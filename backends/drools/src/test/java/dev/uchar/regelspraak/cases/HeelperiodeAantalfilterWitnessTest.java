@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,12 +49,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>} under {@code _build/default}). The raw output of
  * that run is not in the repository; it is kept with the measurements of the card, in
  * {@code stap3b/fix3a/heelperiode-ruw.txt} (verifier, ref, clingo) and {@code stap3b/fix3a/heelperiode-ruw-drools.txt}
- * (the three Drools branches through the CLI). The creation guard plays through {@code DRL_TMS} once the branch
- * carries a creation (step 5a); until then the branch refuses it for the creation.
+ * (the three Drools branches through the CLI). The creation guard plays through {@code DRL_TMS} since the branch
+ * carries a creation (step 5); until then the branch refused it for the creation, and this witness pinned that refusal.
  *
  * <p><b>Red</b> on {@code 4c8a687b}: the test of the computation rule fails on the refusal of the contribution. The
- * test of the creation guard holds there too, since the rendering meets the creation first: it pins the loud refusal
- * until step 5a, not a form this step brings.
+ * test of the creation guard held there too, since the rendering met the creation first: it pinned the loud refusal
+ * until step 5, not a form step 3a brings. <b>Red</b> on {@code b4d83a69}, before the creations of step 5: the creation
+ * guard failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Creatie nog niet".
  */
 class HeelperiodeAantalfilterWitnessTest {
 
@@ -114,16 +114,14 @@ class HeelperiodeAantalfilterWitnessTest {
         }
     }
 
-    @Test void de_creatieguard_wacht_op_stap_5a_en_drl_tms_weigert_haar_luid() throws Exception {
+    @Test void de_creatieguard_speelt_op_beide_takken() throws Exception {
         Path ir = DOCUMENTEN.resolve("creatieguard").resolve("ir.json");
         List<Path> zaken = zaken(ir);
         assertEquals(3, zaken.size(), "de cases van de creatieguard");
         for (Path zaak : zaken) {
             JsonNode c = JSON.readTree(zaak.toFile());
-            assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "exec-model — " + zaak);
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                    () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TMS), "drl-tms — " + zaak);
-            assertEquals("drl-tms: de DRL-weergave draagt Creatie nog niet", e.getMessage());
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+                assertNull(CaseRunner.speelCase(ir, c, tak), tak + " — " + zaak);
         }
     }
 

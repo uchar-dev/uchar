@@ -897,6 +897,13 @@ final class DrlWeergave {
                         + "(" + str(x.producent()) + ", " + x.inconsistent() + ")");
                 case Gevolg.Afloop x -> afloop(x, b);
                 case Gevolg.Conflict x -> conflict(x, b);
+                case Gevolg.Creatie x -> creatie(x, b);
+                case Gevolg.Koppeling x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Koppeling.class) + "("
+                        + str(x.relatie()) + ", " + x.eerste() + ", " + x.tweede() + ", "
+                        + (x.fase() < 0 ? "0" : variabele(x.fase())) + ")");
+                case Gevolg.TweedeVulling x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Fout.class) + "("
+                        + x.onderwerp() + ", " + str(x.relatie()) + ", new " + typenaam(IllegalStateException.class)
+                        + "(" + str(x.zin()) + "))");
                 default -> throw new Weigering(g.getClass().getSimpleName());
             }
             return b.toString();
@@ -1094,6 +1101,83 @@ final class DrlWeergave {
                         + (x.soort() == Uitkomst.Soort.BESLIST ? "v, null" : "null, (String) v") + ")";
                 case Gevolg.Stapelfeit.Inconsistentie x -> route(Route.INCONSISTENTIE) + "((String) v, " + onderwerp + ")";
             };
+        }
+
+        /**
+         * The object creation of {@link Gevolg.Creatie}: a function of the rule takes the steps of the plan in their order
+         * and makes the facts, and the rule inserts them. The function computes the depth through its route, which throws
+         * past the budget before anything is made; then the value of each initialisation, collapsed, the first evaluation
+         * fault being its outcome, as in the executable model, which then makes nothing; then the new bean through the
+         * route {@code nieuwObject}, with each attribute initialisation set on it through the route {@code zet} before it
+         * is inserted; and it gives the facts of the insertions in the order of the plan, null for a characteristic whose
+         * value is not true. The rule inserts the fault, or each fact as the plan inserts it at its place. The function
+         * makes the facts since MVEL resolves no constructor with an {@code int} parameter from an argument of static
+         * type {@code Object} (FABLE-3 §2.4, decision 33). The sentences of the initialisations stand above the function;
+         * the plan carries none of the creation itself.
+         */
+        private void creatie(Gevolg.Creatie x, StringBuilder b) {
+            int plaats = reserveer();
+            String naam = naam("creatie", plaats);
+            List<Term> waarden = new ArrayList<>();
+            List<String> bronnen = new ArrayList<>();
+            for (Gevolg.Initialisatie i : x.initialisaties()) {
+                waarden.add(i.waarde());
+                if (i.waarde().bron() != null) bronnen.add(i.waarde().bron());
+            }
+            Context c = context(x.slots(), -1, null, waarden.toArray(new Term[0]));
+            // the subject is the variable of the rule's subject pattern, and a slot only where the plan reads it as one
+            if (!c.heeft(x.onderwerp())) c.parameter("Object", x.onderwerp(), x.onderwerp());
+            Gevolg.Creatiediepte d = x.diepte();
+            StringBuilder f = new StringBuilder();
+            f.append("    int diepte = ").append(route(Route.CREATIEDIEPTE)).append("(").append(str(x.creatie()))
+                    .append(", ").append(d.stratum()).append(", ").append(str(d.type())).append(", (java.util.List) ")
+                    .append(slot(d.herkomst(), c)).append(", ").append(d.budget()).append(");\n");
+            if (!waarden.isEmpty()) {
+                StringBuilder probeer = new StringBuilder();
+                for (int i = 0; i < waarden.size(); i++) {
+                    f.append("    Object i").append(i).append(" = null;\n");
+                    probeer.append("        i").append(i).append(" = ")
+                            .append(aanroep(Functie.COLLAPSE, List.of(waarde(waarden.get(i), c))).tekst()).append(";\n");
+                }
+                f.append(vang(probeer.toString(), "        return " + route(Route.GEVANGEN) + "(e);\n"));
+            }
+            f.append("    Object nieuw = ").append(route(Route.NIEUW_OBJECT)).append("(").append(x.onderwerp())
+                    .append(", ").append(str(x.constructie().klasse().getName())).append(");\n");
+            for (Gevolg.Constructie.Zetting z : x.constructie().zettingen())
+                f.append("    ").append(route(Route.ZET)).append("(nieuw, ").append(str(z.veld().eigenschap()))
+                        .append(", i").append(z.initialisatie()).append(");\n");
+            f.append("    int fase = ((Integer) ").append(slot(x.fase(), c)).append(").intValue();\n");
+            f.append("    java.util.List feiten = new java.util.ArrayList();\n");
+            for (Gevolg.Invoegsel i : x.invoegingen())
+                f.append("    feiten.add(").append(switch (i) {
+                    case Gevolg.Invoegsel.Nieuw n -> "nieuw";
+                    case Gevolg.Invoegsel.Merk m -> "new " + typenaam(Gemaakt.class) + "(" + str(x.creatie()) + ", "
+                            + x.onderwerp() + ", nieuw, fase, " + d.stratum() + ", diepte)";
+                    case Gevolg.Invoegsel.Link l -> "new " + typenaam(Koppeling.class) + "(" + str(l.relatie()) + ", "
+                            + (l.nieuwIsEerste() ? "nieuw, " + x.onderwerp() : x.onderwerp() + ", nieuw") + ", fase)";
+                    case Gevolg.Invoegsel.Kenmerk k -> "Boolean.TRUE.equals(i" + k.initialisatie() + ") ? new "
+                            + typenaam(HeeftKenmerk.class) + "(nieuw, "
+                            + sleutel(x.initialisaties().get(k.initialisatie()).lid()) + ") : null";
+                }).append(");\n");
+            f.append("    return feiten;\n");
+            vul(plaats, bronnen.isEmpty() ? null : String.join("; ", bronnen),
+                    "Object " + naam + "(" + c.declaratie() + ")", f.toString());
+            b.append("    Object v = ").append(naam).append("(").append(c.argumenten()).append(");\n");
+            b.append("    if (").append(route(Route.IS_EVALUATIEFOUT)).append("(v)) {\n");
+            voegIn(b, "        ", x.foutinvoeging(), "new " + typenaam(Fout.class) + "(" + x.onderwerp() + ", "
+                    + str(x.fout().vorm()) + ", " + route(Route.BENOEM) + "(v, " + str(x.fout().regel()) + "))");
+            b.append("    } else {\n        java.util.List feiten = (java.util.List) v;\n");
+            for (int i = 0; i < x.invoegingen().size(); i++) {
+                Gevolg.Invoegsel s = x.invoegingen().get(i);
+                if (s instanceof Gevolg.Invoegsel.Kenmerk) {
+                    b.append("        if (feiten.get(").append(i).append(") != null) {\n");
+                    voegIn(b, "            ", s.invoeging(), "feiten.get(" + i + ")");
+                    b.append("        }\n");
+                } else {
+                    voegIn(b, "        ", s.invoeging(), "feiten.get(" + i + ")");
+                }
+            }
+            b.append("    }\n");
         }
 
         /** The fault of {@link Gevolg.Filterfout}: the filter evaluated again over the same bound values, its

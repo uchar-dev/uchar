@@ -38,8 +38,9 @@ import java.util.List;
  * Plans made by hand that hold every form {@link DrlWeergave} carries, over three beans of one document (a Wachter at a
  * Post on a Kustvak), so that a witness can compile the forms no golden of the corpus renders: the forms of step 2a of
  * card drl-teksttak-op-truth-maintenance ({@link #plan}), those of the rules of a fold of step 3a ({@link #vouwen}), and
- * those of a uniqueness and of the §9.5 channel of step 3b ({@link #kanaal}), and those of a defaults stack of step 4
- * ({@link #defaults}). They decide nothing of a document's
+ * those of a uniqueness and of the §9.5 channel of step 3b ({@link #kanaal}), those of a defaults stack of step 4
+ * ({@link #defaults}), and those of a creation and a link of step 5 ({@link #creaties}). They decide nothing of a
+ * document's
  * meaning, and no rule of them is meant to fire. The rules are named after what they hold.
  */
 final class Vormenplan {
@@ -118,13 +119,104 @@ final class Vormenplan {
                 new Modelplan.Globaal("rekendatum", LocalDate.class)), regels);
     }
 
-    /** A plan whose one rule has a consequence of a kind the rendering does not carry yet: the fault of a second filling
-     *  of a relation, which step 5a of the card brings. Until step 3b it was the violation of a uniqueness, which that
-     *  step carries. */
+    /** A plan whose one rule has a consequence of a kind the rendering does not carry yet: a recipient of an
+     *  allocation, which step 5 of the card brings with the distribution. Until step 3b it was the violation of a
+     *  uniqueness, and until the creations of step 5 the fault of a second filling of a relation, which those steps
+     *  carry. */
     static Modelplan ongedragen(Class<?> wachter) {
-        return new Modelplan(List.of(), List.of(new Regelplan("tweede vulling", null, null, new Leestabel(List.of()),
+        return new Modelplan(List.of(), List.of(new Regelplan("ontvanger", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of())),
-                new Gevolg.TweedeVulling(O, "proefrelatie", "een tweede vulling", Gevolg.Invoeging.LOGISCH))));
+                new Gevolg.Ontvanger(O, "proefverdeling", 0, -1, -1, -1, Gevolg.Invoeging.LOGISCH))));
+    }
+
+    /** Fragments of the text that show the forms of the plan of the creations and the links ({@link #creaties}), one
+     *  per form. */
+    static final List<String> CREATIEVORMEN = List.of(
+            "// uitkijkbonus\nfunction Object r0_creatie0(Object $uitkijkbonus, Object $fase, Object $herkomsten,"
+                    + " Object $onderwerp) {",
+            "    int diepte = Rekenhulpen.creatiediepte(\"proefcreatie\", 0, \"Wachter\", (java.util.List) $herkomsten,"
+                    + " 3);",
+            "    Object i0 = null;\n    Object i1 = null;\n    try {\n        i0 = Rekenhulpen.collapse($uitkijkbonus);",
+            "    } catch (RuntimeException e) {\n        return Rekenhulpen.gevangen(e);\n    }",
+            "    Object nieuw = Rekenhulpen.nieuwObject($onderwerp, \"dev.uchar.regelspraak.facts.Post\");\n"
+                    + "    Rekenhulpen.zet(nieuw, \"hoogte\", i0);",
+            "    int fase = ((Integer) $fase).intValue();",
+            "    feiten.add(nieuw);\n    feiten.add(new Gemaakt(\"proefcreatie\", $onderwerp, nieuw, fase, 0, diepte));\n"
+                    + "    feiten.add(new Koppeling(\"wachterpost\", $onderwerp, nieuw, fase));\n"
+                    + "    feiten.add(Boolean.TRUE.equals(i1) ? new HeeftKenmerk(nieuw, ElementSleutel.van(\"post\","
+                    + " \"bemand\", true)) : null);\n    return feiten;",
+            "    agenda-group \"uchar-objectcreatie\"",
+            "    if (Rekenhulpen.isEvaluatiefout(v)) {\n        insert(new Fout($onderwerp, \"proefcreatie\","
+                    + " Rekenhulpen.benoem(v, \"proefcreatie\")));\n    } else {\n"
+                    + "        java.util.List feiten = (java.util.List) v;\n        insert(feiten.get(0));\n"
+                    + "        insert(feiten.get(1));\n        insert(feiten.get(2));\n"
+                    + "        if (feiten.get(3) != null) {\n            insertLogical(feiten.get(3));\n        }\n    }",
+            "function Object r1_creatie0(Object $fase, Object $herkomsten, Object $onderwerp) {\n    int diepte =",
+            "    Object nieuw = Rekenhulpen.nieuwObject($onderwerp, \"dev.uchar.regelspraak.facts.Wachter\");\n"
+                    + "    int fase",
+            "    feiten.add(new Koppeling(\"opvolging\", nieuw, $onderwerp, fase));",
+            "    insertLogical(new Koppeling(\"wachterpost\", $onderwerp, $post, 0));",
+            "    agenda-group \"uchar-feitcreatie\"",
+            "    insert(new Koppeling(\"wachterpost\", $onderwerp, $post, $fase));",
+            "    insertLogical(new Fout($onderwerp, \"proefrelatie\", new IllegalStateException(\"een tweede vulling\")));");
+
+    /**
+     * A plan with every consequence of a creation and of a link (step 5 of card drl-teksttak-op-truth-maintenance), over
+     * the beans of the same document as {@link #plan}: an object creation of a Post for a Wachter, in its agenda group,
+     * with an attribute initialisation set on the new bean and a characteristic initialisation inserted with an
+     * insertion of its own, each from a function that can fault; one of a Wachter without initialisations, whose new
+     * object is the first end of its link; the link a reference field of the input carries, at phase 0, and the link of
+     * a fact creation, in its agenda group, at the phase it binds; and the fault of a second filling. No rule of it is
+     * meant to fire.
+     */
+    static Modelplan creaties(Class<?> wachter, Class<?> post) {
+        List<Regelplan> regels = new ArrayList<>();
+        Patroon fase = new Patroon(Creatiefase.class, "$creatiefase", List.of(new Alfa("creatiestratum", List.of(
+                new Alfa.Veldtoets("stratum", Alfa.Vergelijker.MINSTENS, 0)))), List.of(),
+                List.of(Binding.van("$fase", Creatiefase.class, "nummer")));
+        Accumulatie herkomst = new Accumulatie(new Patroon(Gemaakt.class, "$herkomst", List.of(),
+                List.of(new Join("herkomst", "object", O)), List.of()),
+                List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, "$herkomsten")));
+        Gevolg.Foutnaam fout = new Gevolg.Foutnaam("proefcreatie", "proefcreatie");
+        regels.add(new Regelplan("creatie met initialisaties", "proefcreatie", "uchar-objectcreatie",
+                tabel(new Lezing(0, Leessoort.INVOER, "uitkijkbonus", "$uitkijkbonus"),
+                        new Lezing(1, Leessoort.CREATIEFASE, "creatiefase", "$fase"),
+                        new Lezing(2, Leessoort.HERKOMST, "herkomst", "$herkomsten")),
+                List.of(new Onderwerp(wachter, O, List.of(), List.of(),
+                        List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus"))), fase, herkomst),
+                new Gevolg.Creatie(O, "proefcreatie", new Gevolg.Creatiediepte(2, 0, "Wachter", 3), List.of(
+                        new Gevolg.Initialisatie(ElementSleutel.van("post", "hoogte", false), new Term.Lees(0,
+                                "uitkijkbonus")),
+                        new Gevolg.Initialisatie(ElementSleutel.van("post", "bemand", true),
+                                new Term.Const(Boolean.TRUE, null, null))),
+                        fout, Gevolg.Invoeging.GESTELD, new Gevolg.Constructie(post, List.of(
+                                new Gevolg.Constructie.Zetting(0, new Binding.Veld(post, "hoogte")))), 1,
+                        List.of(new Gevolg.Invoegsel.Nieuw(Gevolg.Invoeging.GESTELD),
+                                new Gevolg.Invoegsel.Merk(Gevolg.Invoeging.GESTELD),
+                                new Gevolg.Invoegsel.Link("wachterpost", false, Gevolg.Invoeging.GESTELD),
+                                new Gevolg.Invoegsel.Kenmerk(1, Gevolg.Invoeging.LOGISCH)),
+                        List.of(0, 1, 2), 3)));
+        regels.add(new Regelplan("creatie zonder initialisaties", "proefcreatie", "uchar-objectcreatie",
+                tabel(new Lezing(0, Leessoort.CREATIEFASE, "creatiefase", "$fase"),
+                        new Lezing(1, Leessoort.HERKOMST, "herkomst", "$herkomsten")),
+                List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of()), fase, herkomst),
+                new Gevolg.Creatie(O, "proefopvolging", new Gevolg.Creatiediepte(1, 0, "Wachter", 3), List.of(), fout,
+                        Gevolg.Invoeging.GESTELD, new Gevolg.Constructie(wachter, List.of()), 0,
+                        List.of(new Gevolg.Invoegsel.Nieuw(Gevolg.Invoeging.GESTELD),
+                                new Gevolg.Invoegsel.Merk(Gevolg.Invoeging.GESTELD),
+                                new Gevolg.Invoegsel.Link("opvolging", true, Gevolg.Invoeging.GESTELD)),
+                        List.of(0, 1), 2)));
+        Onderwerp metPost = new Onderwerp(wachter, O, List.of(), List.of(), List.of(Binding.van("$post", wachter,
+                "post")));
+        regels.add(new Regelplan("koppeling uit de invoer", null, null, tabel(), List.of(metPost),
+                new Gevolg.Koppeling("wachterpost", O, "$post", -1, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("koppeling van een feitcreatie", "proeffeitcreatie", "uchar-feitcreatie",
+                tabel(new Lezing(0, Leessoort.CREATIEFASE, "creatiefase", "$fase")), List.of(metPost, fase),
+                new Gevolg.Koppeling("wachterpost", O, "$post", 0, Gevolg.Invoeging.GESTELD)));
+        regels.add(new Regelplan("tweede vulling", null, null, tabel(),
+                List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of())),
+                new Gevolg.TweedeVulling(O, "proefrelatie", "een tweede vulling", Gevolg.Invoeging.LOGISCH)));
+        return new Modelplan(List.of(), regels);
     }
 
     /** Fragments of the text that show the forms of the plan of a uniqueness and the channel ({@link #kanaal}), one per

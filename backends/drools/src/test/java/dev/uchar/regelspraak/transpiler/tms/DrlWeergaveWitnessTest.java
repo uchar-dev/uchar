@@ -172,8 +172,8 @@ class DrlWeergaveWitnessTest {
             assertTrue(tekst.contains(vorm), () -> "de vormentekst mist " + vorm + ":\n" + tekst);
         DrlWeergave.Weigering w = org.junit.jupiter.api.Assertions.assertThrows(DrlWeergave.Weigering.class,
                 () -> DrlWeergave.tekst(Vormenplan.ongedragen(wachter)));
-        assertEquals("TweedeVulling", w.soort());
-        assertEquals("de DRL-weergave draagt TweedeVulling nog niet", w.getMessage());
+        assertEquals("Ontvanger", w.soort());
+        assertEquals("de DRL-weergave draagt Ontvanger nog niet", w.getMessage());
     }
 
     /**
@@ -254,6 +254,33 @@ class DrlWeergaveWitnessTest {
         for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de defaultstekst");
         for (String vorm : Vormenplan.DEFAULTSVORMEN)
             assertTrue(tekst.contains(vorm), () -> "de defaultstekst mist " + vorm + ":\n" + tekst);
+    }
+
+    /**
+     * Every form of a creation and of a link compiles (step 5), also where no golden has it: a plan made here over the
+     * same beans ({@link Vormenplan#creaties}), with an object creation in its agenda group that sets an attribute
+     * initialisation on the new bean and inserts a characteristic initialisation with an insertion of its own, one
+     * without initialisations whose new object is the first end of its link, the link of the input and that of a fact
+     * creation, and the fault of a second filling. One plan gives one text, written to {@code <map>/_creatieplan.drl}
+     * under {@code -Duchar.drlvorm}.
+     *
+     * <p><b>Red</b> before step 5, on {@code b4d83a69}: the rendering refused the plan, "de DRL-weergave draagt Creatie
+     * nog niet".
+     */
+    @Test void elke_vorm_van_een_creatie_en_een_koppeling_compileert() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve("anchor/jutterswet-kustwacht").resolve("ir.json"),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> wachter = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Wachter");
+        Class<?> post = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Post");
+        Modelplan plan = Vormenplan.creaties(wachter, post);
+        String tekst = DrlWeergave.tekst(plan);
+        assertEquals(tekst, DrlWeergave.tekst(plan), "één plan geeft één tekst");
+        String dump = System.getProperty("uchar.drlvorm");
+        if (dump != null) Files.writeString(Path.of(dump).resolve("_creatieplan.drl"), tekst);
+        assertEquals(List.of(), compileer(tekst, b.beanLoader()), () -> "de creatietekst compileert niet:\n" + tekst);
+        for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de creatietekst");
+        for (String vorm : Vormenplan.CREATIEVORMEN)
+            assertTrue(tekst.contains(vorm), () -> "de creatietekst mist " + vorm + ":\n" + tekst);
     }
 
     /** The errors of compiling {@code tekst} with {@code KieHelper} under the bean loader {@code bonen}, which is the
