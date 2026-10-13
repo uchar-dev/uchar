@@ -189,6 +189,11 @@ final class PatternDslWeergave {
             case Gevolg.Stand x -> new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarde())},
                     (drools, a) -> voegIn(drools, x.invoeging(), new Stand(a[0], x.attribuut(),
                             x.emmerscalair() ? Emmerscalair.van((List<?>) a[1]) : a[1])));
+            case Gevolg.Padstand x -> x.bron() == Gevolg.Standbron.ONTBREKENDE_LINK
+                    ? new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                            voegIn(drools, x.invoeging(), new PadStand(a[0], x.pad(), x.lid(), null)))
+                    : new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarde())}, (drools, a) ->
+                            voegIn(drools, x.invoeging(), new PadStand(a[0], x.pad(), x.lid(), a[1])));
         };
     }
 

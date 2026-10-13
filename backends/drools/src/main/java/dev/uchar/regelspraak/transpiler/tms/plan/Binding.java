@@ -5,7 +5,8 @@ import java.util.List;
 /**
  * A value a pattern binds to the variable {@code doel}: from its object along the reference fields of {@code pad}, null
  * where a link on it is absent, the field {@code veld}, read as {@code vorm}. On a fact of the branch the path is empty
- * and the field is a component of the fact; on a bean every step is a reference field and the field a member.
+ * and the field is a component of the fact; on a bean every step is a reference field and the field a member, or the
+ * last reference field of a path where the binding binds the object the path reaches.
  */
 public record Binding(String doel, List<Veld> pad, Veld veld, Leesvorm vorm, Class<?> soort) {
 

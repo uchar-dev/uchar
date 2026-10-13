@@ -104,9 +104,10 @@ public sealed interface Gevolg {
     record Rekendatumstand(String global, Invoeging invoeging) implements Gevolg {}
 
     /** Where a standing takes what it states from, as the left-hand side of its rule decided: the input on the object's
-     *  bean ({@code INVOER}); a derivation, the fact a form inserted ({@code AFLEIDING}); or neither, so that a
-     *  characteristic is onwaar ({@code GEEN}). */
-    enum Standbron { INVOER, AFLEIDING, GEEN }
+     *  bean ({@code INVOER}); a derivation, the fact a form inserted ({@code AFLEIDING}); neither, so that a
+     *  characteristic is onwaar ({@code GEEN}); the standing of a member on the object a path reaches
+     *  ({@code BEREIKT}); or no object, where a link on the path is absent ({@code ONTBREKENDE_LINK}). */
+    enum Standbron { INVOER, AFLEIDING, GEEN, BEREIKT, ONTBREKENDE_LINK }
 
     /**
      * The standing of characteristic {@code kenmerk} on the object {@code onderwerp} binds, {@code waar} or onwaar:
@@ -116,7 +117,8 @@ public sealed interface Gevolg {
     record Kenmerkstand(String onderwerp, ElementSleutel kenmerk, Standbron bron, boolean waar, Invoeging invoeging)
             implements Gevolg {
         public Kenmerkstand {
-            if (waar == (bron == Standbron.GEEN))
+            if (bron != Standbron.INVOER && bron != Standbron.AFLEIDING && bron != Standbron.GEEN
+                    || waar == (bron == Standbron.GEEN))
                 throw new IllegalArgumentException("een kenmerkstand is waar uit de invoer of een afleiding en onwaar"
                         + " uit geen van beide, niet " + waar + " uit " + bron);
         }
@@ -131,9 +133,25 @@ public sealed interface Gevolg {
     record Stand(String onderwerp, ElementSleutel attribuut, Standbron bron, int waarde, boolean emmerscalair,
                  Invoeging invoeging) implements Gevolg {
         public Stand {
-            if (bron == Standbron.GEEN || emmerscalair && bron != Standbron.INVOER)
+            if (bron != Standbron.INVOER && bron != Standbron.AFLEIDING || emmerscalair && bron != Standbron.INVOER)
                 throw new IllegalArgumentException("een stand komt uit de invoer of een afleiding, en alleen de invoer"
                         + " staat als emmerscalair, niet " + bron + (emmerscalair ? " als emmerscalair" : ""));
+        }
+    }
+
+    /**
+     * The standing of member {@code lid} at the end of the path {@code pad} on the object {@code onderwerp} binds:
+     * where every link on the path is present ({@code bron} {@code BEREIKT}), the value in slot {@code waarde} of the
+     * value array, the member's standing on the object the path reaches; where a link is absent
+     * ({@code ONTBREKENDE_LINK}), null, and {@code waarde} is -1.
+     */
+    record Padstand(String onderwerp, String pad, ElementSleutel lid, Standbron bron, int waarde, Invoeging invoeging)
+            implements Gevolg {
+        public Padstand {
+            if (bron != Standbron.BEREIKT && bron != Standbron.ONTBREKENDE_LINK
+                    || (bron == Standbron.BEREIKT) != (waarde >= 0))
+                throw new IllegalArgumentException("een padstand neemt de stand op het bereikte object uit een slot, of"
+                        + " is leeg bij een ontbrekende link, zonder slot; niet " + bron + " met slot " + waarde);
         }
     }
 }

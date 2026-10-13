@@ -73,5 +73,8 @@ public enum Leessoort {
     WAARDEN,
     /** The value a writer put on the subject, off its {@code Waarde}: what the standing of a derived attribute carries
      *  ({@code TmsTranspiler.attribuutstandregels}). */
-    AFLEIDING
+    AFLEIDING,
+    /** The standing of a member on the object a path reaches, off its {@code Stand} or {@code KenmerkStand}: what the
+     *  standing of the path carries ({@code TmsTranspiler.padstandregels}). */
+    BEREIKTE_STAND
 }

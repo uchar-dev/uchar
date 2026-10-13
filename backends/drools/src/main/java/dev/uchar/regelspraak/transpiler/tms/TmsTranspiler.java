@@ -5800,10 +5800,8 @@ public final class TmsTranspiler {
                 return nieuw(Leessoort.PADSTAND, sleutel, w);
             }
             // input over links that are input: bound off the subject's bean, null where a link is absent
-            List<Binding.Veld> stappen = new ArrayList<>();
-            for (int i = 0; i < pad.hops().size(); i++)
-                stappen.add(new Binding.Veld(bonenklasse(pad.hops().get(i).van()), pad.rollen().get(i)));
-            bindOnderwerp(new Binding(w, stappen, new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null));
+            bindOnderwerp(new Binding(w, pad.velden(), new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid),
+                    null));
             return nieuw(Leessoort.INVOERPAD, sleutel, w);
         }
 
@@ -6013,9 +6011,10 @@ public final class TmsTranspiler {
      * The two generic rules that keep one {@link PadStand} per object of the subject type for a derived member read over
      * a path: where every link on the path is present, the standing of the member on the object the path reaches,
      * joined on that object; where a link is absent, null. The links are input, read off the bean in the left-hand
-     * side, and do not change while the session fires, so exactly one of the two holds for each object.
+     * side, and do not change while the session fires, so exactly one of the two holds for each object. Both rules
+     * read the path along its reference fields ({@link Pad#velden}): the test whether it reaches an object, and the
+     * binding of that object, which walks to the last field and reads it there.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> padstandregels(Padlezing p) {
         Pad pad = p.pad();
         Lid lid = p.lid();
@@ -6024,33 +6023,33 @@ public final class TmsTranspiler {
         Class<?> klasse = bonenklasse(pad.subject());
         String naam = "padstand " + pad.subject().naam + "." + String.join(".", pad.rollen()) + " naar "
                 + lid.declarant().naam + "." + lid.naam() + ": ";
+        List<Binding.Veld> velden = pad.velden();
 
-        Variable s1 = DSL.declarationOf(klasse, "$onderwerp");
-        Variable<Object> bereikt = DSL.declarationOf(Object.class, "$bereikt");
-        Variable<Object> v1 = DSL.declarationOf(Object.class, "$v");
-        PatternDSL.PatternDef bron = ((PatternDSL.PatternDef) PatternDSL.pattern(s1))
-                .expr(id("link"), (Predicate1) o -> pad.loop(o) != null)
-                .bind(bereikt, o -> pad.loop(o));
-        RuleItemBuilder<?> stand;
-        if (lid.kenmerk()) {
-            Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand");
-            stand = zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk)), "stand-bereikt",
-                    bereikt, KenmerkStand::onderwerp).bind(v1, KenmerkStand::waar);
-        } else {
-            Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand");
-            stand = zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)), "stand-bereikt",
-                    bereikt, Stand::onderwerp).bind(v1, Stand::waarde);
-        }
-        Rule aanwezig = PatternDSL.rule(PKG, naam + "link aanwezig").build(bron, stand,
-                DSL.on(s1, v1).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
-                        drools.logicalInsert(new PadStand(o, ps, lk, v))));
+        Alfa link = langsPad(id("link"), velden, Alfa.Vergelijker.GEVULD);
+        Binding bereikt = new Binding("$bereikt", velden.subList(0, velden.size() - 1), velden.get(velden.size() - 1),
+                Binding.Leesvorm.WAARDE, null);
+        Class<?> standklasse = lid.kenmerk() ? KenmerkStand.class : Stand.class;
+        Patroon stand = new Patroon(standklasse, "$stand",
+                List.of(gelijk(id("stand"), lid.kenmerk() ? "kenmerk" : "attribuut", lk)),
+                List.of(new Join(id("stand-bereikt"), "onderwerp", "$bereikt")),
+                List.of(Binding.van("$v", standklasse, lid.kenmerk() ? "waar" : "waarde")));
+        Rule aanwezig = weergeef(new Regelplan(naam + "link aanwezig", null, null,
+                eenSlot(Leessoort.BEREIKTE_STAND, "stand " + ps + " " + lk, "$v"),
+                List.of(new Onderwerp(klasse, ONDERWERP, List.of(link), List.of(bereikt)), stand),
+                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH)));
 
-        Variable s2 = DSL.declarationOf(klasse, "$onderwerp");
-        Rule afwezig = PatternDSL.rule(PKG, naam + "link afwezig").build(
-                ((PatternDSL.PatternDef) PatternDSL.pattern(s2)).expr(id("geen-link"), (Predicate1) o -> pad.loop(o) == null),
-                DSL.on(s2).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                        drools.logicalInsert(new PadStand(o, ps, lk, null))));
+        Alfa geenLink = langsPad(id("geen-link"), velden, Alfa.Vergelijker.LEEG);
+        Rule afwezig = weergeef(new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
+                List.of(new Onderwerp(klasse, ONDERWERP, List.of(geenLink), List.of())),
+                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
+                        Gevolg.Invoeging.LOGISCH)));
         return List.of(aanwezig, afwezig);
+    }
+
+    /** The test {@code op} of the object the walk over the reference fields {@code velden} reaches from the subject,
+     *  null where a link on it is absent: {@code GEVULD} where the path reaches an object, {@code LEEG} where not. */
+    private static Alfa langsPad(String id, List<Binding.Veld> velden, Alfa.Vergelijker op) {
+        return new Alfa(id, List.of(new Alfa.Veldtoets(velden, null, Binding.Leesvorm.WAARDE, op, null)));
     }
 
     /**
@@ -6269,22 +6268,12 @@ public final class TmsTranspiler {
     }
 
     /** A path of to-one roles from a subject type over the reference fields of the beans: the walk
-     *  {@link FactModelGenerator#navigatiewandeling} derives from the wire's bindings, a getter per hop, and the type
-     *  the last hop reaches. {@code sleutel} names the subject type and the fields, as the {@link PadStand} facts of
-     *  the path carry it. */
+     *  {@link FactModelGenerator#navigatiewandeling} derives from the wire's bindings, the reference field of each hop
+     *  over an input relation on its bean class ({@code velden}, which a plan reads the path along, and only for a path
+     *  whose links are all input, {@link #gecreeerd}), the hops, and the type the last hop reaches. {@code sleutel}
+     *  names the subject type and the fields, as the {@link PadStand} facts of the path carry it. */
     private record Pad(String sleutel, Objecttype subject, List<String> rollen, Objecttype bereikt,
-                       List<Function<Object, Object>> stappen, List<Hop> hops) {
-        /** The object the path reaches from {@code o}, or null where a link on it is absent. Only for a path whose
-         *  links are all input ({@link #gecreeerd}). */
-        Object loop(Object o) {
-            Object d = o;
-            for (Function<Object, Object> stap : stappen) {
-                d = stap.apply(d);
-                if (d == null) return null;
-            }
-            return d;
-        }
-
+                       List<Binding.Veld> velden, List<Hop> hops) {
         /** Whether a hop of the path goes over a relation a form creates, whose links change while the session fires:
          *  such a path is read over {@link Koppeling} facts, never off the beans. */
         boolean gecreeerd() {
@@ -6312,7 +6301,7 @@ public final class TmsTranspiler {
         if (w.rollen().size() != bindingen.size())
             throw new IllegalStateException(wat + ": de wandeling telt " + w.rollen().size() + " stappen en de draad "
                     + bindingen.size() + " bindingen");
-        List<Function<Object, Object>> stappen = new ArrayList<>();
+        List<Binding.Veld> velden = new ArrayList<>();
         List<Hop> hops = new ArrayList<>();
         Objecttype cur = subject;
         for (int i = 0; i < w.rollen().size(); i++) {
@@ -6328,12 +6317,11 @@ public final class TmsTranspiler {
             if (!FactModelGenerator.heeftReferentieVeld(model, cur, rol, volgend))
                 throw new Weigering(wat + ": " + cur.naam + " heeft geen referentieveld '" + rol + "' naar " + volgend.naam
                         + " (§13.3.9 opslagrichting)");
-            Function<Object, Object> lees = Accessors.getter(bonenklasse(cur), rol);
-            stappen.add(lees);
-            hops.add(new Hop(cur, volgend, lees, true, null, false));
+            velden.add(new Binding.Veld(bonenklasse(cur), rol));
+            hops.add(new Hop(cur, volgend, Accessors.getter(bonenklasse(cur), rol), true, null, false));
             cur = volgend;
         }
-        return new Pad(subject.naam + ":" + String.join(".", w.rollen()), subject, w.rollen(), cur, List.copyOf(stappen),
+        return new Pad(subject.naam + ":" + String.join(".", w.rollen()), subject, w.rollen(), cur, List.copyOf(velden),
                 List.copyOf(hops));
     }
 
