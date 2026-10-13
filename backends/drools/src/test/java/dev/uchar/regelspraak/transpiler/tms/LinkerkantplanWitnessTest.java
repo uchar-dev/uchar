@@ -5,10 +5,10 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
 import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
-import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
 import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
+import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.junit.jupiter.api.Test;
@@ -27,9 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * {@link PatternDslWeergave} makes the executable model of them. That plan is what a rendering into DRL text will take,
  * so this witness pins its shape for one golden: per form, how many plans, slots of each kind and items of each kind
  * (constraints, joins, bindings, folds). It counts; it does not pin the constraint ids, the fields, the join targets or
- * the order of the items, which the harness covers through the rules they render to. Nor does it cover every read: in
- * step 1a the carrier pattern of a fold and the accumulates over {@code Lijstplaats} of a filter fault are still built
- * outside the plan, by the transpiler itself (step 1c plans them).
+ * the order of the items, which the harness covers through the rules they render to. Since step 1d it counts over the
+ * rule plans of the analysis ({@code Modelplan}), every rule of a form and every item of its left-hand side: the
+ * carrier pattern a contribution rule binds before its subject, which step 1c planned, is counted as well. Until then
+ * it counted the planned left-hand sides, which held only what {@code Lezingen} planned.
  *
  * <p>The golden {@code jutterswet-premierecht} has the reads the step planned in one small document: an input
  * member bound off the subject ({@code toekenning van een recht op premie}), a derived characteristic and a parameter
@@ -38,13 +39,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * reads the member itself and its value or its filter ({@code premiebedrag van een jutter},
  * {@code aantal toegekende rechten}). The counts follow from the document: a condition is one test, a derived member
  * one standing pattern with a constraint on the member, a join on the subject and a binding of the value, a parameter
- * one pattern without a join, a fold one accumulate whose count is always bound beside the folded value.
+ * one pattern without a join, a fold one accumulate whose count is always bound beside the folded value, and its
+ * contribution rule one pattern of the fold's subject, the {@code Jutter}, before its own subject pattern.
  *
- * <p>The witness reads the transpiler's plans, not the rules: that the rendering of the plans builds the same rules as
+ * <p>The witness reads the analysis's plans, not the rules: that the rendering of the plans builds the same rules as
  * before the step is what the harness {@code Vuurspoor} shows, a dump of every firing and every fact of the corpus and
  * of the suite equal to the one before the step.
  *
- * <p><b>Red</b> before the step: {@code Lezingen} built the patterns itself and planned nothing, so the transpiler gave
+ * <p><b>Red</b> before step 1a: {@code Lezingen} built the patterns itself and planned nothing, so the transpiler gave
  * no plan for any form.
  */
 class LinkerkantplanWitnessTest {
@@ -62,26 +64,27 @@ class LinkerkantplanWitnessTest {
                 "alfa", 2, "join", 1, "binding", 2, "toets", 1));
         verwacht.put("premiebedrag van een jutter", telling(
                 "plan", 2, "lezing ONDERWERP", 1, "lezing STAND", 1, "lezing VOUW_AANTAL", 1, "lezing VOUW_WAARDE", 1,
-                "onderwerp", 2, "patroon Stand", 1, "accumulatie Bijdrage", 1, "functie AANTAL", 1, "functie SOM", 1,
-                "alfa", 2, "join", 2, "binding", 2));
+                "onderwerp", 2, "patroon Jutter", 1, "patroon Stand", 1, "accumulatie Bijdrage", 1, "functie AANTAL", 1,
+                "functie SOM", 1, "alfa", 2, "join", 2, "binding", 2));
         verwacht.put("aantal toegekende rechten", telling(
                 "plan", 2, "lezing KENMERKSTAND", 1, "lezing ONDERWERP", 1, "lezing VOUW_AANTAL", 1,
-                "onderwerp", 2, "patroon KenmerkStand", 1, "accumulatie Bijdrage", 1, "functie AANTAL", 1,
-                "alfa", 2, "join", 2, "binding", 1, "toets", 1));
+                "onderwerp", 2, "patroon Jutter", 1, "patroon KenmerkStand", 1, "accumulatie Bijdrage", 1,
+                "functie AANTAL", 1, "alfa", 2, "join", 2, "binding", 1, "toets", 1));
         verwacht.put("premiegerechtigdheid", telling(
                 "plan", 1, "lezing STAND", 1, "onderwerp", 1, "patroon Stand", 1, "alfa", 1, "join", 1, "binding", 1,
                 "toets", 1));
-        assertEquals(verwacht, perVorm(bouw.execModelTranspiler().linkerkanten()));
+        assertEquals(verwacht, perVorm(bouw.execModelTranspiler().modelplan().regels()));
     }
 
-    /** Per form, the plans and the kinds of their slots and items. */
-    private static Map<String, Map<String, Integer>> perVorm(List<Linkerkant> plannen) {
+    /** Per form, the plans of its rules and the kinds of their slots and items. */
+    private static Map<String, Map<String, Integer>> perVorm(List<Regelplan> plannen) {
         Map<String, Map<String, Integer>> uit = new TreeMap<>();
-        for (Linkerkant k : plannen) {
-            Map<String, Integer> t = uit.computeIfAbsent(k.vorm(), v -> new TreeMap<>());
+        for (Regelplan r : plannen) {
+            if (r.vorm() == null) continue;
+            Map<String, Integer> t = uit.computeIfAbsent(r.vorm(), v -> new TreeMap<>());
             tel(t, "plan");
-            for (Lezing l : k.lezingen().slots()) tel(t, "lezing " + l.soort());
-            for (LhsItem item : k.items()) {
+            for (Lezing l : r.lezingen().slots()) tel(t, "lezing " + l.soort());
+            for (LhsItem item : r.linkerkant()) {
                 switch (item) {
                     case Onderwerp o -> {
                         tel(t, "onderwerp");

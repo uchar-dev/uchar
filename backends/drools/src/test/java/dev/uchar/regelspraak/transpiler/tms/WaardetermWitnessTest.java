@@ -2,7 +2,9 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
-import dev.uchar.regelspraak.transpiler.tms.plan.Waardeplan;
+import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
+import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
+import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,6 +50,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       comparison of two binders.</li>
  * </ul>
  *
+ * <p>Since step 1d the witness reads the rule plans of the analysis ({@code Modelplan}), in the order of the model:
+ * the value the consequence of a rule of a form writes, of a {@link Gevolg.Waarde}, of each initialisation of a
+ * {@link Gevolg.Creatie} and of a {@link Gevolg.Afloop}. Until then the analysis recorded those values apart, in the
+ * order the rules were built, without the decision of a characteristic default and the agreed decision of a defaults
+ * stack, which neither golden has; for both goldens the lists are the same.
+ *
  * <p><b>Red</b> before the step: the value compilers made the functions themselves and planned nothing, so the
  * transpiler gave no planned value. Before the fix round of step 1b, a restatement and a listed fold named no function,
  * so a rendering had to choose it again, and the source fragments below the root and the type of a constant beyond its
@@ -58,7 +66,7 @@ class WaardetermWitnessTest {
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
     @Test void een_runtimeaanroep_met_eenheidsherschaling_is_een_boom_van_genoemde_aanroepen() throws Exception {
-        List<Waardeplan> plannen = plannen("jutterswet-sleepbaan");
+        List<Regelplan> plannen = plannen("jutterswet-sleepbaan");
         assertEquals(List.of(
                 "sleeplengte van een sleepbaan: Herschaal HERSCHAAL_EXACT km->m 1000/1 (RS_PLUS(Const 2.5 km, "
                         + "Herschaal HERSCHAAL_EXACT m->km 1/1000 (Lees 0)))"), bomen(plannen));
@@ -75,7 +83,7 @@ class WaardetermWitnessTest {
     }
 
     @Test void een_let_is_een_knoop_met_zijn_binder_en_zijn_gretigheid() throws Exception {
-        List<Waardeplan> plannen = plannen("anchor/jutterswet-tariefstelling");
+        List<Regelplan> plannen = plannen("anchor/jutterswet-tariefstelling");
         assertEquals(List.of(
                 "aanslag van een jutter: Let 1 ink [Lees 0] in [Let 3 aftrek [RS_MAAL(Lees 2, Const 250)] in "
                         + "[Let 4 belasting [RS_AFRONDING(RS_MAAL(Binder 1 ink, Const 0.21), Const 2, Const HALF_UP)] in "
@@ -145,19 +153,32 @@ class WaardetermWitnessTest {
         assertEquals(List.of(), fout);
     }
 
-    private static List<Waardeplan> plannen(String golden) throws Exception {
+    /** The plans of the rules of the forms of {@code golden}, in the order of the model. */
+    private static List<Regelplan> plannen(String golden) throws Exception {
         return DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL)
-                .execModelTranspiler().waardeplannen();
+                .execModelTranspiler().modelplan().regels().stream().filter(p -> p.vorm() != null).toList();
     }
 
-    private static List<String> bomen(List<Waardeplan> plannen) {
-        return plannen.stream().map(p -> p.vorm() + ": " + Termboom.boom(p.waarde())).toList();
+    /** The values the consequence {@code g} writes: of a value, of each initialisation of a creation, of a decision. */
+    private static List<Term> waarden(Gevolg g) {
+        return switch (g) {
+            case Gevolg.Waarde w -> List.of(w.waarde());
+            case Gevolg.Creatie c -> c.initialisaties().stream().map(Gevolg.Initialisatie::waarde).toList();
+            case Gevolg.Afloop a -> List.of(a.waarde());
+            default -> List.of();
+        };
     }
 
-    /** Per plan, every node of its tree in pre-order, with what the tree text leaves out ({@link Termboom#velden}). */
-    private static List<String> velden(List<Waardeplan> plannen) {
+    private static List<String> bomen(List<Regelplan> plannen) {
         List<String> uit = new ArrayList<>();
-        for (Waardeplan p : plannen) Termboom.velden(p.vorm(), p.waarde(), "0", uit);
+        for (Regelplan p : plannen) for (Term w : waarden(p.gevolg())) uit.add(p.vorm() + ": " + Termboom.boom(w));
+        return uit;
+    }
+
+    /** Per value, every node of its tree in pre-order, with what the tree text leaves out ({@link Termboom#velden}). */
+    private static List<String> velden(List<Regelplan> plannen) {
+        List<String> uit = new ArrayList<>();
+        for (Regelplan p : plannen) for (Term w : waarden(p.gevolg())) Termboom.velden(p.vorm(), w, "0", uit);
         return uit;
     }
 }

@@ -51,7 +51,6 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leessoort;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
-import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
 import dev.uchar.regelspraak.transpiler.tms.plan.Modelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
@@ -59,7 +58,6 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
 import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
-import dev.uchar.regelspraak.transpiler.tms.plan.Waardeplan;
 
 import org.drools.model.Model;
 import org.kie.api.runtime.ClassObjectFilter;
@@ -267,10 +265,6 @@ public final class TmsTranspiler {
     /** The rules of the model that belong to no form of the document ({@link #vormVan}). */
     private final Set<String> regelsZonderVorm = new LinkedHashSet<>();
     private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
-    /** The planned left-hand sides of the lowered rules, in the order {@link Lezingen#plan} made them. */
-    private final List<Linkerkant> linkerkanten = new ArrayList<>();
-    /** The planned values the consequences of the lowered rules compute, in the order the rules were lowered. */
-    private final List<Waardeplan> waardeplannen = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
@@ -402,17 +396,6 @@ public final class TmsTranspiler {
 
     /** One entry per effective stack the branch lowered, in the order of the model. */
     public List<Defaultsgroep> defaultsgroepen() { return List.copyOf(defaultsgroepen); }
-
-    /** The plan of the left-hand side of every lowered rule that reads through {@link Lezingen}, in the order the rules
-     *  were lowered, of the forms that lowered: what a rendering takes. Until step 1c of card
-     *  drl-teksttak-op-truth-maintenance it holds what {@link Lezingen} decides ({@link Linkerkant}). No consumer reads a
-     *  plan, so it is no public entry. */
-    List<Linkerkant> linkerkanten() { return List.copyOf(linkerkanten); }
-
-    /** The planned value of every consequence of a lowered rule that computes one, in the order the rules were lowered,
-     *  of the forms that lowered ({@link Waardeplan}). Until step 1c of card drl-teksttak-op-truth-maintenance they stand
-     *  apart from the left-hand sides. No consumer reads a plan, so it is no public entry. */
-    List<Waardeplan> waardeplannen() { return List.copyOf(waardeplannen); }
 
     /** The outcome of the analysis ({@link Modelplan}): the globals the model declares and the plan of every rule of
      *  the model, in the order of the model, which {@link PatternDslWeergave#model} renders. No consumer reads a plan,
@@ -772,16 +755,12 @@ public final class TmsTranspiler {
     /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
     private List<Regelplan> meet(String soort, String naam, Supplier<List<Regelplan>> bouw) {
         vorm = naam;
-        int plannen = linkerkanten.size(), waarden = waardeplannen.size();
         try {
             List<Regelplan> regels = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
             for (Regelplan r : regels) vormVanRegel.put(r.naam(), naam);
             return regels;
         } catch (Weigering w) {
-            // a refused form leaves no rule, so the plans it made go as well
-            linkerkanten.subList(plannen, linkerkanten.size()).clear();
-            waardeplannen.subList(waarden, waardeplannen.size()).clear();
             weiger(soort, naam, w.getMessage());
             return List.of();
         }
@@ -1238,10 +1217,10 @@ public final class TmsTranspiler {
         Set<Integer> gebruik = lez.volg();
         // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6); a
         // timeline is written as its producer computes it, as in the reference interpreter (ch. 3.7)
-        Term waarde = waardeplan(lid.tijd() != null
+        Term waarde = lid.tijd() != null
                 ? tijdlijnwaarde((Expr.Functie) r.waarde(), lid, subject, lez)
                 : herschaald(waarde(r.waarde(), lez), eff.eenheidVan(r.waarde()), lid.datatype().eenheidOf(),
-                        "een §4 schrijfgrens naar het doel"));
+                        "een §4 schrijfgrens naar het doel");
         lez.stop();
         int sonde = lez.sondeplaats();
         List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, r.voorwaarde());
@@ -1981,7 +1960,7 @@ public final class TmsTranspiler {
             Term w = waarde(t.waarde(), lez);
             if (!t.kenmerk())
                 w = herschaald(w, eff.eenheidVan(t.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het lid");
-            inits.add(new Initialisatie(lid, waardeplan(w)));
+            inits.add(new Initialisatie(lid, w));
         }
         lez.stop();
         int stratum = stratum(oc, naam);
@@ -2799,8 +2778,8 @@ public final class TmsTranspiler {
                     Gevolg.Invoeging.LOGISCH);
         } else {
             Set<Integer> gebruik = lez.volg();
-            Term waarde = waardeplan(herschaald(waarde(d.consequentie(), lez), eff.eenheidVan(d.consequentie()),
-                    b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel"));
+            Term waarde = herschaald(waarde(d.consequentie(), lez), eff.eenheidVan(d.consequentie()),
+                    b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
             lez.stop();
             items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.get());
             besluit = new Gevolg.Afloop(ONDERWERP, waarde, List.copyOf(gebruik), lez.grootte(), true,
@@ -2849,13 +2828,6 @@ public final class TmsTranspiler {
                 yield new Term.Faal(Rekenfout.ONOPGELOST, bron(o.bron()));
             }
         };
-    }
-
-    /** {@code t}, the value a consequence of the form being lowered computes, recorded as its plan
-     *  ({@link #waardeplannen}); a rule that comes whole from its plan carries it in its consequence. */
-    private Term waardeplan(Term t) {
-        waardeplannen.add(new Waardeplan(vorm, t));
-        return t;
     }
 
     /** A constant of the analysis, which an argument of a function of the plan takes ({@link Term.Const}). */
@@ -4990,7 +4962,7 @@ public final class TmsTranspiler {
      *
      * <p>It decides what the rule reads and plans it: a {@link dev.uchar.regelspraak.transpiler.tms.plan.Lezing} per
      * slot (the plan's record, which the record {@link Lezing} of a read of the fixpoint shadows here), and the items of
-     * the left-hand side in the closed vocabulary of {@code transpiler/tms/plan} ({@link Linkerkant}). It builds no
+     * the left-hand side in the closed vocabulary of {@code transpiler/tms/plan} ({@link LhsItem}). It builds no
      * pattern itself: the plan of the rule ({@link #regelplan}) carries every item, and a rendering makes the rule of it.
      */
     private final class Lezingen {
@@ -5072,7 +5044,6 @@ public final class TmsTranspiler {
         List<LhsItem> plan(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde,
                            List<LhsItem> stuur) {
             Toetsitem test = toetsitem(rol, toets, gelezen, voorwaarde);
-            legVast(test);
             List<LhsItem> uit = new ArrayList<>(parameters);
             uit.addAll(standen);
             uit.addAll(stuur);
@@ -5090,18 +5061,6 @@ public final class TmsTranspiler {
                         + "'): de toets van deze tak neemt hoogstens " + MAX_LEZINGEN + " gebonden waarden");
             return new Toetsitem(id("voorwaarde"), rol, toets, rol == Toetsitem.Rol.DEPONERING ? sonde : -1,
                     List.copyOf(gelezen), slots.size());
-        }
-
-        /** Records the plan of the left-hand side up to and with {@code test} with the transpiler's plans
-         *  ({@link #linkerkanten}). */
-        private void legVast(Toetsitem test) {
-            List<LhsItem> plan = new ArrayList<>();
-            plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbetatoetsen,
-                    onderwerpbindingen));
-            plan.addAll(parameters);
-            plan.addAll(standen);
-            if (test != null) plan.add(test);
-            linkerkanten.add(new Linkerkant(vorm, new Leestabel(slots), plan));
         }
 
         /** The plan of this rule, {@code naam}, of the form being lowered: the planned items before the subject

@@ -9,7 +9,7 @@ import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
-import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
+import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
@@ -35,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * checks of a test a form composes itself, their order and their polarity, as a composite under all whose members are
  * {@code LEEGTOETS}, {@code EMMERSCALAIR} and a member's filter, tested without its fault where another rule takes it
  * ({@link Term.ZonderFout}). This witness pins those trees as {@link VoorwaardetermWitnessTest} does, in two lists per
- * document: per planned left-hand side its form, the role of its test and the condition as a tree text
- * ({@link Termboom#boom}); and per planned test every node of its condition in pre-order with its position, its kind,
+ * document: per rule of a form, in the order of the model, its form, the role of each test and the condition as a
+ * tree text ({@link Termboom#boom}); and per test every node of its condition in pre-order with its position, its kind,
  * its source fragment where it carries one, and of a constant the class of its value and its whole IR type
  * ({@link Termboom#velden}), a test whose list equals that of the test before it of the same form named with "zoals de
  * vorige toets". That the rendering of these trees tests what the compiled tests tested before the step is what the
@@ -58,10 +58,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       channel: "Een Dossier is onder verscherpt toezicht indien regelversie controle saldo is inconsistent" reads
  *       the standing of the channel, and the consistency "controle saldo" tests the negation of its comparison.</li>
  *   <li>{@code jutterswet-vondstnummer}: a consistency whose assertion is a comparison of dates, negated; and the key
- *       rule of a uniqueness of one component, which takes part where the component is gevuld.</li>
+ *       rule of a uniqueness of one component, which takes part where the component is gevuld, beside the rule over
+ *       the keys, which tests whether a key is taken twice, and the channel rule, which tests nothing.</li>
  *   <li>{@code anchor/jutterswet-strandregister}: two uniquenesses over a key on a timeline, one scoped: the key rule
  *       takes part where the key is not the asOfDate-bucket scalar and, scoped, where the parent is set; the key-form
- *       rule beside it tests that the key is that scalar.</li>
+ *       rule beside it tests that the key is that scalar; each uniqueness has its rule over the keys and its channel
+ *       rule as well.</li>
  *   <li>{@code jutterswet-keurlast} with a filter that divides ({@link #keurlastMetDelendFilter}), since no document of
  *       the corpus or the suite has a per-element fold whose filter can fault: the member-fault rule tests the filter
  *       without its fault, which the filter-fault rule takes, and then that the member's timeline is the
@@ -70,7 +72,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       takes the fault and the member-fault rule does not hold.</li>
  * </ul>
  *
- * <p><b>Red</b> before the step: the compilers of these tests made the predicates themselves, so each of them was a
+ * <p>Since step 1d the witness reads the rule plans of the analysis ({@code Modelplan}). Until then it read the
+ * planned left-hand sides in the order they were built, and only those of rules whose reads {@code Lezingen} planned;
+ * the trees are the same, the contribution rules of the folds now stand after the rules of the forms, and the rule
+ * over the keys and the channel rule of a uniqueness are pinned as well.
+ *
+ * <p><b>Red</b> before step 1b3: the compilers of these tests made the predicates themselves, so each of them was a
  * {@code GecompileerdeToets}, which showed nothing of what it tested.
  */
 public class ToetstermWitnessTest {
@@ -152,15 +159,15 @@ public class ToetstermWitnessTest {
     }
 
     @Test void het_eindoordeel_zonder_volgorde_is_een_aanroep_over_telling_en_som() throws Exception {
-        List<Linkerkant> plannen = plannen(golden("jutterswet-opvolgerquorum"));
+        List<Regelplan> plannen = plannen(golden("jutterswet-opvolgerquorum"));
         assertEquals(List.of(
                 "merk van een wachter: geen toets",
-                "merk van een wachter: geen toets",
-                "werf een opvolger: geen toets",
-                "werf een opvolger: geen toets",
                 "werf een opvolger VOORWAARDE: Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees 0, Const 5, Const <), "
                         + "KWANTOROORDEEL(Lees 1, Lees 2, Const TEN_MINSTE, Const 1), KWANTOROORDEEL(Lees 3, Lees "
-                        + "4, Const ALLE, Const 0))"), bomen(plannen));
+                        + "4, Const ALLE, Const 0))",
+                "merk van een wachter: geen toets",
+                "werf een opvolger: geen toets",
+                "werf een opvolger: geen toets"), bomen(plannen));
         assertEquals(List.of(
                 "werf een opvolger VOORWAARDE 0 Samengesteld bron 'de rang van de Wachter is kleiner dan 5, ten "
                         + "minste 1 opvolger van de Wachter heeft een rang groter dan 3 en alle ploegleden van de "
@@ -185,18 +192,18 @@ public class ToetstermWitnessTest {
     }
 
     @Test void het_eindoordeel_met_volgorde_is_een_kwantorlezing() throws Exception {
-        List<Linkerkant> plannen = plannen(golden("jutterswet-ploegpremie"));
+        List<Regelplan> plannen = plannen(golden("jutterswet-ploegpremie"));
         assertEquals(List.of(
-                "premiegerechtigd bij dagvergoeding: geen toets",
                 "premiegerechtigd bij dagvergoeding ZONDER_FOUT: Kwantorlezing KWANTORLEZING ALLE 0 sonde -1 (Lees "
                         + "0, Lees 1)",
                 "premiegerechtigd bij dagvergoeding FOUT: Kwantorlezing KWANTORLEZING ALLE 0 sonde -1 (Lees 0, Lees "
                         + "1)",
-                "wisselvallig bij dagvergoeding: geen toets",
                 "wisselvallig bij dagvergoeding ZONDER_FOUT: Kwantorlezing KWANTORLEZING GEEN 0 sonde -1 (Lees 0, "
                         + "Lees 1)",
                 "wisselvallig bij dagvergoeding FOUT: Kwantorlezing KWANTORLEZING GEEN 0 sonde -1 (Lees 0, Lees 1)",
                 "bergertal van een bergingsploeg: geen toets",
+                "premiegerechtigd bij dagvergoeding: geen toets",
+                "wisselvallig bij dagvergoeding: geen toets",
                 "bergertal van een bergingsploeg: geen toets"), bomen(plannen));
         assertEquals(List.of(
                 "premiegerechtigd bij dagvergoeding ZONDER_FOUT 0 Kwantorlezing bron 'de dagvergoeding van alle "
@@ -212,7 +219,7 @@ public class ToetstermWitnessTest {
     }
 
     @Test void een_kanaaltoets_leest_de_stand_van_het_kanaal() throws Exception {
-        List<Linkerkant> plannen = plannen(JSON.readTree(TOEZICHT));
+        List<Regelplan> plannen = plannen(JSON.readTree(TOEZICHT));
         assertEquals(List.of(
                 "toezicht VOORWAARDE: KANAAL(Lees 0)",
                 "controle saldo VOORWAARDE: NIET(RS_AGG_VERGELIJK(Lees 0, Const 0, Const >=))"), bomen(plannen));
@@ -228,11 +235,13 @@ public class ToetstermWitnessTest {
     }
 
     @Test void een_consistentie_toetst_de_negatie_van_haar_assertie() throws Exception {
-        List<Linkerkant> plannen = plannen(golden("jutterswet-vondstnummer"));
+        List<Regelplan> plannen = plannen(golden("jutterswet-vondstnummer"));
         assertEquals(List.of(
                 "aanmelding niet voor de vondstdag VOORWAARDE: NIET(DATUM_VERGELIJK(Lees 0, Lees 1, Const "
                         + "LATER_OF_GELIJK))",
-                "eenmalig vondstnummer VORM: Samengesteld ALLE 0(LEEGTOETS(Lees 0, Const false))"), bomen(plannen));
+                "eenmalig vondstnummer VORM: Samengesteld ALLE 0(LEEGTOETS(Lees 0, Const false))",
+                "eenmalig vondstnummer VORM: DUBBEL(Lees 0)",
+                "eenmalig vondstnummer: geen toets"), bomen(plannen));
         assertEquals(List.of(
                 "aanmelding niet voor de vondstdag VOORWAARDE 0 Aanroep bron 'De aanmelddatum van een Vondst moet "
                         + "later of gelijk zijn aan de vondstdag van de Vondst'",
@@ -244,23 +253,31 @@ public class ToetstermWitnessTest {
                 "eenmalig vondstnummer VORM 0 Samengesteld",
                 "eenmalig vondstnummer VORM 0.0 Aanroep",
                 "eenmalig vondstnummer VORM 0.0.0 Lees",
-                "eenmalig vondstnummer VORM 0.0.1 Const Boolean"), velden(plannen));
+                "eenmalig vondstnummer VORM 0.0.1 Const Boolean",
+                "eenmalig vondstnummer VORM 0 Aanroep",
+                "eenmalig vondstnummer VORM 0.0 Lees"), velden(plannen));
     }
 
     @Test void een_sleutel_toetst_zijn_deelname_en_zijn_vorm() throws Exception {
-        List<Linkerkant> plannen = plannen(golden("anchor/jutterswet-strandregister"));
+        List<Regelplan> plannen = plannen(golden("anchor/jutterswet-strandregister"));
         assertEquals(List.of(
                 "eenmalig nummer VORM: Samengesteld ALLE 0(EMMERSCALAIR(Lees 0, Const false))",
                 "eenmalig nummer VORM: Samengesteld ALLE 0(EMMERSCALAIR(Lees 0, Const true))",
+                "eenmalig nummer VORM: DUBBEL(Lees 0)",
+                "eenmalig nummer: geen toets",
                 "kavel per kust VORM: Samengesteld ALLE 0(EMMERSCALAIR(Lees 0, Const false), LEEGTOETS(Lees 1, "
                         + "Const false))",
-                "kavel per kust VORM: Samengesteld ALLE 0(EMMERSCALAIR(Lees 0, Const true))"), bomen(plannen));
+                "kavel per kust VORM: Samengesteld ALLE 0(EMMERSCALAIR(Lees 0, Const true))",
+                "kavel per kust VORM: DUBBEL(Lees 0)",
+                "kavel per kust: geen toets"), bomen(plannen));
         assertEquals(List.of(
                 "eenmalig nummer VORM 0 Samengesteld",
                 "eenmalig nummer VORM 0.0 Aanroep",
                 "eenmalig nummer VORM 0.0.0 Lees",
                 "eenmalig nummer VORM 0.0.1 Const Boolean",
                 "eenmalig nummer VORM: zoals de vorige toets",
+                "eenmalig nummer VORM 0 Aanroep",
+                "eenmalig nummer VORM 0.0 Lees",
                 "kavel per kust VORM 0 Samengesteld",
                 "kavel per kust VORM 0.0 Aanroep",
                 "kavel per kust VORM 0.0.0 Lees",
@@ -271,12 +288,15 @@ public class ToetstermWitnessTest {
                 "kavel per kust VORM 0 Samengesteld",
                 "kavel per kust VORM 0.0 Aanroep",
                 "kavel per kust VORM 0.0.0 Lees",
-                "kavel per kust VORM 0.0.1 Const Boolean"), velden(plannen));
+                "kavel per kust VORM 0.0.1 Const Boolean",
+                "kavel per kust VORM 0 Aanroep",
+                "kavel per kust VORM 0.0 Lees"), velden(plannen));
     }
 
     @Test void de_lidfoutregel_toetst_het_filter_zonder_zijn_fout() throws Exception {
-        List<Linkerkant> plannen = plannen(keurlastMetDelendFilter());
+        List<Regelplan> plannen = plannen(keurlastMetDelendFilter());
         assertEquals(List.of(
+                "keurlast van een jutter: geen toets",
                 "keurlast van een jutter ZONDER_FOUT: RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const "
                         + "2, Const >)",
                 "keurlast van een jutter FOUT: RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, "
@@ -284,8 +304,7 @@ public class ToetstermWitnessTest {
                 "keurlast van een jutter VORM: Samengesteld ALLE 0(ZonderFout(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 "
                         + "(Lees 2, Lees 3), Const 2, Const >)), EMMERSCALAIR(Lees 5, Const true))",
                 "keurlast van een jutter DEPONERING sonde 2: RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees "
-                        + "1), Const 2, Const >)",
-                "keurlast van een jutter: geen toets"), bomen(plannen));
+                        + "1), Const 2, Const >)"), bomen(plannen));
         assertEquals(List.of(
                 "keurlast van een jutter ZONDER_FOUT 0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers "
                         + "groter is dan 2'",
@@ -347,47 +366,51 @@ public class ToetstermWitnessTest {
         return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
     }
 
-    private static List<Linkerkant> plannen(JsonNode document) {
-        return DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler().linkerkanten();
+    /** The plans of the rules of the forms of {@code document}, in the order of the model. */
+    private static List<Regelplan> plannen(JsonNode document) {
+        return DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler().modelplan()
+                .regels().stream().filter(p -> p.vorm() != null).toList();
     }
 
-    /** The test of {@code k}, or null where its left-hand side tests nothing. */
-    private static Toetsitem toets(Linkerkant k) {
-        for (LhsItem item : k.items()) if (item instanceof Toetsitem t) return t;
-        return null;
+    /** The tests of {@code p}, in the order of its left-hand side. */
+    private static List<Toetsitem> toetsen(Regelplan p) {
+        List<Toetsitem> uit = new ArrayList<>();
+        for (LhsItem item : p.linkerkant()) if (item instanceof Toetsitem t) uit.add(t);
+        return uit;
     }
 
-    /** Per planned left-hand side, in plan order: its form, the role of its test and the test's condition as a tree
-     *  ({@link Termboom#boom}). */
-    private static List<String> bomen(List<Linkerkant> plannen) {
+    /** Per rule of a form, in the order of the model: its form, the role of each of its tests and the test's
+     *  condition as a tree ({@link Termboom#boom}), or that it tests nothing. */
+    private static List<String> bomen(List<Regelplan> plannen) {
         List<String> uit = new ArrayList<>();
-        for (Linkerkant k : plannen) {
-            Toetsitem t = toets(k);
-            uit.add(t == null ? k.vorm() + ": geen toets" : naam(k, t) + ": " + Termboom.boom(t.toets()));
+        for (Regelplan p : plannen) {
+            List<Toetsitem> toetsen = toetsen(p);
+            if (toetsen.isEmpty()) uit.add(p.vorm() + ": geen toets");
+            for (Toetsitem t : toetsen) uit.add(naam(p, t) + ": " + Termboom.boom(t.toets()));
         }
         return uit;
     }
 
-    /** Per planned test, every node of its condition with what the tree text leaves out ({@link Termboom#velden}); a
-     *  test of the same form as the test before it, whose list equals that test's, is named once instead. */
-    private static List<String> velden(List<Linkerkant> plannen) {
+    /** Per test, every node of its condition with what the tree text leaves out ({@link Termboom#velden}); a test of
+     *  the same form as the test before it, whose list equals that test's, is named once instead. */
+    private static List<String> velden(List<Regelplan> plannen) {
         List<String> uit = new ArrayList<>();
         String vorigeVorm = null;
         List<String> vorige = null;
-        for (Linkerkant k : plannen) {
-            Toetsitem t = toets(k);
-            if (t == null) continue;
-            List<String> regels = new ArrayList<>();
-            Termboom.velden("", t.toets(), "0", regels);
-            if (k.vorm().equals(vorigeVorm) && regels.equals(vorige)) uit.add(naam(k, t) + ": zoals de vorige toets");
-            else for (String r : regels) uit.add(naam(k, t) + r);
-            vorigeVorm = k.vorm();
-            vorige = regels;
-        }
+        for (Regelplan p : plannen)
+            for (Toetsitem t : toetsen(p)) {
+                List<String> regels = new ArrayList<>();
+                Termboom.velden("", t.toets(), "0", regels);
+                if (p.vorm().equals(vorigeVorm) && regels.equals(vorige))
+                    uit.add(naam(p, t) + ": zoals de vorige toets");
+                else for (String r : regels) uit.add(naam(p, t) + r);
+                vorigeVorm = p.vorm();
+                vorige = regels;
+            }
         return uit;
     }
 
-    private static String naam(Linkerkant k, Toetsitem t) {
-        return k.vorm() + " " + t.rol() + (t.sonde() < 0 ? "" : " sonde " + t.sonde());
+    private static String naam(Regelplan p, Toetsitem t) {
+        return p.vorm() + " " + t.rol() + (t.sonde() < 0 ? "" : " sonde " + t.sonde());
     }
 }
