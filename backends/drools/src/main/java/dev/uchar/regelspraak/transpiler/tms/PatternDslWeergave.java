@@ -539,6 +539,10 @@ final class PatternDslWeergave {
         veld(Filterdeponering.class, "onderwerp", Filterdeponering::onderwerp);
         veld(Lidfout.class, "vouw", Lidfout::vouw);
         veld(Lidfout.class, "onderwerp", Lidfout::onderwerp);
+        veld(Uniciteitssleutel.class, "uniciteit", Uniciteitssleutel::uniciteit);
+        veld(Uniciteitssleutel.class, "element", Uniciteitssleutel::element);
+        veld(Uniciteitsschending.class, "uniciteit", Uniciteitsschending::uniciteit);
+        veld(Uniciteitsschending.class, "element", Uniciteitsschending::element);
         veld(Ontvanger.class, "verdeling", Ontvanger::verdeling);
         veld(Ontvanger.class, "bron", Ontvanger::bron);
         veld(Gemaakt.class, "object", Gemaakt::object);

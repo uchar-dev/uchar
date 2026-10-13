@@ -43,6 +43,7 @@ import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
 import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
+import dev.uchar.regelspraak.transpiler.tms.plan.Betatoets;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
@@ -1507,26 +1508,23 @@ public final class TmsTranspiler {
             Rule vorm = sleutelvormregel(naam, regelnaam, b, bronnen.get(b), geldigheid);
             if (vorm != null) uit.add(vorm);
         }
-        Variable<Uniciteitssleutel> k = DSL.declarationOf(Uniciteitssleutel.class, "$sleutel");
-        Variable<Object> element = DSL.declarationOf(Object.class, "$element");
-        Variable<Uniciteitssleutel> ander = DSL.declarationOf(Uniciteitssleutel.class, "$ander");
-        Variable<Object> botsingen = DSL.declarationOf(Object.class, "$botsingen");
-        uit.add(PatternDSL.rule(PKG, regelnaam).build(
-                PatternDSL.pattern(k).expr(id("uniciteit"), x -> x.uniciteit().equals(naam))
-                        .bind(element, Uniciteitssleutel::element),
-                DSL.accumulate(PatternDSL.pattern(ander).expr(id("uniciteit"), x -> x.uniciteit().equals(naam))
-                                .expr(id("botsing"), k, Uniciteitssleutel::botstMet),
-                        DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), ander).as(botsingen)),
-                DSL.expr(id("dubbel"), botsingen, n -> ((Number) n).longValue() > 1),
-                DSL.on(element).execute((Block2<org.drools.model.Drools, Object>) (drools, e) ->
-                        drools.logicalInsert(new Uniciteitsschending(naam, e)))));
-        Variable<Uniciteitsschending> s = DSL.declarationOf(Uniciteitsschending.class, "$schending");
-        Variable<Object> subject = DSL.declarationOf(Object.class, "$subject");
-        uit.add(PatternDSL.rule(PKG, regelnaam + ": kanaal").build(
-                PatternDSL.pattern(s).expr(id("schending"), x -> x.uniciteit().equals(naam))
-                        .bind(subject, Uniciteitsschending::element),
-                DSL.on(subject).execute((Block2<org.drools.model.Drools, Object>) (drools, e) ->
-                        drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, e)))));
+        Patroon sleutel = new Patroon(Uniciteitssleutel.class, "$sleutel", List.of(gelijk(id("uniciteit"), "uniciteit",
+                naam)), List.of(), List.of(Binding.van("$element", Uniciteitssleutel.class, "element")));
+        Alfa vanUniciteit = gelijk(id("uniciteit"), "uniciteit", naam);
+        Betatoets botsing = new Betatoets(id("botsing"), Functie.BOTST_MET, "$sleutel");
+        Accumulatie botsingen = new Accumulatie(new Patroon(Uniciteitssleutel.class, "$ander", List.of(vanUniciteit),
+                List.of(), List.of(botsing), List.of()),
+                List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, "$botsingen")));
+        Leestabel tabel = new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0,
+                Leessoort.BOTSINGEN, "botsingen", "$botsingen")));
+        Toetsitem dubbel = new Toetsitem(id("dubbel"), Toetsitem.Rol.VORM,
+                new Term.Aanroep(Functie.DUBBEL, List.of(new Term.Lees(0, null)), null), -1, List.of(0), 1);
+        uit.add(weergeef(new Regelplan(regelnaam, vorm, null, tabel, List.of(sleutel, botsingen, dubbel),
+                new Gevolg.Uniciteitsschending("$element", naam, Gevolg.Invoeging.LOGISCH))));
+        Patroon schending = new Patroon(Uniciteitsschending.class, "$schending", List.of(gelijk(id("schending"),
+                "uniciteit", naam)), List.of(), List.of(Binding.van("$subject", Uniciteitsschending.class, "element")));
+        uit.add(weergeef(new Regelplan(regelnaam + ": kanaal", vorm, null, new Leestabel(List.of()),
+                List.of(schending), new Gevolg.Inconsistentie("$subject", naam, Gevolg.Invoeging.LOGISCH))));
         Rule zonderDatum = geldigheidsfout(regelnaam, naam, geldigheid);
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
@@ -1547,7 +1545,7 @@ public final class TmsTranspiler {
     private Rule sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron, RolBindingRef scopeRol,
                               Geldigheid geldigheid) {
         Objecttype type = bron.type();
-        Lezingen lez = new Lezingen(type).geldig(geldigheid);
+        Lezingen lez = new Lezingen(type, false).geldig(geldigheid);
         Set<Integer> gelezen = lez.volg();
         List<Integer> sleutels = new ArrayList<>();
         List<Boolean> enumeratie = new ArrayList<>();
@@ -1580,27 +1578,17 @@ public final class TmsTranspiler {
         // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
         if (tijdlijn >= 0) deelname.add(emmerscalair(sleutels.get(tijdlijn), false));
         if (scope >= 0) deelname.add(gevuld(scope));
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, alle(deelname), gelezen, null);
-        items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> {
-            List<Object> waarden = new ArrayList<>(sleutels.size());
-            for (int i = 0; i < sleutels.size(); i++) {
-                Object v = w[sleutels.get(i)];
-                waarden.add(enumeratie.get(i) ? RegelSpraakRuntime.rsEnumNaam(v) : v);
-            }
-            Object ouder = scope < 0 ? null : w[scope];
-            if (tijdlijn < 0) {
-                drools.logicalInsert(new Uniciteitssleutel(naam, b, o, ouder, waarden));
-                return;
-            }
-            for (BigDecimal waarde : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(waarden.get(tijdlijn)))) {
-                List<Object> sleutel = new ArrayList<>(waarden);
-                sleutel.set(tijdlijn, waarde);
-                drools.logicalInsert(new Uniciteitssleutel(naam, b, o, ouder, sleutel));
-            }
-        }, lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(deelname), gelezen, null);
+        List<Term> componenten = new ArrayList<>();
+        for (int i = 0; i < sleutels.size(); i++) {
+            Term component = new Term.Lees(sleutels.get(i), null);
+            componenten.add(enumeratie.get(i) ? new Term.Aanroep(Functie.RS_ENUM_NAAM, List.of(component), null)
+                    : component);
+        }
         lez.vastleggen();
-        return PatternDSL.rule(PKG, regelnaam + ": sleutel van " + type.naam + " " + (b + 1))
-                .build(items.toArray(new RuleItemBuilder[0]));
+        return weergeef(lez.regelplan(regelnaam + ": sleutel van " + type.naam + " " + (b + 1), items,
+                new Gevolg.Uniciteitssleutel(ONDERWERP, naam, b, componenten, tijdlijn, scope, List.copyOf(gelezen),
+                        lez.grootte(), Gevolg.Invoeging.LOGISCH)));
     }
 
     /**
@@ -1622,7 +1610,7 @@ public final class TmsTranspiler {
         for (int i = 0; i < bron.sleutels().size() && positie < 0; i++)
             if (gedeclareerd(type, bron.sleutels().get(i), false).tijd() != null) positie = i;
         if (positie < 0) return null;
-        Lezingen lez = new Lezingen(type).geldig(geldigheid);
+        Lezingen lez = new Lezingen(type, false).geldig(geldigheid);
         Set<Integer> gelezen = lez.volg();
         List<Integer> ervoor = new ArrayList<>();
         for (int i = 0; i < positie; i++) ervoor.add(lez.eigen(lid(type, bron.sleutels().get(i), false)));
@@ -1633,14 +1621,12 @@ public final class TmsTranspiler {
         List<Term> emmer = new ArrayList<>();
         for (int i : ervoor) emmer.add(gevuld(i));
         emmer.add(emmerscalair(tijdlijn, true));
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, alle(emmer), gelezen, null);
-        String sleutelnaam = tijdlid.naam();
-        items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> drools.logicalInsert(new Fout(o, naam,
-                new Invoervormfout("the ever-unique key \"" + sleutelnaam + "\" needs the full timeline; ", o,
-                        " supplies only a scalar (ch. 5.9)").inDeRegel(regelnaam))), lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(emmer), gelezen, null);
         lez.vastleggen();
-        return PatternDSL.rule(PKG, regelnaam + ": sleutelvorm van " + type.naam + " " + (b + 1))
-                .build(items.toArray(new RuleItemBuilder[0]));
+        return weergeef(lez.regelplan(regelnaam + ": sleutelvorm van " + type.naam + " " + (b + 1), items,
+                new Gevolg.Invoervormfout(ONDERWERP, "the ever-unique key \"" + tijdlid.naam()
+                        + "\" needs the full timeline; ", " supplies only a scalar (ch. 5.9)",
+                        new Gevolg.Foutnaam(naam, regelnaam), Gevolg.Invoeging.LOGISCH)));
     }
 
     /**
