@@ -6172,13 +6172,16 @@ public final class TmsTranspiler {
     /** The read of the input member {@code lid} off a bean of a type that declares it: a characteristic on a timeline as
      *  its true periods, a {@code List<Tijdvak>} ({@link Tijdvak#lijst}), null for an absent timeline, a characteristic
      *  that holds one truth value as that value, and any other member as its value. An attribute on a timeline is read
-     *  through its standing instead ({@link #tijdlijnattribuut}). */
+     *  through its standing instead ({@link #tijdlijnattribuut}). A closure, for the one rule family that still builds
+     *  its rules itself ({@link #koppelingpadstandregels}, until step 1c-C of card
+     *  drl-teksttak-op-truth-maintenance); a plan carries the same decision as a binding's form of reading
+     *  ({@link #invoervorm}). */
     private static Function<Object, Object> invoerlezing(Lid lid) {
         return PatternDslWeergave.invoerlezer(new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null);
     }
 
-    /** How the input member {@code lid} is read off a bean ({@link #invoerlezing}): the decision a plan's binding
-     *  carries. */
+    /** How the input member {@code lid} is read off a bean: the decision a plan's binding carries
+     *  ({@link Binding.Leesvorm}), which {@link #invoerlezing} takes as well. */
     private static Binding.Leesvorm invoervorm(Lid lid) {
         if (lid.tijd() != null) return Binding.Leesvorm.TIJDVAKKEN;
         if (lid.kenmerk()) return Binding.Leesvorm.WAAR;
