@@ -156,9 +156,11 @@ law-execution IR this is the core promise, not a nice-to-have.
 **The published corpus is rights-free by construction.** The corpus ships
 with the spec and inherits its obligations. Own-authored casus material (the
 Jutterswet) and statute text (copyright-free under art. 11 Auteurswet) only;
-no ©-Belastingdienst material — no TOKA casus, no RegelSpraak specification
-excerpts — enters the uchar repos. A test case that cannot be published is
-not a test case for a public spec.
+no RegelSpraak specification excerpts enter the uchar repos (the
+specification carries "Alle rechten voorbehouden"), with one exception: the
+TOKA casus, which is not corpus material and lives in the `toka/` parity
+zone, outside `corpus/` (§9 (10); `CLAUDE.md`, Corpus rules). A test case
+that cannot be published is not a test case for a public spec.
 
 **Backend diversity before frontend diversity.** The deepest problem is "the
 runtime is the bearer of meaning". A reference interpreter attacks it first
@@ -334,7 +336,8 @@ art. 15–21 WW — a genuine layered default/exception structure with
 termijnen, the defaults round's reality test — replacing the earlier
 zorgtoeslag candidate). Whether `regelspraak-java`'s *internal*
 gates also migrate off TOKA is that repo's own decision, out of scope here;
-this repo is TOKA-free from its first commit.
+the corpus is TOKA-free from its first commit, and the TOKA casus has its
+own parity zone, `toka/`, since 2026-08-27 (§9 (10)).
 
 Take the dialect/core split as an explicit design decision in the spec now,
 even if the mechanical separation lands later: mark per node whether it
@@ -640,10 +643,12 @@ repo-reading agent. It does NOT exist, and no acceptance is measured on one
 sentence untrue; if it comes, it comes as that separate repository). The protected paths — the
 authoritative list lives in `CLAUDE.md` (Protected paths), with
 `.github/CODEOWNERS` as its mechanical mirror — take proposals from
-sessions, never merges: enforced by CODEOWNERS plus branch protection once
-the repository is public; until then the mandate-and-review protocol of
+sessions, never merges: the mandate-and-review protocol of
 `WAY-OF-WORKING.md` carries it, and no separate CI check exists (recorded
-2026-09-10). The gate set runs locally before every landing — GitHub Actions
+2026-09-10). The repository is public since 2026-10-12, so the free org
+plan allows branch protection; it is not enabled (2026-10-13), so GitHub
+does not enforce the CODEOWNERS review, and whether to enable it is open.
+The gate set runs locally before every landing — GitHub Actions
 is not used (maintainer decision 2026-09-26: no paid compute; the workflow
 file is hand-triggered only, `CLAUDE.md` Gate set) — so a weakened harness
 fails loudly rather than silently, on the maintainer's machine. And
@@ -696,7 +701,11 @@ construction — the Jutterswet (plus its quantitative extensions) replaces
 TOKA as the golden corpus, and one statute-based case (art. 11 Auteurswet;
 2026-08-29: WW-herleving, `PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q14 — previously
 zorgtoeslag) joins for realism; no ©-Belastingdienst material
-enters the uchar repos. (9) **Decided
+enters the uchar repos. **Amended (2026-10-13):** the clause no longer
+covers the TOKA casus, Bijlage 1 of the RegelSpraak specification: it
+stays outside the corpus, in the `toka/` parity zone (see (10)). Other
+specification excerpts still do not enter the uchar repos; the
+specification carries "Alle rechten voorbehouden". (9) **Decided
 (2026-08-16):** Apache-2.0 for code (verifier, reference interpreter,
 backends, gate scripts — and the JSON schemas, which ship as functional
 artifacts) and CC-BY-4.0 for the specification and corpus text; the
@@ -711,7 +720,17 @@ stands with it. **Precondition added (2026-08-27):** the temporary
 `toka/` parity zone admits ©-Belastingdienst material into the tree AND
 the git history; the flip now additionally requires removing the zone
 and rewriting history (filter-repo or a fresh public copy) — recorded in
-`CLAUDE.md` with the zone's charter.
+`CLAUDE.md` with the zone's charter. **Taken (2026-10-12):** `uchar` and
+`regelspraak-toolchain` are public. **Amended (2026-10-13, maintainer):**
+the precondition of 2026-08-27 is withdrawn. The `toka/` zone stays, its
+git history is not rewritten, and P11 of decision (11) lapses; gate 11 is
+a regular gate of the set, so the set has no documented exception to
+monotone growth any more. The provenance and status of the TOKA casus
+stand in one fixed text in `toka/README.md`, `README.md` and `CLAUDE.md`:
+the Belastingdienst indicated to the maintainer on 2026-10-13 that TOKA
+is meant to be releasable; written confirmation is not yet received.
+Branch protection is available on the public repository and not enabled
+(2026-10-13); whether to enable it is open.
 
 
 New in v5. (11) **Decided (2026-09-23):** the v1 wire migration
