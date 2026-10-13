@@ -1,0 +1,100 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustvak",
+        "attributes": {},
+        "roles": {
+          "posten": [
+            "P3",
+            "P5",
+            "P6",
+            "P7"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P3",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P5",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bemand": [
+            {
+              "from": "2025-01-01",
+              "to": "2027-01-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "P6",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bemand": [
+            {
+              "from": "2025-06-01",
+              "to": "2027-01-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "P7",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bemand": [
+            {
+              "from": "2026-01-01",
+              "to": "2026-07-01"
+            },
+            {
+              "from": "2026-07-01",
+              "to": "2027-01-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "postental",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "waaktarief",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustvak",
+        "attributes": {},
+        "roles": {
+          "posten": [
+            "P3",
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P3",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bemand": [
+            {
+              "from": "2026-01-01",
+              "to": "2026-07-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "brieftal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

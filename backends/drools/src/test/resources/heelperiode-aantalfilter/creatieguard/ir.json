@@ -1,0 +1,275 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kustvak",
+        "animate": false,
+        "plural": "Kustvakken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "brieftal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Post",
+        "animate": false,
+        "plural": "Posten",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bemand",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wachtbrief",
+        "animate": false,
+        "plural": "Wachtbrieven",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "briefbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "postindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "briefuitgifte",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "uitgevende kustvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "uitgegeven wachtbrief",
+            "objectType": "Wachtbrief",
+            "plural": "uitgegeven wachtbrieven",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "tel de wachtbrieven",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "brieftal",
+              "subjectType": "Kustvak",
+              "source": {
+                "snippet": "Het brieftal van een Kustvak"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "uitgegeven wachtbrieven",
+                  "subjectType": "Kustvak",
+                  "source": {
+                    "snippet": "uitgegeven wachtbrieven van het Kustvak"
+                  }
+                }
+              ],
+              "elementType": "Wachtbrief",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "briefuitgifte",
+                "role": "uitgegeven wachtbrief"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal uitgegeven wachtbrieven van het Kustvak"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "geef een wachtbrief uit",
+        "versions": [
+          {
+            "createdType": "Wachtbrief",
+            "subject": "Kustvak",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "briefbedrag",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "posten",
+                    "subjectType": "Kustvak",
+                    "source": {
+                      "snippet": "posten van het Kustvak die gedurende het gehele jaar bemand zijn"
+                    }
+                  }
+                ],
+                "elementType": "Post",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "bemand",
+                  "negated": false,
+                  "wholePeriod": {
+                    "node": "WholePeriod",
+                    "granularity": "year",
+                    "negated": false
+                  },
+                  "source": {
+                    "snippet": "gedurende het gehele jaar bemand zijn"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "postindeling",
+                  "role": "post"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

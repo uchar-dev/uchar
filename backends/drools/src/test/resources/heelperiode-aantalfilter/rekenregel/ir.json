@@ -1,0 +1,259 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kustvak",
+        "animate": false,
+        "plural": "Kustvakken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "postental",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waaktarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Post",
+        "animate": false,
+        "plural": "Posten",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bemand",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "postindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "postental van een kustvak",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "postental",
+              "subjectType": "Kustvak",
+              "source": {
+                "snippet": "Het postental van een Kustvak"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "posten",
+                  "subjectType": "Kustvak",
+                  "source": {
+                    "snippet": "posten van het Kustvak die gedurende het gehele jaar bemand zijn"
+                  }
+                }
+              ],
+              "elementType": "Post",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "bemand",
+                "negated": false,
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": false
+                },
+                "source": {
+                  "snippet": "gedurende het gehele jaar bemand zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "postindeling",
+                "role": "post"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "waaktarief van een kustvak",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "waaktarief",
+              "subjectType": "Kustvak",
+              "source": {
+                "snippet": "Het waaktarief van een Kustvak"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "posten",
+                    "subjectType": "Kustvak",
+                    "source": {
+                      "snippet": "posten van het Kustvak die gedurende het gehele jaar bemand zijn"
+                    }
+                  }
+                ],
+                "elementType": "Post",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "bemand",
+                  "negated": false,
+                  "wholePeriod": {
+                    "node": "WholePeriod",
+                    "granularity": "year",
+                    "negated": false
+                  },
+                  "source": {
+                    "snippet": "gedurende het gehele jaar bemand zijn"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "postindeling",
+                  "role": "post"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

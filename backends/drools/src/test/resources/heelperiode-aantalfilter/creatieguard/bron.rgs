@@ -1,0 +1,27 @@
+Objecttype het Kustvak (mv: Kustvakken)
+    het brieftal Numeriek (niet-negatief geheel getal);
+
+Objecttype de Post (mv: Posten)
+    is bemand kenmerk (bijvoeglijk) voor elke maand;
+
+Objecttype de Wachtbrief (mv: Wachtbrieven)
+    het briefbedrag Numeriek (geheel getal);
+
+Feittype postindeling
+    het kustvak Kustvak
+    de post (mv: posten) Post
+Eén kustvak omvat meerdere posten
+
+Feittype briefuitgifte
+    het uitgevende kustvak Kustvak
+    de uitgegeven wachtbrief (mv: uitgegeven wachtbrieven) Wachtbrief
+Eén uitgevende kustvak heeft één uitgegeven wachtbrief
+
+Regel geef een wachtbrief uit
+    geldig altijd
+        Een Kustvak heeft een Wachtbrief met briefbedrag gelijk aan 10
+        indien het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0.
+
+Regel tel de wachtbrieven
+    geldig altijd
+        Het brieftal van een Kustvak moet berekend worden als het aantal uitgegeven wachtbrieven van het Kustvak.
