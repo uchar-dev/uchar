@@ -22,16 +22,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * golden, never a refusal. The count of played goldens is held to a floor, raised per step of the card as the rendering
  * carries more.
  *
- * <p>The refusals are counted per family and reported in the message of a missed floor: a kind the rendering does not
- * carry yet ({@code drl-tms: de DRL-weergave draagt <soort> nog niet}), a document with day kinds, and the refusals the
- * branch shares with the exec-model branch, which come from the same analysis: where this branch refuses with no
+ * <p>The refusals are counted per family and reported in the message of a missed floor: a form the rendering does not
+ * carry ({@code drl-tms: de DRL-weergave draagt <soort> nog niet}), and the refusals the branch shares with the
+ * exec-model branch, which come from the same analysis: where this branch refuses with no
  * {@code drl-tms:} sentence of its own, the exec-model branch refuses the golden in the same words.
  *
  * <p><b>Red</b> on {@code 5eda2eff}, before the branch: {@code CaseRunner.viaDrlTms} did not exist, and this class did
  * not compile. With the floor of step 3a red on {@code 4c8a687b}, before that step: 113 goldens played, under the
  * floor of 161. With the floor of step 3b red on {@code 0458b2d0}, before that step: 161 goldens played, under the
  * floor of 166. With the floor of step 4 red on {@code e2bd685e}, before that step: 166 goldens played, under the floor
- * of 203.
+ * of 203. With the floor of step 5 red on {@code b4d83a69}, before the rendering of that step: 203 goldens played, under
+ * the floor of 250.
  */
 class DrlTmsCorpusWitnessTest {
 
@@ -44,8 +45,10 @@ class DrlTmsCorpusWitnessTest {
      *  rules of a fold, to the 161 measured then, the 113 and the 48 goldens it refused for a contribution only; step
      *  3b, which carries those of a uniqueness and of the channel, to the 166 measured then, with the five goldens it
      *  refused for the keys of a uniqueness only; step 4, which carries those of a defaults stack, to the 203 measured
-     *  then, with the 37 goldens it refused for a decision of a default only. */
-    private static final int EXPECTED_MIN_PLAYED = 203;
+     *  then, with the 37 goldens it refused for a decision of a default only; and step 5, which carries the creations,
+     *  the links, the allocations and the day kinds, to the 250 measured then, every golden the exec-model branch
+     *  plays. */
+    private static final int EXPECTED_MIN_PLAYED = 250;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;
@@ -91,7 +94,7 @@ class DrlTmsCorpusWitnessTest {
                 + EXPECTED_MIN_PLAYED + "; per familie " + telling + ", zonder cases " + zonder);
     }
 
-    /** The family of a refusal: the kind the rendering does not carry yet, the day kinds, the kind of form the manifest
+    /** The family of a refusal: the form the rendering does not carry, the kind of form the manifest
      *  refuses first, the label of a branch (a cycle, two rules of one name), the loader, or two names on one bean
      *  member. */
     private static String familie(String reden) {

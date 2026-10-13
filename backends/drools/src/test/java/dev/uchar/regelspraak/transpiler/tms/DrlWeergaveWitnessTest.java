@@ -46,10 +46,11 @@ class DrlWeergaveWitnessTest {
     /** Floors, measured 2026-10-13 at step 2a: the goldens the exec-model branch plays, and those whose text the
      *  rendering gives and Drools compiles, raised at step 3a, which carries the rules of a fold, from 117 to the 165
      *  measured then, at step 3b, which carries those of a uniqueness and of the channel, to the 170 measured then, and
-     *  at step 4, which carries those of a defaults stack, to the 207 measured then. A deliberate removal lowers a floor
-     *  in the same commit. */
+     *  at step 4, which carries those of a defaults stack, to the 207 measured then, and at step 5, which carries every
+     *  kind of consequence, to the 250 measured then, every golden. A deliberate removal lowers a floor in the same
+     *  commit. */
     private static final int EXPECTED_MIN_GOLDENS = 250;
-    private static final int EXPECTED_MIN_GECOMPILEERD = 207;
+    private static final int EXPECTED_MIN_GECOMPILEERD = 250;
 
     /** What the text of no golden holds. */
     private static final List<String> VERBODEN = List.of("import function", "salience", "no-loop", "modify",
@@ -101,10 +102,11 @@ class DrlWeergaveWitnessTest {
 
     /** Floors, measured 2026-10-13 at step 2a: the rules of the goldens the branch plays whose consequence the rendering
      *  carries, raised at step 3a from 1221 to the 1433 measured then, at step 3b to the 1467 measured then and at step 4
-     *  to the 1684 measured then, and the goldens that have at least one, which stayed 224 until step 4 raised them to
-     *  the 239 measured then. A deliberate removal lowers a floor in the same commit. */
-    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1684;
-    private static final int EXPECTED_MIN_GOLDENS_MET_REGELS = 239;
+     *  to the 1684 measured then, and at step 5 to the 1851 measured then, every rule of the corpus; and the goldens that
+     *  have at least one, which stayed 224 until step 4 raised them to the 239 measured then, and step 5 to the 250
+     *  measured then. A deliberate removal lowers a floor in the same commit. */
+    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1851;
+    private static final int EXPECTED_MIN_GOLDENS_MET_REGELS = 250;
 
     /** The rules whose consequence the rendering carries compile in every golden, also in one whose text it refuses for
      *  the consequence of another rule: their left-hand sides and terms are those of the whole corpus but for the rules
