@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.tms.HeeftKenmerk;
+import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
+import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.KieBase;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
@@ -88,23 +91,42 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * values failed on "expected: &lt;[]&gt; but was: &lt;[geen fixpunt: twee schrijvers van één doel geven verschillende
  * waarden — de regel "uitkering" schrijft 20 en de regel "uitkering volgens een tweede regel" schrijft 20.0 in het
  * attribuut uitkering van een Vondst (Vondst@…); divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7), …]&gt;".
+ *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; lens on round 4:
+ * these orders of rules and defaults groups ran on the executable model only): every row but the one of the DRL-text
+ * branch runs on the exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, whose write-back is the same
+ * code; and a seeded sample of the orders of the generated rules fires the Vondsten and writes back on both, on
+ * {@code DRL_TMS} with the rules of the text in each order ({@code Tekstvolgorde}). The sample passes no intermediate
+ * standing: each position of the two groups reads an input characteristic, whose standing is fixed before the fire, so
+ * no lower default decides before a higher one (measured on the exec-model branch: no order of the sample withdrew a
+ * control fact); it pins the write-back in every order the sample takes. <b>Red</b> on {@code e2bd685e}, before step 4: every row with the two
+ * defaults groups failed on
+ * {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet"; the rows of the characteristic rule alone
+ * were green there from the start, since step 2a carries that rule.
  */
 class TmsTerugzettingWitnessTest {
 
     private static final List<String> KENMERKEN = List.of("erkend", "vergund");
 
+    /** The two branches with truth maintenance, whose write-back is one implementation. */
+    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
+            DroolsBackend.Branch.DRL_TMS);
+
     @Test void de_replay_leest_het_afgeleide_en_de_ingevoerde_kenmerken() throws Exception {
-        assertNull(CaseRunner.speelCase(document(), TmsDocumenten.zaak(
-                List.of(TmsDocumenten.jutter("J1", List.of("erkend")), TmsDocumenten.jutter("J2", List.of("vergund")),
-                        TmsDocumenten.jutter("J3", List.of())),
-                List.of(verwacht("J1", "vergund", true), verwacht("J1", "erkend", true),
-                        verwacht("J2", "vergund", true), verwacht("J2", "erkend", false),
-                        verwacht("J3", "vergund", false), verwacht("J3", "erkend", false))),
-                DroolsBackend.Branch.EXEC_MODEL));
+        for (DroolsBackend.Branch tak : TAKKEN)
+            assertNull(CaseRunner.speelCase(document(), TmsDocumenten.zaak(
+                    List.of(TmsDocumenten.jutter("J1", List.of("erkend")), TmsDocumenten.jutter("J2", List.of("vergund")),
+                            TmsDocumenten.jutter("J3", List.of())),
+                    List.of(verwacht("J1", "vergund", true), verwacht("J1", "erkend", true),
+                            verwacht("J2", "vergund", true), verwacht("J2", "erkend", false),
+                            verwacht("J3", "vergund", false), verwacht("J3", "erkend", false))), tak), tak.toString());
     }
 
     @Test void pas_na_het_terugzetten_draagt_de_bean_het_afgeleide_kenmerk() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
+        for (DroolsBackend.Branch tak : TAKKEN) zetKenmerkTerug(DroolsBackend.build(document(), tak));
+    }
+
+    private static void zetKenmerkTerug(DroolsBackend.Build b) throws Exception {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         KieSession sessie = b.kieBase().newKieSession();
@@ -113,18 +135,20 @@ class TmsTerugzettingWitnessTest {
             Object j2 = jutterBoon(b.beanLoader(), List.of("vergund"));
             Object j3 = jutterBoon(b.beanLoader(), List.of());
             for (Object j : List.of(j1, j2, j3)) sessie.insert(j);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), "the fixpoint");
+            String tak = b.branch() + ": ";
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), tak + "the fixpoint");
             // the derivation is a fact of the session, and the bean does not carry it yet
             List<Object> afgeleid = new ArrayList<>(sessie.getObjects(o -> o instanceof HeeftKenmerk));
-            assertEquals(List.of(new HeeftKenmerk(j1, ElementSleutel.van("Jutter", "vergund", true))), afgeleid);
-            assertFalse(heeft(j1, "vergund"), "J1 is vergund before the write-back");
+            assertEquals(List.of(new HeeftKenmerk(j1, ElementSleutel.van("Jutter", "vergund", true))), afgeleid,
+                    tak + "the derivation");
+            assertFalse(heeft(j1, "vergund"), tak + "J1 is vergund before the write-back");
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
-            assertTrue(heeft(j1, "vergund"), "J1 vergund");
-            assertTrue(heeft(j1, "erkend"), "J1 erkend, the input, stays");
-            assertTrue(heeft(j2, "vergund"), "J2 vergund, the input, stays");
-            assertFalse(heeft(j2, "erkend"), "J2 erkend");
-            assertFalse(heeft(j3, "vergund"), "J3 vergund");
-            assertFalse(heeft(j3, "erkend"), "J3 erkend");
+            assertTrue(heeft(j1, "vergund"), tak + "J1 vergund");
+            assertTrue(heeft(j1, "erkend"), tak + "J1 erkend, the input, stays");
+            assertTrue(heeft(j2, "vergund"), tak + "J2 vergund, the input, stays");
+            assertFalse(heeft(j2, "erkend"), tak + "J2 erkend");
+            assertFalse(heeft(j3, "vergund"), tak + "J3 vergund");
+            assertFalse(heeft(j3, "erkend"), tak + "J3 erkend");
         } finally {
             sessie.dispose();
             Thread.currentThread().setContextClassLoader(vorige);
@@ -187,30 +211,55 @@ class TmsTerugzettingWitnessTest {
     @Test void de_replay_leest_de_afgeleide_en_de_ingevoerde_attributen_in_elke_documentvolgorde() throws Exception {
         int volgordes = 0;
         for (List<String> regels : TmsDocumenten.permutaties(REGELS))
-            for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN)) {
-                String waar = documentvolgorde(regels, groepen);
-                assertNull(CaseRunner.speelCase(vondstdocument(regels, groepen), vondstzaak(),
-                        DroolsBackend.Branch.EXEC_MODEL), waar);
-                volgordes++;
-            }
-        assertEquals(4, volgordes);
+            for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN))
+                for (DroolsBackend.Branch tak : TAKKEN) {
+                    String waar = " op " + tak + documentvolgorde(regels, groepen);
+                    assertNull(CaseRunner.speelCase(vondstdocument(regels, groepen), vondstzaak(), tak), waar);
+                    volgordes++;
+                }
+        assertEquals(8, volgordes);
     }
 
     @Test void pas_na_het_terugzetten_dragen_de_beans_de_afgeleide_attributen() throws Exception {
         int volgordes = 0;
         for (List<String> regels : TmsDocumenten.permutaties(REGELS))
-            for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN)) {
-                vuurEnZetTerug(DroolsBackend.build(vondstdocument(regels, groepen),
-                        DroolsBackend.Branch.EXEC_MODEL), documentvolgorde(regels, groepen));
-                volgordes++;
-            }
-        assertEquals(4, volgordes);
+            for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN))
+                for (DroolsBackend.Branch tak : TAKKEN) {
+                    DroolsBackend.Build b = DroolsBackend.build(vondstdocument(regels, groepen), tak);
+                    vuurEnZetTerug(b, b.kieBase(), " op " + tak + documentvolgorde(regels, groepen));
+                    volgordes++;
+                }
+        assertEquals(8, volgordes);
     }
 
-    private static void vuurEnZetTerug(DroolsBackend.Build b, String waar) throws Exception {
+    /** The same write-back in a seeded sample of the orders of the generated rules, on the exec-model branch and on
+     *  {@code DRL_TMS} with the rules of its text in each order. */
+    @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        int volgordes = 0;
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261013L, 100)) {
+            vuurEnZetTerug(b, TmsDocumenten.kieBase(b, volgorde), " op " + b.branch() + " in volgorde "
+                    + volgorde.stream().map(Rule::getName).toList());
+            volgordes++;
+        }
+        DroolsBackend.Build t = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.DRL_TMS);
+        List<String> regels = Tekstvolgorde.regels(t);
+        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
+        for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261013L, 100)) {
+            vuurEnZetTerug(t, Tekstvolgorde.kieBase(t, volgorde), " op " + t.branch() + " in volgorde " + volgorde);
+            volgordes++;
+        }
+        assertEquals(2 * 102, volgordes);
+    }
+
+    /** Fires V1, V2 and V3 through {@code kieBase}, which holds the rules of {@code b}, and writes back: before the
+     *  write-back the session holds the derivations and each bean its input only, after it each bean carries what the
+     *  class comment says. */
+    private static void vuurEnZetTerug(DroolsBackend.Build b, KieBase kieBase, String waar) throws Exception {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = b.kieBase().newKieSession();
+        KieSession sessie = kieBase.newKieSession();
         try {
             List<Object> v = new ArrayList<>();
             for (int i = 0; i < GETALLEN.size(); i++)
@@ -251,29 +300,37 @@ class TmsTerugzettingWitnessTest {
      *  does not choose: the facts are put in the session by hand, since the branch refuses every document that could
      *  derive them (two computing rules, or two initialisations, on one target), and in both orders. */
     @Test void twee_verschillende_waarden_op_een_doel_zijn_een_benoemde_fout_in_elke_volgorde() throws Exception {
-        List<String> zinnen = new ArrayList<>();
-        Object v1 = tweeSchrijvers(new BigDecimal("20"), new BigDecimal("7"), zinnen);
-        Object geschreven = lees(v1, "uitkering");
-        assertEquals(2, zinnen.size(), () -> "a failure in each order, got " + zinnen + ", V1 uitkering " + geschreven);
-        assertEquals("geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"uitkering\""
-                + " schrijft 20 en de regel \"uitkering volgens een tweede regel\" schrijft 7 in het attribuut uitkering"
-                + " van een Vondst (Vondst@" + Integer.toHexString(System.identityHashCode(v1)) + "); divergentie is een"
-                + " fout (RUNTIME-SEMANTICS ch. 5.7)", zinnen.get(0));
-        assertEquals(zinnen.get(0), zinnen.get(1), "the sentence does not depend on the order of the two facts");
-        assertNull(geschreven, "a divergence writes neither value");
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            List<String> zinnen = new ArrayList<>();
+            Object v1 = tweeSchrijvers(tak, new BigDecimal("20"), new BigDecimal("7"), zinnen);
+            Object geschreven = lees(v1, "uitkering");
+            assertEquals(2, zinnen.size(), () -> tak + ": a failure in each order, got " + zinnen + ", V1 uitkering "
+                    + geschreven);
+            assertEquals("geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel"
+                    + " \"uitkering\" schrijft 20 en de regel \"uitkering volgens een tweede regel\" schrijft 7 in het"
+                    + " attribuut uitkering van een Vondst (Vondst@" + Integer.toHexString(System.identityHashCode(v1))
+                    + "); divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", zinnen.get(0), tak.toString());
+            assertEquals(zinnen.get(0), zinnen.get(1), tak + ": the sentence does not depend on the order of the two"
+                    + " facts");
+            assertNull(geschreven, tak + ": a divergence writes neither value");
+        }
     }
 
     @Test void gelijke_waarden_van_twee_schrijvers_zijn_een_waarde() throws Exception {
-        List<String> zinnen = new ArrayList<>();
-        Object v1 = tweeSchrijvers(new BigDecimal("20"), new BigDecimal("20.0"), zinnen);
-        assertEquals(List.of(), zinnen);
-        assertGetal("20", lees(v1, "uitkering"), "V1 uitkering");
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            List<String> zinnen = new ArrayList<>();
+            Object v1 = tweeSchrijvers(tak, new BigDecimal("20"), new BigDecimal("20.0"), zinnen);
+            assertEquals(List.of(), zinnen, tak.toString());
+            assertGetal("20", lees(v1, "uitkering"), tak + ": V1 uitkering");
+        }
     }
 
     /** Puts a Waarde of {@code eerste} by the rule "uitkering" and one of {@code tweede} by another writer on the
-     *  uitkering of one Vondst, in both orders, each in a fresh session, writes back, and collects the failures. */
-    private static Object tweeSchrijvers(BigDecimal eerste, BigDecimal tweede, List<String> zinnen) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.EXEC_MODEL);
+     *  uitkering of one Vondst, in both orders, each in a fresh session of {@code tak}, writes back, and collects the
+     *  failures. */
+    private static Object tweeSchrijvers(DroolsBackend.Branch tak, BigDecimal eerste, BigDecimal tweede,
+                                         List<String> zinnen) throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), tak);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         try {
