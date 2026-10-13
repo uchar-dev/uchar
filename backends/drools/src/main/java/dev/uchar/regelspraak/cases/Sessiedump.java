@@ -58,8 +58,9 @@ import java.util.regex.Pattern;
  * <p>The text names an input bean by its case label and a made object by its creation and its subject,
  * {@code «creatie»(onderwerp)#k}, and never by its identity: the identity hash of an object differs between two runs,
  * so every {@code Type@hex} that a sentence of the branch carries is replaced by the name of its object, or by
- * {@code Type@?}. Every value carries its Java class, a number its scale and a text its quotes ({@link #render}), so
- * two values that a fact holds unequal never print alike; every list of lines is sorted.
+ * {@code Type@?}; a text value stays as it is, also where it looks like an identity. Every value carries its Java
+ * class, a number its scale and a text its quotes ({@link #render}), so two values that a fact holds unequal never
+ * print alike; every list of lines is sorted.
  */
 final class Sessiedump {
 
@@ -70,6 +71,10 @@ final class Sessiedump {
     static final String NAADMAP = System.getProperty(EIGENSCHAP);
 
     private static final Pattern IDENTITEIT = Pattern.compile("\\b([A-Za-z_$][A-Za-z0-9_$]*)@([0-9a-f]+)\\b");
+
+    /** A text value as {@link #render} writes it, {@code String("…")} with a quote and a backslash in it escaped
+     *  ({@link #citeer}); possessive, so that a long text does not recurse. */
+    private static final Pattern TEKSTWAARDE = Pattern.compile("String\\(\"(?:[^\"\\\\]++|\\\\.)*+\"\\)");
 
     /** The sessions the seam wrote, per document and branch: the number in the name of the next file. */
     private static final Map<String, Integer> VOLGNUMMERS = new HashMap<>();
@@ -261,7 +266,21 @@ final class Sessiedump {
         return uit;
     }
 
+    /** {@code tekst} with every identity of an object replaced by the name of that object, or by {@code Type@?}; a text
+     *  value in it ({@link #TEKSTWAARDE}) stays as it is, since what looks like an identity there is content, and two
+     *  texts that differ only there are two different facts (lens on step 3a). */
     private static String zonderIdentiteit(String tekst, Map<String, String> identiteit) {
+        Matcher w = TEKSTWAARDE.matcher(tekst);
+        StringBuilder uit = new StringBuilder();
+        int vanaf = 0;
+        while (w.find()) {
+            uit.append(identiteitenVervangen(tekst.substring(vanaf, w.start()), identiteit)).append(w.group());
+            vanaf = w.end();
+        }
+        return uit.append(identiteitenVervangen(tekst.substring(vanaf), identiteit)).toString();
+    }
+
+    private static String identiteitenVervangen(String tekst, Map<String, String> identiteit) {
         Matcher m = IDENTITEIT.matcher(tekst);
         StringBuilder uit = new StringBuilder();
         while (m.find()) {
