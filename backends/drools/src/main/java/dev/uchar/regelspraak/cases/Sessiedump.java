@@ -7,6 +7,8 @@ import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
 import dev.uchar.regelspraak.transpiler.tms.Fout;
 import dev.uchar.regelspraak.transpiler.tms.Gemaakt;
 
+import org.kie.api.definition.KiePackage;
+import org.kie.api.definition.rule.Global;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.AgendaEventListener;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
@@ -31,6 +33,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +46,9 @@ import java.util.regex.Pattern;
  * {@code diff -r}.
  *
  * <p>Every line starts with its section, so a diff counts its lines per section ({@code awk '{print $2}'} over the
- * changed lines): {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint),
+ * changed lines): {@code invoer} (every object in working memory and every global right before the fire: the input of
+ * the session, so that a comparison couples a session to its case and not only to its document),
+ * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint),
  * {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the order they fired),
  * {@code lees} (everything {@link DroolsBackend#lees} gives) and {@code feiten}/{@code feit} (every object in working
  * memory at the fixpoint, the beans with their fields among them, so that a write on a bean during the fire shows).
@@ -53,7 +58,8 @@ import java.util.regex.Pattern;
  * <p>The text names an input bean by its case label and a made object by its creation and its subject,
  * {@code «creatie»(onderwerp)#k}, and never by its identity: the identity hash of an object differs between two runs,
  * so every {@code Type@hex} that a sentence of the branch carries is replaced by the name of its object, or by
- * {@code Type@?}. Numbers keep their scale, and every list of lines is sorted.
+ * {@code Type@?}. Every value carries its Java class, a number its scale and a text its quotes ({@link #render}), so
+ * two values that a fact holds unequal never print alike; every list of lines is sorted.
  */
 final class Sessiedump {
 
@@ -71,18 +77,45 @@ final class Sessiedump {
     private final List<String> spoor = new ArrayList<>();
     private final AgendaEventListener luisteraar;
     private final KieSession sessie;
+    /** The lines of the section {@code invoer}, written when the dump starts, before the fire changes anything. */
+    private final List<String> invoer;
 
-    private Sessiedump(KieSession sessie) {
+    private Sessiedump(KieSession sessie, Map<String, Object> labels) {
         this.sessie = sessie;
+        this.invoer = invoer(sessie, labels);
         this.luisteraar = new DefaultAgendaEventListener() {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) { spoor.add(e.getMatch().getRule().getName()); }
         };
         sessie.addEventListener(luisteraar);
     }
 
-    /** Records the firings of {@code sessie} from now on, in order: call it right before the fire. */
-    static Sessiedump op(KieSession sessie) {
-        return new Sessiedump(sessie);
+    /** Records the input of {@code sessie}, whose input beans {@code labels} names by their case labels, and its
+     *  firings from now on, in order: call it right before the fire. */
+    static Sessiedump op(KieSession sessie, Map<String, Object> labels) {
+        return new Sessiedump(sessie, labels);
+    }
+
+    /** The input of a session right before its fire: every object in working memory, named and with its fields as
+     *  {@link #feiten} writes them, and every global of the knowledge base with its value. Two sessions of one document
+     *  with an equal input are two firings of one case; a global that is a predicate, the compiled day kind of the
+     *  document, prints as such, since it is the same for every case and prints an identity of the JVM otherwise. */
+    private static List<String> invoer(KieSession sessie, Map<String, Object> labels) {
+        Map<Object, String> naam = new IdentityHashMap<>();
+        labels.forEach((l, b) -> naam.put(b, l));
+        Map<String, String> identiteit = identiteiten(naam);
+        List<String> regels = new ArrayList<>();
+        for (Object o : sessie.getObjects()) regels.add(feit(o, naam));
+        TreeMap<String, String> globals = new TreeMap<>();
+        for (KiePackage p : sessie.getKieBase().getKiePackages())
+            for (Global g : p.getGlobalVariables()) {
+                Object w = sessie.getGlobal(g.getName());
+                globals.put(g.getName(), w instanceof Predicate<?> ? "Predicate" : render(w, naam));
+            }
+        globals.forEach((g, w) -> regels.add("global " + g + " = " + w));
+        List<String> schoon = new ArrayList<>();
+        for (String r : regels) schoon.add(zonderIdentiteit(r, identiteit));
+        schoon.sort(Comparator.naturalOrder());
+        return schoon;
     }
 
     /** The first sixteen hex digits of the SHA-256 of the file {@code document}, as {@code shasum -a 256} gives them:
@@ -127,7 +160,7 @@ final class Sessiedump {
         }
     }
 
-    /** Appends the dump of a session whose {@code vuur} returned {@code v}: the firings, at a fixpoint what
+    /** Appends the dump of a session whose {@code vuur} returned {@code v}: its input, the firings, at a fixpoint what
      *  {@link DroolsBackend#lees} gives, and every object in working memory. A session without a fixpoint gets its
      *  objects too, as they stand where the fire stopped: {@code lees} refuses such a session, and without them a
      *  rebuild that changes what a capped session derives would pass the comparison unseen. {@code labels} maps each
@@ -136,6 +169,7 @@ final class Sessiedump {
         sessie.removeEventListener(luisteraar);
         Map<Object, String> naam = namen(labels);
         Map<String, String> identiteit = identiteiten(naam);
+        for (String r : invoer) uit.append("invoer ").append(r).append('\n');
         uit.append("vuringen ").append(v.vuringen()).append(" plafond ").append(v.plafond()).append(" geenFixpunt ")
                 .append(zonderIdentiteit(String.valueOf(v.geenFixpunt()), identiteit)).append('\n');
         spoor(uit);
@@ -161,12 +195,13 @@ final class Sessiedump {
         feiten(uit, naam, identiteit);
     }
 
-    /** Appends the dump of a session whose {@code vuur} threw {@code e}: the exception, the firings before it, and
-     *  every object in working memory as it stands where the fire stopped. */
+    /** Appends the dump of a session whose {@code vuur} threw {@code e}: its input, the exception, the firings before
+     *  it, and every object in working memory as it stands where the fire stopped. */
     void schrijf(StringBuilder uit, RuntimeException e, Map<String, Object> labels) {
         sessie.removeEventListener(luisteraar);
         Map<Object, String> naam = namen(labels);
         Map<String, String> identiteit = identiteiten(naam);
+        for (String r : invoer) uit.append("invoer ").append(r).append('\n');
         uit.append("vuringen gooit ").append(zonderIdentiteit(fout(e), identiteit)).append('\n');
         spoor(uit);
         feiten(uit, naam, identiteit);
@@ -270,8 +305,14 @@ final class Sessiedump {
         return e.getClass().getSimpleName() + ": " + e.getMessage();
     }
 
-    /** A value or a fact, without identities: a bean by its name, a record and every other class of the branch by its
-     *  components or fields, a number with its scale, a collection in its order where it has one and sorted where not. */
+    /**
+     * A value or a fact, without identities: a bean by its name, a record and every other class of the branch by its
+     * components or fields, a collection in its order where it has one and sorted where not, and every other value with
+     * its Java class, so that two values a fact holds unequal never print alike, as {@code BigDecimal} 2 and the text
+     * "2" did: a number of {@code BigDecimal} as {@link BigDecimal#toString}, one text per value and scale (also where
+     * a fact compares such numbers by {@code compareTo}, which can only show a difference more, never hide one); a
+     * text quoted and escaped; an enumeration label with its class.
+     */
     static String render(Object o, Map<Object, String> naam) {
         if (o == null) return "leeg";
         if (isBean(o)) {
@@ -286,8 +327,9 @@ final class Sessiedump {
                         + render(RegelSpraakRuntime.get(o, "waarde"), naam) + ")";
             return type + "#ongelabeld";
         }
-        if (o instanceof BigDecimal d) return d.toPlainString();
-        if (o instanceof Enum<?> e) return e.name();
+        if (o instanceof BigDecimal d) return "BigDecimal(" + d + ")";
+        if (o instanceof String s) return "String(" + citeer(s) + ")";
+        if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
         if (o instanceof ElementSleutel k) return k.objecttype() + "." + k.naam() + (k.kenmerk() ? " (kenmerk)" : "");
         if (o instanceof Throwable e) return fout(e);
         if (o instanceof List<?> l) {
@@ -334,6 +376,12 @@ final class Sessiedump {
             }
             return klasse.getSimpleName() + "(" + String.join(", ", r) + ")";
         }
-        return o.toString();
+        return klasse.getSimpleName() + "(" + o + ")";
+    }
+
+    /** {@code s} between double quotes, with a quote, a backslash and a line break escaped, so that a text stays on its
+     *  line and tells where it ends. */
+    private static String citeer(String s) {
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 }

@@ -16,8 +16,9 @@ import java.util.stream.Stream;
  * The guard harness of card drl-teksttak-op-truth-maintenance: while the card rebuilds the exec-model branch's
  * lowering into one analysis with two renderings, the branch must not change. For every golden the exec-model branch
  * plays and every case of it, the harness sets the case up as the replay does ({@link CaseRunner#metSessie}), fires it
- * through {@link DroolsBackend#vuur} and writes the dump of the session ({@link Sessiedump}): the firings, the order and
- * the count per rule, everything {@link DroolsBackend#lees} gives, and every object in working memory at the fixpoint.
+ * through {@link DroolsBackend#vuur} and writes the dump of the session ({@link Sessiedump}): its input, the firings, the
+ * order and the count per rule, everything {@link DroolsBackend#lees} gives, and every object in working memory at the
+ * fixpoint.
  * One file per golden, its cases in the order of their names. Gate 12 pins only the expectations of a case; this pins
  * every fact and every firing. A step of the card compares the dump of its code with the one before it with
  * {@code diff -r}: {@code lees}, {@code feiten} and {@code spoor-telling} must be equal, and a difference in
@@ -122,7 +123,7 @@ public final class Vuurspoor {
             n++;
             uit.append("### ").append(pad.getFileName()).append('\n');
             runner.metSessie(c, (bouw, sessie, labels) -> {
-                Sessiedump d = Sessiedump.op(sessie);
+                Sessiedump d = Sessiedump.op(sessie, labels);
                 DroolsBackend.Vuring v;
                 try {
                     v = DroolsBackend.vuur(bouw, sessie);

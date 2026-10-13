@@ -596,7 +596,7 @@ public final class CaseRunner {
             sessie.addEventListener(schrijvers);
         }
         Sessiedump spoor = documenthash == null || bouw.branch() == DroolsBackend.Branch.DRL_TEXT ? null
-                : Sessiedump.op(sessie);
+                : Sessiedump.op(sessie, labelNaarBean);
         DroolsBackend.Vuring vuring;
         try {
             vuring = DroolsBackend.vuur(bouw, sessie);
