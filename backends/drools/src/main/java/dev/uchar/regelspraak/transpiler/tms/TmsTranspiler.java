@@ -4644,7 +4644,7 @@ public final class TmsTranspiler {
             case Conditie.Vergelijking v -> vergelijking(v, lez);
             case Conditie.Predicaat p -> predicaat(p, lez);
             case Conditie.Periode p -> tijdvenster(p, lez);
-            case Conditie.Kwantorvouw q -> gecompileerd(kwantorvouw(q, lez), q);
+            case Conditie.Kwantorvouw q -> kwantorvouw(q, lez);
             case Conditie.Rollidmaatschap rol -> rolcontrole(rol, lez);
             // the v0 far-side record, which the loader no longer makes: since L2 a role check is one node (IR-SPEC
             // ch. 4.5), so only a hand-built model reaches this
@@ -4949,16 +4949,16 @@ public final class TmsTranspiler {
      * value changes takes its contribution along, and an accumulate over the contributions in the left-hand side of the
      * rule that reads the fold. Where the matrix can neither fault nor deposit, a contribution carries 1 or 0 for the
      * matrix's verdict and the accumulate counts the contributors and sums the verdicts: the order of the members is then
-     * invisible. Where it can, the order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the
-     * contributors' order and stops at the first contributor after which the verdict stands, so a contributor it does not
-     * reach raises no fault and deposits nothing. A contribution then carries the matrix's outcome and the member's place
-     * ({@link Lidtoets}), the accumulate collects them, and the evaluation replays that order
-     * ({@link Rekenhulpen#kwantorlezing}). The filter is settled for every member before the matrix, as for any fold
-     * ({@link #gelezenVouw}). The range is one
-     * step, {@code sourceRole}: the loader refuses a multi-step one (WF-108 (c)), and so does this method where a
-     * hand-built model carries one.
+     * invisible, and the verdict a call over the count and the sum ({@link Functie#KWANTOROORDEEL}). Where it can, the
+     * order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the contributors' order and stops at
+     * the first contributor after which the verdict stands, so a contributor it does not reach raises no fault and
+     * deposits nothing. A contribution then carries the matrix's outcome and the member's place ({@link Lidtoets}), the
+     * accumulate collects them, and the evaluation replays that order ({@link Term.Kwantorlezing}). The filter is settled
+     * for every member before the matrix, as for any fold ({@link #gelezenVouw}). The range is one step,
+     * {@code sourceRole}: the loader refuses a multi-step one (WF-108 (c)), and so does this method where a hand-built
+     * model carries one.
      */
-    private Toets kwantorvouw(Conditie.Kwantorvouw kv, Lezingen lez) {
+    private Term kwantorvouw(Conditie.Kwantorvouw kv, Lezingen lez) {
         // WF-112, in the sentence of the DRL-text branch: a window in the filter or the test under none or a counting
         // quantifier has no reading
         String venster = Vensterpositie.weigering(kv);
@@ -4980,18 +4980,14 @@ public final class TmsTranspiler {
         String bron = bron(kv.bron());
         if (!v.geordend()) {
             int[] i = lez.vouw(v, Accumulatie.Soort.SOM);
-            Waardefunctie oordeel = weergave(gelezenVouw(v, i, lez, new Term.GecompileerdeToets(w -> {
-                long n = ((Number) w[i[0]]).longValue();
-                return Rekenhulpen.eindoordeel(kw, drempel, n == 0 ? 0 : ((BigDecimal) w[i[1]]).longValueExact(), n);
-            }, bron), bron));
-            return w -> (Boolean) oordeel.van(w);
+            return gelezenVouw(v, i, lez, new Term.Aanroep(Functie.KWANTOROORDEEL, List.of(new Term.Lees(i[0], null),
+                    new Term.Lees(i[1], null), constante(kw), constante(drempel)), bron), bron);
         }
         int[] i = lez.vouw(v, Accumulatie.Soort.LIJST);
         if (v.lidKanFalen()) lez.markeerFalen();
         int sonde = v.lidDeponeert() ? lez.sonde() : -1;
-        Waardefunctie oordeel = weergave(gelezenVouw(v, i, lez, new Term.GecompileerdeToets(
-                w -> Rekenhulpen.kwantorlezing(w[i[0]], w[i[1]], kw, drempel, sonde < 0 ? null : w[sonde]), bron), bron));
-        return w -> (Boolean) oordeel.van(w);
+        return gelezenVouw(v, i, lez, new Term.Kwantorlezing(Functie.KWANTORLEZING, new Term.Lees(i[0], null),
+                new Term.Lees(i[1], null), kw, drempel, sonde, bron), bron);
     }
 
     /**
