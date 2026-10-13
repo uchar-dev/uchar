@@ -2,7 +2,6 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.runtime.Accessors;
-import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
 import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
@@ -168,10 +167,9 @@ final class PatternDslWeergave {
             case Gevolg.Toetsfout x -> toetsfout(x);
             case Gevolg.Fout x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
                     voegIn(drools, x.invoeging(), new Fout(a[0], x.fout().vorm(),
-                            new Rekenfout(x.zin()).inDeRegel(x.fout().regel()))));
+                            Rekenhulpen.rekenfout(x.zin(), x.fout().regel()))));
             case Gevolg.Inconsistentie x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.invoeging(),
-                            RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENTIE, x.vorm(), a[0])));
+                    voegIn(drools, x.invoeging(), Rekenhulpen.inconsistentie(x.vorm(), a[0])));
             case Gevolg.Schrijversconflict x ->
                     new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarden())}, (drools, a) -> {
                         List<Waarde> waarden = new ArrayList<>();
@@ -188,7 +186,7 @@ final class PatternDslWeergave {
                     voegIn(drools, x.invoeging(), new KenmerkStand(a[0], x.kenmerk(), x.waar())));
             case Gevolg.Stand x -> new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarde())},
                     (drools, a) -> voegIn(drools, x.invoeging(), new Stand(a[0], x.attribuut(),
-                            x.emmerscalair() ? Emmerscalair.van((List<?>) a[1]) : a[1])));
+                            x.emmerscalair() ? Rekenhulpen.emmerscalairVan(a[1]) : a[1])));
             case Gevolg.Padstand x -> x.bron() == Gevolg.Standbron.ONTBREKENDE_LINK
                     ? new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
                             voegIn(drools, x.invoeging(), new PadStand(a[0], x.pad(), x.lid(), null)))
@@ -204,7 +202,7 @@ final class PatternDslWeergave {
         Gevolg.Deponering deponering = g.deponering();
         return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
             // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
-            Sonde s = deponering == null ? null : new Sonde();
+            Object s = deponering == null ? null : Rekenhulpen.sonde();
             if (s != null) w[deponering.sonde()] = s;
             Object v;
             try {
@@ -216,9 +214,8 @@ final class PatternDslWeergave {
                         new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
                 return;
             }
-            if (s != null && s.gemeld())
-                voegIn(drools, g.invoeging(),
-                        RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENTIE, deponering.vorm(), onderwerp));
+            if (Rekenhulpen.gemeld(s))
+                voegIn(drools, g.invoeging(), Rekenhulpen.inconsistentie(deponering.vorm(), onderwerp));
             if (!Rekenhulpen.isLeeg(v) || g.schrijftLeeg())
                 voegIn(drools, g.invoeging(), new Waarde(onderwerp, g.doel(), v, g.schrijver()));
         });

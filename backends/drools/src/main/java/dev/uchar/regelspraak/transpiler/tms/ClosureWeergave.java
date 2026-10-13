@@ -142,7 +142,7 @@ final class ClosureWeergave {
             case ZONDER_FOUT -> zonderFout(toets);
             case FOUT -> w -> fout(toets, w) != null;
             case DEPONERING -> w -> {
-                Sonde s = new Sonde();
+                Object s = Rekenhulpen.sonde();
                 w[sonde] = s;
                 try {
                     toets.test(w);
@@ -150,7 +150,7 @@ final class ClosureWeergave {
                     // a fault is the fault rule's; what the evaluation deposited before it stays heard
                     if (!Rekenfout.isEvaluatiefout(e)) throw e;
                 }
-                return s.gemeld();
+                return Rekenhulpen.gemeld(s);
             };
         };
     }
@@ -281,7 +281,7 @@ final class ClosureWeergave {
         Waardefunctie uitkomst = waardefunctie(v.uitkomst());
         int deponeringen = v.deponeringen(), sonde = v.sonde(), filterfout = v.filterfout(), lidfout = v.lidfout();
         return w -> {
-            if (sonde >= 0 && ((Number) w[deponeringen]).longValue() > 0) Sonde.meld(w, sonde);
+            if (sonde >= 0 && ((Number) w[deponeringen]).longValue() > 0) Rekenhulpen.meld(w[sonde]);
             if (filterfout >= 0 && w[filterfout] != null) throw ((Filterfout) w[filterfout]).fout();
             // the reference interpreter reads the members' values once every member's filter is evaluated
             if (lidfout >= 0 && w[lidfout] != null) throw ((Lidfout) w[lidfout]).fout();

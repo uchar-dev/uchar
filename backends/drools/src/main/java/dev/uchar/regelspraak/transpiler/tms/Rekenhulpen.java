@@ -22,6 +22,11 @@ import java.util.function.Predicate;
  * object its slot of the value array holds, a {@link Sonde} or nothing. A fault is an evaluation fault of the branch in
  * the reference interpreter's sentence ({@link Rekenfout}, {@link Invoervormfout}, a division by a numeric zero), which
  * the consequence or the fault rule of the form inserts as a {@link Fout}.
+ *
+ * <p>Beside them the routes of a test and a consequence ({@code plan.Route}): a fresh probe, a report to it and its
+ * verdict, and the facts a consequence makes whose class or constructor a DRL text cannot reach, the fault of a fixed
+ * sentence, the inconsistency of a form and the asOfDate-bucket scalar of an input. A {@link Sonde} and the generated
+ * inconsistency class stay out of reach themselves: a rendering only hands them on, typed {@code Object}.
  */
 public final class Rekenhulpen {
 
@@ -493,5 +498,42 @@ public final class Rekenhulpen {
     /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here. */
     public static Object collapse(Object v) {
         return v instanceof Breuk b ? b.naarDecimal() : v;
+    }
+
+    // ---------------- the routes of a test and a consequence (plan.Route) ----------------
+
+    /** A fresh probe of the §6.5 and §6.6 deposit ({@link Sonde}), which a test of deposits or a consequence puts in
+     *  its slot of the value array before it evaluates. */
+    public static Object sonde() {
+        return new Sonde();
+    }
+
+    /** A place that deposits ran and reports to {@code sonde}, the probe its slot holds, or to nothing where the slot
+     *  holds none. */
+    public static void meld(Object sonde) {
+        Sonde.meld(sonde);
+    }
+
+    /** Whether {@code sonde}, a probe or nothing, heard a place. */
+    public static boolean gemeld(Object sonde) {
+        return sonde instanceof Sonde s && s.gemeld();
+    }
+
+    /** The evaluation fault of the fixed sentence {@code zin} ({@link Rekenfout}), named in the rule {@code regel}: the
+     *  fault that a consequence inserts where a form faults by a sentence of its own ({@code plan.Gevolg.Fout}). */
+    public static Rekenfout rekenfout(String zin, String regel) {
+        return new Rekenfout(zin).inDeRegel(regel);
+    }
+
+    /** The §9.5 inconsistency of the form {@code vorm} on {@code onderwerp}: an instance of the class the fact model
+     *  generates for it ({@link TmsTranspiler#INCONSISTENTIE}). */
+    public static Object inconsistentie(String vorm, Object onderwerp) {
+        return RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENTIE, vorm, onderwerp);
+    }
+
+    /** The input timeline {@code tijdlijn}, a list of segments, as the asOfDate-bucket scalar the case gave
+     *  ({@link Emmerscalair}, RUNTIME-SEMANTICS ch. 8.4): what the standing of such an input carries. */
+    public static Emmerscalair emmerscalairVan(Object tijdlijn) {
+        return Emmerscalair.van((List<?>) tijdlijn);
     }
 }

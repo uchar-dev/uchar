@@ -11,16 +11,11 @@ package dev.uchar.regelspraak.transpiler.tms;
  * probe in the test of its deposit rule ({@code TmsTranspiler#deponeerregel}), and a fold's filter in the test of its
  * filter deposit rule ({@code TmsTranspiler#filterdeponeerregel}), whose {@link Filterdeponering} the evaluation of the
  * fold in the reading rule reports to that rule's probe ({@code Term.Vouwlezing}); elsewhere the slot is empty and a
- * place reports to nothing.
+ * place reports to nothing. A rendering makes, reports to and reads a probe through the public routes of
+ * {@link Rekenhulpen} ({@code plan.Route}), which a DRL text reaches as well.
  */
 final class Sonde {
     private boolean gemeld;
-
-    /** A place that qualifies ran and deposits; {@code plaats} is its probe's slot, -1 where the place does not
-     *  qualify. */
-    static void meld(Object[] w, int plaats) {
-        if (plaats >= 0 && w[plaats] instanceof Sonde s) s.gemeld = true;
-    }
 
     /** A place ran and deposits to {@code sonde}, the probe its slot holds, or nothing where it holds none. */
     static void meld(Object sonde) {
