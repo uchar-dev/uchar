@@ -119,7 +119,7 @@ class TmsCreatieInvoerWitnessTest {
         int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(document(volgorde, bron), zaak(terug), DroolsBackend.Branch.EXEC_MODEL),
+            assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(document(volgorde, bron), zaak(terug)),
                     () -> "volgorde " + namen);
             volgordes++;
         }
@@ -189,8 +189,7 @@ class TmsCreatieInvoerWitnessTest {
         int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(ZUSTERS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(TmsDocumenten.document(ZUSTERMODEL, volgorde), zaak,
-                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
+            assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(TmsDocumenten.document(ZUSTERMODEL, volgorde), zaak), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(6, volgordes);

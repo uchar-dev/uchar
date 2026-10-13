@@ -156,7 +156,7 @@ class TmsCreatieWitnessTest {
 
     @Test void een_objectcreatie_maakt_een_object_per_onderwerp_met_de_waarden_van_het_fixpunt() throws Exception {
         Path ir = documentA("null");
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakA("1", "7"), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakA("1", "7")));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
@@ -177,7 +177,7 @@ class TmsCreatieWitnessTest {
 
     @Test void een_creatie_die_alleen_op_een_lagere_default_geldt_gebeurt_niet() throws Exception {
         Path ir = documentA(LAGE_VANGST);
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakA("0", "0"), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakA("0", "0")));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
@@ -230,7 +230,7 @@ class TmsCreatieWitnessTest {
 
     @Test void een_creatie_die_haar_eigen_uitvoer_leest_houdt_zichzelf_niet_in_stand() throws Exception {
         Path ir = documentB();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakB(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakB()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
@@ -291,7 +291,7 @@ class TmsCreatieWitnessTest {
 
     @Test void een_creatie_vuurt_niet_terwijl_de_regellaag_op_een_creatie_reageert() throws Exception {
         Path ir = documentG();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakG()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
@@ -357,7 +357,7 @@ class TmsCreatieWitnessTest {
      */
     @Test void een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand() throws Exception {
         Path ir = documentH();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakG()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         assertTrue(b.execModelTranspiler().creatieregels().contains("waarschuw"), () -> "creatieregels "
                 + b.execModelTranspiler().creatieregels());
@@ -451,7 +451,7 @@ class TmsCreatieWitnessTest {
 
     @Test void een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt() throws Exception {
         Path ir = documentC();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakC(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakC()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -523,7 +523,7 @@ class TmsCreatieWitnessTest {
 
     @Test void een_feitcreatie_legt_elke_link_een_keer() throws Exception {
         Path ir = documentD();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakD1(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakD1()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -553,7 +553,7 @@ class TmsCreatieWitnessTest {
         Path ir = documentD();
         String zin = "IllegalStateException: de naar-één-rol \"haven\" van een Jutter heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
-        assertEquals(zin, TmsFoutWitnessTest.speel(ir, zaakD2(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals(zin, TmsFoutWitnessTest.speelBeide(ir, zaakD2()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -604,7 +604,7 @@ class TmsCreatieWitnessTest {
      *  made; the mint at depth 101 is now the fault at the making, and 100 objects are made. */
     @Test void een_object_is_pas_in_de_volgende_generatie_onderwerp() throws Exception {
         Path ir = documentF();
-        assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speel(ir, zaakF(), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speelBeide(ir, zaakF()));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -682,7 +682,7 @@ class TmsCreatieWitnessTest {
             Path d = CORPUS.resolve("rood").resolve(rood.getKey());
             JsonNode zaak = TmsDocumenten.JSON.readTree(Files.readString(d.resolve("case1.json")));
             ((com.fasterxml.jackson.databind.node.ObjectNode) zaak).putArray("expected");
-            String zin = TmsFoutWitnessTest.speel(d.resolve("ir.json"), zaak, DroolsBackend.Branch.EXEC_MODEL);
+            String zin = TmsFoutWitnessTest.speelBeide(d.resolve("ir.json"), zaak);
             assertEquals("case: " + TmsCreatiestratumWitnessTest.budget(rood.getValue(), 0, "Wachter"), zin,
                     rood.getKey());
             JsonNode pin = zaak.get("expectedFault");

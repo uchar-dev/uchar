@@ -423,6 +423,15 @@ class TmsFoutWitnessTest {
         }
     }
 
+    /** {@link #speel} on the exec-model branch and on {@code DRL_TMS}, its analysis rendered as DRL text, which gives
+     *  the same outcome (card drl-teksttak-op-truth-maintenance, step 5): that outcome. */
+    static String speelBeide(Path ir, JsonNode zaak) throws Exception {
+        String exec = speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
+        assertEquals(exec, speel(ir, zaak, DroolsBackend.Branch.DRL_TMS), () -> "DRL_TMS speelt " + ir
+                + " anders dan de exec-model-tak");
+        return exec;
+    }
+
     /** {@link #fixpuntfout} as "SimpleName: message", or null where the write-back raises nothing. */
     static String vuur(DroolsBackend.Build b, List<Rule> volgorde, List<Object> bonen, AgendaEventListener agenda,
                        Foutfeiten feiten) {

@@ -228,8 +228,9 @@ class TmsVerdelingWitnessTest {
         return uit;
     }
 
+    /** The outcome of the case on the exec-model branch and on {@code DRL_TMS}, which must be one. */
     private static String speel(Path ir, JsonNode zaak) throws Exception {
-        return TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
+        return TmsFoutWitnessTest.speelBeide(ir, zaak);
     }
 
     // ---------------- A: a weight and a key derived later ----------------

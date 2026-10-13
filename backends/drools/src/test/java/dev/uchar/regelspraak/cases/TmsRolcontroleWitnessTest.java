@@ -158,8 +158,7 @@ class TmsRolcontroleWitnessTest {
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             for (int n = 1; n <= 3; n++) {
                 JsonNode zaak = TmsDocumenten.zaak(wereld(n), dichtbij(n));
-                uitkomsten.add(namen + " " + n + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                        DroolsBackend.Branch.EXEC_MODEL));
+                uitkomsten.add(namen + " " + n + " " + TmsFoutWitnessTest.speelBeide(ir, zaak));
                 verwacht.add(namen + " " + n + " gespeeld");
             }
         }
@@ -173,8 +172,7 @@ class TmsRolcontroleWitnessTest {
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             for (int n = 1; n <= 3; n++) {
                 JsonNode zaak = TmsDocumenten.zaak(wereld(n), veraf(n));
-                uitkomsten.add(namen + " " + n + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                        DroolsBackend.Branch.EXEC_MODEL));
+                uitkomsten.add(namen + " " + n + " " + TmsFoutWitnessTest.speelBeide(ir, zaak));
                 verwacht.add(namen + " " + n + " gespeeld");
             }
         }
@@ -207,7 +205,7 @@ class TmsRolcontroleWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(GEMELD, MELDER, STIL))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsCreatieWitnessTest.document(MELDMODEL, volgorde, List.of(), List.of(MAAK), List.of(), List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speelBeide(ir, zaak));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);

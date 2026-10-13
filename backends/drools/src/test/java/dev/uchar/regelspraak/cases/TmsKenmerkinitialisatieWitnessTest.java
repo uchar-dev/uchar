@@ -64,8 +64,8 @@ class TmsKenmerkinitialisatieWitnessTest {
         // the narrowness of the refusal: the golden itself, every case of it
         try (var cases = Files.list(GOLDEN)) {
             for (Path c : cases.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList())
-                assertNull(CaseRunner.speelCase(GOLDEN.resolve("ir.json"),
-                        TmsDocumenten.JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL),
+                assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(GOLDEN.resolve("ir.json"),
+                        TmsDocumenten.JSON.readTree(Files.readString(c))),
                         c.getFileName().toString());
         }
     }

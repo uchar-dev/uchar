@@ -529,7 +529,11 @@ class ObjectCreatieWitnessTest {
 
     /** The full replay of case {@code c} on the truth-maintenance branch: null on a match. */
     private static String speel(Path irPath, JsonNode c) throws Exception {
-        return CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
+        String exec = CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
+        // DRL_TMS renders the same analysis as DRL text, and gives the same verdict (card
+        // drl-teksttak-op-truth-maintenance, step 5); a refusal of the analysis leaves above, before this
+        assertEquals(exec, CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.DRL_TMS), "DRL_TMS op " + irPath);
+        return exec;
     }
 
     /** The objects the creations made, as the fixpoint gives them. */

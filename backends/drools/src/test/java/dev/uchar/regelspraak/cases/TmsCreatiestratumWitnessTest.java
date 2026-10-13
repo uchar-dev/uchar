@@ -549,8 +549,8 @@ class TmsCreatiestratumWitnessTest {
                 Map.of())), List.of(waarde("W1", "rang", "1")));
         for (int grens : List.of(100, 101, 102)) {
             int generaties = grens - 1;
-            assertEquals(generaties <= 100 ? "gespeeld" : "case: " + BUDGET, TmsFoutWitnessTest.speel(documentG(grens),
-                    zaak, DroolsBackend.Branch.EXEC_MODEL), generaties + " generaties");
+            assertEquals(generaties <= 100 ? "gespeeld" : "case: " + BUDGET, TmsFoutWitnessTest.speelBeide(documentG(grens),
+                    zaak), generaties + " generaties");
             DroolsBackend.Build b = DroolsBackend.build(documentG(grens), DroolsBackend.Branch.EXEC_MODEL);
             for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -638,8 +638,7 @@ class TmsCreatiestratumWitnessTest {
      *  run without a fixpoint at the 101st, as the reference interpreter did; the ASP backend played it. */
     @Test void een_feitcreatie_heeft_geen_budget() throws Exception {
         Path d = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-erflijn");
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(d.resolve("ir.json"), erflijnzaak(103),
-                DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(d.resolve("ir.json"), erflijnzaak(103)));
     }
 
     /** "werf de opvolger" gives a Wachter whose rang is below {@code grens} and who has a maatgever an opvolger with rang
@@ -680,8 +679,7 @@ class TmsCreatiestratumWitnessTest {
                 List.of(waarde("W1", "rang", "1")));
         String fout = budget("werf de opvolger", 0, "Wachter");
         for (int grens : List.of(101, 102)) {
-            assertEquals(grens <= 101 ? "gespeeld" : "case: " + fout, TmsFoutWitnessTest.speel(documentE(grens), zaak,
-                    DroolsBackend.Branch.EXEC_MODEL), "tot rang " + grens);
+            assertEquals(grens <= 101 ? "gespeeld" : "case: " + fout, TmsFoutWitnessTest.speelBeide(documentE(grens), zaak), "tot rang " + grens);
             DroolsBackend.Build b = DroolsBackend.build(documentE(grens), DroolsBackend.Branch.EXEC_MODEL);
             for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -951,8 +949,7 @@ class TmsCreatiestratumWitnessTest {
         for (List<String> c : permutaties(creaties))
             for (List<String> r : permutaties(regels)) {
                 String namen = regelnamen(c) + " " + regelnamen(r);
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(bouw.van(c, r), zaak,
-                        DroolsBackend.Branch.EXEC_MODEL));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speelBeide(bouw.van(c, r), zaak));
                 verwacht.add(namen + " gespeeld");
             }
         assertEquals(verwacht, uitkomsten);
