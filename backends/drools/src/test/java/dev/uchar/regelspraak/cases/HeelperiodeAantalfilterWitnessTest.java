@@ -2,12 +2,14 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +87,31 @@ class HeelperiodeAantalfilterWitnessTest {
         for (String regel : tekst.split("\n"))
             assertFalse(regel.contains("accumulate(") && regel.contains("geheelPeriode"),
                     () -> "het filter staat in een accumulate: " + regel);
+    }
+
+    /** The two rules of the computation rule in the other order of the document, its only other order (card
+     *  drl-aantal-filter-zink, acceptance (a): in every order of the rules involved), play every case on both branches.
+     *  Green from the start, on {@code 0458b2d0}: truth maintenance reaches the same fixpoint in either order, and no
+     *  step of card drl-teksttak-op-truth-maintenance changes that; the row guards it for the text. */
+    @Test void de_rekenregel_speelt_ook_in_de_andere_volgorde_van_haar_twee_regels() throws Exception {
+        Path ir = DOCUMENTEN.resolve("rekenregel").resolve("ir.json");
+        JsonNode document = JSON.readTree(ir.toFile());
+        ArrayNode regels = (ArrayNode) document.get("rules").get("rules");
+        assertEquals(List.of("postental van een kustvak", "waaktarief van een kustvak"),
+                List.of(regels.get(0).get("name").asText(), regels.get(1).get("name").asText()), "de regels in het document");
+        List<JsonNode> omgekeerd = new ArrayList<>();
+        regels.forEach(omgekeerd::add);
+        Collections.reverse(omgekeerd);
+        regels.removeAll();
+        regels.addAll(omgekeerd);
+        Path andere = Files.createTempFile("heelperiode-andere-volgorde", ".json");
+        andere.toFile().deleteOnExit();
+        Files.writeString(andere, JSON.writeValueAsString(document));
+        for (Path zaak : zaken(ir)) {
+            JsonNode c = JSON.readTree(zaak.toFile());
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+                assertNull(CaseRunner.speelCase(andere, c, tak), tak + " — " + zaak);
+        }
     }
 
     @Test void de_creatieguard_wacht_op_stap_5a_en_drl_tms_weigert_haar_luid() throws Exception {
