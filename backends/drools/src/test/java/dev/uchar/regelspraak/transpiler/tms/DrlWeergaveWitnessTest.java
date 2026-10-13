@@ -170,10 +170,6 @@ class DrlWeergaveWitnessTest {
         for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de vormentekst");
         for (String vorm : Vormenplan.VORMEN)
             assertTrue(tekst.contains(vorm), () -> "de vormentekst mist " + vorm + ":\n" + tekst);
-        DrlWeergave.Weigering w = org.junit.jupiter.api.Assertions.assertThrows(DrlWeergave.Weigering.class,
-                () -> DrlWeergave.tekst(Vormenplan.ongedragen(wachter)));
-        assertEquals("Ontvanger", w.soort());
-        assertEquals("de DRL-weergave draagt Ontvanger nog niet", w.getMessage());
     }
 
     /**
@@ -281,6 +277,52 @@ class DrlWeergaveWitnessTest {
         for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de creatietekst");
         for (String vorm : Vormenplan.CREATIEVORMEN)
             assertTrue(tekst.contains(vorm), () -> "de creatietekst mist " + vorm + ":\n" + tekst);
+    }
+
+    /**
+     * Every form of an allocation compiles (step 5), also where no golden has it: a plan made here over the same beans
+     * ({@link Vormenplan#verdelingen}), with a recipient with and without its weight, key and cap, and the distribution of
+     * each method, with the decimals of its floor and a rest and without them. One plan gives one text, written to
+     * {@code <map>/_verdelingsplan.drl} under {@code -Duchar.drlvorm}.
+     *
+     * <p><b>Red</b> before the allocations of step 5, on {@code abe891c1}: the rendering refused the plan, "de
+     * DRL-weergave draagt Ontvanger nog niet".
+     */
+    @Test void elke_vorm_van_een_verdeling_compileert() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve("anchor/jutterswet-kustwacht").resolve("ir.json"),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> wachter = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Wachter");
+        Class<?> post = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Post");
+        Modelplan plan = Vormenplan.verdelingen(wachter, post);
+        String tekst = DrlWeergave.tekst(plan);
+        assertEquals(tekst, DrlWeergave.tekst(plan), "één plan geeft één tekst");
+        String dump = System.getProperty("uchar.drlvorm");
+        if (dump != null) Files.writeString(Path.of(dump).resolve("_verdelingsplan.drl"), tekst);
+        assertEquals(List.of(), compileer(tekst, b.beanLoader()), () -> "de verdelingstekst compileert niet:\n" + tekst);
+        for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de verdelingstekst");
+        for (String vorm : Vormenplan.VERDELINGSVORMEN)
+            assertTrue(tekst.contains(vorm), () -> "de verdelingstekst mist " + vorm + ":\n" + tekst);
+    }
+
+    /** Every kind of consequence of the plan stands in a plan of {@link Vormenplan}, so that every kind compiles, also
+     *  where no golden has it. Since step 5 the rendering carries every kind: its switch over the consequences has no
+     *  default arm, so a new kind does not compile until the rendering spells it, and this witness asks for its form. */
+    @Test void elk_soort_gevolg_staat_in_een_vormenplan() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve("anchor/jutterswet-kustwacht").resolve("ir.json"),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> wachter = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Wachter");
+        Class<?> post = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Post");
+        Class<?> kustvak = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Kustvak");
+        Class<?> inconsistentie = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Inconsistentie");
+        java.util.Set<String> soorten = new java.util.TreeSet<>();
+        for (Modelplan p : List.of(Vormenplan.plan(wachter, post, kustvak), Vormenplan.vouwen(wachter, post, kustvak),
+                Vormenplan.kanaal(wachter, post, inconsistentie), Vormenplan.defaults(wachter),
+                Vormenplan.creaties(wachter, post), Vormenplan.verdelingen(wachter, post)))
+            for (Regelplan r : p.regels()) soorten.add(r.gevolg().getClass().getSimpleName());
+        java.util.Set<String> alle = new java.util.TreeSet<>();
+        for (Class<?> k : dev.uchar.regelspraak.transpiler.tms.plan.Gevolg.class.getPermittedSubclasses())
+            alle.add(k.getSimpleName());
+        assertEquals(alle, soorten);
     }
 
     /** The errors of compiling {@code tekst} with {@code KieHelper} under the bean loader {@code bonen}, which is the

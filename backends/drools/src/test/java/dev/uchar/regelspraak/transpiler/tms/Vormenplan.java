@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
@@ -39,8 +40,8 @@ import java.util.List;
  * Post on a Kustvak), so that a witness can compile the forms no golden of the corpus renders: the forms of step 2a of
  * card drl-teksttak-op-truth-maintenance ({@link #plan}), those of the rules of a fold of step 3a ({@link #vouwen}), and
  * those of a uniqueness and of the §9.5 channel of step 3b ({@link #kanaal}), those of a defaults stack of step 4
- * ({@link #defaults}), and those of a creation and a link of step 5 ({@link #creaties}). They decide nothing of a
- * document's
+ * ({@link #defaults}), and those of a creation and a link ({@link #creaties}) and of an allocation
+ * ({@link #verdelingen}) of step 5. They decide nothing of a document's
  * meaning, and no rule of them is meant to fire. The rules are named after what they hold.
  */
 final class Vormenplan {
@@ -119,14 +120,57 @@ final class Vormenplan {
                 new Modelplan.Globaal("rekendatum", LocalDate.class)), regels);
     }
 
-    /** A plan whose one rule has a consequence of a kind the rendering does not carry yet: a recipient of an
-     *  allocation, which step 5 of the card brings with the distribution. Until step 3b it was the violation of a
-     *  uniqueness, and until the creations of step 5 the fault of a second filling of a relation, which those steps
-     *  carry. */
-    static Modelplan ongedragen(Class<?> wachter) {
-        return new Modelplan(List.of(), List.of(new Regelplan("ontvanger", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of())),
-                new Gevolg.Ontvanger(O, "proefverdeling", 0, -1, -1, -1, Gevolg.Invoeging.LOGISCH))));
+    /** Fragments of the text that show the forms of the plan of the allocations ({@link #verdelingen}), one per form. */
+    static final List<String> VERDELINGSVORMEN = List.of(
+            "    insertLogical(new Ontvanger(\"proefverdeling\", $bron, $onderwerp, $uitkijkbonus, $uitkijkbonus,"
+                    + " $uitkijkbonus));",
+            "    insertLogical(new Ontvanger(\"proefverdeling\", $bron, $onderwerp, null, null, null));",
+            "    for (Object feit : Rekenhulpen.uitdeling(\"proefverdeling\", $onderwerp,"
+                    + " dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.NAAR_RATO, $pot, $ontvangers, true, true, false,"
+                    + " Integer.valueOf(2), ElementSleutel.van(\"wachter\", \"uitkijkbonus\", false),"
+                    + " ElementSleutel.van(\"post\", \"hoogte\", false), \"proefverdeling\")) {\n"
+                    + "        insertLogical(feit);\n    }",
+            "Rekenhulpen.uitdeling(\"proefverdeling\", $onderwerp,"
+                    + " dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.OP_VOLGORDE, $pot, $ontvangers, false, false, true,"
+                    + " null, ElementSleutel.van(\"wachter\", \"uitkijkbonus\", false), null, \"proefverdeling\")",
+            "dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.GELIJKE_DELEN");
+
+    /**
+     * A plan with every consequence of an allocation (step 5 of card drl-teksttak-op-truth-maintenance), over the beans
+     * of the same document as {@link #plan}: a recipient with its weight, key and cap, and one without them; the
+     * distribution of each method, with the decimals of its floor and a rest, and without them. No rule of it is meant to
+     * fire.
+     */
+    static Modelplan verdelingen(Class<?> wachter, Class<?> post) {
+        List<Regelplan> regels = new ArrayList<>();
+        Patroon bron = new Patroon(post, "$bron", List.of(), List.of(), List.of());
+        Onderwerp ontvanger = new Onderwerp(wachter, O, List.of(), List.of(),
+                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+        regels.add(new Regelplan("ontvanger met waarden", "proefverdeling", null,
+                tabel(lidslot(0), new Lezing(1, Leessoort.INVOER, "uitkijkbonus", "$uitkijkbonus")),
+                List.of(ontvanger, bron), new Gevolg.Ontvanger("$bron", "proefverdeling", 0, 1, 1, 1,
+                Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("ontvanger zonder waarden", "proefverdeling", null, tabel(lidslot(0)),
+                List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of()), bron),
+                new Gevolg.Ontvanger("$bron", "proefverdeling", 0, -1, -1, -1, Gevolg.Invoeging.LOGISCH)));
+        Onderwerp pot = new Onderwerp(post, O, List.of(), List.of(), List.of(Binding.van("$pot", post, "hoogte")));
+        Accumulatie ontvangers = new Accumulatie(new Patroon(Ontvanger.class, "$ontvanger", List.of(new Alfa("verdeling",
+                List.of(new Alfa.Veldtoets("verdeling", Alfa.Vergelijker.GELIJK, "proefverdeling")))),
+                List.of(new Join("ontvanger-bron", "bron", O)), List.of()),
+                List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, "$ontvangers")));
+        Leestabel uitdeling = tabel(new Lezing(0, Leessoort.INVOER, "hoogte", "$pot"),
+                new Lezing(1, Leessoort.ONTVANGERS, "ontvangers proefverdeling", "$ontvangers"));
+        ElementSleutel aandeel = ElementSleutel.van("wachter", "uitkijkbonus", false);
+        regels.add(new Regelplan("uitdeling naar rato", "proefverdeling", null, uitdeling, List.of(pot, ontvangers),
+                new Gevolg.Uitdeling(O, "proefverdeling", ResolvedVerdeling.Methode.NAAR_RATO, 0, 1, true, true, false, 2,
+                        aandeel, ElementSleutel.van("post", "hoogte", false), "proefverdeling", Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("uitdeling op volgorde", "proefverdeling", null, uitdeling, List.of(pot, ontvangers),
+                new Gevolg.Uitdeling(O, "proefverdeling", ResolvedVerdeling.Methode.OP_VOLGORDE, 0, 1, false, false, true,
+                        null, aandeel, null, "proefverdeling", Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("uitdeling in gelijke delen", "proefverdeling", null, uitdeling, List.of(pot, ontvangers),
+                new Gevolg.Uitdeling(O, "proefverdeling", ResolvedVerdeling.Methode.GELIJKE_DELEN, 0, 1, false, false,
+                        false, 0, aandeel, null, "proefverdeling", Gevolg.Invoeging.LOGISCH)));
+        return new Modelplan(List.of(), regels);
     }
 
     /** Fragments of the text that show the forms of the plan of the creations and the links ({@link #creaties}), one

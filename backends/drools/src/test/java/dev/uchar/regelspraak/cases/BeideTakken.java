@@ -40,9 +40,8 @@ final class BeideTakken {
      *  the branch does not set as globals yet. Measured at step 2b; the kinds of the rules of a fold left at step 3a,
      *  which carries them, so that every row of a fold or a quantifier fold runs on {@code DRL_TMS}, those of a
      *  uniqueness and of the §9.5 channel at step 3b, so that every row of a uniqueness runs there too, those of a
-     *  defaults stack at step 4, and those of a creation and a link at step 5. */
-    static final Map<String, String> NOG_NIET = Map.ofEntries(
-            Map.entry("Ontvanger", "5b"), Map.entry("Uitdeling", "5b"), Map.entry("dagsoorten", "5b"));
+     *  defaults stack at step 4, and those of a creation, a link and an allocation at step 5. */
+    static final Map<String, String> NOG_NIET = Map.ofEntries(Map.entry("dagsoorten", "5b"));
 
     private static final Pattern DRAAGT_NOG_NIET = Pattern.compile("drl-tms: de DRL-weergave draagt (\\w+) nog niet");
 

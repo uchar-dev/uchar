@@ -91,7 +91,10 @@ final class DrlWeergave {
     /** The fixed name of the probe: a local of a consequence, and the parameter of a function that a probe reaches. */
     private static final String SONDE = "sonde";
 
-    /** A form of the plan this rendering does not carry yet, refused loudly with its kind, never left out. */
+    /** A form of the plan this rendering does not carry, refused loudly with its kind, never left out: a bean class as
+     *  the constant of a term, a day kind whose global is no Java identifier, and a member that Drools reads as
+     *  something else where a pattern spells it. Every kind of consequence is carried since step 5; a new kind does not
+     *  compile until the rendering spells it ({@link Regel#gevolg}). */
     static final class Weigering extends RuntimeException {
         private final String soort;
 
@@ -117,8 +120,8 @@ final class DrlWeergave {
     /**
      * The DRL text of {@code plan}: the package, the imports, the globals of the plan and those of the day kinds its
      * terms name, then per rule, in the order of the plan, its functions and the rule, under the name of its plan. A
-     * consequence of a kind this rendering does not carry is refused ({@link Weigering}), and so are two rules of one
-     * name, of which a KieBase would keep one.
+     * form this rendering does not carry is refused ({@link Weigering}), and so are two rules of one name, of which a
+     * KieBase would keep one.
      */
     static String tekst(Modelplan plan) {
         DrlWeergave w = new DrlWeergave();
@@ -904,7 +907,10 @@ final class DrlWeergave {
                 case Gevolg.TweedeVulling x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Fout.class) + "("
                         + x.onderwerp() + ", " + str(x.relatie()) + ", new " + typenaam(IllegalStateException.class)
                         + "(" + str(x.zin()) + "))");
-                default -> throw new Weigering(g.getClass().getSimpleName());
+                case Gevolg.Ontvanger x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Ontvanger.class) + "("
+                        + str(x.verdeling()) + ", " + x.onderwerp() + ", " + variabele(x.ontvanger()) + ", "
+                        + slotOfNull(x.gewicht()) + ", " + slotOfNull(x.sleutel()) + ", " + slotOfNull(x.maximum()) + ")");
+                case Gevolg.Uitdeling x -> uitdeling(x, b);
             }
             return b.toString();
         }
@@ -1177,6 +1183,26 @@ final class DrlWeergave {
                     voegIn(b, "        ", s.invoeging(), "feiten.get(" + i + ")");
                 }
             }
+            b.append("    }\n");
+        }
+
+        /** The variable of slot {@code slot}, or {@code null} where it is -1, a value the plan does not read. */
+        private String slotOfNull(int slot) {
+            return slot < 0 ? "null" : variabele(slot);
+        }
+
+        /** The distribution of {@link Gevolg.Uitdeling}: the facts of the route, each inserted. The method stands as its
+         *  enumeration label, which MVEL reads in the argument of a call (FABLE-3 §2.2), the decimals as an
+         *  {@code Integer} or null, and the keys as {@code ElementSleutel.van}. */
+        private void uitdeling(Gevolg.Uitdeling x, StringBuilder b) {
+            b.append("    for (Object feit : ").append(route(Route.UITDELING)).append("(").append(str(x.vorm()))
+                    .append(", ").append(x.onderwerp()).append(", ").append(enumlabel(x.methode())).append(", ")
+                    .append(variabele(x.pot())).append(", ").append(variabele(x.lijst())).append(", ").append(x.gewogen())
+                    .append(", ").append(x.gemaximeerd()).append(", ").append(x.afnemend()).append(", ")
+                    .append(x.decimalen() == null ? "null" : "Integer.valueOf(" + x.decimalen() + ")").append(", ")
+                    .append(sleutel(x.aandeel())).append(", ").append(x.rest() == null ? "null" : sleutel(x.rest()))
+                    .append(", ").append(str(x.schrijver())).append(")) {\n");
+            voegIn(b, "        ", x.invoeging(), "feit");
             b.append("    }\n");
         }
 

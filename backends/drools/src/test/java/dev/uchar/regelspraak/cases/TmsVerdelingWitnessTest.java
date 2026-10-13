@@ -800,7 +800,7 @@ class TmsVerdelingWitnessTest {
     // ---------------- helpers ----------------
 
     /** Links the Berger {@code berger} to the Berging {@code berging}, as the case input stores the bergingsdeelname. */
-    private static void koppel(Object berger, Object berging) throws Exception {
+    static void koppel(Object berger, Object berging) throws Exception {
         for (java.lang.reflect.Method m : berger.getClass().getMethods())
             if (m.getName().equals(Namen.setter("berging")) && m.getParameterCount() == 1) {
                 m.invoke(berger, berging);
@@ -809,7 +809,7 @@ class TmsVerdelingWitnessTest {
         throw new AssertionError("geen setter voor berging op " + berger.getClass());
     }
 
-    private static Map<Object, String> labels(List<Object> bonen, List<String> namen) {
+    static Map<Object, String> labels(List<Object> bonen, List<String> namen) {
         Map<Object, String> uit = new IdentityHashMap<>();
         for (int i = 0; i < bonen.size(); i++) uit.put(bonen.get(i), namen.get(i));
         return uit;

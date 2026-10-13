@@ -1,0 +1,127 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "B1",
+      "objectType" : "Berging",
+      "attributes" : {
+        "opbrengst" : {
+          "number" : "1000"
+        }
+      },
+      "roles" : {
+        "bergers" : [ "D1", "D2", "D3" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "D1",
+      "objectType" : "Berger",
+      "attributes" : {
+        "jaar" : {
+          "number" : "2019"
+        },
+        "maximum" : {
+          "number" : "600"
+        },
+        "gewicht" : {
+          "number" : "3"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    }, {
+      "label" : "D2",
+      "objectType" : "Berger",
+      "attributes" : {
+        "jaar" : {
+          "number" : "2020"
+        },
+        "maximum" : {
+          "number" : "600"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    }, {
+      "label" : "D3",
+      "objectType" : "Berger",
+      "attributes" : {
+        "jaar" : {
+          "number" : "2020"
+        },
+        "maximum" : {
+          "number" : "600"
+        },
+        "gewicht" : {
+          "number" : "1"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "D1",
+    "attribute" : "bergingsaandeel",
+    "value" : {
+      "number" : "600"
+    }
+  }, {
+    "kind" : "attributeEmpty",
+    "label" : "D2",
+    "attribute" : "bergingsaandeel"
+  }, {
+    "kind" : "attributeValue",
+    "label" : "D3",
+    "attribute" : "bergingsaandeel",
+    "value" : {
+      "number" : "250"
+    }
+  }, {
+    "kind" : "attributeValue",
+    "label" : "B1",
+    "attribute" : "onverdeelde rest",
+    "value" : {
+      "number" : "150"
+    }
+  }, {
+    "kind" : "attributeValue",
+    "label" : "D1",
+    "attribute" : "rangaandeel",
+    "value" : {
+      "number" : "600"
+    }
+  }, {
+    "kind" : "attributeValue",
+    "label" : "D2",
+    "attribute" : "rangaandeel",
+    "value" : {
+      "number" : "0"
+    }
+  }, {
+    "kind" : "attributeValue",
+    "label" : "D3",
+    "attribute" : "rangaandeel",
+    "value" : {
+      "number" : "400"
+    }
+  }, {
+    "kind" : "attributeValue",
+    "label" : "B1",
+    "attribute" : "rangrest",
+    "value" : {
+      "number" : "0"
+    }
+  }, {
+    "kind" : "inconsistent",
+    "rule" : "verdeel de opbrengst naar rato",
+    "label" : "D2"
+  }, {
+    "kind" : "inconsistent",
+    "rule" : "verdeel de opbrengst op jaar",
+    "label" : "D2"
+  } ]
+}
