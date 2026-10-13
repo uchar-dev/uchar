@@ -5080,7 +5080,8 @@ public final class TmsTranspiler {
                     onderwerpbindingen));
             lhs.addAll(bereikplan);
             lhs.addAll(items);
-            return new Regelplan(naam, vorm, agendagroep, new Leestabel(slots), lhs, gevolg);
+            return new Regelplan(naam, vorm, agendagroep, new Leestabel(slots), zonderOngevuldeSonde(lhs),
+                    zonderOngevuldeSonde(gevolg));
         }
 
         /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */
@@ -5589,6 +5590,181 @@ public final class TmsTranspiler {
             "$conflict", "$creatiefase", "$een", "$element", "$emmerinvoer", "$fase", "$houder", "$inconsistentie",
             "$invoer", "$nabij", "$onderwerp", "$rekendatum", "$schending", "$sleutel", "$stand", "$subject", "$twee",
             "$v", "$vouwonderwerp", "$waarde", "$waarden");
+
+    /** The items {@code lhs} of a rule with the probe of every test that places none at -1
+     *  ({@link #zonderOngevuldeSonde(Gevolg)}): a test of deposits places it, every other role does not. */
+    private static List<LhsItem> zonderOngevuldeSonde(List<LhsItem> lhs) {
+        List<LhsItem> uit = new ArrayList<>(lhs.size());
+        for (LhsItem item : lhs) {
+            if (item instanceof Toetsitem t && t.rol() != Toetsitem.Rol.DEPONERING) {
+                Term toets = zonderSonde(t.toets());
+                if (toets != t.toets()) item = new Toetsitem(t.id(), t.rol(), toets, t.sonde(), t.slots(), t.grootte());
+            }
+            uit.add(item);
+        }
+        return uit;
+    }
+
+    /**
+     * {@code g} with the probe of its terms at -1 where it places none. Every place that deposits compiles with the
+     * probe slot of its rule ({@link Lezingen#sonde}), whatever the role of the rule, but only three positions put a
+     * probe in that slot: a test of deposits ({@link Toetsitem.Rol#DEPONERING}), the value of a rule with a deposit
+     * ({@link Gevolg.Waarde#deponering}) and the test of a member with a probe in a quantifier fold
+     * ({@link Gevolg.Inbreng.Lidtoets}). Elsewhere, as in the rule of a condition's fault or a filter's fault, the
+     * places would report to a slot nobody fills, which reads as nothing; the plan says so itself, so that a rendering
+     * needs no rule of its own for such a slot. The slot stays in the table, and the value array keeps its size.
+     */
+    private static Gevolg zonderOngevuldeSonde(Gevolg g) {
+        switch (g) {
+            case Gevolg.Waarde w when w.deponering() == null -> {
+                Term z = zonderSonde(w.waarde());
+                return z == w.waarde() ? w : new Gevolg.Waarde(w.onderwerp(), w.doel(), w.schrijver(), z, w.slots(),
+                        w.grootte(), w.collapse(), w.schrijftLeeg(), null, w.fout(), w.invoeging());
+            }
+            case Gevolg.Toetsfout f -> {
+                Term z = zonderSonde(f.toets());
+                return z == f.toets() ? f : new Gevolg.Toetsfout(f.onderwerp(), z, f.rol(), f.slots(), f.grootte(),
+                        f.fout(), f.invoeging());
+            }
+            case Gevolg.Filterfout f -> {
+                Term z = zonderSonde(f.filter());
+                return z == f.filter() ? f : new Gevolg.Filterfout(f.onderwerp(), f.vouw(), f.lid(), z, f.plaats(),
+                        f.slots(), f.grootte(), f.invoeging());
+            }
+            case Gevolg.Bijdrage b when b.inbreng() instanceof Gevolg.Inbreng.Oordeel o -> {
+                Term z = zonderSonde(o.matrix());
+                return z == o.matrix() ? b : new Gevolg.Bijdrage(b.onderwerp(), b.vouw(), b.lid(),
+                        new Gevolg.Inbreng.Oordeel(z), b.slots(), b.grootte(), b.invoeging());
+            }
+            case Gevolg.Bijdrage b when b.inbreng() instanceof Gevolg.Inbreng.Lidtoets l && l.sonde() < 0 -> {
+                Term z = zonderSonde(l.matrix());
+                return z == l.matrix() ? b : new Gevolg.Bijdrage(b.onderwerp(), b.vouw(), b.lid(),
+                        new Gevolg.Inbreng.Lidtoets(z, -1, l.plaats()), b.slots(), b.grootte(), b.invoeging());
+            }
+            case Gevolg.Creatie c -> {
+                List<Gevolg.Initialisatie> inits = new ArrayList<>();
+                boolean anders = false;
+                for (Gevolg.Initialisatie i : c.initialisaties()) {
+                    Term z = zonderSonde(i.waarde());
+                    anders |= z != i.waarde();
+                    inits.add(z == i.waarde() ? i : new Gevolg.Initialisatie(i.lid(), z));
+                }
+                return !anders ? c : new Gevolg.Creatie(c.onderwerp(), c.creatie(), c.diepte(), inits, c.fout(),
+                        c.foutinvoeging(), c.constructie(), c.fase(), c.invoegingen(), c.slots(), c.grootte());
+            }
+            case Gevolg.Afloop a -> {
+                Term z = zonderSonde(a.waarde());
+                return z == a.waarde() ? a : new Gevolg.Afloop(a.onderwerp(), z, a.slots(), a.grootte(), a.collapse(),
+                        a.fout(), a.feiten(), a.invoeging());
+            }
+            case Gevolg.Conflict c -> {
+                Term z = zonderSonde(c.sleutel());
+                return z == c.sleutel() ? c : new Gevolg.Conflict(c.onderwerp(), z, c.slots(), c.grootte(), c.feit(),
+                        c.invoeging());
+            }
+            default -> {
+                return g;
+            }
+        }
+    }
+
+    /** {@code t} with the probe of every place that deposits at -1: of a division, a square root, the evaluation of a
+     *  fold whose filter deposits and a quantifier fold whose matrix deposits; {@code t} itself where it has none. */
+    private static Term zonderSonde(Term t) {
+        switch (t) {
+            case null -> {
+                return null;
+            }
+            case Term.Const c -> {
+                return c;
+            }
+            case Term.Lees l -> {
+                return l;
+            }
+            case Term.Binder b -> {
+                return b;
+            }
+            case Term.Faal f -> {
+                return f;
+            }
+            case Term.Dagsoort d -> {
+                return d;
+            }
+            case Term.Invoer i -> {
+                Term o = zonderSonde(i.object());
+                return o == i.object() ? i : new Term.Invoer(o, i.veld(), i.vorm(), i.bron());
+            }
+            case Term.Let l -> {
+                Term w = zonderSonde(l.waarde()), b = zonderSonde(l.lichaam());
+                return w == l.waarde() && b == l.lichaam() ? l
+                        : new Term.Let(l.slot(), l.naam(), w, b, l.gretig(), l.bron());
+            }
+            case Term.Keuze k -> {
+                Term v = zonderSonde(k.voorwaarde()), d = zonderSonde(k.dan()), a = zonderSonde(k.anders());
+                return v == k.voorwaarde() && d == k.dan() && a == k.anders() ? k : new Term.Keuze(v, d, a, k.bron());
+            }
+            case Term.Aanroep a -> {
+                List<Term> z = zonderSonde(a.argumenten());
+                return z == a.argumenten() ? a : new Term.Aanroep(a.functie(), z, a.bron());
+            }
+            case Term.Herschaal h -> {
+                Term z = zonderSonde(h.term());
+                return z == h.term() ? h
+                        : new Term.Herschaal(h.functie(), z, h.van(), h.naar(), h.teller(), h.noemer(), h.bron());
+            }
+            case Term.Deel d -> {
+                Term l = zonderSonde(d.links()), r = zonderSonde(d.rechts());
+                return d.sonde() < 0 && l == d.links() && r == d.rechts() ? d
+                        : new Term.Deel(d.functie(), l, r, -1, d.bron());
+            }
+            case Term.Wortel w -> {
+                Term r = zonderSonde(w.radicand());
+                return w.sonde() < 0 && r == w.radicand() ? w : new Term.Wortel(w.functie(), r, -1, w.bron());
+            }
+            case Term.Vereist v -> {
+                Term z = zonderSonde(v.waarde());
+                return z == v.waarde() ? v : new Term.Vereist(z, v.zin(), v.bron());
+            }
+            case Term.Tekstreeks r -> {
+                List<Term> z = zonderSonde(r.delen());
+                return z == r.delen() ? r : new Term.Tekstreeks(z, r.bron());
+            }
+            case Term.GelijsteVouw g -> {
+                List<Term> z = zonderSonde(g.operanden());
+                return z == g.operanden() ? g : new Term.GelijsteVouw(g.functie(), z, g.bron());
+            }
+            case Term.Vouwlezing v -> {
+                Term z = zonderSonde(v.uitkomst());
+                return v.sonde() < 0 && z == v.uitkomst() ? v
+                        : new Term.Vouwlezing(z, v.deponeringen(), -1, v.filterfout(), v.lidfout(), v.bron());
+            }
+            case Term.Samengesteld s -> {
+                List<Term> z = zonderSonde(s.leden());
+                return z == s.leden() ? s : new Term.Samengesteld(s.kwantor(), s.drempel(), z, s.bron());
+            }
+            case Term.Kwantorlezing k -> {
+                Term n = zonderSonde(k.aantal()), b = zonderSonde(k.bijdragen());
+                return k.sonde() < 0 && n == k.aantal() && b == k.bijdragen() ? k
+                        : new Term.Kwantorlezing(k.functie(), n, b, k.kwantor(), k.drempel(), -1, k.bron());
+            }
+            case Term.ZonderFout z -> {
+                Term v = zonderSonde(z.voorwaarde());
+                return v == z.voorwaarde() ? z : new Term.ZonderFout(v, z.bron());
+            }
+        }
+    }
+
+    /** {@link #zonderSonde(Term)} of each term, {@code termen} itself where none changes. */
+    private static List<Term> zonderSonde(List<Term> termen) {
+        List<Term> uit = new ArrayList<>(termen.size());
+        boolean anders = false;
+        for (Term t : termen) {
+            Term z = zonderSonde(t);
+            anders |= z != t;
+            uit.add(z);
+        }
+        return anders ? uit : termen;
+    }
 
     /** A constraint that field {@code veld} of a fact equals {@code waarde}. */
     private static Alfa gelijk(String id, String veld, Object waarde) {

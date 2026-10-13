@@ -213,7 +213,7 @@ class VouwplanWitnessTest {
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_5: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  toets voorwaarde_6 ZONDER_FOUT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
                 "    toets 0.0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
@@ -241,7 +241,7 @@ class VouwplanWitnessTest {
                         + " functies [AANTAL null -> $lijstplaatsen_plaats_10, MINIMUM $lijstplaatswaarde_plaats_9"
                         + " -> $plaats_plaats_11]",
                 "  toets voorwaarde_14 FOUT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
-                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
                 "    toets 0.0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
@@ -251,10 +251,10 @@ class VouwplanWitnessTest {
                 "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1, lid=5,"
-                        + " plaats=selectie 0 [aanmelder 0 1] FILTERFOUT, slots=[0, 1, 2, 3, 5], grootte=6,"
-                        + " invoeging=LOGISCH] filter Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4"
-                        + " (Lees 2, Lees 3), Const 2, Const >))",
+                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1, lid=5, plaats=selectie"
+                        + " 0 [aanmelder 0 1] FILTERFOUT, slots=[0, 1, 2, 3, 5], grootte=6, invoeging=LOGISCH]"
+                        + " filter Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const"
+                        + " 2, Const >))",
                 "    filter 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht"
                         + " gedeeld door zijn deelnemers is groter dan 2'",
                 "    filter 0.0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
@@ -294,7 +294,7 @@ class VouwplanWitnessTest {
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_31: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  toets voorwaarde_32 ZONDER_FOUT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
                 "    toets 0.0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
@@ -322,7 +322,7 @@ class VouwplanWitnessTest {
                         + " functies [AANTAL null -> $lijstplaatsen_plaats_36, MINIMUM"
                         + " $lijstplaatswaarde_plaats_35 -> $plaats_plaats_37]",
                 "  toets voorwaarde_40 FOUT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
-                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
                 "    toets 0.0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
@@ -332,10 +332,10 @@ class VouwplanWitnessTest {
                 "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=drukte: vouw 2, lid=5,"
-                        + " plaats=selectie 0 [aanmelder 0 1] FILTERFOUT, slots=[0, 1, 2, 3, 5], grootte=6,"
-                        + " invoeging=LOGISCH] filter Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4"
-                        + " (Lees 2, Lees 3), Const 2, Const >))",
+                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=drukte: vouw 2, lid=5, plaats=selectie 0"
+                        + " [aanmelder 0 1] FILTERFOUT, slots=[0, 1, 2, 3, 5], grootte=6, invoeging=LOGISCH] filter"
+                        + " Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const 2,"
+                        + " Const >))",
                 "    filter 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht"
                         + " gedeeld door zijn deelnemers is groter dan 2'",
                 "    filter 0.0 Aanroep bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
@@ -419,7 +419,7 @@ class VouwplanWitnessTest {
                         + " pad_11: ONTMOETING $onderwerp [haven] {List<String>, type null, bron null} [] {List<>,"
                         + " type null, bron null}] bind []]",
                 "  toets voorwaarde_12 ZONDER_FOUT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
                 "    toets 0.0 Aanroep bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
@@ -456,7 +456,7 @@ class VouwplanWitnessTest {
                         + " WAARDE] functies [AANTAL null -> $lijstplaatsen_plaats_20, MINIMUM"
                         + " $lijstplaatswaarde_plaats_19 -> $plaats_plaats_21]",
                 "  toets voorwaarde_24 FOUT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
-                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
                 "    toets 0.0 Aanroep bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
@@ -467,10 +467,10 @@ class VouwplanWitnessTest {
                 "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een Jutter:"
-                        + " vouw 1, lid=5, plaats=selectie 0 [schipper 0 1] FILTERFOUT, slots=[0, 1, 2, 3, 5],"
-                        + " grootte=6, invoeging=LOGISCH] filter Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD"
-                        + " sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
+                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw 1, lid=5,"
+                        + " plaats=selectie 0 [schipper 0 1] FILTERFOUT, slots=[0, 1, 2, 3, 5], grootte=6,"
+                        + " invoeging=LOGISCH] filter Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1"
+                        + " (Lees 2, Lees 3), Const 2, Const >))",
                 "    filter 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
                 "    filter 0.0 Aanroep bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"

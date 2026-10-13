@@ -44,7 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       zero for J1's second vondst, is not read there; the fold's read carries its deposit, its filter fault and its
  *       probe ({@code Vouwlezing}). The filter of that fold and of the fold of "zware vondsten" is a composite of one
  *       comparison of a quotient: a leeg divisor makes the quotient leeg with a deposit to the probe in slot 2
- *       ({@code Deel}), and the comparison takes a leeg operand as onwaar ({@code RS_AGG_VERGELIJK}).</li>
+ *       ({@code Deel}), and the comparison takes a leeg operand as onwaar ({@code RS_AGG_VERGELIJK}). Only the test of
+ *       deposits fills a probe, so in the other roles the probe of the quotient and of the fold's read is -1 (step 1e
+ *       of the card).</li>
  *   <li>{@code jutterswet-vast-startpunt}: the gevuld test and a comparison under the whole-period qualifier, each over
  *       the timeline read whole, which faults on an asOfDate-bucket input ({@code VOLLEDIG}), the gevuld test without a
  *       bound and the comparison with the bound 0.</li>
@@ -66,23 +68,23 @@ class VoorwaardetermWitnessTest {
         assertEquals(List.of(
                 "vondstental: geen toets",
                 "zware vondsten VOORWAARDE: KENMERK(Lees 0, Const true)",
-                "drukte ZONDER_FOUT: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Vouwlezing 3 "
-                        + "4 2 -1 (AANTAL(Lees 1)), Const 0, Const >))",
-                "drukte FOUT: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Vouwlezing 3 4 2 -1 "
-                        + "(AANTAL(Lees 1)), Const 0, Const >))",
+                "drukte ZONDER_FOUT: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Vouwlezing 3"
+                        + " -1 2 -1 (AANTAL(Lees 1)), Const 0, Const >))",
+                "drukte FOUT: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Vouwlezing 3 -1 2"
+                        + " -1 (AANTAL(Lees 1)), Const 0, Const >))",
                 "drukte DEPONERING sonde 4: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), "
                         + "RS_AGG_VERGELIJK(Vouwlezing 3 4 2 -1 (AANTAL(Lees 1)), Const 0, Const >))",
                 "vondstental: geen toets",
-                "zware vondsten ZONDER_FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees "
-                        + "1), Const 2, Const >))",
-                "zware vondsten FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), "
-                        + "Const 2, Const >))",
+                "zware vondsten ZONDER_FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 0, Lees"
+                        + " 1), Const 2, Const >))",
+                "zware vondsten FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3),"
+                        + " Const 2, Const >))",
                 "zware vondsten DEPONERING sonde 2: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees "
                         + "0, Lees 1), Const 2, Const >))",
-                "drukte ZONDER_FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), "
-                        + "Const 2, Const >))",
-                "drukte FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, "
-                        + "Const >))",
+                "drukte ZONDER_FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 0, Lees 1),"
+                        + " Const 2, Const >))",
+                "drukte FOUT: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const 2,"
+                        + " Const >))",
                 "drukte DEPONERING sonde 2: Samengesteld DE 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees "
                         + "1), Const 2, Const >))"), bomen(plannen));
         assertEquals(List.of(

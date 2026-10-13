@@ -297,12 +297,12 @@ public class ToetstermWitnessTest {
         List<Regelplan> plannen = plannen(keurlastMetDelendFilter());
         assertEquals(List.of(
                 "keurlast van een jutter: geen toets",
-                "keurlast van een jutter ZONDER_FOUT: RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const "
-                        + "2, Const >)",
-                "keurlast van een jutter FOUT: RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, "
-                        + "Const >)",
-                "keurlast van een jutter VORM: Samengesteld ALLE 0(ZonderFout(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 "
-                        + "(Lees 2, Lees 3), Const 2, Const >)), EMMERSCALAIR(Lees 5, Const true))",
+                "keurlast van een jutter ZONDER_FOUT: RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 0, Lees 1),"
+                        + " Const 2, Const >)",
+                "keurlast van een jutter FOUT: RS_AGG_VERGELIJK(Deel GEDEELD sonde -1 (Lees 2, Lees 3), Const 2,"
+                        + " Const >)",
+                "keurlast van een jutter VORM: Samengesteld ALLE 0(ZonderFout(RS_AGG_VERGELIJK(Deel GEDEELD sonde"
+                        + " -1 (Lees 2, Lees 3), Const 2, Const >)), EMMERSCALAIR(Lees 5, Const true))",
                 "keurlast van een jutter DEPONERING sonde 2: RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees "
                         + "1), Const 2, Const >)"), bomen(plannen));
         assertEquals(List.of(

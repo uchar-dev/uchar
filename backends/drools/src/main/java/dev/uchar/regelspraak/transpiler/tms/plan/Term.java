@@ -22,6 +22,12 @@ import java.util.function.Predicate;
  * ({@link Let}, {@link Keuze}, {@link Samengesteld}). The children of a node are evaluated in the order the node lists
  * them, which is the order of RUNTIME-SEMANTICS ch. 5.11.
  *
+ * <p>A probe slot in a term ({@code sonde} of {@link Deel}, {@link Wortel}, {@link Vouwlezing} and
+ * {@link Kwantorlezing}) is a slot that the term's position in its rule fills: a test of deposits
+ * ({@link Toetsitem.Rol#DEPONERING}), the value of a {@link Gevolg.Waarde} with a deposit, or the matrix of a
+ * {@link Gevolg.Inbreng.Lidtoets} with a probe. In every other position, such as the rule of a condition's fault, the
+ * analysis sets it to -1, so a place there deposits nothing and a rendering reads no slot that nobody fills.
+ *
  * <p>A node that stands for a node of the IR carries that node's source fragment, the IR's {@code source.snippet}
  * ({@link #bron}): a rendering into DRL text puts it above the text as a comment. It is null where the IR has none, and
  * on a node the analysis adds without a node of its own in the IR, such as the arguments of a helper.

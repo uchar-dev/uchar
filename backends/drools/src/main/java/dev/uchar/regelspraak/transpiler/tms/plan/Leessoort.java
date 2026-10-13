@@ -60,7 +60,8 @@ public enum Leessoort {
     SCOPE,
     /** The binder of a {@code Let}: no pattern binds it ({@code binder}). */
     BINDER,
-    /** The probe of the rule's deposits: no pattern binds it ({@code sonde}). */
+    /** The probe of the rule's deposits: no pattern binds it ({@code sonde}). In a rule whose positions place no probe
+     *  the slot stays, so the value array keeps its size, but no term names it ({@link Term}). */
     SONDE,
     /** The number of places a to-many step's member has in its list ({@code TmsTranspiler.plaats}). */
     LIJSTPLAATSEN,

@@ -112,8 +112,8 @@ class RegelplanWitnessTest {
                 "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang WAARDE, $vangstwaarde ="
                         + " [].vangstwaarde WAARDE]",
                 "  toets voorwaarde_0 ZONDER_FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
-                        + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD"
-                        + " sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
+                        + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel"
+                        + " GEDEELD sonde -1 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
                 "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
                 "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
@@ -147,9 +147,9 @@ class RegelplanWitnessTest {
                         + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang WAARDE, $vangstwaarde ="
                         + " [].vangstwaarde WAARDE]",
-                "  toets voorwaarde_1 FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees"
-                        + " 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD sonde 2 (Lees 1, Lees"
-                        + " 0), Const 0, Const FLOOR), Const 0, Const >))",
+                "  toets voorwaarde_1 FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
+                        + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel"
+                        + " GEDEELD sonde -1 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
                 "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
                 "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
@@ -170,10 +170,10 @@ class RegelplanWitnessTest {
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
                 "  gevolg Toetsfout [onderwerp=$onderwerp, toets=Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees 0, Const"
-                        + " 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD sonde 2 (Lees 1, Lees 0), Const"
-                        + " 0, Const FLOOR), Const 0, Const >)), rol=FOUT, slots=[0, 1], grootte=3,"
-                        + " fout=Foutnaam[vorm=bergingsaandeel van een jutter, regel=bergingsaandeel van een jutter],"
-                        + " invoeging=LOGISCH]",
+                        + " 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD sonde -1 (Lees 1, Lees 0),"
+                        + " Const 0, Const FLOOR), Const 0, Const >)), rol=FOUT, slots=[0, 1], grootte=3,"
+                        + " fout=Foutnaam[vorm=bergingsaandeel van een jutter, regel=bergingsaandeel van een"
+                        + " jutter], invoeging=LOGISCH]",
                 "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
                 "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
