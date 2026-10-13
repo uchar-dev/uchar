@@ -1,0 +1,63 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "reekscode": {
+            "number": "7"
+          },
+          "volgnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "reekscode": {
+            "number": "1"
+          },
+          "volgnummer": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "D1",
+        "objectType": "Drijfvondst",
+        "attributes": {
+          "reekscode": {
+            "number": "7"
+          },
+          "volgnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige reekscode",
+      "label": "S1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige reekscode",
+      "label": "D1"
+    }
+  ]
+}

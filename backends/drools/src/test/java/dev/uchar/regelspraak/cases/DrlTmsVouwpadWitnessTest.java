@@ -8,12 +8,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static dev.uchar.regelspraak.cases.TmsDocumenten.consistent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Two consequences of the rules of a fold that no session of the corpus or the suite fired on {@code DRL_TMS} at step
@@ -21,9 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * and the fault of a member ({@code Lidfout}). The documents are those of the witnesses of the exec-model branch that
  * make these facts, {@link TmsFilterdeponeringWitnessTest} and part E of {@link TmsInvoervormWitnessTest}, here fired
  * through both branches: each case gets the same verdict, and the dump of its session ({@link Sessiedump}) is the same
- * in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint, and holds the fact. The
- * firings are left out of the comparison: in a document with a fold their order and number follow the agenda, which
- * differs between the two renderings, while the fixpoint is the same. The third path the lens named, a member's place
+ * in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint ({@link Takdumps}), and holds
+ * the fact. The third path the lens named, a member's place
  * over two steps, the corpus fires on {@code DRL_TMS} (measured at fix round 3a: in five goldens a contribution or the
  * fault of a filter with such a place, the same as on the exec-model branch).
  *
@@ -46,7 +43,7 @@ class DrlTmsVouwpadWitnessTest {
         for (JsonNode zaak : List.of(TmsFilterdeponeringWitnessTest.zaak1(), TmsFilterdeponeringWitnessTest.zaak2(),
                 TmsFilterdeponeringWitnessTest.zaak3())) {
             n++;
-            if (gelijk(ir, zaak, "zaak " + n).contains("feit Filterdeponering(")) metFeit.add("zaak " + n);
+            if (Takdumps.gelijk(ir, zaak, "zaak " + n).contains("feit Filterdeponering(")) metFeit.add("zaak " + n);
         }
         assertEquals(List.of("zaak 1", "zaak 2"), metFeit, "de zaken die een filterdeponering maken");
     }
@@ -66,34 +63,8 @@ class DrlTmsVouwpadWitnessTest {
                         Map.of())));
         instanties.addAll(TmsInvoervormWitnessTest.spelendeE());
         JsonNode zaak = TmsTijdlijnDocumenten.zaak(TmsInvoervormWitnessTest.DATUM, instanties, List.of(consistent()));
-        String dump = gelijk(ir, zaak, "de zaak van deel E");
+        String dump = Takdumps.gelijk(ir, zaak, "de zaak van deel E");
         assertEquals(3, Stream.of(dump.split("\n")).filter(r -> r.startsWith("feit Lidfout(")).count(),
                 () -> "drie lidfouten, op V2, V5 en V6:\n" + dump);
-    }
-
-    /** Fires {@code zaak} through both branches: the same verdict, and the same dump but for the firings. Returns the
-     *  dump of the exec-model branch without them. */
-    private static String gelijk(Path ir, JsonNode zaak, String welke) throws Exception {
-        String exec = TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.DRL_TMS), "het oordeel, " + welke);
-        String uit = zonderVuringen(dump(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals(uit, zonderVuringen(dump(ir, zaak, DroolsBackend.Branch.DRL_TMS)), "de dumps van de twee takken, "
-                + welke);
-        assertTrue(uit.contains("\nlees "), () -> "geen fixpunt, " + welke + ":\n" + uit);
-        return uit;
-    }
-
-    private static String dump(Path ir, JsonNode zaak, DroolsBackend.Branch tak) throws Exception {
-        return CaseRunner.voorMeting(ir, tak).metSessie(zaak, (bouw, sessie, labels) -> {
-            Sessiedump d = Sessiedump.op(sessie, labels);
-            StringBuilder uit = new StringBuilder();
-            d.schrijf(uit, bouw, DroolsBackend.vuur(bouw, sessie), labels);
-            return uit.toString();
-        });
-    }
-
-    private static String zonderVuringen(String dump) {
-        return Stream.of(dump.split("\n")).filter(r -> !r.startsWith("vuringen ") && !r.startsWith("spoor-"))
-                .collect(Collectors.joining("\n"));
     }
 }
