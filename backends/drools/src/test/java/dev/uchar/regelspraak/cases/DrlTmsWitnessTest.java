@@ -7,8 +7,12 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -143,5 +147,44 @@ class DrlTmsWitnessTest {
         while (m.find()) gedeclareerd.add(m.group(1));
         assertTrue(!gedeclareerd.isEmpty(), "de tekst declareert de global van een dagsoort");
         assertEquals(gedeclareerd, new java.util.TreeSet<>(b.dagsoortGlobalen().keySet()));
+    }
+
+    /**
+     * Two day kinds whose predicates differ on the dates the case reaches (round 5b, on the lens of round 5), so that a
+     * text that swaps two predicates cannot pass. On {@code DRL_TMS} the predicate of a day kind is a global of the
+     * text, which the session sets by its name from {@code Build.dagsoortGlobalen}; the test of the names alone
+     * ({@link #de_vlag_drl_tms_speelt_door_de_tak}) passes with a swapped pair. The document
+     * {@code src/test/resources/dagsoorten/twee-dagsoorten} is {@code jutterswet-getijklok} with a second day kind
+     * beside the springtijdag (day 1 or 15 of the month): the doodtijdag (day 8 or 22), with a doodtermijn in
+     * doodtijdagen and a doodsluiting, the meldtijdstip plus the doodtermijn. The case steps over both: the
+     * sluittijdstip of G1 is 2026-04-15T09:15:30 and its doodsluiting 2026-04-22T09:15:30, which a swap turns around.
+     * Each global carries the predicate of its own day kind, true on a day of that kind and false on one of the other,
+     * and the case plays on both branches.
+     *
+     * <p><b>Measured</b> (2026-10-14): verifier PASS; the reference interpreter and the ASP backend PASS (7
+     * expectations). <b>Red</b> with a mutant that swaps the two predicates among the globals of the text (in
+     * {@code DrlWeergave.render}, not committed): "rsDagsoort_Springtijdag: de springtijdag ==&gt; expected: &lt;[true,
+     * false]&gt; but was: &lt;[false, true]&gt;"; and with that check left out of a copy, the case on {@code DRL_TMS},
+     * "case: attribuut sluittijdstip: verwacht 2026-04-15T09:15:30, werkelijk 2026-04-22T09:15:30; attribuut
+     * doodsluiting: verwacht 2026-04-22T09:15:30, werkelijk 2026-04-15T09:15:30; attribuut openingstijdstip: verwacht
+     * 2026-02-01T09:15:30, werkelijk 2026-02-08T09:15:30; …".
+     */
+    @Test void twee_dagsoorten_op_datums_waarop_hun_predicaten_verschillen() throws Exception {
+        Path map = Path.of("src", "test", "resources", "dagsoorten", "twee-dagsoorten");
+        Path ir = map.resolve("ir.json");
+        JsonNode zaak = JSON.readTree(map.resolve("case.json").toFile());
+        Map<String, Predicate<LocalDate>> predicaten =
+                DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS).dagsoortGlobalen();
+        assertEquals(Set.of("rsDagsoort_Springtijdag", "rsDagsoort_Doodtijdag"), predicaten.keySet(),
+                "de predicaatglobals van de tekst");
+        LocalDate vijftien = LocalDate.of(2026, 3, 15), tweeëntwintig = LocalDate.of(2026, 3, 22);
+        Predicate<LocalDate> spring = predicaten.get("rsDagsoort_Springtijdag");
+        Predicate<LocalDate> dood = predicaten.get("rsDagsoort_Doodtijdag");
+        assertEquals(List.of(true, false), List.of(spring.test(vijftien), spring.test(tweeëntwintig)),
+                "rsDagsoort_Springtijdag: de springtijdag");
+        assertEquals(List.of(false, true), List.of(dood.test(vijftien), dood.test(tweeëntwintig)),
+                "rsDagsoort_Doodtijdag: de doodtijdag");
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+            assertEquals(null, CaseRunner.speelCase(ir, zaak, tak), tak + ": twee dagsoorten");
     }
 }

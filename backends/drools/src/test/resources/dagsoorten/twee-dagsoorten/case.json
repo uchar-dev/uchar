@@ -1,0 +1,96 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijpost",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2026-03-10T09:15:30"
+          },
+          "wachttermijn": {
+            "number": "3"
+          },
+          "doodtermijn": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G2",
+        "objectType": "Getijpost",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2026-03-22T12:00:00"
+          },
+          "wachttermijn": {
+            "number": "1"
+          },
+          "doodtermijn": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "sluittijdstip",
+      "value": {
+        "dateTime": "2026-04-15T09:15:30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "doodsluiting",
+      "value": {
+        "dateTime": "2026-04-22T09:15:30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "openingstijdstip",
+      "value": {
+        "dateTime": "2026-02-01T09:15:30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "sluittijdstip",
+      "value": {
+        "dateTime": "2026-04-01T12:00:00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "doodsluiting",
+      "value": {
+        "dateTime": "2026-04-08T12:00:00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "openingstijdstip",
+      "value": {
+        "dateTime": "2026-03-15T12:00:00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
