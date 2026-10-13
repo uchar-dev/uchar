@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -45,7 +46,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * <p>The row where the reader of the characteristic sits in the band of the group itself came last (2026-09-30), with
  * the reader placed below the group: before that, in both its documents, {@code kenmerk rustig: verwacht afwezig,
  * werkelijk aanwezig} — on the transpiler of the claim already for the document on the own type, which that
- * transpiler lowers, and on the band of the group for the document two roles away.
+ * transpiler lowers, and on the band of the group for the document two roles away. *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): every row runs on the
+ * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, with the same verdict, a refusal in the same
+ * words. <b>Red</b> on {@code e2bd685e}, before the step: every
+ * row failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet".
  */
 class DefaultsRechtvaardigingWitnessTest {
 
@@ -606,12 +611,15 @@ class DefaultsRechtvaardigingWitnessTest {
                 + "],\"parameters\":{" + parameters + "}},\"expected\":[" + verwacht + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict on one case of the exec-model branch and of {@code DRL_TMS}, which must be the same: null when
+     *  every expectation holds. */
     private static String speel(String ir, String zaak) throws Exception {
         Path tmp = Files.createTempFile("defaults-rechtvaardiging", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
-        return CaseRunner.speelCase(tmp, c, false);
+        String exec = CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.EXEC_MODEL);
+        assertEquals(exec, CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.DRL_TMS), "DRL_TMS naast de exec-model-tak");
+        return exec;
     }
 }

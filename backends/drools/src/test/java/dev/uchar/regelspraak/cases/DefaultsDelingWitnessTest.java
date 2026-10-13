@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,7 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * such a fault counts waits on the norm decision of card {@code 20261008-fout-op-tussenstand}. A root there gets no
  * §6.6 deposit from it, since a default deposits only where it decides (ch. 7.1). The destructive exec-model branch
  * carried the five forms above the last row; the loss is accepted, and each row keeps the values {@code ref} answers, so
- * that the card that carries the form turns the row back into a replay.
+ * that the card that carries the form turns the row back into a replay. *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): every row runs on the
+ * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, with the same verdict, a refusal in the same
+ * words. Green from the start on {@code DRL_TMS}: the refusal
+ * comes from the analysis, which the two branches share, before the rendering.
  */
 class DefaultsDelingWitnessTest {
 
@@ -207,8 +212,11 @@ class DefaultsDelingWitnessTest {
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + vorm), e.getMessage());
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(tmp, c, tak),
+                    tak.toString());
+            assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + vorm), tak + ": "
+                    + e.getMessage());
+        }
     }
 }

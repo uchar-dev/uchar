@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,7 +33,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * no source text on the wire); the two refusal rows found that same sentence where they look for the form. The row over
  * two number folds came after the fix and was red on the transpiler of the claim in the same sentence. The row over
  * five folds pinned a refusal of the group until a consequence bound more than nine variables (2026-10-01); red against
- * that transpiler in {@code te veel gebonden variabelen (aggregaties, vouwen en globals)}, it plays since.
+ * that transpiler in {@code te veel gebonden variabelen (aggregaties, vouwen en globals)}, it plays since. *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): every row runs on the
+ * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, with the same verdict, a refusal in the same
+ * words. <b>Red</b> on {@code e2bd685e}, before the step: every
+ * row that plays failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet"; the refusal row
+ * held there already, since the refusal comes from the analysis, which the two branches share.
  */
 class DefaultsConsequentieVouwWitnessTest {
 
@@ -541,21 +547,37 @@ class DefaultsConsequentieVouwWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
+    /** The verdict on one case of the exec-model branch and of {@code DRL_TMS}, which must be the same: null when
+     *  every expectation holds. */
     private static String speel(String ir, String zaak) throws Exception {
-        return speel(ir, zaak, false);
+        String exec = speelTms(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
+        assertEquals(exec, speelTms(ir, zaak, DroolsBackend.Branch.DRL_TMS), "DRL_TMS naast de exec-model-tak");
+        return exec;
     }
 
     private static String speelDrl(String ir, String zaak) throws Exception {
         return speel(ir, zaak, true);
     }
 
-    /** The truth-maintenance branch's verdict on one case. */
+    /** The verdict of the exec-model branch on one case, where {@code DRL_TMS} refuses the document in the same
+     *  words if that branch refuses it. */
     private static String speelTms(String ir, String zaak) throws Exception {
+        try {
+            return speelTms(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
+        } catch (CaseRunner.Excluded e) {
+            CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
+                    () -> speelTms(ir, zaak, DroolsBackend.Branch.DRL_TMS), "DRL_TMS weigert ook");
+            assertEquals(e.getMessage(), drl.getMessage(), "de weigering van DRL_TMS");
+            throw e;
+        }
+    }
+
+    /** The verdict of the branch {@code tak} of the analysis on one case. */
+    private static String speelTms(String ir, String zaak, DroolsBackend.Branch tak) throws Exception {
         Path tmp = Files.createTempFile("defaults-consequentie", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
-        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.EXEC_MODEL);
+        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), tak);
     }
 
     private static String speel(String ir, String zaak, boolean drl) throws Exception {

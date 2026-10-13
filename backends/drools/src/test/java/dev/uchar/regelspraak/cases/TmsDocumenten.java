@@ -418,15 +418,23 @@ final class TmsDocumenten {
     static void vuur(DroolsBackend.Build b, List<org.drools.model.Rule> volgorde, List<Object> bonen,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> voor,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> na) {
+        vuur(b, kieBase(b, volgorde), volgorde.stream().map(org.drools.model.Rule::getName).toList(), bonen, voor, na);
+    }
+
+    /** As {@link #vuur(DroolsBackend.Build, List, List, java.util.function.Consumer, java.util.function.Consumer)}
+     *  through {@code kieBase}, which holds the rules of {@code b} in the order {@code namen}: those of the executable
+     *  model ({@link #kieBase}) or those of the text ({@code Tekstvolgorde}). */
+    static void vuur(DroolsBackend.Build b, org.kie.api.KieBase kieBase, List<String> namen, List<Object> bonen,
+                     java.util.function.Consumer<org.kie.api.runtime.KieSession> voor,
+                     java.util.function.Consumer<org.kie.api.runtime.KieSession> na) {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        org.kie.api.runtime.KieSession sessie = kieBase(b, volgorde).newKieSession();
+        org.kie.api.runtime.KieSession sessie = kieBase.newKieSession();
         try {
             voor.accept(sessie);
             for (Object boon : bonen) sessie.insert(boon);
             if (DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt() != null)
-                throw new AssertionError("geen fixpunt in volgorde "
-                        + volgorde.stream().map(org.drools.model.Rule::getName).toList());
+                throw new AssertionError(b.branch() + ": geen fixpunt in volgorde " + namen);
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
             na.accept(sessie);
         } finally {

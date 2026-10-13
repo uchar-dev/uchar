@@ -1,7 +1,9 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import org.drools.model.Rule;
+import org.kie.api.KieBase;
 import org.junit.jupiter.api.Test;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
@@ -52,6 +54,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the stack's write, but the sample failed on "de initialisatie vuurde als regel op [W4, W3, W2] in volgorde
  * [standaardbergloon, defaults A:Wrakvondst.bergloon: default 0, defaults A:Wrakvondst.bergloon: default 1, defaults
  * A:Wrakvondst.bergloon: default 2] ==&gt; expected: &lt;true&gt; but was: &lt;false&gt;".
+ *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): the replay runs on the
+ * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, and the sample of orders on both: on
+ * {@code DRL_TMS} the rules of the plan rendered as text in each order ({@code Tekstvolgorde}), since the order of the
+ * rules in the text is the order in which Drools loads them. <b>Red</b> on {@code e2bd685e}, before the step: both rows
+ * failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet", the replay through the case and the
+ * sample where it builds the branch.
  */
 class TmsStapelWitnessTest {
 
@@ -109,16 +118,33 @@ class TmsStapelWitnessTest {
     }
 
     @Test void de_gevouwen_initialisatie_vult_onder_haar_voorwaarde() throws Exception {
-        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.EXEC_MODEL));
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+            assertNull(CaseRunner.speelCase(document(), zaak(), tak), tak.toString());
     }
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        Class<?> wrakvondst = Class.forName("dev.uchar.regelspraak.facts.Wrakvondst", true, b.beanLoader());
         int[] gevouwen = {0};
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
+            vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(), gevouwen);
+        assertTrue(gevouwen[0] > 0, "de initialisatiedefault van de stapel vuurde nooit op W2");
+        DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TMS);
+        List<String> regels = Tekstvolgorde.regels(t);
+        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
+        int[] inDeTekst = {0};
+        for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261008L, 100))
+            vuurSteekproef(t, Tekstvolgorde.kieBase(t, volgorde), volgorde, inDeTekst);
+        assertTrue(inDeTekst[0] > 0, "de initialisatiedefault van de stapel vuurde in de tekst nooit op W2");
+    }
+
+    /** Fires the objects of {@link #GEVALLEN} through {@code kieBase}, the rules of {@code b} in the order {@code namen}:
+     *  the rule never fires on a Wrakvondst, and every bergloon ends as it should; counts in {@code gevouwen} the
+     *  firings of the stack's initialisation default on W2. */
+    private static void vuurSteekproef(DroolsBackend.Build b, KieBase kieBase, List<String> namen, int[] gevouwen)
+            throws Exception {
+        Class<?> wrakvondst = Class.forName("dev.uchar.regelspraak.facts.Wrakvondst", true, b.beanLoader());
+        {
             Map<Object, String> labels = new IdentityHashMap<>();
             List<Object> bonen = new ArrayList<>();
             for (Map.Entry<String, Geval> e : GEVALLEN.entrySet()) {
@@ -127,7 +153,7 @@ class TmsStapelWitnessTest {
                 bonen.add(boon);
             }
             List<String> opHetSubtype = new ArrayList<>();
-            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocumenten.vuur(b, kieBase, namen, bonen, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     String regel = e.getMatch().getRule().getName();
                     for (Object o : e.getMatch().getObjects()) {
@@ -137,15 +163,15 @@ class TmsStapelWitnessTest {
                     }
                 }
             }), sessie -> { });
-            assertTrue(opHetSubtype.isEmpty(),
-                    () -> "de initialisatie vuurde als regel op " + opHetSubtype + " in volgorde " + namen);
+            assertTrue(opHetSubtype.isEmpty(), () -> "de initialisatie vuurde als regel op " + opHetSubtype + " op "
+                    + b.branch() + " in volgorde " + namen);
             for (Object boon : bonen) {
                 Geval g = GEVALLEN.get(labels.get(boon));
                 assertEquals(g.bergloon() == null ? null : new BigDecimal(g.bergloon()),
-                        TmsDocumenten.lees(boon, "bergloon"), () -> labels.get(boon) + " bergloon in volgorde " + namen);
+                        TmsDocumenten.lees(boon, "bergloon"), () -> labels.get(boon) + " bergloon op " + b.branch()
+                                + " in volgorde " + namen);
             }
         }
-        assertTrue(gevouwen[0] > 0, "de initialisatiedefault van de stapel vuurde nooit op W2");
     }
 
     /** The fold is per concrete type: the Wrakvondst carries one stack, and the Vondst none. */
