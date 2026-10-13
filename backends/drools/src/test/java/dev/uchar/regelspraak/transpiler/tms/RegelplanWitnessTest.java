@@ -39,11 +39,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * 1c-A1): {@code TmsTranspiler} plans each rule as a {@link Regelplan}, its name, its form, its agenda group, the slots
  * of its value array, its left-hand side with the constraints the form sets itself, and its consequence as a
  * {@link Gevolg} whose every decision is a field, and {@link PatternDslWeergave#regel} builds the rule of it. This
- * witness pins the plans of seven documents as text, per plan in order: the name, the form and the group; the slots;
- * every item of the left-hand side in order with its kind, its constraint ids and what each constraint tests, its
- * joins and its bindings; and the kind of the consequence with every field, a term as a tree ({@link Termboom#boom}).
- * That the rendering of these plans builds the rules of before the step is what the harness {@code Vuurspoor} shows,
- * and the executable model of the corpus, which is equal as text.
+ * witness pins the plans of seven documents as text, per plan in order: the name, the form and the group; the slots,
+ * each with its kind, its variable and its key; every item of the left-hand side in order with its kind, its
+ * constraint ids and what each constraint tests, its joins and its bindings; and the kind of the consequence with every
+ * field. A term, the condition of a test or a field of a consequence, is pinned twice: as a tree with the fields each
+ * node decides ({@link Termboom#boom}), and on the lines after it node by node with what the tree leaves out, the
+ * node's source fragment, which a rendering into DRL text puts above the text, and of a constant the class of its value
+ * and its whole IR type ({@link Termboom#velden}). That the rendering of these plans builds the rules of before the
+ * step is what the harness {@code Vuurspoor} shows, and the executable model of the corpus, which is equal as text.
  *
  * <ul>
  *   <li>{@code jutterswet-penningdrempel}: a characteristic attribution, which reads a parameter, and the standing of
@@ -74,15 +77,19 @@ class RegelplanWitnessTest {
 
     @Test void een_kenmerkregel_en_een_parameterstand() throws Exception {
         assertEquals(List.of(
-                "regel Kenmerktoekenning jutter penninggerechtigd | vorm Kenmerktoekenning jutter"
-                        + " penninggerechtigd | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 PARAMETER $lezing_1]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].aantal aangemelde vondsten"
-                        + " WAARDE]",
-                "  patroon ParameterStand $parameter_1 alfa [parameter_0: [parameter GELIJK vondstdrempel]]"
-                        + " join [] bind [$lezing_1 = [].waarde WAARDE]",
-                "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0, 1] grootte 2: RS_AGG_VERGELIJK(Lees 0,"
-                        + " Lees 1, Const >=)",
+                "regel Kenmerktoekenning jutter penninggerechtigd | vorm Kenmerktoekenning jutter penninggerechtigd |"
+                        + " groep null",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=aantal aangemelde"
+                        + " vondsten, kenmerk=false]), 1 PARAMETER $lezing_1 (parameter vondstdrempel)]",
+                "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].aantal aangemelde vondsten WAARDE]",
+                "  patroon ParameterStand $parameter_1 alfa [parameter_0: [parameter GELIJK vondstdrempel]] join []"
+                        + " bind [$lezing_1 = [].waarde WAARDE]",
+                "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0, 1] grootte 2: RS_AGG_VERGELIJK(Lees 0, Lees 1,"
+                        + " Const >=)",
+                "    toets 0 Aanroep bron 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
+                "    toets 0.0 Lees bron 'zijn aantal aangemelde vondsten'",
+                "    toets 0.1 Lees bron 'de vondstdrempel'",
+                "    toets 0.2 Const String",
                 "  gevolg Kenmerk [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=jutter,"
                         + " naam=penninggerechtigd, kenmerk=true], invoeging=LOGISCH]",
                 "regel parameterstand vondstdrempel | vorm null | groep null",
@@ -94,39 +101,122 @@ class RegelplanWitnessTest {
     @Test void een_rekenregel_met_sonde_en_de_regels_van_haar_voorwaarde() throws Exception {
         assertEquals(List.of(
                 "regel bergingsaandeel van een jutter | vorm bergingsaandeel van een jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 INVOER $lezing_1, 2 SONDE null]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
+                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                        + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].ploegomvang WAARDE, $lezing_1 ="
                         + " [].vangstwaarde WAARDE]",
                 "  toets voorwaarde_0 ZONDER_FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
                         + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD"
                         + " sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=jutter,"
-                        + " naam=bergingsaandeel, kenmerk=false], schrijver=bergingsaandeel van een jutter,"
-                        + " waarde=Const 1, slots=[], grootte=3, collapse=true, schrijftLeeg=false,"
-                        + " deponering=Deponering[sonde=2, vorm=bergingsaandeel van een jutter],"
-                        + " fout=Foutnaam[vorm=bergingsaandeel van een jutter, regel=bergingsaandeel van een jutter],"
-                        + " invoeging=LOGISCH]",
-                "regel bergingsaandeel van een jutter: fout in de voorwaarde | vorm bergingsaandeel van een"
-                        + " jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 INVOER $lezing_1, 2 SONDE null]",
+                "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
+                "    toets 0.0.0 Lees bron 'zijn ploegomvang'",
+                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.0.2 Const String",
+                "    toets 0.1 Aanroep bron 'het aandeel is groter dan 0'",
+                "    toets 0.1.0 Aanroep bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter naar beneden afgerond op 0 decimalen'",
+                "    toets 0.1.0.0 Deel bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter'",
+                "    toets 0.1.0.0.0 Lees bron 'de vangstwaarde van de Jutter'",
+                "    toets 0.1.0.0.1 Lees bron 'de ploegomvang van de Jutter'",
+                "    toets 0.1.0.1 Const Integer",
+                "    toets 0.1.0.2 Const RoundingMode",
+                "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.1.2 Const String",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=jutter, naam=bergingsaandeel,"
+                        + " kenmerk=false], schrijver=bergingsaandeel van een jutter, waarde=Const 1, slots=[],"
+                        + " grootte=3, collapse=true, schrijftLeeg=false, deponering=Deponering[sonde=2,"
+                        + " vorm=bergingsaandeel van een jutter], fout=Foutnaam[vorm=bergingsaandeel van een jutter,"
+                        + " regel=bergingsaandeel van een jutter], invoeging=LOGISCH]",
+                "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD, eenheid=null]"
+                        + " bron '1'",
+                "regel bergingsaandeel van een jutter: fout in de voorwaarde | vorm bergingsaandeel van een jutter |"
+                        + " groep null",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
+                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                        + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].ploegomvang WAARDE, $lezing_1 ="
                         + " [].vangstwaarde WAARDE]",
-                "  toets voorwaarde_1 FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
-                        + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD"
-                        + " sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
-                "  gevolg Toetsfout [onderwerp=$onderwerp, toets=Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees"
+                "  toets voorwaarde_1 FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees"
                         + " 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD sonde 2 (Lees 1, Lees"
-                        + " 0), Const 0, Const FLOOR), Const 0, Const >)), rol=FOUT, slots=[0, 1], grootte=3,"
+                        + " 0), Const 0, Const FLOOR), Const 0, Const >))",
+                "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
+                "    toets 0.0.0 Lees bron 'zijn ploegomvang'",
+                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.0.2 Const String",
+                "    toets 0.1 Aanroep bron 'het aandeel is groter dan 0'",
+                "    toets 0.1.0 Aanroep bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter naar beneden afgerond op 0 decimalen'",
+                "    toets 0.1.0.0 Deel bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter'",
+                "    toets 0.1.0.0.0 Lees bron 'de vangstwaarde van de Jutter'",
+                "    toets 0.1.0.0.1 Lees bron 'de ploegomvang van de Jutter'",
+                "    toets 0.1.0.1 Const Integer",
+                "    toets 0.1.0.2 Const RoundingMode",
+                "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.1.2 Const String",
+                "  gevolg Toetsfout [onderwerp=$onderwerp, toets=Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees 0, Const"
+                        + " 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD sonde 2 (Lees 1, Lees 0), Const"
+                        + " 0, Const FLOOR), Const 0, Const >)), rol=FOUT, slots=[0, 1], grootte=3,"
                         + " fout=Foutnaam[vorm=bergingsaandeel van een jutter, regel=bergingsaandeel van een jutter],"
                         + " invoeging=LOGISCH]",
-                "regel bergingsaandeel van een jutter: deponering in de voorwaarde | vorm bergingsaandeel"
-                        + " van een jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 INVOER $lezing_1, 2 SONDE null]",
+                "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
+                "    toets 0.0.0 Lees bron 'zijn ploegomvang'",
+                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.0.2 Const String",
+                "    toets 0.1 Aanroep bron 'het aandeel is groter dan 0'",
+                "    toets 0.1.0 Aanroep bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter naar beneden afgerond op 0 decimalen'",
+                "    toets 0.1.0.0 Deel bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter'",
+                "    toets 0.1.0.0.0 Lees bron 'de vangstwaarde van de Jutter'",
+                "    toets 0.1.0.0.1 Lees bron 'de ploegomvang van de Jutter'",
+                "    toets 0.1.0.1 Const Integer",
+                "    toets 0.1.0.2 Const RoundingMode",
+                "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.1.2 Const String",
+                "regel bergingsaandeel van een jutter: deponering in de voorwaarde | vorm bergingsaandeel van een"
+                        + " jutter | groep null",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
+                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                        + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].ploegomvang WAARDE, $lezing_1 ="
                         + " [].vangstwaarde WAARDE]",
                 "  toets voorwaarde_2 DEPONERING sonde 2 slots [0, 1] grootte 3: Samengesteld ALLE"
                         + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD"
                         + " sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
+                "    toets 0 Samengesteld bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                "    toets 0.0 Aanroep bron 'zijn ploegomvang is ongelijk aan 0'",
+                "    toets 0.0.0 Lees bron 'zijn ploegomvang'",
+                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.0.2 Const String",
+                "    toets 0.1 Aanroep bron 'het aandeel is groter dan 0'",
+                "    toets 0.1.0 Aanroep bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter naar beneden afgerond op 0 decimalen'",
+                "    toets 0.1.0.0 Deel bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter'",
+                "    toets 0.1.0.0.0 Lees bron 'de vangstwaarde van de Jutter'",
+                "    toets 0.1.0.0.1 Lees bron 'de ploegomvang van de Jutter'",
+                "    toets 0.1.0.1 Const Integer",
+                "    toets 0.1.0.2 Const RoundingMode",
+                "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.1.2 Const String",
                 "  gevolg Inconsistentie [onderwerp=$onderwerp, vorm=bergingsaandeel van een jutter,"
                         + " invoeging=LOGISCH]"),
                 regels(golden("jutterswet-ploegaandeel")));
@@ -135,23 +225,29 @@ class RegelplanWitnessTest {
     @Test void een_begrensde_geldigheid_en_de_rekendatumstand() throws Exception {
         assertEquals(List.of(
                 "regel vensterheffing in 2026 | vorm vensterheffing in 2026 | groep null",
-                "  lezingen [0 INVOER $lezing_0]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
+                        + " kenmerk=false])]",
                 "  onderwerp Vondstmelding $onderwerp alfa [] bind [$lezing_0 = [].meldwaarde WAARDE]",
-                "  patroon Rekendatum $geldigheid_0 alfa [geldig_0: [datum BINNEN"
-                        + " Geldigheid[vanaf=2026-01-01, tot=2026-12-31]]] join [] bind []",
+                "  patroon Rekendatum $geldigheid_0 alfa [geldig_0: [datum BINNEN Geldigheid[vanaf=2026-01-01,"
+                        + " tot=2026-12-31]]] join [] bind []",
                 "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondstmelding,"
-                        + " naam=vensterheffing, kenmerk=false], schrijver=vensterheffing in 2026, waarde=RS_PLUS(Lees"
-                        + " 0, Const 25), slots=[0], grootte=1, collapse=true, schrijftLeeg=true, deponering=null,"
-                        + " fout=Foutnaam[vorm=vensterheffing in 2026, regel=vensterheffing in 2026],"
-                        + " invoeging=LOGISCH]",
+                        + " naam=vensterheffing, kenmerk=false], schrijver=vensterheffing in 2026,"
+                        + " waarde=RS_PLUS(Lees 0, Const 25), slots=[0], grootte=1, collapse=true, schrijftLeeg=true,"
+                        + " deponering=null, fout=Foutnaam[vorm=vensterheffing in 2026, regel=vensterheffing in"
+                        + " 2026], invoeging=LOGISCH]",
+                "    waarde 0 Aanroep bron 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
+                "    waarde 0.0 Lees bron 'de meldwaarde van de Vondstmelding'",
+                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '25'",
                 "regel vensterheffing in 2026: geen rekendatum | vorm vensterheffing in 2026 | groep null",
                 "  lezingen []",
                 "  patroon Rekendatum $rekendatum alfa [geen-rekendatum_1: [datum LEEG]] join [] bind []",
-                "  gevolg Fout [onderwerp=$rekendatum, zin=a validity-bounded form needs an evaluation date;"
-                        + " this session is time-free, fout=Foutnaam[vorm=vensterheffing in 2026, regel=vensterheffing"
-                        + " in 2026], invoeging=LOGISCH]",
+                "  gevolg Fout [onderwerp=$rekendatum, zin=a validity-bounded form needs an evaluation date; this"
+                        + " session is time-free, fout=Foutnaam[vorm=vensterheffing in 2026, regel=vensterheffing in"
+                        + " 2026], invoeging=LOGISCH]",
                 "regel overgangsheffing tot en met 2025 | vorm overgangsheffing tot en met 2025 | groep null",
-                "  lezingen [0 INVOER $lezing_0]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
+                        + " kenmerk=false])]",
                 "  onderwerp Vondstmelding $onderwerp alfa [] bind [$lezing_0 = [].meldwaarde WAARDE]",
                 "  patroon Rekendatum $geldigheid_0 alfa [geldig_2: [datum BINNEN Geldigheid[vanaf=null,"
                         + " tot=2025-12-31]]] join [] bind []",
@@ -160,12 +256,16 @@ class RegelplanWitnessTest {
                         + " waarde=RS_PLUS(Lees 0, Const 40), slots=[0], grootte=1, collapse=true, schrijftLeeg=true,"
                         + " deponering=null, fout=Foutnaam[vorm=overgangsheffing tot en met 2025,"
                         + " regel=overgangsheffing tot en met 2025], invoeging=LOGISCH]",
-                "regel overgangsheffing tot en met 2025: geen rekendatum | vorm overgangsheffing tot en met"
-                        + " 2025 | groep null",
+                "    waarde 0 Aanroep bron 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
+                "    waarde 0.0 Lees bron 'de meldwaarde van de Vondstmelding'",
+                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '40'",
+                "regel overgangsheffing tot en met 2025: geen rekendatum | vorm overgangsheffing tot en met 2025 |"
+                        + " groep null",
                 "  lezingen []",
                 "  patroon Rekendatum $rekendatum alfa [geen-rekendatum_3: [datum LEEG]] join [] bind []",
-                "  gevolg Fout [onderwerp=$rekendatum, zin=a validity-bounded form needs an evaluation date;"
-                        + " this session is time-free, fout=Foutnaam[vorm=overgangsheffing tot en met 2025,"
+                "  gevolg Fout [onderwerp=$rekendatum, zin=a validity-bounded form needs an evaluation date; this"
+                        + " session is time-free, fout=Foutnaam[vorm=overgangsheffing tot en met 2025,"
                         + " regel=overgangsheffing tot en met 2025], invoeging=LOGISCH]",
                 "regel rekendatumstand | vorm null | groep null",
                 "  lezingen []",
@@ -176,34 +276,59 @@ class RegelplanWitnessTest {
     @Test void twee_schrijvers_van_een_doel() throws Exception {
         assertEquals(List.of(
                 "regel vrijgave zonder beletsel | vorm vrijgave zonder beletsel | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 INVOER $lezing_1]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
+                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=bergingszaak,"
+                        + " naam=bezwaren, kenmerk=false])]",
                 "  onderwerp Bergingszaak $onderwerp alfa [] bind [$lezing_0 = [].geclaimd WAAR, $lezing_1 ="
                         + " [].bezwaren WAARDE]",
-                "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld GEEN"
-                        + " 0(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Lees 1, Const 0, Const >))",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=bergingszaak,"
-                        + " naam=status, kenmerk=false], schrijver=vrijgave zonder beletsel, waarde=Const vrijgegeven,"
-                        + " slots=[], grootte=2, collapse=true, schrijftLeeg=true, deponering=null,"
-                        + " fout=Foutnaam[vorm=vrijgave zonder beletsel, regel=vrijgave zonder beletsel],"
-                        + " invoeging=LOGISCH]",
+                "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld GEEN 0(KENMERK(Lees 0,"
+                        + " Const true), RS_AGG_VERGELIJK(Lees 1, Const 0, Const >))",
+                "    toets 0 Samengesteld bron 'geen van: geclaimd, bezwaren boven 0'",
+                "    toets 0.0 Aanroep bron 'de Bergingszaak geclaimd is'",
+                "    toets 0.0.0 Lees",
+                "    toets 0.0.1 Const Boolean",
+                "    toets 0.1 Aanroep bron 'haar bezwaren groter zijn dan 0'",
+                "    toets 0.1.0 Lees bron 'de bezwaren van de Bergingszaak'",
+                "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.1.2 Const String",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=bergingszaak, naam=status,"
+                        + " kenmerk=false], schrijver=vrijgave zonder beletsel, waarde=Const vrijgegeven, slots=[],"
+                        + " grootte=2, collapse=true, schrijftLeeg=true, deponering=null, fout=Foutnaam[vorm=vrijgave"
+                        + " zonder beletsel, regel=vrijgave zonder beletsel], invoeging=LOGISCH]",
+                "    waarde 0 Const String type Tekst[] bron ''vrijgegeven''",
                 "regel aanhouding bij beletsel | vorm aanhouding bij beletsel | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 INVOER $lezing_1]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
+                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=bergingszaak,"
+                        + " naam=bezwaren, kenmerk=false])]",
                 "  onderwerp Bergingszaak $onderwerp alfa [] bind [$lezing_0 = [].geclaimd WAAR, $lezing_1 ="
                         + " [].bezwaren WAARDE]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld TEN_MINSTE"
                         + " 1(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Lees 1, Const 0, Const >))",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=bergingszaak,"
-                        + " naam=status, kenmerk=false], schrijver=aanhouding bij beletsel, waarde=Const aangehouden,"
-                        + " slots=[], grootte=2, collapse=true, schrijftLeeg=true, deponering=null,"
+                "    toets 0 Samengesteld bron 'ten minste één van: geclaimd, bezwaren boven 0'",
+                "    toets 0.0 Aanroep bron 'de Bergingszaak geclaimd is'",
+                "    toets 0.0.0 Lees",
+                "    toets 0.0.1 Const Boolean",
+                "    toets 0.1 Aanroep bron 'haar bezwaren groter zijn dan 0'",
+                "    toets 0.1.0 Lees bron 'de bezwaren van de Bergingszaak'",
+                "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    toets 0.1.2 Const String",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=bergingszaak, naam=status,"
+                        + " kenmerk=false], schrijver=aanhouding bij beletsel, waarde=Const aangehouden, slots=[],"
+                        + " grootte=2, collapse=true, schrijftLeeg=true, deponering=null,"
                         + " fout=Foutnaam[vorm=aanhouding bij beletsel, regel=aanhouding bij beletsel],"
                         + " invoeging=LOGISCH]",
+                "    waarde 0 Const String type Tekst[] bron ''aangehouden''",
                 "regel schrijvers Bergingszaak.status: verschil | vorm null | groep null",
-                "  lezingen [0 WAARDEN $waarden]",
+                "  lezingen [0 WAARDEN $waarden (waarden)]",
                 "  onderwerp Bergingszaak $onderwerp alfa [] bind []",
                 "  accumulatie Waarde $waarde alfa [waarde_2: [attribuut GELIJK"
                         + " ElementSleutel[objecttype=bergingszaak, naam=status, kenmerk=false]]] join"
                         + " [waarde-onderwerp_3: onderwerp = $onderwerp] bind [] functies [LIJST null -> $waarden]",
                 "  toets verschil_4 VORM sonde -1 slots [0] grootte 1: VERSCHILLEN(Lees 0)",
+                "    toets 0 Aanroep",
+                "    toets 0.0 Lees",
                 "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0,"
                         + " doel=ElementSleutel[objecttype=bergingszaak, naam=status, kenmerk=false],"
                         + " attribuut=status, documentplaats={aanhouding bij beletsel=1, vrijgave zonder beletsel=0},"
@@ -214,85 +339,137 @@ class RegelplanWitnessTest {
     @Test void een_onderwerp_buiten_een_stapel() throws Exception {
         assertEquals(List.of(
                 "regel uitkering van een strandrecht | vorm uitkering van een strandrecht | groep null",
-                "  lezingen [0 INVOER $lezing_0]",
-                "  onderwerp Strandrecht $onderwerp alfa [niet-in-een-stapel_0: [null KLASSE_NIET_IN"
-                        + " [Wrakrecht]]] bind [$lezing_0 = [].grondslag WAARDE]",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=strandrecht,"
-                        + " naam=uitkering, kenmerk=false], schrijver=uitkering van een strandrecht,"
-                        + " waarde=RS_MAAL(Lees 0, Const 2), slots=[0], grootte=1, collapse=true, schrijftLeeg=false,"
-                        + " deponering=null, fout=Foutnaam[vorm=uitkering van een strandrecht, regel=uitkering van een"
-                        + " strandrecht], invoeging=LOGISCH]"),
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=strandrecht, naam=grondslag,"
+                        + " kenmerk=false])]",
+                "  onderwerp Strandrecht $onderwerp alfa [niet-in-een-stapel_0: [null KLASSE_NIET_IN [Wrakrecht]]]"
+                        + " bind [$lezing_0 = [].grondslag WAARDE]",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=strandrecht, naam=uitkering,"
+                        + " kenmerk=false], schrijver=uitkering van een strandrecht, waarde=RS_MAAL(Lees 0, Const 2),"
+                        + " slots=[0], grootte=1, collapse=true, schrijftLeeg=false, deponering=null,"
+                        + " fout=Foutnaam[vorm=uitkering van een strandrecht, regel=uitkering van een strandrecht],"
+                        + " invoeging=LOGISCH]",
+                "    waarde 0 Aanroep bron 'zijn grondslag maal 2'",
+                "    waarde 0.0 Lees bron 'zijn grondslag'",
+                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '2'"),
                 regels(golden("jutterswet-wrakerfbasis")));
     }
 
     @Test void een_initialisatie_zonder_andere_schrijver() throws Exception {
         assertEquals(List.of(
                 "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0]",
-                "  onderwerp Vondst $onderwerp alfa [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind"
-                        + " [$lezing_0 = [].gewicht WAARDE]",
-                "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0,"
-                        + " Const 10, Const >)",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false])]",
+                "  onderwerp Vondst $onderwerp alfa [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$lezing_0 ="
+                        + " [].gewicht WAARDE]",
+                "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
+                        + " Const >)",
+                "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",
+                "    toets 0.0 Lees bron 'zijn gewicht'",
+                "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '10'",
+                "    toets 0.2 Const String",
                 "  niet Waarde $andere_schrijver alfa [andere-schrijver_2: [attribuut GELIJK"
                         + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], schrijver NIET_GELIJK"
                         + " standaardbergloon]] join [andere-schrijver-onderwerp_3: onderwerp = $onderwerp] bind []",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst,"
-                        + " naam=bergloon, kenmerk=false], schrijver=standaardbergloon, waarde=RS_MAAL(Const 2, Lees"
-                        + " 0), slots=[0], grootte=1, collapse=true, schrijftLeeg=false, deponering=null,"
-                        + " fout=Foutnaam[vorm=standaardbergloon, regel=standaardbergloon], invoeging=LOGISCH]"),
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
+                        + " kenmerk=false], schrijver=standaardbergloon, waarde=RS_MAAL(Const 2, Lees 0), slots=[0],"
+                        + " grootte=1, collapse=true, schrijftLeeg=false, deponering=null,"
+                        + " fout=Foutnaam[vorm=standaardbergloon, regel=standaardbergloon], invoeging=LOGISCH]",
+                "    waarde 0 Aanroep bron '2 maal zijn gewicht'",
+                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '2'",
+                "    waarde 0.1 Lees bron 'zijn gewicht'"),
                 regels(golden("jutterswet-voorwaardelijke-initialisatie")));
     }
 
     @Test void een_initialisatie_naast_een_schrijver_die_leeg_schrijft() throws Exception {
         assertEquals(List.of(
                 "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0, 1 LEGE_SCHRIJVERS $lege_schrijvers, 2 ONDERWERP $onderwerp]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false]), 1 LEGE_SCHRIJVERS $lege_schrijvers (lege schrijvers), 2 ONDERWERP"
+                        + " $onderwerp (onderwerp zelf)]",
                 "  onderwerp Vondst $onderwerp alfa [] bind [$lezing_0 = [].gewicht WAARDE]",
-                "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0,"
-                        + " Const 10, Const >)",
+                "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
+                        + " Const >)",
+                "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",
+                "    toets 0.0 Lees bron 'zijn gewicht'",
+                "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '10'",
+                "    toets 0.2 Const String",
                 "  niet Waarde $andere_schrijver alfa [andere-schrijver_1: [attribuut GELIJK"
                         + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], schrijver NIET_GELIJK"
                         + " standaardbergloon, waarde GEVULD]] join [andere-schrijver-onderwerp_2: onderwerp ="
                         + " $onderwerp] bind []",
                 "  accumulatie Waarde $lege_schrijver alfa [lege-schrijver_3: [attribuut GELIJK"
                         + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], schrijver NIET_GELIJK"
-                        + " standaardbergloon, waarde LEEG]] join [lege-schrijver-onderwerp_4: onderwerp = $onderwerp]"
-                        + " bind [] functies [AANTAL null -> $lege_schrijvers]",
-                "  toets doel-leeg_5 VORM sonde -1 slots [1, 2] grootte 3: DOEL_LEEG(Lees 1, Lees 2, Const"
-                        + " class dev.uchar.regelspraak.facts.Vondst, Const bergloon)",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst,"
-                        + " naam=bergloon, kenmerk=false], schrijver=standaardbergloon, waarde=RS_MAAL(Const 2, Lees"
-                        + " 0), slots=[0], grootte=3, collapse=true, schrijftLeeg=false, deponering=null,"
+                        + " standaardbergloon, waarde LEEG]] join [lege-schrijver-onderwerp_4: onderwerp ="
+                        + " $onderwerp] bind [] functies [AANTAL null -> $lege_schrijvers]",
+                "  toets doel-leeg_5 VORM sonde -1 slots [1, 2] grootte 3: DOEL_LEEG(Lees 1, Lees 2, Const class"
+                        + " dev.uchar.regelspraak.facts.Vondst, Const bergloon)",
+                "    toets 0 Aanroep",
+                "    toets 0.0 Lees",
+                "    toets 0.1 Lees",
+                "    toets 0.2 Const Class",
+                "    toets 0.3 Const String",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
+                        + " kenmerk=false], schrijver=standaardbergloon, waarde=RS_MAAL(Const 2, Lees 0), slots=[0],"
+                        + " grootte=3, collapse=true, schrijftLeeg=false, deponering=null,"
                         + " fout=Foutnaam[vorm=standaardbergloon, regel=standaardbergloon], invoeging=LOGISCH]",
+                "    waarde 0 Aanroep bron '2 maal zijn gewicht'",
+                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '2'",
+                "    waarde 0.1 Lees bron 'zijn gewicht'",
                 "regel zwaar bergloon | vorm zwaar bergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false])]",
                 "  onderwerp Vondst $onderwerp alfa [] bind [$lezing_0 = [].gewicht WAARDE]",
-                "  toets voorwaarde_6 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0,"
-                        + " Const 10, Const >)",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst,"
-                        + " naam=bergloon, kenmerk=false], schrijver=zwaar bergloon, waarde=RS_MAAL(Const 2, Lees 0),"
-                        + " slots=[0], grootte=1, collapse=true, schrijftLeeg=true, deponering=null,"
-                        + " fout=Foutnaam[vorm=zwaar bergloon, regel=zwaar bergloon], invoeging=LOGISCH]",
+                "  toets voorwaarde_6 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
+                        + " Const >)",
+                "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",
+                "    toets 0.0 Lees bron 'zijn gewicht'",
+                "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '10'",
+                "    toets 0.2 Const String",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
+                        + " kenmerk=false], schrijver=zwaar bergloon, waarde=RS_MAAL(Const 2, Lees 0), slots=[0],"
+                        + " grootte=1, collapse=true, schrijftLeeg=true, deponering=null, fout=Foutnaam[vorm=zwaar"
+                        + " bergloon, regel=zwaar bergloon], invoeging=LOGISCH]",
+                "    waarde 0 Aanroep bron '2 maal zijn gewicht'",
+                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '2'",
+                "    waarde 0.1 Lees bron 'zijn gewicht'",
                 "regel licht bergloon | vorm licht bergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0]",
+                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false])]",
                 "  onderwerp Vondst $onderwerp alfa [] bind [$lezing_0 = [].gewicht WAARDE]",
-                "  toets voorwaarde_7 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0,"
-                        + " Const 10, Const >)",
-                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst,"
-                        + " naam=bergloon, kenmerk=false], schrijver=licht bergloon, waarde=RS_MAAL(Const 2, Lees 0),"
-                        + " slots=[0], grootte=1, collapse=true, schrijftLeeg=true, deponering=null,"
-                        + " fout=Foutnaam[vorm=licht bergloon, regel=licht bergloon], invoeging=LOGISCH]",
+                "  toets voorwaarde_7 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
+                        + " Const >)",
+                "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",
+                "    toets 0.0 Lees bron 'zijn gewicht'",
+                "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '10'",
+                "    toets 0.2 Const String",
+                "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
+                        + " kenmerk=false], schrijver=licht bergloon, waarde=RS_MAAL(Const 2, Lees 0), slots=[0],"
+                        + " grootte=1, collapse=true, schrijftLeeg=true, deponering=null, fout=Foutnaam[vorm=licht"
+                        + " bergloon, regel=licht bergloon], invoeging=LOGISCH]",
+                "    waarde 0 Aanroep bron '2 maal zijn gewicht'",
+                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '2'",
+                "    waarde 0.1 Lees bron 'zijn gewicht'",
                 "regel schrijvers Vondst.bergloon: verschil | vorm null | groep null",
-                "  lezingen [0 WAARDEN $waarden]",
+                "  lezingen [0 WAARDEN $waarden (waarden)]",
                 "  onderwerp Vondst $onderwerp alfa [] bind []",
-                "  accumulatie Waarde $waarde alfa [waarde_8: [attribuut GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false]]] join"
-                        + " [waarde-onderwerp_9: onderwerp = $onderwerp] bind [] functies [LIJST null -> $waarden]",
+                "  accumulatie Waarde $waarde alfa [waarde_8: [attribuut GELIJK ElementSleutel[objecttype=vondst,"
+                        + " naam=bergloon, kenmerk=false]]] join [waarde-onderwerp_9: onderwerp = $onderwerp] bind []"
+                        + " functies [LIJST null -> $waarden]",
                 "  toets verschil_10 VORM sonde -1 slots [0] grootte 1: VERSCHILLEN(Lees 0)",
-                "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0,"
-                        + " doel=ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], attribuut=bergloon,"
-                        + " documentplaats={licht bergloon=2, standaardbergloon=0, zwaar bergloon=1},"
-                        + " typenamen={Vondst=Vondst}, invoeging=LOGISCH]"),
+                "    toets 0 Aanroep",
+                "    toets 0.0 Lees",
+                "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0, doel=ElementSleutel[objecttype=vondst,"
+                        + " naam=bergloon, kenmerk=false], attribuut=bergloon, documentplaats={licht bergloon=2,"
+                        + " standaardbergloon=0, zwaar bergloon=1}, typenamen={Vondst=Vondst}, invoeging=LOGISCH]"),
                 regels(initialisatieNaastLegeSchrijver()));
     }
 
@@ -317,17 +494,25 @@ class RegelplanWitnessTest {
         return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
     }
 
-    /** Every plan of {@code document}'s rules as text, in the order the rules were built. */
-    private static List<String> regels(JsonNode document) {
+    /** Every plan of {@code document}'s rules as text, in the order the rules were built; after a line that holds a
+     *  term, the term node by node ({@link Termboom#velden}). */
+    private static List<String> regels(JsonNode document) throws ReflectiveOperationException {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .regelplannen()) {
             uit.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendagroep());
             List<String> slots = new ArrayList<>();
-            for (Lezing l : p.lezingen().slots()) slots.add(l.slot() + " " + l.soort() + " " + l.naam());
+            for (Lezing l : p.lezingen().slots())
+                slots.add(l.slot() + " " + l.soort() + " " + l.naam() + " (" + l.sleutel() + ")");
             uit.add("  lezingen " + slots);
-            for (LhsItem item : p.linkerkant()) uit.add("  " + item(item));
+            for (LhsItem item : p.linkerkant()) {
+                uit.add("  " + item(item));
+                if (item instanceof Toetsitem t) Termboom.velden("    toets", t.toets(), "0", uit);
+            }
             uit.add("  gevolg " + gevolg(p.gevolg()));
+            for (RecordComponent c : p.gevolg().getClass().getRecordComponents())
+                if (c.getAccessor().invoke(p.gevolg()) instanceof Term t)
+                    Termboom.velden("    " + c.getName(), t, "0", uit);
         }
         return uit;
     }
