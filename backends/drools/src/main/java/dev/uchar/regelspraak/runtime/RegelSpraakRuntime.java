@@ -1417,16 +1417,21 @@ public final class RegelSpraakRuntime {
         return acc;
     }
 
-    // ---- identifier convention: DELEGATES to the single naming authority kern.Namen.ident ----
-    /** The PascalCase bean-member/class name for a RegelSpraak name — now a thin delegate to
-     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#ident(String, boolean)}, the ONE authority the
-     *  fact-model generator and the DRL back-end also derive from. Delegating (instead of a whitespace-only
-     *  twin split) is what routes BOTH back-ends through the single naming authority: the exec/runtime reads
-     *  now split a name on EVERY non-letter/digit run exactly as the beans were generated, so a koppelteken
-     *  attribute ("de datum-tijd voor het berekenen…" -> {@code DatumTijdVoorHetBerekenen…}) resolves the
-     *  same getter the FactModelGenerator emitted — the old {@code \s+}-only split left the "-" in and
-     *  targeted a non-existent {@code getDatum-tijd…}. No lidwoord stripping (Namen.ident carries the full
-     *  name), matching the bean the generator wrote; the resolver already delivers declared names bare. */
+    // ---- identifier convention: delegates to kern.Namen.ident ----
+    /** The PascalCase form of a RegelSpraak name — a thin delegate to
+     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#ident(String, boolean)}, from which the fact-model generator
+     *  derives a class name and a member's bean property. It splits a name on EVERY non-letter/digit run, as the beans
+     *  were generated, so a koppelteken attribute ("de datum-tijd voor het berekenen…" ->
+     *  {@code DatumTijdVoorHetBerekenen…}) keeps its words; the old {@code \s+}-only split left the "-" in and
+     *  targeted a non-existent {@code getDatum-tijd…}. No lidwoord stripping (Namen.ident carries the full name); the
+     *  resolver already delivers declared names bare.
+     *
+     *  <p>It is not the authority for the getter and the setter of a member: the generator writes those with
+     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#lidnamen} of the member's property, and every reader and
+     *  writer of the branch with truth maintenance takes them from there. The reflective bridge here
+     *  ({@link #get}, {@link #set}) and the DRL-text branch still put this form after {@code get}, {@code is} and
+     *  {@code set}, which misses the generator's name where the first letter of a declared name, put in lower case
+     *  and back in upper case, is another letter ("İş": {@code getİş}, where the generator writes {@code getIş}). */
     public static String pascal(String naam) {
         return dev.uchar.regelspraak.transpiler.kern.Namen.ident(naam, true);
     }
