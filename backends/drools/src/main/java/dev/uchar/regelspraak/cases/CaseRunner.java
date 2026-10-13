@@ -1371,9 +1371,12 @@ public final class CaseRunner {
         return null;
     }
 
+    /** The §9.5 facts as "regel @ label", sorted: the session gives them in the order of its working memory, which
+     *  differs between two renderings of one analysis, and a mismatch line must not. */
     private String renderIncs(List<Object> facts) {
         List<String> uit = new ArrayList<>();
         for (Object f : facts) uit.add(lees(f, "getRegel") + " @ " + labelVanBean(lees(f, "getSubject")));
+        uit.sort(Comparator.naturalOrder());
         return String.join(", ", uit);
     }
 
