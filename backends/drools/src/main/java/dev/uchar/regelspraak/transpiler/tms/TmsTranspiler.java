@@ -2454,15 +2454,21 @@ public final class TmsTranspiler {
     private Rule stapelGeldigheidsfout(Stapelbouw b) {
         rekendatumGlobal();
         String naam = b.naam;
-        Class<?> klasse = b.klasse;
-        @SuppressWarnings("unchecked")
-        Variable<Object> s = (Variable<Object>) DSL.declarationOf(klasse, "$onderwerp");
-        Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$rekendatum");
-        return PatternDSL.rule(PKG, naam + ": geen rekendatum").build(
-                PatternDSL.pattern(s).expr(id("concreet-type"), o -> o.getClass() == klasse),
-                PatternDSL.pattern(r).expr(id("geen-rekendatum"), x -> x.datum() == null),
-                DSL.on(s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) -> drools.logicalInsert(
-                        new Fout(o, naam, new Rekenfout(Rekenfout.GELDIGHEID_ZONDER_DATUM).inDeRegel(naam)))));
+        Alfa concreet = concreetType(b.klasse);
+        Alfa zonderDatum = new Alfa(id("geen-rekendatum"),
+                List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.LEEG, null)));
+        return weergeef(new Regelplan(naam + ": geen rekendatum", vorm, null, new Leestabel(List.of()),
+                List.of(new Onderwerp(b.klasse, ONDERWERP, List.of(concreet), List.of(), List.of()),
+                        new Patroon(Rekendatum.class, "$rekendatum", List.of(zonderDatum), List.of(), List.of())),
+                new Gevolg.Fout(ONDERWERP, Rekenfout.GELDIGHEID_ZONDER_DATUM, new Gevolg.Foutnaam(naam, naam),
+                        Gevolg.Invoeging.LOGISCH)));
+    }
+
+    /** The constraint that keeps a rule of a stack on instances of exactly the stack's owner, the bean class
+     *  {@code klasse}: the stack runs on instances of exactly that type (RUNTIME-SEMANTICS ch. 7.10,
+     *  {@link Stapelbouw#klasse}). */
+    private Alfa concreetType(Class<?> klasse) {
+        return new Alfa(id("concreet-type"), List.of(new Alfa.Veldtoets(null, Alfa.Vergelijker.KLASSE_IS, klasse)));
     }
 
     /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#niveau}), an

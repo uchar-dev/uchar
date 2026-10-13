@@ -769,6 +769,7 @@ final class PatternDslWeergave {
                 case LEEG -> x -> f.apply(x) == null;
                 case GEVULD -> x -> f.apply(x) != null;
                 case KLASSE_NIET_IN -> x -> !((Set<?>) w).contains(f.apply(x).getClass());
+                case KLASSE_IS -> x -> f.apply(x).getClass() == w;
             });
         }
         if (delen.size() == 1) return delen.get(0);
