@@ -1,7 +1,9 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import org.drools.model.Rule;
+import org.kie.api.KieBase;
 import org.junit.jupiter.api.Test;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
@@ -36,6 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * sample failed on the build, "het_besluit_onwaar_verdringt_en_de_invoer_blijft_staan:79 » Excluded tms-transpiler SKIP:
  * defaults: vrijstelling van een jutter — een PrioritizedDefaults: de truth-maintenance-tak draagt deze vorm nog niet";
  * the exec-model branch passed the same case.
+ *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4; acceptance (a), the
+ * characteristic defaults of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2): the replay runs on the exec-model branch and on
+ * {@code DRL_TMS}, and the sample of orders on both, on {@code DRL_TMS} with the rules of the text in each order
+ * ({@code Tekstvolgorde}); the displacement must happen in the text too. <b>Red</b> on {@code e2bd685e}, before the
+ * step: both rows failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet".
  */
 class TmsKenmerkbesluitWitnessTest {
 
@@ -79,15 +87,32 @@ class TmsKenmerkbesluitWitnessTest {
     }
 
     @Test void het_besluit_onwaar_verdringt_en_de_invoer_blijft_staan() throws Exception {
-        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.EXEC_MODEL));
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+            assertNull(CaseRunner.speelCase(document(), zaak(), tak), tak.toString());
     }
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int[] verdrongen = {0};
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
+            vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(), verdrongen);
+        assertTrue(verdrongen[0] > 0,
+                "geen volgorde liet de toekenning eerst vuren en het besluit onwaar haar verdringen");
+        DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TMS);
+        List<String> regels = Tekstvolgorde.regels(t);
+        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
+        int[] inDeTekst = {0};
+        for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261008L, 100))
+            vuurSteekproef(t, Tekstvolgorde.kieBase(t, volgorde), volgorde, inDeTekst);
+        assertTrue(inDeTekst[0] > 0, "geen volgorde van de tekst liet het besluit onwaar de toekenning verdringen");
+    }
+
+    /** Fires the Jutters of {@code INVOER} through {@code kieBase}, the rules of {@code b} in the order {@code namen}:
+     *  every Jutter ends vrijgesteld as it should; counts in {@code verdrongen} the firings of the attribution on J2. */
+    private static void vuurSteekproef(DroolsBackend.Build b, KieBase kieBase, List<String> namen, int[] verdrongen)
+            throws Exception {
+        {
             Map<Object, String> labels = new IdentityHashMap<>();
             List<Object> bonen = new ArrayList<>();
             for (Map.Entry<String, List<String>> e : INVOER.entrySet()) {
@@ -96,7 +121,7 @@ class TmsKenmerkbesluitWitnessTest {
                 bonen.add(boon);
             }
             Object j2 = bonen.get(1);
-            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocumenten.vuur(b, kieBase, namen, bonen, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().endsWith("default 1")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o == j2))
@@ -105,9 +130,7 @@ class TmsKenmerkbesluitWitnessTest {
             }), sessie -> { });
             for (Object boon : bonen)
                 assertEquals(VRIJGESTELD.get(labels.get(boon)), TmsDocumenten.heeft(boon, "vrijgesteld"),
-                        () -> labels.get(boon) + " vrijgesteld in volgorde " + namen);
+                        () -> labels.get(boon) + " vrijgesteld op " + b.branch() + " in volgorde " + namen);
         }
-        assertTrue(verdrongen[0] > 0,
-                "geen volgorde liet de toekenning eerst vuren en het besluit onwaar haar verdringen");
     }
 }
