@@ -6,26 +6,37 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Every route of the plan ({@link Route}) is a public static method of a public class, the only method of its name
- * there, so that a DRL text reaches it as an {@code import function} (card drl-teksttak-op-truth-maintenance, step
- * 1c-A2): a fresh probe, a report to it and its verdict, the fault of a fixed sentence, the inconsistency of a form and
+ * there, so that a DRL text calls it class-qualified and finds one method by its name (card
+ * drl-teksttak-op-truth-maintenance, step 1c-A2): a fresh probe, a report to it and its verdict, the fault of a fixed sentence, the inconsistency of a form and
  * the asOfDate-bucket scalar of an input had no public route before the step; the fault of an input's form, the keys of
  * a uniqueness and the facts of an allocation's distribution none before step 1c-B1; the creation depth of an object
- * creation, whose fault past the budget has no public constructor, none before step 1c-C1. The witness pins each route
- * with its signature, which a rendering into DRL text writes, and what the three routes of the probe do. The rendering
- * into closures calls the same methods ({@link PatternDslWeergave}, {@link ClosureWeergave}); that its behaviour did
- * not change is what the harness {@code Vuurspoor} shows.
+ * creation, whose fault past the budget has no public constructor, none before step 1c-C1; and none before step 1e the
+ * routes a DRL text needs where MVEL has no construct of its own (FABLE-2 §2.1): catching, naming and throwing an
+ * evaluation fault, joining texts, reading a bean and walking a path with null at an absent link, the tests of a
+ * reading form, a validity window and a class by its name, the cell of a {@code Let} with its public
+ * {@link Leegbarriere}, the verdict of a matrix, a broken contract, the fault of writers that disagree over lists, and
+ * a list of a fixed number of values. The witness pins each route with its signature, which a rendering into DRL text
+ * writes, what the three routes of the probe do, and what the routes of step 1e do. The rendering into closures calls
+ * the same methods where it has a use for them ({@link PatternDslWeergave}, {@link ClosureWeergave}); that its
+ * behaviour did not change is what the harness {@code Vuurspoor} shows.
  *
- * <p><b>Red</b> before the step: there was no {@code Route}, and this class did not compile.
+ * <p><b>Red</b> before the step: there was no {@code Route}, and this class did not compile. Before step 1e the routes
+ * of that step did not exist, and the two tests over them did not compile.
  */
 class RouteWitnessTest {
 
@@ -61,7 +72,36 @@ class RouteWitnessTest {
                         + " boolean, Integer, ElementSleutel, ElementSleutel, String]",
                 "BIJDRAGE: Bijdrage Rekenhulpen.bijdrage[String, Object, Object, Object, String, boolean]",
                 "VOUWPLAATS: List Rekenhulpen.vouwplaats[Plaatsreden, String, Object, int, List, List, List]",
-                "CREATIEDIEPTE: int Rekenhulpen.creatiediepte[String, int, String, List, int]"), uit);
+                "CREATIEDIEPTE: int Rekenhulpen.creatiediepte[String, int, String, List, int]",
+                "IS_EVALUATIEFOUT: boolean Rekenhulpen.isEvaluatiefout[Object]",
+                "GEVANGEN: RuntimeException Rekenhulpen.gevangen[RuntimeException]",
+                "BENOEM: RuntimeException Rekenhulpen.benoem[Object, String]",
+                "FAAL: Object Rekenhulpen.faal[String]",
+                "VEREIST: Object Rekenhulpen.vereist[Object, String]",
+                "TEKSTREEKS: String Rekenhulpen.tekstreeks[List]",
+                "LEES: Object Rekenhulpen.lees[Object, String]",
+                "LANGS: Object Rekenhulpen.langs[Object, List]",
+                "WAAR: boolean Rekenhulpen.waar[Object]",
+                "TIJDVAKKEN: List Rekenhulpen.tijdvakken[Object]",
+                "GEZET: boolean Rekenhulpen.gezet[Object, String]",
+                "BINNEN: boolean Rekenhulpen.binnen[Object, String, String]",
+                "IS_EEN: boolean Rekenhulpen.isEen[Object, String]",
+                "KLASSE_NIET_IN: boolean Rekenhulpen.klasseNietIn[Object, List]",
+                "BINDERCEL: Object Rekenhulpen.bindercel[]",
+                "BINDERCEL_GEVULD: boolean Rekenhulpen.bindercelGevuld[Object]",
+                "VUL_BINDERCEL: Object Rekenhulpen.vulBindercel[Object, Object]",
+                "BINDERWAARDE: Object Rekenhulpen.binderwaarde[Object]",
+                "OPGEVANGEN: Object Rekenhulpen.opgevangen[Leegbarriere, Object]",
+                "OORDEEL: BigDecimal Rekenhulpen.oordeel[boolean]",
+                "CONTRACTBREUK: Object Rekenhulpen.contractbreuk[String]",
+                "SCHRIJVERSCONFLICT: Fout Rekenhulpen.schrijversconflict[Object, Object, String, List, List, List]",
+                "LIJST0: List Rekenhulpen.lijst0[]",
+                "LIJST1: List Rekenhulpen.lijst1[Object]",
+                "LIJST2: List Rekenhulpen.lijst2[Object, Object]",
+                "LIJST3: List Rekenhulpen.lijst3[Object, Object, Object]",
+                "LIJST4: List Rekenhulpen.lijst4[Object, Object, Object, Object]",
+                "LIJST5: List Rekenhulpen.lijst5[Object, Object, Object, Object, Object]",
+                "LIJST6: List Rekenhulpen.lijst6[Object, Object, Object, Object, Object, Object]"), uit);
     }
 
     /** A fresh probe heard nothing; a report makes it heard; a report to an empty slot and the verdict of an empty slot
@@ -75,5 +115,92 @@ class RouteWitnessTest {
         assertFalse(Rekenhulpen.gemeld(Rekenhulpen.sonde()));
         Rekenhulpen.meld(null);
         assertFalse(Rekenhulpen.gemeld(null));
+    }
+
+    /** The routes of the faults and the texts: an evaluation fault is caught, named and recognised, any other exception
+     *  passes on; a sentence and a leeg required value fault; texts join in order. */
+    @Test void de_routes_van_een_fout_en_een_tekst() {
+        Rekenfout fout = assertThrows(Rekenfout.class, () -> Rekenhulpen.faal("geen dag"));
+        assertEquals("geen dag", fout.zin());
+        assertTrue(Rekenhulpen.isEvaluatiefout(fout));
+        assertFalse(Rekenhulpen.isEvaluatiefout(new IllegalStateException("contract")));
+        assertFalse(Rekenhulpen.isEvaluatiefout("geen fout"));
+        assertSame(fout, Rekenhulpen.gevangen(fout));
+        IllegalStateException breuk = new IllegalStateException("contract");
+        assertSame(breuk, assertThrows(IllegalStateException.class, () -> Rekenhulpen.gevangen(breuk)));
+        assertEquals("fout in de regel \"r\": geen dag", Rekenhulpen.benoem(fout, "r").getMessage());
+        assertEquals(5, Rekenhulpen.vereist(5, "leeg"));
+        assertEquals("leeg", assertThrows(Rekenfout.class, () -> Rekenhulpen.vereist(null, "leeg")).zin());
+        assertEquals("ab", Rekenhulpen.tekstreeks(List.of("a", "b")));
+        assertEquals("x", assertThrows(IllegalStateException.class, () -> Rekenhulpen.contractbreuk("x")).getMessage());
+    }
+
+    /** The routes of a read: a bean member by its property, null on an absent object; a walk over reference fields that
+     *  reads null at an absent link; the reading forms; a class by its name, through its superclasses and interfaces;
+     *  a validity window with open bounds. */
+    @Test void de_routes_van_een_lezing() {
+        Lid b = new Lid(null, BigDecimal.TEN), a = new Lid(b, BigDecimal.ONE);
+        assertEquals(BigDecimal.ONE, Rekenhulpen.lees(a, "bedrag"));
+        assertNull(Rekenhulpen.lees(null, "bedrag"));
+        assertSame(b, Rekenhulpen.langs(a, List.of("volgende")));
+        assertNull(Rekenhulpen.langs(a, List.of("volgende", "volgende", "volgende")));
+        assertEquals(BigDecimal.TEN, Rekenhulpen.lees(Rekenhulpen.langs(a, List.of("volgende")), "bedrag"));
+        assertTrue(Rekenhulpen.waar(Boolean.TRUE));
+        assertFalse(Rekenhulpen.waar(null));
+        assertNull(Rekenhulpen.tijdvakken(null));
+        assertTrue(Rekenhulpen.gezet(a, null));
+        assertTrue(Rekenhulpen.gezet(a, Lid.class.getName()));
+        assertFalse(Rekenhulpen.gezet(a, "java.lang.String"));
+        assertFalse(Rekenhulpen.gezet(null, null));
+        assertTrue(Rekenhulpen.isEen(new ArrayList<>(), "java.util.AbstractList"));
+        assertTrue(Rekenhulpen.isEen(new ArrayList<>(), "java.util.Collection"));
+        assertFalse(Rekenhulpen.isEen(new ArrayList<>(), "java.util.Map"));
+        assertFalse(Rekenhulpen.isEen(null, "java.lang.Object"));
+        assertTrue(Rekenhulpen.klasseNietIn(new ArrayList<>(), List.of("java.util.AbstractList")));
+        assertFalse(Rekenhulpen.klasseNietIn(new ArrayList<>(), List.of("java.util.LinkedList", "java.util.ArrayList")));
+        LocalDate dag = LocalDate.of(2026, 1, 1);
+        assertTrue(Rekenhulpen.binnen(dag, "2026-01-01", null));
+        assertFalse(Rekenhulpen.binnen(dag, null, "2025-12-31"));
+        assertFalse(Rekenhulpen.binnen(null, null, null));
+    }
+
+    /** The cell of a {@code Let}: empty until a read fills it, and a leeg value ends its own {@code Let} with leeg,
+     *  while the barrier of another passes on; the verdict of a matrix; the lists of a fixed number of values, which
+     *  may hold null. */
+    @Test void de_routes_van_een_let_en_een_lijst() {
+        Object cel = Rekenhulpen.bindercel(), ander = Rekenhulpen.bindercel();
+        assertFalse(Rekenhulpen.bindercelGevuld(cel));
+        assertEquals(7, Rekenhulpen.vulBindercel(cel, 7));
+        assertTrue(Rekenhulpen.bindercelGevuld(cel));
+        assertEquals(7, Rekenhulpen.binderwaarde(cel));
+        Rekenhulpen.vulBindercel(ander, null);
+        Leegbarriere barriere = assertThrows(Leegbarriere.class, () -> Rekenhulpen.binderwaarde(ander));
+        assertSame(ander, barriere.cel());
+        assertNull(Rekenhulpen.opgevangen(barriere, ander));
+        assertSame(barriere, assertThrows(Leegbarriere.class, () -> Rekenhulpen.opgevangen(barriere, cel)));
+        assertEquals(BigDecimal.ONE, Rekenhulpen.oordeel(true));
+        assertEquals(BigDecimal.ZERO, Rekenhulpen.oordeel(false));
+        assertEquals(List.of(), Rekenhulpen.lijst0());
+        assertEquals(Arrays.asList(1, null, 3), Rekenhulpen.lijst3(1, null, 3));
+        assertEquals(List.of(1, 2, 3, 4, 5, 6), Rekenhulpen.lijst6(1, 2, 3, 4, 5, 6));
+    }
+
+    /** A bean with a member and a reference field, read by property. */
+    public static final class Lid {
+        private final Lid volgende;
+        private final BigDecimal bedrag;
+
+        Lid(Lid volgende, BigDecimal bedrag) {
+            this.volgende = volgende;
+            this.bedrag = bedrag;
+        }
+
+        public Lid getVolgende() {
+            return volgende;
+        }
+
+        public BigDecimal getBedrag() {
+            return bedrag;
+        }
     }
 }

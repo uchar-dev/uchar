@@ -7,8 +7,9 @@ import dev.uchar.regelspraak.transpiler.tms.Tijdvak;
 /**
  * A static function a {@link Term} calls, by its class and its name: a helper of the runtime, which the other branch
  * calls as well, or a helper of this branch ({@link Rekenhulpen}) that holds what the value compilers computed around
- * such a call. A rendering into closures calls the function itself; a rendering into DRL text names it in an
- * {@code import function}. Every argument is a value, evaluated before the call in the order of
+ * such a call. A rendering into closures calls the function itself; a rendering into DRL text calls it
+ * class-qualified, never through an {@code import function} ({@link Route}), and finds it by name, so no function is
+ * overloaded. Every argument is a value, evaluated before the call in the order of
  * {@link Term.Aanroep#argumenten}; a constant of the analysis (a number of decimals, a rounding mode, a unit of time, a
  * class) is a {@link Term.Const}. {@link #kanFalen} says whether the function can raise an evaluation fault, a division by a
  * numeric zero or a {@code Rekenfout} or an {@code Invoervormfout} of the branch (RUNTIME-SEMANTICS ch. 5.2).

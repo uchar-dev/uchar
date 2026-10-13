@@ -11,6 +11,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -82,23 +83,19 @@ final class ClosureWeergave {
             }
             case Term.Faal f -> {
                 String zin = f.zin();
-                yield w -> { throw new Rekenfout(zin); };
+                yield w -> Rekenhulpen.faal(zin);
             }
             case Term.Vereist v -> {
                 Waardefunctie f = waardefunctie(v.waarde());
                 String zin = v.zin();
-                yield w -> {
-                    Object x = f.van(w);
-                    if (x == null) throw new Rekenfout(zin);
-                    return x;
-                };
+                yield w -> Rekenhulpen.vereist(f.van(w), zin);
             }
             case Term.Tekstreeks s -> {
                 List<Waardefunctie> delen = s.delen().stream().map(ClosureWeergave::waardefunctie).toList();
                 yield w -> {
-                    StringBuilder uit = new StringBuilder();
-                    for (Waardefunctie deel : delen) uit.append((String) deel.van(w));
-                    return uit.toString();
+                    List<Object> waarden = new ArrayList<>(delen.size());
+                    for (Waardefunctie deel : delen) waarden.add(deel.van(w));
+                    return Rekenhulpen.tekstreeks(waarden);
                 };
             }
             case Term.GelijsteVouw g -> gelijsteVouw(g);
@@ -148,7 +145,7 @@ final class ClosureWeergave {
                     toets.test(w);
                 } catch (RuntimeException e) {
                     // a fault is the fault rule's; what the evaluation deposited before it stays heard
-                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                    if (!Rekenhulpen.isEvaluatiefout(e)) throw e;
                 }
                 return Rekenhulpen.gemeld(s);
             };
@@ -162,7 +159,7 @@ final class ClosureWeergave {
             try {
                 return toets.test(w);
             } catch (RuntimeException e) {
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                if (!Rekenhulpen.isEvaluatiefout(e)) throw e;
                 return false;
             }
         };
@@ -178,7 +175,7 @@ final class ClosureWeergave {
             toets.test(w);
             return null;
         } catch (RuntimeException e) {
-            if (!Rekenfout.isEvaluatiefout(e)) throw e;
+            if (!Rekenhulpen.isEvaluatiefout(e)) throw e;
             return e;
         }
     }

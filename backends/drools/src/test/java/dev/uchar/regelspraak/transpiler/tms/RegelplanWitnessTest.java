@@ -336,8 +336,8 @@ class RegelplanWitnessTest {
                 "    toets 0.0 Lees",
                 "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0,"
                         + " doel=ElementSleutel[objecttype=bergingszaak, naam=status, kenmerk=false],"
-                        + " attribuut=status, documentplaats={aanhouding bij beletsel=1, vrijgave zonder beletsel=0},"
-                        + " typenamen={Bergingszaak=Bergingszaak}, invoeging=LOGISCH]"),
+                        + " attribuut=status, documentvolgorde=[vrijgave zonder beletsel, aanhouding bij beletsel],"
+                        + " typeklassen=[Bergingszaak], typen=[Bergingszaak], invoeging=LOGISCH]"),
                 regels(golden("jutterswet-vrijgavetoets")));
     }
 
@@ -471,9 +471,10 @@ class RegelplanWitnessTest {
                 "  toets verschil_10 VORM sonde -1 slots [0] grootte 1: VERSCHILLEN(Lees 0)",
                 "    toets 0 Aanroep",
                 "    toets 0.0 Lees",
-                "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0, doel=ElementSleutel[objecttype=vondst,"
-                        + " naam=bergloon, kenmerk=false], attribuut=bergloon, documentplaats={licht bergloon=2,"
-                        + " standaardbergloon=0, zwaar bergloon=1}, typenamen={Vondst=Vondst}, invoeging=LOGISCH]"),
+                "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0,"
+                        + " doel=ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false],"
+                        + " attribuut=bergloon, documentvolgorde=[standaardbergloon, zwaar bergloon, licht"
+                        + " bergloon], typeklassen=[Vondst], typen=[Vondst], invoeging=LOGISCH]"),
                 regels(initialisatieNaastLegeSchrijver()));
     }
 

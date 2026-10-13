@@ -3,7 +3,6 @@ package dev.uchar.regelspraak.transpiler.tms;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -38,18 +37,26 @@ public final class Schrijversconflict extends IllegalStateException {
     }
 
     /** The conflict of the value facts {@code waarden} on attribute {@code attribuut} of {@code onderwerp}: the
-     *  writers in the order of the document, {@code documentplaats} giving a rule's place and a writer the document has
-     *  no rule of, such as a defaults group, after them by name, and the object's own type named by {@code typenamen}
-     *  from its bean class's simple name, or that name where it has none. */
-    static Schrijversconflict van(Object onderwerp, String attribuut, List<Waarde> waarden,
-                                  Map<String, Integer> documentplaats, Map<String, String> typenamen) {
+     *  writers in the order of the document's rules {@code documentvolgorde}, a writer the document has no rule of,
+     *  such as a defaults group, after them by name, and the object's own type named by the type in {@code typen} whose
+     *  bean class's simple name stands at the same place in {@code typeklassen}, or by that simple name where none
+     *  does. */
+    static Schrijversconflict van(Object onderwerp, String attribuut, List<Waarde> waarden, List<?> documentvolgorde,
+                                  List<?> typeklassen, List<?> typen) {
         List<Waarde> geordend = new ArrayList<>(waarden);
-        geordend.sort(Comparator.comparing((Waarde w) -> documentplaats.getOrDefault(w.schrijver(), Integer.MAX_VALUE))
+        geordend.sort(Comparator.comparing((Waarde w) -> plaats(documentvolgorde, w.schrijver()))
                 .thenComparing(Waarde::schrijver));
         List<Schrijfdaad> daden = new ArrayList<>();
         for (Waarde w : geordend) daden.add(new Schrijfdaad(w.schrijver(), w.waarde()));
         String klasse = onderwerp.getClass().getSimpleName();
-        return new Schrijversconflict(onderwerp, attribuut, typenamen.getOrDefault(klasse, klasse), daden);
+        int t = typeklassen.indexOf(klasse);
+        return new Schrijversconflict(onderwerp, attribuut, t < 0 ? klasse : (String) typen.get(t), daden);
+    }
+
+    /** The place of the rule {@code schrijver} in {@code documentvolgorde}; after every rule where it is none. */
+    private static int plaats(List<?> documentvolgorde, String schrijver) {
+        int i = documentvolgorde.indexOf(schrijver);
+        return i < 0 ? Integer.MAX_VALUE : i;
     }
 
     private Schrijversconflict(Object onderwerp, String attribuut, String type, List<Schrijfdaad> schrijvers,

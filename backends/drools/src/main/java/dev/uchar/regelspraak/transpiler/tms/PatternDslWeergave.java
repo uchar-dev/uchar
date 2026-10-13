@@ -174,13 +174,9 @@ final class PatternDslWeergave {
             case Gevolg.Inconsistentie x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
                     voegIn(drools, x.invoeging(), Rekenhulpen.inconsistentie(x.vorm(), a[0])));
             case Gevolg.Schrijversconflict x ->
-                    new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarden())}, (drools, a) -> {
-                        List<Waarde> waarden = new ArrayList<>();
-                        for (Object o : (List<?>) a[1]) waarden.add((Waarde) o);
-                        Schrijversconflict c = Schrijversconflict.van(a[0], x.attribuut(), waarden, x.documentplaats(),
-                                x.typenamen());
-                        voegIn(drools, x.invoeging(), new Fout(a[0], c.schrijvers().get(0).schrijver(), c));
-                    });
+                    new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarden())}, (drools, a) ->
+                            voegIn(drools, x.invoeging(), Rekenhulpen.schrijversconflict(a[0], a[1], x.attribuut(),
+                                    x.documentvolgorde(), x.typeklassen(), x.typen())));
             case Gevolg.Parameterstand x -> new Consequentie(new Variable[]{globals.apply(x.global())}, (drools, a) ->
                     voegIn(drools, x.invoeging(), new ParameterStand(x.parameter(), a[0])));
             case Gevolg.Rekendatumstand x -> new Consequentie(new Variable[]{globals.apply(x.global())}, (drools, a) ->
@@ -269,7 +265,7 @@ final class PatternDslWeergave {
                 Predicate<Object[]> matrix = ClosureWeergave.toets(o.matrix());
                 yield consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, drager, w) ->
                         voegIn(drools, g.invoeging(), new Bijdrage(g.vouw(), drager, w[g.lid()],
-                                matrix.test(w) ? BigDecimal.ONE : BigDecimal.ZERO)));
+                                Rekenhulpen.oordeel(matrix.test(w)))));
             }
             case Gevolg.Inbreng.Lidtoets t -> {
                 Predicate<Object[]> matrix = ClosureWeergave.toets(t.matrix());
@@ -282,7 +278,7 @@ final class PatternDslWeergave {
                     try {
                         waar = matrix.test(w);
                     } catch (RuntimeException e) {
-                        if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                        if (!Rekenhulpen.isEvaluatiefout(e)) throw e;
                         fout = e;
                     }
                     voegIn(drools, g.invoeging(), new Bijdrage(g.vouw(), drager, w[g.lid()],
@@ -360,9 +356,9 @@ final class PatternDslWeergave {
                 v = waarde.van(w);
                 if (g.collapse()) v = Rekenhulpen.collapse(v);
             } catch (RuntimeException e) {
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                if (!Rekenhulpen.isEvaluatiefout(e)) throw e;
                 voegIn(drools, g.invoeging(),
-                        new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
+                        new Fout(onderwerp, g.fout().vorm(), Rekenhulpen.benoem(e, g.fout().regel())));
                 return;
             }
             if (Rekenhulpen.gemeld(s))
@@ -394,9 +390,9 @@ final class PatternDslWeergave {
                 try {
                     v[i] = Rekenhulpen.collapse(waarden.get(i).van(w));
                 } catch (RuntimeException e) {
-                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                    if (!Rekenhulpen.isEvaluatiefout(e)) throw e;
                     voegIn(drools, g.foutinvoeging(),
-                            new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
+                            new Fout(onderwerp, g.fout().vorm(), Rekenhulpen.benoem(e, g.fout().regel())));
                     return;
                 }
             }
@@ -433,9 +429,9 @@ final class PatternDslWeergave {
                 v = waarde.van(w);
                 if (g.collapse()) v = Rekenhulpen.collapse(v);
             } catch (RuntimeException e) {
-                if (g.fout() == null || !Rekenfout.isEvaluatiefout(e)) throw e;
+                if (g.fout() == null || !Rekenhulpen.isEvaluatiefout(e)) throw e;
                 voegIn(drools, g.invoeging(),
-                        new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
+                        new Fout(onderwerp, g.fout().vorm(), Rekenhulpen.benoem(e, g.fout().regel())));
                 return;
             }
             if (v == null) return;
@@ -475,7 +471,7 @@ final class PatternDslWeergave {
             if (f == null)
                 throw new IllegalStateException("de voorwaarde van \"" + g.fout().vorm() + "\" faalde in de toets en niet"
                         + " in het gevolg, over dezelfde gebonden waarden");
-            voegIn(drools, g.invoeging(), new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(f, g.fout().regel())));
+            voegIn(drools, g.invoeging(), new Fout(onderwerp, g.fout().vorm(), Rekenhulpen.benoem(f, g.fout().regel())));
         });
     }
 

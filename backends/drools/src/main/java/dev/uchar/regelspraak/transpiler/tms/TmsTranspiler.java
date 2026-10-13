@@ -255,12 +255,14 @@ public final class TmsTranspiler {
     /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified by the class
      *  both branches share. */
     private StaandeDoelen staandeDoelen;
-    /** The place of each rule of the document in its list, by name: the sentence of two writers that disagree names
-     *  them in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7). */
-    private final Map<String, Integer> documentplaats = new HashMap<>();
-    /** The object type of each bean class, by the class's simple name (the one {@link #bonenklasse} loads): a sentence
-     *  names an object by its own type. Keyed by name, so that building it loads no class. */
-    private final Map<String, String> typeNamen = new HashMap<>();
+    /** The names of the document's rules in its order, each once: the sentence of two writers that disagree names them
+     *  in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7). A list, so that a plan
+     *  carries the order itself and a DRL text can spell it. */
+    private final List<String> documentvolgorde = new ArrayList<>();
+    /** The object types of the document in its order ({@link #typen}), and at the same place the simple name of each
+     *  one's bean class (the one {@link #bonenklasse} loads): a sentence names an object by its own type. By name, so
+     *  that building it loads no class. */
+    private final List<String> typeklassen = new ArrayList<>(), typen = new ArrayList<>();
     private final List<Dekking> dekking = new ArrayList<>();
     /** The form each rule of the model belongs to, by the rule's name ({@link #vormVan}). */
     private final Map<String, String> vormVanRegel = new HashMap<>();
@@ -635,11 +637,12 @@ public final class TmsTranspiler {
     }
 
     /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code sleutel} of
-     *  {@code onderwerp}: the writers in the order of the document ({@link #documentplaats}; a writer the document has
+     *  {@code onderwerp}: the writers in the order of the document ({@link #documentvolgorde}; a writer the document has
      *  no rule of, such as a defaults group, after them by name), the attribute as declared, and the object's own
      *  type. */
     private Schrijversconflict conflict(Object onderwerp, ElementSleutel sleutel, List<Waarde> waarden) {
-        return Schrijversconflict.van(onderwerp, lidVan(onderwerp, sleutel).naam(), waarden, documentplaats, typeNamen);
+        return Schrijversconflict.van(onderwerp, lidVan(onderwerp, sleutel).naam(), waarden, documentvolgorde, typeklassen,
+                typen);
     }
 
     /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
@@ -652,8 +655,18 @@ public final class TmsTranspiler {
     private Modelplan run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
-        for (int i = 0; i < model.resolvedRegels.size(); i++) documentplaats.putIfAbsent(model.resolvedRegels.get(i).naam(), i);
-        for (Objecttype t : model.objecttypen.values()) typeNamen.put(Namen.ident(t.naam, true), t.naam);
+        for (ResolvedRegel r : model.resolvedRegels)
+            if (r.naam() != null && !documentvolgorde.contains(r.naam())) documentvolgorde.add(r.naam());
+        for (Objecttype t : model.objecttypen.values()) {
+            String klasse = Namen.ident(t.naam, true);
+            int i = typeklassen.indexOf(klasse);
+            if (i < 0) {
+                typeklassen.add(klasse);
+                typen.add(t.naam);
+            } else {
+                typen.set(i, t.naam);
+            }
+        }
         if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty())
             strata = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
         // before any form lowers: a form that reads a created relation must know it while it lowers
@@ -1297,7 +1310,7 @@ public final class TmsTranspiler {
                         new Accumulatie(new Patroon(Waarde.class, "$waarde", List.of(vanDoel), List.of(opOnderwerp),
                                 List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, "$waarden"))),
                         verschil),
-                new Gevolg.Schrijversconflict(ONDERWERP, 0, sleutel, lid.naam(), documentplaats, typeNamen,
+                new Gevolg.Schrijversconflict(ONDERWERP, 0, sleutel, lid.naam(), documentvolgorde, typeklassen, typen,
                         Gevolg.Invoeging.LOGISCH));
     }
 

@@ -5,10 +5,7 @@ import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.transpiler.tms.Uitkomst.Soort;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * What a rule does when it fires, as the analysis plans it, in a closed vocabulary: which fact it inserts about which
@@ -91,17 +88,22 @@ public sealed interface Gevolg {
     /**
      * The fault of two or more writers of attribute {@code doel} that stand on one object with different values
      * (RUNTIME-SEMANTICS ch. 5.7), on the object {@code onderwerp} binds, over the value facts the slot {@code waarden}
-     * holds: the writers in the order of the document, {@code documentplaats} giving a rule's place and a writer
-     * without a place after them by name, the attribute named {@code attribuut} as declared, and the object's own type
-     * named by {@code typenamen} from its bean class's simple name. The fault is the first writer's.
+     * holds: the writers in the order of the document's rules {@code documentvolgorde}, each named once, and a writer
+     * the document has no rule of after them by name; the attribute named {@code attribuut} as declared; and the
+     * object's own type, named by the type in {@code typen} whose bean class's simple name stands at the same place in
+     * {@code typeklassen}, the types of the document in its order. The fault is the first writer's, made by the route
+     * {@link Route#SCHRIJVERSCONFLICT}.
      */
     record Schrijversconflict(String onderwerp, int waarden, ElementSleutel doel, String attribuut,
-                              Map<String, Integer> documentplaats, Map<String, String> typenamen, Invoeging invoeging)
-            implements Gevolg {
+                              List<String> documentvolgorde, List<String> typeklassen, List<String> typen,
+                              Invoeging invoeging) implements Gevolg {
         public Schrijversconflict {
-            // a copy that keeps a null key: the place of a nameless rule, which the analysis refuses by name, is one
-            documentplaats = Collections.unmodifiableMap(new HashMap<>(documentplaats));
-            typenamen = Collections.unmodifiableMap(new HashMap<>(typenamen));
+            documentvolgorde = List.copyOf(documentvolgorde);
+            typeklassen = List.copyOf(typeklassen);
+            typen = List.copyOf(typen);
+            if (typeklassen.size() != typen.size())
+                throw new IllegalArgumentException("de typen en hun klassen staan in paren: " + typeklassen + ", "
+                        + typen);
         }
     }
 

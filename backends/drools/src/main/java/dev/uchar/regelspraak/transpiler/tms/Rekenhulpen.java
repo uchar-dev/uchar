@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
@@ -12,6 +13,8 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +25,8 @@ import java.util.function.Predicate;
  * The functions of this branch's values beside the runtime's helpers: what the value compilers computed around a
  * runtime call, as plain functions of the values the call receives, so that a value is one tree of named calls
  * ({@code plan.Term.Aanroep}, {@code plan.Functie}) that the rendering into closures calls and a rendering into DRL text
- * can name in an {@code import function}. A function takes its arguments evaluated; the probe of a deposit is the
+ * calls class-qualified, never through an {@code import function}, which a field of a fact with the same name as a
+ * helper shadows without a complaint. A function takes its arguments evaluated; the probe of a deposit is the
  * object its slot of the value array holds, a {@link Sonde} or nothing. A fault is an evaluation fault of the branch in
  * the reference interpreter's sentence ({@link Rekenfout}, {@link Invoervormfout}, a division by a numeric zero), which
  * the consequence or the fault rule of the form inserts as a {@link Fout}.
@@ -32,7 +36,9 @@ import java.util.function.Predicate;
  * sentence, the inconsistency of a form and the asOfDate-bucket scalar of an input, or whose number a computation over
  * the bound values decides: the fault of an input's form, the keys of a uniqueness, and the shares, the rest and the
  * deposits of an allocation. A {@link Sonde} and the generated
- * inconsistency class stay out of reach themselves: a rendering only hands them on, typed {@code Object}.
+ * inconsistency class stay out of reach themselves: a rendering only hands them on, typed {@code Object}. Last the
+ * routes of a DRL text, which MVEL needs where a test or a consequence would otherwise catch, throw, cast, build a
+ * list or read a bean: no route is overloaded, so a call by name finds one method.
  */
 public final class Rekenhulpen {
 
@@ -649,6 +655,220 @@ public final class Rekenhulpen {
             plaats.add(((Number) plaatsen.get(i)).intValue());
         }
         return plaats;
+    }
+
+    // ---------------- the routes of a DRL text (plan.Route) ----------------
+    // A DRL text calls them class-qualified: MVEL has no try and no throw, and a function of the text returns a fault as
+    // its outcome. The rendering into closures calls those it has a use for, so that both run one implementation.
+
+    /** Whether {@code v}, the outcome of an evaluation, is an evaluation fault this branch turns into a {@link Fout}: a
+     *  division by a numeric zero, a {@link Rekenfout} or an {@link Invoervormfout}. Every other exception is a broken
+     *  contract and leaves the fire. */
+    public static boolean isEvaluatiefout(Object v) {
+        return v instanceof Throwable t && Rekenfout.isEvaluatiefout(t);
+    }
+
+    /** {@code e}, caught in an evaluation, where it is an evaluation fault ({@link #isEvaluatiefout}); any other
+     *  exception passes on as it is. */
+    public static RuntimeException gevangen(RuntimeException e) {
+        if (!Rekenfout.isEvaluatiefout(e)) throw e;
+        return e;
+    }
+
+    /** The evaluation fault {@code fout} named after the rule {@code regel} it ran in, as the {@link Fout} of a form
+     *  carries it. */
+    public static RuntimeException benoem(Object fout, String regel) {
+        return Rekenfout.benoem((RuntimeException) fout, regel);
+    }
+
+    /** The evaluation fault of the sentence {@code zin} ({@link Rekenfout}), thrown wherever the evaluation reaches it:
+     *  an {@code Unresolved} node, or the bound day outside a day kind ({@code plan.Term.Faal}). */
+    public static Object faal(String zin) {
+        throw new Rekenfout(zin);
+    }
+
+    /** {@code waarde}, and the evaluation fault of the sentence {@code zin} where it is leeg: the evaluation date in a
+     *  session without one ({@code plan.Term.Vereist}). */
+    public static Object vereist(Object waarde, String zin) {
+        if (waarde == null) throw new Rekenfout(zin);
+        return waarde;
+    }
+
+    /** The texts {@code delen}, in order, joined: a text composition or a concatenation ({@code plan.Term.Tekstreeks}). */
+    public static String tekstreeks(List<?> delen) {
+        StringBuilder uit = new StringBuilder();
+        for (Object deel : delen) uit.append((String) deel);
+        return uit.toString();
+    }
+
+    /** The member {@code eigenschap}, a bean property ({@code plan.Binding.Veld#eigenschap}), of the bean
+     *  {@code object}, through the getter of its own class as the runtime reads a property; null where {@code object}
+     *  is null, a link that is absent. */
+    public static Object lees(Object object, String eigenschap) {
+        return RegelSpraakRuntime.get(object, eigenschap);
+    }
+
+    /** The object the walk over the reference fields {@code eigenschappen}, bean properties in order, reaches from
+     *  {@code object}; null where a link on it is absent. A read along a path is this walk and never a null-safe
+     *  navigation of the DRL dialect, which drops the match where a link is absent instead of reading null. */
+    public static Object langs(Object object, List<?> eigenschappen) {
+        return wandel(object, eigenschappen);
+    }
+
+    /** Whether {@code waarde} holds {@code true}: a characteristic read off a bean ({@code Binding.Leesvorm.WAAR}). */
+    public static boolean waar(Object waarde) {
+        return Boolean.TRUE.equals(waarde);
+    }
+
+    /** The true periods of a characteristic on a timeline as a bean holds them, a list of {@link Tijdvak}; null where it
+     *  holds none ({@code Binding.Leesvorm.TIJDVAKKEN}). */
+    public static List<Tijdvak> tijdvakken(Object waarde) {
+        return Tijdvak.lijst((List<?>) waarde);
+    }
+
+    /** Whether a reference field holds {@code ander}, an instance of the class named {@code soort} where that is not
+     *  null ({@code Binding.Leesvorm.GEZET}, {@link #isEen}). */
+    public static boolean gezet(Object ander, String soort) {
+        return ander != null && (soort == null || isEen(ander, soort));
+    }
+
+    /** Whether the evaluation date {@code datum} lies in the validity window from {@code vanaf} to {@code tot}, dates in
+     *  ISO form, both inclusive and a null bound open; never where the session has no date
+     *  ({@code Alfa.Vergelijker.BINNEN}, {@link Geldigheid#bevat}). */
+    public static boolean binnen(Object datum, String vanaf, String tot) {
+        return new Geldigheid(vanaf == null ? null : LocalDate.parse(vanaf), tot == null ? null : LocalDate.parse(tot))
+                .bevat((LocalDate) datum);
+    }
+
+    /** Whether {@code object} is an instance of the class named {@code klasse}: its own class or a class or interface
+     *  it extends has that name ({@code Alfa.Vergelijker.IS_EEN}). A bean class is named, not loaded: a DRL text cannot
+     *  reach the classes of the beans. */
+    public static boolean isEen(Object object, String klasse) {
+        return object != null && heetOfErft(object.getClass(), klasse);
+    }
+
+    /** Whether the own class of {@code object}, exactly, has none of the names {@code klassen}
+     *  ({@code Alfa.Vergelijker.KLASSE_NIET_IN}). */
+    public static boolean klasseNietIn(Object object, List<?> klassen) {
+        return !klassen.contains(object.getClass().getName());
+    }
+
+    private static boolean heetOfErft(Class<?> c, String naam) {
+        if (c == null) return false;
+        if (c.getName().equals(naam)) return true;
+        for (Class<?> i : c.getInterfaces()) if (heetOfErft(i, naam)) return true;
+        return heetOfErft(c.getSuperclass(), naam);
+    }
+
+    /** A fresh cell for the binder of one evaluation of a {@code Let} (RUNTIME-SEMANTICS ch. 10.6, clause 1): empty
+     *  until the first read of the binder fills it ({@link #vulBindercel}), so that the value is evaluated by need, at
+     *  most once where it answers. */
+    public static Object bindercel() {
+        return new Bindercel();
+    }
+
+    /** Whether the cell {@code cel} holds the value of its binder: a read evaluates the value only where it does not. */
+    public static boolean bindercelGevuld(Object cel) {
+        return ((Bindercel) cel).gevuld;
+    }
+
+    /** Fills the cell {@code cel} with {@code waarde}, the value of its binder, and returns it. */
+    public static Object vulBindercel(Object cel, Object waarde) {
+        Bindercel c = (Bindercel) cel;
+        c.waarde = waarde;
+        c.gevuld = true;
+        return waarde;
+    }
+
+    /** The value of the binder in the cell {@code cel}; where it is leeg, the barrier of that cell's {@code Let}, which
+     *  ends that {@code Let} with leeg (clause 2). */
+    public static Object binderwaarde(Object cel) {
+        Object waarde = ((Bindercel) cel).waarde;
+        if (waarde == null) throw new Leegbarriere(cel);
+        return waarde;
+    }
+
+    /** The outcome of the evaluation of a {@code Let} with the cell {@code cel} that the barrier {@code b} ended: leeg
+     *  where {@code b} is that cell's own; a barrier of an enclosing {@code Let} passes on. */
+    public static Object opgevangen(Leegbarriere b, Object cel) {
+        if (b.cel() != cel) throw b;
+        return null;
+    }
+
+    /** The cell of one evaluation of a {@code Let}: made in that evaluation and passed on to its body only, so it is
+     *  never shared between sessions or threads. */
+    private static final class Bindercel {
+        private boolean gevuld;
+        private Object waarde;
+    }
+
+    /** The verdict of the matrix of a quantifier fold as a member's contribution: 1 where it holds, 0 where it does not
+     *  ({@code Gevolg.Inbreng.Oordeel}). */
+    public static BigDecimal oordeel(boolean waar) {
+        return waar ? BigDecimal.ONE : BigDecimal.ZERO;
+    }
+
+    /** A broken contract of the branch, thrown with the sentence {@code zin}: what cannot happen where the analysis is
+     *  right, such as a condition that faulted in the test and answers in the consequence over the same values. It is
+     *  no evaluation fault ({@link #isEvaluatiefout}) and leaves the fire. */
+    public static Object contractbreuk(String zin) {
+        throw new IllegalStateException(zin);
+    }
+
+    /** The fault of two or more writers of the attribute {@code attribuut} of {@code onderwerp} that stand with
+     *  different values, over the value facts {@code waarden} ({@code Gevolg.Schrijversconflict}, RUNTIME-SEMANTICS
+     *  ch. 5.7): the writers in the order of the document's rules {@code documentvolgorde}, a writer the document has
+     *  no rule of after them by name, and the object's own type named through the pairs of {@code typeklassen}, the
+     *  simple names of the bean classes, and {@code typen}, the types as declared; a {@link Fout} under the first
+     *  writer. */
+    public static Fout schrijversconflict(Object onderwerp, Object waarden, String attribuut, List<?> documentvolgorde,
+                                          List<?> typeklassen, List<?> typen) {
+        List<Waarde> lijst = new ArrayList<>();
+        for (Object w : (List<?>) waarden) lijst.add((Waarde) w);
+        Schrijversconflict c = Schrijversconflict.van(onderwerp, attribuut, lijst, documentvolgorde, typeklassen, typen);
+        return new Fout(onderwerp, c.schrijvers().get(0).schrijver(), c);
+    }
+
+    // A list of values in order, as a DRL text builds the list argument of a route: MVEL builds no array, and a route is
+    // never overloaded, so the number of values is in the name. Unmodifiable, and it may hold null.
+
+    /** An empty list. */
+    public static List<Object> lijst0() {
+        return lijstVan();
+    }
+
+    /** The list of {@code a}. */
+    public static List<Object> lijst1(Object a) {
+        return lijstVan(a);
+    }
+
+    /** The list of {@code a} and {@code b}. */
+    public static List<Object> lijst2(Object a, Object b) {
+        return lijstVan(a, b);
+    }
+
+    /** The list of {@code a} to {@code c}. */
+    public static List<Object> lijst3(Object a, Object b, Object c) {
+        return lijstVan(a, b, c);
+    }
+
+    /** The list of {@code a} to {@code d}. */
+    public static List<Object> lijst4(Object a, Object b, Object c, Object d) {
+        return lijstVan(a, b, c, d);
+    }
+
+    /** The list of {@code a} to {@code e}. */
+    public static List<Object> lijst5(Object a, Object b, Object c, Object d, Object e) {
+        return lijstVan(a, b, c, d, e);
+    }
+
+    /** The list of {@code a} to {@code f}. */
+    public static List<Object> lijst6(Object a, Object b, Object c, Object d, Object e, Object f) {
+        return lijstVan(a, b, c, d, e, f);
+    }
+
+    private static List<Object> lijstVan(Object... waarden) {
+        return Collections.unmodifiableList(Arrays.asList(waarden));
     }
 
     // ---------------- the constraints of a fold's range (plan.Betatoets) ----------------
