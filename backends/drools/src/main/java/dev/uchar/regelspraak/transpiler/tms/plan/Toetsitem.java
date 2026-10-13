@@ -9,10 +9,6 @@ import java.util.List;
  * model makes a predicate and one into DRL text makes the calls. {@code rol} says what the test asks of the condition,
  * which a rendering cannot tell from the condition itself: that it holds, that it holds without a fault, that it
  * faults, or that it deposits, with the probe in slot {@code sonde} (-1 for every other role).
- *
- * <p>Until step 1b3 of card drl-teksttak-op-truth-maintenance a quantifier fold and a test of the §9.5 channel within
- * the condition, the negation of a consistency's assertion and a test a form composes itself are a
- * {@link Term.GecompileerdeToets}, which no rendering can show.
  */
 public record Toetsitem(String id, Rol rol, Term toets, int sonde, List<Integer> slots, int grootte)
         implements LhsItem {

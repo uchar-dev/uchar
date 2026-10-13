@@ -2968,8 +2968,7 @@ public final class TmsTranspiler {
         return ClosureWeergave.waardefunctie(t);
     }
 
-    /** The test a consequence or a test a form composes itself calls to evaluate the condition {@code t}
-     *  ({@link ClosureWeergave#toets(Term)}). */
+    /** The test a consequence calls to evaluate the condition {@code t} again ({@link ClosureWeergave#toets(Term)}). */
     private static Toets toetsweergave(Term t) {
         Predicate<Object[]> p = ClosureWeergave.toets(t);
         return p::test;
@@ -3444,9 +3443,9 @@ public final class TmsTranspiler {
             case Term.GelijsteVouw g -> leestEerst(g.operanden(), slot);
             // the value of a nested Let is evaluated at the first read of its own binder, which gives FALSE above
             case Term.Let l -> leestEerst(l.lichaam(), slot);
-            // the condition comes first and, until step 1b2, shows nothing of what it reads; a branch is conditional
+            // the condition comes first and a branch is conditional; what the condition reads is not looked into, so the
+            // choice counts as something else first, as before the conditions were planned
             case Term.Keuze k -> Boolean.FALSE;
-            case Term.GecompileerdeToets g -> Boolean.FALSE;
             // a composite is a condition, which stands in a value only as the condition of a choice, answered above; its
             // members after the first are read only where no stop came before them
             case Term.Samengesteld s -> Boolean.FALSE;
@@ -4636,9 +4635,8 @@ public final class TmsTranspiler {
     // ---------------- conditions ----------------
 
     /** A condition as a predicate over the values its reads bind, in the order {@link Lezingen} gives them indices: the
-     *  rendering of a planned condition that a consequence or a test a form composes itself calls
-     *  ({@link #toetsweergave}), and, until step 1b3 of card drl-teksttak-op-truth-maintenance, what the compilers of a
-     *  quantifier fold and of a test of the §9.5 channel and the forms that compose a test themselves still make. */
+     *  rendering of a planned condition that a consequence calls to evaluate it again ({@link #toetsweergave}), until
+     *  step 1c of card drl-teksttak-op-truth-maintenance plans the consequences. */
     @FunctionalInterface
     private interface Toets {
         boolean test(Object[] waarden);

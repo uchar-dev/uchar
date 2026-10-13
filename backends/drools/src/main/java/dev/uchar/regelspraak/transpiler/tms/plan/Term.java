@@ -183,13 +183,4 @@ public sealed interface Term {
     /** The predicate of the day kind {@code naam} over a calendar day: a constant of the document, which reads nothing
      *  of working memory (IR-SPEC ch. 3.7, WF-031). */
     record Dagsoort(String naam, Predicate<LocalDate> predikaat, String bron) implements Term {}
-
-    /**
-     * A condition as the condition compiler compiled it: a predicate over the value array, a truth value.
-     *
-     * <p>INTERIM FORM, until step 1b3 of card drl-teksttak-op-truth-maintenance plans what it still holds: a quantifier
-     * fold, a test of the §9.5 channel, the negation of a consistency's assertion and the tests a form composes itself.
-     * No rendering can show what it tests.
-     */
-    record GecompileerdeToets(Predicate<Object[]> toets, String bron) implements Term {}
 }

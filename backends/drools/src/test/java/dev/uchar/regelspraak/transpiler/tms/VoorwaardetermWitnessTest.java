@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       equals, line for line, that of the test before it of the same form is named with "zoals de vorige toets"
  *       instead of repeating the list.</li>
  * </ul>
- * Not pinned: the predicate a {@link Term.GecompileerdeToets} holds, which neither golden has. That the rendering of
+ * Not pinned: the predicate of a day kind ({@link Term.Dagsoort}), which neither golden has. That the rendering of
  * these trees tests what the compiled conditions tested before the step is what the harness {@code Vuurspoor} shows, a
  * dump of every firing and every fact of the corpus and of the suite equal to the one before the step.
  *

@@ -39,7 +39,6 @@ final class Termboom {
             case Term.Kwantorlezing k -> "Kwantorlezing " + k.functie() + " " + k.kwantor() + " " + k.drempel()
                     + " sonde " + k.sonde() + " (" + boom(k.aantal()) + ", " + boom(k.bijdragen()) + ")";
             case Term.ZonderFout z -> "ZonderFout(" + boom(z.voorwaarde()) + ")";
-            case Term.GecompileerdeToets g -> "GecompileerdeToets '" + g.bron() + "'";
         };
     }
 
@@ -79,7 +78,6 @@ final class Termboom {
             case Term.Samengesteld s -> s.leden();
             case Term.Kwantorlezing k -> List.of(k.aantal(), k.bijdragen());
             case Term.ZonderFout z -> List.of(z.voorwaarde());
-            case Term.GecompileerdeToets g -> List.of();
         };
     }
 

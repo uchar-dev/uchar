@@ -110,17 +110,12 @@ final class ClosureWeergave {
                 Predicate<LocalDate> p = d.predikaat();
                 yield w -> p;
             }
-            case Term.GecompileerdeToets g -> {
-                Predicate<Object[]> p = g.toets();
-                yield w -> p.test(w);
-            }
         };
     }
 
-    /** The test that {@code t}, a condition, holds: a compiled condition as it is, a composite as its fold, a condition
-     *  tested without its fault as that test, any other term as its value, a truth value. */
+    /** The test that {@code t}, a condition, holds: a composite as its fold, a condition tested without its fault as
+     *  that test, any other term as its value, a truth value. */
     static Predicate<Object[]> toets(Term t) {
-        if (t instanceof Term.GecompileerdeToets g) return g.toets();
         if (t instanceof Term.Samengesteld s) return samengesteld(s);
         if (t instanceof Term.ZonderFout z) return zonderFout(toets(z.voorwaarde()));
         Waardefunctie f = waardefunctie(t);
