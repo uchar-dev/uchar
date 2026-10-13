@@ -1447,12 +1447,11 @@ public final class TmsTranspiler {
         Supplier<Lezingen> nieuw = () -> new Lezingen(c.subject()).geldig(c.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets houdt = toetsweergave(voorwaarde(c.assertie(), lez));
+        Term houdt = voorwaarde(c.assertie(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
-        Toets geschonden = w -> !houdt.test(w);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen),
-                new Term.GecompileerdeToets(geschonden::test, bron(c.assertie().bron())), gelezen, c.assertie());
+        Term geschonden = new Term.Aanroep(Functie.NIET, List.of(houdt), bron(c.assertie().bron()));
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), geschonden, gelezen, c.assertie());
         String naam = c.naam();
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, o))));
