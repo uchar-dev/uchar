@@ -10,7 +10,6 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
-import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
@@ -46,10 +45,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,39 +60,20 @@ import java.util.function.Predicate;
  * analysis planned, and the consequence the plan's {@link Gevolg} says. It decides nothing: what is read, how, in which
  * order, and what a firing inserts is the plan's ({@code TmsTranspiler.Lezingen}, {@link Regelplan}).
  *
- * <p>A whole plan it renders at once ({@link #regel}). Until step 1c of card drl-teksttak-op-truth-maintenance has
- * planned every form, the forms that still build their rules themselves take an instance per rule, which renders each
- * item of the left-hand side when the analysis hands it over and keeps the rendering, since such a form adds
- * constraints to the rendered subject pattern itself. The variables of the value array's slots are the variables the
+ * <p>It renders a whole plan at once ({@link #regel}). The variables of the value array's slots are the variables the
  * bindings of the plan bind, by name; a value variable is bound once.
  */
 final class PatternDslWeergave {
 
-    private final Variable<Object> onderwerp;
-    private final PatternDSL.PatternDef<Object> onderwerpPatroon;
-    /** The slots of the rule's value array of a whole plan ({@link #regel}); null for the rendering of a form that still
-     *  builds its rule itself, which registers each slot as the analysis makes it ({@link #lezing}). */
+    /** The slots of the rule's value array ({@link #regel}). */
     private final Leestabel tabel;
     /** The value variables of the rule, by name, the subject's among them. */
     private final Map<String, Variable<Object>> waarden = new HashMap<>();
     /** The value variables a binding or an accumulate function binds already and that are still in scope. */
     private final Set<String> gebonden = new HashSet<>();
-    private final List<Variable<?>> slots = new ArrayList<>();
-    private final List<Variable<?>> slotsLezen = Collections.unmodifiableList(slots);
-    private final Map<LhsItem, RuleItemBuilder<?>> weergegeven = new IdentityHashMap<>();
-
-    @SuppressWarnings("unchecked")
-    PatternDslWeergave(Class<?> bonenklasse, String naam) {
-        onderwerp = (Variable<Object>) DSL.declarationOf(bonenklasse, naam);
-        onderwerpPatroon = PatternDSL.pattern(onderwerp);
-        waarden.put(naam, onderwerp);
-        tabel = null;
-    }
 
     /** The rendering of a whole plan, whose subject pattern, if the rule has one, is an item of its left-hand side. */
     private PatternDslWeergave(Leestabel tabel) {
-        onderwerp = null;
-        onderwerpPatroon = null;
         this.tabel = tabel;
     }
 
@@ -148,15 +126,8 @@ final class PatternDslWeergave {
         return def;
     }
 
-    /** Adds the constraint {@code a} on the subject bean to the subject pattern this rendering renders as the analysis
-     *  hands it over. */
-    void alfaOnderwerp(Class<?> bonenklasse, Alfa a) {
-        onderwerpPatroon.expr(a.id(), predicaat(bonenklasse, a));
-    }
-
     /** The variable of slot {@code slot} of the value array, null for a binder or a probe. */
     private Variable<?> variabele(int slot) {
-        if (tabel == null) return slots.get(slot);
         String naam = tabel.slots().get(slot).naam();
         return naam == null ? null : bekend(naam);
     }
@@ -512,7 +483,7 @@ final class PatternDslWeergave {
      *  to a {@link org.drools.model.functions.BlockN} over the Drools handle and the bound facts, and the engine calls
      *  that block whatever its arity; this builder sets the same block directly, so a consequence is not limited by the
      *  arities the DSL spells out. */
-    static final class Consequentie
+    private static final class Consequentie
             extends org.drools.model.consequences.ConsequenceBuilder.AbstractValidBuilder<Consequentie> {
         @SuppressWarnings("rawtypes")
         Consequentie(Variable[] v, BiConsumer<org.drools.model.Drools, Object[]> body) {
@@ -521,46 +492,6 @@ final class PatternDslWeergave {
             block = args -> body.accept((org.drools.model.Drools) args[0],
                     java.util.Arrays.copyOfRange(args, 1, args.length));
         }
-    }
-
-    Variable<Object> onderwerp() { return onderwerp; }
-
-    PatternDSL.PatternDef<Object> onderwerpPatroon() { return onderwerpPatroon; }
-
-    /** The variable of each slot of the value array, null for a binder or a probe: a view that grows with the plan. */
-    List<Variable<?>> slots() { return slotsLezen; }
-
-    /** Registers slot {@code l}: the variable an item rendered before binds under its name, the subject's for the
-     *  subject itself, and none for a binder or a probe, which no pattern binds. */
-    void lezing(Lezing l) {
-        if (l.slot() != slots.size())
-            throw new IllegalStateException("slot " + l.slot() + " na " + slots.size() + " slots");
-        slots.add(l.naam() == null ? null : bekend(l.naam()));
-    }
-
-    /** Binds {@code b} off the subject pattern. */
-    void bindOnderwerp(Binding b) {
-        onderwerpPatroon.bind(bind(b.doel()), lezer(b));
-    }
-
-    /** The rendering of {@code item}, made at the first call and the same object at every later one. */
-    RuleItemBuilder<?> item(LhsItem item) {
-        // the subject pattern exists from the start and takes its bindings as they come (bindOnderwerp); the plan's
-        // subject item is a copy of those bindings per planned left-hand side, so it renders as that one pattern
-        if (item instanceof Onderwerp) return onderwerpPatroon;
-        RuleItemBuilder<?> r = weergegeven.get(item);
-        if (r == null) {
-            r = switch (item) {
-                case Onderwerp o -> onderwerpPatroon;
-                case Patroon p -> patroon(p).def();
-                case Niet n -> niet(n);
-                case Bestaat b -> bestaat(b);
-                case Accumulatie a -> accumulatie(a);
-                case Toetsitem t -> toets(t);
-            };
-            weergegeven.put(item, r);
-        }
-        return r;
     }
 
     private record Weergegeven(Variable<Object> variabele, PatternDSL.PatternDef<Object> def) {}
@@ -922,8 +853,8 @@ final class PatternDslWeergave {
      * the key, so the two cannot differ; Drools evaluates the predicate where it does not use the index. A side that
      * reads null meets nothing.
      */
-    static <T, U> PatternDSL.PatternDef<T> zelfde(PatternDSL.PatternDef<T> p, String id, Variable<U> v,
-                                                 Function1<T, Object> links, Function1<U, Object> rechts) {
+    private static <T, U> PatternDSL.PatternDef<T> zelfde(PatternDSL.PatternDef<T> p, String id, Variable<U> v,
+                                                         Function1<T, Object> links, Function1<U, Object> rechts) {
         return p.expr(id, v, (x, o) -> {
             Object a = links.apply(x);
             return a != null && a == rechts.apply(o);
