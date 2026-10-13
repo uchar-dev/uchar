@@ -103,8 +103,9 @@ final class Sessiedump {
 
     /** The input of a session right before its fire: every object in working memory, named and with its fields as
      *  {@link #feiten} writes them, and every global of the knowledge base with its value. Two sessions of one document
-     *  with an equal input are two firings of one case; a global that is a predicate, the compiled day kind of the
-     *  document, prints as such, since it is the same for every case and prints an identity of the JVM otherwise. */
+     *  with an equal input are two firings of one case. A global that is a predicate, the compiled day kind of the
+     *  document, is left out: it is the same for every case, only the DRL text holds it in a global, and it prints an
+     *  identity of the JVM otherwise. */
     private static List<String> invoer(KieSession sessie, Map<String, Object> labels) {
         Naamgeving n = new Naamgeving(sessie, labels, List.of());
         List<String> regels = new ArrayList<>();
@@ -113,7 +114,10 @@ final class Sessiedump {
         for (KiePackage p : sessie.getKieBase().getKiePackages())
             for (Global g : p.getGlobalVariables()) {
                 Object w = sessie.getGlobal(g.getName());
-                globals.put(g.getName(), w instanceof Predicate<?> ? "Predicate" : n.render(w));
+                // the predicate of a day kind is a constant of the document, which the DRL text holds in a global and
+                // the executable model closes over; no input of the case, so the input of the two renderings compares
+                if (w instanceof Predicate<?>) continue;
+                globals.put(g.getName(), n.render(w));
             }
         globals.forEach((g, w) -> regels.add("global " + citeer(g) + " = " + w));
         regels.sort(Comparator.naturalOrder());

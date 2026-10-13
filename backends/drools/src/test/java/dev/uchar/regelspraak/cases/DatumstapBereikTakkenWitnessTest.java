@@ -39,8 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * tms-verdeling-en-tijdlijnen (2026-10-09), which carries them: since then its row faults as the other two do.
  *
  * <p>{@code DRL_TMS}, the analysis of the exec-model branch rendered as DRL text (card
- * drl-teksttak-op-truth-maintenance), faults on the four cases of the calendar step as the other branches do, and
- * refuses the day kinds by name until its step 5b, which this witness pins.
+ * drl-teksttak-op-truth-maintenance), faults on the four cases of the calendar step as the other branches do, and on
+ * the step of a day kind since its step 5, which sets the predicates of the analysis as globals of the text; until then
+ * it refused the day kinds by name, and this witness pinned that refusal. <b>Red</b> on {@code 2704d81d}, before the
+ * day kinds of step 5: the row of the day-kind step failed on {@code DRL_TMS} with "drl-tms: een document met
+ * dagsoorten".
  */
 class DatumstapBereikTakkenWitnessTest {
 
@@ -66,18 +69,7 @@ class DatumstapBereikTakkenWitnessTest {
         Path map = ROOD.resolveSibling("dagsoortstap-buiten-bereik");
         Path ir = map.resolve("ir.json"), geval = map.resolve("case1.json");
         JsonNode c = JSON.readTree(Files.readString(geval));
-        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
-            if (tak == DroolsBackend.Branch.DRL_TMS) weigertDagsoorten(ir, c);
-            else faalt(ir, geval, c, tak);
-        }
-    }
-
-    /** {@code DRL_TMS} refuses a document with day kinds by name until the analysis gives their predicates (card
-     *  drl-teksttak-op-truth-maintenance, step 5b); this row then expects the fault there too. */
-    private static void weigertDagsoorten(Path ir, JsonNode c) {
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, zonderFout(c), DroolsBackend.Branch.DRL_TMS), "DRL_TMS");
-        assertTrue(e.getMessage().startsWith("drl-tms: een document met dagsoorten"), e.getMessage());
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) faalt(ir, geval, c, tak);
     }
 
     /** {@code c} replayed on {@code tak} faults at fire, with the fragment it pins for the backend in the cause chain. */

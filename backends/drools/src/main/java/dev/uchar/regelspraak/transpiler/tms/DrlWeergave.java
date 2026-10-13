@@ -111,8 +111,9 @@ final class DrlWeergave {
     private final Set<String> imports = new TreeSet<>();
     /** The canonical name of each imported class by its simple name, so that two classes of one name fail loudly. */
     private final Map<String, String> enkelvoudig = new HashMap<>();
-    /** The globals of the day kinds the terms name, by their names, each with its day kind. */
-    private final Map<String, String> dagsoorten = new LinkedHashMap<>();
+    /** The globals of the day kinds the terms name, by their names, each with the node of its day kind, which carries
+     *  the predicate the analysis compiled. */
+    private final Map<String, Term.Dagsoort> dagsoorten = new LinkedHashMap<>();
     private final StringBuilder regels = new StringBuilder();
 
     private DrlWeergave() {}
@@ -124,6 +125,16 @@ final class DrlWeergave {
      * KieBase would keep one.
      */
     static String tekst(Modelplan plan) {
+        return render(plan).tekst();
+    }
+
+    /** The DRL text of a plan ({@link #tekst}), and the predicate of every day kind whose global the text declares, by
+     *  the name of the global: a session of the text sets each before it fires. The predicates are those the analysis
+     *  compiled into its plan ({@code Term.Dagsoort}); the rendering only names their globals (decision 6). */
+    record Gerenderd(String tekst, Map<String, java.util.function.Predicate<LocalDate>> dagsoorten) {}
+
+    /** {@link #tekst} with the predicates of its day-kind globals. */
+    static Gerenderd render(Modelplan plan) {
         DrlWeergave w = new DrlWeergave();
         Set<String> regelnamen = new HashSet<>();
         for (int n = 0; n < plan.regels().size(); n++) {
@@ -148,7 +159,9 @@ final class DrlWeergave {
         for (String i : w.imports) uit.append("import ").append(i).append(";\n");
         if (!w.imports.isEmpty()) uit.append('\n');
         if (!globals.isEmpty()) uit.append(globals).append('\n');
-        return uit.append(w.regels).toString();
+        Map<String, java.util.function.Predicate<LocalDate>> predikaten = new LinkedHashMap<>();
+        w.dagsoorten.forEach((global, d) -> predikaten.put(global, d.predikaat()));
+        return new Gerenderd(uit.append(w.regels).toString(), java.util.Collections.unmodifiableMap(predikaten));
     }
 
     // ---------------- names ----------------
@@ -277,15 +290,20 @@ final class DrlWeergave {
                 + e.kenmerk() + ")";
     }
 
-    /** The global of the day kind {@code naam}: its predicate, a constant of the document, which the case runner sets
-     *  under this name before the session fires. */
-    private String dagsoort(String naam) {
+    /** The global of the day kind {@code d}: its predicate, a constant of the document, which the case runner sets
+     *  under this name before the session fires. The analysis compiles one predicate per day kind, so two nodes of one
+     *  global carry one predicate; any other pair fails. */
+    private String dagsoort(Term.Dagsoort d) {
+        String naam = d.naam();
         String global = "rsDagsoort_" + Namen.ident(naam, true);
         if (!global.codePoints().allMatch(Character::isJavaIdentifierPart))
             throw new Weigering("de dagsoort '" + naam + "', waarvan de global geen Java-identifier is");
-        String eerder = dagsoorten.putIfAbsent(global, naam);
-        if (eerder != null && !eerder.equals(naam))
-            throw new IllegalStateException("de dagsoorten '" + eerder + "' en '" + naam + "' delen de global " + global);
+        Term.Dagsoort eerder = dagsoorten.putIfAbsent(global, d);
+        if (eerder != null && !eerder.naam().equals(naam))
+            throw new IllegalStateException("de dagsoorten '" + eerder.naam() + "' en '" + naam + "' delen de global "
+                    + global);
+        if (eerder != null && eerder.predikaat() != d.predikaat())
+            throw new IllegalStateException("de dagsoort '" + naam + "' heeft in het plan twee predicaten");
         return global;
     }
 
@@ -712,7 +730,7 @@ final class DrlWeergave {
                 case Term.Kwantorlezing q -> new Expr(kwantorlezing(q, c), Object.class);
                 case Term.ZonderFout z -> new Expr("Boolean.valueOf(" + zonderFout(z, c) + ")", Boolean.class);
                 case Term.Dagsoort d -> {
-                    String global = dagsoort(d.naam());
+                    String global = dagsoort(d);
                     if (!c.heeft(global)) throw new IllegalStateException("de dagsoort " + d.naam() + " buiten haar context");
                     yield new Expr(global, java.util.function.Predicate.class);
                 }
@@ -1264,7 +1282,7 @@ final class DrlWeergave {
         /** Adds to {@code uit} the global of every day kind {@code t} names, in the order of the tree. */
         private void dagsoorten(Term t, Set<String> uit) {
             switch (t) {
-                case Term.Dagsoort d -> uit.add(dagsoort(d.naam()));
+                case Term.Dagsoort d -> uit.add(dagsoort(d));
                 case Term.Invoer i -> dagsoorten(i.object(), uit);
                 case Term.Let l -> {
                     dagsoorten(l.waarde(), uit);

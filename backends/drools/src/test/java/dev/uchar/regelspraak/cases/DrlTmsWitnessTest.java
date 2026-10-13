@@ -114,8 +114,10 @@ class DrlTmsWitnessTest {
         assertEquals(List.of(), fouten);
     }
 
-    /** The CLI's {@code --drl-tms} replays through the branch: a golden it carries plays, one it does not carry yet is
-     *  refused with the reason of the branch. */
+    /** The CLI's {@code --drl-tms} replays through the branch: a golden plays, also one with day kinds, whose
+     *  predicates the build gives as the globals the text declares ({@code Build.dagsoortGlobalen}). <b>Red</b> on
+     *  {@code 2704d81d}, before the day kinds of step 5: the branch refused the golden with day kinds, "EXCLUDE drl-tms:
+     *  een document met dagsoorten", and this test pinned that refusal. */
     @Test void de_vlag_drl_tms_speelt_door_de_tak() throws Exception {
         java.io.ByteArrayOutputStream uit = new java.io.ByteArrayOutputStream();
         Path kustwacht = GOLDEN.resolve("anchor").resolve("jutterswet-kustwacht");
@@ -132,8 +134,14 @@ class DrlTmsWitnessTest {
         }
         code = DroolsBackendMain.voer(argumenten.toArray(String[]::new),
                 new java.io.PrintStream(uit, true, java.nio.charset.StandardCharsets.UTF_8));
-        String regel = uit.toString(java.nio.charset.StandardCharsets.UTF_8).trim();
-        assertTrue(regel.startsWith("EXCLUDE drl-tms: een document met dagsoorten"), regel);
-        assertEquals(2, code);
+        assertEquals("PLAYED 2", uit.toString(java.nio.charset.StandardCharsets.UTF_8).trim());
+        assertEquals(0, code);
+        DroolsBackend.Build b = DroolsBackend.build(getijklok.resolve("ir.json"), DroolsBackend.Branch.DRL_TMS);
+        java.util.Set<String> gedeclareerd = new java.util.TreeSet<>();
+        java.util.regex.Matcher m = Pattern.compile("(?m)^global java\\.util\\.function\\.Predicate (\\w+);$")
+                .matcher(b.drl());
+        while (m.find()) gedeclareerd.add(m.group(1));
+        assertTrue(!gedeclareerd.isEmpty(), "de tekst declareert de global van een dagsoort");
+        assertEquals(gedeclareerd, new java.util.TreeSet<>(b.dagsoortGlobalen().keySet()));
     }
 }

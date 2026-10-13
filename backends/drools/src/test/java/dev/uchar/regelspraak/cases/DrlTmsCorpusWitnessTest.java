@@ -99,7 +99,6 @@ class DrlTmsCorpusWitnessTest {
             int nogNiet = reden.indexOf(" nog niet");
             return nogNiet < 0 ? reden : reden.substring(0, nogNiet);
         }
-        if (reden.startsWith("drl-tms: een document met dagsoorten")) return "drl-tms: dagsoorten";
         if (reden.startsWith("transpiler SKIP: ")) {
             String rest = reden.substring("transpiler SKIP: ".length());
             int dubbelepunt = rest.indexOf(':');

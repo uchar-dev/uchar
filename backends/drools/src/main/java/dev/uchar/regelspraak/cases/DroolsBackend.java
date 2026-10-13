@@ -140,10 +140,12 @@ public final class DroolsBackend {
         }
 
         /** The §9.8 day-kind predicates the DRL text declares as globals (name -> predicate); a session must have
-         *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas, and on
-         *  {@code DRL_TMS}, which refuses a document with day kinds until the analysis gives their predicates. */
+         *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas; on
+         *  {@code DRL_TMS} those of the analysis, whose rendering names their globals
+         *  ({@link TmsTranspiler#drlDagsoortGlobalen}); on the DRL-text branch those of its own transpiler. */
         public Map<String, Predicate<LocalDate>> dagsoortGlobalen() {
-            return drlTranspiler == null ? Map.of() : drlTranspiler.dagsoortGlobalen();
+            if (drlTranspiler != null) return drlTranspiler.dagsoortGlobalen();
+            return drl == null ? Map.of() : execModelTranspiler.drlDagsoortGlobalen();
         }
     }
 
@@ -305,15 +307,12 @@ public final class DroolsBackend {
      *  compiled by the classic DRL build ({@code KieHelper}) in EQUALITY mode, as the executable model of that branch
      *  is. The text derives with truth maintenance over the same facts as the executable model, so every entry of a
      *  session treats this branch as the exec-model branch. It refuses as well, loudly and with the reason, a kind the
-     *  rendering does not carry yet ({@link TmsTranspiler.DrlWeigering}), and a document with day kinds: their
-     *  predicates are globals of the text, and the analysis does not give them yet, so {@link Build#dagsoortGlobalen}
-     *  is empty here. A text the Drools compiler rejects is a fault of the rendering, not a form the branch does not
-     *  carry: it fails with an {@link IllegalStateException}, which a caller that knows the document names. */
+     *  rendering does not carry ({@link TmsTranspiler.DrlWeigering}). The predicates of the day kinds are globals of the
+     *  text, which {@link Build#dagsoortGlobalen} gives from the analysis. A text the Drools compiler rejects is a
+     *  fault of the rendering, not a form the branch does not carry: it fails with an {@link IllegalStateException},
+     *  which a caller that knows the document names. */
     private static Build drlTmsTak(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = analyse(loaded, cl, "drl-tms");
-        if (!loaded.model().dagsoorten.isEmpty())
-            throw new Excluded("drl-tms: een document met dagsoorten (§9.8) " + loaded.model().dagsoorten
-                    + " — de tak zet hun predicaten nog niet als globals");
         String drl;
         try {
             drl = t.drl();

@@ -422,9 +422,10 @@ public final class TmsTranspiler {
         public String soort() { return soort; }
     }
 
-    /** The outcome of the one rendering into DRL text ({@link #drl}): the text, or the refusal of the rendering; both
-     *  null until the first call. */
+    /** The outcome of the one rendering into DRL text ({@link #drl}): the text with the predicates of its day-kind
+     *  globals, or the refusal of the rendering; both null until the first call. */
     private String drl;
+    private Map<String, java.util.function.Predicate<LocalDate>> drlDagsoorten;
     private DrlWeergave.Weigering drlGeweigerd;
 
     /**
@@ -436,7 +437,9 @@ public final class TmsTranspiler {
     public synchronized String drl() {
         if (drl == null && drlGeweigerd == null) {
             try {
-                drl = DrlWeergave.tekst(modelplan);
+                DrlWeergave.Gerenderd g = DrlWeergave.render(modelplan);
+                drl = g.tekst();
+                drlDagsoorten = g.dagsoorten();
             } catch (DrlWeergave.Weigering w) {
                 drlGeweigerd = w;
             }
@@ -444,6 +447,14 @@ public final class TmsTranspiler {
         if (drlGeweigerd != null)
             throw new DrlWeigering(drlGeweigerd.soort(), drlGeweigerd.getMessage(), drlGeweigerd);
         return drl;
+    }
+
+    /** The §9.8 day-kind predicates of the DRL text ({@link #drl}), by the name of the global the text declares for
+     *  each, as the analysis compiled them into its plan; a session of the text has each set before it fires. Refused
+     *  as {@link #drl} refuses. */
+    public synchronized Map<String, java.util.function.Predicate<LocalDate>> drlDagsoortGlobalen() {
+        drl();
+        return drlDagsoorten;
     }
 
     /**

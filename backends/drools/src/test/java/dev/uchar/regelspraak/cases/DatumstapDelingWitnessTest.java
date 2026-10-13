@@ -10,8 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A date step whose count is a division that does not terminate: "zijn meldtijdstip plus zijn wachttijd gedeeld door
@@ -36,8 +34,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * division terminates.
  *
  * <p>{@code DRL_TMS}, the analysis of the exec-model branch rendered as DRL text (card
- * drl-teksttak-op-truth-maintenance), gives the values of the calendar step, and refuses the day kinds by name until
- * its step 5b, which the day-kind rows pin.
+ * drl-teksttak-op-truth-maintenance), gives the values of the calendar step, and those of the day-kind step since its
+ * step 5, which sets the predicates of the analysis as globals of the text; until then it refused the day kinds by
+ * name, and the day-kind rows pinned that refusal. <b>Red</b> on {@code 2704d81d}, before the day kinds of step 5: the
+ * day-kind rows failed on {@code DRL_TMS} with "drl-tms: een document met dagsoorten".
  */
 class DatumstapDelingWitnessTest {
 
@@ -68,23 +68,9 @@ class DatumstapDelingWitnessTest {
         JsonNode getij = zaak("Getijpost", "G1", "{\"meldtijdstip\":{\"dateTime\":\"2026-03-10T09:15:30\"},"
                 + "\"wachttermijn\":{\"number\":\"10\"}}", "sluittijdstip", "{\"dateTime\":\"2026-04-15T09:15:30\"}");
         for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
-            if (tak == DroolsBackend.Branch.DRL_TMS) {
-                // refuses day kinds by name until the analysis gives their predicates (card
-                // drl-teksttak-op-truth-maintenance, step 5b); the rows then expect its values as on the other branches
-                weigert(datum, berging);
-                weigert(tijdstip, getij);
-                continue;
-            }
             assertNull(CaseRunner.speelCase(datum, berging, tak), tak + ": 10 springtijdagen gedeeld door 3 op een datum");
             assertNull(CaseRunner.speelCase(tijdstip, getij, tak), tak + ": hetzelfde op een datum-tijd");
         }
-    }
-
-    /** {@code DRL_TMS} refuses the document {@code ir}, which has day kinds, by name. */
-    private static void weigert(Path ir, JsonNode zaak) {
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.DRL_TMS), "DRL_TMS: " + ir);
-        assertTrue(e.getMessage().startsWith("drl-tms: een document met dagsoorten"), e.getMessage());
     }
 
     /** {@code bron} with the duration operand X of the rule {@code regel} replaced by "X gedeeld door 3", typed as the
