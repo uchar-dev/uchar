@@ -1799,50 +1799,36 @@ public final class TmsTranspiler {
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
         List<Rule> uit = new ArrayList<>();
 
-        // per source and recipient: the recipient's values, bound in this rule's left-hand side
-        Lezingen lid = bijdragelezingen(bron, doel, ontvangersjoin(rb, bron, doel, naam));
-        Set<Integer> lidgebruik = lid.volg();
+        // per source and recipient: the recipient's values, bound in this rule's left-hand side, after the source
+        Consumer<Lezingen> bereik = ontvangersjoin(rb, bron, doel, naam);
+        Lezingen lid = new Lezingen(doel, false);
+        lid.buiten = vouwbinders;
+        lid.kopPlan(new Patroon(bonenklasse(bron), VOUWONDERWERP, List.of(), List.of(), List.of()));
+        bereik.accept(lid);
         int ontvanger = lid.lid();
         int g = gewicht == null ? -1 : lid.eigen(gewicht);
         int k = sleutel == null ? -1 : lid.eigen(sleutel);
         int m = maximum == null ? -1 : lid.eigen(maximum);
-        lid.stop();
-        List<RuleItemBuilder<?>> lidregel = lid.linkerkant(Toetsitem.Rol.VOORWAARDE, null, Set.of(), null);
-        lidregel.add(gevolg(lid, lid.drager, posities(lidgebruik), (drools, b, w) ->
-                drools.logicalInsert(new Ontvanger(naam, b, w[ontvanger], g < 0 ? null : w[g], k < 0 ? null : w[k],
-                        m < 0 ? null : w[m])), lid.variabelen.size()));
+        List<LhsItem> lidregel = lid.plan(Toetsitem.Rol.VOORWAARDE, null, Set.of(), null);
         lid.vastleggen();
-        uit.add(PatternDSL.rule(PKG, regelnaam + ": ontvanger").build(lidregel.toArray(new RuleItemBuilder[0])));
+        uit.add(weergeef(lid.regelplan(regelnaam + ": ontvanger", lidregel,
+                new Gevolg.Ontvanger(VOUWONDERWERP, naam, ontvanger, g, k, m, Gevolg.Invoeging.LOGISCH))));
 
         // per source: the condition, the pot and the list of recipients, and the distribution computed from them
-        Supplier<Lezingen> nieuw = () -> new Lezingen(bron).geldig(v.geldigheid());
+        Supplier<Lezingen> nieuw = () -> new Lezingen(bron, false).geldig(v.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Term toets = v.voorwaarde() == null ? null : voorwaarde(v.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
         int p = lez.eigen(pot);
         int lijst = lez.ontvangers(naam);
-        lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, v.voorwaarde());
+        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, v.voorwaarde());
         ElementSleutel aandeelSleutel = aandeel.sleutel(), restSleutel = rest == null ? null : rest.sleutel();
-        boolean gewogen = gewicht != null, gemaximeerd = maximum != null, afnemend = v.afnemend();
-        Integer decimalen = v.afrondingDecimalen();
-        items.add(gevolg(lez, posities(gebruik), (drools, onderwerp, w) -> {
-            List<Ontvanger> ontvangers = new ArrayList<>();
-            for (Object o : (List<?>) w[lijst]) ontvangers.add((Ontvanger) o);
-            Verdeling.Uitslag u = Verdeling.bereken(methode, w[p], ontvangers, gewogen, gemaximeerd, decimalen,
-                    afnemend);
-            for (Object r : u.deponeringen())
-                drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, r));
-            for (Map.Entry<Object, BigDecimal> e : u.aandelen().entrySet())
-                drools.logicalInsert(new Waarde(e.getKey(), aandeelSleutel, e.getValue(), naam));
-            if (restSleutel != null && u.rest() != null)
-                drools.logicalInsert(new Waarde(onderwerp, restSleutel, u.rest(), naam));
-        }, lez.variabelen.size()));
         lez.vastleggen();
-        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
+        uit.add(weergeef(lez.regelplan(regelnaam, items, new Gevolg.Uitdeling(ONDERWERP, naam, methode, p, lijst,
+                gewicht != null, maximum != null, v.afnemend(), v.afrondingDecimalen(), aandeelSleutel, restSleutel,
+                naam, Gevolg.Invoeging.LOGISCH))));
         afgeleid.put(aandeelSleutel, aandeel);
         if (rest != null) afgeleid.put(restSleutel, rest);
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, v.voorwaarde(), null));
@@ -1928,8 +1914,10 @@ public final class TmsTranspiler {
         if (paar == null)
             throw new Weigering("de connectingRole van de verdeling noemt geen gedeclareerde rol (" + rb.feittype() + ", "
                     + rb.rol() + ")");
-        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype())))
-            return koppelingsbereik(rb, paar[0], "de verdeling '" + naam + "'").koppel();
+        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype()))) {
+            Koppelrelatie relatie = koppelrelatie(rb, paar[0], "de verdeling '" + naam + "'");
+            return lid -> lid.bereikPlan(koppelingsbestaat(relatie));
+        }
         String ontvangerrol = paar[0].naam(), bronrol = paar[1].naam();
         boolean voorwaarts = !model.naarVeelRol(bron, doel, ontvangerrol);
         if (voorwaarts && model.naarVeelRol(doel, bron, bronrol))
@@ -1941,11 +1929,10 @@ public final class TmsTranspiler {
         if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, ander))
             throw new Weigering("de join van de verdeling heeft geen beanveld — "
                     + FactModelGenerator.geenJoinveldReden(model, drager, rol, ander) + " (§13.3.9 opslagrichting)");
-        Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
-        return lid -> {
-            if (voorwaarts) zelfde(lid.onderwerp, "verdelingsbereik", lid.drager, e -> e, veld::apply);
-            else zelfde(lid.onderwerp, "verdelingsbereik", lid.drager, veld::apply);
-        };
+        // forward the source's reference field names the recipient, else the recipient's names the source
+        Binding.Veld veld = new Binding.Veld(bonenklasse(drager), rol);
+        return lid -> lid.onderwerpJoin(voorwaarts ? new Join(id("verdelingsbereik"), null, VOUWONDERWERP, veld)
+                : new Join(id("verdelingsbereik"), rol, VOUWONDERWERP));
     }
 
     // ---------------- object and fact creation ----------------
@@ -4383,7 +4370,7 @@ public final class TmsTranspiler {
     private Lezingen bijdragelezingen(Objecttype subject, Objecttype elem, Consumer<Lezingen> bereik) {
         Lezingen lez = new Lezingen(elem);
         lez.buiten = vouwbinders;
-        lez.drager = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), "$vouwonderwerp");
+        lez.drager = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), VOUWONDERWERP);
         lez.kop.add(PatternDSL.pattern(lez.drager));
         bereik.accept(lez);
         return lez;
@@ -4475,12 +4462,9 @@ public final class TmsTranspiler {
      *  link has no place in the fold order, which the reference interpreter gives by the order of creation, so a filter
      *  that can fault over such a range is refused. */
     private Bereik koppelingsbereik(RolBindingRef rb, RegelSpraakModel.Rol lidrol, String wat) {
-        RegelSpraakModel.Feittype ft = feittype(rb.feittype());
-        if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-            throw new Weigering("het bereik van '" + wat + "' over de gecreëerde relatie '" + rb.feittype()
-                    + "', die geen relatie van twee rollen is: " + NOG_NIET);
-        String relatie = Namen.norm(ft.naam);
-        boolean lidIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(lidrol.naam()));
+        Koppelrelatie r = koppelrelatie(rb, lidrol, wat);
+        String relatie = r.relatie();
+        boolean lidIsEerste = r.lidIsEerste();
         return new Bereik(lid -> {
             Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$koppeling_" + id("bereik"));
             lid.bereik.add(DSL.exists(zelfde(zelfde(PatternDSL.pattern(k)
@@ -4492,6 +4476,34 @@ public final class TmsTranspiler {
                     + "' ('" + wat + "'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout"
                     + " de vouw geeft (RUNTIME-SEMANTICS ch. 5.11); " + NOG_NIET);
         });
+    }
+
+    /** A relation a form creates, as a one-step range over it walks it: by its normalised name, and whether the member
+     *  fills its first role. */
+    private record Koppelrelatie(String relatie, boolean lidIsEerste) {}
+
+    /** The relation a form creates that a one-step range over {@code rb} walks, its member filling {@code lidrol}, for
+     *  {@code wat}; a fact type that is no relation of two roles is refused. */
+    private Koppelrelatie koppelrelatie(RolBindingRef rb, RegelSpraakModel.Rol lidrol, String wat) {
+        RegelSpraakModel.Feittype ft = feittype(rb.feittype());
+        if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
+            throw new Weigering("het bereik van '" + wat + "' over de gecreëerde relatie '" + rb.feittype()
+                    + "', die geen relatie van twee rollen is: " + NOG_NIET);
+        return new Koppelrelatie(Namen.norm(ft.naam),
+                Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(lidrol.naam())));
+    }
+
+    /** The range of an allocation's recipient rule over the relation {@code r} a form creates, planned: as the one-step
+     *  range of a fold over such a relation joins ({@link #koppelingsbereik}), an {@code exists} of a {@link Koppeling}
+     *  of the relation that holds the subject at the member's end and the source the rule binds before the subject at
+     *  the other. */
+    private Bestaat koppelingsbestaat(Koppelrelatie r) {
+        String koppeling = "$koppeling_" + id("bereik");
+        Alfa vanRelatie = gelijk(id("bereik-koppeling"), "relatie", r.relatie());
+        Join lid = new Join(id("bereik-lid"), r.lidIsEerste() ? "eerste" : "tweede", ONDERWERP);
+        Join drager = new Join(id("bereik-drager"), r.lidIsEerste() ? "tweede" : "eerste", VOUWONDERWERP);
+        return new Bestaat(List.of(new Patroon(Koppeling.class, koppeling, List.of(vanRelatie), List.of(lid, drager),
+                List.of())));
     }
 
     /**
@@ -5847,6 +5859,9 @@ public final class TmsTranspiler {
 
     /** The name of the variable of a rule's subject in every plan: the name joins on the subject refer to. */
     private static final String ONDERWERP = "$onderwerp";
+    /** The variable of the object a rule binds before its subject: a fold's subject in a contribution rule, the source
+     *  in an allocation's recipient rule. */
+    private static final String VOUWONDERWERP = "$vouwonderwerp";
 
     /** A constraint that field {@code veld} of a fact equals {@code waarde}. */
     private static Alfa gelijk(String id, String veld, Object waarde) {
