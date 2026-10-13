@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import dev.uchar.regelspraak.cases.CaseRunner;
 import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
@@ -21,10 +22,12 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +66,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       whose second case deposits on a recipient: the recipient rule after the source's pattern, joined to it by the
  *       recipient's reference field, and the rule of the distribution over the list of recipients.</li>
  *   <li>{@code jutterswet-bergersdeling} with a relation of two to-one roles ({@link #bronWijstNaarOntvanger}), since
- *       no golden has one: the join reads the reference field on the source.</li>
+ *       no golden has one: the join reads the reference field on the source. This document is also fired with a case
+ *       of three sources, and its shares and rests pinned, since the plan names the field and only a firing shows that
+ *       the rendering reads it.</li>
  *   <li>Document F of {@code TmsVerdelingWitnessTest} ({@link #ontvangerUitEenCreatie}), since no golden has one: an
  *       allocation over a relation a form creates, whose range is the existence of a link.</li>
  * </ul>
@@ -395,6 +400,45 @@ class KanaalplanWitnessTest {
                         + " kenmerk=false], rest=ElementSleutel[objecttype=berging, naam=onverdeelde rest,"
                         + " kenmerk=false], schrijver=verdeel de opbrengst van een berging, invoeging=LOGISCH]"),
                 plannen(bronWijstNaarOntvanger(), List.of("verdeel de opbrengst van een berging")));
+    }
+
+    /** The case of {@link #bronWijstNaarOntvanger}: three sources, each naming its one berger. The recipients are the
+     *  hoofdbergers, so B1 and B3 give their whole yield to H1 and H2, with a rest of 0, and B2, whose berger G1 is no
+     *  hoofdberger, has no recipient and distributes nothing (ch. 4.4). The reference interpreter and the ASP backend
+     *  both pass these seven expectations. */
+    private static final String BRON_WIJST_NAAR_ONTVANGER_CASE = """
+            {"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+              {"label": "B1", "objectType": "Berging", "attributes": {"opbrengst": {"number": "1001"}},
+               "roles": {"berger": ["H1"]}, "characteristics": []},
+              {"label": "B2", "objectType": "Berging", "attributes": {"opbrengst": {"number": "700"}},
+               "roles": {"berger": ["G1"]}, "characteristics": []},
+              {"label": "B3", "objectType": "Berging", "attributes": {"opbrengst": {"number": "300"}},
+               "roles": {"berger": ["H2"]}, "characteristics": []},
+              {"label": "H1", "objectType": "Hoofdberger", "attributes": {"rang": {"number": "1"}}, "roles": {},
+               "characteristics": []},
+              {"label": "H2", "objectType": "Hoofdberger", "attributes": {"rang": {"number": "2"}}, "roles": {},
+               "characteristics": []},
+              {"label": "G1", "objectType": "Berger", "attributes": {}, "roles": {}, "characteristics": []}],
+              "parameters": {}},
+             "expected": [
+              {"kind": "attributeValue", "label": "H1", "attribute": "bergingsaandeel", "value": {"number": "1001"}},
+              {"kind": "attributeValue", "label": "B1", "attribute": "onverdeelde rest", "value": {"number": "0"}},
+              {"kind": "attributeEmpty", "label": "G1", "attribute": "bergingsaandeel"},
+              {"kind": "attributeEmpty", "label": "B2", "attribute": "onverdeelde rest"},
+              {"kind": "attributeValue", "label": "H2", "attribute": "bergingsaandeel", "value": {"number": "300"}},
+              {"kind": "attributeValue", "label": "B3", "attribute": "onverdeelde rest", "value": {"number": "0"}},
+              {"kind": "consistent"}]}
+            """;
+
+    /** The plan of the join that reads the reference field on the source, pinned above, fired: the comparison of plans
+     *  and of the executable model shows the field the join reads by name but not that its rendering reads it, and no
+     *  document of the corpus or the suite has this shape, so the harness does not watch it. A rendering that read
+     *  another field of the source would match no recipient and lose the shares. */
+    @Test void een_verdeling_waarvan_de_bron_naar_de_ontvanger_wijst_vuurt(@TempDir Path map) throws Exception {
+        Path ir = map.resolve("ir.json"), zaak = map.resolve("case.json");
+        Files.writeString(ir, JSON.writeValueAsString(bronWijstNaarOntvanger()));
+        Files.writeString(zaak, BRON_WIJST_NAAR_ONTVANGER_CASE);
+        assertEquals(new CaseRunner.Result("PLAYED", "", List.of(), 1), CaseRunner.runGolden(ir, List.of(zaak)));
     }
 
     @Test void een_verdeling_over_een_relatie_die_een_creatie_maakt() throws Exception {
