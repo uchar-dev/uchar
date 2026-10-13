@@ -91,7 +91,7 @@ IR. So: reference interpreter, then Clingo, then the extra source languages.
 | `backends/` | `clingo/` (translation to ASP-Core-2) and `drools/` (an IR loader plus two transpiler branches — DRL text for fast development and testing, the executable model for compiling services — over a shared runtime) |
 | `frontends/` | `regelspraak/` (Java parser/resolver, emits the IR), `catala/` (a Catala plugin), `flogic/` (OCaml, a second independent source language) |
 | `scripts/` | The gate set: sixteen checks, run locally before every landing (`CLAUDE.md`, Gate set) |
-| `toka/` | **Temporary.** Third-party © parity fixtures (Belastingdienst TOKA material) used to prove the RegelSpraak frontend byte-identical to the original toolchain. Not covered by the licenses below; the repository stays private while this zone exists |
+| `toka/` | Parity fixtures on the TOKA casus of the Belastingdienst (third-party material), used to prove the RegelSpraak frontend byte-identical to the original toolchain (gate 11). Not covered by the licenses below; provenance and status under License and in `toka/README.md` |
 
 ## Status
 
@@ -112,7 +112,7 @@ answers; a no-op guard proves an identity transpiler fails; the red corpus
 must fail in every executor. Per frontend: Catala, RegelSpraak and F-logic
 sources re-emit their committed IR byte-identically. Plus an
 annotation-indifference harness (consumers must derive units from
-declarations, not wire annotations) and the temporary TOKA parity gate.
+declarations, not wire annotations) and the TOKA parity gate.
 The gate set grows monotonically; a green subset is not green, an empty
 input set is a failure, and counts carry explicit floors so shrinkage
 cannot pass silently.
@@ -121,7 +121,7 @@ Start with `spec/PLAN.md`; the review that motivates it is
 `spec/IR-REVIEW.md`. Day-to-day process is `WAY-OF-WORKING.md`; work items
 live in `backlog/`.
 
-The first consumer is `uchar-dev/regelspraak-toolchain` (separate, private
+The first consumer is `uchar-dev/regelspraak-toolchain` (separate, public
 repository; the successor of the archived `regelspraak-java`): a
 distribution — CLI, decision service, container — that carries this
 repository as a git submodule and builds the RegelSpraak frontend and the
@@ -151,5 +151,31 @@ to one body of literature.
   the corpus material under `corpus/` (casus text, RegelSpraak sources,
   and their IR and case data): Creative Commons Attribution 4.0
   International, see `LICENSE-CC-BY-4.0`.
-- **Exception** — `toka/` contains third-party © material (see Layout) and
-  is covered by neither license.
+- **Not covered** — `toka/`, the TOKA parity zone, falls under neither
+  license (Apache-2.0, CC BY 4.0); see `toka/README.md`. Provenance and
+  status of the TOKA casus, the same text as in `toka/README.md` and
+  `CLAUDE.md`:
+
+> **TOKA casus.** Source: *RegelSpraak specificatie* v2.3.0 (4-12-2025),
+> Bijlage 1, "Treinen Op Korte Afstand" (TOKA, a fictitious act from the
+> Belastingdienst's ALEF course), published by the Belastingdienst at
+> https://wendbarewetsuitvoering.pleio.nl/page/view/291f5846-cdfc-42d9-9f31-a2158fe59128/specificaties-regelspraak.
+> Rights notice of the source:
+> "© 2025 Belastingdienst / Alle rechten voorbehouden".
+> Status: the Belastingdienst indicated to the maintainer on 2026-10-13 that
+> TOKA is meant to be releasable. It is probably under EUPL-1.2, like ALEF
+> (https://github.com/belastingdienst/ALEF) and the repository
+> MinBZK/regels.overheid.nl, which carries a 2022 version of the course
+> casus. Written confirmation: not yet received.
+> The licences of this repository (Apache-2.0, CC BY 4.0) do not cover this
+> material.
+>
+> Files in this repository. Copied verbatim from the source: the 47
+> definition fragments `toka/casus/toka-*.rgs`. Derived from them or own
+> work: the IR dump `toka/casus/ir.json` and the 29 IR slices
+> `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
+> of the fragments in their source snippets); the 29 case files
+> `toka/cases/scenario-*/case.json`, with situations and expected values
+> derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
+> tests under `toka/src/test/java/`, which quote lines of the fragments; and
+> `toka/README.md`.

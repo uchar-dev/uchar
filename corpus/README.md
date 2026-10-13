@@ -10,13 +10,15 @@ construction**.
 
 - Casus material is own-authored (the Jutterswet, `jutterswet/`) or built on
   statute text, which is copyright-free under art. 11 Auteurswet.
-- No ©-Belastingdienst material enters the corpus: no TOKA casus, no
-  RegelSpraak specification excerpts. Programs *written in* RegelSpraak are
-  ours; the language specification text is not. The repository's one
-  exception is the top-level `toka/` parity zone — temporary, outside
-  `corpus/`, and the reason the repository stays private (see the root
-  README and `CLAUDE.md`). Gate 1 checks that every corpus zone stays
-  TOKA-free.
+- No RegelSpraak specification excerpts enter the corpus: the specification
+  carries "Alle rechten voorbehouden" (all rights reserved). Programs
+  *written in* RegelSpraak are ours; the language specification text is
+  not.
+- No TOKA material enters the corpus. The reason is provenance: the corpus
+  is own work, and TOKA is third-party material whose release is not yet
+  confirmed in writing. The TOKA casus lives in the top-level `toka/` parity
+  zone, outside `corpus/`; its provenance and status are in
+  `toka/README.md`. Gate 1 checks that every corpus zone stays TOKA-free.
 
 ## Layout
 

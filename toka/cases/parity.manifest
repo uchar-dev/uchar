@@ -2,9 +2,9 @@
 # executor of the differential square (ref, clingo, Drools), pinned so gate 11
 # (scripts/check-toka-parity.sh) fails on any drift. Derived by the slotmeting
 # method (backlog/done/20260826-toka-slotmeting.md): each scenario is a slice of
-# the ©-Belastingdienst TOKA casus (companions resolved to an ir.json), replayed
-# against the hand-derived case.json. This file, the slices and the cases live
-# ONLY here under toka/ (the charter zone); ©-material never leaves it.
+# the TOKA casus (companions resolved to an ir.json), replayed against the
+# hand-derived case.json. This file, the slices and the cases live ONLY here
+# under toka/ (the parity zone); provenance and status in toka/README.md.
 #
 # Columns, pipe-delimited: scenario | ref | clingo | clingo-fragment | drools | drools-fragment
 #   ref     = PASS   : the ref-100 oracle matches every pinned expectation (exit 0). A wrong

@@ -1,10 +1,39 @@
-# toka/ — the isolated TOKA parity zone (temporary)
+# toka/ — the TOKA parity zone
 
-This top-level zone is the **one place** in the repository where
-©-Belastingdienst **TOKA** material is admitted, by maintainer decision of
-2026-08-27, **for feature-parity testing** of uchar's own RegelSpraak frontend
-against the original toolchain. It is isolated in a single directory so it can
-be removed in one move.
+This top-level zone is the **one place** in the repository that carries
+**TOKA** material, by maintainer decision of 2026-08-27, **for feature-parity
+testing** of uchar's own RegelSpraak frontend against the original toolchain
+(gate 11). Every other zone stays TOKA-free (gate 1): the corpus is own work,
+and TOKA is third-party material whose release is not yet confirmed in
+writing.
+
+## Provenance and status
+
+The same text stands in the root `README.md` and in `CLAUDE.md`.
+
+> **TOKA casus.** Source: *RegelSpraak specificatie* v2.3.0 (4-12-2025),
+> Bijlage 1, "Treinen Op Korte Afstand" (TOKA, a fictitious act from the
+> Belastingdienst's ALEF course), published by the Belastingdienst at
+> https://wendbarewetsuitvoering.pleio.nl/page/view/291f5846-cdfc-42d9-9f31-a2158fe59128/specificaties-regelspraak.
+> Rights notice of the source:
+> "© 2025 Belastingdienst / Alle rechten voorbehouden".
+> Status: the Belastingdienst indicated to the maintainer on 2026-10-13 that
+> TOKA is meant to be releasable. It is probably under EUPL-1.2, like ALEF
+> (https://github.com/belastingdienst/ALEF) and the repository
+> MinBZK/regels.overheid.nl, which carries a 2022 version of the course
+> casus. Written confirmation: not yet received.
+> The licences of this repository (Apache-2.0, CC BY 4.0) do not cover this
+> material.
+>
+> Files in this repository. Copied verbatim from the source: the 47
+> definition fragments `toka/casus/toka-*.rgs`. Derived from them or own
+> work: the IR dump `toka/casus/ir.json` and the 29 IR slices
+> `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
+> of the fragments in their source snippets); the 29 case files
+> `toka/cases/scenario-*/case.json`, with situations and expected values
+> derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
+> tests under `toka/src/test/java/`, which quote lines of the fragments; and
+> `toka/README.md`.
 
 ## What is here
 
@@ -12,8 +41,7 @@ be removed in one move.
   object/parameter/rule definitions of the worked example published in the
   RegelSpraak v2.3.0 specification. The TOKA data is explicitly fictitious
   ("volledig verzonnen", per the spec's own disclaimer) and relates to no real
-  case. The casus document itself is © Belastingdienst and is **not**
-  redistributed beyond these definition fragments.
+  case.
 - `casus/ir.json` — the pinned parity dump: the faithful v0 IR emitted **once
   with the original toolchain** at the frontend pin, minus the recorded
   divergences below. Gate 11 (`scripts/check-toka-parity.sh`) re-emits it
@@ -276,16 +304,12 @@ stays honest about where it no longer proves toolchain agreement.
   rejects the fragment as written. Divergence by holdout and divergence by
   re-pin are both recorded; a silent divergence is not on offer.
 
-## Rights and lifecycle — read before touching
+## Lifecycle
 
-- This material enters git **history** from the card that created the zone.
-  While the zone exists the repository **must stay private**.
-- Any public flip (PLAN §9 decision 10) requires **both** removing this zone
-  **and** a history rewrite (filter-repo or a fresh public copy) — deleting the
-  files alone does not erase them from history.
-- Gate 11 is explicitly **temporary**: it leaves the gate set with the zone —
-  the one documented exception to gate-set monotonicity.
-- Every other zone stays TOKA-free: the rights tripwire in
+- The zone stays, with its git history (maintainer decision 2026-10-13). The
+  repository is public since 2026-10-12, and its history is not rewritten.
+- Gate 11 is a regular gate of the set since 2026-10-13.
+- Every other zone stays TOKA-free: the TOKA tripwire in
   `scripts/check-self-contained.sh` keeps firing everywhere else. This zone is
   exempt from the self-containedness prose rules but must carry **no
   machine-local paths**.
