@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       with different values.</li>
  *   <li>{@code jutterswet-wrakerfbasis}: a rule whose subject pattern leaves out the objects of a type a defaults
  *       stack writes the target of; the plans of the stack itself, which step 1c-C2 planned, are left out here and
- *       have a witness of their own.</li>
+ *       pinned by {@link DefaultsplanWitnessTest}.</li>
  *   <li>{@code jutterswet-voorwaardelijke-initialisatie}: an initialisation beside no other writer, guarded by the
  *       input on the target and the absence of another writer's value.</li>
  *   <li>The same document with two computing rules beside the initialisation
