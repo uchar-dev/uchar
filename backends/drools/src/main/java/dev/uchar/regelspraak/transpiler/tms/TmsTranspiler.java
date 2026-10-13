@@ -1662,7 +1662,7 @@ public final class TmsTranspiler {
      * channel nothing fills would never hold and say nothing. "is gevuurd" reads no channel; it is no construct of the
      * core, and is refused with that reason.
      */
-    private Toets kanaallezing(Conditie.Regelversie rv, Lezingen lez) {
+    private Term kanaallezing(Conditie.Regelversie rv, Lezingen lez) {
         // decided as a predicate of the dialect over the fixpoint, never a construct of the core: the reference
         // interpreter faults on it ("not implemented") and the ASP backend does not translate it
         if (!rv.inconsistent())
@@ -1676,7 +1676,7 @@ public final class TmsTranspiler {
                     + " Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar"
                     + " waarde (§6.5, §6.6)");
         int i = lez.kanaal(producent);
-        return w -> Boolean.TRUE.equals(w[i]);
+        return new Term.Aanroep(Functie.KANAAL, List.of(new Term.Lees(i, null)), bron(rv.bron()));
     }
 
     /** Whether the form named {@code naam}, spelled as the error facts carry it, fills a channel this branch lowers. */
@@ -4650,7 +4650,7 @@ public final class TmsTranspiler {
             // ch. 4.5), so only a hand-built model reaches this
             case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("VerreRollidmaatschap", c, "de verre rolcontrole"
                     + " van v0, die sinds L2 de ene knoop RoleMembership is (IR-SPEC ch. 4.5) en die de lader niet maakt");
-            case Conditie.Regelversie rv -> gecompileerd(kanaallezing(rv, lez), rv);
+            case Conditie.Regelversie rv -> kanaallezing(rv, lez);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
             // reaches it, so a composite that settles before it reads it plays
             case Conditie.Onopgelost o -> {
@@ -4658,13 +4658,6 @@ public final class TmsTranspiler {
                 yield new Term.Faal(Rekenfout.ONOPGELOSTE_VOORWAARDE, bron(o.bron()));
             }
         };
-    }
-
-    /** {@code toets}, the condition {@code c} as its compiler still compiles it: a quantifier fold and a test of the
-     *  §9.5 channel, until step 1b3 of card drl-teksttak-op-truth-maintenance plans them
-     *  ({@link Term.GecompileerdeToets}). */
-    private static Term gecompileerd(Toets toets, Conditie c) {
-        return new Term.GecompileerdeToets(toets::test, bron(c.bron()));
     }
 
     /**
