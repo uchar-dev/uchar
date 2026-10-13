@@ -74,6 +74,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code 日 X} fails at the build, "geen getter voor '日X' op dev.uchar.regelspraak.facts.Jutter"; and on the compiled
  * bean {@code Namen.getter} and {@code Namen.setter} name {@code getİş} and {@code setİş}, and the PatternDSL reader and
  * the routes find no getter for {@code 日X}.
+ *
+ * <p>Fix round 2a2 adds the characteristic, whose getter the generator writes in the {@code is} form: the readers and
+ * writers over characteristics with such names, the replay of each, and a document with an input characteristic
+ * {@code ışık}; and a case key in another capitalisation than its declaration, which the replay brings back to the
+ * declared member. <b>Red</b> on {@code 3f6b14ba}: the four cases of {@code eigenschap/spelling} fail, "kon setter
+ * setMelDingen(BigDecimal) niet aanroepen op Seinpost", "kon setter setBeMand(boolean) niet aanroepen op Seinpost",
+ * "geen getter getMeldingsAfschrift op Seinpost" and "geen getter getSluimerEnd op Seinpost". The tests of the
+ * characteristic were green there: the branch read a characteristic through its {@code is} getter already.
  */
 class EigenschapWitnessTest {
 
@@ -187,6 +195,106 @@ class EigenschapWitnessTest {
                 + bron);
     }
 
+    /** Characteristics with names outside the corpus (fix round 2a2, point 2): one whose getter stem lowers to another
+     *  first letter than its property ({@code ışık}, getter {@code isIşık}), two whose property differs from the declared
+     *  name ({@code İş}, {@code 日 X}), and words of DRL and MVEL, among them two the DRL text cannot spell
+     *  ({@code in}, {@code drools}). The generator writes a scalar characteristic with an {@code is} getter. */
+    static final List<String> KENMERKEN = List.of("ışık", "İş", "日 X", "in", "not", "from", "drools", "eval");
+
+    /** As {@link #elke_lezer_en_schrijver_gebruikt_de_namen_van_de_beangenerator}, for a characteristic, whose getter
+     *  the generator writes in the {@code is} form: the names {@code Namen} gives, among them the getter the replay
+     *  falls back to ({@code is} and the stem of {@link Namen#getter}), and every reader and writer of the branch, each
+     *  for a member set to true and then to false through the generator's own setter. */
+    @Test void elke_lezer_en_schrijver_van_een_kenmerk_gebruikt_de_namen_van_de_beangenerator() throws Exception {
+        Map<String, String> bronnen = FactModelGenerator.genereer(IrLoader.load(json(proefdocument(List.of(),
+                KENMERKEN))));
+        String bron = bronnen.get("Kenmerkproef");
+        Map<String, String> getters = new HashMap<>(), setters = new HashMap<>();
+        Matcher g = Pattern.compile("public boolean (is\\S+)\\(\\) \\{ return (\\S+); \\}").matcher(bron);
+        while (g.find()) getters.put(g.group(2), g.group(1));
+        Matcher z = Pattern.compile("public void (set\\S+)\\(boolean v\\) \\{ this\\.(\\S+) = v; \\}").matcher(bron);
+        while (z.find()) setters.put(z.group(2), z.group(1));
+        Class<?> klasse = BeanCompiler.compileer(bronnen).loadClass(FactModelGenerator.PAKKET + ".Kenmerkproef");
+        List<String> fouten = new ArrayList<>();
+        for (String naam : KENMERKEN) {
+            String e = Namen.eigenschap(naam), getter = getters.get(e), setter = setters.get(e);
+            if (getter == null || setter == null) {
+                fouten.add(naam + " | de generator schreef geen is-getter en setter voor " + e);
+                continue;
+            }
+            Map<String, String> namen = new java.util.LinkedHashMap<>();
+            namen.put("lidnamen.isGetter", Namen.lidnamen(e).isGetter());
+            namen.put("lidnamen.setter", Namen.lidnamen(e).setter());
+            // the replay reads a member through Namen.getter, and else through the is form of its stem
+            namen.put("is-vorm van Namen.getter", "is" + Namen.getter(naam).substring(3));
+            namen.put("Namen.setter", Namen.setter(naam));
+            for (Map.Entry<String, String> m : namen.entrySet()) {
+                String verwacht = m.getKey().endsWith("setter") ? setter : getter;
+                if (!m.getValue().equals(verwacht))
+                    fouten.add(naam + " | " + m.getKey() + " " + m.getValue() + ", de generator " + verwacht);
+            }
+            for (boolean w : new boolean[] { true, false }) {
+                Object bean = klasse.getConstructor().newInstance();
+                meet(fouten, naam, "Accessors.eigenschapSetter " + w, w, () -> {
+                    Accessors.eigenschapSetter(klasse, e).accept(bean, w);
+                    return klasse.getMethod(getter).invoke(bean);
+                });
+                klasse.getMethod(setter, boolean.class).invoke(bean, w);
+                meet(fouten, naam, "Accessors.eigenschapGetter " + w, w,
+                        () -> Accessors.eigenschapGetter(klasse, e).apply(bean));
+                meet(fouten, naam, "Accessors.leesEigenschap " + w, w, () -> Accessors.leesEigenschap(bean, e));
+                meet(fouten, naam, "PatternDslWeergave.invoerlezer " + w, w, () -> PatternDslWeergave.invoerlezer(
+                        new Binding.Veld(klasse, naam), Binding.Leesvorm.WAAR, null).apply(bean));
+                meet(fouten, naam, "Rekenhulpen.lees " + w, w, () -> Rekenhulpen.lees(bean, e));
+                meet(fouten, naam, "Rekenhulpen.langs " + w, w, () -> Rekenhulpen.langs(bean, List.of(e)));
+            }
+        }
+        assertEquals(List.of(), fouten, () -> "lezers en schrijvers van een kenmerk die niet de namen van de"
+                + " beangenerator gebruiken:\n" + bron);
+    }
+
+    /** The replay sets every characteristic of {@link #KENMERKEN} as input and reads each back as an expectation, on a
+     *  document without rules: through {@code Namen.setter}, and through {@code Namen.getter} and its {@code is} form.
+     *  The reference interpreter and the ASP backend give both expectations of every characteristic. */
+    @Test void de_replay_zet_en_leest_elk_kenmerk() throws Exception {
+        Path ir = Files.createTempFile("kenmerken", ".json");
+        try {
+            Files.writeString(ir, proefdocument(List.of(), KENMERKEN));
+            for (boolean aanwezig : new boolean[] { true, false })
+                assertNull(VouwplanWitnessTest.speelCase(ir, json(kenmerkcase(KENMERKEN, aanwezig))),
+                        "de replay van de kenmerken, " + (aanwezig ? "aanwezig" : "afwezig"));
+        } finally {
+            Files.delete(ir);
+        }
+    }
+
+    /** The case of {@link #de_replay_zet_en_leest_elk_kenmerk}: one {@code Kenmerkproef} with every characteristic of
+     *  {@code kenmerken} as input where {@code aanwezig}, and expected present, or else none and each expected absent. */
+    static String kenmerkcase(List<String> kenmerken, boolean aanwezig) {
+        StringBuilder invoer = new StringBuilder(), verwacht = new StringBuilder();
+        for (String k : kenmerken) {
+            if (aanwezig) invoer.append(invoer.isEmpty() ? "" : ", ").append(Namen.drlString(k));
+            verwacht.append("{\"kind\": \"").append(aanwezig ? "characteristicPresent" : "characteristicAbsent")
+                    .append("\", \"label\": \"K1\", \"characteristic\": ").append(Namen.drlString(k)).append("}, ");
+        }
+        return "{\"format\": \"uchar-case-v0\", \"asOfDate\": null, \"input\": {\"instances\": [{\"label\": \"K1\","
+                + " \"objectType\": \"Kenmerkproef\", \"attributes\": {}, \"roles\": {}, \"characteristics\": [" + invoer
+                + "]}], \"parameters\": {}}, \"expected\": [" + verwacht + "{\"kind\": \"consistent\"}]}";
+    }
+
+    /** The document {@code eigenschap/turks-kenmerk}, verifier-clean: "het uit van een Jutter moet gesteld worden op
+     *  1,00 indien hij ışık is" and "een Jutter is İç indien hij ışık is". The replay sets the input characteristic
+     *  through {@code setIşık}, the branch reads it through {@code isIşık}, derives uit and İç, and the replay reads İç
+     *  back through {@code isIç}; without the input uit stays empty and İç absent. The reference interpreter and the
+     *  ASP backend give both cases. */
+    @Test void een_document_met_een_turks_kenmerk_vuurt() throws Exception {
+        Path map = Path.of("src", "test", "resources", "eigenschap", "turks-kenmerk");
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        for (String zaak : List.of("case.json", "case-zonder.json"))
+            assertNull(VouwplanWitnessTest.speelCase(map.resolve("ir.json"), json.readTree(map.resolve(zaak).toFile())),
+                    zaak);
+    }
+
     /** Names whose property is no Java identifier: a digit first ("3 M", "3e lid") or a character that is no
      *  identifier character ({@code ²}, decision 24). The generator writes the property as the field, so the bean source
      *  does not compile, before any reader or writer comes into play: an older limit of the generator, not of this card
@@ -226,14 +334,28 @@ class EigenschapWitnessTest {
 
     /** A document whose object type {@code Proef} has a number attribute for each of {@code namen}. */
     static String proefdocument(List<String> namen) {
+        return proefdocument(namen, List.of());
+    }
+
+    /** As {@link #proefdocument(List)}, with, where {@code kenmerken} is not empty, an object type {@code Kenmerkproef}
+     *  that has a characteristic for each of them. */
+    static String proefdocument(List<String> namen, List<String> kenmerken) {
         StringBuilder attributen = new StringBuilder();
         for (String n : namen)
             attributen.append(attributen.isEmpty() ? "" : ", ").append("{\"node\": \"Attribute\", \"name\": ")
                     .append(Namen.drlString(n)).append(", \"datatype\": {\"node\": \"Number\", \"whole\": false,"
                             + " \"decimals\": 2, \"sign\": \"nonNegative\"}}");
+        StringBuilder kenmerktype = new StringBuilder();
+        for (String k : kenmerken)
+            kenmerktype.append(kenmerktype.isEmpty() ? ", {\"node\": \"ObjectType\", \"name\": \"Kenmerkproef\","
+                    + " \"animate\": false, \"plural\": \"Kenmerkproeven\", \"attributes\": [], \"characteristics\": ["
+                    : ", ").append("{\"node\": \"Characteristic\", \"name\": ").append(Namen.drlString(k))
+                    .append(", \"kind\": \"adjectival\"}");
+        if (!kenmerktype.isEmpty()) kenmerktype.append("]}");
         return "{\"format\": \"uchar-ir-v1\", \"model\":"
                 + " {\"objectTypes\": [{\"node\": \"ObjectType\", \"name\": \"Proef\", \"animate\": false,"
-                + " \"plural\": \"Proeven\", \"attributes\": [" + attributen + "], \"characteristics\": []}],"
+                + " \"plural\": \"Proeven\", \"attributes\": [" + attributen + "], \"characteristics\": []}"
+                + kenmerktype + "],"
                 + " \"factTypes\": [], \"parameters\": [], \"domains\": [], \"unitSystems\": [], \"dimensions\": [],"
                 + " \"timelines\": [], \"dayKinds\": []}, \"rules\": {\"rules\": [], \"dayKindDefinitions\": [],"
                 + " \"objectCreations\": [], \"allocations\": [], \"consistencies\": [], \"uniquenesses\": [],"
@@ -276,6 +398,33 @@ class EigenschapWitnessTest {
         com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
         assertNull(VouwplanWitnessTest.speelCase(map.resolve("ir.json"), json.readTree(map.resolve("case.json")
                 .toFile())));
+    }
+
+    /** The cases {@code eigenschap/spelling} on the golden {@code jutterswet-sluimerwacht}, each with one key in another
+     *  capitalisation than its declaration (fix round 2a2, point 1): in the input an attribute ("melDingen" for
+     *  "meldingen") and a characteristic ("beMand"), in an expectation an attribute ("meldingsAfschrift") and a
+     *  characteristic ("sluimerEnd"). The reference interpreter and the ASP backend read each key as the declared member
+     *  and play every case; the replay brings the key back to its declaration before it derives a setter or a getter,
+     *  so it reaches the members the generator wrote. */
+    @Test void een_sleutel_in_een_andere_hoofdletterspelling_bereikt_het_gedeclareerde_lid() throws Exception {
+        Path ir = GOLDEN.resolve("jutterswet-sluimerwacht").resolve("ir.json");
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        List<Path> zaken;
+        try (Stream<Path> s = Files.list(Path.of("src", "test", "resources", "eigenschap", "spelling"))) {
+            zaken = s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
+        }
+        List<String> fouten = new ArrayList<>();
+        for (Path zaak : zaken) {
+            String uitkomst;
+            try {
+                uitkomst = VouwplanWitnessTest.speelCase(ir, json.readTree(zaak.toFile()));
+            } catch (java.lang.reflect.InvocationTargetException f) {
+                uitkomst = "faalt: " + f.getCause();
+            }
+            if (uitkomst != null) fouten.add(zaak.getFileName() + " | " + uitkomst);
+        }
+        assertEquals(4, zaken.size(), "de vier cases van eigenschap/spelling");
+        assertEquals(List.of(), fouten, "cases waarvan de replay het gedeclareerde lid niet bereikt");
     }
 
     private static com.fasterxml.jackson.databind.JsonNode json(String tekst) {

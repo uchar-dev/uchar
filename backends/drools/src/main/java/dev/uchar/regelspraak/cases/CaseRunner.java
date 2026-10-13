@@ -637,6 +637,23 @@ public final class CaseRunner {
         return !ot.dimensiesVan(attr).isEmpty();
     }
 
+    /** The declared name of the attribute a case writes as {@code naam} on {@code ot} or one of its ancestors, under the
+     *  name equality of the reference interpreter ({@link Namen#gedeclareerdeNaam}); {@code naam} where {@code ot} is null
+     *  or declares none. The generator derives a member's getter and setter from its declared name, and a case may
+     *  write the name in another capitalisation, "vondstNummer" for a declared "vondstnummer", which the reference
+     *  interpreter reads as the same member: a method derived from the written name would be one the bean lacks. */
+    private static String attribuutnaam(Objecttype ot, String naam) {
+        return ot == null ? naam : Namen.gedeclareerdeNaam(ot.attribuutLeden().keySet(), naam);
+    }
+
+    /** {@link #attribuutnaam} for a characteristic. */
+    private static String kenmerknaam(Objecttype ot, String naam) {
+        if (ot == null) return naam;
+        List<String> gedeclareerd = new ArrayList<>();
+        for (Objecttype t : ot.keten()) gedeclareerd.addAll(t.kenmerken);
+        return Namen.gedeclareerdeNaam(gedeclareerd, naam);
+    }
+
     private void zetAttributenEnKenmerken(JsonNode i) {
         Object bean = labelNaarBean.get(i.get("label").asText());
         Objecttype ot = model.objecttypeOpNaam(i.get("objectType").asText());
@@ -658,7 +675,7 @@ public final class CaseRunner {
                     emmers.add(new Invoer.Emmer(bean, e.getKey()));
                 continue;
             }
-            roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
+            roep(bean, Namen.setter(attribuutnaam(ot, e.getKey())), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
         }
         JsonNode kenmerken = i.get("characteristics");
         if (kenmerken != null) for (JsonNode k : kenmerken) {
@@ -677,7 +694,7 @@ public final class CaseRunner {
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
                         + "consults");
             eigenVeld(ot, k.asText(), true, "zet");
-            roep(bean, Namen.setter(k.asText()), boolean.class, Boolean.TRUE);
+            roep(bean, Namen.setter(kenmerknaam(ot, k.asText())), boolean.class, Boolean.TRUE);
         }
         JsonNode ctls = i.get("characteristicTimelines");
         if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
@@ -1206,7 +1223,7 @@ public final class CaseRunner {
             throw new Excluded("scalar read-back of temporal attribute '" + attr + "' is not carried by the v0 "
                     + "backend — the bean holds a List<Segment>; use an attributeTimeline expectation");
         Object bean = labelNaarBean.get(label);
-        Object werkelijk = bean == null ? null : lees(bean, Namen.getter(attr));
+        Object werkelijk = bean == null ? null : lees(bean, Namen.getter(attribuutnaam(ot, attr)));
         if (leegVerwacht)
             return werkelijk == null ? null : "verwacht leeg, werkelijk " + werkelijk;
         Object verwacht = waardeNaarArg(v.get("value"), attr);
@@ -1233,7 +1250,8 @@ public final class CaseRunner {
         eigenVeld(ot, attr, false, "leest");
         List<Object> verwacht = tijdreeks(v.get("timeline"), attr, "expected " + label + "." + attr, rooster(ot, attr),
                 true);
-        Object gelezen = labelNaarBean.containsKey(label) ? lees(labelNaarBean.get(label), Namen.getter(attr)) : null;
+        Object gelezen = labelNaarBean.containsKey(label)
+                ? lees(labelNaarBean.get(label), Namen.getter(attribuutnaam(ot, attr))) : null;
         if (gelezen == null)
             return verwacht.isEmpty() ? null
                     : "attribuut " + attr + ": draagt geen tijdreeks, verwacht " + renderTl(verwacht);
@@ -1264,9 +1282,11 @@ public final class CaseRunner {
     }
 
     private String kenmerk(JsonNode v, boolean aanwezigVerwacht) {
-        eigenVeld(labelType.get(v.get("label").asText()), v.get("characteristic").asText(), true, "leest");
+        Objecttype ot = labelType.get(v.get("label").asText());
+        eigenVeld(ot, v.get("characteristic").asText(), true, "leest");
         Object bean = labelNaarBean.get(v.get("label").asText());
-        Object gelezen = bean == null ? null : lees(bean, Namen.getter(v.get("characteristic").asText()));
+        Object gelezen = bean == null ? null
+                : lees(bean, Namen.getter(kenmerknaam(ot, v.get("characteristic").asText())));
         boolean aanwezig = Boolean.TRUE.equals(gelezen);
         return aanwezig == aanwezigVerwacht ? null
                 : "kenmerk " + v.get("characteristic").asText() + ": verwacht "

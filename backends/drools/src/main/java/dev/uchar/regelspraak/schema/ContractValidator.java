@@ -32,20 +32,23 @@ public final class ContractValidator {
                 continue;
             }
             for (Lid l : FactModelGenerator.leden(model, ot)) {
-                String p = l.eigenschap(), P = Character.toUpperCase(p.charAt(0)) + p.substring(1);
-                Method getter = vind(c, (l.isVorm() ? "is" : "get") + P, 0);
+                // the names the generator writes the member with, never derived here a second time
+                String p = l.eigenschap();
+                Namen.Lidnamen n = Namen.lidnamen(p);
+                String getternaam = l.isVorm() ? n.isGetter() : n.getter();
+                Method getter = vind(c, getternaam, 0);
                 // a scalar kenmerk may also be exposed as get<X>() (mvel resolves the property either way)
-                if (getter == null && l.isVorm()) getter = vind(c, "get" + P, 0);
+                if (getter == null && l.isVorm()) getter = vind(c, n.getter(), 0);
                 if (getter == null)
-                    uit.add(ot.naam + "." + p + ": getter " + (l.isVorm() ? "is" : "get") + P + "() ontbreekt op " + klasse);
+                    uit.add(ot.naam + "." + p + ": getter " + getternaam + "() ontbreekt op " + klasse);
                 else if (!typeOk(l.javaType(), getter.getReturnType()))
                     uit.add(ot.naam + "." + p + ": getter " + getter.getName() + "() geeft " + getter.getReturnType().getName()
                             + ", het model vraagt " + l.javaType());
-                Method setter = vind(c, "set" + P, 1);
+                Method setter = vind(c, n.setter(), 1);
                 if (setter == null)
-                    uit.add(ot.naam + "." + p + ": setter set" + P + "(" + l.javaType() + ") ontbreekt op " + klasse);
+                    uit.add(ot.naam + "." + p + ": setter " + n.setter() + "(" + l.javaType() + ") ontbreekt op " + klasse);
                 else if (!typeOk(l.javaType(), setter.getParameterTypes()[0]))
-                    uit.add(ot.naam + "." + p + ": setter set" + P + " neemt " + setter.getParameterTypes()[0].getName()
+                    uit.add(ot.naam + "." + p + ": setter " + n.setter() + " neemt " + setter.getParameterTypes()[0].getName()
                             + ", het model vraagt " + l.javaType());
             }
         }

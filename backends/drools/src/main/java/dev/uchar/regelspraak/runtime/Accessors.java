@@ -103,7 +103,10 @@ public final class Accessors {
 
     /** A null-safe typed getter for {@code owner.get<Prop>()} / {@code is<Prop>()}: {@code apply(null) -> null}
      *  (a null to-one navigation reads leeg, matching {@link RegelSpraakRuntime#get}). Throws at THIS call (model
-     *  build time) when the bean has no such getter. */
+     *  build time) when the bean has no such getter. It takes a DECLARED name and derives the method again through
+     *  {@link RegelSpraakRuntime#pascal}, which is not always the name the generator wrote: not for the branch with
+     *  truth maintenance, whose readers take {@link #eigenschapGetter}; the DRL-text branch reads through it until its
+     *  switch-over to the branch's rendering. */
     public static Function<Object, Object> getter(Class<?> owner, String prop) {
         return GETTERS.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
                       .computeIfAbsent(prop, p -> buildGetter(owner, p));
@@ -111,7 +114,8 @@ public final class Accessors {
 
     /** A typed setter for {@code owner.set<Prop>(v)}. Falls back to the value-type-directed reflective bridge when
      *  the bean has 0 or &gt;1 single-arg {@code set<Prop>} (so overload resolution stays identical to
-     *  {@link RegelSpraakRuntime#set}). */
+     *  {@link RegelSpraakRuntime#set}). Like {@link #getter} it derives the method from a declared name, and it is not
+     *  for the branch with truth maintenance, whose writers take {@link #eigenschapSetter}. */
     public static BiConsumer<Object, Object> setter(Class<?> owner, String prop) {
         return SETTERS.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
                       .computeIfAbsent(prop, p -> buildSetter(owner, p));

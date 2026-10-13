@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Seinpost",
+        "attributes": {
+          "meldingen": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "bemand"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "sluimerEnd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "meldingsafschrift",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
