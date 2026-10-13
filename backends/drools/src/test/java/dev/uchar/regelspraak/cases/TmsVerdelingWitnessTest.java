@@ -277,53 +277,64 @@ class TmsVerdelingWitnessTest {
      * A seeded sample of orders of the generated rules. In every order the beans end at the fixpoint and the session
      * holds one {@link Waarde} for each share; and in at least one order the allocation inserts a share of the state
      * before the toeslag is derived (J1 225 naar rato, J2 900 op rang), which truth maintenance withdraws.
+     *
+     * <p>The sample fires on the exec-model branch and on {@code DRL_TMS}, its analysis rendered as DRL text, with the
+     * rules of the text in the same orders ({@code Tekstvolgorde}), and each branch meets the same demands (card
+     * drl-teksttak-op-truth-maintenance, round 5b, on the lens of round 5). <b>Red</b> on {@code abe891c1}, before the
+     * rendering carried the recipients of an allocation: "Excluded drl-tms: de DRL-weergave draagt Ontvanger nog
+     * niet".
      */
     @Test void a_steekproef_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(A_REGELS, A_VERDELINGEN, List.of()),
-                DroolsBackend.Branch.EXEC_MODEL);
-        int naarRatoOnderweg = 0, opRangOnderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "900"), List.of());
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "1", "extra", "5",
-                    "jaar", "2020"), List.of());
-            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "3", "extra", "0",
-                    "jaar", "2018"), List.of());
-            koppel(j1, b1);
-            koppel(j2, b1);
-            List<Object> naarRato = new ArrayList<>(), opRang = new ArrayList<>();
-            int[] waarden = new int[2];
-            TmsDocumenten.vuur(b, volgorde, List.of(b1, j1, j2), sessie -> sessie.addEventListener(
-                    new DefaultRuleRuntimeEventListener() {
-                        @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (!(e.getObject() instanceof Waarde w)) return;
-                            if (w.onderwerp() == j1 && w.attribuut().naam().equals("bergingsaandeel"))
-                                naarRato.add(w.waarde());
-                            if (w.onderwerp() == j2 && w.attribuut().naam().equals("rangaandeel")) opRang.add(w.waarde());
-                        }
-                    }), sessie -> {
-                        waarden[0] = sessie.getObjects(o -> o instanceof Waarde w && w.onderwerp() == j1
-                                && w.attribuut().naam().equals("bergingsaandeel")).size();
-                        waarden[1] = sessie.getObjects(o -> o instanceof Waarde w && w.onderwerp() == j2
-                                && w.attribuut().naam().equals("rangaandeel")).size();
-                    });
-            assertEquals(List.of(1, 1), List.of(waarden[0], waarden[1]), () -> "Waarde-feiten in volgorde " + namen);
-            Map<String, Object> eind = new LinkedHashMap<>();
-            eind.put("J1 bergingsaandeel", TmsDocumenten.lees(j1, "bergingsaandeel"));
-            eind.put("J2 bergingsaandeel", TmsDocumenten.lees(j2, "bergingsaandeel"));
-            eind.put("B1 onverdeelde rest", TmsDocumenten.lees(b1, "onverdeelde rest"));
-            eind.put("J1 rangaandeel", TmsDocumenten.lees(j1, "rangaandeel"));
-            eind.put("J2 rangaandeel", TmsDocumenten.lees(j2, "rangaandeel"));
-            eind.put("B1 rangrest", TmsDocumenten.lees(b1, "rangrest"));
-            eind.put("J1 toezicht", TmsDocumenten.lees(j1, "toezicht"));
-            assertEquals("{J1 bergingsaandeel=600, J2 bergingsaandeel=300, B1 onverdeelde rest=0, J1 rangaandeel=900,"
-                    + " J2 rangaandeel=0, B1 rangrest=0, J1 toezicht=601}", getallen(eind), () -> "volgorde " + namen);
-            if (naarRato.stream().anyMatch(x -> isGetal(x, "225"))) naarRatoOnderweg++;
-            if (opRang.stream().anyMatch(x -> isGetal(x, "900"))) opRangOnderweg++;
+        Path ir = document(A_REGELS, A_VERDELINGEN, List.of());
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int naarRatoOnderweg = 0, opRangOnderweg = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261009L, 100)) {
+                String waar = namen + " op " + tak;
+                Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "900"), List.of());
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "1", "extra", "5",
+                        "jaar", "2020"), List.of());
+                Object j2 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "3", "extra", "0",
+                        "jaar", "2018"), List.of());
+                koppel(j1, b1);
+                koppel(j2, b1);
+                List<Object> naarRato = new ArrayList<>(), opRang = new ArrayList<>();
+                int[] waarden = new int[2];
+                TmsDocumenten.vuur(b, TmsDocumenten.kieBaseVan(b, namen), namen, List.of(b1, j1, j2),
+                        sessie -> sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                            @Override public void objectInserted(ObjectInsertedEvent e) {
+                                if (!(e.getObject() instanceof Waarde w)) return;
+                                if (w.onderwerp() == j1 && w.attribuut().naam().equals("bergingsaandeel"))
+                                    naarRato.add(w.waarde());
+                                if (w.onderwerp() == j2 && w.attribuut().naam().equals("rangaandeel"))
+                                    opRang.add(w.waarde());
+                            }
+                        }), sessie -> {
+                            waarden[0] = sessie.getObjects(o -> o instanceof Waarde w && w.onderwerp() == j1
+                                    && w.attribuut().naam().equals("bergingsaandeel")).size();
+                            waarden[1] = sessie.getObjects(o -> o instanceof Waarde w && w.onderwerp() == j2
+                                    && w.attribuut().naam().equals("rangaandeel")).size();
+                        });
+                assertEquals(List.of(1, 1), List.of(waarden[0], waarden[1]), () -> "Waarde-feiten in volgorde " + waar);
+                Map<String, Object> eind = new LinkedHashMap<>();
+                eind.put("J1 bergingsaandeel", TmsDocumenten.lees(j1, "bergingsaandeel"));
+                eind.put("J2 bergingsaandeel", TmsDocumenten.lees(j2, "bergingsaandeel"));
+                eind.put("B1 onverdeelde rest", TmsDocumenten.lees(b1, "onverdeelde rest"));
+                eind.put("J1 rangaandeel", TmsDocumenten.lees(j1, "rangaandeel"));
+                eind.put("J2 rangaandeel", TmsDocumenten.lees(j2, "rangaandeel"));
+                eind.put("B1 rangrest", TmsDocumenten.lees(b1, "rangrest"));
+                eind.put("J1 toezicht", TmsDocumenten.lees(j1, "toezicht"));
+                assertEquals("{J1 bergingsaandeel=600, J2 bergingsaandeel=300, B1 onverdeelde rest=0,"
+                        + " J1 rangaandeel=900, J2 rangaandeel=0, B1 rangrest=0, J1 toezicht=601}", getallen(eind),
+                        () -> "volgorde " + waar);
+                if (naarRato.stream().anyMatch(x -> isGetal(x, "225"))) naarRatoOnderweg++;
+                if (opRang.stream().anyMatch(x -> isGetal(x, "900"))) opRangOnderweg++;
+            }
+            assertTrue(naarRatoOnderweg > 0, tak + ": geen volgorde liet de verdeling naar rato vuren op het gewicht"
+                    + " van vóór de toeslag");
+            assertTrue(opRangOnderweg > 0, tak + ": geen volgorde liet de verdeling op rang vuren op de rang van vóór"
+                    + " de toeslag");
         }
-        assertTrue(naarRatoOnderweg > 0, "geen volgorde liet de verdeling naar rato vuren op het gewicht van vóór de"
-                + " toeslag");
-        assertTrue(opRangOnderweg > 0, "geen volgorde liet de verdeling op rang vuren op de rang van vóór de toeslag");
     }
 
     // ---------------- B: two allocations over one set of recipients ----------------

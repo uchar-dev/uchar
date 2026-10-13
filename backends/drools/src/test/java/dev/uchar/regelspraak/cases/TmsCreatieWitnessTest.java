@@ -8,6 +8,7 @@ import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.KieBase;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.event.rule.DefaultRuleRuntimeEventListener;
 import org.kie.api.event.rule.MatchCreatedEvent;
@@ -109,6 +110,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * object creations (H by its match on the intermediate state, "expected: &lt;[]&gt; but was: &lt;[{aantal=1,
  * kopie=0}]&gt;"; C, F and the budget by the phase), and an eager object creation without auto-focus, no-loop (H, the
  * same match).
+ *
+ * <p><b>The samples of document A on the text</b> (card drl-teksttak-op-truth-maintenance, round 5b, on the lens of
+ * round 5). The two samples where a lower default decides before a creation fire on the exec-model branch and on
+ * {@code DRL_TMS}, its analysis rendered as DRL text, with the rules of the text in the same orders
+ * ({@code Tekstvolgorde}), since the order of the rules in the text is the order in which Drools loads them; each
+ * branch meets the same demands, among them an order in which the lower default decides first. <b>Red</b> on
+ * {@code b4d83a69}, before the rendering carried the creations: both failed at the replay, "DRL_TMS speelt … anders
+ * dan de exec-model-tak ==&gt; expected: &lt;gespeeld&gt; but was: &lt;Excluded: drl-tms: de DRL-weergave draagt
+ * Creatie nog niet&gt;", and with the replay on {@code DRL_TMS} left out of a copy, at the sample on the text,
+ * "Excluded drl-tms: de DRL-weergave draagt Creatie nog niet".
  */
 class TmsCreatieWitnessTest {
 
@@ -157,41 +168,47 @@ class TmsCreatieWitnessTest {
     @Test void een_objectcreatie_maakt_een_object_per_onderwerp_met_de_waarden_van_het_fixpunt() throws Exception {
         Path ir = documentA("null");
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakA("1", "7")));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
-            int[] lager = {0};
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> sessie.addEventListener(waardeteller("vangst", "3", lager)),
-                    sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(j1, "meldingaantal"), "meldingaantal in volgorde " + namen);
-            assertGetal("7", TmsDocumenten.lees(j1, "meldingswaarde"), "meldingswaarde in volgorde " + namen);
-            assertEquals(1, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            assertTrue(gemaakt.get(0)[0] == j1, () -> "onderwerp in volgorde " + namen);
-            if (lager[0] > 0) tussenstand++;
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int tussenstand = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L, 100)) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
+                int[] lager = {0};
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1),
+                        sessie -> sessie.addEventListener(waardeteller("vangst", "3", lager)),
+                        sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                assertGetal("1", TmsDocumenten.lees(j1, "meldingaantal"), "meldingaantal" + waar);
+                assertGetal("7", TmsDocumenten.lees(j1, "meldingswaarde"), "meldingswaarde" + waar);
+                assertEquals(1, gemaakt.size(), () -> "objecten" + waar);
+                assertTrue(gemaakt.get(0)[0] == j1, () -> "onderwerp" + waar);
+                if (lager[0] > 0) tussenstand++;
+            }
+            assertTrue(tussenstand > 0, tak + ": geen volgorde liet de lagere default eerst beslissen");
         }
-        assertTrue(tussenstand > 0, "geen volgorde liet de lagere default eerst beslissen");
     }
 
     @Test void een_creatie_die_alleen_op_een_lagere_default_geldt_gebeurt_niet() throws Exception {
         Path ir = documentA(LAGE_VANGST);
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakA("0", "0")));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
-            int[] lager = {0};
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> sessie.addEventListener(waardeteller("vangst", "3", lager)),
-                    sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(j1, "meldingaantal"), "meldingaantal in volgorde " + namen);
-            assertEquals(0, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            if (lager[0] > 0) tussenstand++;
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int tussenstand = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L, 100)) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
+                int[] lager = {0};
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1),
+                        sessie -> sessie.addEventListener(waardeteller("vangst", "3", lager)),
+                        sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                assertGetal("0", TmsDocumenten.lees(j1, "meldingaantal"), "meldingaantal" + waar);
+                assertEquals(0, gemaakt.size(), () -> "objecten" + waar);
+                if (lager[0] > 0) tussenstand++;
+            }
+            assertTrue(tussenstand > 0, tak + ": geen volgorde liet de lagere default eerst beslissen");
         }
-        assertTrue(tussenstand > 0, "geen volgorde liet de lagere default eerst beslissen");
     }
 
     // ---------------- document B: a condition that reads its own output ----------------
@@ -766,9 +783,23 @@ class TmsCreatieWitnessTest {
      */
     static String vuur(DroolsBackend.Build b, List<Rule> volgorde, List<Object> bonen, Consumer<KieSession> voor,
                        Consumer<KieSession> na) throws Exception {
+        return vuur(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(), bonen, voor,
+                na);
+    }
+
+    /** {@link #vuur(DroolsBackend.Build, List, List, Consumer, Consumer)} through the rules of {@code b} named in
+     *  {@code namen}, in that order, as its branch builds them ({@link TmsDocumenten#kieBaseVan}): on the exec-model
+     *  branch the rules of its executable model, on {@code DRL_TMS} those of its text (round 5b). */
+    static String vuurInVolgorde(DroolsBackend.Build b, List<String> namen, List<Object> bonen,
+                                 Consumer<KieSession> voor, Consumer<KieSession> na) throws Exception {
+        return vuur(b, TmsDocumenten.kieBaseVan(b, namen), namen, bonen, voor, na);
+    }
+
+    private static String vuur(DroolsBackend.Build b, KieBase kieBase, List<String> namen, List<Object> bonen,
+                               Consumer<KieSession> voor, Consumer<KieSession> na) throws Exception {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocumenten.kieBase(b, volgorde).newKieSession();
+        KieSession sessie = kieBase.newKieSession();
         try {
             voor.accept(sessie);
             for (Object boon : bonen) sessie.insert(boon);
@@ -788,7 +819,7 @@ class TmsCreatieWitnessTest {
             int n = (Integer) vuringen.invoke(vuring);
             String zin = (String) geenFixpunt.invoke(vuring);
             if (n >= 100_000)
-                throw new AssertionError("vuurplafond in volgorde " + volgorde.stream().map(Rule::getName).toList());
+                throw new AssertionError(b.branch() + ": vuurplafond in volgorde " + namen);
             if (zin == null) DroolsBackend.zetAfgeleideWaarden(b, sessie);
             na.accept(sessie);
             return zin;

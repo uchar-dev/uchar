@@ -20,7 +20,9 @@ import static dev.uchar.regelspraak.cases.TmsCreatieWitnessTest.koppelingen;
 import static dev.uchar.regelspraak.cases.TmsCreatieWitnessTest.objectcreatie;
 import static dev.uchar.regelspraak.cases.TmsCreatieWitnessTest.regelgroep;
 import static dev.uchar.regelspraak.cases.TmsCreatieWitnessTest.vuur;
+import static dev.uchar.regelspraak.cases.TmsCreatieWitnessTest.vuurInVolgorde;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.GEHEEL;
+import static dev.uchar.regelspraak.cases.TmsDocumenten.TAKKEN;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.TELLING;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.aggregatie;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuut;
@@ -28,6 +30,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.binair;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.bronrol;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.feittype;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.feittypeEenNaarVeel;
+import static dev.uchar.regelspraak.cases.TmsDocumenten.gegenereerd;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.getal;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.instantieMetRollen;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.lezing;
@@ -51,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * creation phases stratum by stratum, each in generations, the rule layer under truth maintenance throughout
  * ({@code DroolsBackend.vuur}). Each document plays through the replay in every order of its creations and rules in the
  * document, and fires through the driver in the order of the rules the branch generates, its reverse and a hundred
- * shuffles.
+ * shuffles, on the exec-model branch and on {@code DRL_TMS} (the last paragraph).
  *
  * <ul>
  *   <li>An initialisation reads what a creation of a lower stratum made: "maak een afrekening" counts the Penning that
@@ -144,6 +147,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * arguments: 6 expected: 4"). Mutants of the change, each caught: a depth that runs on over the strata (D), the budget
  * one lower (G, E and L here, F and the corpus in {@code TmsCreatieWitnessTest}), and without the test of the invariant
  * (the forged mark).
+ *
+ * <p><b>The samples on the text</b> (card drl-teksttak-op-truth-maintenance, round 5b, on the lens of round 5). Every
+ * sample of this class fires on the exec-model branch and on {@code DRL_TMS}, its analysis rendered as DRL text, with
+ * the rules of the text in the same orders ({@code Tekstvolgorde}), since the order of the rules in the text is the
+ * order in which Drools loads them; each branch meets the same demands. <b>Red</b> on {@code b4d83a69}, before the
+ * rendering carried the creations: fifteen of the sixteen failed at the replay, "DRL_TMS speelt … anders dan de
+ * exec-model-tak ==&gt; expected: &lt;gespeeld&gt; but was: &lt;Excluded: drl-tms: de DRL-weergave draagt Creatie nog
+ * niet&gt;" (the erflijn: "… draagt Koppeling …"); with the replay on {@code DRL_TMS} left out of a copy, the fourteen
+ * with a sample failed at the sample on the text, "Excluded drl-tms: de DRL-weergave draagt Creatie nog niet".
  */
 class TmsCreatiestratumWitnessTest {
 
@@ -196,18 +208,23 @@ class TmsCreatiestratumWitnessTest {
 
     @Test void een_initialisatie_leest_wat_een_creatie_uit_een_lager_stratum_maakte() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK), List.of(PENNINGAANTAL), TmsCreatiestratumWitnessTest::documentP, zaakP());
-        DroolsBackend.Build b = DroolsBackend.build(documentP(List.of(GEEF, MAAK), List.of(PENNINGAANTAL)),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            List<Object[]> objecten = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + namen);
-            // one phase per generation: the Penning in stratum 0's first generation; stratum 0 closes with a generation
-            // that makes nothing (phase 2), and the Afrekening follows in the first generation of stratum 1
-            assertEquals(List.of("Penning in fase 1", "Afrekening in fase 3"), soorten(objecten), () -> "volgorde " + namen);
+        Path ir = documentP(List.of(GEEF, MAAK), List.of(PENNINGAANTAL));
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261008L, 100)) {
+                String waar = namen + " op " + tak;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                List<Object[]> objecten = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + waar);
+                // one phase per generation: the Penning in stratum 0's first generation; stratum 0 closes with a
+                // generation that makes nothing (phase 2), and the Afrekening follows in the first generation of
+                // stratum 1
+                assertEquals(List.of("Penning in fase 1", "Afrekening in fase 3"), soorten(objecten),
+                        () -> "volgorde " + waar);
+            }
         }
     }
 
@@ -253,19 +270,22 @@ class TmsCreatiestratumWitnessTest {
 
     @Test void een_voorwaarde_met_een_groeiende_operand_beslist_na_het_lagere_stratum() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK_ONDER_ACHT), REGELS_S, TmsCreatiestratumWitnessTest::documentS, zaakS());
-        DroolsBackend.Build b = DroolsBackend.build(documentS(List.of(GEEF, MAAK_ONDER_ACHT), REGELS_S),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            Object p1 = TmsDocumenten.boon(b.beanLoader(), "Penning", Map.of("bedrag", "5"), List.of());
-            zetRol(p1, "houder", j1);
-            List<Object[]> objecten = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1, p1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(j1, "afrekeningaantal"), "afrekeningaantal in volgorde " + namen);
-            assertGetal("10", TmsDocumenten.lees(j1, "penningsom"), "penningsom in volgorde " + namen);
-            assertEquals(List.of("Penning in fase 1"), soorten(objecten), () -> "volgorde " + namen);
+        Path ir = documentS(List.of(GEEF, MAAK_ONDER_ACHT), REGELS_S);
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261008L, 100)) {
+                String waar = namen + " op " + tak;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                Object p1 = TmsDocumenten.boon(b.beanLoader(), "Penning", Map.of("bedrag", "5"), List.of());
+                zetRol(p1, "houder", j1);
+                List<Object[]> objecten = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1, p1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertGetal("0", TmsDocumenten.lees(j1, "afrekeningaantal"), "afrekeningaantal in volgorde " + waar);
+                assertGetal("10", TmsDocumenten.lees(j1, "penningsom"), "penningsom in volgorde " + waar);
+                assertEquals(List.of("Penning in fase 1"), soorten(objecten), () -> "volgorde " + waar);
+            }
         }
     }
 
@@ -298,23 +318,28 @@ class TmsCreatiestratumWitnessTest {
     @Test void een_keten_van_objectcreatie_feitcreatie_en_objectcreatie_loopt_in_drie_strata() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK_BEWAARD), List.of(PENNINGAANTAL), TmsCreatiestratumWitnessTest::documentK,
                 zaakP());
-        DroolsBackend.Build b = DroolsBackend.build(documentK(List.of(GEEF, MAAK_BEWAARD), List.of(PENNINGAANTAL)),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> { }, sessie -> {
-                objecten.addAll(gemaakt(sessie));
-                links.addAll(koppelingen(sessie, "bewaring"));
-            }), () -> "volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + namen);
-            // one phase per generation: stratum 0 makes the Penning (phase 1) and closes in phase 2; stratum 1 links it
-            // in its first generation (3) and closes in 4; stratum 2 makes the Afrekening in its first generation (5)
-            assertEquals(List.of("Penning in fase 1", "Afrekening in fase 5"), soorten(objecten), () -> "volgorde " + namen);
-            assertEquals(1, links.size(), () -> "links in volgorde " + namen);
-            assertTrue(links.get(0)[0] == j1 && links.get(0)[1] == objecten.get(0)[1], () -> "link in volgorde " + namen);
-            assertEquals(3, links.get(0)[2], () -> "fase van de link in volgorde " + namen);
+        Path ir = documentK(List.of(GEEF, MAAK_BEWAARD), List.of(PENNINGAANTAL));
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261008L, 100)) {
+                String waar = namen + " op " + tak;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1), sessie -> { }, sessie -> {
+                    objecten.addAll(gemaakt(sessie));
+                    links.addAll(koppelingen(sessie, "bewaring"));
+                }), () -> "volgorde " + waar);
+                assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + waar);
+                // one phase per generation: stratum 0 makes the Penning (phase 1) and closes in phase 2; stratum 1
+                // links it in its first generation (3) and closes in 4; stratum 2 makes the Afrekening in its first
+                // generation (5)
+                assertEquals(List.of("Penning in fase 1", "Afrekening in fase 5"), soorten(objecten),
+                        () -> "volgorde " + waar);
+                assertEquals(1, links.size(), () -> "links in volgorde " + waar);
+                assertTrue(links.get(0)[0] == j1 && links.get(0)[1] == objecten.get(0)[1],
+                        () -> "link in volgorde " + waar);
+                assertEquals(3, links.get(0)[2], () -> "fase van de link in volgorde " + waar);
+            }
         }
     }
 
@@ -349,21 +374,24 @@ class TmsCreatiestratumWitnessTest {
 
     @Test void twee_creaties_van_een_stratum_vuren_in_een_generatie() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK, KWITEER), REGELS_T, TmsCreatiestratumWitnessTest::documentT, zaakT());
-        DroolsBackend.Build b = DroolsBackend.build(documentT(List.of(GEEF, MAAK, KWITEER), REGELS_T),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            List<Object[]> objecten = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(j1, "kwitantieaantal"), "kwitantieaantal in volgorde " + namen);
-            List<String> soorten = new ArrayList<>(soorten(objecten));
-            soorten.sort(null);
-            // both of stratum 1 in its first generation, phase 3
-            assertEquals(List.of("Afrekening in fase 3", "Kwitantie in fase 3", "Penning in fase 1"), soorten,
-                    () -> "volgorde " + namen);
+        Path ir = documentT(List.of(GEEF, MAAK, KWITEER), REGELS_T);
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261008L, 100)) {
+                String waar = namen + " op " + tak;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                List<Object[]> objecten = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + waar);
+                assertGetal("1", TmsDocumenten.lees(j1, "kwitantieaantal"), "kwitantieaantal in volgorde " + waar);
+                List<String> soorten = new ArrayList<>(soorten(objecten));
+                soorten.sort(null);
+                // both of stratum 1 in its first generation, phase 3
+                assertEquals(List.of("Afrekening in fase 3", "Kwitantie in fase 3", "Penning in fase 1"), soorten,
+                        () -> "volgorde " + waar);
+            }
         }
     }
 
@@ -413,25 +441,30 @@ class TmsCreatiestratumWitnessTest {
      *  52 + 1. */
     @Test void het_creatiebudget_geldt_per_stratum() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(), (creaties, regels) -> documentB(creaties), zaakB());
-        DroolsBackend.Build b = DroolsBackend.build(documentB(List.of(WERF, LEG)), DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 10)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Boei", Map.of("nummer", "1"), List.of());
-            zetRol(w1, "boei", b1);
-            zetRol(b1, "wachter", w1);
-            List<Object[]> objecten = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(w1, b1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertEquals(102, objecten.size(), () -> "objecten in volgorde " + namen);
-            for (int i = 0; i < 51; i++) {
-                assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
-                assertEquals("Boei in fase " + (52 + i + 1), soort(objecten.get(51 + i)), "volgorde " + namen);
+        Path ir = documentB(List.of(WERF, LEG));
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261008L, 10)) {
+                String waar = namen + " op " + tak;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                Object b1 = TmsDocumenten.boon(b.beanLoader(), "Boei", Map.of("nummer", "1"), List.of());
+                zetRol(w1, "boei", b1);
+                zetRol(b1, "wachter", w1);
+                List<Object[]> objecten = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(w1, b1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertEquals(102, objecten.size(), () -> "objecten in volgorde " + waar);
+                for (int i = 0; i < 51; i++) {
+                    assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + waar);
+                    assertEquals("Boei in fase " + (52 + i + 1), soort(objecten.get(51 + i)), "volgorde " + waar);
+                }
+                assertGetal("52", TmsDocumenten.lees(objecten.get(50)[1], "rang"), "rang van W52 in volgorde " + waar);
+                assertGetal("52", TmsDocumenten.lees(objecten.get(101)[1], "nummer"),
+                        "nummer van B52 in volgorde " + waar);
+                assertGetal("1", TmsDocumenten.lees(objecten.get(51)[1], "wachterrang"),
+                        "wachterrang van B2 in volgorde " + waar);
             }
-            assertGetal("52", TmsDocumenten.lees(objecten.get(50)[1], "rang"), "rang van W52 in volgorde " + namen);
-            assertGetal("52", TmsDocumenten.lees(objecten.get(101)[1], "nummer"), "nummer van B52 in volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(objecten.get(51)[1], "wachterrang"), "wachterrang van B2 in volgorde "
-                    + namen);
         }
     }
 
@@ -551,20 +584,24 @@ class TmsCreatiestratumWitnessTest {
             int generaties = grens - 1;
             assertEquals(generaties <= 100 ? "gespeeld" : "case: " + BUDGET, TmsFoutWitnessTest.speelBeide(documentG(grens),
                     zaak), generaties + " generaties");
-            DroolsBackend.Build b = DroolsBackend.build(documentG(grens), DroolsBackend.Branch.EXEC_MODEL);
-            for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
-                List<String> namen = volgorde.stream().map(Rule::getName).toList();
-                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-                List<Object[]> objecten = new ArrayList<>();
-                assertEquals(generaties <= 100 ? null : BUDGET, vuur(b, volgorde, List.of(w1), sessie -> { },
-                        sessie -> objecten.addAll(gemaakt(sessie))), () -> generaties + " generaties in volgorde " + namen);
-                assertEquals(Math.min(generaties, 100), objecten.size(),
-                        () -> "objecten na " + generaties + " generaties in volgorde " + namen);
-                for (int i = 0; i < objecten.size(); i++)
-                    assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
-                if (generaties <= 100)
-                    assertGetal(String.valueOf(grens), TmsDocumenten.lees(objecten.get(generaties - 1)[1], "rang"),
-                            "rang van de laatste Wachter na " + generaties + " generaties in volgorde " + namen);
+            Path ir = documentG(grens);
+            for (DroolsBackend.Branch tak : TAKKEN) {
+                DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+                for (List<String> namen : steekproef(gegenereerd(b), 20261009L, 10)) {
+                    String waar = namen + " op " + tak;
+                    Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                    List<Object[]> objecten = new ArrayList<>();
+                    assertEquals(generaties <= 100 ? null : BUDGET, vuurInVolgorde(b, namen, List.of(w1), sessie -> { },
+                            sessie -> objecten.addAll(gemaakt(sessie))),
+                            () -> generaties + " generaties in volgorde " + waar);
+                    assertEquals(Math.min(generaties, 100), objecten.size(),
+                            () -> "objecten na " + generaties + " generaties in volgorde " + waar);
+                    for (int i = 0; i < objecten.size(); i++)
+                        assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + waar);
+                    if (generaties <= 100)
+                        assertGetal(String.valueOf(grens), TmsDocumenten.lees(objecten.get(generaties - 1)[1], "rang"),
+                                "rang van de laatste Wachter na " + generaties + " generaties in volgorde " + waar);
+                }
             }
         }
     }
@@ -601,22 +638,26 @@ class TmsCreatiestratumWitnessTest {
         JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
                 Map.of())), List.of(waarde("W1", "rang", "1")));
         speeltInElkeVolgorde(List.of(WERF, BOEI_BIJ_51, LEG), List.of(), (creaties, regels) -> documentD(creaties), zaak);
-        DroolsBackend.Build b = DroolsBackend.build(documentD(List.of(WERF, BOEI_BIJ_51, LEG)),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-            List<Object[]> objecten = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertEquals(50 + 1 + 50, objecten.size(), () -> "objecten in volgorde " + namen);
-            for (int i = 0; i < 50; i++) {
-                assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
-                assertEquals("Boei in fase " + (54 + i), soort(objecten.get(51 + i)), "volgorde " + namen);
+        Path ir = documentD(List.of(WERF, BOEI_BIJ_51, LEG));
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261009L, 10)) {
+                String waar = namen + " op " + tak;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                List<Object[]> objecten = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(w1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertEquals(50 + 1 + 50, objecten.size(), () -> "objecten in volgorde " + waar);
+                for (int i = 0; i < 50; i++) {
+                    assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + waar);
+                    assertEquals("Boei in fase " + (54 + i), soort(objecten.get(51 + i)), "volgorde " + waar);
+                }
+                assertEquals("Boei in fase 52", soort(objecten.get(50)), "volgorde " + waar);
+                assertGetal("51", TmsDocumenten.lees(objecten.get(49)[1], "rang"), "rang van W51 in volgorde " + waar);
+                assertGetal("51", TmsDocumenten.lees(objecten.get(100)[1], "nummer"),
+                        "nummer van B51 in volgorde " + waar);
             }
-            assertEquals("Boei in fase 52", soort(objecten.get(50)), "volgorde " + namen);
-            assertGetal("51", TmsDocumenten.lees(objecten.get(49)[1], "rang"), "rang van W51 in volgorde " + namen);
-            assertGetal("51", TmsDocumenten.lees(objecten.get(100)[1], "nummer"), "nummer van B51 in volgorde " + namen);
         }
     }
 
@@ -680,22 +721,26 @@ class TmsCreatiestratumWitnessTest {
         String fout = budget("werf de opvolger", 0, "Wachter");
         for (int grens : List.of(101, 102)) {
             assertEquals(grens <= 101 ? "gespeeld" : "case: " + fout, TmsFoutWitnessTest.speelBeide(documentE(grens), zaak), "tot rang " + grens);
-            DroolsBackend.Build b = DroolsBackend.build(documentE(grens), DroolsBackend.Branch.EXEC_MODEL);
-            for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
-                List<String> namen = volgorde.stream().map(Rule::getName).toList();
-                Object w0 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
-                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-                zetRol(w0, "maat", w1);
-                List<Object[]> objecten = new ArrayList<>();
-                assertEquals(grens <= 101 ? null : fout, vuur(b, volgorde, List.of(w0, w1), sessie -> { },
-                        sessie -> objecten.addAll(gemaakt(sessie))), () -> "tot rang " + grens + " in volgorde " + namen);
-                assertEquals(100, objecten.size(), () -> "objecten tot rang " + grens + " in volgorde " + namen);
-                for (int i = 0; i < objecten.size(); i++)
-                    assertEquals("Wachter in fase " + (2 * i + 1), soort(objecten.get(i)), "volgorde " + namen);
-                // a run that ends at the budget writes nothing back onto the beans
-                if (grens <= 101)
-                    assertGetal("101", TmsDocumenten.lees(objecten.get(99)[1], "rang"),
-                            "rang van de laatste Wachter in volgorde " + namen);
+            Path ir = documentE(grens);
+            for (DroolsBackend.Branch tak : TAKKEN) {
+                DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+                for (List<String> namen : steekproef(gegenereerd(b), 20261009L, 10)) {
+                    String waar = namen + " op " + tak;
+                    Object w0 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
+                    Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                    zetRol(w0, "maat", w1);
+                    List<Object[]> objecten = new ArrayList<>();
+                    assertEquals(grens <= 101 ? null : fout, vuurInVolgorde(b, namen, List.of(w0, w1), sessie -> { },
+                            sessie -> objecten.addAll(gemaakt(sessie))),
+                            () -> "tot rang " + grens + " in volgorde " + waar);
+                    assertEquals(100, objecten.size(), () -> "objecten tot rang " + grens + " in volgorde " + waar);
+                    for (int i = 0; i < objecten.size(); i++)
+                        assertEquals("Wachter in fase " + (2 * i + 1), soort(objecten.get(i)), "volgorde " + waar);
+                    // a run that ends at the budget writes nothing back onto the beans
+                    if (grens <= 101)
+                        assertGetal("101", TmsDocumenten.lees(objecten.get(99)[1], "rang"),
+                                "rang van de laatste Wachter in volgorde " + waar);
+                }
             }
         }
     }
@@ -770,25 +815,28 @@ class TmsCreatiestratumWitnessTest {
         JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
                 Map.of())), List.of(waarde("W1", "opvolgerbegin", "0"), waarde("W1", "verder", "0")));
         speeltInElkeVolgorde(List.of(), REGELS_V, (creaties, regels) -> documentV(regels), zaak);
-        DroolsBackend.Build b = DroolsBackend.build(documentV(REGELS_V), DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-            List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> {
-                objecten.addAll(gemaakt(sessie));
-                links.addAll(koppelingen(sessie, "maatschap"));
-            }), () -> "volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(w1, "verder"), "verder van W1 in volgorde " + namen);
-            assertEquals(List.of("Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), soorten(objecten),
-                    () -> "volgorde " + namen);
-            for (Object[] g : objecten)
-                assertGetal("0", TmsDocumenten.lees(g[1], "beginstand"), "beginstand in volgorde " + namen);
-            List<Integer> fasen = new ArrayList<>();
-            for (Object[] l : links) fasen.add((Integer) l[2]);
-            fasen.sort(null);
-            assertEquals(List.of(2, 3, 4), fasen, () -> "fasen van de maatschap in volgorde " + namen);
+        Path ir = documentV(REGELS_V);
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261009L, 100)) {
+                String waar = namen + " op " + tak;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(w1), sessie -> { }, sessie -> {
+                    objecten.addAll(gemaakt(sessie));
+                    links.addAll(koppelingen(sessie, "maatschap"));
+                }), () -> "volgorde " + waar);
+                assertGetal("0", TmsDocumenten.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + waar);
+                assertGetal("0", TmsDocumenten.lees(w1, "verder"), "verder van W1 in volgorde " + waar);
+                assertEquals(List.of("Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), soorten(objecten),
+                        () -> "volgorde " + waar);
+                for (Object[] g : objecten)
+                    assertGetal("0", TmsDocumenten.lees(g[1], "beginstand"), "beginstand in volgorde " + waar);
+                List<Integer> fasen = new ArrayList<>();
+                for (Object[] l : links) fasen.add((Integer) l[2]);
+                fasen.sort(null);
+                assertEquals(List.of(2, 3, 4), fasen, () -> "fasen van de maatschap in volgorde " + waar);
+            }
         }
     }
 
@@ -887,27 +935,32 @@ class TmsCreatiestratumWitnessTest {
                 Map.of())), List.of(waarde("W1", "stand", "1"), waarde("W1", "beloningaantal", "1"),
                 waarde("W1", "opvolgerbegin", null), waarde("W1", "verder", "0")));
         speeltInElkeVolgorde(List.of(WERF_R, BELOON_R), KRING_R, TmsCreatiestratumWitnessTest::documentR, zaak);
-        DroolsBackend.Build b = DroolsBackend.build(documentR(List.of(WERF_R, BELOON_R), KRING_R),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-            List<Object[]> objecten = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(w1, "verder"), "verder van W1 in volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(w1, "beloningaantal"), "beloningaantal van W1 in volgorde " + namen);
-            List<String> soorten = new ArrayList<>(soorten(objecten));
-            soorten.sort(null);
-            assertEquals(List.of("Beloning in fase 2", "Beloning in fase 3", "Beloning in fase 4", "Wachter in fase 1",
-                    "Wachter in fase 2", "Wachter in fase 3"), soorten, () -> "volgorde " + namen);
-            for (Object[] g : objecten) {
-                if (!g[1].getClass().getSimpleName().equals("Wachter")) continue;
-                if ((Integer) g[2] == 1)
-                    assertNull(TmsDocumenten.lees(g[1], "beginbeloning"),
-                            () -> "beginbeloning van W2 in volgorde " + namen);
-                else
-                    assertGetal("0", TmsDocumenten.lees(g[1], "beginbeloning"), "beginbeloning in volgorde " + namen);
+        Path ir = documentR(List.of(WERF_R, BELOON_R), KRING_R);
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261009L, 100)) {
+                String waar = namen + " op " + tak;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                List<Object[]> objecten = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(w1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertGetal("0", TmsDocumenten.lees(w1, "verder"), "verder van W1 in volgorde " + waar);
+                assertGetal("1", TmsDocumenten.lees(w1, "beloningaantal"), "beloningaantal van W1 in volgorde " + waar);
+                List<String> soorten = new ArrayList<>(soorten(objecten));
+                soorten.sort(null);
+                assertEquals(List.of("Beloning in fase 2", "Beloning in fase 3", "Beloning in fase 4",
+                        "Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), soorten,
+                        () -> "volgorde " + waar);
+                for (Object[] g : objecten) {
+                    if (!g[1].getClass().getSimpleName().equals("Wachter")) continue;
+                    if ((Integer) g[2] == 1)
+                        assertNull(TmsDocumenten.lees(g[1], "beginbeloning"),
+                                () -> "beginbeloning van W2 in volgorde " + waar);
+                    else
+                        assertGetal("0", TmsDocumenten.lees(g[1], "beginbeloning"),
+                                "beginbeloning in volgorde " + waar);
+                }
             }
         }
     }
@@ -924,13 +977,16 @@ class TmsCreatiestratumWitnessTest {
     /** Fires document {@code ir} on {@link #boeienlijn} through the driver in a sample of orders of its rules: each
      *  reaches its fixpoint with {@code objecten} objects made. */
     private static void speeltDoorDeDriver(Path ir, int objecten) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 10)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, boeienlijn(b), sessie -> { }, sessie -> gemaakt.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertEquals(objecten, gemaakt.size(), () -> "objecten in volgorde " + namen);
+        for (DroolsBackend.Branch tak : TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : steekproef(gegenereerd(b), 20261008L, 10)) {
+                String waar = namen + " op " + tak;
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, boeienlijn(b), sessie -> { },
+                        sessie -> gemaakt.addAll(gemaakt(sessie))),
+                        () -> "volgorde " + waar);
+                assertEquals(objecten, gemaakt.size(), () -> "objecten in volgorde " + waar);
+            }
         }
     }
 

@@ -412,6 +412,48 @@ final class TmsDocumenten {
                 org.kie.api.conf.EqualityBehaviorOption.EQUALITY);
     }
 
+    /** The branches a sample of orders of the rules fires on (card drl-teksttak-op-truth-maintenance, round 5b): the
+     *  exec-model branch, and {@code DRL_TMS}, its analysis rendered as DRL text, whose rules the sample puts in order
+     *  in the text ({@code Tekstvolgorde}), since the order of the rules in the text is the order in which Drools loads
+     *  them, and with it the order of the agenda among matches of equal standing. */
+    static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
+            DroolsBackend.Branch.DRL_TMS);
+
+    /** The names of the rules of {@code b}, in the order in which its branch generates them: those of its executable
+     *  model, or on {@code DRL_TMS} those of its text, which must be the same in the same order, so that one sample
+     *  gives both branches the same orders. */
+    static List<String> gegenereerd(DroolsBackend.Build b) {
+        if (b.branch() == DroolsBackend.Branch.DRL_TEXT)
+            throw new IllegalArgumentException("een steekproef vuurt de analyse, niet de oude DRL-teksttak");
+        List<String> model = b.execModelTranspiler().model().getRules().stream().map(org.drools.model.Rule::getName)
+                .toList();
+        if (b.branch() == DroolsBackend.Branch.EXEC_MODEL) return model;
+        List<String> tekst = dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde.regels(b);
+        if (!tekst.equals(model))
+            throw new AssertionError("de regels van de tekst " + tekst + " zijn niet die van het model " + model);
+        return tekst;
+    }
+
+    /** A KieBase of the rules of {@code b} named in {@code namen}, each once and in that order, as its branch builds
+     *  them: the rules of its executable model ({@link #kieBase}), or on {@code DRL_TMS} the rules of its plan rendered
+     *  as text ({@code Tekstvolgorde}). */
+    static org.kie.api.KieBase kieBaseVan(DroolsBackend.Build b, List<String> namen) {
+        if (b.branch() == DroolsBackend.Branch.DRL_TMS)
+            return dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde.kieBase(b, namen);
+        Map<String, org.drools.model.Rule> perNaam = new java.util.HashMap<>();
+        for (org.drools.model.Rule r : b.execModelTranspiler().model().getRules())
+            if (perNaam.put(r.getName(), r) != null)
+                throw new IllegalStateException("twee regels heten " + r.getName());
+        List<org.drools.model.Rule> volgorde = new ArrayList<>();
+        for (String naam : namen) {
+            org.drools.model.Rule r = perNaam.remove(naam);
+            if (r == null) throw new IllegalArgumentException("geen regel " + naam + " (of twee keer) in " + namen);
+            volgorde.add(r);
+        }
+        if (!perNaam.isEmpty()) throw new IllegalArgumentException("de volgorde mist " + perNaam.keySet());
+        return kieBase(b, volgorde);
+    }
+
     /** Fires {@code bonen} through the rules of {@code b} added in {@code volgorde}: {@code voor} sees the session before
      *  the fire (to add a listener), the fire must reach its fixpoint below the cap, the derivations are written back,
      *  and {@code na} sees the session before it is disposed. */
