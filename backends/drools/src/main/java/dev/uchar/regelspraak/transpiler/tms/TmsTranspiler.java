@@ -92,7 +92,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 /**
  * The lowering of the exec-model branch: a uchar IR document to a Drools executable model that derives with
@@ -3948,15 +3947,6 @@ public final class TmsTranspiler {
                 new Term.Lees(onderwerp, null), constante(na)), bron);
     }
 
-    /** {@code waarde}, the timeline of an attribute a condition reads whole, or the fault {@code fout} gives where the
-     *  case gives that input as the asOfDate-bucket scalar ({@link Emmerscalair}, RUNTIME-SEMANTICS ch. 8.4). The values
-     *  read such a timeline through {@link Rekenhulpen#volledig}; the whole-period qualifier still through this, until
-     *  step 1b2 of card drl-teksttak-op-truth-maintenance plans the conditions. */
-    private static List<?> volledig(Object waarde, Supplier<Invoervormfout> fout) {
-        if (waarde instanceof Emmerscalair) throw fout.get();
-        return (List<?>) waarde;
-    }
-
     /**
      * The gedurende clause {@code c} of a temporal total as a clip of the subject's timeline (RUNTIME-SEMANTICS
      * ch. 3.6), in the three shapes the reference interpreter carries, each through the runtime's helpers: a check of
@@ -4631,43 +4621,46 @@ public final class TmsTranspiler {
 
     // ---------------- conditions ----------------
 
-    /** A condition as a predicate over the values its reads bind, in the order {@link Lezingen} gives them indices. */
+    /** A condition as a predicate over the values its reads bind, in the order {@link Lezingen} gives them indices: the
+     *  rendering of a planned condition that a consequence or a test a form composes itself calls
+     *  ({@link #toetsweergave}), and, until step 1b3 of card drl-teksttak-op-truth-maintenance, what the compilers of a
+     *  quantifier fold and of a test of the §9.5 channel and the forms that compose a test themselves still make. */
     @FunctionalInterface
     private interface Toets {
         boolean test(Object[] waarden);
     }
 
-    /** The condition {@code c} as a term, a truth value ({@link Term}).
-     *
-     *  <p>INTERIM FORM, until the condition compilers plan: the compiled condition. */
+    /** The condition {@code c} as a term whose value is a truth value ({@link Term}), with the reads it needs bound in
+     *  {@code lez}. Every condition node is named here, so a node the IR records gain later fails to compile until it
+     *  is decided whether this branch reads it. */
     private Term voorwaarde(Conditie c, Lezingen lez) {
-        Toets t = voorwaardetoets(c, lez);
-        return new Term.GecompileerdeToets(t::test, bron(c.bron()));
-    }
-
-    /** Every condition node is named here, so a node the IR records gain later fails to compile until it is decided
-     *  whether this branch reads it. */
-    private Toets voorwaardetoets(Conditie c, Lezingen lez) {
         return switch (c) {
             case Conditie.Kenmerk k -> kenmerkcheck(k, lez);
             case Conditie.Samengesteld s -> samengesteld(s, lez);
             case Conditie.Vergelijking v -> vergelijking(v, lez);
             case Conditie.Predicaat p -> predicaat(p, lez);
             case Conditie.Periode p -> tijdvenster(p, lez);
-            case Conditie.Kwantorvouw q -> kwantorvouw(q, lez);
+            case Conditie.Kwantorvouw q -> gecompileerd(kwantorvouw(q, lez), q);
             case Conditie.Rollidmaatschap rol -> rolcontrole(rol, lez);
             // the v0 far-side record, which the loader no longer makes: since L2 a role check is one node (IR-SPEC
             // ch. 4.5), so only a hand-built model reaches this
             case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("VerreRollidmaatschap", c, "de verre rolcontrole"
                     + " van v0, die sinds L2 de ene knoop RoleMembership is (IR-SPEC ch. 4.5) en die de lader niet maakt");
-            case Conditie.Regelversie rv -> kanaallezing(rv, lez);
+            case Conditie.Regelversie rv -> gecompileerd(kanaallezing(rv, lez), rv);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
             // reaches it, so a composite that settles before it reads it plays
             case Conditie.Onopgelost o -> {
                 lez.markeerFalen();
-                yield w -> { throw new Rekenfout(Rekenfout.ONOPGELOSTE_VOORWAARDE); };
+                yield new Term.Faal(Rekenfout.ONOPGELOSTE_VOORWAARDE, bron(o.bron()));
             }
         };
+    }
+
+    /** {@code toets}, the condition {@code c} as its compiler still compiles it: a quantifier fold and a test of the
+     *  §9.5 channel, until step 1b3 of card drl-teksttak-op-truth-maintenance plans them
+     *  ({@link Term.GecompileerdeToets}). */
+    private static Term gecompileerd(Toets toets, Conditie c) {
+        return new Term.GecompileerdeToets(toets::test, bron(c.bron()));
     }
 
     /**
@@ -4680,26 +4673,21 @@ public final class TmsTranspiler {
      * time-dependent target the window would clip the timeline instead, and such a target is refused before this
      * ({@link #lid}).
      */
-    private Toets tijdvenster(Conditie.Periode p, Lezingen lez) {
+    private Term tijdvenster(Conditie.Periode p, Lezingen lez) {
         if (p.vanaf() == null && p.tot() == null)
             throw new Weigering("een periodevenster zonder grens ('" + snippet(p) + "'): er is geen venster om op te"
                     + " poorten");
         for (Expr grens : java.util.Arrays.asList(p.vanaf(), p.tot()))
             if (grens != null && !Vensterpositie.grensLowerbaar(grens, lez.subject, navigatieBindingen::containsKey))
                 throw new Weigering(Vensterpositie.GRENSVORM + ": " + snippet(p));
-        Waardefunctie vanaf = p.vanaf() == null ? null : weergave(waarde(p.vanaf(), lez));
-        Waardefunctie tot = p.tot() == null ? null : weergave(waarde(p.tot(), lez));
+        Term vanaf = p.vanaf() == null ? null : waarde(p.vanaf(), lez);
+        Term tot = p.tot() == null ? null : waarde(p.tot(), lez);
         int datum = lez.rekendatum();
-        boolean totInclusief = p.totInclusief();
-        return w -> {
-            Object van = vanaf == null ? null : vanaf.van(w);
-            Object eind = tot == null ? null : tot.van(w);
-            if (!(w[datum] instanceof LocalDate dag)) return false;
-            if (vanaf != null && !(van instanceof LocalDate v && !dag.isBefore(v))) return false;
-            if (tot != null && !(eind instanceof LocalDate t && (totInclusief ? !dag.isAfter(t) : dag.isBefore(t))))
-                return false;
-            return true;
-        };
+        // an absent bound is open where a leeg one never matches, so whether the window has the bound is a constant
+        // of its own beside the bound's place
+        return new Term.Aanroep(Functie.TIJDVENSTER, List.of(vanaf == null ? constante(null) : vanaf,
+                constante(vanaf != null), tot == null ? constante(null) : tot, constante(tot != null),
+                constante(p.totInclusief()), new Term.Lees(datum, null)), bron(p.bron()));
     }
 
     private static Weigering nietGelezen(String vorm, Conditie c, String reden) {
@@ -4710,7 +4698,7 @@ public final class TmsTranspiler {
      *  role, the reached object's, and a check over an absent link holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8
      *  rule 3). The standings are total, so no negation is needed here. Under the whole-period qualifier the check
      *  folds the characteristic's true periods instead ({@link #geheelPeriodeKenmerk}). */
-    private Toets kenmerkcheck(Conditie.Kenmerk k, Lezingen lez) {
+    private Term kenmerkcheck(Conditie.Kenmerk k, Lezingen lez) {
         // WF-109: the host is satisfied extensionally; a host the subject is no instance of names another object, which
         // a rule condition does not bind
         if (!Gastheer.hostOp(k, lez.subject))
@@ -4722,11 +4710,13 @@ public final class TmsTranspiler {
             if (k.navigatie() != null)
                 throw new Weigering("een CharacteristicCheck met een navigatie zonder binding ('" + snippet(k) + "')");
             int i = lez.eigen(lid(lez.subject, k.kenmerk(), true));
-            return w -> (Boolean) w[i] == gewenst;
+            return new Term.Aanroep(Functie.KENMERK, List.of(new Term.Lees(i, null), constante(gewenst)),
+                    bron(k.bron()));
         }
         Pad p = pad(lez.subject, nav, null, "de kenmerkcheck '" + snippet(k) + "'");
         int i = lez.genavigeerd(p, lid(p.bereikt(), k.kenmerk(), true));
-        return w -> w[i] != null && (Boolean) w[i] == gewenst;
+        return new Term.Aanroep(Functie.KENMERK_LANGS_PAD, List.of(new Term.Lees(i, null), constante(gewenst)),
+                bron(k.bron()));
     }
 
     // ---------------- the whole-period qualifier ----------------
@@ -4741,7 +4731,7 @@ public final class TmsTranspiler {
      * ("gedurende het gehele jaar niet …"), a per-day complement of the periods, which the DRL-text branch refuses as
      * well (ch. 3.12).
      */
-    private Toets geheelPeriodeKenmerk(Conditie.Kenmerk k, Lezingen lez) {
+    private Term geheelPeriodeKenmerk(Conditie.Kenmerk k, Lezingen lez) {
         String wat = "een CharacteristicCheck met wholePeriod ('" + snippet(k) + "')";
         if (k.negatie())
             throw new Weigering(wat + " met de ontkenning binnen de kwalificatie: " + NOG_NIET + ", zoals de andere twee"
@@ -4749,12 +4739,12 @@ public final class TmsTranspiler {
         List<RolBindingRef> nav = navigatieBindingen.get(k);
         if (nav == null) {
             if (k.navigatie() != null) throw new Weigering(wat + " met een navigatie zonder binding");
-            return geheelPeriode(k.periode(), lez.tijdlijn(tijdlid(lez.subject, k.kenmerk(), true, wat)),
-                    TOETS_KENMERK, null, null);
+            return geheelPeriode(k.periode(), new Term.Lees(lez.tijdlijn(tijdlid(lez.subject, k.kenmerk(), true, wat)),
+                    null), TOETS_KENMERK, null, bron(k.bron()));
         }
         Pad p = pad(lez.subject, nav, null, wat);
-        return geheelPeriode(k.periode(), lez.genavigeerd(p, tijdlid(p.bereikt(), k.kenmerk(), true, wat)),
-                TOETS_KENMERK, null, null);
+        return geheelPeriode(k.periode(), new Term.Lees(lez.genavigeerd(p, tijdlid(p.bereikt(), k.kenmerk(), true, wat)),
+                null), TOETS_KENMERK, null, bron(k.bron()));
     }
 
     /**
@@ -4768,7 +4758,7 @@ public final class TmsTranspiler {
      * timeline, a date ordering (ch. 3.12) and a side that is no number. A bound read over a path is a value like any
      * other. The timeline is read before the bound, as the reference interpreter reads them.
      */
-    private Toets geheelPeriodeVergelijking(Conditie.Vergelijking v, Lezingen lez) {
+    private Term geheelPeriodeVergelijking(Conditie.Vergelijking v, Lezingen lez) {
         String wat = "een Comparison met wholePeriod ('" + snippet(v) + "')";
         for (Expr kant : java.util.Arrays.asList(v.links(), v.rechts()))
             if (kant instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a) && a.objecttype() != null
@@ -4792,9 +4782,10 @@ public final class TmsTranspiler {
             throw new Weigering(wat + " die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal"
                     + " (RUNTIME-SEMANTICS ch. 3.9)");
         int tijdlijn = lez.tijdlijn(lid);
-        Waardefunctie grens = weergave(herschaald(waarde(grensExpr, lez), eff.eenheidVan(grensExpr),
-                eff.eenheidVan(tijd), "een §8.2 tijdlijngrens"));
-        return geheelPeriode(v.periode(), tijdlijn, toets, grens, emmerfout(lid, null, lez));
+        Term grens = herschaald(waarde(grensExpr, lez), eff.eenheidVan(grensExpr), eff.eenheidVan(tijd),
+                "een §8.2 tijdlijngrens");
+        return geheelPeriode(v.periode(), volledigeTijdlijn(tijdlijn, lid, null, lez, bron(tijd.bron())), toets, grens,
+                bron(v.bron()));
     }
 
     /**
@@ -4806,7 +4797,7 @@ public final class TmsTranspiler {
      * timeline are refused by name (the loader refuses a parameter as the operand, in the sentence of the other two
      * executors).
      */
-    private Toets geheelPeriodePredicaat(Conditie.Predicaat p, Lezingen lez) {
+    private Term geheelPeriodePredicaat(Conditie.Predicaat p, Lezingen lez) {
         String wat = "een Predicate met wholePeriod ('" + snippet(p) + "')";
         boolean gevuld = switch (p.soort()) {
             case LEEG -> p.negatie();
@@ -4824,29 +4815,31 @@ public final class TmsTranspiler {
                 throw new Weigering(wat + " over een eigen lezing die " + a.objecttype().naam + " noemt op een "
                         + lez.subject.naam + " (WF-053)");
             Lid lid = tijdlid(lez.subject, a.attribuut(), false, wat);
-            return geheelPeriode(p.periode(), lez.tijdlijn(lid), toets, null, emmerfout(lid, null, lez));
+            return geheelPeriode(p.periode(), volledigeTijdlijn(lez.tijdlijn(lid), lid, null, lez, bron(a.bron())),
+                    toets, null, bron(p.bron()));
         }
         Pad q = pad(lez.subject, pad, a.objecttype(), wat);
         Lid lid = tijdlid(q.bereikt(), a.attribuut(), false, wat);
-        return geheelPeriode(p.periode(), lez.genavigeerd(q, lid), toets, null, emmerfout(lid, q, lez));
+        return geheelPeriode(p.periode(), volledigeTijdlijn(lez.genavigeerd(q, lid), lid, q, lez, bron(a.bron())),
+                toets, null, bron(p.bron()));
     }
 
     /**
-     * The fault of the whole-period fold over the attribute {@code lid} where the case gives its input as the
-     * asOfDate-bucket scalar ({@link Emmerscalair}): the fold reads the full timeline, and ch. 8.4 makes a form that needs
-     * the one convention and finds the other fault, never guess. It names the object by the subject of the rule, through
-     * the roles of {@code pad} where the attribute is read over one ("the werf of "S1""). Registers that the rule's
-     * evaluation can fault. The reference interpreter and the ASP backend read such an input as no timeline, which passes
-     * (measured 2026-10-09).
+     * The timeline of the attribute {@code lid} bound at slot {@code tijdlijn}, which the whole-period fold reads whole,
+     * or the fault where the case gives its input as the asOfDate-bucket scalar ({@link Emmerscalair},
+     * {@link Functie#VOLLEDIG}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
+     * guess. The fault names the object by the subject of the rule, through the roles of {@code pad} where the attribute
+     * is read over one ("the werf of "S1""). Registers that the rule's evaluation can fault. The reference interpreter
+     * and the ASP backend read such an input as no timeline, which passes (measured 2026-10-09).
      */
-    private static Function<Object[], Invoervormfout> emmerfout(Lid lid, Pad pad, Lezingen lez) {
+    private static Term volledigeTijdlijn(int tijdlijn, Lid lid, Pad pad, Lezingen lez, String bron) {
         int onderwerp = lez.lid();
         lez.markeerFalen();
         StringBuilder langs = new StringBuilder();
         if (pad != null) for (int i = pad.rollen().size() - 1; i >= 0; i--)
             langs.append("the ").append(pad.rollen().get(i)).append(" of ");
         String voor = "the whole-period qualifier over \"" + lid.naam() + "\" needs the full timeline; " + langs;
-        return w -> new Invoervormfout(voor, w[onderwerp], " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)");
+        return volledig(tijdlijn, voor, onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", bron);
     }
 
     /** Whether {@code e} reads an attribute on a timeline of this rule's subject itself: an attribute reference without
@@ -4869,19 +4862,14 @@ public final class TmsTranspiler {
      * and satisfies no test but the leeg test. A timeline without segments, and a null one, touch no bucket and pass,
      * so the qualifier's own negation ("niet gedurende …"), which complements the folded verdict, fails on them. The
      * bound of a comparison is read as a decimal ({@code toBd}), after the timeline.
-     * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults with the fault
-     * {@code emmer} gives ({@link #emmerfout}); a characteristic, whose input is its true periods, has none
-     * ({@code emmer} null).
+     * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults
+     * ({@link #volledigeTijdlijn}); a characteristic, whose input is its true periods, reads its timeline as it is.
+     * {@code grens} is null where the test has no bound.
      */
-    private static Toets geheelPeriode(Conditie.GeheelPeriode periode, int tijdlijn, int toets, Waardefunctie grens,
-                                       Function<Object[], Invoervormfout> emmer) {
-        String raster = periode.jaar() ? "JAAR" : "MAAND";
-        boolean niet = periode.niet();
-        return w -> {
-            List<?> tl = emmer == null ? (List<?>) w[tijdlijn] : volledig(w[tijdlijn], () -> emmer.apply(w));
-            BigDecimal g = grens == null ? null : RegelSpraakRuntime.toBd(grens.van(w));
-            return RegelSpraakRuntime.rsGeheelPeriode(tl, raster, toets, g) != niet;
-        };
+    private static Term geheelPeriode(Conditie.GeheelPeriode periode, Term tijdlijn, int toets, Term grens,
+                                      String bron) {
+        return new Term.Aanroep(Functie.GEHEEL_PERIODE, List.of(tijdlijn, grens == null ? constante(null) : grens,
+                constante(periode.jaar() ? "JAAR" : "MAAND"), constante(toets), constante(periode.niet())), bron);
     }
 
     /**
@@ -4896,7 +4884,7 @@ public final class TmsTranspiler {
      * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
      * refused in the sentence the DRL-text branch gives.
      */
-    private Toets rolcontrole(Conditie.Rollidmaatschap r, Lezingen lez) {
+    private Term rolcontrole(Conditie.Rollidmaatschap r, Lezingen lez) {
         RolBindingRef rb = rolBindingen.get(r);
         RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
         if (paar == null)
@@ -4912,7 +4900,8 @@ public final class TmsTranspiler {
                         + " relatie van twee rollen is: " + NOG_NIET);
             boolean onderwerpIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(paar[0].naam()));
             int i = lez.rolkoppelingen(Namen.norm(ft.naam), onderwerpIsEerste, klasse);
-            return w -> (((Number) w[i]).longValue() > 0) != ontkend;
+            return new Term.Aanroep(Functie.ROLAANTAL, List.of(new Term.Lees(i, null), constante(ontkend)),
+                    bron(r.bron()));
         }
         FactModelGenerator.Lidmaatschapsopslag o = FactModelGenerator.lidmaatschapsopslag(model, rb);
         if (o.weigering() != null) throw nietGelezen("RoleMembership", r, o.weigering());
@@ -4921,43 +4910,29 @@ public final class TmsTranspiler {
                 throw nietGelezen("RoleMembership", r, FactModelGenerator.geenReferentieveldReden(model, lez.subject,
                         o.beanveld(), o.ander()) + " (§13.3.9 opslagrichting)");
             int i = lez.rolveld(o.beanveld(), klasse);
-            return w -> (Boolean) w[i] != ontkend;
+            return new Term.Aanroep(Functie.ROLVELD, List.of(new Term.Lees(i, null), constante(ontkend)),
+                    bron(r.bron()));
         }
         Objecttype vuller = tegenpartij != null ? tegenpartij : o.ander();
         if (!FactModelGenerator.heeftReferentieVeld(model, vuller, o.beanveld(), lez.subject))
             throw nietGelezen("RoleMembership", r, FactModelGenerator.geenReferentieveldReden(model, vuller,
                     o.beanveld(), lez.subject) + " (§13.3.9 opslagrichting)");
         int i = lez.rolvullers(bonenklasse(vuller), o.beanveld());
-        return w -> (((Number) w[i]).longValue() > 0) != ontkend;
+        return new Term.Aanroep(Functie.ROLAANTAL, List.of(new Term.Lees(i, null), constante(ontkend)),
+                bron(r.bron()));
     }
 
     /** A composite folds its members in wire order and stops at the first member after which the verdict stands
      *  (RUNTIME-SEMANTICS ch. 5.10), so a member that would fault, a comparison with a division by zero, is not read
      *  where an earlier member settled the verdict, and the composite faults only where it reads such a member. */
-    private Toets samengesteld(Conditie.Samengesteld s, Lezingen lez) {
+    private Term samengesteld(Conditie.Samengesteld s, Lezingen lez) {
         // a window under GEEN or a counting quantifier has no reading (WF-112), refused in the sentence both other
         // branches give
         String venster = Vensterpositie.weigering(s);
         if (venster != null) throw new Weigering(venster + ": " + snippet(s));
-        List<Toets> leden = new ArrayList<>();
-        for (Conditie deel : s.onderdelen()) leden.add(voorwaardetoets(deel, lez));
-        Conditie.Kwantor kw = s.kwantor();
-        int drempel = s.drempel();
-        return w -> {
-            int raak = 0;
-            for (int i = 0; i < leden.size(); i++) {
-                Boolean vast = Rekenhulpen.vastgesteld(kw, drempel, raak, i, leden.size() - i);
-                if (vast != null) return vast;
-                if (leden.get(i).test(w)) raak++;
-            }
-            return switch (kw) {
-                case ALLE, DE -> raak == leden.size();
-                case GEEN -> raak == 0;
-                case TEN_MINSTE -> raak >= drempel;
-                case TEN_HOOGSTE -> raak <= drempel;
-                case PRECIES -> raak == drempel;
-            };
-        };
+        List<Term> leden = new ArrayList<>();
+        for (Conditie deel : s.onderdelen()) leden.add(voorwaarde(deel, lez));
+        return new Term.Samengesteld(s.kwantor(), s.drempel(), leden, bron(s.bron()));
     }
 
     /**
@@ -5134,37 +5109,41 @@ public final class TmsTranspiler {
      * one (ch. 5.11). Two sides whose types allow no comparison are refused. Under the whole-period qualifier the
      * comparison folds a timeline instead ({@link #geheelPeriodeVergelijking}).
      */
-    private Toets vergelijking(Conditie.Vergelijking v, Lezingen lez) {
+    private Term vergelijking(Conditie.Vergelijking v, Lezingen lez) {
         if (v.periode() != null) return geheelPeriodeVergelijking(v, lez);
         Datatype lt = eff.typeVan(v.links()), rt = eff.typeVan(v.rechts());
         Conditie.Operator op = v.op();
         Term linkerterm = waarde(v.links(), lez), rechterterm = waarde(v.rechts(), lez);
-        Waardefunctie l = weergave(linkerterm), r = weergave(rechterterm);
+        String bron = bron(v.bron());
         if (lt.isGetalachtig() && rt.isGetalachtig() && !isDatumOp(op)) {
-            Waardefunctie rechts = weergave(herschaald(rechterterm, eff.eenheidVan(v.rechts()), eff.eenheidVan(v.links()),
-                    "een §5.1 vergelijking"));
-            String symbool = Operatoren.symbool(op);
-            return w -> {
-                Object links = l.van(w);
-                return RegelSpraakRuntime.rsAggVergelijk(links, rechts.van(w), symbool);
-            };
+            Term rechts = herschaald(rechterterm, eff.eenheidVan(v.rechts()), eff.eenheidVan(v.links()),
+                    "een §5.1 vergelijking");
+            return new Term.Aanroep(Functie.RS_AGG_VERGELIJK, List.of(linkerterm, rechts,
+                    constante(Operatoren.symbool(op))), bron);
         }
         if (lt.isDatum() && rt.isDatum() && (isDatumOp(op) || op == Conditie.Operator.GELIJK
                 || op == Conditie.Operator.ONGELIJK)) {
             if (!zelfdeDatumsoort(lt, rt))
                 throw new Weigering("een Comparison van een datum met een datum-tijd ('" + snippet(v) + "', §5.3 Tabel 36)");
-            return w -> Rekenhulpen.datumVergelijk(l.van(w), r.van(w), op);
+            return new Term.Aanroep(Functie.DATUM_VERGELIJK, List.of(linkerterm, rechterterm, constante(op)), bron);
         }
         if ((op == Conditie.Operator.GELIJK || op == Conditie.Operator.ONGELIJK) && gelijkheidstype(lt)
                 && gelijkheidstype(rt) && lt.isBoolean() == rt.isBoolean()) {
-            UnaryOperator<Object> lezing = lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie
-                    ? RegelSpraakRuntime::rsEnumNaam : UnaryOperator.identity();
-            boolean gelijk = op == Conditie.Operator.GELIJK;
-            return w -> Rekenhulpen.tekstGelijk(lezing.apply(l.van(w)), lezing.apply(r.van(w)), gelijk);
+            boolean enumeratie = lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie;
+            Term links = enumeratie ? enumnaam(linkerterm) : linkerterm;
+            Term rechts = enumeratie ? enumnaam(rechterterm) : rechterterm;
+            return new Term.Aanroep(Functie.TEKST_GELIJK, List.of(links, rechts,
+                    constante(op == Conditie.Operator.GELIJK)), bron);
         }
         throw new Weigering("een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typenaam(lt) + " en "
                 + typenaam(rt) + " ('" + snippet(v) + "'): de typen van de twee kanten laten deze vergelijking niet toe"
                 + " (RUNTIME-SEMANTICS ch. 1.2)");
+    }
+
+    /** {@code t}, an enumeration label or leeg, up to its normalisation ({@link Functie#RS_ENUM_NAAM}); the call has no
+     *  node of its own in the IR and carries the fragment of the operand it normalises, as a restatement does. */
+    private static Term enumnaam(Term t) {
+        return new Term.Aanroep(Functie.RS_ENUM_NAAM, List.of(t), t.bron());
     }
 
     private static String typenaam(Datatype t) {
@@ -5190,13 +5169,13 @@ public final class TmsTranspiler {
     /** A leeg or gevuld test of a value; a read over an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8 rule 1). The loader
      *  writes a negated test as its sister test. Under the whole-period qualifier the test folds a timeline instead
      *  ({@link #geheelPeriodePredicaat}). */
-    private Toets predicaat(Conditie.Predicaat p, Lezingen lez) {
+    private Term predicaat(Conditie.Predicaat p, Lezingen lez) {
         if (p.periode() != null) return geheelPeriodePredicaat(p, lez);
         switch (p.soort()) {
             case LEEG, GEVULD -> {
-                Waardefunctie f = weergave(waarde(p.operand(), lez));
-                boolean leeg = p.soort() == Conditie.Predicaatsoort.LEEG;
-                return w -> (f.van(w) == null) == leeg;
+                Term operand = waarde(p.operand(), lez);
+                return new Term.Aanroep(Functie.LEEGTOETS, List.of(operand,
+                        constante(p.soort() == Conditie.Predicaatsoort.LEEG)), bron(p.bron()));
             }
             case ELFPROEF, NUMERIEK_MET_EXACT -> {
                 return cijferproef(p, lez);
@@ -5215,19 +5194,17 @@ public final class TmsTranspiler {
      *  passes neither test. The operand is read as any value; over a path of roles that branch makes an absent link fail
      *  both polarities, which a leeg read here cannot tell from a leeg value, so such an operand is refused by name. The
      *  reference interpreter and the ASP backend do not evaluate these predicates. */
-    private Toets cijferproef(Conditie.Predicaat p, Lezingen lez) {
+    private Term cijferproef(Conditie.Predicaat p, Lezingen lez) {
         if (p.operand() instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a))
             throw new Weigering("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " over een pad ('"
                     + snippet(p) + "'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, wat"
                     + " een lege lezing hier niet van een lege waarde onderscheidt");
-        Waardefunctie f = weergave(waarde(p.operand(), lez));
-        boolean elf = p.soort() == Conditie.Predicaatsoort.ELFPROEF;
-        int cijfers = p.cijfers();
+        Term operand = waarde(p.operand(), lez);
         boolean gewenst = !p.negatie();
-        return w -> {
-            Object v = f.van(w);
-            return (elf ? RegelSpraakRuntime.rsElfproef(v) : RegelSpraakRuntime.rsNumeriekMetExact(v, cijfers)) == gewenst;
-        };
+        if (p.soort() == Conditie.Predicaatsoort.ELFPROEF)
+            return new Term.Aanroep(Functie.ELFPROEF, List.of(operand, constante(gewenst)), bron(p.bron()));
+        return new Term.Aanroep(Functie.NUMERIEK_MET_EXACT, List.of(operand, constante(p.cijfers()), constante(gewenst)),
+                bron(p.bron()));
     }
 
     // ---------------- the reads of one rule ----------------

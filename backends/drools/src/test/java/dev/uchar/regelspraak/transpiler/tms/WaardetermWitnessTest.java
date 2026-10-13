@@ -1,20 +1,16 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.model.Eenheid;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
-import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Waardeplan;
 
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -47,8 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       boundary restates the sum into the target's unit, by 1000/1 (RUNTIME-SEMANTICS ch. 2.6).</li>
  *   <li>{@code anchor/jutterswet-tariefstelling}: three nested {@code Let}s around an {@code IfThenElse}, a division
  *       with its probe, and a {@code Let} whose body reads its binder first. The outermost {@code Let} is not eager:
- *       its binder is read only in the value of an inner one, which the condition forces, and the condition is still a
- *       compiled test until step 1b2.</li>
+ *       its binder is read only in the value of an inner one, which the condition of the choice forces, and the
+ *       analysis counts a choice as reading something else first. Since step 1b2 the condition is a planned
+ *       comparison of two binders.</li>
  * </ul>
  *
  * <p><b>Red</b> before the step: the value compilers made the functions themselves and planned nothing, so the
@@ -82,7 +79,7 @@ class WaardetermWitnessTest {
         assertEquals(List.of(
                 "aanslag van een jutter: Let 1 ink [Lees 0] in [Let 3 aftrek [RS_MAAL(Lees 2, Const 250)] in "
                         + "[Let 4 belasting [RS_AFRONDING(RS_MAAL(Binder 1 ink, Const 0.21), Const 2, Const HALF_UP)] in "
-                        + "[Keuze(GecompileerdeToets 'aftrek groter dan belasting', Const 0, "
+                        + "[Keuze(RS_AGG_VERGELIJK(Binder 3 aftrek, Binder 4 belasting, Const >), Const 0, "
                         + "RS_MIN(Binder 4 belasting, Binder 3 aftrek))]]]",
                 "factor van een jutter: RS_PLUS(Const 1, Deel GEDEELD sonde 1 (Lees 0, Const 2))",
                 "gewogen inkomen van een jutter: RS_AFRONDING(Let 1 ink2 gretig [Lees 0] in "
@@ -94,27 +91,35 @@ class WaardetermWitnessTest {
                 "aanslag van een jutter 0.1 Let bron 'aftrek is het kindertal van de Jutter maal 250,00'",
                 "aanslag van een jutter 0.1.0 Aanroep bron 'het kindertal van de Jutter maal 250,00'",
                 "aanslag van een jutter 0.1.0.0 Lees bron 'het kindertal van de Jutter'",
-                "aanslag van een jutter 0.1.0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD, eenheid=null] bron '250,00'",
+                "aanslag van een jutter 0.1.0.1 Const BigDecimal type "
+                        + "Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD, eenheid=null] bron '250,00'",
                 "aanslag van een jutter 0.1.1 Let bron 'belasting is ink maal 0,2100 rekenkundig afgerond op 2 "
                         + "decimalen'",
                 "aanslag van een jutter 0.1.1.0 Aanroep bron 'ink maal 0,2100 rekenkundig afgerond op 2 decimalen'",
                 "aanslag van een jutter 0.1.1.0.0 Aanroep bron 'ink maal 0,2100'",
                 "aanslag van een jutter 0.1.1.0.0.0 Binder bron 'ink'",
-                "aanslag van een jutter 0.1.1.0.0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '0,2100'",
+                "aanslag van een jutter 0.1.1.0.0.1 Const BigDecimal type "
+                        + "Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '0,2100'",
                 "aanslag van een jutter 0.1.1.0.1 Const Integer",
                 "aanslag van een jutter 0.1.1.0.2 Const RoundingMode",
                 "aanslag van een jutter 0.1.1.1 Keuze bron 'als aftrek groter dan belasting dan 0,00 anders belasting "
                         + "min aftrek'",
-                "aanslag van een jutter 0.1.1.1.0 GecompileerdeToets bron 'aftrek groter dan belasting'",
-                "aanslag van een jutter 0.1.1.1.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD, eenheid=null] bron '0,00'",
+                "aanslag van een jutter 0.1.1.1.0 Aanroep bron 'aftrek groter dan belasting'",
+                "aanslag van een jutter 0.1.1.1.0.0 Binder bron 'aftrek'",
+                "aanslag van een jutter 0.1.1.1.0.1 Binder bron 'belasting'",
+                "aanslag van een jutter 0.1.1.1.0.2 Const String",
+                "aanslag van een jutter 0.1.1.1.1 Const BigDecimal type "
+                        + "Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD, eenheid=null] bron '0,00'",
                 "aanslag van een jutter 0.1.1.1.2 Aanroep bron 'belasting min aftrek'",
                 "aanslag van een jutter 0.1.1.1.2.0 Binder bron 'belasting'",
                 "aanslag van een jutter 0.1.1.1.2.1 Binder bron 'aftrek'",
                 "factor van een jutter 0 Aanroep bron '1,0000 plus het kindertal van de Jutter gedeeld door 2,0000'",
-                "factor van een jutter 0.0 Const BigDecimal type Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '1,0000'",
+                "factor van een jutter 0.0 Const BigDecimal type "
+                        + "Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '1,0000'",
                 "factor van een jutter 0.1 Deel bron 'het kindertal van de Jutter gedeeld door 2,0000'",
                 "factor van een jutter 0.1.0 Lees bron 'het kindertal van de Jutter'",
-                "factor van een jutter 0.1.1 Const BigDecimal type Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '2,0000'",
+                "factor van een jutter 0.1.1 Const BigDecimal type "
+                        + "Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '2,0000'",
                 "gewogen inkomen van een jutter 0 Aanroep bron 'ink2 maal de factor van de Jutter rekenkundig "
                         + "afgerond op 2 decimalen'",
                 "gewogen inkomen van een jutter 0.0 Let bron 'ink2 is het inkomen van de Jutter'",
@@ -146,90 +151,13 @@ class WaardetermWitnessTest {
     }
 
     private static List<String> bomen(List<Waardeplan> plannen) {
-        return plannen.stream().map(p -> p.vorm() + ": " + boom(p.waarde())).toList();
+        return plannen.stream().map(p -> p.vorm() + ": " + Termboom.boom(p.waarde())).toList();
     }
 
-    /** {@code t} as text: every node by its kind, with the fields the analysis decided. */
-    private static String boom(Term t) {
-        return switch (t) {
-            case Term.Const c -> "Const " + waarde(c.waarde())
-                    + (c.type() == null || c.type().eenheidOf() == null ? "" : " " + c.type().eenheidOf().weergave());
-            case Term.Lees l -> "Lees " + l.slot();
-            case Term.Binder b -> "Binder " + b.slot() + " " + b.naam();
-            case Term.Let l -> "Let " + l.slot() + " " + l.naam() + (l.gretig() ? " gretig" : "") + " [" + boom(l.waarde())
-                    + "] in [" + boom(l.lichaam()) + "]";
-            case Term.Keuze k -> "Keuze(" + boom(k.voorwaarde()) + ", " + boom(k.dan()) + ", " + boom(k.anders()) + ")";
-            case Term.Aanroep a -> a.functie() + lijst(a.argumenten());
-            case Term.Herschaal h -> "Herschaal " + h.functie() + " " + eenheid(h.van()) + "->" + eenheid(h.naar()) + " "
-                    + h.teller()
-                    + (h.noemer() == null ? "" : "/" + h.noemer()) + " (" + boom(h.term()) + ")";
-            case Term.Deel d -> "Deel " + d.functie() + " sonde " + d.sonde() + " (" + boom(d.links()) + ", "
-                    + boom(d.rechts()) + ")";
-            case Term.Wortel w -> "Wortel " + w.functie() + " sonde " + w.sonde() + " (" + boom(w.radicand()) + ")";
-            case Term.Faal f -> "Faal '" + f.zin() + "'";
-            case Term.Vereist v -> "Vereist (" + boom(v.waarde()) + ") '" + v.zin() + "'";
-            case Term.Tekstreeks s -> "Tekstreeks" + lijst(s.delen());
-            case Term.GelijsteVouw g -> "GelijsteVouw " + g.functie() + lijst(g.operanden());
-            case Term.Vouwlezing v -> "Vouwlezing " + v.deponeringen() + " " + v.sonde() + " " + v.filterfout() + " "
-                    + v.lidfout() + " (" + boom(v.uitkomst()) + ")";
-            case Term.Dagsoort d -> "Dagsoort " + d.naam();
-            case Term.Samengesteld s -> "Samengesteld " + s.kwantor() + " " + s.drempel() + lijst(s.leden());
-            case Term.GecompileerdeToets g -> "GecompileerdeToets '" + g.bron() + "'";
-        };
-    }
-
-    /** Per plan, every node of its tree in pre-order, with what the tree text leaves out: its position (the root 0,
-     *  the i-th child of the node at p at p.i), its kind, its source fragment where it carries one, and of a constant
-     *  the class of its value and, where it has one, its whole IR type, as the type's record prints it. */
+    /** Per plan, every node of its tree in pre-order, with what the tree text leaves out ({@link Termboom#velden}). */
     private static List<String> velden(List<Waardeplan> plannen) {
         List<String> uit = new ArrayList<>();
-        for (Waardeplan p : plannen) velden(p.vorm(), p.waarde(), "0", uit);
+        for (Waardeplan p : plannen) Termboom.velden(p.vorm(), p.waarde(), "0", uit);
         return uit;
-    }
-
-    private static void velden(String vorm, Term t, String plek, List<String> uit) {
-        StringBuilder regel = new StringBuilder(vorm + " " + plek + " " + t.getClass().getSimpleName());
-        if (t instanceof Term.Const c)
-            regel.append(" ").append(c.waarde() == null ? "null" : c.waarde().getClass().getSimpleName())
-                    .append(c.type() == null ? "" : " type " + c.type());
-        if (t.bron() != null) regel.append(" bron '").append(t.bron()).append("'");
-        uit.add(regel.toString());
-        List<Term> kinderen = kinderen(t);
-        for (int i = 0; i < kinderen.size(); i++) velden(vorm, kinderen.get(i), plek + "." + i, uit);
-    }
-
-    /** The children of {@code t}, in the order the node lists them. */
-    private static List<Term> kinderen(Term t) {
-        return switch (t) {
-            case Term.Const c -> List.of();
-            case Term.Lees l -> List.of();
-            case Term.Binder b -> List.of();
-            case Term.Let l -> List.of(l.waarde(), l.lichaam());
-            case Term.Keuze k -> List.of(k.voorwaarde(), k.dan(), k.anders());
-            case Term.Aanroep a -> a.argumenten();
-            case Term.Herschaal h -> List.of(h.term());
-            case Term.Deel d -> List.of(d.links(), d.rechts());
-            case Term.Wortel w -> List.of(w.radicand());
-            case Term.Faal f -> List.of();
-            case Term.Vereist v -> List.of(v.waarde());
-            case Term.Tekstreeks s -> s.delen();
-            case Term.GelijsteVouw g -> g.operanden();
-            case Term.Vouwlezing v -> List.of(v.uitkomst());
-            case Term.Dagsoort d -> List.of();
-            case Term.Samengesteld s -> s.leden();
-            case Term.GecompileerdeToets g -> List.of();
-        };
-    }
-
-    private static String lijst(List<Term> termen) {
-        return termen.stream().map(WaardetermWitnessTest::boom).collect(Collectors.joining(", ", "(", ")"));
-    }
-
-    private static String waarde(Object w) {
-        return w instanceof BigDecimal b ? b.toPlainString() : String.valueOf(w);
-    }
-
-    private static String eenheid(Eenheid e) {
-        return e == null ? "-" : e.weergave();
     }
 }
