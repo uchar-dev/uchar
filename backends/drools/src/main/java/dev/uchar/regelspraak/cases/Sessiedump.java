@@ -48,12 +48,15 @@ import java.util.function.Predicate;
  * <p>Every line starts with its section, so a diff counts its lines per section ({@code awk '{print $2}'} over the
  * changed lines): {@code invoer} (every object in working memory and every global right before the fire: the input of
  * the session, so that a comparison couples a session to its case and not only to its document),
- * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint),
- * {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the order they fired),
- * {@code lees} (everything {@link DroolsBackend#lees} gives) and {@code feiten}/{@code feit} (every object in working
- * memory at the fixpoint, the beans with their fields among them, so that a write on a bean during the fire shows).
- * The order of the firings depends on the order in which a rendering adds the rules, so a step reports it and explains
- * a difference; the other sections hold strictly.
+ * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint), {@code fixpunt} (the outcome
+ * of the fire in one line: {@code ja}, {@code nee} with the sentence of the cap or the budget, or {@code gooit} with
+ * the exception the fire threw), {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the
+ * order they fired), {@code lees} (everything {@link DroolsBackend#lees} gives) and {@code feiten}/{@code feit}
+ * (every object in working memory at the fixpoint, the beans with their fields among them, so that a write on a bean
+ * during the fire shows).
+ * The order and the count of the firings depend on the order in which a rendering adds the rules, so a step reports
+ * them and explains a difference; the other sections hold strictly, the outcome of the fire among them (round 5b of
+ * card drl-teksttak-op-truth-maintenance: before, it stood only in the reported line {@code vuringen}).
  *
  * <p>The text names every object by a name of its own and never by its identity, which differs between two runs: an
  * input bean by its case label, quoted, and a made object by its creation, the name of its subject and its number,
@@ -177,6 +180,9 @@ final class Sessiedump {
         for (String r : invoer) uit.append("invoer ").append(r).append('\n');
         uit.append("vuringen ").append(v.vuringen()).append(" plafond ").append(v.plafond()).append(" geenFixpunt ")
                 .append(v.geenFixpunt() == null ? "null" : n.zin(v.geenFixpunt())).append('\n');
+        // the count of the firings differs between two renderings that reach the same fixpoint, so the comparison only
+        // reports the line above; whether there is a fixpoint at all it holds strictly, in a line of its own
+        uit.append("fixpunt ").append(v.geenFixpunt() == null ? "ja" : "nee " + n.zin(v.geenFixpunt())).append('\n');
         spoor(uit);
         if (v.geenFixpunt() != null) {
             feiten(uit, n);
@@ -210,6 +216,7 @@ final class Sessiedump {
         Naamgeving n = naamgeving(labels);
         for (String r : invoer) uit.append("invoer ").append(r).append('\n');
         uit.append("vuringen gooit ").append(n.fout(e)).append('\n');
+        uit.append("fixpunt gooit ").append(n.fout(e)).append('\n');
         spoor(uit);
         feiten(uit, n);
     }

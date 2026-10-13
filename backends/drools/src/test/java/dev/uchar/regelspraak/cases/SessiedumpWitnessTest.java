@@ -128,6 +128,48 @@ class SessiedumpWitnessTest {
         assertEquals("lees koppeling \"F\" \"x r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", twee);
     }
 
+    /**
+     * The outcome of the fire stands in a line of its own, in the section {@code fixpunt}, which the comparison of the
+     * harness holds strictly (round 5b, Fable advice 4 §2.4 point 1): {@code fixpunt ja} at a fixpoint,
+     * {@code fixpunt nee "<zin>"} at the cap or the creation budget, and {@code fixpunt gooit Klasse: "<zin>"} where
+     * the fire threw. The line {@code vuringen}, which the comparison only reports, keeps the count, the cap and the
+     * sentence. Without the line, a session that reached its fixpoint on one branch and not on the other differed only
+     * through {@code lees}, which a session that derives nothing leaves empty either way. The fixpoint is a fire of a
+     * case; the two other outcomes are written for the same session as {@code vuur} would hand them over. <b>Red</b> on
+     * {@code da00178e}, before the line: "expected: &lt;[[fixpunt ja], [fixpunt nee "geen fixpunt binnen \"100\"
+     * vuringen"], [fixpunt gooit IllegalStateException: "de proef gooit"]]&gt; but was: &lt;[[], [], []]&gt;".
+     */
+    @Test void de_uitkomst_van_het_vuren_staat_in_een_eigen_regel() throws Exception {
+        String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+                List.of())), List.of());
+        CaseRunner runner = CaseRunner.voorMeting(TmsDocumenten.document(model, List.of()),
+                DroolsBackend.Branch.EXEC_MODEL);
+        String ja = dump(runner, vondst("V1", "x"));
+        String nee = runner.metSessie(vondst("V1", "x"), (bouw, sessie, labels) -> {
+            Sessiedump d = Sessiedump.op(sessie, labels);
+            StringBuilder uit = new StringBuilder();
+            d.schrijf(uit, bouw, new DroolsBackend.Vuring(7, 100, "geen fixpunt binnen \"100\" vuringen"), labels);
+            return uit.toString();
+        });
+        String gooit = runner.metSessie(vondst("V1", "x"), (bouw, sessie, labels) -> {
+            Sessiedump d = Sessiedump.op(sessie, labels);
+            StringBuilder uit = new StringBuilder();
+            d.schrijf(uit, new IllegalStateException("de proef gooit"), labels);
+            return uit.toString();
+        });
+        assertEquals(List.of(List.of("fixpunt ja"), List.of("fixpunt nee \"geen fixpunt binnen \\\"100\\\" vuringen\""),
+                        List.of("fixpunt gooit IllegalStateException: \"de proef gooit\"")),
+                List.of(sectie(ja, "fixpunt"), sectie(nee, "fixpunt"), sectie(gooit, "fixpunt")));
+        assertEquals(List.of(List.of("vuringen 7 plafond 100 geenFixpunt \"geen fixpunt binnen \\\"100\\\" vuringen\""),
+                        List.of("vuringen gooit IllegalStateException: \"de proef gooit\"")),
+                List.of(sectie(nee, "vuringen"), sectie(gooit, "vuringen")));
+    }
+
+    /** The lines of the section {@code sectie} of dump {@code d}, in their order. */
+    private static List<String> sectie(String d, String sectie) {
+        return Stream.of(d.split("\n")).filter(r -> r.startsWith(sectie + " ")).toList();
+    }
+
     /** The document of {@link #een_naam_met_tekens_van_de_regelopbouw_staat_geciteerd}, in the test resources, where
      *  the verifier, the reference interpreter and the ASP runner read it too. */
     private static final Path STRUCTUURNAMEN = Path.of("src", "test", "resources", "sessiedump", "structuurnamen",
