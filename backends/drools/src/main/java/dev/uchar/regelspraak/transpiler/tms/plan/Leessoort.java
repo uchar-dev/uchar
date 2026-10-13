@@ -4,14 +4,18 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
  * What one slot of a rule's value array holds, as the analysis decided to read it. Each kind comes from one method of
  * {@code TmsTranspiler.Lezingen}, named per constant; a method that decides between two ways of reading gives a kind per
  * way. A validity window ({@code Lezingen.geldig}) gates the rule on the evaluation date and binds no slot, so it is a
- * pattern of the left-hand side and no kind of this table. Two kinds come from outside {@code Lezingen}: the places
- * that {@code TmsTranspiler.plaats} binds in the range of a filter fault rule, with a pattern outside the plan until
- * step 1c of card drl-teksttak-op-truth-maintenance, have a slot all the same, since the table holds every slot.
+ * pattern of the left-hand side and no kind of this table. Some kinds come from outside {@code Lezingen}, from the
+ * method each names: the places that {@code TmsTranspiler.plaats} binds in the range of a filter fault rule, with a
+ * pattern outside the plan until step 1c of card drl-teksttak-op-truth-maintenance, have a slot all the same, since
+ * the table holds every slot; so do the reads of the rules that a form composes itself, an initialisation's guard, the
+ * rule of two writers and the standing rules.
  */
 public enum Leessoort {
     /** The subject itself, for a consequence that hands it on ({@code lid}). */
     ONDERWERP,
-    /** A member of the subject that no form writes, bound off its bean ({@code eigen}). */
+    /** The input of a member of the subject, bound off its bean: of a member that no form writes ({@code eigen}), and
+     *  the input that a member's standing carries where no derivation stands
+     *  ({@code TmsTranspiler.invoerstandregel}). */
     INVOER,
     /** A derived attribute of the subject, through its {@code Stand} ({@code eigen}). */
     STAND,
@@ -66,5 +70,8 @@ public enum Leessoort {
      *  ({@code TmsTranspiler.initialisatieRegel}). */
     LEGE_SCHRIJVERS,
     /** The value facts that the writers of one attribute put on the subject ({@code TmsTranspiler.verschilregel}). */
-    WAARDEN
+    WAARDEN,
+    /** The value a writer put on the subject, off its {@code Waarde}: what the standing of a derived attribute carries
+     *  ({@code TmsTranspiler.attribuutstandregels}). */
+    AFLEIDING
 }

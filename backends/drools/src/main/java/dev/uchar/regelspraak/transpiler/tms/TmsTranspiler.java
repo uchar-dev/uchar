@@ -42,6 +42,7 @@ import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
+import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
@@ -5953,61 +5954,59 @@ public final class TmsTranspiler {
      * beans, the one under {@code exists} and the other under {@code not}; the fact is stated and never changes while
      * the session fires, so exactly one of them holds for each object.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> attribuutstandregels(Lid lid) {
-        Function<Object, Object> bean = Accessors.getter(lid.klasse(), lid.naam());
         ElementSleutel sleutel = lid.sleutel();
         String naam = "stand " + lid.declarant().naam + "." + lid.naam() + ": ";
         List<Rule> uit = new ArrayList<>();
 
         if (schrijvers.containsKey(sleutel)) {
-            Variable<Object> s1 = (Variable<Object>) DSL.declarationOf(lid.klasse(), "$onderwerp");
-            Variable<Waarde> w1 = DSL.declarationOf(Waarde.class, "$waarde");
-            Variable<Object> v1 = DSL.declarationOf(Object.class, "$v");
-            uit.add(PatternDSL.rule(PKG, naam + "uit een afleiding").build(
-                    PatternDSL.pattern(s1),
-                    zelfde(PatternDSL.pattern(w1).expr(id("waarde"), x -> x.attribuut().equals(sleutel)),
-                            "waarde-onderwerp", s1, Waarde::onderwerp).bind(v1, Waarde::waarde),
-                    DSL.on(s1, v1).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
-                            drools.logicalInsert(new Stand(o, sleutel, v)))));
+            Patroon waarde = new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
+                    List.of(opOnderwerp(id("waarde-onderwerp"))), List.of(Binding.van("$v", Waarde.class, "waarde")));
+            uit.add(weergeef(new Regelplan(naam + "uit een afleiding", null, null,
+                    eenSlot(Leessoort.AFLEIDING, "afleiding " + sleutel, "$v"),
+                    List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of()), waarde),
+                    new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, 0, false,
+                            Gevolg.Invoeging.LOGISCH))));
         }
 
         if (lid.tijd() == null) {
-            uit.add(invoerstandregel(lid, naam + "uit de invoer", bean, null));
+            uit.add(invoerstandregel(lid, naam + "uit de invoer", null));
             return uit;
         }
-        Function<Object, Object> tijdlijn = o -> Tijdvak.lijst((List<?>) bean.apply(o));
-        uit.add(invoerstandregel(lid, naam + "uit de invoer", tijdlijn, false));
-        uit.add(invoerstandregel(lid, naam + "uit de invoer, een emmerscalair", tijdlijn, true));
+        uit.add(invoerstandregel(lid, naam + "uit de invoer", false));
+        uit.add(invoerstandregel(lid, naam + "uit de invoer, een emmerscalair", true));
         return uit;
     }
 
     /** The input rule {@code naam} of {@link #attribuutstandregels}: where no {@link Waarde} stands on the object, the
-     *  {@link Stand} of the input that {@code invoer} reads off the bean; with {@code emmer} null for a member that
-     *  holds one value, and for a member on a timeline only where an {@link Emmerinvoer} of the member on the object
-     *  exists ({@code true}), the input then standing as its {@link Emmerscalair}, or does not ({@code false}). The
-     *  bucket is taken in the consequence, from the bound timeline: a binding is computed for every object the subject
-     *  pattern matches, also one whose input is a full timeline. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private Rule invoerstandregel(Lid lid, String naam, Function<Object, Object> invoer, Boolean emmer) {
+     *  {@link Stand} of the input on the bean, read as it is, or as its segments for a member on a timeline
+     *  ({@link #invoervorm}); with {@code emmer} null for a member that holds one value, and for a member on a timeline
+     *  only where an {@link Emmerinvoer} of the member on the object exists ({@code true}), the input then standing as
+     *  its {@link Emmerscalair}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
+     *  timeline: a binding is computed for every object the subject pattern matches, also one whose input is a full
+     *  timeline. */
+    private Rule invoerstandregel(Lid lid, String naam, Boolean emmer) {
         ElementSleutel sleutel = lid.sleutel();
-        Variable s = DSL.declarationOf(lid.klasse(), "$onderwerp");
-        Variable<Object> v = DSL.declarationOf(Object.class, "$invoer");
-        Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$waarde");
-        List<RuleItemBuilder<?>> items = new ArrayList<>();
-        items.add(((PatternDSL.PatternDef) PatternDSL.pattern(s)).bind(v, o -> invoer.apply(o)));
+        List<LhsItem> items = new ArrayList<>();
+        items.add(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(new Binding("$invoer", List.of(),
+                new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null))));
         if (emmer != null) {
-            Variable<Emmerinvoer> e = DSL.declarationOf(Emmerinvoer.class, "$emmerinvoer");
-            PatternDSL.PatternDef<Emmerinvoer> p = zelfde(PatternDSL.pattern(e).expr(id("emmerinvoer"),
-                    x -> x.attribuut().equals(sleutel)), "emmerinvoer-onderwerp", s, Emmerinvoer::onderwerp);
-            items.add(emmer ? DSL.exists(p) : DSL.not(p));
+            Patroon p = new Patroon(Emmerinvoer.class, "$emmerinvoer",
+                    List.of(gelijk(id("emmerinvoer"), "attribuut", sleutel)),
+                    List.of(opOnderwerp(id("emmerinvoer-onderwerp"))), List.of());
+            items.add(emmer ? new Bestaat(List.of(p)) : new Niet(p));
         }
-        items.add(DSL.not(zelfde(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel)),
-                "waarde-onderwerp", s, Waarde::onderwerp)));
-        boolean alsEmmer = Boolean.TRUE.equals(emmer);
-        items.add(DSL.on(s, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, x) ->
-                drools.logicalInsert(new Stand(o, sleutel, alsEmmer ? Emmerscalair.van((List<?>) x) : x))));
-        return PatternDSL.rule(PKG, naam).build(items.toArray(new RuleItemBuilder[0]));
+        items.add(new Niet(new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
+                List.of(opOnderwerp(id("waarde-onderwerp"))), List.of())));
+        return weergeef(new Regelplan(naam, null, null, eenSlot(Leessoort.INVOER, "invoer " + sleutel, "$invoer"),
+                items, new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, 0, Boolean.TRUE.equals(emmer),
+                        Gevolg.Invoeging.LOGISCH)));
+    }
+
+    /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code soort}, which the
+     *  variable {@code naam} binds. */
+    private static Leestabel eenSlot(Leessoort soort, String sleutel, String naam) {
+        return new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, soort, sleutel, naam)));
     }
 
     /**

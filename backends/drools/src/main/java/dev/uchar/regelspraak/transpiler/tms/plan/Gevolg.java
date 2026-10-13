@@ -121,4 +121,19 @@ public sealed interface Gevolg {
                         + " uit geen van beide, niet " + waar + " uit " + bron);
         }
     }
+
+    /**
+     * The standing of attribute {@code attribuut} on the object {@code onderwerp} binds: the value in slot
+     * {@code waarde} of the value array, from {@code bron}, a derivation's value or the input on the bean. Where
+     * {@code emmerscalair}, the input, a timeline, stands as the asOfDate-bucket scalar the case gave
+     * ({@code Emmerscalair}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline.
+     */
+    record Stand(String onderwerp, ElementSleutel attribuut, Standbron bron, int waarde, boolean emmerscalair,
+                 Invoeging invoeging) implements Gevolg {
+        public Stand {
+            if (bron == Standbron.GEEN || emmerscalair && bron != Standbron.INVOER)
+                throw new IllegalArgumentException("een stand komt uit de invoer of een afleiding, en alleen de invoer"
+                        + " staat als emmerscalair, niet " + bron + (emmerscalair ? " als emmerscalair" : ""));
+        }
+    }
 }

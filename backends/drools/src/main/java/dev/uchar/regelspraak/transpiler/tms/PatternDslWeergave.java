@@ -186,6 +186,9 @@ final class PatternDslWeergave {
                     voegIn(drools, x.invoeging(), new Rekendatum((LocalDate) a[0])));
             case Gevolg.Kenmerkstand x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
                     voegIn(drools, x.invoeging(), new KenmerkStand(a[0], x.kenmerk(), x.waar())));
+            case Gevolg.Stand x -> new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarde())},
+                    (drools, a) -> voegIn(drools, x.invoeging(), new Stand(a[0], x.attribuut(),
+                            x.emmerscalair() ? Emmerscalair.van((List<?>) a[1]) : a[1])));
         };
     }
 
@@ -451,6 +454,8 @@ final class PatternDslWeergave {
         veld(KenmerkStand.class, "waar", KenmerkStand::waar);
         veld(HeeftKenmerk.class, "onderwerp", HeeftKenmerk::onderwerp);
         veld(HeeftKenmerk.class, "kenmerk", HeeftKenmerk::kenmerk);
+        veld(Emmerinvoer.class, "onderwerp", Emmerinvoer::onderwerp);
+        veld(Emmerinvoer.class, "attribuut", Emmerinvoer::attribuut);
         veld(PadStand.class, "onderwerp", PadStand::onderwerp);
         veld(PadStand.class, "pad", PadStand::pad);
         veld(PadStand.class, "lid", PadStand::lid);
