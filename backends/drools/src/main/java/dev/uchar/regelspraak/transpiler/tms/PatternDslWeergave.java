@@ -78,7 +78,7 @@ final class PatternDslWeergave {
     private final Leestabel tabel;
     /** The value variables of the rule, by name, the subject's among them. */
     private final Map<String, Variable<Object>> waarden = new HashMap<>();
-    /** The value variables a binding or an accumulate function binds already. */
+    /** The value variables a binding or an accumulate function binds already and that are still in scope. */
     private final Set<String> gebonden = new HashSet<>();
     private final List<Variable<?>> slots = new ArrayList<>();
     private final List<Variable<?>> slotsLezen = Collections.unmodifiableList(slots);
@@ -576,7 +576,11 @@ final class PatternDslWeergave {
             if (waarden.putIfAbsent(p.naam(), w.variabele()) != null)
                 throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
         }
-        for (String naam : binnen) waarden.remove(naam);
+        // a value bound inside lives only inside: a later quantification may bind its name again, as its plan allows
+        for (String naam : binnen) {
+            waarden.remove(naam);
+            gebonden.remove(naam);
+        }
         return defs;
     }
 

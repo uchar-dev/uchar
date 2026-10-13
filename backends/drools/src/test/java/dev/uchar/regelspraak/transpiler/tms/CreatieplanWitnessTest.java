@@ -87,7 +87,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * shows, and the executable model of the corpus, which is equal as text; for {@link #gehesenDoorEenRegel}, outside the
  * corpus, the executable model of before and after the step is equal as text as well. That a creation constructs its
  * new object before it inserts anything is what the constructor of {@link Gevolg.Creatie} holds and what
- * {@link #de_nieuwe_bean_komt_gevuld_in_het_werkgeheugen} watches in working memory.
+ * {@link #de_nieuwe_bean_komt_gevuld_in_het_werkgeheugen} watches in working memory; that it inserts in the order of
+ * its consequence before the step, and in no other, the constructor holds as well
+ * ({@link #de_creatie_houdt_de_volgorde_van_haar_gevolg}, fix round 1c-C1).
  *
  * <p><b>Red</b> before the step: these forms built their rules themselves, so there was no plan of them, and this class
  * did not compile, since the plan had no consequence of a creation or a link, no constraint after the joins and no
@@ -469,6 +471,46 @@ class CreatieplanWitnessTest {
                                         Gevolg.Invoeging.GESTELD))),
                         creatie(inits, bouw, List.of(nieuw, merk, link)),
                         creatie(inits, bouw, List.of(nieuw, merk, kenmerk))));
+    }
+
+    /**
+     * The constructor holds a creation to the order of its consequence before step 1c-C1 exactly (fix round 1c-C1): the
+     * new object, its mark, its link, and then the characteristics in the order of their initialisations, with the
+     * attributes set in that order too. A plan whose kinds and counts are right but whose order is another, which a
+     * rendering would carry out as listed, is refused: the mark and the link swapped, two characteristics reversed, a
+     * characteristic before the link, two attributes set in reverse.
+     */
+    @Test void de_creatie_houdt_de_volgorde_van_haar_gevolg() {
+        ElementSleutel bedrag = ElementSleutel.van("Penning", "bedrag", false);
+        ElementSleutel gewicht = ElementSleutel.van("Penning", "gewicht", false);
+        ElementSleutel uitgereikt = ElementSleutel.van("Penning", "uitgereikt", true);
+        ElementSleutel gemunt = ElementSleutel.van("Penning", "gemunt", true);
+        List<Gevolg.Initialisatie> inits = List.of(new Gevolg.Initialisatie(bedrag, new Term.Lees(1, "bedrag")),
+                new Gevolg.Initialisatie(uitgereikt, new Term.Const(true, null, "waar")),
+                new Gevolg.Initialisatie(gemunt, new Term.Const(true, null, "waar")),
+                new Gevolg.Initialisatie(gewicht, new Term.Lees(1, "gewicht")));
+        Gevolg.Constructie.Zetting zetBedrag = new Gevolg.Constructie.Zetting(0, new Binding.Veld(Object.class, "bedrag"));
+        Gevolg.Constructie.Zetting zetGewicht = new Gevolg.Constructie.Zetting(3,
+                new Binding.Veld(Object.class, "gewicht"));
+        Gevolg.Constructie bouw = new Gevolg.Constructie(Object.class, List.of(zetBedrag, zetGewicht));
+        Gevolg.Invoegsel nieuw = new Gevolg.Invoegsel.Nieuw(Gevolg.Invoeging.GESTELD);
+        Gevolg.Invoegsel merk = new Gevolg.Invoegsel.Merk(Gevolg.Invoeging.GESTELD);
+        Gevolg.Invoegsel link = new Gevolg.Invoegsel.Link("uitgifte", true, Gevolg.Invoeging.GESTELD);
+        Gevolg.Invoegsel eerste = new Gevolg.Invoegsel.Kenmerk(1, Gevolg.Invoeging.GESTELD);
+        Gevolg.Invoegsel tweede = new Gevolg.Invoegsel.Kenmerk(2, Gevolg.Invoeging.GESTELD);
+        String verwacht = "een creatie voegt het nieuwe object, zijn merk, zijn koppeling en dan haar"
+                + " kenmerkinitialisaties in hun volgorde in, [Nieuw, Merk, Link, Kenmerk 1, Kenmerk 2], niet ";
+        assertEquals(List.of("ok",
+                        verwacht + "[Nieuw, Link, Merk, Kenmerk 1, Kenmerk 2]",
+                        verwacht + "[Nieuw, Merk, Link, Kenmerk 2, Kenmerk 1]",
+                        verwacht + "[Nieuw, Merk, Kenmerk 1, Link, Kenmerk 2]",
+                        "een creatie zet haar attribuutinitialisaties in hun volgorde [0, 3], niet [3, 0]"),
+                List.of(creatie(inits, bouw, List.of(nieuw, merk, link, eerste, tweede)),
+                        creatie(inits, bouw, List.of(nieuw, link, merk, eerste, tweede)),
+                        creatie(inits, bouw, List.of(nieuw, merk, link, tweede, eerste)),
+                        creatie(inits, bouw, List.of(nieuw, merk, eerste, link, tweede)),
+                        creatie(inits, new Gevolg.Constructie(Object.class, List.of(zetGewicht, zetBedrag)),
+                                List.of(nieuw, merk, link, eerste, tweede))));
     }
 
     /** "ok" where the constructor of {@link Gevolg.Creatie} takes the plan, else its refusal. */

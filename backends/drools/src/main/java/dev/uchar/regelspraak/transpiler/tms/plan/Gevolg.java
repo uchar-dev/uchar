@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -326,9 +327,11 @@ public sealed interface Gevolg {
      *       write on a bean in working memory: the bean is in none yet, so no rule ever saw it without them;</li>
      *   <li>the insertions {@code invoegingen}, in order, the new object itself first ({@link Invoegsel}).</li>
      * </ol>
-     * The constructor holds the plan to that order: every initialisation is set in the construction where it is an
-     * attribute, or inserted as a characteristic after the new object where it is one, exactly once; the new object is
-     * inserted first, its mark and its link once each.
+     * The constructor holds the plan to that order, the order of the consequence before the step exactly: every
+     * initialisation is set in the construction where it is an attribute, or inserted as a characteristic after the new
+     * object where it is one, exactly once; the attributes are set in the order of the initialisations; the new object is
+     * inserted first, then its mark, then its link, then the characteristics in the order of the initialisations. Any
+     * other order fails loudly.
      */
     record Creatie(String onderwerp, String creatie, Creatiediepte diepte, List<Initialisatie> initialisaties,
                    Foutnaam fout, Invoeging foutinvoeging, Constructie constructie, int fase,
@@ -367,6 +370,22 @@ public sealed interface Gevolg {
                 if (keer[i] != 1)
                     throw new IllegalArgumentException("de initialisatie van " + initialisaties.get(i).lid() + " komt "
                             + keer[i] + " keer in de constructie of de invoegingen, niet één keer");
+            // the order of the consequence before step 1c-C1, which a rendering carries out as the plan lists it: a
+            // rendering into DRL text has no other source for the order of the facts the agenda then sees
+            List<Integer> attributen = new ArrayList<>(), kenmerken = new ArrayList<>();
+            for (int i = 0; i < initialisaties.size(); i++)
+                (initialisaties.get(i).lid().kenmerk() ? kenmerken : attributen).add(i);
+            List<Integer> gezet = constructie.zettingen().stream().map(Constructie.Zetting::initialisatie).toList();
+            if (!gezet.equals(attributen))
+                throw new IllegalArgumentException("een creatie zet haar attribuutinitialisaties in hun volgorde "
+                        + attributen + ", niet " + gezet);
+            List<String> volgorde = new ArrayList<>(List.of("Nieuw", "Merk", "Link"));
+            for (int k : kenmerken) volgorde.add("Kenmerk " + k);
+            List<String> gegeven = invoegingen.stream().map(i -> i instanceof Invoegsel.Kenmerk k
+                    ? "Kenmerk " + k.initialisatie() : i.getClass().getSimpleName()).toList();
+            if (!gegeven.equals(volgorde))
+                throw new IllegalArgumentException("een creatie voegt het nieuwe object, zijn merk, zijn koppeling en"
+                        + " dan haar kenmerkinitialisaties in hun volgorde in, " + volgorde + ", niet " + gegeven);
         }
     }
 

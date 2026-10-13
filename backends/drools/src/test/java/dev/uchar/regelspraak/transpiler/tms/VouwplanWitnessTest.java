@@ -92,6 +92,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The fix round of step 1c-B2 added the case of {@link #havenketen} whose filter faults, red under a mutation of the
  * place reader, pinned the constants of a constraint between two objects with every field, and made the scope of an
  * existence cover what its patterns bind ({@link #de_scope_van_een_bestaan_omvat_de_bindingen_van_zijn_patronen}).
+ * The fix round of step 1c-C1 let the rendering forget such a binding entirely after its quantification, so that a
+ * second quantification may bind the same name ({@link #twee_kwantificaties_binden_elk_dezelfde_lokale_naam}).
  */
 class VouwplanWitnessTest {
 
@@ -706,6 +708,26 @@ class VouwplanWitnessTest {
         Regelplan erna = new Regelplan("na het bestaan", null, null, new Leestabel(List.of()), List.of(bestaan,
                 new Patroon(Waarde.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
                 new Gevolg.Kanaalstand("bestaan", true, Gevolg.Invoeging.LOGISCH));
+        IllegalStateException weg = assertThrows(IllegalStateException.class,
+                () -> PatternDslWeergave.regel(erna, naam -> null));
+        assertEquals("de variabele $v is nog niet gebonden", weg.getMessage());
+    }
+
+    /** Two quantifications that each bind the same name inside, an existence and a negation, are a plan the scope of
+     *  each allows (fix round 1c-C1): what one binds lives only inside it, so the rendering takes the second binding
+     *  of the name as well, and an item after both that names the value still fails loudly. */
+    @Test void twee_kwantificaties_binden_elk_dezelfde_lokale_naam() {
+        Bestaat bestaan = new Bestaat(List.of(new Patroon(Waarde.class, "$eerste", List.of(), List.of(),
+                List.of(Binding.van("$v", Waarde.class, "waarde")))), List.of("$eerste", "$v"), List.of());
+        Niet niet = new Niet(new Patroon(Waarde.class, "$tweede", List.of(), List.of(),
+                List.of(Binding.van("$v", Waarde.class, "waarde"))));
+        Gevolg kanaal = new Gevolg.Kanaalstand("bestaan", true, Gevolg.Invoeging.LOGISCH);
+        Regelplan twee = new Regelplan("twee kwantificaties", null, null, new Leestabel(List.of()),
+                List.of(bestaan, niet), kanaal);
+        assertEquals("twee kwantificaties", PatternDslWeergave.regel(twee, naam -> null).getName());
+        Regelplan erna = new Regelplan("na twee kwantificaties", null, null, new Leestabel(List.of()), List.of(bestaan,
+                niet, new Patroon(Waarde.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
+                kanaal);
         IllegalStateException weg = assertThrows(IllegalStateException.class,
                 () -> PatternDslWeergave.regel(erna, naam -> null));
         assertEquals("de variabele $v is nog niet gebonden", weg.getMessage());
