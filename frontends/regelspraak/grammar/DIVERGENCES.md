@@ -853,7 +853,7 @@ silently fold the wrong set, which is by far the worse of the two.
   part in (witness: `ExtensieHerdeclaratieTest`, every sentence whole). Until
   then the repeat replaced the declaration without a diagnostic, also with
   another datatype. The word-for-word repeat is admitted because it changes
-  nothing and the casus of the repository's temporary parity zone writes three
+  nothing and the casus of the repository's parity zone writes three
   of them (measured 2026-09-28; no source of the corpus declares an
   extension). Along the inheritance line WF-105 refuses every repeat, literal
   or not, and its sentence names both lines.
@@ -912,7 +912,7 @@ construct; this one cannot, because the phrase *extends* an existing one. A
 document naming a role or attribute "gevulde waarden …" would have its count
 sentence re-read. So the claim is a measurement, taken 2026-09-20 over **876
 flat RegelSpraak documents** in seven collections: the 64 emitter goldens of
-this corpus, the 47 official-casus documents of the repository's temporary
+this corpus, the 47 official-casus documents of the repository's
 parity zone, 176 documents of the reference toolchain's own corpus, 513
 documents of an operational ruleset collection, and 76 more across three
 further rule collections found on a second pass — plus the six markdown
@@ -1543,7 +1543,7 @@ count over ALL instances of a type, and measured that it does not:
   aggregation operand;
 - the reference toolchain has no lowering for the sentence either — its
   resolver leaves it a marker and emits nothing without an explicit override —
-  and no count in the official casus of the repository's temporary parity zone
+  and no count in the official casus of the repository's parity zone
   counts a type: its two count sentences count a role.
 
 So the form stays refused, and nothing reaches the wire. The refusal is older
@@ -1720,7 +1720,7 @@ line aside (witness: `ExtensieHerdeclaratieTest`).
 
 Counted on 2026-09-25, before the token existed: the opening `(mag` and the
 whole sequence occur in none of the 81 `bron.rgs` sources of the corpus, none
-of the 47 sources of the repository's temporary parity zone, none of the six
+of the 47 sources of the repository's parity zone, none of the six
 markdown documents of the v2.3.0 specification set, none of 660 `.rgs` files
 in the operational rule collections and toolchain examples outside this
 repository, and none of 164 in a checkout of the reference toolchain (build
@@ -2131,7 +2131,7 @@ there is not taken into a name.
 
 Counted on 2026-09-27 over 638 distinct RegelSpraak sources (by content):
 the rgs goldens and scenario files of this corpus, the sources of the
-repository's temporary parity zone, the rule collections and toolchain
+repository's parity zone, the rule collections and toolchain
 examples outside this repository. `Vocabulaire` occurs in none of them, and
 `(standaard)` in none. The opener shape `(<woord>:` other than `(mv:`
 occurs 60 times, all inside `//` line comments, where the lexer never
@@ -2359,7 +2359,7 @@ of the distribution emit the same IR, diagnostics and exit code. Witness:
 
 Counted on 2026-09-28 over 643 distinct RegelSpraak sources (by content), in
 six collections: the 107 sources this corpus held before the card (100
-`bron.rgs` and 7 `scenario.rgs`), the 47 sources of the repository's temporary
+`bron.rgs` and 7 `scenario.rgs`), the 47 sources of the repository's
 parity zone, 59 sources of the distribution that consumes this repository, and
 outside it 201 sources of a rule workbench, 36 of an operational rule
 collection and 193 of the reference toolchain's corpus. Read as text (comments and literals left out),

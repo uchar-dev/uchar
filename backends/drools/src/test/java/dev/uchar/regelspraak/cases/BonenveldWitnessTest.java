@@ -94,7 +94,7 @@ class BonenveldWitnessTest {
         // postwacht with kustligging made 1:1. Both beans now carry a field (Kustvak.post and Post.kustvak) and the
         // case input writes both (ch. 5.7a), so the two sides answer alike here and the document plays either way;
         // what this row pins is the CHOICE, in the one derivation both branches execute. The parent side is the
-        // side the frontend picks for an objectcreatie-placed link; the only other witness sits in the temporary
+        // side the frontend picks for an objectcreatie-placed link; the only other witness sits in the
         // parity zone. Verifier-clean, ref PASS.
         ObjectNode ir = lees(POSTWACHT);
         for (JsonNode r : IrPad.declaratie(ir, "factTypes", "kustligging").get("roles"))

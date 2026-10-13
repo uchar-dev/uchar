@@ -380,7 +380,7 @@ public final class DefinitionResolver {
      *  Any other repeat is an ERROR at the repeat's line that names both lines: until this check the repeat replaced
      *  the declaration without a word, also with another datatype, and a repeated characteristic went to the wire
      *  twice. The words decide, so layout and the closing ';' do not count. The literal repeat is admitted because it
-     *  changes nothing, and the casus of the repository's temporary parity zone writes three of them. Along the
+     *  changes nothing, and the casus of the repository's parity zone writes three of them. Along the
      *  inheritance line WF-105 refuses every repeat, literal or not ({@link #weigerGeshadowdeLeden}). A definition the
      *  parser recovered inside is left alone: its syntax error is the one to act on. */
     private void weigerHerdeclaraties() {
