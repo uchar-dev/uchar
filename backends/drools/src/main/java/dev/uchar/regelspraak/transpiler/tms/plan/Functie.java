@@ -125,7 +125,54 @@ public enum Functie {
      *  a sentence that names the object. */
     VOLLEDIG(Rekenhulpen.class, "volledig", true),
     /** A value at rest: an exact rational as a decimal (§6.1.2), any other value as it is. */
-    COLLAPSE(Rekenhulpen.class, "collapse", false);
+    COLLAPSE(Rekenhulpen.class, "collapse", false),
+
+    // the functions of a condition below give a truth value
+
+    /** A comparison of two numbers with the empty operand of ch. 1.2: an ordering with a leeg operand is onwaar, two
+     *  leeg numbers are equal, exactly one leeg is unequal; exact where a value is a rational. The operator a
+     *  {@code String} constant as {@code Operatoren.symbool} spells it. */
+    RS_AGG_VERGELIJK(RegelSpraakRuntime.class, "rsAggVergelijk", false),
+    /** A comparison of two dates or two date-times, a value that is no date reading as leeg, the operator a
+     *  {@code Conditie.Operator} constant: an ordering with a leeg operand is onwaar, two leeg dates are not equal
+     *  (§5.3 Tabel 38), and they are unequal where exactly one is leeg (§5.6 Tabel 44). */
+    DATUM_VERGELIJK(Rekenhulpen.class, "datumVergelijk", false),
+    /** The equality of two texts, enumeration labels or truth values with the empty operand of ch. 1.2, a
+     *  {@code Boolean} constant asking equal (true) or unequal (false): equal only where both are filled and the same,
+     *  unequal where exactly one is leeg or the two differ. */
+    TEKST_GELIJK(Rekenhulpen.class, "tekstGelijk", false),
+    /** An enumeration label up to its normalisation, a leeg value leeg: both sides of an equality where either is an
+     *  enumeration (maintainer decision 2026-09-20). */
+    RS_ENUM_NAAM(RegelSpraakRuntime.class, "rsEnumNaam", false),
+    /** The leeg test, where a {@code Boolean} constant is true, or the gevuld test, where it is false, of a value
+     *  (ch. 5.8 rule 1: a read over an absent link is leeg). */
+    LEEGTOETS(Rekenhulpen.class, "leegtoets", false),
+    /** The eleven test of a value ({@code rsElfproef}, §8.1.3), whose verdict a {@code Boolean} constant must equal:
+     *  false for the written negation. */
+    ELFPROEF(Rekenhulpen.class, "elfproef", false),
+    /** The exact-digit test of a value ({@code rsNumeriekMetExact}, §8.1.4) with an {@code Integer} constant of
+     *  digits, whose verdict a {@code Boolean} constant must equal. */
+    NUMERIEK_MET_EXACT(Rekenhulpen.class, "numeriekMetExact", false),
+    /** A characteristic check of the subject (ch. 5.8): its truth value off a total standing, which a {@code Boolean}
+     *  constant must equal: false for a negated check. */
+    KENMERK(Rekenhulpen.class, "kenmerk", false),
+    /** A characteristic check of the object a path of roles reaches, as {@link #KENMERK}; over an absent link, whose
+     *  read is leeg, it holds in neither polarity (ch. 5.8 rule 3). */
+    KENMERK_LANGS_PAD(Rekenhulpen.class, "kenmerkLangsPad", false),
+    /** A role check over a count of links (ch. 5.8a): whether there is one, complemented where a {@code Boolean}
+     *  constant says the check is negated. */
+    ROLAANTAL(Rekenhulpen.class, "rolaantal", false),
+    /** A role check over the subject's own reference field, bound as whether it is set, complemented where a
+     *  {@code Boolean} constant says the check is negated. */
+    ROLVELD(Rekenhulpen.class, "rolveld", false),
+    /** The evaluation-date gate of a time window (ch. 3.10) over its bounds, each with a {@code Boolean} constant that
+     *  says whether the window has it, a {@code Boolean} constant for an inclusive end, and the evaluation date: an
+     *  absent bound is open, a leeg one and an unset date never match. */
+    TIJDVENSTER(Rekenhulpen.class, "tijdvenster", false),
+    /** The fold of the whole-period qualifier (ch. 3.9, {@code rsGeheelPeriode}) over a timeline, with the bound of a
+     *  comparison or none, the grid ("JAAR" or "MAAND") and the test's code as constants, complemented where a
+     *  {@code Boolean} constant says the qualifier is negated. */
+    GEHEEL_PERIODE(Rekenhulpen.class, "geheelPeriode", false);
 
     private final Class<?> klasse;
     private final String methode;

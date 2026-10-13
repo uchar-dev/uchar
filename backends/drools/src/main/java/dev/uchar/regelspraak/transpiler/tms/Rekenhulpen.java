@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -242,6 +244,133 @@ public final class Rekenhulpen {
     public static int vergelijk(Object a, Object b) {
         if (a instanceof Number x && b instanceof Number y) return Breuk.van(x).compareTo(Breuk.van(y));
         return ((Comparable) a).compareTo(b);
+    }
+
+    // ---------------- conditions ----------------
+
+    /** A date comparison of {@code links} and {@code rechts}, two dates or two date-times of one precision, a value that
+     *  is no date reading as leeg, with its leeg tables: an ordering with a leeg operand is onwaar, equality of two leeg
+     *  dates is onwaar (§5.3 Tabel 38), inequality holds where exactly one is leeg (§5.6 Tabel 44). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static boolean datumVergelijk(Object links, Object rechts, Conditie.Operator op) {
+        Object a = datumWaarde(links), b = datumWaarde(rechts);
+        switch (op) {
+            case GELIJK: return Objects.equals(a, b) && !(a == null && b == null);
+            case ONGELIJK: return !Objects.equals(a, b);
+            default: break;
+        }
+        if (!(a instanceof Comparable) || b == null) return false;
+        int c = ((Comparable) a).compareTo(b);
+        return switch (op) {
+            case EERDER -> c < 0;
+            case EERDER_OF_GELIJK -> c <= 0;
+            case LATER -> c > 0;
+            case LATER_OF_GELIJK -> c >= 0;
+            default -> false;
+        };
+    }
+
+    private static Object datumWaarde(Object v) {
+        return v instanceof java.time.LocalDate || v instanceof java.time.LocalDateTime ? v : null;
+    }
+
+    /** The equality of a text, an enumeration label or a truth value with its leeg tables: equal only where both are
+     *  filled and the same, unequal where exactly one is leeg or the two differ; {@code gelijk} false asks unequal. */
+    public static boolean tekstGelijk(Object a, Object b, boolean gelijk) {
+        boolean beideLeeg = a == null && b == null;
+        boolean zelfde = Objects.equals(a, b);
+        return gelijk ? zelfde && !beideLeeg : !zelfde && !beideLeeg;
+    }
+
+    /** The leeg test of {@code waarde}, where {@code leeg}, or else the gevuld test; a read over an absent link is leeg
+     *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). */
+    public static boolean leegtoets(Object waarde, boolean leeg) {
+        return (waarde == null) == leeg;
+    }
+
+    /** The eleven test (§8.1.3, {@code rsElfproef}) of {@code waarde}, a leeg value failing it, whose verdict must equal
+     *  {@code gewenst}: false for the written negation, which complements it. */
+    public static boolean elfproef(Object waarde, boolean gewenst) {
+        return RegelSpraakRuntime.rsElfproef(waarde) == gewenst;
+    }
+
+    /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code waarde} with {@code cijfers} digits, whose
+     *  verdict must equal {@code gewenst}. */
+    public static boolean numeriekMetExact(Object waarde, int cijfers, boolean gewenst) {
+        return RegelSpraakRuntime.rsNumeriekMetExact(waarde, cijfers) == gewenst;
+    }
+
+    /** A characteristic check of the subject (RUNTIME-SEMANTICS ch. 5.8): its truth value {@code waarde}, bound off a
+     *  total standing, so never leeg, equal to {@code gewenst}, false for a negated check. */
+    public static boolean kenmerk(Object waarde, boolean gewenst) {
+        return (Boolean) waarde == gewenst;
+    }
+
+    /** A characteristic check of the object a path of roles reaches, as {@link #kenmerk}: a check over an absent link,
+     *  whose read is leeg, holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8 rule 3). */
+    public static boolean kenmerkLangsPad(Object waarde, boolean gewenst) {
+        return waarde != null && (Boolean) waarde == gewenst;
+    }
+
+    /** A role check over {@code aantal}, the number of links that hold the subject in the role (RUNTIME-SEMANTICS
+     *  ch. 5.8a): whether there is one, complemented where the check is negated ({@code ontkend}). */
+    public static boolean rolaantal(Object aantal, boolean ontkend) {
+        return (((Number) aantal).longValue() > 0) != ontkend;
+    }
+
+    /** A role check over the subject's own reference field, bound as whether it is set ({@code gezet}), complemented
+     *  where the check is negated ({@code ontkend}). */
+    public static boolean rolveld(Object gezet, boolean ontkend) {
+        return (Boolean) gezet != ontkend;
+    }
+
+    /** The evaluation-date gate of a time window (RUNTIME-SEMANTICS ch. 3.10): whether the evaluation date
+     *  {@code datum} lies in the window, from {@code van} inclusive to {@code eind}, exclusive or, where
+     *  {@code totInclusief}, inclusive. A bound the window does not have ({@code heeftVanaf}, {@code heeftTot}) is open;
+     *  an unset evaluation date never matches, nor does a leeg bound; neither is a fault. */
+    public static boolean tijdvenster(Object van, boolean heeftVanaf, Object eind, boolean heeftTot, boolean totInclusief,
+                                      Object datum) {
+        if (!(datum instanceof LocalDate dag)) return false;
+        if (heeftVanaf && !(van instanceof LocalDate v && !dag.isBefore(v))) return false;
+        if (heeftTot && !(eind instanceof LocalDate t && (totInclusief ? !dag.isAfter(t) : dag.isBefore(t))))
+            return false;
+        return true;
+    }
+
+    /** The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) as the runtime folds it
+     *  ({@code rsGeheelPeriode}): over {@code tijdlijn}, a list of segments or null, on the grid {@code raster}
+     *  ("JAAR" or "MAAND"), with the test of code {@code toets} and the bound {@code grens} of a comparison read as a
+     *  decimal, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
+    public static boolean geheelPeriode(Object tijdlijn, Object grens, String raster, int toets, boolean niet) {
+        List<?> tl = (List<?>) tijdlijn;
+        BigDecimal g = RegelSpraakRuntime.toBd(grens);
+        return RegelSpraakRuntime.rsGeheelPeriode(tl, raster, toets, g) != niet;
+    }
+
+    /** The stop triggers of a composite and of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once
+     *  {@code gelezen} members are read, of which {@code raak} hold and {@code rest} are unread, or null while the
+     *  unread members can still change it. */
+    public static Boolean vastgesteld(Conditie.Kwantor kw, int drempel, int raak, int gelezen, int rest) {
+        return switch (kw) {
+            case ALLE, DE -> raak < gelezen ? Boolean.FALSE : null;
+            case GEEN -> raak > 0 ? Boolean.FALSE : null;
+            case TEN_MINSTE -> raak >= drempel ? Boolean.TRUE : (raak + rest < drempel ? Boolean.FALSE : null);
+            case TEN_HOOGSTE -> raak > drempel ? Boolean.FALSE : (raak + rest <= drempel ? Boolean.TRUE : null);
+            case PRECIES -> (raak > drempel || raak + rest < drempel) ? Boolean.FALSE : null;
+        };
+    }
+
+    /** The verdict of a quantifier over {@code n} members of which {@code raak} hold, every member read
+     *  (RUNTIME-SEMANTICS ch. 5.10): all where all hold, none where none does, the counting quantifiers on the
+     *  threshold. */
+    public static boolean eindoordeel(Conditie.Kwantor kw, int drempel, long raak, long n) {
+        return switch (kw) {
+            case ALLE, DE -> raak == n;
+            case GEEN -> raak == 0;
+            case TEN_MINSTE -> raak >= drempel;
+            case TEN_HOOGSTE -> raak <= drempel;
+            case PRECIES -> raak == drempel;
+        };
     }
 
     // ---------------- timelines ----------------

@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
+import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Eenheid;
 
@@ -9,13 +10,15 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * A value of a rule as the analysis plans it: a tree of calls over the values the rule's left-hand side binds, in a
- * closed vocabulary that a rendering turns into a function over the rule's value array or into DRL text without
- * deciding anything itself. Every decision the analysis takes about a value is a node or a field of a node: the
- * function that computes it, by name ({@link Functie}); the factor that restates a unit ({@link Herschaal}); where a
- * division or a square root deposits ({@link Deel}, {@link Wortel}); where the evaluation faults ({@link Faal},
- * {@link Vereist}, {@link Vouwlezing} and the functions that can, {@link Functie#kanFalen}); what is evaluated only on
- * need or on one branch ({@link Let}, {@link Keuze}). The children of a node are evaluated in the order the node lists
+ * A value or a condition of a rule as the analysis plans it: a tree of calls over the values the rule's left-hand side
+ * binds, in a closed vocabulary that a rendering turns into a function over the rule's value array or into DRL text
+ * without deciding anything itself. A condition is a term whose value is a truth value. Every decision the analysis
+ * takes about a value or a condition is a node or a field of a node: the function that computes it, by name
+ * ({@link Functie}), among them the helper that compares and the operator, polarity and leeg tables it takes as
+ * constants; the factor that restates a unit ({@link Herschaal}); where a division or a square root deposits
+ * ({@link Deel}, {@link Wortel}); where the evaluation faults ({@link Faal}, {@link Vereist}, {@link Vouwlezing} and the
+ * functions that can, {@link Functie#kanFalen}); what is evaluated only on need, on one branch or up to a stop
+ * ({@link Let}, {@link Keuze}, {@link Samengesteld}). The children of a node are evaluated in the order the node lists
  * them, which is the order of RUNTIME-SEMANTICS ch. 5.11.
  *
  * <p>A node that stands for a node of the IR carries that node's source fragment, the IR's {@code source.snippet}
@@ -137,6 +140,20 @@ public sealed interface Term {
     record Vouwlezing(Term uitkomst, int deponeringen, int sonde, int filterfout, int lidfout, String bron)
             implements Term {}
 
+    /**
+     * A composite condition (RUNTIME-SEMANTICS ch. 5.10, IR-SPEC ch. 4.5): its members, truth values, read in the order
+     * of {@code leden}, the wire order, and counted under {@code kwantor}, with the threshold {@code drempel} of a
+     * counting quantifier. Before each member the stop triggers of ch. 5.10 are tested on the members read so far
+     * ({@code Rekenhulpen.vastgesteld}), and the composite stops at the first point from which its verdict stands, so a
+     * member after it is not evaluated: it raises no fault and deposits nothing. Where no trigger stops it, every member
+     * is read and the verdict is the quantifier's over them ({@code Rekenhulpen.eindoordeel}).
+     */
+    record Samengesteld(Conditie.Kwantor kwantor, int drempel, List<Term> leden, String bron) implements Term {
+        public Samengesteld {
+            leden = List.copyOf(leden);
+        }
+    }
+
     /** The predicate of the day kind {@code naam} over a calendar day: a constant of the document, which reads nothing
      *  of working memory (IR-SPEC ch. 3.7, WF-031). */
     record Dagsoort(String naam, Predicate<LocalDate> predikaat, String bron) implements Term {}
@@ -144,8 +161,9 @@ public sealed interface Term {
     /**
      * A condition as the condition compiler compiled it: a predicate over the value array, a truth value.
      *
-     * <p>INTERIM FORM, until step 1b2 of card drl-teksttak-op-truth-maintenance makes the conditions terms of their own:
-     * no rendering can show what it tests.
+     * <p>INTERIM FORM, until step 1b3 of card drl-teksttak-op-truth-maintenance plans what it still holds: a quantifier
+     * fold, a test of the §9.5 channel, the negation of a consistency's assertion and the tests a form composes itself.
+     * No rendering can show what it tests.
      */
     record GecompileerdeToets(Predicate<Object[]> toets, String bron) implements Term {}
 }

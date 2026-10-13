@@ -173,6 +173,7 @@ class WaardetermWitnessTest {
             case Term.Vouwlezing v -> "Vouwlezing " + v.deponeringen() + " " + v.sonde() + " " + v.filterfout() + " "
                     + v.lidfout() + " (" + boom(v.uitkomst()) + ")";
             case Term.Dagsoort d -> "Dagsoort " + d.naam();
+            case Term.Samengesteld s -> "Samengesteld " + s.kwantor() + " " + s.drempel() + lijst(s.leden());
             case Term.GecompileerdeToets g -> "GecompileerdeToets '" + g.bron() + "'";
         };
     }
@@ -215,6 +216,7 @@ class WaardetermWitnessTest {
             case Term.GelijsteVouw g -> g.operanden();
             case Term.Vouwlezing v -> List.of(v.uitkomst());
             case Term.Dagsoort d -> List.of();
+            case Term.Samengesteld s -> s.leden();
             case Term.GecompileerdeToets g -> List.of();
         };
     }

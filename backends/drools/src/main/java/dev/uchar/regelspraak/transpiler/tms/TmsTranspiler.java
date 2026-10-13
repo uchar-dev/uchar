@@ -877,7 +877,7 @@ public final class TmsTranspiler {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), true);
         Lezingen lez = new Lezingen(doel.objecttype()).geldig(r.geldigheid());
         Set<Integer> gelezen = lez.volg();
-        Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
+        Term toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, r.voorwaarde());
@@ -1234,7 +1234,7 @@ public final class TmsTranspiler {
         Supplier<Lezingen> nieuw = () -> lezingen(subject, geabsorbeerd).geldig(r.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
+        Term toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
@@ -1363,13 +1363,14 @@ public final class TmsTranspiler {
                                      Function<Lezingen, List<RuleItemBuilder<?>>> blokkade) {
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = voorwaarde(c, lez);
+        Term toets = voorwaarde(c, lez);
         lez.stop();
         List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.FOUT, toets, gelezen, c);
         if (blokkade != null) items.addAll(blokkade.apply(lez));
         String zinregel = model.geëmitteerdeRegelNaam(vorm);
+        Toets gecompileerd = toetsweergave(toets);
         items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
-            RuntimeException f = fout(toets, w);
+            RuntimeException f = fout(gecompileerd, w);
             if (f == null)
                 throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" faalde in de toets en niet in het"
                         + " gevolg, over dezelfde gebonden waarden");
@@ -1407,7 +1408,7 @@ public final class TmsTranspiler {
         if (!deponeert(c)) return null;
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = voorwaarde(c, lez);
+        Term toets = voorwaarde(c, lez);
         lez.stop();
         int sonde = lez.sondeplaats();
         if (sonde < 0) throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" deelt, maar kreeg geen sonde");
@@ -1447,12 +1448,12 @@ public final class TmsTranspiler {
         Supplier<Lezingen> nieuw = () -> new Lezingen(c.subject()).geldig(c.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets houdt = voorwaarde(c.assertie(), lez);
+        Toets houdt = toetsweergave(voorwaarde(c.assertie(), lez));
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Toets geschonden = w -> !houdt.test(w);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), geschonden, gelezen,
-                c.assertie());
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen),
+                new Term.GecompileerdeToets(geschonden::test, bron(c.assertie().bron())), gelezen, c.assertie());
         String naam = c.naam();
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, o))));
@@ -1588,7 +1589,8 @@ public final class TmsTranspiler {
             if (tijdlijn >= 0 && w[sleutels.get(tijdlijn)] instanceof Emmerscalair) return false;
             return scope < 0 || w[scope] != null;
         };
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, doetMee, gelezen, null);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
+                new Term.GecompileerdeToets(doetMee::test, null), gelezen, null);
         items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> {
             List<Object> waarden = new ArrayList<>(sleutels.size());
             for (int i = 0; i < sleutels.size(); i++) {
@@ -1642,7 +1644,8 @@ public final class TmsTranspiler {
             for (int i : ervoor) if (w[i] == null) return false;
             return w[tijdlijn] instanceof Emmerscalair;
         };
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, emmer, gelezen, null);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
+                new Term.GecompileerdeToets(emmer::test, null), gelezen, null);
         String sleutelnaam = tijdlid.naam();
         items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> drools.logicalInsert(new Fout(o, naam,
                 new Invoervormfout("the ever-unique key \"" + sleutelnaam + "\" needs the full timeline; ", o,
@@ -1844,7 +1847,7 @@ public final class TmsTranspiler {
         Supplier<Lezingen> nieuw = () -> new Lezingen(bron).geldig(v.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = v.voorwaarde() == null ? null : voorwaarde(v.voorwaarde(), lez);
+        Term toets = v.voorwaarde() == null ? null : voorwaarde(v.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
@@ -2033,7 +2036,7 @@ public final class TmsTranspiler {
         Supplier<Lezingen> nieuwe = () -> new Lezingen(subject).geldig(oc.geldigheid());
         Lezingen lez = nieuwe.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = oc.voorwaarde() == null ? null : voorwaarde(oc.voorwaarde(), lez);
+        Term toets = oc.voorwaarde() == null ? null : voorwaarde(oc.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
@@ -2282,7 +2285,7 @@ public final class TmsTranspiler {
         Supplier<Lezingen> nieuw = () -> new Lezingen(anker).geldig(fc.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = ankerguard == null ? null : voorwaarde(ankerguard, lez);
+        Term toets = ankerguard == null ? null : voorwaarde(ankerguard, lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         int stratum = stratum(fc, fc.naam());
@@ -2885,7 +2888,7 @@ public final class TmsTranspiler {
         };
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
-        Toets toets = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
+        Term toets = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         String naam = b.naam;
@@ -2975,6 +2978,13 @@ public final class TmsTranspiler {
     /** The function a consequence or a test calls to compute {@code t} ({@link ClosureWeergave}). */
     private static Waardefunctie weergave(Term t) {
         return ClosureWeergave.waardefunctie(t);
+    }
+
+    /** The test a consequence or a test a form composes itself calls to evaluate the condition {@code t}
+     *  ({@link ClosureWeergave#toets(Term)}). */
+    private static Toets toetsweergave(Term t) {
+        Predicate<Object[]> p = ClosureWeergave.toets(t);
+        return p::test;
     }
 
     /** {@code t}, the value a consequence of the form being lowered computes, recorded as its plan
@@ -3431,6 +3441,9 @@ public final class TmsTranspiler {
             // the condition comes first and, until step 1b2, shows nothing of what it reads; a branch is conditional
             case Term.Keuze k -> Boolean.FALSE;
             case Term.GecompileerdeToets g -> Boolean.FALSE;
+            // a composite is a condition, which stands in a value only as the condition of a choice, answered above; its
+            // members after the first are read only where no stop came before them
+            case Term.Samengesteld s -> Boolean.FALSE;
             // the analysis adds the node only where the fold's filter can deposit or a fault can stand, before the value
             case Term.Vouwlezing v -> Boolean.FALSE;
             case Term.Faal f -> Boolean.FALSE;
@@ -3466,10 +3479,9 @@ public final class TmsTranspiler {
      *  exactly the branch it chooses; the other branch evaluates nothing, so it reads no binder, faults nowhere and
      *  deposits nothing. The reads of both branches are bound in the left-hand side all the same. */
     private Term keuze(Expr.IfThenElse k, Lezingen lez) {
-        Toets voorwaarde = voorwaarde(k.conditie(), lez);
+        Term voorwaarde = voorwaarde(k.conditie(), lez);
         Term dan = waarde(k.dan(), lez), anders = waarde(k.anders(), lez);
-        return new Term.Keuze(new Term.GecompileerdeToets(voorwaarde::test, bron(k.conditie().bron())), dan, anders,
-                bron(k.bron()));
+        return new Term.Keuze(voorwaarde, dan, anders, bron(k.bron()));
     }
 
     /** A context value (RUNTIME-SEMANTICS ch. 8.2): evaluationDate, the session's evaluation date, and evaluationYear,
@@ -4209,7 +4221,7 @@ public final class TmsTranspiler {
                                    Expr.AttribuutRef arg, List<Rule> uit, List<Lezingen> lezingen) {
         Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
         Set<Integer> gelezen = lez.volg();
-        Toets toets = filter == null ? null : voorwaarde(filter, lez);
+        Term toets = filter == null ? null : voorwaarde(filter, lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
@@ -4261,7 +4273,7 @@ public final class TmsTranspiler {
                                      Bereik bereik, Conditie filter, Consumer<Lezingen> vastleggen) {
         Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
         Set<Integer> gelezen = lez.volg();
-        Toets toets = voorwaarde(filter, lez);
+        Term toets = voorwaarde(filter, lez);
         lez.stop();
         int sonde = lez.sondeplaats();
         if (sonde < 0) throw new IllegalStateException("het filter van " + sleutel + " deponeert, maar kreeg geen sonde");
@@ -4291,7 +4303,7 @@ public final class TmsTranspiler {
         List<Plaatslezing> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
-        Toets toets = voorwaarde(filter, lez);
+        Term toets = voorwaarde(filter, lez);
         lez.stop();
         Set<Integer> gebruik = lez.volg();
         int lid = lez.lid();
@@ -4302,8 +4314,9 @@ public final class TmsTranspiler {
             gebruik.add(p.plaats());
         }
         List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.FOUT, toets, gelezen, filter);
+        Toets gecompileerd = toetsweergave(toets);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
-            RuntimeException fout = fout(toets, w);
+            RuntimeException fout = fout(gecompileerd, w);
             if (fout == null)
                 throw new IllegalStateException("het filter van " + sleutel + " faalde in de toets en niet in het gevolg,"
                         + " over dezelfde gebonden waarden");
@@ -4341,7 +4354,7 @@ public final class TmsTranspiler {
         List<Plaatslezing> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
-        Toets filtertoets = filter == null ? null : voorwaarde(filter, lez);
+        Toets filtertoets = filter == null ? null : toetsweergave(voorwaarde(filter, lez));
         Toets houdt = filtertoets == null ? w -> true : lez.kanFalen() ? zonderFout(filtertoets) : filtertoets;
         int waarde = lez.tijdlijn(lidwaarde);
         lez.stop();
@@ -4353,8 +4366,9 @@ public final class TmsTranspiler {
             gebruik.add(p.plaats());
         }
         String naam = lidwaarde.naam();
+        Toets emmer = w -> houdt.test(w) && w[waarde] instanceof Emmerscalair;
         List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
-                w -> houdt.test(w) && w[waarde] instanceof Emmerscalair, gelezen, filter);
+                new Term.GecompileerdeToets(emmer::test, null), gelezen, filter);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
             List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
             plaats.add(selectie);
@@ -4623,9 +4637,17 @@ public final class TmsTranspiler {
         boolean test(Object[] waarden);
     }
 
+    /** The condition {@code c} as a term, a truth value ({@link Term}).
+     *
+     *  <p>INTERIM FORM, until the condition compilers plan: the compiled condition. */
+    private Term voorwaarde(Conditie c, Lezingen lez) {
+        Toets t = voorwaardetoets(c, lez);
+        return new Term.GecompileerdeToets(t::test, bron(c.bron()));
+    }
+
     /** Every condition node is named here, so a node the IR records gain later fails to compile until it is decided
      *  whether this branch reads it. */
-    private Toets voorwaarde(Conditie c, Lezingen lez) {
+    private Toets voorwaardetoets(Conditie c, Lezingen lez) {
         return switch (c) {
             case Conditie.Kenmerk k -> kenmerkcheck(k, lez);
             case Conditie.Samengesteld s -> samengesteld(s, lez);
@@ -4918,13 +4940,13 @@ public final class TmsTranspiler {
         String venster = Vensterpositie.weigering(s);
         if (venster != null) throw new Weigering(venster + ": " + snippet(s));
         List<Toets> leden = new ArrayList<>();
-        for (Conditie deel : s.onderdelen()) leden.add(voorwaarde(deel, lez));
+        for (Conditie deel : s.onderdelen()) leden.add(voorwaardetoets(deel, lez));
         Conditie.Kwantor kw = s.kwantor();
         int drempel = s.drempel();
         return w -> {
             int raak = 0;
             for (int i = 0; i < leden.size(); i++) {
-                Boolean vast = vastgesteld(kw, drempel, raak, i, leden.size() - i);
+                Boolean vast = Rekenhulpen.vastgesteld(kw, drempel, raak, i, leden.size() - i);
                 if (vast != null) return vast;
                 if (leden.get(i).test(w)) raak++;
             }
@@ -4935,18 +4957,6 @@ public final class TmsTranspiler {
                 case TEN_HOOGSTE -> raak <= drempel;
                 case PRECIES -> raak == drempel;
             };
-        };
-    }
-
-    /** The stop triggers of RUNTIME-SEMANTICS ch. 5.10: the verdict once {@code gelezen} members are read, of
-     *  which {@code raak} hold and {@code rest} are unread, or null while the unread members can still change it. */
-    private static Boolean vastgesteld(Conditie.Kwantor kw, int drempel, int raak, int gelezen, int rest) {
-        return switch (kw) {
-            case ALLE, DE -> raak < gelezen ? Boolean.FALSE : null;
-            case GEEN -> raak > 0 ? Boolean.FALSE : null;
-            case TEN_MINSTE -> raak >= drempel ? Boolean.TRUE : (raak + rest < drempel ? Boolean.FALSE : null);
-            case TEN_HOOGSTE -> raak > drempel ? Boolean.FALSE : (raak + rest <= drempel ? Boolean.TRUE : null);
-            case PRECIES -> (raak > drempel || raak + rest < drempel) ? Boolean.FALSE : null;
         };
     }
 
@@ -4992,7 +5002,7 @@ public final class TmsTranspiler {
             int[] i = lez.vouw(v, Accumulatie.Soort.SOM);
             Waardefunctie oordeel = weergave(gelezenVouw(v, i, lez, new Term.GecompileerdeToets(w -> {
                 long n = ((Number) w[i[0]]).longValue();
-                return eindoordeel(kw, drempel, n == 0 ? 0 : ((BigDecimal) w[i[1]]).longValueExact(), n);
+                return Rekenhulpen.eindoordeel(kw, drempel, n == 0 ? 0 : ((BigDecimal) w[i[1]]).longValueExact(), n);
             }, bron), bron));
             return w -> (Boolean) oordeel.van(w);
         }
@@ -5022,12 +5032,12 @@ public final class TmsTranspiler {
         // binds the member's place
         Lezingen lez = bijdragelezingen(subject, elem, l -> { });
         Set<Integer> gelezen = lez.volg();
-        Toets filter = kv.filter() == null ? null : voorwaarde(kv.filter(), lez);
+        Term filter = kv.filter() == null ? null : voorwaarde(kv.filter(), lez);
         boolean filterKanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
         int lid = lez.lid();
-        Toets matrix = voorwaarde(kv.toets(), lez);
+        Toets matrix = toetsweergave(voorwaarde(kv.toets(), lez));
         boolean lidKanFalen = lez.kanFalen();
         lez.stop();
         boolean lidDeponeert = deponeert(kv.toets());
@@ -5091,18 +5101,6 @@ public final class TmsTranspiler {
                 lidKanFalen, lidDeponeert);
     }
 
-    /** The verdict of a quantifier over {@code n} members of which {@code raak} hold, every member read (RUNTIME-SEMANTICS
-     *  ch. 5.10): all where all hold, none where none does, the counting quantifiers on the threshold. */
-    private static boolean eindoordeel(Conditie.Kwantor kw, int drempel, long raak, long n) {
-        return switch (kw) {
-            case ALLE, DE -> raak == n;
-            case GEEN -> raak == 0;
-            case TEN_MINSTE -> raak >= drempel;
-            case TEN_HOOGSTE -> raak <= drempel;
-            case PRECIES -> raak == drempel;
-        };
-    }
-
     /**
      * The matrix of a quantifier fold read as the reference interpreter reads it, over the {@link Lidtoets} of each
      * contributor (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the contributors' order, with the stop triggers of ch. 5.10
@@ -5116,14 +5114,14 @@ public final class TmsTranspiler {
         leden.sort(null);
         int n = leden.size(), raak = 0;
         for (int k = 0; k < n; k++) {
-            Boolean vast = vastgesteld(kw, drempel, raak, k, n - k);
+            Boolean vast = Rekenhulpen.vastgesteld(kw, drempel, raak, k, n - k);
             if (vast != null) return vast;
             Lidtoets lid = leden.get(k);
             if (lid.gedeponeerd()) Sonde.meld(w, sonde);
             if (lid.fout() != null) throw lid.fout();
             if (lid.waar()) raak++;
         }
-        return eindoordeel(kw, drempel, raak, n);
+        return Rekenhulpen.eindoordeel(kw, drempel, raak, n);
     }
 
     /**
@@ -5131,8 +5129,8 @@ public final class TmsTranspiler {
      * numbers through {@code rsAggVergelijk} (an ordering with a leeg operand is onwaar, two leeg numbers are equal,
      * exactly one leeg is unequal; exact where a value is a rational), a percentage being a number in the unit %, the
      * right operand restated into the left one's unit (RUNTIME-SEMANTICS ch. 2.6); dates of one precision through
-     * {@link #datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a truth value through
-     * {@link #tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated before the right
+     * {@link Rekenhulpen#datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a truth value
+     * through {@link Rekenhulpen#tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated before the right
      * one (ch. 5.11). Two sides whose types allow no comparison are refused. Under the whole-period qualifier the
      * comparison folds a timeline instead ({@link #geheelPeriodeVergelijking}).
      */
@@ -5155,14 +5153,14 @@ public final class TmsTranspiler {
                 || op == Conditie.Operator.ONGELIJK)) {
             if (!zelfdeDatumsoort(lt, rt))
                 throw new Weigering("een Comparison van een datum met een datum-tijd ('" + snippet(v) + "', §5.3 Tabel 36)");
-            return w -> datumVergelijk(datumWaarde(l.van(w)), datumWaarde(r.van(w)), op);
+            return w -> Rekenhulpen.datumVergelijk(l.van(w), r.van(w), op);
         }
         if ((op == Conditie.Operator.GELIJK || op == Conditie.Operator.ONGELIJK) && gelijkheidstype(lt)
                 && gelijkheidstype(rt) && lt.isBoolean() == rt.isBoolean()) {
             UnaryOperator<Object> lezing = lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie
                     ? RegelSpraakRuntime::rsEnumNaam : UnaryOperator.identity();
             boolean gelijk = op == Conditie.Operator.GELIJK;
-            return w -> tekstGelijk(lezing.apply(l.van(w)), lezing.apply(r.van(w)), gelijk);
+            return w -> Rekenhulpen.tekstGelijk(lezing.apply(l.van(w)), lezing.apply(r.van(w)), gelijk);
         }
         throw new Weigering("een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typenaam(lt) + " en "
                 + typenaam(rt) + " ('" + snippet(v) + "'): de typen van de twee kanten laten deze vergelijking niet toe"
@@ -5187,39 +5185,6 @@ public final class TmsTranspiler {
     private static boolean zelfdeDatumsoort(Datatype a, Datatype b) {
         if (a instanceof Datatype.DatumTijd) return b instanceof Datatype.DatumTijd;
         return a instanceof Datatype.DatumInDagen && b instanceof Datatype.DatumInDagen;
-    }
-
-    private static Object datumWaarde(Object v) {
-        return v instanceof java.time.LocalDate || v instanceof java.time.LocalDateTime ? v : null;
-    }
-
-    /** A date comparison with its leeg tables: an
-     *  ordering with a leeg operand is onwaar, equality of two leeg dates is onwaar (§5.3 Tabel 38), inequality holds
-     *  where exactly one is leeg (§5.6 Tabel 44). */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static boolean datumVergelijk(Object a, Object b, Conditie.Operator op) {
-        switch (op) {
-            case GELIJK: return Objects.equals(a, b) && !(a == null && b == null);
-            case ONGELIJK: return !Objects.equals(a, b);
-            default: break;
-        }
-        if (!(a instanceof Comparable) || b == null) return false;
-        int c = ((Comparable) a).compareTo(b);
-        return switch (op) {
-            case EERDER -> c < 0;
-            case EERDER_OF_GELIJK -> c <= 0;
-            case LATER -> c > 0;
-            case LATER_OF_GELIJK -> c >= 0;
-            default -> false;
-        };
-    }
-
-    /** The equality of a text, an enumeration label or a truth value with its leeg tables: equal only where both are
-     *  filled and the same, unequal where exactly one is leeg or the two differ. */
-    private static boolean tekstGelijk(Object a, Object b, boolean gelijk) {
-        boolean beideLeeg = a == null && b == null;
-        boolean zelfde = Objects.equals(a, b);
-        return gelijk ? zelfde && !beideLeeg : !zelfde && !beideLeeg;
     }
 
     /** A leeg or gevuld test of a value; a read over an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8 rule 1). The loader
@@ -5351,16 +5316,16 @@ public final class TmsTranspiler {
         /** The left-hand side of the rule, once its condition and its value are compiled: the subject pattern with its
          *  bindings, the parameter declarations, the standing patterns, and the test of {@code voorwaarde} over the
          *  values at {@code gelezen}, which asks {@code rol} of it ({@link Toetsitem.Rol}). */
-        List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Toets toets, Set<Integer> gelezen, Conditie voorwaarde) {
+        List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde) {
             return linkerkant(rol, toets, gelezen, voorwaarde, List.of());
         }
 
-        /** As {@link #linkerkant(Toetsitem.Rol, Toets, Set, Conditie)}, with {@code stuur} between the standing patterns
+        /** As {@link #linkerkant(Toetsitem.Rol, Term, Set, Conditie)}, with {@code stuur} between the standing patterns
          *  and the test: the control-fact patterns of a default, so that a default a higher one displaced is not tested
          *  at all. The plan of the left-hand side goes to the transpiler's plans ({@link #linkerkanten}); the rendering
          *  gives the items, among them those a form built directly ({@code kop}, {@code bereik}, {@code stuur}). A test
          *  of deposits takes the probe of this rule ({@link #sondeplaats}). */
-        List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Toets toets, Set<Integer> gelezen, Conditie voorwaarde,
+        List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde,
                                             List<RuleItemBuilder<?>> stuur) {
             Toetsitem test = null;
             if (toets != null) {
@@ -5368,7 +5333,7 @@ public final class TmsTranspiler {
                 if (pos.length > MAX_LEZINGEN)
                     throw new Weigering("een voorwaarde die " + pos.length + " waarden leest ('" + snippet(voorwaarde)
                             + "'): de toets van deze tak neemt hoogstens " + MAX_LEZINGEN + " gebonden waarden");
-                test = new Toetsitem(id("voorwaarde"), rol, toets::test, rol == Toetsitem.Rol.DEPONERING ? sonde : -1,
+                test = new Toetsitem(id("voorwaarde"), rol, toets, rol == Toetsitem.Rol.DEPONERING ? sonde : -1,
                         List.copyOf(gelezen), slots.size());
             }
             List<LhsItem> plan = new ArrayList<>();

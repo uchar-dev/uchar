@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
@@ -16,8 +17,9 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * The rendering of a planned value ({@link Term}) into a function over the value array of a rule ({@link Waardefunctie}),
- * the form in which the consequences and the tests of the executable model compute it. Each node becomes the lambda the
+ * The rendering of a planned value or condition ({@link Term}) into a function over the value array of a rule
+ * ({@link Waardefunctie}) or a predicate over it, the form in which the consequences and the tests of the executable
+ * model compute it. Each node becomes the lambda the
  * value compilers made before the values were planned, with the same calls in the same order, the same guards and the
  * same faults. It decides nothing: the functions, the unit factors, the probes, the faults and the order of evaluation
  * are the plan's ({@code TmsTranspiler}), and a function of the plan is called here by its constant, never chosen. The
@@ -95,6 +97,10 @@ final class ClosureWeergave {
             }
             case Term.GelijsteVouw g -> gelijsteVouw(g);
             case Term.Vouwlezing v -> vouwlezing(v);
+            case Term.Samengesteld s -> {
+                Predicate<Object[]> p = samengesteld(s);
+                yield w -> p.test(w);
+            }
             case Term.Dagsoort d -> {
                 Predicate<LocalDate> p = d.predikaat();
                 yield w -> p;
@@ -106,11 +112,19 @@ final class ClosureWeergave {
         };
     }
 
-    /** The test that {@code t}, a truth value, holds: a compiled condition as it is, any other term as its value. */
+    /** The test that {@code t}, a condition, holds: a compiled condition as it is, a composite as its fold, any other
+     *  term as its value, a truth value. */
     static Predicate<Object[]> toets(Term t) {
         if (t instanceof Term.GecompileerdeToets g) return g.toets();
+        if (t instanceof Term.Samengesteld s) return samengesteld(s);
         Waardefunctie f = waardefunctie(t);
         return w -> (Boolean) f.van(w);
+    }
+
+    /** The test of {@code t}, the condition of a rule's left-hand side, that asks {@code rol} of it
+     *  ({@link Toetsitem}). */
+    static Predicate<Object[]> toets(Toetsitem t) {
+        return toets(t.rol(), toets(t.toets()), t.sonde());
     }
 
     /** The test of a rule's left-hand side that asks {@code rol} of the condition {@code toets}
@@ -210,6 +224,24 @@ final class ClosureWeergave {
         };
     }
 
+    /** A composite ({@link Term.Samengesteld}): its members read in order, the stop triggers of RUNTIME-SEMANTICS
+     *  ch. 5.10 tested before each, and the quantifier's verdict where none stops it, so a member after the stop is not
+     *  evaluated. */
+    private static Predicate<Object[]> samengesteld(Term.Samengesteld s) {
+        List<Predicate<Object[]>> leden = s.leden().stream().map(ClosureWeergave::toets).toList();
+        Conditie.Kwantor kw = s.kwantor();
+        int drempel = s.drempel();
+        return w -> {
+            int raak = 0;
+            for (int i = 0; i < leden.size(); i++) {
+                Boolean vast = Rekenhulpen.vastgesteld(kw, drempel, raak, i, leden.size() - i);
+                if (vast != null) return vast;
+                if (leden.get(i).test(w)) raak++;
+            }
+            return Rekenhulpen.eindoordeel(kw, drempel, raak, leden.size());
+        };
+    }
+
     /** A listed fold: each operand taken by the plan's step as it is evaluated, so the order of evaluation and
      *  comparison is the value compiler's ({@link Term.GelijsteVouw}). */
     private static Waardefunctie gelijsteVouw(Term.GelijsteVouw g) {
@@ -304,6 +336,21 @@ final class ClosureWeergave {
             case EIGEN_TOTAAL -> x -> Rekenhulpen.eigenTotaal(x[0], x[1], x[2], (String) x[3], (String) x[4]);
             case VOLLEDIG -> x -> Rekenhulpen.volledig(x[0], (String) x[1], x[2], (String) x[3]);
             case COLLAPSE -> x -> Rekenhulpen.collapse(x[0]);
+            case RS_AGG_VERGELIJK -> x -> RegelSpraakRuntime.rsAggVergelijk(x[0], x[1], (String) x[2]);
+            case DATUM_VERGELIJK -> x -> Rekenhulpen.datumVergelijk(x[0], x[1], (Conditie.Operator) x[2]);
+            case TEKST_GELIJK -> x -> Rekenhulpen.tekstGelijk(x[0], x[1], (Boolean) x[2]);
+            case RS_ENUM_NAAM -> x -> RegelSpraakRuntime.rsEnumNaam(x[0]);
+            case LEEGTOETS -> x -> Rekenhulpen.leegtoets(x[0], (Boolean) x[1]);
+            case ELFPROEF -> x -> Rekenhulpen.elfproef(x[0], (Boolean) x[1]);
+            case NUMERIEK_MET_EXACT -> x -> Rekenhulpen.numeriekMetExact(x[0], (Integer) x[1], (Boolean) x[2]);
+            case KENMERK -> x -> Rekenhulpen.kenmerk(x[0], (Boolean) x[1]);
+            case KENMERK_LANGS_PAD -> x -> Rekenhulpen.kenmerkLangsPad(x[0], (Boolean) x[1]);
+            case ROLAANTAL -> x -> Rekenhulpen.rolaantal(x[0], (Boolean) x[1]);
+            case ROLVELD -> x -> Rekenhulpen.rolveld(x[0], (Boolean) x[1]);
+            case TIJDVENSTER -> x -> Rekenhulpen.tijdvenster(x[0], (Boolean) x[1], x[2], (Boolean) x[3],
+                    (Boolean) x[4], x[5]);
+            case GEHEEL_PERIODE -> x -> Rekenhulpen.geheelPeriode(x[0], x[1], (String) x[2], (Integer) x[3],
+                    (Boolean) x[4]);
         };
     }
 
