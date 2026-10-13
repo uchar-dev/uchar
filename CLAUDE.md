@@ -35,9 +35,10 @@ Sessions may propose diffs to these; only the maintainer merges them:
 Mechanism: `.github/CODEOWNERS` lists these paths, and the mandate-and-review
 protocol of `WAY-OF-WORKING.md` carries the review (§3: a card branch that
 touches them stays an unmerged proposal). The repository is public since
-2026-10-12, so the free org plan allows branch protection; it is not enabled
-(2026-10-13), so GitHub does not enforce that review. A change to a protected
-path without maintainer review must not land.
+2026-10-12. Since 2026-10-13 a ruleset on `main` blocks a force-push and the
+deletion of the branch; it requires no pull request, so GitHub does not
+enforce that review. A change to a protected path without maintainer review
+must not land.
 
 **The CODEOWNERS claim is wider on purpose** (recorded 2026-09-10, existing
 practice). `.github/CODEOWNERS` claims `/spec/` whole — a safety net,
