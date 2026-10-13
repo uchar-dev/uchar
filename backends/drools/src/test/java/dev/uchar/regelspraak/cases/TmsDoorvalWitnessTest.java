@@ -3,7 +3,9 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.uchar.regelspraak.transpiler.tms.Beslist;
 import dev.uchar.regelspraak.transpiler.tms.Stuurfeit;
+import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import org.drools.model.Rule;
+import org.kie.api.KieBase;
 import org.junit.jupiter.api.Test;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
@@ -59,6 +61,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * takeover failed: "IllegalState geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
  * "defaults A:Vondst.doel" schrijft 100 en de regel "defaults A:Vondst.doel" schrijft 200 in het attribuut doel van een
  * Vondst".
+ *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4; acceptance (a), the ordered
+ * defaults with fall-through of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2): every order of the document's rules plays on the
+ * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, and the sample of orders runs on both: on
+ * {@code DRL_TMS} the rules of the plan rendered as text in each order ({@code Tekstvolgorde}), since the order of the
+ * rules in the text is the order in which Drools loads them, and the takeover and the give-back must each happen there
+ * too. <b>Red</b> on {@code e2bd685e}, before the step: both rows failed on {@code DRL_TMS} with "drl-tms: de
+ * DRL-weergave draagt Afloop nog niet".
  */
 class TmsDoorvalWitnessTest {
 
@@ -117,11 +127,12 @@ class TmsDoorvalWitnessTest {
         int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(document(volgorde), zaak(), DroolsBackend.Branch.EXEC_MODEL),
-                    () -> "volgorde " + namen);
-            volgordes++;
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+                assertNull(CaseRunner.speelCase(document(volgorde), zaak(), tak), () -> tak + ": volgorde " + namen);
+                volgordes++;
+            }
         }
-        assertEquals(24, volgordes);
+        assertEquals(48, volgordes);
     }
 
     /** The two defaults, the four rules and the standings of tussen, afgewezen, bron1 and bron2: too many for every
@@ -132,13 +143,32 @@ class TmsDoorvalWitnessTest {
         assertEquals(16, gegenereerd.size(),
                 () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int[] overname = {0}, teruggave = {0};
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
+            vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(), overname,
+                    teruggave);
+        assertTrue(overname[0] > 0, "geen volgorde liet de lagere default eerst beslissen en de hogere overnemen");
+        assertTrue(teruggave[0] > 0, "geen volgorde liet de hogere default beslissen en zijn besluit weer verliezen");
+        DroolsBackend.Build t = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.DRL_TMS);
+        List<String> regels = Tekstvolgorde.regels(t);
+        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
+        int[] tekstOvername = {0}, tekstTeruggave = {0};
+        for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261008L, 100))
+            vuurSteekproef(t, Tekstvolgorde.kieBase(t, volgorde), volgorde, tekstOvername, tekstTeruggave);
+        assertTrue(tekstOvername[0] > 0, "geen volgorde van de tekst liet de hogere default overnemen");
+        assertTrue(tekstTeruggave[0] > 0, "geen volgorde van de tekst liet de hogere default zijn besluit verliezen");
+    }
+
+    /** Fires the sixteen Vondsten through {@code kieBase}, the rules of {@code b} in the order {@code namen}: every doel
+     *  ends as ch. 7.1 says, and a simple group inserts no other control fact than {@code Beslist}; counts the takeovers
+     *  and the give-backs. */
+    private static void vuurSteekproef(DroolsBackend.Build b, KieBase kieBase, List<String> namen, int[] overname,
+                                       int[] teruggave) throws Exception {
+        {
             List<Object> bonen = new ArrayList<>();
             for (int bits = 0; bits < 16; bits++)
                 bonen.add(TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of(), kenmerken(bits)));
             Map<Object, List<String>> gevuurd = new IdentityHashMap<>();
-            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocumenten.vuur(b, kieBase, namen, bonen, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     String regel = e.getMatch().getRule().getName();
                     for (Object o : e.getMatch().getObjects())
@@ -151,7 +181,7 @@ class TmsDoorvalWitnessTest {
             });
             for (int bits = 0; bits < 16; bits++) {
                 Object boon = bonen.get(bits);
-                String waar = label(bits) + " doel in volgorde " + namen;
+                String waar = label(bits) + " doel op " + b.branch() + " in volgorde " + namen;
                 String v = verwacht(bits);
                 assertEquals(v == null ? null : new BigDecimal(v), TmsDocumenten.lees(boon, "doel"), waar);
                 List<String> regels = gevuurd.getOrDefault(boon, List.of());
@@ -159,7 +189,5 @@ class TmsDoorvalWitnessTest {
                 if ("200".equals(v) && regels.stream().anyMatch(r -> r.endsWith("default 0"))) teruggave[0]++;
             }
         }
-        assertTrue(overname[0] > 0, "geen volgorde liet de lagere default eerst beslissen en de hogere overnemen");
-        assertTrue(teruggave[0] > 0, "geen volgorde liet de hogere default beslissen en zijn besluit weer verliezen");
     }
 }
