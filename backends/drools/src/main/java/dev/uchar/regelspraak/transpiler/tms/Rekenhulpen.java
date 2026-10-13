@@ -221,6 +221,22 @@ public final class Rekenhulpen {
         return ((Number) aantal).longValue() == 0 ? terugval : waarde;
     }
 
+    /** One step of a listed fold that keeps the least operand (RUNTIME-SEMANTICS ch. 1.2e): {@code tot} the value so
+     *  far, leeg before the first operand, and {@code operand} the next one; a leeg operand is skipped, and a tie takes
+     *  the later operand. */
+    public static Object kleinste(Object tot, Object operand) {
+        if (operand == null) return tot;
+        if (tot == null) return operand;
+        return vergelijk(tot, operand) < 0 ? tot : operand;
+    }
+
+    /** As {@link #kleinste}, keeping the greatest operand. */
+    public static Object grootste(Object tot, Object operand) {
+        if (operand == null) return tot;
+        if (tot == null) return operand;
+        return vergelijk(tot, operand) > 0 ? tot : operand;
+    }
+
     /** The order of two values a fold compares: numbers exactly, a rational among them included; dates as they order. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static int vergelijk(Object a, Object b) {

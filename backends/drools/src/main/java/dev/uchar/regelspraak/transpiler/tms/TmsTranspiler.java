@@ -3216,8 +3216,9 @@ public final class TmsTranspiler {
         Eenheidsconflict.eisHerschaalbaar(van, naar, plek);
         if (van == null || naar == null || !van.convertibleNaar(naar) || !van.vereistOmrekening(naar)) return t;
         BigDecimal[] exact = van.exacteHerschaalFactoren(naar);
-        if (exact != null) return new Term.Herschaal(t, van, naar, exact[0], exact[1], t.bron());
-        return new Term.Herschaal(t, van, naar, van.omrekenfactorNaar(naar), null, t.bron());
+        if (exact != null)
+            return new Term.Herschaal(Functie.HERSCHAAL_EXACT, t, van, naar, exact[0], exact[1], t.bron());
+        return new Term.Herschaal(Functie.HERSCHAAL, t, van, naar, van.omrekenfactorNaar(naar), null, t.bron());
     }
 
     // ---------------- the forms of a value beside the arithmetic ----------------
@@ -3734,7 +3735,7 @@ public final class TmsTranspiler {
             Term op = waarde(a, lez);
             operanden.add(i == 0 ? op : herschaald(op, eff.eenheidVan(a), eerste, "een §5.8.3 operand van een gelijste vouw"));
         }
-        return new Term.GelijsteVouw(kleinste, operanden, bron(f.bron()));
+        return new Term.GelijsteVouw(kleinste ? Functie.KLEINSTE : Functie.GROOTSTE, operanden, bron(f.bron()));
     }
 
     /**

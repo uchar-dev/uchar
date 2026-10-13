@@ -174,11 +174,15 @@ final class ClosureWeergave {
         };
     }
 
+    /** A restatement through the function the plan names, with the factors it takes: the numerator and the denominator
+     *  of {@link Functie#HERSCHAAL_EXACT}, or the one ratio of {@link Functie#HERSCHAAL}, whose plan has no
+     *  denominator ({@link Term.Herschaal}). */
     private static Waardefunctie herschaal(Term.Herschaal h) {
         Waardefunctie f = waardefunctie(h.term());
+        Implementatie g = implementatie(h.functie());
         BigDecimal teller = h.teller(), noemer = h.noemer();
-        if (noemer != null) return w -> Rekenhulpen.herschaalExact(f.van(w), teller, noemer);
-        return w -> Rekenhulpen.herschaal(f.van(w), teller);
+        if (noemer != null) return w -> g.van(new Object[]{f.van(w), teller, noemer});
+        return w -> g.van(new Object[]{f.van(w), teller});
     }
 
     /**
@@ -206,23 +210,14 @@ final class ClosureWeergave {
         };
     }
 
-    /** A listed fold: each operand compared as it is evaluated, so the order of evaluation and comparison is the
-     *  value compiler's ({@link Term.GelijsteVouw}). */
+    /** A listed fold: each operand taken by the plan's step as it is evaluated, so the order of evaluation and
+     *  comparison is the value compiler's ({@link Term.GelijsteVouw}). */
     private static Waardefunctie gelijsteVouw(Term.GelijsteVouw g) {
-        boolean kleinste = g.kleinste();
+        Implementatie stap = implementatie(g.functie());
         List<Waardefunctie> operanden = g.operanden().stream().map(ClosureWeergave::waardefunctie).toList();
         return w -> {
             Object acc = null;
-            for (Waardefunctie op : operanden) {
-                Object x = op.van(w);
-                if (x == null) continue;
-                if (acc == null) {
-                    acc = x;
-                    continue;
-                }
-                int c = Rekenhulpen.vergelijk(acc, x);
-                acc = kleinste ? (c < 0 ? acc : x) : (c > 0 ? acc : x);
-            }
+            for (Waardefunctie op : operanden) acc = stap.van(new Object[]{acc, op.van(w)});
             return acc;
         };
     }
@@ -299,6 +294,10 @@ final class ClosureWeergave {
                     x[7]);
             case CEL -> x -> Rekenhulpen.cel(x[0], (String) x[1]);
             case KAART -> x -> Rekenhulpen.kaart(x[0]);
+            case HERSCHAAL_EXACT -> x -> Rekenhulpen.herschaalExact(x[0], (BigDecimal) x[1], (BigDecimal) x[2]);
+            case HERSCHAAL -> x -> Rekenhulpen.herschaal(x[0], (BigDecimal) x[1]);
+            case KLEINSTE -> x -> Rekenhulpen.kleinste(x[0], x[1]);
+            case GROOTSTE -> x -> Rekenhulpen.grootste(x[0], x[1]);
             case TERUGVAL -> x -> Rekenhulpen.terugval(x[0], x[1]);
             case AANTAL -> x -> Rekenhulpen.aantal(x[0]);
             case VOUWWAARDE -> x -> Rekenhulpen.vouwwaarde(x[0], x[1], x[2]);

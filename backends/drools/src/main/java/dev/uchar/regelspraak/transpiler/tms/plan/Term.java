@@ -69,12 +69,20 @@ public sealed interface Term {
 
     /**
      * The value of {@code term} restated from the unit {@code van} into the unit {@code naar} (RUNTIME-SEMANTICS ch.
-     * 2.6): a number times {@code teller} and divided by {@code noemer}, the exact canonical factors, as exact
-     * rationals, or, where {@code noemer} is null, times the single ratio {@code teller} of the two units. A leeg value
-     * and a value that is no number pass unchanged. The analysis adds no node where no restatement is due.
+     * 2.6) through {@code functie}: {@link Functie#HERSCHAAL_EXACT}, a number times {@code teller} and divided by
+     * {@code noemer}, the exact canonical factors, as exact rationals; or {@link Functie#HERSCHAAL}, where
+     * {@code noemer} is null, times the single ratio {@code teller} of the two units. A leeg value and a value that is
+     * no number pass unchanged. The analysis adds no node where no restatement is due.
      */
-    record Herschaal(Term term, Eenheid van, Eenheid naar, BigDecimal teller, BigDecimal noemer, String bron)
-            implements Term {}
+    record Herschaal(Functie functie, Term term, Eenheid van, Eenheid naar, BigDecimal teller, BigDecimal noemer,
+                     String bron) implements Term {
+        public Herschaal {
+            boolean exact = functie == Functie.HERSCHAAL_EXACT;
+            if (!exact && functie != Functie.HERSCHAAL || exact != (noemer != null))
+                throw new IllegalArgumentException("een herschaling noemt HERSCHAAL_EXACT met een noemer of HERSCHAAL"
+                        + " zonder, niet " + functie + " met noemer " + noemer);
+        }
+    }
 
     /**
      * A division, {@code links} by {@code rechts}, both evaluated in that order, through {@code functie}
@@ -107,12 +115,14 @@ public sealed interface Term {
     }
 
     /**
-     * A listed fold (RUNTIME-SEMANTICS ch. 1.2e): the operands in order, each compared as it is evaluated, a leeg one
-     * skipped, keeping the least where {@code kleinste} and else the greatest, a tie taking the later operand; leeg where
-     * every operand is.
+     * A listed fold (RUNTIME-SEMANTICS ch. 1.2e): the operands in order, each taken by the step {@code functie} as it is
+     * evaluated, from leeg before the first: {@link Functie#KLEINSTE} keeps the least, {@link Functie#GROOTSTE} the
+     * greatest, a leeg operand skipped and a tie taking the later operand; leeg where every operand is.
      */
-    record GelijsteVouw(boolean kleinste, List<Term> operanden, String bron) implements Term {
+    record GelijsteVouw(Functie functie, List<Term> operanden, String bron) implements Term {
         public GelijsteVouw {
+            if (functie != Functie.KLEINSTE && functie != Functie.GROOTSTE)
+                throw new IllegalArgumentException("een gelijste vouw neemt KLEINSTE of GROOTSTE als stap, niet " + functie);
             operanden = List.copyOf(operanden);
         }
     }

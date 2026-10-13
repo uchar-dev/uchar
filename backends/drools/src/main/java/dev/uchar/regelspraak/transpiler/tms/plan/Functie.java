@@ -99,6 +99,19 @@ public enum Functie {
     CEL(Rekenhulpen.class, "cel", false),
     /** A dimension map as it is, or leeg where the value is no map. */
     KAART(Rekenhulpen.class, "kaart", false),
+    /** A value restated by the exact canonical factors of two units (ch. 2.1, 2.6), a {@code BigDecimal} numerator and
+     *  denominator, as rationals; a leeg value and a value that is no number pass unchanged. The function of a
+     *  {@link Term.Herschaal}. */
+    HERSCHAAL_EXACT(Rekenhulpen.class, "herschaalExact", false),
+    /** A value restated by the single ratio of two units, a {@code BigDecimal}, a rate whose factors are not both
+     *  known; a leeg value and a value that is no number pass unchanged. The function of a {@link Term.Herschaal}. */
+    HERSCHAAL(Rekenhulpen.class, "herschaal", false),
+    /** One step of a listed fold that keeps the least operand (ch. 1.2e): from the value so far and the next operand,
+     *  a leeg operand skipped, a tie taking the later one, compared exactly ({@code Rekenhulpen.vergelijk}). The function
+     *  of a {@link Term.GelijsteVouw}. */
+    KLEINSTE(Rekenhulpen.class, "kleinste", false),
+    /** As {@link #KLEINSTE}, keeping the greatest operand. */
+    GROOTSTE(Rekenhulpen.class, "grootste", false),
     /** A value, or the fallback where it is leeg. */
     TERUGVAL(Rekenhulpen.class, "terugval", false),
     /** A count bound off an accumulate, as a number. */
