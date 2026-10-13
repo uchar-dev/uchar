@@ -3,6 +3,8 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.uchar.regelspraak.loader.IrLoader;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,12 +33,18 @@ import java.util.stream.Stream;
  *   CP=$(mktemp -d)/cp.txt
  *   mvn -o -q -f backends/drools/pom.xml dependency:build-classpath -Dmdep.outputFile="$CP"
  *   java -cp "backends/drools/target/test-classes:backends/drools/target/classes:$(cat "$CP")" \
- *       dev.uchar.regelspraak.cases.Vuurspoor corpus/golden &lt;table&gt; &lt;fresh directory&gt;
+ *       dev.uchar.regelspraak.cases.Vuurspoor corpus/golden &lt;table&gt; &lt;fresh directory&gt; [&lt;branch&gt;]
  * </pre>
  * The table is tab-separated, one golden per line: its directory under {@code corpus/golden} and the last line the
  * jar gives for it on the exec-model branch; the goldens whose line starts with {@code PLAYED} are dumped, so a
  * comparison runs over one fixed set. The directory must be empty or absent. It prints one line with the goldens,
  * the cases, the goldens that failed and the time, and exits with 1 where a golden failed.
+ *
+ * <p>The branch is {@code EXEC_MODEL} without the fourth argument. With {@code DRL_TMS} it dumps the sessions of the
+ * analysis rendered as DRL text (card drl-teksttak-op-truth-maintenance), over the same goldens, so that a step compares
+ * {@code lees} and {@code feiten} of each case with the dump of the exec-model branch; a golden that branch refuses gets
+ * a file of one line, {@code WEIGERING} and the reason, and counts among the refused, not among the failed. The
+ * DRL-text branch writes the beans as it fires and has no dump.
  */
 public final class Vuurspoor {
 
@@ -45,8 +53,12 @@ public final class Vuurspoor {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3)
-            throw new IllegalArgumentException("gebruik: Vuurspoor <corpus/golden> <tabel> <verse uitmap>");
+        if (args.length != 3 && args.length != 4)
+            throw new IllegalArgumentException("gebruik: Vuurspoor <corpus/golden> <tabel> <verse uitmap> [<tak>]");
+        DroolsBackend.Branch tak = args.length == 4 ? DroolsBackend.Branch.valueOf(args[3])
+                : DroolsBackend.Branch.EXEC_MODEL;
+        if (tak == DroolsBackend.Branch.DRL_TEXT)
+            throw new IllegalArgumentException("de DRL-teksttak schrijft de beans tijdens het vuren en heeft geen dump");
         Path golden = Path.of(args[0]);
         if (!Files.isDirectory(golden))
             throw new IllegalArgumentException("geen map " + golden.toAbsolutePath()
@@ -66,11 +78,22 @@ public final class Vuurspoor {
             if (kolommen.length == 2 && kolommen[1].startsWith("PLAYED")) gespeeld.add(kolommen[0]);
         }
         long begin = System.nanoTime();
-        int cases = 0, fouten = 0;
+        int cases = 0, fouten = 0, geweigerd = 0;
         for (String g : gespeeld) {
             StringBuilder uit = new StringBuilder();
             try {
-                cases += dump(golden.resolve(g), uit);
+                cases += dump(golden.resolve(g), tak, uit);
+            } catch (CaseRunner.Excluded | IrLoader.Refusal e) {
+                // only DRL_TMS refuses here: on the exec-model branch every golden of the table plays
+                if (tak == DroolsBackend.Branch.EXEC_MODEL) {
+                    fouten++;
+                    uit.append("FOUT ").append(e).append('\n');
+                } else {
+                    geweigerd++;
+                    uit.setLength(0);
+                    uit.append("WEIGERING ").append(e instanceof IrLoader.Refusal ? "loader: " : "")
+                            .append(e.getMessage().replace('\n', ' ')).append('\n');
+                }
             } catch (RuntimeException | IOException e) {
                 fouten++;
                 uit.append("FOUT ").append(e).append('\n');
@@ -78,18 +101,20 @@ public final class Vuurspoor {
             Files.writeString(uitmap.resolve(g.replace('/', '_') + ".txt"), uit.toString());
         }
         System.out.println("vuurspoor: " + gespeeld.size() + " goldens, " + cases + " cases, " + fouten + " fouten, "
+                + (tak == DroolsBackend.Branch.EXEC_MODEL ? "" : geweigerd + " geweigerd op " + tak + ", ")
                 + (System.nanoTime() - begin) / 1_000_000 + " ms");
         if (fouten > 0) System.exit(1);
     }
 
-    /** Appends the dump of every case of the golden in {@code map} that is no red case, and returns their number. */
-    private static int dump(Path map, StringBuilder uit) throws IOException {
+    /** Appends the dump on {@code tak} of every case of the golden in {@code map} that is no red case, and returns their
+     *  number. */
+    private static int dump(Path map, DroolsBackend.Branch tak, StringBuilder uit) throws IOException {
         List<Path> paden;
         try (Stream<Path> s = Files.list(map)) {
             paden = s.filter(p -> p.getFileName().toString().startsWith("case")
                     && p.getFileName().toString().endsWith(".json")).sorted().toList();
         }
-        CaseRunner runner = CaseRunner.voorMeting(map.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
+        CaseRunner runner = CaseRunner.voorMeting(map.resolve("ir.json"), tak);
         int n = 0;
         for (Path pad : paden) {
             JsonNode c = JSON.readTree(Files.readString(pad));
