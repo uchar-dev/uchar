@@ -703,12 +703,12 @@ class DefaultsplanWitnessTest {
 
     // ---------------- the plans as text ----------------
 
-    /** Every plan of a rule of a defaults stack of {@code document}, in the order the rules were built, as text; after
+    /** Every plan of a rule of a defaults stack of {@code document}, in the order of the model, as text; after
      *  a line that holds a term, the term node by node. */
     static List<String> plannen(JsonNode document) {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
-                .regelplannen()) {
+                .modelplan().regels()) {
             if (p.vorm() == null || !p.vorm().startsWith("defaults ")) continue;
             uit.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendagroep());
             List<String> slots = new ArrayList<>();

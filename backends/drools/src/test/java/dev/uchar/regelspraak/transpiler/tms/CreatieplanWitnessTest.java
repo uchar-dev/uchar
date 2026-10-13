@@ -681,12 +681,12 @@ class CreatieplanWitnessTest {
 
     // ---------------- the plans as text ----------------
 
-    /** Every plan of {@code document} that {@code keuze} takes, in the order the rules were built, as text; after a
+    /** Every plan of {@code document} that {@code keuze} takes, in the order of the model, as text; after a
      *  line that holds a term, the term node by node. */
     static List<String> plannen(JsonNode document, Predicate<Regelplan> keuze) {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
-                .regelplannen()) {
+                .modelplan().regels()) {
             if (!keuze.test(p)) continue;
             uit.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendagroep());
             List<String> slots = new ArrayList<>();

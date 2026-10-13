@@ -496,7 +496,7 @@ class RegelplanWitnessTest {
         return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
     }
 
-    /** Every plan of {@code document}'s rules as text, in the order the rules were built; after a line that holds a
+    /** Every plan of {@code document}'s rules as text, in the order of the model; after a line that holds a
      *  term, the term node by node ({@link Termboom#velden}). */
     private static List<String> regels(JsonNode document) throws ReflectiveOperationException {
         return regels(document, p -> true);
@@ -506,7 +506,7 @@ class RegelplanWitnessTest {
     static List<String> regels(JsonNode document, Predicate<Regelplan> welke) throws ReflectiveOperationException {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
-                .regelplannen()) {
+                .modelplan().regels()) {
             if (!welke.test(p)) continue;
             uit.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendagroep());
             List<String> slots = new ArrayList<>();

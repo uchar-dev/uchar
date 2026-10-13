@@ -11,6 +11,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
+import dev.uchar.regelspraak.transpiler.tms.plan.Modelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
 import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
@@ -21,6 +22,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 import org.drools.model.DSL;
 import org.drools.model.Global;
 import org.drools.model.Index;
+import org.drools.model.Model;
 import org.drools.model.PatternDSL;
 import org.drools.model.Rule;
 import org.drools.model.RuleItemBuilder;
@@ -40,6 +42,7 @@ import org.drools.model.functions.Predicate7;
 import org.drools.model.functions.Predicate8;
 import org.drools.model.functions.Predicate9;
 import org.drools.model.functions.accumulate.AccumulateFunction;
+import org.drools.model.impl.ModelImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,10 +58,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * The rendering of a planned rule into Drools' executable model: the subject pattern, the patterns, the accumulates
- * and the tests as {@code PatternDSL} items, with the constraint ids, the names and the indexed identity joins the
- * analysis planned, and the consequence the plan's {@link Gevolg} says. It decides nothing: what is read, how, in which
- * order, and what a firing inserts is the plan's ({@code TmsTranspiler.Lezingen}, {@link Regelplan}).
+ * The rendering of the outcome of the analysis into Drools' executable model ({@link #model}): the globals, and per
+ * planned rule the subject pattern, the patterns, the accumulates and the tests as {@code PatternDSL} items, with the
+ * constraint ids, the names and the indexed identity joins the analysis planned, and the consequence the plan's
+ * {@link Gevolg} says. It decides nothing: which globals there are, what is read, how, in which order, and what a
+ * firing inserts is the plan's ({@code TmsTranspiler}, {@link Modelplan}, {@link Regelplan}).
  *
  * <p>It renders a whole plan at once ({@link #regel}). The variables of the value array's slots are the variables the
  * bindings of the plan bind, by name; a value variable is bound once.
@@ -75,6 +79,28 @@ final class PatternDslWeergave {
     /** The rendering of a whole plan, whose subject pattern, if the rule has one, is an item of its left-hand side. */
     private PatternDslWeergave(Leestabel tabel) {
         this.tabel = tabel;
+    }
+
+    /**
+     * The executable model of {@code plan}: its globals declared, each once, and its rules, in the order of the plan
+     * ({@link #regel}). This is the one place the model is made.
+     */
+    static Model model(Modelplan plan) {
+        ModelImpl m = new ModelImpl(TmsTranspiler.PKG);
+        Map<String, Global<?>> globals = new HashMap<>();
+        for (Modelplan.Globaal g : plan.globals()) {
+            Global<?> global = DSL.globalOf(g.klasse(), TmsTranspiler.PKG, g.naam());
+            if (globals.putIfAbsent(g.naam(), global) != null)
+                throw new IllegalStateException("de global " + g.naam() + " wordt twee keer gedeclareerd");
+            m.addGlobal(global);
+        }
+        for (Regelplan r : plan.regels())
+            m.addRule(regel(r, naam -> {
+                Global<?> g = globals.get(naam);
+                if (g == null) throw new IllegalStateException("geen global " + naam + " in het model");
+                return g;
+            }));
+        return m;
     }
 
     /**

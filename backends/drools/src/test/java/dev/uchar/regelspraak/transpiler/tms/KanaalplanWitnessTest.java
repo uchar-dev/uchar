@@ -497,11 +497,11 @@ class KanaalplanWitnessTest {
     }
 
     /** Every plan of {@code document} of a form named in {@code vormen}, and of the standing of its channel, in the
-     *  order the rules were built, as text; after a line that holds a term, the term node by node. */
+     *  order of the model, as text; after a line that holds a term, the term node by node. */
     static List<String> plannen(JsonNode document, List<String> vormen) throws ReflectiveOperationException {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
-                .regelplannen()) {
+                .modelplan().regels()) {
             if (vormen.stream().noneMatch(v -> p.naam().equals(v) || p.naam().startsWith(v + ": ")
                     || p.naam().startsWith("kanaalstand " + v + ": ")))
                 continue;

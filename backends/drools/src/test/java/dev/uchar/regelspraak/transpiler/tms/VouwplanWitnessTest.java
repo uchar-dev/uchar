@@ -805,12 +805,12 @@ class VouwplanWitnessTest {
         return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
     }
 
-    /** Every plan of {@code document} of a rule of a fold, in the order the rules were built, as text; after a line that
+    /** Every plan of {@code document} of a rule of a fold, in the order of the model, as text; after a line that
      *  holds a term, the term node by node. */
     static List<String> plannen(JsonNode document) {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
-                .regelplannen()) {
+                .modelplan().regels()) {
             if (!(p.gevolg() instanceof Gevolg.Bijdrage || p.gevolg() instanceof Gevolg.Filterdeponering
                     || p.gevolg() instanceof Gevolg.Filterfout || p.gevolg() instanceof Gevolg.Lidfout))
                 continue;

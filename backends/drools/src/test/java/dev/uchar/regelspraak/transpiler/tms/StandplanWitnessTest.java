@@ -219,12 +219,12 @@ class StandplanWitnessTest {
                 standplannen("jutterswet-premiestaffel"));
     }
 
-    /** Every plan of a standing rule of the golden {@code naam}, in the order the rules were built, as text. */
+    /** Every plan of a standing rule of the golden {@code naam}, in the order of the model, as text. */
     private static List<String> standplannen(String naam) throws Exception {
         JsonNode document = JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
-                .regelplannen()) {
+                .modelplan().regels()) {
             if (!p.naam().startsWith("kenmerkstand ") && !p.naam().startsWith("stand ")
                     && !p.naam().startsWith("padstand "))
                 continue;

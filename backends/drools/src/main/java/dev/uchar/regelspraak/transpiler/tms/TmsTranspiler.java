@@ -52,6 +52,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Leessoort;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
+import dev.uchar.regelspraak.transpiler.tms.plan.Modelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
 import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
@@ -60,11 +61,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Waardeplan;
 
-import org.drools.model.DSL;
-import org.drools.model.Global;
 import org.drools.model.Model;
-import org.drools.model.Rule;
-import org.drools.model.impl.ModelImpl;
 import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
 
@@ -183,6 +180,10 @@ import java.util.function.Supplier;
  * a form creates is read through {@link Koppeling} facts, its input links included ({@link #koppelingregels}), since a
  * created link is in no bean field, and a second distinct filler of a to-one role is a {@link Fout} at the fixpoint.
  * The rule layer stays under truth maintenance throughout: it reads what a creation made as it reads input.
+ *
+ * <p>This class is the analysis: it decides per rule what is read, how, in which order, and what a firing inserts, as
+ * a {@link Regelplan}, and delivers every plan with the globals of the model as one {@link Modelplan}. It builds no part
+ * of the executable model itself; {@link PatternDslWeergave#model} renders the outcome into it ({@link #model}).
  */
 public final class TmsTranspiler {
 
@@ -231,7 +232,7 @@ public final class TmsTranspiler {
      *  that two effective stacks share, reads the contributions already made for it. */
     private final Map<Object, Map<Objecttype, Vouw>> vouwen = new IdentityHashMap<>();
     /** The contribution rules of the folds the lowered forms read, by the fold's key. */
-    private final Map<String, List<Rule>> bijdrageregels = new LinkedHashMap<>();
+    private final Map<String, List<Regelplan>> bijdrageregels = new LinkedHashMap<>();
     private int vouwteller;
     /** While the rules of a fold are built ({@link #vouwVoor}), the binders in scope at the fold, by normalised name:
      *  the rule that reads the fold binds them, its contribution rules do not ({@link Lezingen#buiten}). */
@@ -270,8 +271,6 @@ public final class TmsTranspiler {
     private final List<Linkerkant> linkerkanten = new ArrayList<>();
     /** The planned values the consequences of the lowered rules compute, in the order the rules were lowered. */
     private final List<Waardeplan> waardeplannen = new ArrayList<>();
-    /** The plans of the rules the branch renders whole from their plan, in the order they were built. */
-    private final List<Regelplan> regelplannen = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
@@ -283,12 +282,13 @@ public final class TmsTranspiler {
     /** The producers whose §9.5 channel a lowered condition reads, by the name the channel test spells: each gets the
      *  two rules of its {@link KanaalStand}. */
     private final Set<String> kanalen = new LinkedHashSet<>();
-    /** The parameters a lowered rule reads, as the globals the case runner sets by name. */
-    private final Map<String, Global<?>> globals = new LinkedHashMap<>();
-    /** The global the case runner sets from the case's {@code asOfDate}, the session's evaluation date
-     *  (RUNTIME-SEMANTICS ch. 8.1), read through the {@link Rekendatum} fact; null until a lowered form needs the date,
-     *  so a model whose forms are all always valid and read no context value declares none. */
-    private Global<LocalDate> rekendatumGlobal;
+    /** The parameters a lowered rule reads, as the globals the case runner sets by name: the Java class of each, by
+     *  name, in the order they were first read. */
+    private final Map<String, Class<?>> globals = new LinkedHashMap<>();
+    /** Whether the model declares the global the case runner sets from the case's {@code asOfDate}, the session's
+     *  evaluation date (RUNTIME-SEMANTICS ch. 8.1), read through the {@link Rekendatum} fact: false until a lowered
+     *  form needs the date, so a model whose forms are all always valid and read no context value declares none. */
+    private boolean rekendatumGlobal;
     /** The name of that global, the one the case runner sets for every branch. */
     static final String REKENDATUM = "rekendatum";
     /** The relations a form of the document creates, by normalised fact type name: the connecting relation of an
@@ -307,6 +307,8 @@ public final class TmsTranspiler {
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
      *  two different tests under one id would collapse into the first. */
     private int idSeq;
+    /** The outcome of the analysis, which {@link PatternDslWeergave#model} renders into {@link #model}. */
+    private Modelplan modelplan;
     private Model model0;
     /** The day-kind definitions of the document, each compiled to its predicate over a calendar day where a form first
      *  steps or counts in its day kind ({@link #dagsoortpredikaat}). A definition reads nothing of working memory
@@ -343,7 +345,8 @@ public final class TmsTranspiler {
         Map<Object, List<RolBindingRef>> nav = new IdentityHashMap<>(navigatieBindingen);
         TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(rolBindingen),
                 new IdentityHashMap<>(bronPaden), new EffectieveEenheid(lets));
-        t.model0 = t.run();
+        t.modelplan = t.run();
+        t.model0 = PatternDslWeergave.model(t.modelplan);
         return t;
     }
 
@@ -411,10 +414,10 @@ public final class TmsTranspiler {
      *  apart from the left-hand sides. No consumer reads a plan, so it is no public entry. */
     List<Waardeplan> waardeplannen() { return List.copyOf(waardeplannen); }
 
-    /** The plan of every rule of the branch ({@link Regelplan}), in the order the rules were built, of the forms that
-     *  lowered: since step 1c-C2 of card drl-teksttak-op-truth-maintenance every rule comes whole from its plan, the
-     *  rules of the defaults included. No consumer reads a plan, so it is no public entry. */
-    List<Regelplan> regelplannen() { return List.copyOf(regelplannen); }
+    /** The outcome of the analysis ({@link Modelplan}): the globals the model declares and the plan of every rule of
+     *  the model, in the order of the model, which {@link PatternDslWeergave#model} renders. No consumer reads a plan,
+     *  so it is no public entry. */
+    Modelplan modelplan() { return modelplan; }
 
     /**
      * What stands in {@code sessie} after a fire that reached its fixpoint, read without writing anything on a bean:
@@ -661,7 +664,7 @@ public final class TmsTranspiler {
 
     // ---------------- the model ----------------
 
-    private Model run() {
+    private Modelplan run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
         for (int i = 0; i < model.resolvedRegels.size(); i++) documentplaats.putIfAbsent(model.resolvedRegels.get(i).naam(), i);
@@ -705,7 +708,7 @@ public final class TmsTranspiler {
             effectief = List.of();
             samenstelling = o.getMessage();
         }
-        List<Rule> regels = new ArrayList<>();
+        List<Regelplan> regels = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) regels.addAll(meet("regel", naamOf(r.naam()), () -> regel(r)));
         for (ResolvedConsistentie c : model.consistenties)
             regels.addAll(meet("consistentie", naamOf(c.naam()), () -> consistentieRegels(c)));
@@ -730,18 +733,18 @@ public final class TmsTranspiler {
         // a day-kind definition is no form that fires: the forms that step or count in its day kind compile it where
         // they lower (dagsoortpredikaat), so a definition no form uses is never compiled and refuses nothing
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here
-        for (List<Rule> rs : bijdrageregels.values()) regels.addAll(rs);
+        for (List<Regelplan> rs : bijdrageregels.values()) regels.addAll(rs);
         for (String relatie : gecreeerdeRelaties) regels.addAll(koppelingregels(relatie));
         // a standing is built once per member, for every rule that reads it, and only for one a lowered rule reads: a
         // standing nothing reads would only add firings
-        List<Rule> standen = new ArrayList<>();
+        List<Regelplan> standen = new ArrayList<>();
         for (Padlezing p : padlezingen.values())
             standen.addAll(p.pad().gecreeerd() ? koppelingpadstandregels(p) : padstandregels(p));
         for (Lid lid : gelezen.values()) standen.addAll(lid.kenmerk() ? kenmerkstandregels(lid) : attribuutstandregels(lid));
         for (String producent : kanalen) standen.addAll(kanaalstandregels(producent));
         for (String parameter : globals.keySet()) standen.add(parameterstandregel(parameter));
-        ModelImpl m = new ModelImpl(PKG);
-        if (rekendatumGlobal != null) {
+        List<Modelplan.Globaal> declaraties = new ArrayList<>();
+        if (rekendatumGlobal) {
             // the case runner sets the evaluation date under this name after the parameters, so a parameter of the same
             // Java name would read the date, or the date the parameter
             if (globals.containsKey(REKENDATUM))
@@ -749,16 +752,16 @@ public final class TmsTranspiler {
                         + " de rekendatum leest: de caserunner zet de rekendatum onder die naam, zodat de twee één global"
                         + " delen");
             else {
-                m.addGlobal(rekendatumGlobal);
+                declaraties.add(new Modelplan.Globaal(REKENDATUM, LocalDate.class));
                 standen.add(rekendatumstandregel());
             }
         }
-        globals.values().forEach(m::addGlobal);
-        regels.forEach(m::addRule);
-        standen.forEach(m::addRule);
-        for (Rule r : regels) if (!vormVanRegel.containsKey(r.getName())) regelsZonderVorm.add(r.getName());
-        for (Rule r : standen) regelsZonderVorm.add(r.getName());
-        return m;
+        globals.forEach((naam, klasse) -> declaraties.add(new Modelplan.Globaal(naam, klasse)));
+        for (Regelplan r : regels) if (!vormVanRegel.containsKey(r.naam())) regelsZonderVorm.add(r.naam());
+        for (Regelplan r : standen) regelsZonderVorm.add(r.naam());
+        List<Regelplan> plannen = new ArrayList<>(regels);
+        plannen.addAll(standen);
+        return new Modelplan(declaraties, plannen);
     }
 
     /** A form's name as the manifest shows it; a nameless form (WF-107 refuses it) still gets an entry. */
@@ -767,19 +770,18 @@ public final class TmsTranspiler {
     }
 
     /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
-    private List<Rule> meet(String soort, String naam, Supplier<List<Rule>> bouw) {
+    private List<Regelplan> meet(String soort, String naam, Supplier<List<Regelplan>> bouw) {
         vorm = naam;
-        int plannen = linkerkanten.size(), waarden = waardeplannen.size(), regels = regelplannen.size();
+        int plannen = linkerkanten.size(), waarden = waardeplannen.size();
         try {
-            List<Rule> rules = bouw.get();
+            List<Regelplan> regels = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
-            for (Rule r : rules) vormVanRegel.put(r.getName(), naam);
-            return rules;
+            for (Regelplan r : regels) vormVanRegel.put(r.naam(), naam);
+            return regels;
         } catch (Weigering w) {
             // a refused form leaves no rule, so the plans it made go as well
             linkerkanten.subList(plannen, linkerkanten.size()).clear();
             waardeplannen.subList(waarden, waardeplannen.size()).clear();
-            regelplannen.subList(regels, regelplannen.size()).clear();
             weiger(soort, naam, w.getMessage());
             return List.of();
         }
@@ -798,7 +800,7 @@ public final class TmsTranspiler {
 
     // ---------------- a rule ----------------
 
-    private List<Rule> regel(ResolvedRegel r) {
+    private List<Regelplan> regel(ResolvedRegel r) {
         // the rule of a form is named by the form, and a KieBase keeps one rule per name
         if (r.naam() == null) throw new Weigering("een regel zonder naam (WF-107)");
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null || doel.attribuut() == null)
@@ -806,12 +808,12 @@ public final class TmsTranspiler {
         if (navigatieBindingen.containsKey(doel)) throw new Weigering("een regel op een genavigeerd doel");
         // a version with a bounded validity gates on the evaluation date: its rules bind the date where the window
         // admits it (Lezingen.geldig), and beside them a rule faults the session that carries no date
-        List<Rule> uit = new ArrayList<>(switch (r.soort()) {
+        List<Regelplan> uit = new ArrayList<>(switch (r.soort()) {
             case KENMERKTOEKENNING -> kenmerkRegel(r, doel);
             case GELIJKSTELLING, BEREKENING -> rekenRegel(r, doel);
             case INITIALISATIE -> initialisatieRegel(r, doel);
         });
-        Rule zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(r.naam()), r.naam(), r.geldigheid());
+        Regelplan zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(r.naam()), r.naam(), r.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
@@ -824,30 +826,29 @@ public final class TmsTranspiler {
      * the date is, and like every evaluation fault it counts where it stands at the fixpoint. Null for a form that is
      * always valid, which needs no date.
      */
-    private Rule geldigheidsfout(String regelnaam, String vorm, Geldigheid g) {
+    private Regelplan geldigheidsfout(String regelnaam, String vorm, Geldigheid g) {
         if (g == null || g.altijd()) return null;
-        rekendatumGlobal();
+        rekendatumNodig();
         Alfa zonderDatum = new Alfa(id("geen-rekendatum"),
                 List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.LEEG, null)));
-        return weergeef(new Regelplan(regelnaam + ": geen rekendatum", this.vorm, null, new Leestabel(List.of()),
+        return new Regelplan(regelnaam + ": geen rekendatum", this.vorm, null, new Leestabel(List.of()),
                 List.of(new Patroon(Rekendatum.class, "$rekendatum", List.of(zonderDatum), List.of(), List.of())),
                 new Gevolg.Fout("$rekendatum", Rekenfout.GELDIGHEID_ZONDER_DATUM, new Gevolg.Foutnaam(vorm, regelnaam),
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
     }
 
-    /** The global of the evaluation date, declared the first time a lowered form needs the date. */
-    private Global<LocalDate> rekendatumGlobal() {
-        if (rekendatumGlobal == null) rekendatumGlobal = DSL.globalOf(LocalDate.class, PKG, REKENDATUM);
-        return rekendatumGlobal;
+    /** Declares the global of the evaluation date, the first time a lowered form needs the date. */
+    private void rekendatumNodig() {
+        rekendatumGlobal = true;
     }
 
     /** The rule that puts the session's {@link Rekendatum} in working memory, from the global the case runner sets
      *  where the case carries an {@code asOfDate} and leaves unset, null, where it carries none. Like a parameter's
      *  standing ({@link #parameterstandregel}) it matches no fact and fires once per session; the global does not
      *  change while the session fires. */
-    private Rule rekendatumstandregel() {
-        return weergeef(new Regelplan("rekendatumstand", null, null, new Leestabel(List.of()), List.of(),
-                new Gevolg.Rekendatumstand(REKENDATUM, Gevolg.Invoeging.LOGISCH)));
+    private Regelplan rekendatumstandregel() {
+        return new Regelplan("rekendatumstand", null, null, new Leestabel(List.of()), List.of(),
+                new Gevolg.Rekendatumstand(REKENDATUM, Gevolg.Invoeging.LOGISCH));
     }
 
     /**
@@ -857,7 +858,7 @@ public final class TmsTranspiler {
      * later retracted takes the characteristic with it, also when the condition read it negated. Beside it, where the
      * condition can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
-    private List<Rule> kenmerkRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Regelplan> kenmerkRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         // the loader refuses any other value (WF-022); asked again because this rule writes true whatever it says
         if (!(r.waarde() instanceof Expr.Literal l && "waar".equals(l.waarde()) && l.type() instanceof Datatype.Booleaan))
             throw new Weigering("een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
@@ -877,11 +878,11 @@ public final class TmsTranspiler {
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
         String regelnaam = model.geëmitteerdeRegelNaam(r.naam());
-        List<Rule> uit = new ArrayList<>();
-        uit.add(weergeef(lez.regelplan(regelnaam, items,
-                new Gevolg.Kenmerk(ONDERWERP, sleutel, Gevolg.Invoeging.LOGISCH))));
+        List<Regelplan> uit = new ArrayList<>();
+        uit.add(lez.regelplan(regelnaam, items,
+                new Gevolg.Kenmerk(ONDERWERP, sleutel, Gevolg.Invoeging.LOGISCH)));
         if (kanFalen) uit.add(voorwaardefoutregel(r.naam(), regelnaam, nieuw, r.voorwaarde(), null));
-        Rule deponering = deponeerregel(r.naam(), regelnaam, nieuw, r.voorwaarde(), null);
+        Regelplan deponering = deponeerregel(r.naam(), regelnaam, nieuw, r.voorwaarde(), null);
         if (deponering != null) uit.add(deponering);
         return uit;
     }
@@ -914,7 +915,7 @@ public final class TmsTranspiler {
      * displaces that value as it displaces case input, and outside the standing domain a computed leeg erases it, as in
      * the reference interpreter, which overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
      */
-    private List<Rule> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Regelplan> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         if (gedeclareerd(doel.objecttype(), doel.attribuut(), false).tijd() != null) return tijdlijnregel(r, doel);
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
@@ -940,7 +941,7 @@ public final class TmsTranspiler {
      * gating the rule on the evaluation date (ch. 3.10), as the DRL-text branch refuses it; golden
      * {@code jutterswet-pachtvenster} has it.
      */
-    private List<Rule> tijdlijnregel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Regelplan> tijdlijnregel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = tijdlid(doel.objecttype(), doel.attribuut(), false, "een tijdsafhankelijk doel");
         List<String> anderen = andereSchrijvers(r, doel.objecttype(), lid.sleutel());
         if (!anderen.isEmpty())
@@ -1149,7 +1150,7 @@ public final class TmsTranspiler {
      * initialisation beside another writer stays refused, with the predicate of a division in a default
      * ({@code TmsInitialisatieWitnessTest}). Without another writer nothing displaces it and the division stays carried.
      */
-    private List<Rule> initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Regelplan> initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid tijd = gedeclareerd(doel.objecttype(), doel.attribuut(), false);
         if (tijd.tijd() != null)
             throw new Weigering("een initialisatie van het tijdsafhankelijke attribuut '" + tijd.naam() + "' van "
@@ -1224,9 +1225,9 @@ public final class TmsTranspiler {
      * match: an effective stack writes the target there ({@link #geabsorbeerd}). Beside it, where the condition can
      * fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
-    private List<Rule> schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
-                                    Function<Lezingen, List<LhsItem>> blokkade, Set<Class<?>> geabsorbeerd,
-                                    boolean schrijftLeeg) {
+    private List<Regelplan> schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
+                                         Function<Lezingen, List<LhsItem>> blokkade, Set<Class<?>> geabsorbeerd,
+                                         boolean schrijftLeeg) {
         ElementSleutel sleutel = lid.sleutel();
         Supplier<Lezingen> nieuw = () -> lezingen(subject, geabsorbeerd).geldig(r.geldigheid());
         Lezingen lez = nieuw.get();
@@ -1252,10 +1253,10 @@ public final class TmsTranspiler {
                 Gevolg.Invoeging.LOGISCH);
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
-        List<Rule> uit = new ArrayList<>();
-        uit.add(weergeef(lez.regelplan(regelnaam, items, gevolg)));
+        List<Regelplan> uit = new ArrayList<>();
+        uit.add(lez.regelplan(regelnaam, items, gevolg));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade));
-        Rule deponering = deponeerregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade);
+        Regelplan deponering = deponeerregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade);
         if (deponering != null) uit.add(deponering);
         return uit;
     }
@@ -1278,8 +1279,8 @@ public final class TmsTranspiler {
      * whose guard a written leeg leaves open (ch. 5.4). An initialisation beside a standing rule needs none: its guard
      * keeps it from standing beside the rule's value, and the rule writes nothing for a computed leeg.
      */
-    private List<Rule> verschilregels() {
-        List<Rule> uit = new ArrayList<>();
+    private List<Regelplan> verschilregels() {
+        List<Regelplan> uit = new ArrayList<>();
         for (Map.Entry<ElementSleutel, List<ResolvedRegel>> e : rekenregels.entrySet()) {
             Lid lid = afgeleid.get(e.getKey());
             // no writer of the attribute was lowered: the manifest names the refused forms, and the build fails on them
@@ -1299,13 +1300,13 @@ public final class TmsTranspiler {
      * goes again when a writer's condition or value changes, and the session reports the differences that stand at its
      * fixpoint, as it reports every evaluation fault ({@link #zetAfgeleideWaarden}).
      */
-    private Rule verschilregel(Lid lid) {
+    private Regelplan verschilregel(Lid lid) {
         ElementSleutel sleutel = lid.sleutel();
         Alfa vanDoel = gelijk(id("waarde"), "attribuut", sleutel);
         Join opOnderwerp = new Join(id("waarde-onderwerp"), "onderwerp", ONDERWERP);
         Toetsitem verschil = new Toetsitem(id("verschil"), Toetsitem.Rol.VORM,
                 new Term.Aanroep(Functie.VERSCHILLEN, List.of(new Term.Lees(0, null)), null), -1, List.of(0), 1);
-        return weergeef(new Regelplan("schrijvers " + lid.declarant().naam + "." + lid.naam() + ": verschil", null, null,
+        return new Regelplan("schrijvers " + lid.declarant().naam + "." + lid.naam() + ": verschil", null, null,
                 new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, Leessoort.WAARDEN,
                         "waarden", "$waarden"))),
                 List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()),
@@ -1313,7 +1314,7 @@ public final class TmsTranspiler {
                                 List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, "$waarden"))),
                         verschil),
                 new Gevolg.Schrijversconflict(ONDERWERP, 0, sleutel, lid.naam(), documentplaats, typeNamen,
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
     }
 
     // ---------------- an evaluation fault in a condition ----------------
@@ -1332,8 +1333,8 @@ public final class TmsTranspiler {
      * reaches a fold whose filter faulted for a member ({@link #vouw}); the filter itself inserts no fault
      * ({@link #filterfoutregel}).
      */
-    private Rule voorwaardefoutregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                                     Function<Lezingen, List<LhsItem>> blokkade) {
+    private Regelplan voorwaardefoutregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
+                                          Function<Lezingen, List<LhsItem>> blokkade) {
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Term toets = voorwaarde(c, lez);
@@ -1343,7 +1344,7 @@ public final class TmsTranspiler {
         Gevolg fout = new Gevolg.Toetsfout(ONDERWERP, toets, Toetsitem.Rol.FOUT, List.copyOf(gelezen), lez.grootte(),
                 new Gevolg.Foutnaam(vorm, model.geëmitteerdeRegelNaam(vorm)), Gevolg.Invoeging.LOGISCH);
         lez.vastleggen();
-        return weergeef(lez.regelplan(regelnaam + ": fout in de voorwaarde", items, fout));
+        return lez.regelplan(regelnaam + ": fout in de voorwaarde", items, fout);
     }
 
     /** The role of the test of a condition in the rule of its form: where the condition can fault it is tested without
@@ -1362,8 +1363,8 @@ public final class TmsTranspiler {
      * inserts the deposit logically under the form and the subject; it goes when a read it rested on changes. Null where
      * {@code c} holds no division and no root.
      */
-    private Rule deponeerregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                               Function<Lezingen, List<LhsItem>> blokkade) {
+    private Regelplan deponeerregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
+                                    Function<Lezingen, List<LhsItem>> blokkade) {
         if (!deponeert(c)) return null;
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
@@ -1374,8 +1375,8 @@ public final class TmsTranspiler {
         List<LhsItem> items = lez.plan(Toetsitem.Rol.DEPONERING, toets, gelezen, c);
         if (blokkade != null) items.addAll(blokkade.apply(lez));
         lez.vastleggen();
-        return weergeef(lez.regelplan(regelnaam + ": deponering in de voorwaarde", items,
-                new Gevolg.Inconsistentie(ONDERWERP, vorm, Gevolg.Invoeging.LOGISCH)));
+        return lez.regelplan(regelnaam + ": deponering in de voorwaarde", items,
+                new Gevolg.Inconsistentie(ONDERWERP, vorm, Gevolg.Invoeging.LOGISCH));
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -1393,7 +1394,7 @@ public final class TmsTranspiler {
      * instead and never withdrew one, which reaches the same fixpoint. An assertion that faults is no violation: beside
      * the rule, where the assertion can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
-    private List<Rule> consistentieRegels(ResolvedConsistentie c) {
+    private List<Regelplan> consistentieRegels(ResolvedConsistentie c) {
         // the rule is named by the form, and the channel test reads the error facts by that name
         if (c.naam() == null) throw new Weigering("een consistentie zonder naam (WF-107)");
         if (c.subject() == null || c.assertie() == null) throw new Weigering("een consistentie zonder subject of assertie");
@@ -1407,19 +1408,19 @@ public final class TmsTranspiler {
         List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), geschonden, gelezen, c.assertie());
         String naam = c.naam();
         lez.vastleggen();
-        List<Rule> uit = new ArrayList<>();
-        uit.add(weergeef(lez.regelplan(model.geëmitteerdeRegelNaam(naam), items,
-                new Gevolg.Inconsistentie(ONDERWERP, naam, Gevolg.Invoeging.LOGISCH))));
+        List<Regelplan> uit = new ArrayList<>();
+        uit.add(lez.regelplan(model.geëmitteerdeRegelNaam(naam), items,
+                new Gevolg.Inconsistentie(ONDERWERP, naam, Gevolg.Invoeging.LOGISCH)));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null));
-        Rule deponering = deponeerregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null);
+        Regelplan deponering = deponeerregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null);
         if (deponering != null) uit.add(deponering);
-        Rule zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(naam), naam, c.geldigheid());
+        Regelplan zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(naam), naam, c.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
 
     /** A uniqueness over one source (RUNTIME-SEMANTICS ch. 5.9), unscoped or scoped by a parent ({@link #uniciteitsregels}). */
-    private List<Rule> uniciteitRegels(ResolvedUniciteit u) {
+    private List<Regelplan> uniciteitRegels(ResolvedUniciteit u) {
         if (u.subject() == null || u.sleutels().isEmpty()) throw new Weigering("een Uniqueness zonder bron of sleutel");
         return uniciteitsregels(u.naam(), List.of(new ResolvedUniciteitUnie.Bron(u.subject(), u.sleutels())),
                 u.scopeRol(), u.geldigheid());
@@ -1427,7 +1428,7 @@ public final class TmsTranspiler {
 
     /** A uniqueness over two or more sources, the union of ch. 5.9, rule 1: one key domain, compared position by
      *  position, so every source carries as many keys (WF-030); a union has no scope (rule 3). */
-    private List<Rule> uniciteitUnieRegels(ResolvedUniciteitUnie u) {
+    private List<Regelplan> uniciteitUnieRegels(ResolvedUniciteitUnie u) {
         if (u.bronnen().size() < 2)
             throw new Weigering("een Uniqueness over meer bronnen met " + u.bronnen().size() + " bron: een unie draagt er"
                     + " ten minste twee (WF-030)");
@@ -1455,15 +1456,15 @@ public final class TmsTranspiler {
      * where they ever carried one value, and an instance whose key the case gives as the asOfDate-bucket scalar faults
      * ({@link #sleutelvormregel}, ch. 8.4). A scope over a relation a form creates is refused.
      */
-    private List<Rule> uniciteitsregels(String naam, List<ResolvedUniciteitUnie.Bron> bronnen, RolBindingRef scopeRol,
-                                        Geldigheid geldigheid) {
+    private List<Regelplan> uniciteitsregels(String naam, List<ResolvedUniciteitUnie.Bron> bronnen,
+                                             RolBindingRef scopeRol, Geldigheid geldigheid) {
         // the rules are named by the form, and the channel test reads the error facts by that name
         if (naam == null) throw new Weigering("een Uniqueness zonder naam (WF-107)");
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        List<Rule> uit = new ArrayList<>();
+        List<Regelplan> uit = new ArrayList<>();
         for (int b = 0; b < bronnen.size(); b++) {
             uit.add(sleutelregel(naam, regelnaam, b, bronnen.get(b), scopeRol, geldigheid));
-            Rule vorm = sleutelvormregel(naam, regelnaam, b, bronnen.get(b), geldigheid);
+            Regelplan vorm = sleutelvormregel(naam, regelnaam, b, bronnen.get(b), geldigheid);
             if (vorm != null) uit.add(vorm);
         }
         Patroon sleutel = new Patroon(Uniciteitssleutel.class, "$sleutel", List.of(gelijk(id("uniciteit"), "uniciteit",
@@ -1477,13 +1478,13 @@ public final class TmsTranspiler {
                 Leessoort.BOTSINGEN, "botsingen", "$botsingen")));
         Toetsitem dubbel = new Toetsitem(id("dubbel"), Toetsitem.Rol.VORM,
                 new Term.Aanroep(Functie.DUBBEL, List.of(new Term.Lees(0, null)), null), -1, List.of(0), 1);
-        uit.add(weergeef(new Regelplan(regelnaam, vorm, null, tabel, List.of(sleutel, botsingen, dubbel),
-                new Gevolg.Uniciteitsschending("$element", naam, Gevolg.Invoeging.LOGISCH))));
+        uit.add(new Regelplan(regelnaam, vorm, null, tabel, List.of(sleutel, botsingen, dubbel),
+                new Gevolg.Uniciteitsschending("$element", naam, Gevolg.Invoeging.LOGISCH)));
         Patroon schending = new Patroon(Uniciteitsschending.class, "$schending", List.of(gelijk(id("schending"),
                 "uniciteit", naam)), List.of(), List.of(Binding.van("$subject", Uniciteitsschending.class, "element")));
-        uit.add(weergeef(new Regelplan(regelnaam + ": kanaal", vorm, null, new Leestabel(List.of()),
-                List.of(schending), new Gevolg.Inconsistentie("$subject", naam, Gevolg.Invoeging.LOGISCH))));
-        Rule zonderDatum = geldigheidsfout(regelnaam, naam, geldigheid);
+        uit.add(new Regelplan(regelnaam + ": kanaal", vorm, null, new Leestabel(List.of()),
+                List.of(schending), new Gevolg.Inconsistentie("$subject", naam, Gevolg.Invoeging.LOGISCH)));
+        Regelplan zonderDatum = geldigheidsfout(regelnaam, naam, geldigheid);
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
@@ -1500,8 +1501,8 @@ public final class TmsTranspiler {
      *  runtime's {@code rsOoitWaarden}: without trailing zeros and once each, so an instance whose timeline carries one
      *  value in two segments claims it once and does not duplicate against itself. A key has at most one component on a
      *  timeline, as the reference interpreter refuses more: the same-moment join of two has no corpus case. */
-    private Rule sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron, RolBindingRef scopeRol,
-                              Geldigheid geldigheid) {
+    private Regelplan sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron,
+                                   RolBindingRef scopeRol, Geldigheid geldigheid) {
         Objecttype type = bron.type();
         Lezingen lez = new Lezingen(type).geldig(geldigheid);
         Set<Integer> gelezen = lez.volg();
@@ -1544,9 +1545,9 @@ public final class TmsTranspiler {
                     : component);
         }
         lez.vastleggen();
-        return weergeef(lez.regelplan(regelnaam + ": sleutel van " + type.naam + " " + (b + 1), items,
+        return lez.regelplan(regelnaam + ": sleutel van " + type.naam + " " + (b + 1), items,
                 new Gevolg.Uniciteitssleutel(ONDERWERP, naam, b, componenten, tijdlijn, scope, List.copyOf(gelezen),
-                        lez.grootte(), Gevolg.Invoeging.LOGISCH)));
+                        lez.grootte(), Gevolg.Invoeging.LOGISCH));
     }
 
     /**
@@ -1561,8 +1562,8 @@ public final class TmsTranspiler {
      * interpreter builds a row's tuples component by component and stops at an empty one, so an empty component before
      * the timeline leaves the timeline unread. Null for a key without a component on a timeline.
      */
-    private Rule sleutelvormregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron,
-                                  Geldigheid geldigheid) {
+    private Regelplan sleutelvormregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron,
+                                       Geldigheid geldigheid) {
         Objecttype type = bron.type();
         int positie = -1;
         for (int i = 0; i < bron.sleutels().size() && positie < 0; i++)
@@ -1581,10 +1582,10 @@ public final class TmsTranspiler {
         emmer.add(emmerscalair(tijdlijn, true));
         List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(emmer), gelezen, null);
         lez.vastleggen();
-        return weergeef(lez.regelplan(regelnaam + ": sleutelvorm van " + type.naam + " " + (b + 1), items,
+        return lez.regelplan(regelnaam + ": sleutelvorm van " + type.naam + " " + (b + 1), items,
                 new Gevolg.Invoervormfout(ONDERWERP, "the ever-unique key \"" + tijdlid.naam()
                         + "\" needs the full timeline; ", " supplies only a scalar (ch. 5.9)",
-                        new Gevolg.Foutnaam(naam, regelnaam), Gevolg.Invoeging.LOGISCH)));
+                        new Gevolg.Foutnaam(naam, regelnaam), Gevolg.Invoeging.LOGISCH));
     }
 
     /**
@@ -1673,7 +1674,7 @@ public final class TmsTranspiler {
      * carries the negation over the channel, so a condition that reads it, in either polarity, binds the standing as a
      * positive pattern.
      */
-    private List<Rule> kanaalstandregels(String producent) {
+    private List<Regelplan> kanaalstandregels(String producent) {
         // the class the fact model generates for the inconsistency is data of the plan, by which a rendering names it
         Class<?> klasse;
         try {
@@ -1684,13 +1685,13 @@ public final class TmsTranspiler {
         String naam = "kanaalstand " + producent + ": ";
         Patroon fout = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
                 List.of(), List.of());
-        Rule inconsistent = weergeef(new Regelplan(naam + "inconsistent", null, null, new Leestabel(List.of()),
+        Regelplan inconsistent = new Regelplan(naam + "inconsistent", null, null, new Leestabel(List.of()),
                 List.of(new Bestaat(List.of(fout), List.of(fout.naam()), List.of())),
-                new Gevolg.Kanaalstand(producent, true, Gevolg.Invoeging.LOGISCH)));
+                new Gevolg.Kanaalstand(producent, true, Gevolg.Invoeging.LOGISCH));
         Patroon geen = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
                 List.of(), List.of());
-        Rule consistent = weergeef(new Regelplan(naam + "consistent", null, null, new Leestabel(List.of()),
-                List.of(new Niet(geen)), new Gevolg.Kanaalstand(producent, false, Gevolg.Invoeging.LOGISCH)));
+        Regelplan consistent = new Regelplan(naam + "consistent", null, null, new Leestabel(List.of()),
+                List.of(new Niet(geen)), new Gevolg.Kanaalstand(producent, false, Gevolg.Invoeging.LOGISCH));
         return List.of(inconsistent, consistent);
     }
 
@@ -1722,7 +1723,7 @@ public final class TmsTranspiler {
      * are ill-formed (WF-026), so is a defaults group beside an allocation (WF-050), and a rule beside one, a computing
      * rule or an initialisation, this branch does not carry yet.
      */
-    private List<Rule> verdeling(ResolvedVerdeling v) {
+    private List<Regelplan> verdeling(ResolvedVerdeling v) {
         String naam = v.naam();
         // the rules of a form are named by the form, and the deposits and shares carry that name
         if (naam == null) throw new Weigering("een verdeling zonder naam (WF-107)");
@@ -1755,7 +1756,7 @@ public final class TmsTranspiler {
         if (rest != null) verdelingsschrijvers(v, bron, rest);
 
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        List<Rule> uit = new ArrayList<>();
+        List<Regelplan> uit = new ArrayList<>();
 
         // per source and recipient: the recipient's values, bound in this rule's left-hand side, after the source
         Consumer<Lezingen> bereik = ontvangersjoin(rb, bron, doel, naam);
@@ -1769,8 +1770,8 @@ public final class TmsTranspiler {
         int m = maximum == null ? -1 : lid.eigen(maximum);
         List<LhsItem> lidregel = lid.plan(Toetsitem.Rol.VOORWAARDE, null, Set.of(), null);
         lid.vastleggen();
-        uit.add(weergeef(lid.regelplan(regelnaam + ": ontvanger", lidregel,
-                new Gevolg.Ontvanger(VOUWONDERWERP, naam, ontvanger, g, k, m, Gevolg.Invoeging.LOGISCH))));
+        uit.add(lid.regelplan(regelnaam + ": ontvanger", lidregel,
+                new Gevolg.Ontvanger(VOUWONDERWERP, naam, ontvanger, g, k, m, Gevolg.Invoeging.LOGISCH)));
 
         // per source: the condition, the pot and the list of recipients, and the distribution computed from them
         Supplier<Lezingen> nieuw = () -> new Lezingen(bron).geldig(v.geldigheid());
@@ -1784,15 +1785,15 @@ public final class TmsTranspiler {
         List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, v.voorwaarde());
         ElementSleutel aandeelSleutel = aandeel.sleutel(), restSleutel = rest == null ? null : rest.sleutel();
         lez.vastleggen();
-        uit.add(weergeef(lez.regelplan(regelnaam, items, new Gevolg.Uitdeling(ONDERWERP, naam, methode, p, lijst,
+        uit.add(lez.regelplan(regelnaam, items, new Gevolg.Uitdeling(ONDERWERP, naam, methode, p, lijst,
                 gewicht != null, maximum != null, v.afnemend(), v.afrondingDecimalen(), aandeelSleutel, restSleutel,
-                naam, Gevolg.Invoeging.LOGISCH))));
+                naam, Gevolg.Invoeging.LOGISCH)));
         afgeleid.put(aandeelSleutel, aandeel);
         if (rest != null) afgeleid.put(restSleutel, rest);
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, v.voorwaarde(), null));
-        Rule deponering = deponeerregel(naam, regelnaam, nieuw, v.voorwaarde(), null);
+        Regelplan deponering = deponeerregel(naam, regelnaam, nieuw, v.voorwaarde(), null);
         if (deponering != null) uit.add(deponering);
-        Rule zonderDatum = geldigheidsfout(regelnaam, naam, v.geldigheid());
+        Regelplan zonderDatum = geldigheidsfout(regelnaam, naam, v.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
@@ -1928,7 +1929,7 @@ public final class TmsTranspiler {
      * fault rule is an ordinary rule of the rule layer, without the marks and without the 1:1 guard: the reference
      * interpreter evaluates the condition first, in every pass.
      */
-    private List<Rule> objectCreatie(ResolvedObjectCreatie oc) {
+    private List<Regelplan> objectCreatie(ResolvedObjectCreatie oc) {
         if (oc.naam() == null) throw new Weigering("een objectcreatie zonder naam (WF-107)");
         Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
         if (nieuw == null || subject == null) throw new Weigering("een objectcreatie zonder opgelost type");
@@ -2023,12 +2024,12 @@ public final class TmsTranspiler {
         lez.vastleggen();
         creatieregels.add(regelnaam);
         creatiestrata.add(stratum);
-        List<Rule> uit = new ArrayList<>();
-        uit.add(weergeef(lez.regelplan(regelnaam, OBJECTCREATIE, items, creatie)));
+        List<Regelplan> uit = new ArrayList<>();
+        uit.add(lez.regelplan(regelnaam, OBJECTCREATIE, items, creatie));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null));
-        Rule deponering = deponeerregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null);
+        Regelplan deponering = deponeerregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null);
         if (deponering != null) uit.add(deponering);
-        Rule zonderDatum = geldigheidsfout(regelnaam, naam, oc.geldigheid());
+        Regelplan zonderDatum = geldigheidsfout(regelnaam, naam, oc.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
@@ -2117,7 +2118,7 @@ public final class TmsTranspiler {
      * condition, filters the targets instead (ch. 5.5, WF-109); hosted on the target anywhere else it is refused, as the
      * other branches refuse it. A second distinct filler of a to-one role is a fault ({@link #koppelingregels}).
      */
-    private List<Rule> feitCreatie(ResolvedFeitCreatie fc) {
+    private List<Regelplan> feitCreatie(ResolvedFeitCreatie fc) {
         if (fc.naam() == null) throw new Weigering("een feitcreatie zonder naam (WF-107)");
         Objecttype anker = fc.anker(), doel = fc.doel();
         if (anker == null || doel == null || fc.feittype() == null || fc.joinRol() == null || fc.ankerRol() == null)
@@ -2175,12 +2176,12 @@ public final class TmsTranspiler {
         lez.vastleggen();
         creatieregels.add(regelnaam);
         creatiestrata.add(stratum);
-        List<Rule> uit = new ArrayList<>();
-        uit.add(weergeef(lez.regelplan(regelnaam, FEITCREATIE, items, koppeling)));
+        List<Regelplan> uit = new ArrayList<>();
+        uit.add(lez.regelplan(regelnaam, FEITCREATIE, items, koppeling));
         if (kanFalen) uit.add(voorwaardefoutregel(fc.naam(), regelnaam, nieuw, ankerguard, null));
-        Rule deponering = deponeerregel(fc.naam(), regelnaam, nieuw, ankerguard, null);
+        Regelplan deponering = deponeerregel(fc.naam(), regelnaam, nieuw, ankerguard, null);
         if (deponering != null) uit.add(deponering);
-        Rule zonderDatum = geldigheidsfout(regelnaam, fc.naam(), fc.geldigheid());
+        Regelplan zonderDatum = geldigheidsfout(regelnaam, fc.naam(), fc.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
@@ -2264,13 +2265,13 @@ public final class TmsTranspiler {
      * filler of it: one object filling the other role with two links to different objects, the fault of ch. 5.5,
      * never an overwrite.
      */
-    private List<Rule> koppelingregels(String relatie) {
+    private List<Regelplan> koppelingregels(String relatie) {
         RegelSpraakModel.Feittype ft = feittype(relatie);
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig) return List.of();
         RegelSpraakModel.Rol r0 = ft.rollen.get(0), r1 = ft.rollen.get(1);
         Objecttype t0 = model.objecttypeOpNaam(r0.objecttypeNaam()), t1 = model.objecttypeOpNaam(r1.objecttypeNaam());
         if (t0 == null || t1 == null) return List.of();
-        List<Rule> uit = new ArrayList<>();
+        List<Regelplan> uit = new ArrayList<>();
         if (!r1.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t0, r1.naam(), t1))
             uit.add(invoerkoppeling(relatie, t0, r1.naam(), true));
         if (!r0.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t1, r0.naam(), t0))
@@ -2283,20 +2284,20 @@ public final class TmsTranspiler {
     /** The links of {@code relatie} the reference field {@code veld} of the beans of {@code houder} carries, the holder
      *  being the link's first end where {@code houderIsEerste}: a rule of no form, whose subject is the holder and whose
      *  link has phase 0, the input's. */
-    private Rule invoerkoppeling(String relatie, Objecttype houder, String veld, boolean houderIsEerste) {
+    private Regelplan invoerkoppeling(String relatie, Objecttype houder, String veld, boolean houderIsEerste) {
         Class<?> klasse = bonenklasse(houder);
         Onderwerp h = new Onderwerp(klasse, "$houder", List.of(new Alfa(id("koppeling-invoer"),
                 List.of(new Alfa.Veldtoets(veld, Alfa.Vergelijker.GEVULD, null)))), List.of(),
                 List.of(Binding.van("$ander", klasse, veld)));
-        return weergeef(new Regelplan("koppeling " + relatie + " uit de invoer: " + houder.naam + "." + veld, null, null,
+        return new Regelplan("koppeling " + relatie + " uit de invoer: " + houder.naam + "." + veld, null, null,
                 new Leestabel(List.of()), List.of(h), new Gevolg.Koppeling(relatie, houderIsEerste ? "$houder" : "$ander",
-                houderIsEerste ? "$ander" : "$houder", -1, Gevolg.Invoeging.LOGISCH)));
+                houderIsEerste ? "$ander" : "$houder", -1, Gevolg.Invoeging.LOGISCH));
     }
 
     /** The fault of two links of {@code relatie} from one object to two different fillers of the to-one role
      *  {@code rol}: the near object is the links' first end where {@code nabijIsEerste}. */
-    private Rule tweedeVulling(RegelSpraakModel.Feittype ft, String relatie, boolean nabijIsEerste, String rol,
-                               Objecttype nabijType) {
+    private Regelplan tweedeVulling(RegelSpraakModel.Feittype ft, String relatie, boolean nabijIsEerste, String rol,
+                                    Objecttype nabijType) {
         String nabijeinde = nabijIsEerste ? "eerste" : "tweede", vereinde = nabijIsEerste ? "tweede" : "eerste";
         String zin = "de naar-één-rol \"" + rol + "\" van een " + nabijType.naam + " heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
@@ -2308,9 +2309,9 @@ public final class TmsTranspiler {
                 List.of(new Betatoets(id("tweede-vulling-ander"), Functie.ANDERE_VULLING, "$een",
                         List.of(constante(vereinde)))),
                 List.of());
-        return weergeef(new Regelplan("koppeling " + relatie + ": tweede vulling van " + rol, null, null,
+        return new Regelplan("koppeling " + relatie + ": tweede vulling van " + rol, null, null,
                 new Leestabel(List.of()), List.of(een, twee),
-                new Gevolg.TweedeVulling("$nabij", ft.naam, zin, Gevolg.Invoeging.LOGISCH)));
+                new Gevolg.TweedeVulling("$nabij", ft.naam, zin, Gevolg.Invoeging.LOGISCH));
     }
 
     // ---------------- prioritized defaults ----------------
@@ -2370,7 +2371,7 @@ public final class TmsTranspiler {
      * without a justification; a target on a timeline or with dimensions through {@link #lid}. Refused besides: a
      * division anywhere in a default ({@link #deling(Conditie, Expr)}).
      */
-    private List<Rule> stapelregels(Stapels.Stapel st) {
+    private List<Regelplan> stapelregels(Stapels.Stapel st) {
         PrioritizedDefaults l0 = st.leden().get(0);
         Objecttype eigenaar = st.eigenaar();
         boolean kenmerk = l0.isKenmerk();
@@ -2390,7 +2391,7 @@ public final class TmsTranspiler {
             wortel.add(keten(b, st.leden().get(m).defaults(), m, null, eigenaar, List.of(),
                     st.leden().size() == 1 ? "" : m + ":", st.leden().get(m).geldigheid()));
         boolean algemeen = wortel.size() > 1 || wortel.stream().flatMap(List::stream).anyMatch(Knoop::heeftLeden);
-        List<Rule> regels = new ArrayList<>(algemeen ? algemeneVorm(b, wortel) : eenvoudigeVorm(b, wortel.get(0)));
+        List<Regelplan> regels = new ArrayList<>(algemeen ? algemeneVorm(b, wortel) : eenvoudigeVorm(b, wortel.get(0)));
         if (st.leden().stream().anyMatch(l -> l.geldigheid() != null && !l.geldigheid().altijd()))
             regels.add(stapelGeldigheidsfout(b));
         // registered only once every default of the stack lowered, as a single rule registers its reads
@@ -2404,17 +2405,17 @@ public final class TmsTranspiler {
      *  date, where a group of the stack has a dated validity: the reference interpreter asks the validity of a group when
      *  it evaluates the stack on an object, and faults there (RUNTIME-SEMANTICS ch. 8.1), so an owner without objects
      *  faults nothing. */
-    private Rule stapelGeldigheidsfout(Stapelbouw b) {
-        rekendatumGlobal();
+    private Regelplan stapelGeldigheidsfout(Stapelbouw b) {
+        rekendatumNodig();
         String naam = b.naam;
         Alfa concreet = concreetType(b.klasse);
         Alfa zonderDatum = new Alfa(id("geen-rekendatum"),
                 List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.LEEG, null)));
-        return weergeef(new Regelplan(naam + ": geen rekendatum", vorm, null, new Leestabel(List.of()),
+        return new Regelplan(naam + ": geen rekendatum", vorm, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(b.klasse, ONDERWERP, List.of(concreet), List.of(), List.of()),
                         new Patroon(Rekendatum.class, "$rekendatum", List.of(zonderDatum), List.of(), List.of())),
                 new Gevolg.Fout(ONDERWERP, Rekenfout.GELDIGHEID_ZONDER_DATUM, new Gevolg.Foutnaam(naam, naam),
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
     }
 
     /** The constraint that keeps a rule of a stack on instances of exactly the stack's owner, the bean class
@@ -2538,14 +2539,14 @@ public final class TmsTranspiler {
      * holds the input (ch. 7.3). A do-not-attribute decision with no attribution below it has nothing to displace and
      * gets no rule.
      */
-    private List<Rule> eenvoudigeVorm(Stapelbouw b, List<Knoop> keten) {
+    private List<Regelplan> eenvoudigeVorm(Stapelbouw b, List<Knoop> keten) {
         List<Knoop> beslissend = new ArrayList<>(keten.stream().filter(k -> beslistZelf(b, k.d())).toList());
         while (b.kenmerk && !beslissend.isEmpty()
                 && Boolean.FALSE.equals(beslissend.get(beslissend.size() - 1).d().besluit()))
             beslissend.remove(beslissend.size() - 1);
         String naam = b.naam;
         ElementSleutel sleutel = b.lid.sleutel();
-        List<Rule> uit = new ArrayList<>();
+        List<Regelplan> uit = new ArrayList<>();
         for (int j = 0; j < beslissend.size(); j++) {
             Knoop k = beslissend.get(j);
             int i = k.positie();
@@ -2572,8 +2573,8 @@ public final class TmsTranspiler {
      * included (ch. 7.9), and its exception groups with it. At the root the groups of the stack reconcile once more, by
      * the same rules, under the bare key, and that reconciliation writes the target or deposits the conflict.
      */
-    private List<Rule> algemeneVorm(Stapelbouw b, List<List<Knoop>> wortel) {
-        List<Rule> uit = new ArrayList<>();
+    private List<Regelplan> algemeneVorm(Stapelbouw b, List<List<Knoop>> wortel) {
+        List<Regelplan> uit = new ArrayList<>();
         for (List<Knoop> keten : wortel) ketenregels(b, keten, List::of, uit);
         ElementSleutel sleutel = b.lid.sleutel();
         // at the root the reconciliation writes the target and deposits a conflict as the §9.5 inconsistency; on a
@@ -2592,7 +2593,7 @@ public final class TmsTranspiler {
      * only where no higher default in its chain decides ({@code decide}), so a group below a displaced default is not
      * evaluated, settles nothing and raises no fault (RUNTIME-SEMANTICS ch. 7.9; PLAN §9, 2026-10-09).
      */
-    private void ketenregels(Stapelbouw b, List<Knoop> keten, Supplier<List<LhsItem>> voorouders, List<Rule> uit) {
+    private void ketenregels(Stapelbouw b, List<Knoop> keten, Supplier<List<LhsItem>> voorouders, List<Regelplan> uit) {
         String naam = b.naam;
         for (Knoop k : keten) {
             int id = k.keten(), i = k.positie();
@@ -2642,7 +2643,7 @@ public final class TmsTranspiler {
      */
     private void verzoening(Stapelbouw b, int eerste, int aantal, boolean ledenConflicteren, String sleutel, String label,
                             Supplier<List<LhsItem>> wacht, Gevolg.Stapelfeit bijConflict,
-                            Gevolg.Stapelfeit bijBesluit, boolean alleenWaar, boolean tussen, List<Rule> uit) {
+                            Gevolg.Stapelfeit bijBesluit, boolean alleenWaar, boolean tussen, List<Regelplan> uit) {
         String naam = b.naam;
         int tot = eerste + aantal;
         Binding vanOnderwerp = Binding.van(ONDERWERP, Uitkomst.class, "onderwerp");
@@ -2654,11 +2655,11 @@ public final class TmsTranspiler {
             if (aantal > 1) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT,
                     "eerder-lid", Functie.EERDER_LID, "$conflict")));
             items.addAll(wacht.get());
-            uit.add(weergeef(new Regelplan(naam + ": doorgeven " + label, vorm, null,
+            uit.add(new Regelplan(naam + ": doorgeven " + label, vorm, null,
                     new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0,
                             Leessoort.CONFLICTSLEUTEL, "conflictsleutel", "$sleutel"))), items,
                     new Gevolg.Conflict(ONDERWERP, new Term.Lees(0, null), List.of(0), 1, bijConflict,
-                            Gevolg.Invoeging.LOGISCH))));
+                            Gevolg.Invoeging.LOGISCH)));
             if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
         }
         if (aantal > 1) {
@@ -2673,9 +2674,9 @@ public final class TmsTranspiler {
                     "$besluit");
             items.add(new Bestaat(List.of(ander), Bestaat.verklaard(List.of(ander)), Bestaat.gelezen(List.of(ander))));
             items.addAll(wacht.get());
-            uit.add(weergeef(new Regelplan(naam + ": verschil " + label, vorm, null, new Leestabel(List.of()), items,
+            uit.add(new Regelplan(naam + ": verschil " + label, vorm, null, new Leestabel(List.of()), items,
                     new Gevolg.Conflict(ONDERWERP, constante(sleutel), List.of(), 0, bijConflict,
-                            Gevolg.Invoeging.LOGISCH))));
+                            Gevolg.Invoeging.LOGISCH)));
             if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
         }
         List<LhsItem> items = new ArrayList<>();
@@ -2690,11 +2691,11 @@ public final class TmsTranspiler {
                     Functie.ANDER_BESLUIT, "$besluit")));
         }
         items.addAll(wacht.get());
-        uit.add(weergeef(new Regelplan(naam + ": eens " + label, vorm, null,
+        uit.add(new Regelplan(naam + ": eens " + label, vorm, null,
                 new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, Leessoort.BESLUIT,
                         "besluit", "$waarde"))), items,
                 new Gevolg.Afloop(ONDERWERP, new Term.Lees(0, null), List.of(0), 1, false, null, List.of(bijBesluit),
-                        Gevolg.Invoeging.LOGISCH))));
+                        Gevolg.Invoeging.LOGISCH)));
         if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
     }
 
@@ -2772,8 +2773,8 @@ public final class TmsTranspiler {
      * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint (PLAN §9,
      * 2026-10-09).
      */
-    private List<Rule> eigenRegel(Stapelbouw b, Knoop k, String regelnaam, Supplier<List<LhsItem>> wacht,
-                                  List<Gevolg.Stapelfeit> feiten) {
+    private List<Regelplan> eigenRegel(Stapelbouw b, Knoop k, String regelnaam, Supplier<List<LhsItem>> wacht,
+                                       List<Gevolg.Stapelfeit> feiten) {
         Default d = k.d();
         Supplier<Lezingen> nieuw = () -> {
             Lezingen l = new Lezingen(k.niveau());
@@ -2806,8 +2807,8 @@ public final class TmsTranspiler {
                     new Gevolg.Foutnaam(naam, naam), feiten, Gevolg.Invoeging.LOGISCH);
         }
         b.lezingen.add(lez);
-        List<Rule> uit = new ArrayList<>();
-        uit.add(weergeef(lez.regelplan(regelnaam, items, besluit)));
+        List<Regelplan> uit = new ArrayList<>();
+        uit.add(lez.regelplan(regelnaam, items, besluit));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, d.voorwaarde(), l -> wacht.get()));
         return uit;
     }
@@ -3411,15 +3412,15 @@ public final class TmsTranspiler {
      *  in which case its contributions carry a {@link Lidtoets} ({@link #kwantorvouw}); and for a per-element fold over
      *  an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
      *  {@link Lidfout} facts as well ({@link #lidfoutregel}). */
-    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
-                        boolean lidKanFalen, boolean lidDeponeert, boolean waardeKanFalen) {
+    private record Vouw(String sleutel, List<Regelplan> regels, List<Lezingen> lezingen, boolean kanFalen,
+                        boolean deponeert, boolean lidKanFalen, boolean lidDeponeert, boolean waardeKanFalen) {
         /** A fold over a set source or a union: no matrix per member. */
-        Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {
+        Vouw(String sleutel, List<Regelplan> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {
             this(sleutel, regels, lezingen, kanFalen, deponeert, false, false, false);
         }
 
         /** A quantifier fold: a matrix per member, and no value per member. */
-        Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
+        Vouw(String sleutel, List<Regelplan> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
              boolean lidKanFalen, boolean lidDeponeert) {
             this(sleutel, regels, lezingen, kanFalen, deponeert, lidKanFalen, lidDeponeert, false);
         }
@@ -3719,7 +3720,7 @@ public final class TmsTranspiler {
                     + " invoer de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); " + NOG_NIET + ", en geen golden met"
                     + " cases heeft het");
         Vouw v = vouwVoor(f, lez, (sleutel, naam) -> {
-            List<Rule> regels = new ArrayList<>();
+            List<Regelplan> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
             boolean kanFalen = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem), 0,
                     f.filter(), lid, regels, lezingen);
@@ -4054,7 +4055,7 @@ public final class TmsTranspiler {
                         + " subtyperelatie (WF-110 (d))");
         }
         return vouwVoor(f, lez, (sleutel, naam) -> {
-            List<Rule> regels = new ArrayList<>();
+            List<Regelplan> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
             boolean kanFalen = false, deponeert = false;
             for (int k = 0; k < u.takken().size(); k++) {
@@ -4084,7 +4085,7 @@ public final class TmsTranspiler {
      */
     private boolean bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
                                    Objecttype elem, Bereik bereik, int selectie, Conditie filter,
-                                   Expr.AttribuutRef arg, List<Rule> uit, List<Lezingen> lezingen) {
+                                   Expr.AttribuutRef arg, List<Regelplan> uit, List<Lezingen> lezingen) {
         Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
         Set<Integer> gelezen = lez.volg();
         Term toets = filter == null ? null : voorwaarde(filter, lez);
@@ -4104,8 +4105,8 @@ public final class TmsTranspiler {
         Gevolg.Inbreng inbreng = kind == Expr.FunctieKind.AANTAL ? new Gevolg.Inbreng.Telling()
                 : new Gevolg.Inbreng.Lidwaarde(waarde, totaal, kind == Expr.FunctieKind.AANTAL_GEVULDE);
         String vormnaam = model.geëmitteerdeRegelNaam(vorm);
-        uit.add(weergeef(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
-                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH))));
+        uit.add(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
+                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH)));
         lezingen.add(lez);
         if (kanFalen) uit.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem, bereik,
                 selectie, filter, lezingen::add));
@@ -4127,8 +4128,8 @@ public final class TmsTranspiler {
      * faults after a place that deposits has deposited, as there; the fault is the reading form's
      * ({@link #filterfoutregel}). The fact goes when a read it rested on changes, as a contribution does.
      */
-    private Rule filterdeponeerregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
-                                     Bereik bereik, Conditie filter, Consumer<Lezingen> vastleggen) {
+    private Regelplan filterdeponeerregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
+                                          Bereik bereik, Conditie filter, Consumer<Lezingen> vastleggen) {
         Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
         Set<Integer> gelezen = lez.volg();
         Term toets = voorwaarde(filter, lez);
@@ -4138,8 +4139,8 @@ public final class TmsTranspiler {
         int lid = lez.lid();
         List<LhsItem> items = lez.plan(Toetsitem.Rol.DEPONERING, toets, gelezen, filter);
         vastleggen.accept(lez);
-        return weergeef(lez.regelplan(regelnaam, items, new Gevolg.Filterdeponering(VOUWONDERWERP, sleutel, lid,
-                Gevolg.Invoeging.LOGISCH)));
+        return lez.regelplan(regelnaam, items, new Gevolg.Filterdeponering(VOUWONDERWERP, sleutel, lid,
+                Gevolg.Invoeging.LOGISCH));
     }
 
     /**
@@ -4153,8 +4154,8 @@ public final class TmsTranspiler {
      * place the input did not state has no place in the fold order, and the first fault cannot be told without it: the
      * consequence throws, naming the field.
      */
-    private Rule filterfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
-                                 int selectie, Conditie filter, Consumer<Lezingen> vastleggen) {
+    private Regelplan filterfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
+                                      Bereik bereik, int selectie, Conditie filter, Consumer<Lezingen> vastleggen) {
         List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
@@ -4170,9 +4171,9 @@ public final class TmsTranspiler {
         }
         List<LhsItem> items = lez.plan(Toetsitem.Rol.FOUT, toets, gelezen, filter);
         vastleggen.accept(lez);
-        return weergeef(lez.regelplan(regelnaam, items, new Gevolg.Filterfout(VOUWONDERWERP, sleutel, lid, toets,
+        return lez.regelplan(regelnaam, items, new Gevolg.Filterfout(VOUWONDERWERP, sleutel, lid, toets,
                 new Gevolg.Vouwplaats(selectie, plaatsen, Gevolg.Plaatsreden.FILTERFOUT), List.copyOf(gebruik),
-                lez.grootte(), Gevolg.Invoeging.LOGISCH)));
+                lez.grootte(), Gevolg.Invoeging.LOGISCH));
     }
 
     /**
@@ -4188,8 +4189,8 @@ public final class TmsTranspiler {
      * place the input did not state has no place in the fold order: the consequence throws, naming the field, as the
      * filter fault rule does.
      */
-    private Rule lidfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
-                              int selectie, Conditie filter, Lid lidwaarde, Consumer<Lezingen> vastleggen) {
+    private Regelplan lidfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
+                                   int selectie, Conditie filter, Lid lidwaarde, Consumer<Lezingen> vastleggen) {
         List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
@@ -4205,11 +4206,11 @@ public final class TmsTranspiler {
         emmer.add(emmerscalair(waarde, true));
         List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(emmer), gelezen, filter);
         vastleggen.accept(lez);
-        return weergeef(lez.regelplan(regelnaam, items, new Gevolg.Lidfout(VOUWONDERWERP, sleutel, lid,
+        return lez.regelplan(regelnaam, items, new Gevolg.Lidfout(VOUWONDERWERP, sleutel, lid,
                 new Gevolg.Vouwplaats(selectie, plaatsen, Gevolg.Plaatsreden.LIDFOUT),
                 "the per-element temporal total of \"" + lidwaarde.naam() + "\" over ", ": the case supplies an"
                 + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
-                + " timeline (ch. 3.6/§7.1, ch. 8.4)", Gevolg.Invoeging.LOGISCH)));
+                + " timeline (ch. 3.6/§7.1, ch. 8.4)", Gevolg.Invoeging.LOGISCH));
     }
 
     /** The reads of a contribution rule, planned: the member is the subject, the fold's subject is bound before it
@@ -4855,10 +4856,10 @@ public final class TmsTranspiler {
                         Gevolg.Plaatsreden.KWANTOR))
                 : new Gevolg.Inbreng.Oordeel(matrix);
         String vormnaam = model.geëmitteerdeRegelNaam(vorm);
-        List<Rule> regels = new ArrayList<>();
+        List<Regelplan> regels = new ArrayList<>();
         List<Lezingen> lezingen = new ArrayList<>();
-        regels.add(weergeef(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
-                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH))));
+        regels.add(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
+                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH)));
         lezingen.add(lez);
         if (filterKanFalen) regels.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem,
                 bereik, 0, kv.filter(), lezingen::add));
@@ -5191,7 +5192,7 @@ public final class TmsTranspiler {
             kanalen.addAll(kanaalnamen);
             for (Vouw v : vouwen) {
                 if (bijdrageregels.putIfAbsent(v.sleutel(), v.regels()) == null)
-                    for (Rule r : v.regels()) vormVanRegel.put(r.getName(), vorm);
+                    for (Regelplan r : v.regels()) vormVanRegel.put(r.naam(), vorm);
                 for (Lezingen l : v.lezingen()) l.vastleggen();
             }
         }
@@ -5275,7 +5276,7 @@ public final class TmsTranspiler {
         int rekendatum() {
             int bekend = bestaand("rekendatum");
             if (bekend >= 0) return bekend;
-            rekendatumGlobal();
+            rekendatumNodig();
             String r = "$rekendatum_" + slots.size();
             String d = "$rekendatumwaarde_" + slots.size();
             parameters(new Patroon(Rekendatum.class, r, List.of(), List.of(),
@@ -5289,7 +5290,7 @@ public final class TmsTranspiler {
          *  valid adds nothing. The date is constant while the session fires, so the gate never changes a match. */
         Lezingen geldig(Geldigheid g) {
             if (g == null || g.altijd()) return this;
-            rekendatumGlobal();
+            rekendatumNodig();
             String r = "$geldigheid_" + slots.size();
             parameters(new Patroon(Rekendatum.class, r, List.of(new Alfa(id("geldig"),
                     List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.BINNEN, g)))), List.of(), List.of()));
@@ -5619,17 +5620,16 @@ public final class TmsTranspiler {
     /** The rule that puts the {@link ParameterStand} of one parameter in working memory: it matches no fact, so it fires
      *  once per session, and it binds the global in its consequence, where the case runner set it before the session
      *  fired. The global does not change while the session fires, so the standing never needs to be withdrawn. */
-    private Rule parameterstandregel(String naam) {
-        return weergeef(new Regelplan("parameterstand " + naam, null, null, new Leestabel(List.of()), List.of(),
-                new Gevolg.Parameterstand(naam, naam, Gevolg.Invoeging.LOGISCH)));
+    private Regelplan parameterstandregel(String naam) {
+        return new Regelplan("parameterstand " + naam, null, null, new Leestabel(List.of()), List.of(),
+                new Gevolg.Parameterstand(naam, naam, Gevolg.Invoeging.LOGISCH));
     }
 
-    /** The global of parameter {@code p}, of the Java type of its datatype, so that the case runner sets it by name;
-     *  one per parameter for the whole model. */
-    private Global<?> global(Parameter p) {
+    /** Declares the global of parameter {@code p}, of the Java type of its datatype, so that the case runner sets it by
+     *  name; one per parameter for the whole model. */
+    private void global(Parameter p) {
         String naam = Namen.ident(p.naam(), false);
-        Global<?> g = globals.get(naam);
-        if (g != null) return g;
+        if (globals.containsKey(naam)) return;
         if (p.granulariteit() != null)
             throw new Weigering("de tijdsafhankelijke parameter '" + p.naam() + "': " + NOG_NIET + "; de goldens met"
                     + " cases die er een lezen, doen dat in een TemporalRead, die de lader voor alle takken weigert");
@@ -5640,9 +5640,7 @@ public final class TmsTranspiler {
                 : t.isTekst() || t instanceof Datatype.Enumeratie ? String.class
                 : t.isBoolean() ? Boolean.class : null;
         if (klasse == null) throw new Weigering("de parameter '" + p.naam() + "' van type " + typenaam(t) + ": " + NOG_NIET);
-        g = DSL.globalOf(klasse, PKG, naam);
-        globals.put(naam, g);
-        return g;
+        globals.put(naam, klasse);
     }
 
     private static int[] posities(Set<Integer> gebruik) {
@@ -5660,22 +5658,22 @@ public final class TmsTranspiler {
      * off the bean as whether it holds {@code true} ({@link Binding.Leesvorm#WAAR}), the one truth value the standing
      * holds: a characteristic on a timeline is never read through it ({@link Lezingen#tijdlijn}).
      */
-    private List<Rule> kenmerkstandregels(Lid lid) {
+    private List<Regelplan> kenmerkstandregels(Lid lid) {
         ElementSleutel sleutel = lid.sleutel();
         String naam = "kenmerkstand " + lid.declarant().naam + "." + lid.naam() + ": ";
         Alfa invoerWaar = invoerWaar(id("invoer"), lid, true);
-        Rule invoer = weergeef(new Regelplan(naam + "waar uit de invoer", null, null, new Leestabel(List.of()),
+        Regelplan invoer = new Regelplan(naam + "waar uit de invoer", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(invoerWaar), List.of(), List.of())),
-                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, true, Gevolg.Invoeging.LOGISCH)));
-        Rule afleiding = weergeef(new Regelplan(naam + "waar uit een afleiding", null, null, new Leestabel(List.of()),
+                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, true, Gevolg.Invoeging.LOGISCH));
+        Regelplan afleiding = new Regelplan(naam + "waar uit een afleiding", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()), afgeleid(sleutel)),
                 new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, true,
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
         Alfa geenInvoer = invoerWaar(id("geen-invoer"), lid, false);
-        Rule onwaar = weergeef(new Regelplan(naam + "onwaar", null, null, new Leestabel(List.of()),
+        Regelplan onwaar = new Regelplan(naam + "onwaar", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(geenInvoer), List.of(), List.of()),
                         new Niet(afgeleid(sleutel))),
-                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.GEEN, false, Gevolg.Invoeging.LOGISCH)));
+                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.GEEN, false, Gevolg.Invoeging.LOGISCH));
         return List.of(invoer, afleiding, onwaar);
     }
 
@@ -5708,19 +5706,19 @@ public final class TmsTranspiler {
      * beans, the one under {@code exists} and the other under {@code not}; the fact is stated and never changes while
      * the session fires, so exactly one of them holds for each object.
      */
-    private List<Rule> attribuutstandregels(Lid lid) {
+    private List<Regelplan> attribuutstandregels(Lid lid) {
         ElementSleutel sleutel = lid.sleutel();
         String naam = "stand " + lid.declarant().naam + "." + lid.naam() + ": ";
-        List<Rule> uit = new ArrayList<>();
+        List<Regelplan> uit = new ArrayList<>();
 
         if (schrijvers.containsKey(sleutel)) {
             Patroon waarde = new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
                     List.of(opOnderwerp(id("waarde-onderwerp"))), List.of(Binding.van("$v", Waarde.class, "waarde")));
-            uit.add(weergeef(new Regelplan(naam + "uit een afleiding", null, null,
+            uit.add(new Regelplan(naam + "uit een afleiding", null, null,
                     eenSlot(Leessoort.AFLEIDING, "afleiding " + sleutel, "$v"),
                     List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()), waarde),
                     new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, 0, false,
-                            Gevolg.Invoeging.LOGISCH))));
+                            Gevolg.Invoeging.LOGISCH)));
         }
 
         if (lid.tijd() == null) {
@@ -5739,7 +5737,7 @@ public final class TmsTranspiler {
      *  its {@link Emmerscalair}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
      *  timeline: a binding is computed for every object the subject pattern matches, also one whose input is a full
      *  timeline. */
-    private Rule invoerstandregel(Lid lid, String naam, Boolean emmer) {
+    private Regelplan invoerstandregel(Lid lid, String naam, Boolean emmer) {
         ElementSleutel sleutel = lid.sleutel();
         List<LhsItem> items = new ArrayList<>();
         items.add(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
@@ -5752,9 +5750,9 @@ public final class TmsTranspiler {
         }
         items.add(new Niet(new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
                 List.of(opOnderwerp(id("waarde-onderwerp"))), List.of())));
-        return weergeef(new Regelplan(naam, null, null, eenSlot(Leessoort.INVOER, "invoer " + sleutel, "$invoer"),
+        return new Regelplan(naam, null, null, eenSlot(Leessoort.INVOER, "invoer " + sleutel, "$invoer"),
                 items, new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, 0, Boolean.TRUE.equals(emmer),
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
     }
 
     /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code soort}, which the
@@ -5771,7 +5769,7 @@ public final class TmsTranspiler {
      * read the path along its reference fields ({@link Pad#velden}): the test whether it reaches an object, and the
      * binding of that object, which walks to the last field and reads it there.
      */
-    private List<Rule> padstandregels(Padlezing p) {
+    private List<Regelplan> padstandregels(Padlezing p) {
         Pad pad = p.pad();
         Lid lid = p.lid();
         String ps = pad.sleutel();
@@ -5789,16 +5787,16 @@ public final class TmsTranspiler {
                 List.of(gelijk(id("stand"), lid.kenmerk() ? "kenmerk" : "attribuut", lk)),
                 List.of(new Join(id("stand-bereikt"), "onderwerp", "$bereikt")),
                 List.of(Binding.van("$v", standklasse, lid.kenmerk() ? "waar" : "waarde")));
-        Rule aanwezig = weergeef(new Regelplan(naam + "link aanwezig", null, null,
+        Regelplan aanwezig = new Regelplan(naam + "link aanwezig", null, null,
                 eenSlot(Leessoort.BEREIKTE_STAND, "stand " + ps + " " + lk, "$v"),
                 List.of(new Onderwerp(klasse, ONDERWERP, List.of(link), List.of(), List.of(bereikt)), stand),
-                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH)));
+                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH));
 
         Alfa geenLink = langsPad(id("geen-link"), velden, Alfa.Vergelijker.LEEG);
-        Rule afwezig = weergeef(new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
+        Regelplan afwezig = new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(klasse, ONDERWERP, List.of(geenLink), List.of(), List.of())),
                 new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
         return List.of(aanwezig, afwezig);
     }
 
@@ -5818,7 +5816,7 @@ public final class TmsTranspiler {
      * convention; where it does not, the value is null, under a {@code not} over the same chain. A link that a creation
      * adds takes the standing along.
      */
-    private List<Rule> koppelingpadstandregels(Padlezing p) {
+    private List<Regelplan> koppelingpadstandregels(Padlezing p) {
         Pad pad = p.pad();
         Lid lid = p.lid();
         String ps = pad.sleutel();
@@ -5846,17 +5844,17 @@ public final class TmsTranspiler {
                     new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null)));
             waarde = eenSlot(Leessoort.BEREIKTE_INVOER, "invoer " + ps + " " + lk, "$v");
         }
-        Rule aanwezig = weergeef(new Regelplan(naam + "link aanwezig", null, null, waarde, items,
-                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH)));
+        Regelplan aanwezig = new Regelplan(naam + "link aanwezig", null, null, waarde, items,
+                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH));
 
         // no combination of the chain's objects: what the chain declares lives inside the negation, and it reads the
         // subject alone from before it
         List<Patroon> geen = keten(pad.hops(), ONDERWERP, null);
-        Rule afwezig = weergeef(new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
+        Regelplan afwezig = new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(klasse, ONDERWERP, List.of(), List.of(), List.of()),
                         new Niet(geen, Bestaat.verklaard(geen), List.of(ONDERWERP))),
                 new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
-                        Gevolg.Invoeging.LOGISCH)));
+                        Gevolg.Invoeging.LOGISCH));
         return List.of(aanwezig, afwezig);
     }
 
@@ -6105,19 +6103,4 @@ public final class TmsTranspiler {
 
     private String id(String soort) { return soort + "_" + (idSeq++); }
 
-    /** The rule {@code plan} plans, rendered into the executable model ({@link PatternDslWeergave#regel}), and the plan
-     *  recorded ({@link #regelplannen}). */
-    private Rule weergeef(Regelplan plan) {
-        regelplannen.add(plan);
-        return PatternDslWeergave.regel(plan, this::global);
-    }
-
-    /** The global of the model named {@code naam}: a parameter's, or the evaluation date's, each declared once. A
-     *  parameter of the date's Java name beside a form that reads the date refuses the document ({@link #run}), so the
-     *  name of a parameter is looked up first and the date's standing is not built then. */
-    private Global<?> global(String naam) {
-        Global<?> g = globals.containsKey(naam) ? globals.get(naam) : REKENDATUM.equals(naam) ? rekendatumGlobal : null;
-        if (g == null) throw new IllegalStateException("geen global " + naam + " in het model");
-        return g;
-    }
 }
