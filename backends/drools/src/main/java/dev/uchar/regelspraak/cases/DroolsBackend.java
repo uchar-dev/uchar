@@ -98,6 +98,10 @@ import java.util.function.Predicate;
  * write-back does nothing and {@link #lees} refuses. An evaluation fault is on the exec-model branch a fact of the
  * fixpoint, which {@link #lees} gives as data and {@link #zetAfgeleideWaarden} throws; on the DRL-text branch it
  * leaves the fire as a {@code ConsequenceException}, which {@link #benoem} names.
+ *
+ * <p>{@link Branch#DRL_TMS} renders the analysis of the exec-model branch as DRL text, which derives with truth
+ * maintenance over the same facts: every entry treats it as the exec-model branch, and what this says of that branch
+ * holds for it.
  */
 public final class DroolsBackend {
 
@@ -107,25 +111,37 @@ public final class DroolsBackend {
 
     /** Which transpiler lowers the document. The exec-model branch ({@code TmsTranspiler}) is the one gate 12's square
      *  replays: it derives with truth maintenance, with logical inserts instead of writing the beans. The DRL-text
-     *  branch is narrower — no ch. 7 defaults lowering, more markers — and the gate counts it apart. */
-    public enum Branch { EXEC_MODEL, DRL_TEXT }
+     *  branch is narrower — no ch. 7 defaults lowering, more markers — and the gate counts it apart. {@code DRL_TMS}
+     *  renders the analysis of the exec-model branch as DRL text ({@link TmsTranspiler#drl}), which derives with truth
+     *  maintenance over the same facts: the DRL-text branch to be, beside the other two until the switch-over of card
+     *  drl-teksttak-op-truth-maintenance, which replaces the DRL-text branch with it; no gate replays it. */
+    public enum Branch { EXEC_MODEL, DRL_TEXT, DRL_TMS }
 
-    /** A built document. Exactly one transpiler is set, the one {@link #branch()} names; {@code dekking} is its
-     *  coverage manifest, every entry lowered, because the build refuses a document with any other entry. */
+    /** A built document, in one of three forms, from which {@link #branch()} follows: on the exec-model branch the
+     *  analysis ({@code execModelTranspiler}) and no text; on {@code DRL_TMS} the analysis and its DRL text
+     *  ({@link TmsTranspiler#drl}); on the DRL-text branch its own transpiler and that one's text
+     *  ({@link DrlTranspiler#drl}). {@code dekking} is the coverage manifest of the transpiler, every entry lowered,
+     *  because the build refuses a document with any other entry. */
     public record Build(RegelSpraakModel model, ClassLoader beanLoader, TmsTranspiler execModelTranspiler,
-                        DrlTranspiler drlTranspiler, List<Dekking> dekking, KieBase kieBase) {
+                        DrlTranspiler drlTranspiler, String drl, List<Dekking> dekking, KieBase kieBase) {
         public Build {
             if ((execModelTranspiler == null) == (drlTranspiler == null))
                 throw new IllegalArgumentException("a Build carries exactly one transpiler, got "
                         + (execModelTranspiler == null ? "none" : 2));
+            if (drlTranspiler != null && !drlTranspiler.drl().equals(drl))
+                throw new IllegalArgumentException("a Build of the DRL-text branch carries the text of its transpiler");
+            if (execModelTranspiler != null && drl != null && !drl.equals(execModelTranspiler.drl()))
+                throw new IllegalArgumentException("a Build of DRL_TMS carries the DRL text of its analysis");
         }
 
         public Branch branch() {
-            return execModelTranspiler != null ? Branch.EXEC_MODEL : Branch.DRL_TEXT;
+            if (drlTranspiler != null) return Branch.DRL_TEXT;
+            return drl != null ? Branch.DRL_TMS : Branch.EXEC_MODEL;
         }
 
         /** The §9.8 day-kind predicates the DRL text declares as globals (name -> predicate); a session must have
-         *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas. */
+         *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas, and on
+         *  {@code DRL_TMS}, which refuses a document with day kinds until the analysis gives their predicates. */
         public Map<String, Predicate<LocalDate>> dagsoortGlobalen() {
             return drlTranspiler == null ? Map.of() : drlTranspiler.dagsoortGlobalen();
         }
@@ -145,8 +161,11 @@ public final class DroolsBackend {
      *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
      *      violation, a construct the branch does not lower, on the DRL-text branch a prioritized-defaults
-     *      extension or a DRL text the Drools compiler rejects, and on the exec-model branch a cycle of the
-     *      dependency graph that WF-045 or WF-046 forbids */
+     *      extension or a DRL text the Drools compiler rejects, on the exec-model branch a cycle of the
+     *      dependency graph that WF-045 or WF-046 forbids, and on {@code DRL_TMS} what the exec-model branch
+     *      refuses, a kind its DRL rendering does not carry yet and a document with day kinds
+     *  @throws IllegalStateException on {@code DRL_TMS} a DRL text the Drools compiler rejects: a fault of the
+     *      rendering, never a form the branch does not carry */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
@@ -190,6 +209,7 @@ public final class DroolsBackend {
             return switch (branch) {
                 case EXEC_MODEL -> execModelTak(loaded, cl);
                 case DRL_TEXT -> drlTak(loaded, cl);
+                case DRL_TMS -> drlTmsTak(loaded, cl);
             };
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
@@ -257,6 +277,16 @@ public final class DroolsBackend {
      *  toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is
      *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Kringen}). */
     private static Build execModelTak(IrLoader.Loaded loaded, ClassLoader cl) {
+        TmsTranspiler t = analyse(loaded, cl, "exec-model");
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
+        return new Build(loaded.model(), cl, t, null, null, List.copyOf(t.dekking()), kieBase);
+    }
+
+    /** The analysis of the document ({@link TmsTranspiler}) with the refusals of the exec-model branch, which
+     *  {@code DRL_TMS} shares: a form the transpiler does not lower, from its manifest, in the {@code transpiler SKIP:}
+     *  sentence the toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids; and two rules of one
+     *  name, with {@code tak} the label of the branch in the sentence. */
+    private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl, String tak) {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.rolBindingen(),
                 loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
         for (Dekking d : t.dekking())
@@ -266,9 +296,44 @@ public final class DroolsBackend {
         // graph over the forms it carries
         String kring = Kringen.weigering(loaded);
         if (kring != null) throw new Excluded(kring);
-        weigerDubbeleRegelnaam(t.model(), "exec-model");
-        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
-        return new Build(loaded.model(), cl, t, null, List.copyOf(t.dekking()), kieBase);
+        weigerDubbeleRegelnaam(t.model(), tak);
+        return t;
+    }
+
+    /** The branch {@code DRL_TMS}, until the switch-over of card drl-teksttak-op-truth-maintenance: the analysis of the
+     *  exec-model branch, with its refusals ({@link #analyse}), rendered into DRL text ({@link TmsTranspiler#drl}) and
+     *  compiled by the classic DRL build ({@code KieHelper}) in EQUALITY mode, as the executable model of that branch
+     *  is. The text derives with truth maintenance over the same facts as the executable model, so every entry of a
+     *  session treats this branch as the exec-model branch. It refuses as well, loudly and with the reason, a kind the
+     *  rendering does not carry yet ({@link TmsTranspiler.DrlWeigering}), and a document with day kinds: their
+     *  predicates are globals of the text, and the analysis does not give them yet, so {@link Build#dagsoortGlobalen}
+     *  is empty here. A text the Drools compiler rejects is a fault of the rendering, not a form the branch does not
+     *  carry: it fails with an {@link IllegalStateException}, which a caller that knows the document names. */
+    private static Build drlTmsTak(IrLoader.Loaded loaded, ClassLoader cl) {
+        TmsTranspiler t = analyse(loaded, cl, "drl-tms");
+        if (!loaded.model().dagsoorten.isEmpty())
+            throw new Excluded("drl-tms: een document met dagsoorten (§9.8) " + loaded.model().dagsoorten
+                    + " — de tak zet hun predicaten nog niet als globals");
+        String drl;
+        try {
+            drl = t.drl();
+        } catch (TmsTranspiler.DrlWeigering w) {
+            throw new Excluded("drl-tms: " + w.getMessage());
+        }
+        KieHelper helper = new KieHelper();
+        helper.setClassLoader(cl);
+        // the folders of the path follow the package of the text, as DrlWeergave.PAD has them; the extension gives the type
+        helper.addContent(drl, TmsTranspiler.PKG.replace('.', '/') + "/regels.drl");
+        KieBase kieBase;
+        try {
+            kieBase = helper.build(EqualityBehaviorOption.EQUALITY);
+        } catch (RuntimeException e) {
+            // shortened as drlTak shortens it: the header of Drools' message carries the path, the error comes after it
+            String m = String.valueOf(e.getMessage()).replace('\n', ' ');
+            throw new IllegalStateException("drl-tms: de DRL-tekst van de weergave compileert niet, een fout van de"
+                    + " weergave: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m), e);
+        }
+        return new Build(loaded.model(), cl, t, null, drl, List.copyOf(t.dekking()), kieBase);
     }
 
     /**
@@ -308,7 +373,7 @@ public final class DroolsBackend {
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(invoer, "invoer");
         List<Object> bonen = invoer.beans();
-        if (build.branch() == Branch.DRL_TEXT) {
+        if (!heeftAnalyse(build)) {
             for (Object boon : bonen) sessie.insert(boon);
             return;
         }
@@ -574,7 +639,7 @@ public final class DroolsBackend {
     private static Fixpunt lezing(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        if (build.branch() != Branch.EXEC_MODEL)
+        if (!heeftAnalyse(build))
             throw new UnsupportedOperationException("lees leest wat de tak met truth maintenance afleidde; op de "
                     + build.branch() + "-tak schrijven de regels de afgeleide waarden al tijdens het vuren op de beans");
         return build.execModelTranspiler().lees(sessie, label);
@@ -607,7 +672,7 @@ public final class DroolsBackend {
     public static void zetAfgeleideWaarden(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        if (build.branch() == Branch.EXEC_MODEL) build.execModelTranspiler().zetAfgeleideWaarden(sessie);
+        if (heeftAnalyse(build)) build.execModelTranspiler().zetAfgeleideWaarden(sessie);
     }
 
     /** As {@link #zetAfgeleideWaarden(Build, KieSession)}, with {@code label} giving the case label of an input bean
@@ -618,7 +683,14 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(label, "label");
-        if (build.branch() == Branch.EXEC_MODEL) build.execModelTranspiler().zetAfgeleideWaarden(sessie, label);
+        if (heeftAnalyse(build)) build.execModelTranspiler().zetAfgeleideWaarden(sessie, label);
+    }
+
+    /** Whether {@code build} carries the analysis of the exec-model branch: on that branch, and on {@code DRL_TMS}, whose
+     *  text derives with truth maintenance over the same facts. Every entry of a session chooses on this, so that it
+     *  treats the two alike; only the DRL-text branch writes the beans as its rules fire. */
+    private static boolean heeftAnalyse(Build build) {
+        return build.execModelTranspiler() != null;
     }
 
     /** The fixed fire cap of the DRL-text branch: its rules write the beans as they fire, and the cap ends a run whose
@@ -695,8 +767,7 @@ public final class DroolsBackend {
     public static Vuring vuur(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        return build.branch() == Branch.DRL_TEXT ? vuur(build, sessie, VAST_PLAFOND)
-                : vuur(build, sessie, FACTOR, VLOER);
+        return heeftAnalyse(build) ? vuur(build, sessie, FACTOR, VLOER) : vuur(build, sessie, VAST_PLAFOND);
     }
 
     /** As {@link #vuur(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded
@@ -820,7 +891,7 @@ public final class DroolsBackend {
      *  run it puts the watch on where
      *  {@code voegIn} did not, with the beans the session holds as the input, and keeps the globals. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
-        if (build.branch() == Branch.DRL_TEXT) return vuurOnderPlafond(build, sessie, plafond);
+        if (!heeftAnalyse(build)) return vuurOnderPlafond(build, sessie, plafond);
         TmsTranspiler tms = build.execModelTranspiler();
         // per class: Drools keeps the facts of a class apart and hands out only those for a ClassObjectFilter, where a
         // filter of another kind walks every fact the session holds, at every vuur
@@ -899,7 +970,7 @@ public final class DroolsBackend {
      *  a model with a creation on the exec-model branch in generations per stratum. */
     private static Vuring vuurOnderPlafond(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.execModelTranspiler();
-        Set<String> creaties = build.branch() == Branch.DRL_TEXT ? Set.of() : tms.creatieregels();
+        Set<String> creaties = heeftAnalyse(build) ? tms.creatieregels() : Set.of();
         plafond.herreken(sessie);
         if (creaties.isEmpty()) {
             int gevuurd = sessie.fireAllRules(plafond.waarde);
@@ -998,7 +1069,7 @@ public final class DroolsBackend {
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
             throw new Excluded("drl compile: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m));
         }
-        return new Build(loaded.model(), cl, null, t, List.copyOf(t.dekking()), kieBase);
+        return new Build(loaded.model(), cl, null, t, t.drl(), List.copyOf(t.dekking()), kieBase);
     }
 
     /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence

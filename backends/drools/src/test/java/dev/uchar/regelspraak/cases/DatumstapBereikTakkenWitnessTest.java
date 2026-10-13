@@ -37,6 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * branch at 16905a6d: the exec-model and the DRL-text branch answered +146140482-05-01T00:00 without a fault. The
  * truth-maintenance branch refused day kinds by name, and the row pinned that refusal, until the card
  * tms-verdeling-en-tijdlijnen (2026-10-09), which carries them: since then its row faults as the other two do.
+ *
+ * <p>{@code DRL_TMS}, the analysis of the exec-model branch rendered as DRL text (card
+ * drl-teksttak-op-truth-maintenance), faults on the four cases of the calendar step as the other branches do, and
+ * refuses the day kinds by name until its step 5b, which this witness pins.
  */
 class DatumstapBereikTakkenWitnessTest {
 
@@ -62,7 +66,18 @@ class DatumstapBereikTakkenWitnessTest {
         Path map = ROOD.resolveSibling("dagsoortstap-buiten-bereik");
         Path ir = map.resolve("ir.json"), geval = map.resolve("case1.json");
         JsonNode c = JSON.readTree(Files.readString(geval));
-        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) faalt(ir, geval, c, tak);
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
+            if (tak == DroolsBackend.Branch.DRL_TMS) weigertDagsoorten(ir, c);
+            else faalt(ir, geval, c, tak);
+        }
+    }
+
+    /** {@code DRL_TMS} refuses a document with day kinds by name until the analysis gives their predicates (card
+     *  drl-teksttak-op-truth-maintenance, step 5b); this row then expects the fault there too. */
+    private static void weigertDagsoorten(Path ir, JsonNode c) {
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, zonderFout(c), DroolsBackend.Branch.DRL_TMS), "DRL_TMS");
+        assertTrue(e.getMessage().startsWith("drl-tms: een document met dagsoorten"), e.getMessage());
     }
 
     /** {@code c} replayed on {@code tak} faults at fire, with the fragment it pins for the backend in the cause chain. */

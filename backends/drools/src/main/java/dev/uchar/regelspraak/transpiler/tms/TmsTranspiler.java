@@ -183,7 +183,8 @@ import java.util.function.Supplier;
  *
  * <p>This class is the analysis: it decides per rule what is read, how, in which order, and what a firing inserts, as
  * a {@link Regelplan}, and delivers every plan with the globals of the model as one {@link Modelplan}. It builds no part
- * of the executable model itself; {@link PatternDslWeergave#model} renders the outcome into it ({@link #model}).
+ * of the executable model itself; {@link PatternDslWeergave#model} renders the outcome into it ({@link #model}), and
+ * {@code DrlWeergave} into DRL text ({@link #drl}).
  */
 public final class TmsTranspiler {
 
@@ -405,6 +406,45 @@ public final class TmsTranspiler {
      *  the model, in the order of the model, which {@link PatternDslWeergave#model} renders. No consumer reads a plan,
      *  so it is no public entry. */
     Modelplan modelplan() { return modelplan; }
+
+    /** A kind of the plan that the rendering into DRL text does not carry yet ({@link #drl}), refused loudly by its
+     *  kind, never left out of the text: a consequence the rendering does not spell yet, by its simple name, or a member
+     *  of a bean that Drools reads as something else where a pattern spells it. */
+    public static final class DrlWeigering extends RuntimeException {
+        private final String soort;
+
+        DrlWeigering(String soort, String melding, Throwable oorzaak) {
+            super(melding, oorzaak);
+            this.soort = soort;
+        }
+
+        /** The kind refused, such as the simple name of a consequence. */
+        public String soort() { return soort; }
+    }
+
+    /** The outcome of the one rendering into DRL text ({@link #drl}): the text, or the refusal of the rendering; both
+     *  null until the first call. */
+    private String drl;
+    private DrlWeergave.Weigering drlGeweigerd;
+
+    /**
+     * The DRL text of the outcome of the analysis, the second rendering of the plan beside the executable model
+     * ({@link #model}): the rules of the plan in its order, under their names, deriving with truth maintenance over the
+     * same facts. Rendered once, at the first call. A kind the rendering does not carry yet is refused at every call with
+     * {@link DrlWeigering}, never left out of the text.
+     */
+    public synchronized String drl() {
+        if (drl == null && drlGeweigerd == null) {
+            try {
+                drl = DrlWeergave.tekst(modelplan);
+            } catch (DrlWeergave.Weigering w) {
+                drlGeweigerd = w;
+            }
+        }
+        if (drlGeweigerd != null)
+            throw new DrlWeigering(drlGeweigerd.soort(), drlGeweigerd.getMessage(), drlGeweigerd);
+        return drl;
+    }
 
     /**
      * What stands in {@code sessie} after a fire that reached its fixpoint, read without writing anything on a bean:

@@ -141,6 +141,14 @@ public final class CaseRunner {
         return replay(irPath, casePaths, DroolsBackend.Branch.EXEC_MODEL);
     }
 
+    /** The same replay through {@link DroolsBackend.Branch#DRL_TMS}, the analysis of the exec-model branch rendered as
+     *  DRL text, until the switch-over of card drl-teksttak-op-truth-maintenance: the entry of the CLI's
+     *  {@code --drl-tms} and of the witnesses of that branch. Package-private: no gate replays the branch, and the card
+     *  removes it at the switch-over. */
+    static Result viaDrlTms(Path irPath, List<Path> casePaths) {
+        return replay(irPath, casePaths, DroolsBackend.Branch.DRL_TMS);
+    }
+
     private static Result replay(Path irPath, List<Path> casePaths, DroolsBackend.Branch tak) {
         try {
             CaseRunner runner = build(irPath, tak);
@@ -392,7 +400,8 @@ public final class CaseRunner {
     }
 
     /** As above, with {@code tak} choosing WHICH transpiler branch produces the KieBase: the exec-model branch, which
-     *  derives with truth maintenance, or {@link DrlTranspiler}'s DRL TEXT. The whole prelude — load,
+     *  derives with truth maintenance, {@link DrlTranspiler}'s DRL TEXT, or {@code DRL_TMS}, the analysis of the
+     *  exec-model branch rendered as DRL text. The whole prelude — load,
      *  refuse, beans, contract, lowering with every side table, coverage check, KieBase — is
      *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
      *  the red probe and every witness seam build exactly as a consumer of the backend does. */
@@ -574,11 +583,13 @@ public final class CaseRunner {
      *  evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
      *  DRL-text branch); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean.
      *  With the property {@value Sessiedump#EIGENSCHAP} a seam writes the dump of the session ({@link Sessiedump}) right
-     *  after the fire, before the write-back, also where the fire throws; not on the DRL-text branch, whose rules write
-     *  the beans as they fire, so that {@link DroolsBackend#lees} refuses it. */
+     *  after the fire, before the write-back, also where the fire throws, on the exec-model branch and on
+     *  {@code DRL_TMS}, which derives as that branch does; not on the DRL-text branch, whose rules write the beans as
+     *  they fire, so that {@link DroolsBackend#lees} refuses it. */
     private String vuurTotFixpunt(KieSession sessie) {
         // only the DRL-text branch writes the beans as it fires, so only its cap can come from writers that keep
-        // overwriting each other; on the exec-model branch nothing reads the listener, and it cost every firing a call
+        // overwriting each other; on the branches with truth maintenance nothing reads the listener, and it cost every
+        // firing a call
         Schrijfconflict schrijvers = null;
         if (bouw.branch() == DroolsBackend.Branch.DRL_TEXT) {
             schrijvers = new Schrijfconflict(model, cl);
