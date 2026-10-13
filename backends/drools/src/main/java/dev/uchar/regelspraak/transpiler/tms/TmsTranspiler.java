@@ -1727,7 +1727,7 @@ public final class TmsTranspiler {
         Patroon fout = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
                 List.of(), List.of());
         Rule inconsistent = weergeef(new Regelplan(naam + "inconsistent", null, null, new Leestabel(List.of()),
-                List.of(new Bestaat(List.of(fout))),
+                List.of(new Bestaat(List.of(fout), List.of(fout.naam()), List.of())),
                 new Gevolg.Kanaalstand(producent, true, Gevolg.Invoeging.LOGISCH)));
         Patroon geen = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
                 List.of(), List.of());
@@ -2932,7 +2932,8 @@ public final class TmsTranspiler {
         return ClosureWeergave.waardefunctie(t);
     }
 
-    /** The test a consequence calls to evaluate the condition {@code t} again ({@link ClosureWeergave#toets(Term)}). */
+    /** The test a consequence calls to evaluate the condition {@code t} again ({@link ClosureWeergave#toets(Term)}), for
+     *  the one consequence built outside a plan ({@link Toets}). */
     private static Toets toetsweergave(Term t) {
         Predicate<Object[]> p = ClosureWeergave.toets(t);
         return p::test;
@@ -4177,16 +4178,16 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The contribution rule of one range of the fold {@code sleutel}: the fold's subject bound first, the member's
-     * pattern joined to it through {@code bereik}, the member's reads, the {@code filter} as the test (the member is the
-     * filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Bijdrage}
+     * The contribution rule of one range of the fold {@code sleutel}, planned: the fold's subject bound first, the
+     * member's pattern joined to it through {@code bereik}, the member's reads, the {@code filter} as the test (the member
+     * is the filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Bijdrage}
      * logically: for a count the member; for a filled count the member where its value is gevuld; for the other folds
-     * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2). Beside it, where the filter can
-     * fault, the rule that inserts the member's {@link Filterfout} ({@link #filterfoutregel}), and where the filter can
-     * deposit, the rule that inserts the member's {@link Filterdeponering} ({@link #filterdeponeerregel});
-     * {@code selectie} is the number of the selection of an instance-set union, 0 for any other fold. The rules go into
-     * {@code uit} and their reads into {@code lezingen}, to be registered with the form; returns whether the filter can
-     * fault.
+     * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2) ({@link Gevolg.Inbreng}). Beside
+     * it, where the filter can fault, the rule that inserts the member's {@link Filterfout} ({@link #filterfoutregel}),
+     * and where the filter can deposit, the rule that inserts the member's {@link Filterdeponering}
+     * ({@link #filterdeponeerregel}); {@code selectie} is the number of the selection of an instance-set union, 0 for any
+     * other fold. The rules go into {@code uit} and their reads into {@code lezingen}, to be registered with the form;
+     * returns whether the filter can fault.
      */
     private boolean bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
                                    Objecttype elem, Bereik bereik, int selectie, Conditie filter,
@@ -4206,20 +4207,12 @@ public final class TmsTranspiler {
         int waarde = lidwaarde == null ? -1 : lidwaarde.tijd() == null ? lez.eigen(lidwaarde) : lez.tijdlijn(lidwaarde);
         String totaal = lidwaarde == null || lidwaarde.tijd() == null ? null : lidwaarde.tijd().name();
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, filter);
-        boolean telling = kind == Expr.FunctieKind.AANTAL, gevuld = kind == Expr.FunctieKind.AANTAL_GEVULDE;
-        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
-            if (telling) {
-                drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], null));
-                return;
-            }
-            // a member the case gives as the asOfDate-bucket scalar contributes nothing: its Lidfout stands instead
-            if (totaal != null && w[waarde] instanceof Emmerscalair) return;
-            Object v = totaal == null ? w[waarde] : RegelSpraakRuntime.rsTijdTotaal((List<?>) w[waarde], totaal);
-            if (v != null) drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], gevuld ? null : collapse(v)));
-        }, lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, filter);
+        Gevolg.Inbreng inbreng = kind == Expr.FunctieKind.AANTAL ? new Gevolg.Inbreng.Telling()
+                : new Gevolg.Inbreng.Lidwaarde(waarde, totaal, kind == Expr.FunctieKind.AANTAL_GEVULDE);
         String vormnaam = model.geëmitteerdeRegelNaam(vorm);
-        uit.add(PatternDSL.rule(PKG, vormnaam + ": bijdrage aan " + naam).build(items.toArray(new RuleItemBuilder[0])));
+        uit.add(weergeef(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
+                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH))));
         lezingen.add(lez);
         if (kanFalen) uit.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem, bereik,
                 selectie, filter, lezingen::add));
@@ -4231,15 +4224,15 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The rule beside a contribution rule whose filter can deposit: that rule's left-hand side built again over fresh
-     * declarations, the test that evaluating the filter for the member reaches a place that deposits (a division of a
-     * filled dividend by a leeg divisor or the square root of a negative number, RUNTIME-SEMANTICS ch. 1.2), heard by a
-     * probe in the test as {@link #deponeerregel} hears a condition's ({@link Sonde}), so a place the filter's own
-     * composite does not reach deposits nothing (ch. 5.10), and a consequence that inserts the member's
-     * {@link Filterdeponering} logically, on the fold's subject. No inconsistency: the reference interpreter evaluates
-     * the filter only where the evaluation of the form that reads the fold reaches it, and deposits under that form
-     * ({@link #gelezenVouw}). A filter that faults after a place that deposits has deposited, as there; the fault is the
-     * reading form's ({@link #filterfoutregel}). The fact goes when a read it rested on changes, as a contribution does.
+     * The rule beside a contribution rule whose filter can deposit, planned: that rule's left-hand side planned again,
+     * the test that evaluating the filter for the member reaches a place that deposits (a division of a filled dividend
+     * by a leeg divisor or the square root of a negative number, RUNTIME-SEMANTICS ch. 1.2), heard by a probe in the
+     * test as {@link #deponeerregel} hears a condition's ({@link Sonde}), so a place the filter's own composite does not
+     * reach deposits nothing (ch. 5.10), and a consequence that inserts the member's {@link Filterdeponering} logically,
+     * on the fold's subject. No inconsistency: the reference interpreter evaluates the filter only where the evaluation
+     * of the form that reads the fold reaches it, and deposits under that form ({@link #gelezenVouw}). A filter that
+     * faults after a place that deposits has deposited, as there; the fault is the reading form's
+     * ({@link #filterfoutregel}). The fact goes when a read it rested on changes, as a contribution does.
      */
     private Rule filterdeponeerregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
                                      Bereik bereik, Conditie filter, Consumer<Lezingen> vastleggen) {
@@ -4247,32 +4240,29 @@ public final class TmsTranspiler {
         Set<Integer> gelezen = lez.volg();
         Term toets = voorwaarde(filter, lez);
         lez.stop();
-        int sonde = lez.sondeplaats();
-        if (sonde < 0) throw new IllegalStateException("het filter van " + sleutel + " deponeert, maar kreeg geen sonde");
-        Set<Integer> gebruik = lez.volg();
+        if (lez.sondeplaats() < 0)
+            throw new IllegalStateException("het filter van " + sleutel + " deponeert, maar kreeg geen sonde");
         int lid = lez.lid();
-        lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.DEPONERING, toets, gelezen, filter);
-        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) ->
-                drools.logicalInsert(new Filterdeponering(sleutel, onderwerp, w[lid])), lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(Toetsitem.Rol.DEPONERING, toets, gelezen, filter);
         vastleggen.accept(lez);
-        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
+        return weergeef(lez.regelplan(regelnaam, items, new Gevolg.Filterdeponering(VOUWONDERWERP, sleutel, lid,
+                Gevolg.Invoeging.LOGISCH)));
     }
 
     /**
-     * The rule beside a contribution rule whose filter can fault: that rule's left-hand side built again over fresh
-     * declarations, joined per route from the fold's subject with the member's place bound at every to-many step of the
-     * route ({@link Bereik#perRoute}), the test that the filter faults for the member, and a consequence that inserts
-     * the member's {@link Filterfout} logically, on the fold's subject, with its place in the fold order: the
-     * {@code selectie}, then those places. No {@link Fout}: whether the division happens depends on the form that reads
-     * the fold, which faults where its evaluation reaches the fold while such a fact stands ({@link #vouw}). The fact
-     * goes when a read it rested on changes, as a contribution does. A member whose place the input did not state has
-     * no place in the fold order, and the first fault cannot be told without it: the consequence throws, naming the
-     * field.
+     * The rule beside a contribution rule whose filter can fault, planned: that rule's left-hand side planned again,
+     * joined per route from the fold's subject with the member's place bound at every to-many step of the route
+     * ({@link Bereik#perRoute}), the test that the filter faults for the member, and a consequence that inserts the
+     * member's {@link Filterfout} logically, on the fold's subject, with its place in the fold order: the
+     * {@code selectie}, then those places ({@link Gevolg.Vouwplaats}). No {@link Fout}: whether the division happens
+     * depends on the form that reads the fold, which faults where its evaluation reaches the fold while such a fact
+     * stands ({@link #vouw}). The fact goes when a read it rested on changes, as a contribution does. A member whose
+     * place the input did not state has no place in the fold order, and the first fault cannot be told without it: the
+     * consequence throws, naming the field.
      */
     private Rule filterfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
                                  int selectie, Conditie filter, Consumer<Lezingen> vastleggen) {
-        List<Plaatslezing> plaatsen = new ArrayList<>();
+        List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
         Term toets = voorwaarde(filter, lez);
@@ -4281,49 +4271,33 @@ public final class TmsTranspiler {
         int lid = lez.lid();
         lez.stop();
         gebruik.addAll(gelezen);
-        for (Plaatslezing p : plaatsen) {
+        for (Gevolg.Vouwplaats.Stap p : plaatsen) {
             gebruik.add(p.aantal());
             gebruik.add(p.plaats());
         }
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.FOUT, toets, gelezen, filter);
-        Toets gecompileerd = toetsweergave(toets);
-        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
-            RuntimeException fout = fout(gecompileerd, w);
-            if (fout == null)
-                throw new IllegalStateException("het filter van " + sleutel + " faalde in de toets en niet in het gevolg,"
-                        + " over dezelfde gebonden waarden");
-            List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
-            plaats.add(selectie);
-            for (Plaatslezing p : plaatsen) {
-                if (((Number) w[p.aantal()]).longValue() == 0)
-                    throw new IllegalStateException("het filter van " + sleutel + " faalt voor " + Feitnamen.object(w[lid])
-                            + ", maar een lid van zijn route heeft geen Lijstplaats onder het veld '" + p.veld() + "': de"
-                            + " invoer stelt de volgorde van die lijst niet, en zonder haar is de eerste fout van de vouw"
-                            + " niet te bepalen (RUNTIME-SEMANTICS ch. 5.11)");
-                plaats.add(((Number) w[p.plaats()]).intValue());
-            }
-            drools.logicalInsert(new Filterfout(sleutel, onderwerp, w[lid], fout, plaats));
-        }, lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(Toetsitem.Rol.FOUT, toets, gelezen, filter);
         vastleggen.accept(lez);
-        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
+        return weergeef(lez.regelplan(regelnaam, items, new Gevolg.Filterfout(VOUWONDERWERP, sleutel, lid, toets,
+                new Gevolg.Vouwplaats(selectie, plaatsen, Gevolg.Plaatsreden.FILTERFOUT), List.copyOf(gebruik),
+                lez.grootte(), Gevolg.Invoeging.LOGISCH)));
     }
 
     /**
      * The rule beside a contribution rule of a per-element fold over an attribute on a timeline (RUNTIME-SEMANTICS
-     * ch. 3.6, §7.1): that rule's left-hand side built again over fresh declarations, joined per route from the fold's
-     * subject with the member's place bound at every to-many step of the route ({@link Bereik#perRoute}), the test that
-     * the member's filter holds and that the case gives the member's timeline as the asOfDate-bucket scalar
-     * ({@link Emmerscalair}), and a consequence that inserts the member's {@link Lidfout} logically, on the fold's
-     * subject, with its place in the fold order: the {@code selectie}, then those places. Such a member contributes
-     * nothing, since a set fold needs each member's own timeline and the scalar states none (ch. 8.4); the form that
-     * reads the fold faults where its evaluation reaches the fold while such a fact stands ({@link #gelezenVouw}), in the
-     * reference interpreter's words. A member whose filter faults has its {@link Filterfout} instead, which the reading
-     * form meets first. A member whose place the input did not state has no place in the fold order: the consequence
-     * throws, naming the field, as the filter fault rule does.
+     * ch. 3.6, §7.1), planned: that rule's left-hand side planned again, joined per route from the fold's subject with
+     * the member's place bound at every to-many step of the route ({@link Bereik#perRoute}), the test that the member's
+     * filter holds and that the case gives the member's timeline as the asOfDate-bucket scalar ({@link Emmerscalair}),
+     * and a consequence that inserts the member's {@link Lidfout} logically, on the fold's subject, with its place in
+     * the fold order: the {@code selectie}, then those places. Such a member contributes nothing, since a set fold needs
+     * each member's own timeline and the scalar states none (ch. 8.4); the form that reads the fold faults where its
+     * evaluation reaches the fold while such a fact stands ({@link #gelezenVouw}), in the reference interpreter's words.
+     * A member whose filter faults has its {@link Filterfout} instead, which the reading form meets first. A member whose
+     * place the input did not state has no place in the fold order: the consequence throws, naming the field, as the
+     * filter fault rule does.
      */
     private Rule lidfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
                               int selectie, Conditie filter, Lid lidwaarde, Consumer<Lezingen> vastleggen) {
-        List<Plaatslezing> plaatsen = new ArrayList<>();
+        List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
         // the member's filter holds, without its fault where it can fault: the filter fault rule takes that fault
@@ -4334,80 +4308,59 @@ public final class TmsTranspiler {
         }
         int waarde = lez.tijdlijn(lidwaarde);
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
         int lid = lez.lid();
-        lez.stop();
-        for (Plaatslezing p : plaatsen) {
-            gebruik.add(p.aantal());
-            gebruik.add(p.plaats());
-        }
-        String naam = lidwaarde.naam();
         emmer.add(emmerscalair(waarde, true));
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, alle(emmer), gelezen, filter);
-        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
-            List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
-            plaats.add(selectie);
-            for (Plaatslezing p : plaatsen) {
-                if (((Number) w[p.aantal()]).longValue() == 0)
-                    throw new IllegalStateException("de vouw " + sleutel + " leest de tijdlijn van " + Feitnamen.object(w[lid])
-                            + ", die de case als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats"
-                            + " onder het veld '" + p.veld() + "': de invoer stelt de volgorde van die lijst niet, en zonder"
-                            + " haar is niet te bepalen welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)");
-                plaats.add(((Number) w[p.plaats()]).intValue());
-            }
-            drools.logicalInsert(new Lidfout(sleutel, onderwerp, w[lid], new Invoervormfout("the per-element temporal"
-                    + " total of \"" + naam + "\" over ", w[lid], ": the case supplies an asOfDate-bucket scalar, which"
-                    + " carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1,"
-                    + " ch. 8.4)"), plaats));
-        }, lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(emmer), gelezen, filter);
         vastleggen.accept(lez);
-        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
+        return weergeef(lez.regelplan(regelnaam, items, new Gevolg.Lidfout(VOUWONDERWERP, sleutel, lid,
+                new Gevolg.Vouwplaats(selectie, plaatsen, Gevolg.Plaatsreden.LIDFOUT),
+                "the per-element temporal total of \"" + lidwaarde.naam() + "\" over ", ": the case supplies an"
+                + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
+                + " timeline (ch. 3.6/§7.1, ch. 8.4)", Gevolg.Invoeging.LOGISCH)));
     }
 
-    /** The reads of a contribution rule: the member is the subject, the fold's subject is bound before it, and
-     *  {@code bereik} joins the two. */
-    @SuppressWarnings("unchecked")
+    /** The reads of a contribution rule, planned: the member is the subject, the fold's subject is bound before it
+     *  ({@link #VOUWONDERWERP}), and {@code bereik} joins the two. */
     private Lezingen bijdragelezingen(Objecttype subject, Objecttype elem, Consumer<Lezingen> bereik) {
-        Lezingen lez = new Lezingen(elem);
+        Lezingen lez = new Lezingen(elem, false);
         lez.buiten = vouwbinders;
-        lez.drager = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), VOUWONDERWERP);
-        lez.kop.add(PatternDSL.pattern(lez.drager));
+        lez.kopPlan(new Patroon(bonenklasse(subject), VOUWONDERWERP, List.of(), List.of(), List.of()));
         bereik.accept(lez);
         return lez;
     }
 
     /**
-     * How a rule of a fold joins the member, its subject, to the fold's subject, its {@link Lezingen#drager}, in two
-     * shapes. {@code koppel}, for the contribution rule: the join on the member's pattern, and the intermediates a
-     * multi-step range needs right after it, quantified, so a member matches once. {@code perRoute}, for the filter
-     * fault rule: the same join with the intermediates bound, so a member matches once per route, and per to-many step
-     * of the route, in order, the place of the step's member in its list ({@link #plaats}); it returns those places, and
-     * refuses a range whose members have no place.
+     * How a rule of a fold joins the member, its subject, to the fold's subject ({@link #VOUWONDERWERP}), in two
+     * shapes, each planned into the rule's reads. {@code koppel}, for the contribution rule: the join on the member's
+     * pattern, and the intermediates a multi-step range needs right after it, quantified, so a member matches once.
+     * {@code perRoute}, for the filter fault rule: the same join with the intermediates bound, so a member matches once
+     * per route, and per to-many step of the route, in order, the place of the step's member in its list
+     * ({@link #plaats}); it returns those places, and refuses a range whose members have no place.
      */
-    private record Bereik(Consumer<Lezingen> koppel, Function<Lezingen, List<Plaatslezing>> perRoute) {}
+    private record Bereik(Consumer<Lezingen> koppel, Function<Lezingen, List<Gevolg.Vouwplaats.Stap>> perRoute) {}
 
-    /** One to-many step's place, as the filter fault rule binds it: the reference field the step's member links through,
-     *  and the indices of the count of its {@link Lijstplaats} facts and of the least place among them. */
-    private record Plaatslezing(String veld, int aantal, int plaats) {}
 
-    /** The place of a to-many step's member in its list, for the filter fault rule: an accumulate over the
-     *  {@link Lijstplaats} facts of field {@code veld} on the node {@code keten} walks to from {@code knoop} (the node
-     *  itself without a chain), which counts them and takes the least place. The count gives a row where the input
-     *  stated no place, so the rule still fires and its consequence names the gap instead of dropping the fault. */
-    private Plaatslezing plaats(Lezingen lid, String veld, Variable<Object> knoop, List<String> keten) {
+    /** The place of a to-many step's member in its list, for the filter fault rule, planned after the subject pattern:
+     *  an accumulate over the {@link Lijstplaats} facts of field {@code veld} on the node the walk over {@code keten}
+     *  reaches from {@code knoop}, a variable a pattern before it binds (the node itself without a chain), which counts
+     *  them and takes the least place. The count gives a row where the input stated no place, so the rule still fires
+     *  and its consequence names the gap instead of dropping the fault. */
+    private Gevolg.Vouwplaats.Stap plaats(Lezingen lid, String veld, String knoop, List<String> keten) {
         lijstvelden.add(veld);
-        Variable<Lijstplaats> p = DSL.declarationOf(Lijstplaats.class, "$lijstplaats_" + id("plaats"));
-        Variable<Object> waarde = DSL.declarationOf(Object.class, "$lijstplaatswaarde_" + id("plaats"));
-        Variable<Object> aantal = DSL.declarationOf(Object.class, "$lijstplaatsen_" + id("plaats"));
-        Variable<Object> minste = DSL.declarationOf(Object.class, "$plaats_" + id("plaats"));
-        PatternDSL.PatternDef<Lijstplaats> q = PatternDSL.pattern(p).expr(id("plaats-veld"), x -> x.veld().equals(veld))
-                .expr(id("plaats-lid"), knoop, (x, k) -> x.lid() == wandel(k, keten));
-        q.bind(waarde, Lijstplaats::plaats);
-        lid.bereik.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), p).as(aantal),
-                DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), waarde).as(minste)));
-        int n = lid.variabelen.size();
-        return new Plaatslezing(veld, lid.extern(Leessoort.LIJSTPLAATSEN, "lijstplaatsen " + n, aantal),
-                lid.extern(Leessoort.LIJSTPLAATS, "lijstplaats " + n, minste));
+        String p = "$lijstplaats_" + id("plaats");
+        String waarde = "$lijstplaatswaarde_" + id("plaats");
+        String aantal = "$lijstplaatsen_" + id("plaats");
+        String minste = "$plaats_" + id("plaats");
+        Alfa vanVeld = gelijk(id("plaats-veld"), "veld", veld);
+        Betatoets vanLid = new Betatoets(id("plaats-lid"), Functie.PLAATS_VAN, knoop,
+                List.of(constante(List.copyOf(keten))));
+        lid.bereikPlan(new Accumulatie(new Patroon(Lijstplaats.class, p, List.of(vanVeld), List.of(), List.of(vanLid),
+                List.of(Binding.van(waarde, Lijstplaats.class, "plaats"))),
+                List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal),
+                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, waarde, minste))));
+        int n = lid.grootte();
+        return new Gevolg.Vouwplaats.Stap(veld, lid.nieuw(Leessoort.LIJSTPLAATSEN, "lijstplaatsen " + n, aantal),
+                lid.nieuw(Leessoort.LIJSTPLAATS, "lijstplaats " + n, minste));
     }
 
     /** The range of the fold {@code f} from {@code subject} to {@code elem}: its multi-step path, or its one step. */
@@ -4426,7 +4379,8 @@ public final class TmsTranspiler {
      * carries both directions there, and that branch keeps refusing the shape until a card of its own measures it), and
      * a join the bean model gives no field. A to-many member role stores its links on the members, each in the list of
      * the subject at a place the case input states under the field ({@link Lijstplaats}); a to-one member role reaches
-     * one member at most, whose place compares with nothing.
+     * one member at most, whose place compares with nothing. The join is planned on the member's pattern, as the
+     * recipient rule of an allocation plans its join ({@link #ontvangersjoin}).
      */
     private Bereik eenstapsbereik(RolBindingRef rb, Objecttype subject, Objecttype elem, String wat) {
         RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
@@ -4444,34 +4398,25 @@ public final class TmsTranspiler {
         if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel))
             throw new Weigering("de aggregatie-join van '" + wat + "' heeft geen beanveld — "
                     + FactModelGenerator.geenJoinveldReden(model, drager, rol, doel) + " (§13.3.9 opslagrichting)");
-        Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
-        Consumer<Lezingen> koppel = lid -> {
-            if (voorwaarts) zelfde(lid.onderwerp, "bereik", lid.drager, e -> e, veld::apply);
-            else zelfde(lid.onderwerp, "bereik", lid.drager, veld::apply);
-        };
+        // forward the fold subject's reference field names the member, else the member's names the fold's subject
+        Binding.Veld veld = new Binding.Veld(bonenklasse(drager), rol);
+        Consumer<Lezingen> koppel = lid -> lid.onderwerpJoin(voorwaarts
+                ? new Join(id("bereik"), null, VOUWONDERWERP, veld) : new Join(id("bereik"), rol, VOUWONDERWERP));
         String lijstveld = Namen.ident(rol, false);
         return new Bereik(koppel, lid -> {
             koppel.accept(lid);
-            return voorwaarts ? List.of() : List.of(plaats(lid, lijstveld, lid.s, List.of()));
+            return voorwaarts ? List.of() : List.of(plaats(lid, lijstveld, ONDERWERP, List.of()));
         });
     }
 
     /** The one-step range of a fold over a relation a form creates: the member and the fold's subject joined by an
-     *  {@link Koppeling} of the relation in an {@code exists}, the member filling {@code lidrol}. The links of such a
-     *  relation change while the session fires and are in no bean field, so a field join would miss them. A created
-     *  link has no place in the fold order, which the reference interpreter gives by the order of creation, so a filter
-     *  that can fault over such a range is refused. */
+     *  {@link Koppeling} of the relation in an {@code exists} ({@link #koppelingsbestaat}), the member filling
+     *  {@code lidrol}. The links of such a relation change while the session fires and are in no bean field, so a field
+     *  join would miss them. A created link has no place in the fold order, which the reference interpreter gives by the
+     *  order of creation, so a filter that can fault over such a range is refused. */
     private Bereik koppelingsbereik(RolBindingRef rb, RegelSpraakModel.Rol lidrol, String wat) {
         Koppelrelatie r = koppelrelatie(rb, lidrol, wat);
-        String relatie = r.relatie();
-        boolean lidIsEerste = r.lidIsEerste();
-        return new Bereik(lid -> {
-            Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$koppeling_" + id("bereik"));
-            lid.bereik.add(DSL.exists(zelfde(zelfde(PatternDSL.pattern(k)
-                    .expr(id("bereik-koppeling"), x -> x.relatie().equals(relatie)),
-                    "bereik-lid", lid.s, x -> lidIsEerste ? x.eerste() : x.tweede()),
-                    "bereik-drager", lid.drager, x -> lidIsEerste ? x.tweede() : x.eerste())));
-        }, lid -> {
+        return new Bereik(lid -> lid.bereikPlan(koppelingsbestaat(r)), lid -> {
             throw new Weigering("een filter dat kan falen in een vouw over de gecreëerde relatie '" + rb.feittype()
                     + "' ('" + wat + "'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout"
                     + " de vouw geeft (RUNTIME-SEMANTICS ch. 5.11); " + NOG_NIET);
@@ -4493,28 +4438,28 @@ public final class TmsTranspiler {
                 Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(lidrol.naam())));
     }
 
-    /** The range of an allocation's recipient rule over the relation {@code r} a form creates, planned: as the one-step
-     *  range of a fold over such a relation joins ({@link #koppelingsbereik}), an {@code exists} of a {@link Koppeling}
-     *  of the relation that holds the subject at the member's end and the source the rule binds before the subject at
-     *  the other. */
+    /** The range over the relation {@code r} a form creates, planned, of a fold's contribution rule and of an
+     *  allocation's recipient rule: an {@code exists} of a {@link Koppeling} of the relation that holds the subject at
+     *  the member's end and the object the rule binds before the subject ({@link #VOUWONDERWERP}) at the other. */
     private Bestaat koppelingsbestaat(Koppelrelatie r) {
         String koppeling = "$koppeling_" + id("bereik");
         Alfa vanRelatie = gelijk(id("bereik-koppeling"), "relatie", r.relatie());
         Join lid = new Join(id("bereik-lid"), r.lidIsEerste() ? "eerste" : "tweede", ONDERWERP);
         Join drager = new Join(id("bereik-drager"), r.lidIsEerste() ? "tweede" : "eerste", VOUWONDERWERP);
         return new Bestaat(List.of(new Patroon(Koppeling.class, koppeling, List.of(vanRelatie), List.of(lid, drager),
-                List.of())));
+                List.of())), List.of(koppeling), List.of(ONDERWERP, VOUWONDERWERP));
     }
 
     /**
      * The multi-step range of a fold (IR-SPEC ch. 4.3, {@code sourcePath}; RUNTIME-SEMANTICS ch. 3.4b), on the plan the
-     * shared {@link Bronpad} derives: where the walk down from the subject
-     * and the walk up from the member meet, one constraint on the member's pattern; otherwise the intermediates neither
-     * walk determines go into one {@code exists} after the member's pattern, so a member that two intermediates reach
-     * still matches once. Two matches would give two equal contributions, which merge into one fact as well. The filter
-     * fault rule binds the intermediates instead, one match per route, and the place of the member of every backward
-     * step, the to-many ones ({@link Bronpad}): an intermediate where the step ends on one, else the node the member's
-     * own walk reaches.
+     * shared {@link Bronpad} derives: where the walk down from the subject and the walk up from the member meet, one
+     * constraint on the member's pattern that the two walks reach one object ({@link Functie#ONTMOETING}); otherwise
+     * the intermediates neither walk determines go into one {@code exists} after the member's pattern, so a member that
+     * two intermediates reach still matches once ({@link Bestaat}, whose scope holds the intermediates, and reads the
+     * fold's subject and the member from outside). Two matches would give two equal contributions, which merge into one
+     * fact as well. The filter fault rule binds the intermediates instead, as patterns of the rule, one match per route,
+     * and the place of the member of every backward step, the to-many ones ({@link Bronpad}): an intermediate where the
+     * step ends on one, else the node the member's own walk reaches.
      */
     private Bereik padbereik(List<RolBindingRef> pad, Objecttype subject, Objecttype elem, String wat) {
         for (RolBindingRef stap : pad)
@@ -4525,39 +4470,41 @@ public final class TmsTranspiler {
         if (plan.weigering() != null) throw new Weigering(plan.weigering() + " ('" + wat + "')");
         if (plan.ontmoet()) {
             int m = plan.ontmoeting();
-            List<String> vanafLid = plan.ketenVanafElement(m), vanafOnderwerp = plan.ketenVanafOnderwerp(m);
-            Consumer<Lezingen> koppel = lid -> lid.onderwerp.expr(id("pad"), lid.drager, (e, s) -> {
-                Object a = wandel(e, vanafLid), b = wandel(s, vanafOnderwerp);
-                return a != null && a == b;
-            });
+            List<String> vanafLid = List.copyOf(plan.ketenVanafElement(m)),
+                    vanafOnderwerp = List.copyOf(plan.ketenVanafOnderwerp(m));
+            Consumer<Lezingen> koppel = lid -> lid.onderwerpBeta(new Betatoets(id("pad"), Functie.ONTMOETING,
+                    VOUWONDERWERP, List.of(constante(vanafLid), constante(vanafOnderwerp))));
             return new Bereik(koppel, lid -> {
                 koppel.accept(lid);
                 return plaatsenLangs(plan, Map.of(), lid);
             });
         }
         return new Bereik(lid -> {
-            List<PatternDSL.PatternDef<Object>> patronen = tussenpatronen(plan, new LinkedHashMap<>(), lid);
-            lid.bereik.add(DSL.exists(patronen.get(0),
-                    patronen.subList(1, patronen.size()).toArray(new org.drools.model.view.ViewItemBuilder<?>[0])));
+            List<Patroon> patronen = tussenpatronen(plan, new LinkedHashMap<>());
+            // the first intermediate hangs off the fold's subject and the last off the member: both bound before
+            lid.bereikPlan(new Bestaat(patronen, patronen.stream().map(Patroon::naam).toList(),
+                    List.of(VOUWONDERWERP, ONDERWERP)));
         }, lid -> {
-            Map<Integer, Variable<Object>> tussen = new LinkedHashMap<>();
-            lid.bereik.addAll(tussenpatronen(plan, tussen, lid));
+            Map<Integer, String> tussen = new LinkedHashMap<>();
+            for (Patroon p : tussenpatronen(plan, tussen)) lid.bereikPlan(p);
             return plaatsenLangs(plan, tussen, lid);
         });
     }
 
-    /** The patterns of the intermediates of {@code plan} that neither walk determines, each declared into
-     *  {@code tussen} and joined to its neighbours. */
-    private List<PatternDSL.PatternDef<Object>> tussenpatronen(Bronpad.Plan plan, Map<Integer, Variable<Object>> tussen,
-                                                               Lezingen lid) {
-        for (int i : plan.tussenknopen()) tussen.put(i, tussenknoop(plan.knoopTypen().get(i)));
-        List<PatternDSL.PatternDef<Object>> patronen = new ArrayList<>();
+    /** The patterns of the intermediates of {@code plan} that neither walk determines, each over its node's bean class,
+     *  its variable named into {@code tussen}, and constrained to its neighbours by the hops on either side of it
+     *  ({@link #stap}). */
+    private List<Patroon> tussenpatronen(Bronpad.Plan plan, Map<Integer, String> tussen) {
+        for (int i : plan.tussenknopen()) tussen.put(i, "$tussen_" + id("pad"));
+        List<Patroon> patronen = new ArrayList<>();
         int laatste = plan.achterwaartsVanaf() - 1;
-        for (Map.Entry<Integer, Variable<Object>> e : tussen.entrySet()) {
+        for (Map.Entry<Integer, String> e : tussen.entrySet()) {
             int i = e.getKey();
-            PatternDSL.PatternDef<Object> p = koppel(PatternDSL.pattern(e.getValue()), plan, i, i, tussen, lid);
-            if (i == laatste) p = koppel(p, plan, plan.achterwaartsVanaf(), i, tussen, lid);
-            patronen.add(p);
+            List<Betatoets> stappen = new ArrayList<>();
+            stappen.add(stap(plan, i, i, tussen));
+            if (i == laatste) stappen.add(stap(plan, plan.achterwaartsVanaf(), i, tussen));
+            patronen.add(new Patroon(bonenklasse(plan.knoopTypen().get(i)), e.getValue(), List.of(), List.of(), stappen,
+                    List.of()));
         }
         return patronen;
     }
@@ -4565,53 +4512,39 @@ public final class TmsTranspiler {
     /** The places along a route of {@code plan}, one per backward step in step order: the step's own member, node
      *  {@code i}, holds the field toward node {@code i - 1}, whose list it is in. A backward step never lies in the
      *  subject's forward run, so its node is a bound intermediate or a node of the member's own walk. */
-    private List<Plaatslezing> plaatsenLangs(Bronpad.Plan plan, Map<Integer, Variable<Object>> tussen, Lezingen lid) {
-        List<Plaatslezing> uit = new ArrayList<>();
+    private List<Gevolg.Vouwplaats.Stap> plaatsenLangs(Bronpad.Plan plan, Map<Integer, String> tussen, Lezingen lid) {
+        List<Gevolg.Vouwplaats.Stap> uit = new ArrayList<>();
         for (int i = 1; i <= plan.stappen().size(); i++) {
             Bronpad.Stap stap = plan.stappen().get(i - 1);
             if (!stap.achterwaarts()) continue;
-            Variable<Object> knoop = tussen.get(i);
+            String knoop = tussen.get(i);
             uit.add(knoop != null ? plaats(lid, stap.beanveld(), knoop, List.of())
-                    : plaats(lid, stap.beanveld(), lid.s, plan.ketenVanafElement(i)));
+                    : plaats(lid, stap.beanveld(), ONDERWERP, plan.ketenVanafElement(i)));
         }
         return uit;
     }
 
-    @SuppressWarnings("unchecked")
-    private Variable<Object> tussenknoop(Objecttype t) {
-        return (Variable<Object>) DSL.declarationOf(bonenklasse(t), "$tussen_" + id("pad"));
-    }
-
-    /** Constrains {@code p}, the pattern of node {@code dit} of {@code plan}, with hop {@code stap}, which connects nodes
-     *  {@code stap - 1} and {@code stap}; its other end is read through whichever walk determines it: the subject's
-     *  (a forward prefix), the member's (a backward suffix) or an intermediate declared before it. */
-    private PatternDSL.PatternDef<Object> koppel(PatternDSL.PatternDef<Object> p, Bronpad.Plan plan, int stap, int dit,
-                                                Map<Integer, Variable<Object>> tussen, Lezingen lid) {
+    /** The constraint on the pattern of node {@code dit} of {@code plan} by hop {@code stap}, which connects nodes
+     *  {@code stap - 1} and {@code stap}: its other end is read through whichever walk determines it, the subject's (a
+     *  forward prefix), the member's (a backward suffix) or an intermediate declared before it, and the hop's field on
+     *  the end that holds it, the hop's source going forward and its target going backward. The two walks meet where
+     *  the hop holds ({@link Functie#ONTMOETING}). */
+    private Betatoets stap(Bronpad.Plan plan, int stap, int dit, Map<Integer, String> tussen) {
         int ander = stap - 1 == dit ? stap : stap - 1;
         boolean ditIsDoel = ander == stap - 1;
         List<String> keten = ander <= plan.voorwaarts() ? plan.ketenVanafOnderwerp(ander)
                 : ander >= plan.achterwaartsVanaf() ? plan.ketenVanafElement(ander) : List.of();
-        Variable<Object> anderVar = ander <= plan.voorwaarts() ? lid.drager
-                : ander >= plan.achterwaartsVanaf() ? lid.s : tussen.get(ander);
-        String veld = plan.stappen().get(stap - 1).beanveld();
-        boolean achterwaarts = plan.stappen().get(stap - 1).achterwaarts();
-        return p.expr(id("pad"), anderVar, (t, o) -> {
-            Object x = wandel(o, keten);
-            if (x == null || t == null) return false;
-            Object bron = ditIsDoel ? x : t, doel = ditIsDoel ? t : x;
-            return achterwaarts ? RegelSpraakRuntime.get(doel, veld) == bron : RegelSpraakRuntime.get(bron, veld) == doel;
-        });
+        String anderNaam = ander <= plan.voorwaarts() ? VOUWONDERWERP
+                : ander >= plan.achterwaartsVanaf() ? ONDERWERP : tussen.get(ander);
+        Bronpad.Stap hop = plan.stappen().get(stap - 1);
+        boolean veldHier = hop.achterwaarts() == ditIsDoel;
+        List<String> eigen = veldHier ? List.of(hop.beanveld()) : List.of();
+        List<String> andere = new ArrayList<>(keten);
+        if (!veldHier) andere.add(hop.beanveld());
+        return new Betatoets(id("pad"), Functie.ONTMOETING, anderNaam,
+                List.of(constante(eigen), constante(List.copyOf(andere))));
     }
 
-    /** A chain of to-one reference fields, leeg-safe: a broken link reads as null, and the member drops out. */
-    private static Object wandel(Object start, List<String> velden) {
-        Object cur = start;
-        for (String v : velden) {
-            if (cur == null) return null;
-            cur = RegelSpraakRuntime.get(cur, v);
-        }
-        return cur;
-    }
 
     /** A read of an attribute: of the subject where the reference carries no path (it must name the subject's own type,
      *  WF-053), else over its path of roles. */
@@ -4632,8 +4565,10 @@ public final class TmsTranspiler {
     // ---------------- conditions ----------------
 
     /** A condition as a predicate over the values its reads bind, in the order {@link Lezingen} gives them indices: the
-     *  rendering of a planned condition that a consequence calls to evaluate it again ({@link #toetsweergave}), until
-     *  step 1c of card drl-teksttak-op-truth-maintenance plans the consequences. */
+     *  rendering of a planned condition that a consequence calls to evaluate it again ({@link #toetsweergave}). Only
+     *  the fault rule of a default's condition still builds such a consequence itself
+     *  ({@link #voorwaardefoutregelRechtstreeks}), until step 1c-C of card drl-teksttak-op-truth-maintenance plans it;
+     *  every other consequence evaluates its plan's term ({@link Gevolg}). */
     @FunctionalInterface
     private interface Toets {
         boolean test(Object[] waarden);
@@ -4989,14 +4924,15 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The contribution rules of the quantifier fold {@code kv} on {@code subject}: one over its range, the fold's
-     * subject bound first and the member joined to it, the member's reads of the filter and of the matrix bound, the
-     * filter as the test (with the role {@link Toetsitem.Rol#ZONDER_FOUT} where it can fault), and a consequence that
-     * evaluates the matrix for the member and inserts the member's {@link Bijdrage} logically: 1 or 0 for its verdict,
-     * or, where the matrix can fault or deposit, its {@link Lidtoets}, with the member's place bound as the filter fault
-     * rule binds it ({@link Bereik#perRoute}). Beside it the filter fault rule and the filter deposit rule of a filter
-     * that can fault or deposit, as for any fold ({@link #bijdrageregels}). A made link has no place in the order of the
-     * members, so a matrix that can fault or deposit over a relation a form creates is refused.
+     * The contribution rules of the quantifier fold {@code kv} on {@code subject}, planned: one over its range, the
+     * fold's subject bound first and the member joined to it, the member's reads of the filter and of the matrix bound,
+     * the filter as the test (with the role {@link Toetsitem.Rol#ZONDER_FOUT} where it can fault), and a consequence
+     * that evaluates the matrix for the member and inserts the member's {@link Bijdrage} logically: 1 or 0 for its
+     * verdict ({@link Gevolg.Inbreng.Oordeel}), or, where the matrix can fault or deposit, its {@link Lidtoets}
+     * ({@link Gevolg.Inbreng.Lidtoets}), with the member's place bound as the filter fault rule binds it
+     * ({@link Bereik#perRoute}) and the rule's probe. Beside it the filter fault rule and the filter deposit rule of a
+     * filter that can fault or deposit, as for any fold ({@link #bijdrageregels}). A made link has no place in the order
+     * of the members, so a matrix that can fault or deposit over a relation a form creates is refused.
      */
     private Vouw kwantorbijdragen(Conditie.Kwantorvouw kv, String sleutel, String naam, Objecttype subject,
                                   Objecttype elem) {
@@ -5011,13 +4947,13 @@ public final class TmsTranspiler {
         lez.stop();
         Set<Integer> gebruik = lez.volg();
         int lid = lez.lid();
-        Toets matrix = toetsweergave(voorwaarde(kv.toets(), lez));
+        Term matrix = voorwaarde(kv.toets(), lez);
         boolean lidKanFalen = lez.kanFalen();
         lez.stop();
         boolean lidDeponeert = deponeert(kv.toets());
         int sonde = lez.sondeplaats();
         boolean geordend = lidKanFalen || lidDeponeert;
-        List<Plaatslezing> plaatsen = new ArrayList<>();
+        List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
         if (geordend) {
             if (kv.bronRol().feittype() != null && gecreeerdeRelaties.contains(Namen.norm(kv.bronRol().feittype())))
                 throw new Weigering("een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over de gecreëerde"
@@ -5025,46 +4961,21 @@ public final class TmsTranspiler {
                         + " in de volgorde van de leden, die bepaalt welk lid de kortsluiting nog bereikt"
                         + " (RUNTIME-SEMANTICS ch. 3.9a, 5.10); " + NOG_NIET);
             plaatsen.addAll(bereik.perRoute().apply(lez));
-            for (Plaatslezing p : plaatsen) {
+            for (Gevolg.Vouwplaats.Stap p : plaatsen) {
                 gebruik.add(p.aantal());
                 gebruik.add(p.plaats());
             }
         } else bereik.koppel().accept(lez);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(filterKanFalen), filter, gelezen,
-                kv.filter());
-        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
-            if (!geordend) {
-                drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid],
-                        matrix.test(w) ? BigDecimal.ONE : BigDecimal.ZERO));
-                return;
-            }
-            List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
-            plaats.add(0);
-            for (Plaatslezing p : plaatsen) {
-                if (((Number) w[p.aantal()]).longValue() == 0)
-                    throw new IllegalStateException("de kwantorvouw " + sleutel + " leest de matrix van "
-                            + Feitnamen.object(w[lid]) + ", maar dat lid heeft geen Lijstplaats onder het veld '"
-                            + p.veld() + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te"
-                            + " bepalen welk lid de kortsluiting bereikt (RUNTIME-SEMANTICS ch. 5.10, 5.11)");
-                plaats.add(((Number) w[p.plaats()]).intValue());
-            }
-            Sonde s = sonde < 0 ? null : new Sonde();
-            if (s != null) w[sonde] = s;
-            Boolean waar = null;
-            RuntimeException fout = null;
-            try {
-                waar = matrix.test(w);
-            } catch (RuntimeException e) {
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
-                fout = e;
-            }
-            drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid],
-                    new Lidtoets(plaats, waar, fout, s != null && s.gemeld())));
-        }, lez.variabelen.size()));
+        List<LhsItem> items = lez.plan(voorwaarderol(filterKanFalen), filter, gelezen, kv.filter());
+        Gevolg.Inbreng inbreng = geordend
+                ? new Gevolg.Inbreng.Lidtoets(matrix, sonde, new Gevolg.Vouwplaats(0, plaatsen,
+                        Gevolg.Plaatsreden.KWANTOR))
+                : new Gevolg.Inbreng.Oordeel(matrix);
         String vormnaam = model.geëmitteerdeRegelNaam(vorm);
         List<Rule> regels = new ArrayList<>();
         List<Lezingen> lezingen = new ArrayList<>();
-        regels.add(PatternDSL.rule(PKG, vormnaam + ": bijdrage aan " + naam).build(items.toArray(new RuleItemBuilder[0])));
+        regels.add(weergeef(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
+                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH))));
         lezingen.add(lez);
         if (filterKanFalen) regels.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem,
                 bereik, 0, kv.filter(), lezingen::add));
@@ -5226,22 +5137,20 @@ public final class TmsTranspiler {
         private Set<Integer> gebruik;
         /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault. */
         private boolean falen;
-        /** In a contribution rule of a fold ({@link #bijdrageregels}), the fold's subject, bound before the subject
-         *  pattern, which is the member's; null in every other rule. */
-        Variable<Object> drager;
-        /** The patterns before the subject pattern: the fold subject's in a contribution rule. */
-        final List<RuleItemBuilder<?>> kop = new ArrayList<>();
         /** In a rule that comes whole from its plan, the planned items before the subject pattern: the pattern of the
-         *  source of an allocation's recipient rule ({@link #kopPlan}). */
+         *  source of an allocation's recipient rule, and of the fold's subject in a contribution rule
+         *  ({@link #kopPlan}). */
         private final List<LhsItem> kopplan = new ArrayList<>();
         /** In a rule that comes whole from its plan, the identity joins of the subject pattern to an object a planned
          *  item before it binds ({@link #onderwerpJoin}). */
         private final List<Join> onderwerpjoins = new ArrayList<>();
+        /** In a rule that comes whole from its plan, the other constraints of the subject pattern on such an object: the
+         *  meeting of the two walks of a fold's range of more steps ({@link #onderwerpBeta}). */
+        private final List<Betatoets> onderwerpbetatoetsen = new ArrayList<>();
         /** In a rule that comes whole from its plan, the planned items right after the subject pattern: the range of an
-         *  allocation over a relation a form creates ({@link #bereikPlan}). */
+         *  allocation over a relation a form creates, and in a contribution rule the intermediates of a range of more
+         *  steps and the accumulates of the member's places ({@link #bereikPlan}). */
         private final List<LhsItem> bereikplan = new ArrayList<>();
-        /** The patterns right after the subject pattern: the existential intermediates of a multi-step range. */
-        final List<RuleItemBuilder<?>> bereik = new ArrayList<>();
         /** The folds this rule reads, registered with it ({@link #vastleggen}). */
         private final List<Vouw> vouwen = new ArrayList<>();
         /** The binders of the {@code Let}s around the expression being compiled, by normalised name, each to its slot
@@ -5295,15 +5204,14 @@ public final class TmsTranspiler {
         /** As {@link #linkerkant(Toetsitem.Rol, Term, Set, Conditie)}, with {@code stuur} between the standing patterns
          *  and the test: the control-fact patterns of a default, so that a default a higher one displaced is not tested
          *  at all. The plan of the left-hand side goes to the transpiler's plans ({@link #linkerkanten}); the rendering
-         *  gives the items, among them those a form built directly ({@code kop}, {@code bereik}, {@code stuur}). A test
+         *  gives the items, among them those a form built directly ({@code stuur}). A test
          *  of deposits takes the probe of this rule ({@link #sondeplaats}). */
         List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde,
                                             List<RuleItemBuilder<?>> stuur) {
             Toetsitem test = toetsitem(rol, toets, gelezen, voorwaarde);
             legVast(test);
-            List<RuleItemBuilder<?>> items = new ArrayList<>(kop);
+            List<RuleItemBuilder<?>> items = new ArrayList<>();
             items.add(onderwerp);
-            items.addAll(bereik);
             for (LhsItem p : parameters) items.add(weergave.item(p));
             for (LhsItem p : standen) items.add(weergave.item(p));
             items.addAll(stuur);
@@ -5339,7 +5247,8 @@ public final class TmsTranspiler {
          *  ({@link #linkerkanten}). */
         private void legVast(Toetsitem test) {
             List<LhsItem> plan = new ArrayList<>();
-            plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbindingen));
+            plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbetatoetsen,
+                    onderwerpbindingen));
             plan.addAll(parameters);
             plan.addAll(standen);
             if (test != null) plan.add(test);
@@ -5347,14 +5256,12 @@ public final class TmsTranspiler {
         }
 
         /** The plan of this rule, {@code naam}, of the form being lowered: the planned items before the subject
-         *  pattern, the subject pattern with its constraints, joins and bindings as they stand now, the planned items
-         *  right after it, {@code items} after those, and {@code gevolg}. A rule that comes whole from its plan has no
-         *  pattern built outside the plan before or after the subject pattern, which a contribution rule still has. */
+         *  pattern, the subject pattern with its constraints, joins, other constraints and bindings as they stand now,
+         *  the planned items right after it, {@code items} after those, and {@code gevolg}. */
         Regelplan regelplan(String naam, List<LhsItem> items, Gevolg gevolg) {
-            if (!kop.isEmpty() || !bereik.isEmpty())
-                throw new IllegalStateException("een regel uit haar plan met patronen buiten het plan: " + naam);
             List<LhsItem> lhs = new ArrayList<>(kopplan);
-            lhs.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbindingen));
+            lhs.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbetatoetsen,
+                    onderwerpbindingen));
             lhs.addAll(bereikplan);
             lhs.addAll(items);
             return new Regelplan(naam, vorm, null, new Leestabel(slots), lhs, gevolg);
@@ -5371,6 +5278,13 @@ public final class TmsTranspiler {
         void onderwerpJoin(Join j) {
             alleenGepland("een join op het onderwerp");
             onderwerpjoins.add(j);
+        }
+
+        /** Plans the constraint {@code t} between the subject and an object a planned item before it binds on the
+         *  subject pattern, after its joins, in a rule that comes whole from its plan. */
+        void onderwerpBeta(Betatoets t) {
+            alleenGepland("een constraint tussen het onderwerp en een ander patroon");
+            onderwerpbetatoetsen.add(t);
         }
 
         /** Plans {@code item} right after the subject pattern, in a rule that comes whole from its plan. */
@@ -5706,21 +5620,6 @@ public final class TmsTranspiler {
             return i;
         }
 
-        /** A slot that a pattern built outside the plan binds to {@code v}, read once per rule under {@code sleutel}:
-         *  the places of a to-many step that the range of a filter fault rule binds ({@link TmsTranspiler#plaats}),
-         *  until step 1c plans that range too. */
-        int extern(Leessoort soort, String sleutel, Variable<Object> v) {
-            int i = slots.size();
-            dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(i, soort, sleutel, v.getName());
-            if (weergave == null)
-                throw new IllegalStateException("een slot dat een patroon buiten het plan bindt, in een regel uit haar plan");
-            slots.add(l);
-            weergave.extern(l, v);
-            index.put(sleutel, i);
-            if (gebruik != null) gebruik.add(i);
-            return i;
-        }
-
         /** A slot that no pattern binds: the consequence fills it. */
         private int ongebonden(Leessoort soort) {
             dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(slots.size(), soort, null, null);
@@ -6029,7 +5928,7 @@ public final class TmsTranspiler {
             Patroon p = new Patroon(Emmerinvoer.class, "$emmerinvoer",
                     List.of(gelijk(id("emmerinvoer"), "attribuut", sleutel)),
                     List.of(opOnderwerp(id("emmerinvoer-onderwerp"))), List.of());
-            items.add(emmer ? new Bestaat(List.of(p)) : new Niet(p));
+            items.add(emmer ? new Bestaat(List.of(p), List.of(p.naam()), List.of(ONDERWERP)) : new Niet(p));
         }
         items.add(new Niet(new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
                 List.of(opOnderwerp(id("waarde-onderwerp"))), List.of())));

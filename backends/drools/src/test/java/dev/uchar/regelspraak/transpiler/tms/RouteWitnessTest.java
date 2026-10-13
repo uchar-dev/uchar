@@ -57,7 +57,9 @@ class RouteWitnessTest {
                 "INVOERVORMFOUT: Invoervormfout Rekenhulpen.invoervormfout[String, Object, String, String]",
                 "UNICITEITSSLEUTELS: List Rekenhulpen.uniciteitssleutels[String, int, Object, Object, List, int]",
                 "UITDELING: List Rekenhulpen.uitdeling[String, Object, Methode, Object, Object, boolean, boolean,"
-                        + " boolean, Integer, ElementSleutel, ElementSleutel, String]"), uit);
+                        + " boolean, Integer, ElementSleutel, ElementSleutel, String]",
+                "BIJDRAGE: Bijdrage Rekenhulpen.bijdrage[String, Object, Object, Object, String, boolean]",
+                "VOUWPLAATS: List Rekenhulpen.vouwplaats[Plaatsreden, String, Object, int, List, List, List]"), uit);
     }
 
     /** A fresh probe heard nothing; a report makes it heard; a report to an empty slot and the verdict of an empty slot

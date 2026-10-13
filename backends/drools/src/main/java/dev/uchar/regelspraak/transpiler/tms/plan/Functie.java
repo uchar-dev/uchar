@@ -202,7 +202,16 @@ public enum Functie {
     DUBBEL(Rekenhulpen.class, "dubbel", false),
     /** Whether a key of a uniqueness is the same key of one form as the key another pattern binds
      *  ({@code Uniciteitssleutel.botstMet}): a constraint between the two ({@link Betatoets}). */
-    BOTST_MET(Rekenhulpen.class, "botstMet", false);
+    BOTST_MET(Rekenhulpen.class, "botstMet", false),
+    /** Whether the walk over the reference fields of one chain from a pattern's object and the walk over those of
+     *  another from the object another pattern binds reach one object, by identity, a broken link meeting nothing: a
+     *  constraint of a fold's range of more steps on its member or on an intermediate ({@link Betatoets}), the two
+     *  chains its constants. */
+    ONTMOETING(Rekenhulpen.class, "ontmoeting", false),
+    /** Whether a {@code Lijstplaats} is the place of the member that the walk over the reference fields of a chain
+     *  from the object another pattern binds reaches, by identity: the constraint of the accumulate that binds a
+     *  member's place in its list ({@link Betatoets}), the chain its constant. */
+    PLAATS_VAN(Rekenhulpen.class, "plaatsVan", false);
 
     private final Class<?> klasse;
     private final String methode;

@@ -290,10 +290,19 @@ final class ClosureWeergave {
     }
 
     /** The constraint of a pattern ({@link dev.uchar.regelspraak.transpiler.tms.plan.Betatoets}) that calls
-     *  {@code functie} over the pattern's object and the object another pattern binds, in that order. */
-    static org.drools.model.functions.Predicate2<Object, Object> betatoets(Functie functie) {
+     *  {@code functie} over the pattern's object and the object another pattern binds, in that order, and the values of
+     *  {@code constanten} after them. */
+    static org.drools.model.functions.Predicate2<Object, Object> betatoets(Functie functie,
+                                                                          List<Term.Const> constanten) {
         Implementatie f = implementatie(functie);
-        return (x, o) -> (Boolean) f.van(new Object[]{x, o});
+        Object[] c = constanten.stream().map(Term.Const::waarde).toArray();
+        return (x, o) -> {
+            Object[] a = new Object[2 + c.length];
+            a[0] = x;
+            a[1] = o;
+            System.arraycopy(c, 0, a, 2, c.length);
+            return (Boolean) f.van(a);
+        };
     }
 
     /** A function of the plan as a call on evaluated arguments. */
@@ -390,6 +399,8 @@ final class ClosureWeergave {
             case VERSCHILLEN -> x -> Rekenhulpen.verschillen(x[0]);
             case DUBBEL -> x -> Rekenhulpen.dubbel(x[0]);
             case BOTST_MET -> x -> Rekenhulpen.botstMet(x[0], x[1]);
+            case ONTMOETING -> x -> Rekenhulpen.ontmoeting(x[0], x[1], (List<?>) x[2], (List<?>) x[3]);
+            case PLAATS_VAN -> x -> Rekenhulpen.plaatsVan(x[0], x[1], (List<?>) x[2]);
         };
     }
 

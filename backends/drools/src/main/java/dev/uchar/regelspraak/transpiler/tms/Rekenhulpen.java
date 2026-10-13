@@ -5,6 +5,7 @@ import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -556,7 +557,9 @@ public final class Rekenhulpen {
 
     /** The fault of the form of an input ({@link Invoervormfout}), the sentence {@code voor}, the object {@code object}
      *  and {@code na}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
-     *  in a form the rule cannot read ({@code plan.Gevolg.Invoervormfout}). */
+     *  in a form the rule cannot read ({@code plan.Gevolg.Invoervormfout}). A null {@code regel} names no rule yet: the
+     *  fault of a member of a fold ({@code plan.Gevolg.Lidfout}), which the form that reads the fold names where it
+     *  meets it. */
     public static Invoervormfout invoervormfout(String voor, Object object, String na, String regel) {
         return new Invoervormfout(voor, object, na).inDeRegel(regel);
     }
@@ -597,5 +600,83 @@ public final class Rekenhulpen {
             uit.add(new Waarde(e.getKey(), aandeel, e.getValue(), schrijver));
         if (rest != null && u.rest() != null) uit.add(new Waarde(bron, rest, u.rest(), schrijver));
         return uit;
+    }
+
+    /** The contribution of the member {@code lid} to the fold {@code vouw} on {@code onderwerp} by its value
+     *  {@code waarde} ({@link Bijdrage}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
+     *  skipped (ch. 1.2). Where {@code totaal} is not null the value is the member's timeline and contributes its total
+     *  over time per that unit (ch. 3.6, the per-element fold), and nothing where the case gives the timeline as the
+     *  asOfDate-bucket scalar ({@link Emmerscalair}), since the member's {@link Lidfout} stands instead. Where
+     *  {@code gevuld}, the contribution counts the member and carries no value; otherwise it carries the value, an exact
+     *  rational collapsed to a decimal. */
+    public static Bijdrage bijdrage(String vouw, Object onderwerp, Object lid, Object waarde, String totaal,
+                                    boolean gevuld) {
+        if (totaal != null && waarde instanceof Emmerscalair) return null;
+        Object v = totaal == null ? waarde : RegelSpraakRuntime.rsTijdTotaal((List<?>) waarde, totaal);
+        return v == null ? null : new Bijdrage(vouw, onderwerp, lid, gevuld ? null : collapse(v));
+    }
+
+    /**
+     * The place of the member {@code lid} in the order of the fold {@code vouw}: the selection {@code selectie}, then per
+     * to-many step of its route, in order, the least place of the step's member in its list, {@code plaatsen}, over
+     * {@code aantallen} {@link Lijstplaats} facts under the reference field {@code velden}. A step whose member has no
+     * place, since the input did not state the order of that list, breaks the contract of the rule that needs the
+     * place, for {@code reden}: the exception names the field, as no fault of the fold can be told without it
+     * (RUNTIME-SEMANTICS ch. 5.10, 5.11).
+     */
+    public static List<Integer> vouwplaats(Gevolg.Plaatsreden reden, String vouw, Object lid, int selectie,
+                                           List<String> velden, List<?> aantallen, List<?> plaatsen) {
+        List<Integer> plaats = new ArrayList<>(velden.size() + 1);
+        plaats.add(selectie);
+        for (int i = 0; i < velden.size(); i++) {
+            if (((Number) aantallen.get(i)).longValue() == 0) {
+                String veld = velden.get(i);
+                throw new IllegalStateException(switch (reden) {
+                    case FILTERFOUT -> "het filter van " + vouw + " faalt voor " + Feitnamen.object(lid) + ", maar een"
+                            + " lid van zijn route heeft geen Lijstplaats onder het veld '" + veld + "': de invoer stelt de"
+                            + " volgorde van die lijst niet, en zonder haar is de eerste fout van de vouw niet te bepalen"
+                            + " (RUNTIME-SEMANTICS ch. 5.11)";
+                    case LIDFOUT -> "de vouw " + vouw + " leest de tijdlijn van " + Feitnamen.object(lid) + ", die de case"
+                            + " als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats onder het veld '"
+                            + veld + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen"
+                            + " welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)";
+                    case KWANTOR -> "de kwantorvouw " + vouw + " leest de matrix van " + Feitnamen.object(lid) + ", maar"
+                            + " dat lid heeft geen Lijstplaats onder het veld '" + veld + "': de invoer stelt de volgorde van"
+                            + " die lijst niet, en zonder haar is niet te bepalen welk lid de kortsluiting bereikt"
+                            + " (RUNTIME-SEMANTICS ch. 5.10, 5.11)";
+                });
+            }
+            plaats.add(((Number) plaatsen.get(i)).intValue());
+        }
+        return plaats;
+    }
+
+    // ---------------- the constraints of a fold's range (plan.Betatoets) ----------------
+
+    /** Whether the walk over {@code eigenKeten} from {@code eigen}, a pattern's object, and the walk over
+     *  {@code andereKeten} from {@code ander}, the object another pattern binds, reach one object, by identity; a
+     *  broken link reads as null and meets nothing. The other walk goes first, and the own one only where it reached an
+     *  object. */
+    public static boolean ontmoeting(Object eigen, Object ander, List<?> eigenKeten, List<?> andereKeten) {
+        Object b = wandel(ander, andereKeten);
+        if (b == null) return false;
+        return wandel(eigen, eigenKeten) == b;
+    }
+
+    /** Whether {@code lijstplaats}, a {@link Lijstplaats}, is the place of the object the walk over {@code keten} from
+     *  {@code knoop} reaches: its member is that object, by identity. */
+    public static boolean plaatsVan(Object lijstplaats, Object knoop, List<?> keten) {
+        return ((Lijstplaats) lijstplaats).lid() == wandel(knoop, keten);
+    }
+
+    /** The object a chain of to-one reference fields {@code velden} reaches from {@code start}, each read as the
+     *  runtime reads a property by name; a broken link reads as null. */
+    private static Object wandel(Object start, List<?> velden) {
+        Object cur = start;
+        for (Object v : velden) {
+            if (cur == null) return null;
+            cur = RegelSpraakRuntime.get(cur, (String) v);
+        }
+        return cur;
     }
 }

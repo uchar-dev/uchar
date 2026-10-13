@@ -20,9 +20,11 @@ import java.util.Map;
  * where the source of a standing is a field ({@link Standbron}), and those of a consistency, a uniqueness, the §9.5
  * channel and an allocation (step 1c-B1): the key and the violation of a uniqueness, the fault of a key's form, the
  * standing of a channel, the recipient of an allocation and its distribution, whose computation is a route
- * ({@link Route}) the plan names with its arguments. The consequences of the other forms are kinds of their own when
- * their step plans them: a contribution to a fold and the intermediate facts of a fold's filter and members, a creation
- * and a link, the control facts of a default; each names the fact it inserts and how, as these do.
+ * ({@link Route}) the plan names with its arguments; and those of the rules of a fold (step 1c-B2): a member's
+ * contribution, with what it contributes as a kind of its own ({@link Inbreng}), and the intermediate facts of a
+ * fold's filter and members, with the member's place in the fold's order ({@link Vouwplaats}). The consequences of the
+ * other forms are kinds of their own when their step plans them: a creation and a link, the control facts of a
+ * default; each names the fact it inserts and how, as these do.
  */
 public sealed interface Gevolg {
 
@@ -207,4 +209,103 @@ public sealed interface Gevolg {
     record Uitdeling(String onderwerp, String vorm, ResolvedVerdeling.Methode methode, int pot, int lijst,
                      boolean gewogen, boolean gemaximeerd, boolean afnemend, Integer decimalen, ElementSleutel aandeel,
                      ElementSleutel rest, String schrijver, Invoeging invoeging) implements Gevolg {}
+
+    /**
+     * A member's place in the order of a fold, as a rule of the fold binds it, computed by the route
+     * {@link Route#VOUWPLAATS}: the number {@code selectie} of the selection of an instance-set union (0 for any other
+     * fold), then per to-many step of the member's route, in order, the least place of the step's member in its list
+     * ({@link Stap}). {@code reden} is what the rule needs the place for, which names the broken contract where the
+     * input states no place of a step.
+     */
+    record Vouwplaats(int selectie, List<Stap> stappen, Plaatsreden reden) {
+        public Vouwplaats {
+            stappen = List.copyOf(stappen);
+        }
+
+        /** One to-many step: the reference field {@code veld} its member links through, and the slots of the count of
+         *  that member's {@code Lijstplaats} facts under the field and of the least place among them. */
+        public record Stap(String veld, int aantal, int plaats) {}
+    }
+
+    /** What a rule of a fold needs a member's place for: the first fault among the members' filters
+     *  ({@code FILTERFOUT}), the first member whose timeline the case gives as the asOfDate-bucket scalar
+     *  ({@code LIDFOUT}), or the members that the short circuit of a quantifier fold reaches ({@code KWANTOR}). */
+    enum Plaatsreden { FILTERFOUT, LIDFOUT, KWANTOR }
+
+    /**
+     * The contribution ({@code Bijdrage}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code lid}, the subject of a
+     * contribution rule, to the fold {@code vouw} of the fold's subject, the object {@code onderwerp} binds: what the
+     * member contributes is {@code inbreng}, computed over a value array of {@code grootte} slots with the bound values
+     * at {@code slots}.
+     */
+    record Bijdrage(String onderwerp, String vouw, int lid, Inbreng inbreng, List<Integer> slots, int grootte,
+                    Invoeging invoeging) implements Gevolg {
+        public Bijdrage {
+            slots = List.copyOf(slots);
+        }
+    }
+
+    /** What a member contributes to its fold, as the analysis decided from the fold's function. */
+    sealed interface Inbreng {
+        /** The member itself, without a value: a count of the members. */
+        record Telling() implements Inbreng {}
+
+        /** The member's value in slot {@code waarde}, made by the route {@link Route#BIJDRAGE}: nothing where it is
+         *  leeg; where {@code totaal} is not null the slot holds the member's timeline, which contributes its total over
+         *  time per that unit, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code gevuld},
+         *  the member without a value, a count of the members whose value is gevuld. */
+        record Lidwaarde(int waarde, String totaal, boolean gevuld) implements Inbreng {}
+
+        /** The verdict of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot
+         *  fault or deposit: 1 where it holds, 0 where it does not. */
+        record Oordeel(Term matrix) implements Inbreng {}
+
+        /** The test of the member by the matrix of a quantifier fold, the condition {@code matrix}, which can fault or
+         *  deposit, as a {@code Lidtoets}: the member's {@code plaats} in the order of the members, then the verdict or
+         *  the evaluation fault of the matrix, and whether the probe the consequence puts in slot {@code sonde} (-1:
+         *  none, the matrix deposits nothing) heard a place that deposits. The place comes first, so a member without a
+         *  place breaks the contract before the matrix is evaluated. */
+        record Lidtoets(Term matrix, int sonde, Vouwplaats plaats) implements Inbreng {
+            public Lidtoets {
+                if (plaats.reden() != Plaatsreden.KWANTOR)
+                    throw new IllegalArgumentException("de plaats van een lidtoets is die van de kwantor, niet "
+                            + plaats.reden());
+            }
+        }
+    }
+
+    /** That evaluating the filter of the fold {@code vouw} for the member in slot {@code lid} deposits, a
+     *  {@code Filterdeponering} on the fold's subject, the object {@code onderwerp} binds; the test of the rule found
+     *  it. */
+    record Filterdeponering(String onderwerp, String vouw, int lid, Invoeging invoeging) implements Gevolg {}
+
+    /**
+     * The fault of the filter of the fold {@code vouw} for the member in slot {@code lid}, a {@code Filterfout} on the
+     * fold's subject, the object {@code onderwerp} binds: the condition {@code filter}, evaluated again over the value
+     * array of {@code grootte} slots with the bound values at {@code slots}, gives its evaluation fault, which the test
+     * of the rule found, so that it answering here is a broken contract; then the member's {@code plaats} in the fold's
+     * order.
+     */
+    record Filterfout(String onderwerp, String vouw, int lid, Term filter, Vouwplaats plaats, List<Integer> slots,
+                      int grootte, Invoeging invoeging) implements Gevolg {
+        public Filterfout {
+            slots = List.copyOf(slots);
+            if (plaats.reden() != Plaatsreden.FILTERFOUT)
+                throw new IllegalArgumentException("de plaats van een filterfout is die van het filter, niet "
+                        + plaats.reden());
+        }
+    }
+
+    /** The fault of the member in slot {@code lid} of the per-element fold {@code vouw} over an attribute on a
+     *  timeline, which the case gives as the asOfDate-bucket scalar, a {@code Lidfout} on the fold's subject, the object
+     *  {@code onderwerp} binds: the member's {@code plaats} in the fold's order, and the fault of the form of an input,
+     *  the sentence {@code voor}, the member and {@code na}, named in no rule yet, made by the route
+     *  {@link Route#INVOERVORMFOUT}. */
+    record Lidfout(String onderwerp, String vouw, int lid, Vouwplaats plaats, String voor, String na,
+                   Invoeging invoeging) implements Gevolg {
+        public Lidfout {
+            if (plaats.reden() != Plaatsreden.LIDFOUT)
+                throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + plaats.reden());
+        }
+    }
 }

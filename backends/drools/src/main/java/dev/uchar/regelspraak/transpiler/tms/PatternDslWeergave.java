@@ -42,6 +42,7 @@ import org.drools.model.functions.Predicate8;
 import org.drools.model.functions.Predicate9;
 import org.drools.model.functions.accumulate.AccumulateFunction;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,7 +133,8 @@ final class PatternDslWeergave {
         };
     }
 
-    /** The subject pattern of a whole plan: its variable, its constraints, then its bindings. */
+    /** The subject pattern of a whole plan: its variable, its constraints, its joins, its constraints between the bean
+     *  and another pattern's object, then its bindings. */
     @SuppressWarnings("unchecked")
     private PatternDSL.PatternDef<Object> onderwerp(Onderwerp o) {
         Variable<Object> v = (Variable<Object>) DSL.declarationOf(o.bonenklasse(), o.naam());
@@ -141,6 +143,7 @@ final class PatternDslWeergave {
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alfa a : o.alfa()) def = def.expr(a.id(), predicaat(o.bonenklasse(), a));
         for (Join j : o.joins()) def = join(def, o.bonenklasse(), j);
+        for (Betatoets t : o.betatoetsen()) def = betatoets(def, t);
         for (Binding b : o.bindingen()) def = def.bind(bind(b.doel()), lezer(b));
         return def;
     }
@@ -206,6 +209,16 @@ final class PatternDslWeergave {
             case Gevolg.Ontvanger x -> consequentie(x.onderwerp(), slotsVan(x.ontvanger(), x.gewicht(), x.sleutel(),
                     x.maximum()), (drools, bron, w) -> voegIn(drools, x.invoeging(), new Ontvanger(x.verdeling(), bron,
                     w[x.ontvanger()], lees(w, x.gewicht()), lees(w, x.sleutel()), lees(w, x.maximum()))));
+            case Gevolg.Bijdrage x -> bijdrage(x);
+            case Gevolg.Filterdeponering x -> consequentie(x.onderwerp(), slotsVan(x.lid()), (drools, drager, w) ->
+                    voegIn(drools, x.invoeging(), new Filterdeponering(x.vouw(), drager, w[x.lid()])));
+            case Gevolg.Filterfout x -> filterfout(x);
+            case Gevolg.Lidfout x -> consequentie(x.onderwerp(), slotsVan(plaatsslots(x.lid(), x.plaats())),
+                    (drools, drager, w) -> {
+                        List<Integer> plaats = vouwplaats(x.plaats(), x.vouw(), w[x.lid()], w);
+                        voegIn(drools, x.invoeging(), new Lidfout(x.vouw(), drager, w[x.lid()],
+                                Rekenhulpen.invoervormfout(x.voor(), w[x.lid()], x.na(), null), plaats));
+                    });
             case Gevolg.Uitdeling x -> consequentie(x.onderwerp(), slotsVan(x.pot(), x.lijst()), (drools, bron, w) -> {
                 for (Object feit : Rekenhulpen.uitdeling(x.vorm(), bron, x.methode(), w[x.pot()], w[x.lijst()],
                         x.gewogen(), x.gemaximeerd(), x.afnemend(), x.decimalen(), x.aandeel(), x.rest(), x.schrijver()))
@@ -228,6 +241,81 @@ final class PatternDslWeergave {
                     g.tijdlijn()))
                 voegIn(drools, g.invoeging(), k);
         });
+    }
+
+    /** The contribution of {@link Gevolg.Bijdrage}: the member itself, its value through the route, or what the matrix
+     *  of a quantifier fold says of it, its place first and the probe in its slot where the plan says so. */
+    private RuleItemBuilder<?> bijdrage(Gevolg.Bijdrage g) {
+        return switch (g.inbreng()) {
+            case Gevolg.Inbreng.Telling t -> consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, drager, w) ->
+                    voegIn(drools, g.invoeging(), new Bijdrage(g.vouw(), drager, w[g.lid()], null)));
+            case Gevolg.Inbreng.Lidwaarde l -> consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, drager, w) -> {
+                Bijdrage b = Rekenhulpen.bijdrage(g.vouw(), drager, w[g.lid()], w[l.waarde()], l.totaal(), l.gevuld());
+                if (b != null) voegIn(drools, g.invoeging(), b);
+            });
+            case Gevolg.Inbreng.Oordeel o -> {
+                Predicate<Object[]> matrix = ClosureWeergave.toets(o.matrix());
+                yield consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, drager, w) ->
+                        voegIn(drools, g.invoeging(), new Bijdrage(g.vouw(), drager, w[g.lid()],
+                                matrix.test(w) ? BigDecimal.ONE : BigDecimal.ZERO)));
+            }
+            case Gevolg.Inbreng.Lidtoets t -> {
+                Predicate<Object[]> matrix = ClosureWeergave.toets(t.matrix());
+                yield consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, drager, w) -> {
+                    List<Integer> plaats = vouwplaats(t.plaats(), g.vouw(), w[g.lid()], w);
+                    Object s = t.sonde() < 0 ? null : Rekenhulpen.sonde();
+                    if (s != null) w[t.sonde()] = s;
+                    Boolean waar = null;
+                    RuntimeException fout = null;
+                    try {
+                        waar = matrix.test(w);
+                    } catch (RuntimeException e) {
+                        if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                        fout = e;
+                    }
+                    voegIn(drools, g.invoeging(), new Bijdrage(g.vouw(), drager, w[g.lid()],
+                            new Lidtoets(plaats, waar, fout, Rekenhulpen.gemeld(s))));
+                });
+            }
+        };
+    }
+
+    /** The fault of {@link Gevolg.Filterfout}: the filter evaluated again over the same bound values, then the member's
+     *  place. */
+    private RuleItemBuilder<?> filterfout(Gevolg.Filterfout g) {
+        Predicate<Object[]> filter = ClosureWeergave.toets(g.filter());
+        return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, drager, w) -> {
+            RuntimeException fout = ClosureWeergave.fout(filter, w);
+            if (fout == null)
+                throw new IllegalStateException("het filter van " + g.vouw() + " faalde in de toets en niet in het gevolg,"
+                        + " over dezelfde gebonden waarden");
+            List<Integer> plaats = vouwplaats(g.plaats(), g.vouw(), w[g.lid()], w);
+            voegIn(drools, g.invoeging(), new Filterfout(g.vouw(), drager, w[g.lid()], fout, plaats));
+        });
+    }
+
+    /** The member's place {@code p} in the order of the fold {@code vouw}, from the bound values {@code w}, through the
+     *  route. */
+    private static List<Integer> vouwplaats(Gevolg.Vouwplaats p, String vouw, Object lid, Object[] w) {
+        List<String> velden = new ArrayList<>();
+        List<Object> aantallen = new ArrayList<>(), plaatsen = new ArrayList<>();
+        for (Gevolg.Vouwplaats.Stap s : p.stappen()) {
+            velden.add(s.veld());
+            aantallen.add(w[s.aantal()]);
+            plaatsen.add(w[s.plaats()]);
+        }
+        return Rekenhulpen.vouwplaats(p.reden(), vouw, lid, p.selectie(), velden, aantallen, plaatsen);
+    }
+
+    /** The slot {@code lid} and the slots of the place {@code p}. */
+    private static int[] plaatsslots(int lid, Gevolg.Vouwplaats p) {
+        int[] uit = new int[1 + 2 * p.stappen().size()];
+        uit[0] = lid;
+        for (int i = 0; i < p.stappen().size(); i++) {
+            uit[1 + 2 * i] = p.stappen().get(i).aantal();
+            uit[2 + 2 * i] = p.stappen().get(i).plaats();
+        }
+        return uit;
     }
 
     /** The slots a consequence reads, each once and in ascending order, without -1, which stands for none. */
@@ -340,16 +428,6 @@ final class PatternDslWeergave {
         slots.add(l.naam() == null ? null : bekend(l.naam()));
     }
 
-    /** Registers slot {@code l}, which a pattern built outside the plan binds to {@code v}: the variable is that
-     *  pattern's, so this rendering does not bind it again. */
-    void extern(Lezing l, Variable<Object> v) {
-        if (l.slot() != slots.size())
-            throw new IllegalStateException("slot " + l.slot() + " na " + slots.size() + " slots");
-        if (waarden.putIfAbsent(l.naam(), v) != null || !gebonden.add(l.naam()))
-            throw new IllegalStateException("de variabele " + l.naam() + " wordt twee keer gebonden");
-        slots.add(v);
-    }
-
     /** Binds {@code b} off the subject pattern. */
     void bindOnderwerp(Binding b) {
         onderwerpPatroon.bind(bind(b.doel()), lezer(b));
@@ -383,8 +461,7 @@ final class PatternDslWeergave {
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alfa a : p.alfa()) def = def.expr(a.id(), predicaat(p.feitklasse(), a));
         for (Join j : p.joins()) def = join(def, p.feitklasse(), j);
-        for (Betatoets t : p.betatoetsen())
-            def = def.expr(t.id(), bekend(t.doel()), ClosureWeergave.betatoets(t.functie()));
+        for (Betatoets t : p.betatoetsen()) def = betatoets(def, t);
         for (Binding b : p.bindingen()) def = def.bind(bind(b.doel()), lezer(b));
         return new Weergegeven(v, def);
     }
@@ -398,10 +475,24 @@ final class PatternDslWeergave {
         return zelfde(def, j.id(), bekend(j.doel()), links, rechts);
     }
 
+    /** The constraint {@code t} between the object of {@code def} and the object another pattern binds, unindexed. */
+    private PatternDSL.PatternDef<Object> betatoets(PatternDSL.PatternDef<Object> def, Betatoets t) {
+        return def.expr(t.id(), bekend(t.doel()), ClosureWeergave.betatoets(t.functie(), t.constanten()));
+    }
+
+    /** The existence of {@code b}, in the scope its plan states: the variables of its patterns are known to the
+     *  patterns after them inside it, and to nothing after it. */
     private RuleItemBuilder<?> bestaat(Bestaat b) {
-        PatternDSL.PatternDef<?>[] rest = new PatternDSL.PatternDef<?>[b.patronen().size() - 1];
-        for (int i = 1; i < b.patronen().size(); i++) rest[i - 1] = patroon(b.patronen().get(i)).def();
-        return DSL.exists(patroon(b.patronen().get(0)).def(), rest);
+        for (String naam : b.buiten()) bekend(naam);
+        PatternDSL.PatternDef<?>[] defs = new PatternDSL.PatternDef<?>[b.patronen().size()];
+        for (int i = 0; i < defs.length; i++) {
+            Weergegeven w = patroon(b.patronen().get(i));
+            defs[i] = w.def();
+            if (waarden.putIfAbsent(b.binnen().get(i), w.variabele()) != null)
+                throw new IllegalStateException("de variabele " + b.binnen().get(i) + " wordt twee keer gebonden");
+        }
+        for (String naam : b.binnen()) waarden.remove(naam);
+        return DSL.exists(defs[0], Arrays.copyOfRange(defs, 1, defs.length));
     }
 
     private RuleItemBuilder<?> accumulatie(Accumulatie a) {
@@ -550,6 +641,8 @@ final class PatternDslWeergave {
         veld(Koppeling.class, "relatie", Koppeling::relatie);
         veld(Koppeling.class, "eerste", Koppeling::eerste);
         veld(Koppeling.class, "tweede", Koppeling::tweede);
+        veld(Lijstplaats.class, "veld", Lijstplaats::veld);
+        veld(Lijstplaats.class, "plaats", Lijstplaats::plaats);
     }
 
     @SuppressWarnings("unchecked")

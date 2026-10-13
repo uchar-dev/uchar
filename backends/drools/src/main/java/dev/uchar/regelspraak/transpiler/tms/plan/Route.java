@@ -34,7 +34,14 @@ public enum Route {
     UNICITEITSSLEUTELS(Rekenhulpen.class, "uniciteitssleutels"),
     /** The facts of the distribution of an allocation over the recipients of one source, computed by
      *  {@code Verdeling.bereken}: its deposits, its shares and its rest, which {@link Gevolg.Uitdeling} inserts. */
-    UITDELING(Rekenhulpen.class, "uitdeling");
+    UITDELING(Rekenhulpen.class, "uitdeling"),
+    /** The contribution of a member to a fold by its value, or none where the value is leeg or the member's timeline
+     *  stands as the asOfDate-bucket scalar, which {@link Gevolg.Inbreng.Lidwaarde} inserts. */
+    BIJDRAGE(Rekenhulpen.class, "bijdrage"),
+    /** The place of a member in a fold's order from the places its rule binds ({@link Gevolg.Vouwplaats}), which a
+     *  filter fault, a member fault and a quantifier fold's test of a member carry; where the input states no place,
+     *  the broken contract, named after what the rule needs the place for. */
+    VOUWPLAATS(Rekenhulpen.class, "vouwplaats");
 
     private final Class<?> klasse;
     private final String methode;
