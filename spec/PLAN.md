@@ -1177,6 +1177,71 @@ entry in the service, the engine and the scenario explanation; then
 `drl-teksttak-op-truth-maintenance` lowers the DRL-text branch to the same
 design, and `Stratificatie` leaves with it.
 
+**The DRL-text branch derives with truth maintenance too: two branches of one
+design (2026-10-14, card `drl-teksttak-op-truth-maintenance`):** one analysis
+(`transpiler/tms/TmsTranspiler`) makes a plan per rule
+(`transpiler/tms/plan/`, together a `Modelplan`: the reads, the tests and
+values as a tree of calls, the consequence as a kind), and two renderings
+build a rule base from it, `PatternDslWeergave` for `Branch.EXEC_MODEL` and
+`DrlWeergave` for `Branch.DRL_TEXT`. A rendering decides nothing: what the
+analysis refuses, both branches refuse in one sentence, and the DRL rendering
+refuses only what DRL text cannot express. In the DRL text every RegelSpraak
+test and calculation is a Java function with its RegelSpraak sentence above
+it, which the rule calls; a fact's key, a null test, a control fact's rank and
+an identity join stay DRL constraints (maintainer decisions 2026-10-12 and
+2026-10-13: one form and one semantics, no MVEL operators). Both branches play
+255 goldens with the same status line per golden, and per case the same input,
+reads, facts and fixpoint; at the claim the DRL-text branch played 197 of the
+250, and it lost no player. `transpiler/DrlTranspiler` (5 833 lines),
+`Stratificatie`, `Schrijfconflict`, the fixed fire cap and 26 helpers of
+`RegelSpraakRuntime` without a caller left, and the DRL text of the corpus
+(261 texts) carries no `no-loop`, `salience`, `@watch`, `modify` or `update`.
+Maintainer decisions on the norm questions of the third and fourth Fable
+advice (2026-10-13 and 2026-10-14): gate 12 is strict, so the DRL sweep must
+give the exec sweep's status line for every golden, with one list of
+non-players and one pin `EXPECTED_PLAYED` (255), and `EXPECTED_DRL_PLAYED` and
+`DRL_CHANNEL` lapse; the card's comparison harness enters the suite as
+`TakdumpsCorpusWitnessTest` (both branches per case of every played golden,
+695 cases, and per red case, 50), and gate 12 fails when it did not run; the
+card's own documents with expectations became goldens
+(`jutterswet-verdeling-dubbelbezet`, `jutterswet-uniciteit-drie-bronnen`,
+`jutterswet-uitsluiting-gedateerd`, `jutterswet-aantalfilter-gehele-jaar` and
+`jutterswet-aantalfilter-gehele-jaar-creatieguard`, the last two without a
+`bron.rgs` because the frontend does not convert their filter), with the red
+case `jutterswet-uitsluiting-zonder-rekendatum`; and a non-terminating
+fraction at rest got a behaviour witness before the landing
+(`BreukInRustWitnessTest`: ref writes 1/3, clingo refuses by name, both Drools
+branches write 0.3333333333333333, a recorded limit of the backend). On
+2026-10-14 the maintainer added `--fast` to gate 12, for a builder who changes
+a pin or a list: a fresh jar without the suite, the replay under every pin and
+list, no DRL sweep, and a last line saying it is no landing run; 130–160 s
+against about 650 s for the full gate, which took about 300 s at the claim.
+Gate 13's DRL leg must reproduce the exec-model branch's untouched line and
+play as many goldens; gate 7 gains the survivor case 2 of
+`jutterswet-uniciteit-drie-bronnen`, a consistency that holds on the input.
+Landing run on the card's tip `722d8fb6`, on a copy as its own repository
+(15:03–15:23): 16 of 16 gates green; gate 12 in 661 s, 255 played on both
+branches with every status line equal, JUnit 1574 tests against the floor
+1573; gate 13 in 88 s. The card's harness was green on the same tip
+(15:03–15:10): the exec-model branch equal to the baseline of the claim, the
+plan, model and DRL dumps unchanged, 680 cases equal on both branches, 47
+known trace differences (the order and number of firings at an accumulate,
+with an equal fixpoint) and 2 006 suite sessions equal. Next: the distribution
+moves its pin with the list in the card's `Result:` (in the CLI and the
+playground `.drlTranspiler().drl()` becomes `.drl()`, and both catch the
+`IllegalStateException` of a DRL text that does not compile; the branch guard
+in `CaseSessie` goes; `Namen.getter`/`setter` follow the bean generator).
+Cards in `backlog/new/`: `beanlidnamen-zonder-java-identifier`,
+`caselezer-zoals-ref` (an expectation on an undeclared spelling passes in the
+Drools case reader, where ref refuses it),
+`frontend-heelperiode-in-aantalfilter`, `weergaven-als-getuige` (the plan,
+model and DRL dumps of the corpus held in the repository; the card's baselines
+lived outside it), `clingo-default-literaalschaal` (clingo refuses a default
+whose literal has a smaller scale than its target, where the verifier and ref
+accept and play the document) and `uitvoerdernotities-na-truth-maintenance`
+(IR-SPEC ch. 5.5 and javadoc in the backend's tests still describe the
+destructive lowerings as current).
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
