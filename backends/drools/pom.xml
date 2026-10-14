@@ -30,7 +30,7 @@
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <drools.version>8.44.0.Final</drools.version>
-    <jackson.version>2.21.2</jackson.version>
+    <jackson.version>2.21.7</jackson.version>
     <!-- the frontend IR record types (model/ir/kern) — the ONE copy, compiled in-tree -->
     <frontend.src>${project.basedir}/../../frontends/regelspraak/src/main/java</frontend.src>
   </properties>
