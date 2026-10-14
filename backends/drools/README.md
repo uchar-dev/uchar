@@ -47,7 +47,12 @@ returns a `Build` record: the model, the bean class loader, the analysis (`execM
 branch its DRL text (`drl()`; null on the exec-model branch), the coverage manifest of the analysis and the `KieBase`
 (`Branch` has two values, `EXEC_MODEL` and `DRL_TEXT`, the two renderings of the analysis). It is the whole prelude of the case
 runner, which builds every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the
-replay's sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). The analysis has one build,
+replay's sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). On the DRL-text branch it
+also refuses a kind the rendering does not carry, an `Excluded` after the label `drl:` (section "The DRL-text
+branch"). A DRL text that the Drools compiler rejects is no such refusal but a fault of the rendering: the build throws
+an `IllegalStateException`, "drl: de DRL-tekst van de weergave compileert niet, een fout van de weergave: …". Until
+card `drl-teksttak-op-truth-maintenance` the build gave such a text as an `Excluded`, "drl compile: …", so a consumer
+that catches only the refusals now meets it as an exception. The analysis has one build,
 and it takes every side table the loader returns beside the model: a build that left one out still produced a KieBase —
 a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker said so, which is why
 there is no shorter way in. A document whose lowering holds two rules of one name in one package — two forms of one
@@ -243,9 +248,10 @@ java -jar backends/drools/target/uchar-drools-backend-*-shaded.jar \
 `scripts/check-drools.sh` replays every corpus golden through both branches. The exec-model
 branch is the square: a golden whose forms the loader+transpiler carry **must** match the
 pinned expectations gates 5 (ref) and 6 (clingo) verify — a played pass is the square — and
-`EXPECTED_PLAYED` pins the played count as an equality, 250 since card
-`objectcreatie-zonder-connectingrole-binding` (2026-10-11), every golden the destructive
-exec-model lowering played among them. The DRL-text branch is swept after it and must give
+`EXPECTED_PLAYED` pins the played count as an equality, 255 since card
+`drl-teksttak-op-truth-maintenance` (2026-10-14), which brought five goldens of its own (250
+since card `objectcreatie-zonder-connectingrole-binding`, 2026-10-11), every golden the
+destructive exec-model lowering played among them. The DRL-text branch is swept after it and must give
 every golden the status line of the exec-model branch, `PLAYED n` or the same refusal; it has
 no list and no pin of its own (proposed with card `drl-teksttak-op-truth-maintenance`; until
 then it had `EXPECTED_DRL_PLAYED`, 197, and a list of non-players, `DRL_CHANNEL`). Not-carried
@@ -266,9 +272,12 @@ same names, the same facts, the same truth maintenance and the same driver, so e
 a session treats it as the exec-model branch, and what this README says of that branch holds
 for it. Every RegelSpraak comparison or computation is a Java function of the text, with the
 source sentence above it; the structural constraints stay DRL. The predicates of the day kinds
-are globals of the text (`Build.dagsoortGlobalen()`). Its one refusal of its own is a member
-whose name Drools reads as a keyword where a pattern spells it, "drl: …"; a text the compiler
-rejects is a fault of the rendering, an `IllegalStateException`. Gate 12 holds it to the status
+are globals of the text (`Build.dagsoortGlobalen()`). It refuses three kinds of its own,
+after the label `drl:` (`DrlWeergave.Weigering`): a member whose name Drools reads as
+something else where a pattern spells it (a word of DRL or MVEL such as `in`, or a variable of
+a consequence such as `drools`), a day kind whose global is no Java identifier, and a bean class
+as the constant of a term; a text the compiler rejects is a fault of the rendering, an
+`IllegalStateException`. Gate 12 holds it to the status
 line of the exec-model branch on every golden; the price is the time of the fire, 1.8 to 2.3
 times that of the executable model on the scale model.
 
