@@ -1417,19 +1417,22 @@ public final class CaseRunner {
         };
     }
 
-    /** The actual side after fire, read where the comparison reads it. */
+    /** The actual side after fire, read where the comparison reads it: a member through its declared name
+     *  ({@link #attribuutnaam}, {@link #kenmerknaam}), since a case may write it in another capitalisation. */
     private String werkelijk(JsonNode v, KieSession sessie) {
-        Object bean = v.hasNonNull("label") ? labelNaarBean.get(v.get("label").asText()) : null;
+        String label = v.hasNonNull("label") ? v.get("label").asText() : null;
+        Object bean = label == null ? null : labelNaarBean.get(label);
+        Objecttype ot = label == null ? null : labelType.get(label);
         return switch (v.get("kind").asText()) {
-            case "attributeValue", "attributeEmpty" ->
-                    render(bean == null ? null : lees(bean, Namen.getter(v.get("attribute").asText())));
+            case "attributeValue", "attributeEmpty" -> render(bean == null ? null
+                    : lees(bean, Namen.getter(attribuutnaam(ot, v.get("attribute").asText()))));
             case "attributeTimeline" -> {
-                Object gelezen = bean == null ? null : lees(bean, Namen.getter(v.get("attribute").asText()));
+                Object gelezen = bean == null ? null
+                        : lees(bean, Namen.getter(attribuutnaam(ot, v.get("attribute").asText())));
                 yield gelezen == null ? "(leeg)" : renderTl((List<?>) gelezen);
             }
-            case "characteristicPresent", "characteristicAbsent" ->
-                    bean != null && Boolean.TRUE.equals(lees(bean, Namen.getter(v.get("characteristic").asText())))
-                            ? "aanwezig" : "afwezig";
+            case "characteristicPresent", "characteristicAbsent" -> bean != null && Boolean.TRUE.equals(
+                    lees(bean, Namen.getter(kenmerknaam(ot, v.get("characteristic").asText())))) ? "aanwezig" : "afwezig";
             default -> {
                 List<Object> facts = inconsistenties(sessie);
                 yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts) + ")";

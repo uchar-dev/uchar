@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -167,6 +168,39 @@ class ScenarioRapportWitnessTest {
         assertTrue(r.verwachtingen().subList(1, 3).stream().allMatch(VerwachtingResultaat::ok));
         assertEquals("case1-gemuteerd.json: kenmerk uitgesloten: verwacht afwezig, werkelijk aanwezig", r.diagnose(),
                 "de diagnose is de verdictregel van de replay");
+    }
+
+    /** A case may write a member in another capitalisation than its declaration, "schouwPlicht" for a declared
+     *  "schouwplicht": the reference interpreter and the ASP runner read it as the same member and pass both cases below
+     *  (measured 2026-10-14), and the replay reads the bean through the declared name. The report reads its actual side
+     *  the same way, for a value, a characteristic and a timeline. <b>Red before the repair</b> (end lens on card
+     *  drl-teksttak-op-truth-maintenance; measured 2026-10-14 on {@code 10ccd8f9}): both cases FAIL with "geen getter
+     *  …", the getter of the written name, where the replay plays them. */
+    @Test void een_lid_in_een_andere_hoofdletter_leest_het_gedeclareerde_lid() throws Exception {
+        Path d = Files.createTempDirectory("scenario-rapport");
+        Path schouwrooster = GOLDEN.resolve("jutterswet-schouwrooster");
+        Path dagentelling = GOLDEN.resolve("jutterswet-dagentelling-rgs");
+        String waarde = Files.readString(schouwrooster.resolve("case2.json"));
+        String waardeGemuteerd = waarde.replace("\"attribute\": \"schouwplicht\"", "\"attribute\": \"schouwPlicht\"")
+                .replace("\"characteristic\": \"schouwvrij\"", "\"characteristic\": \"schouwVrij\"");
+        String tijdlijn = Files.readString(dagentelling.resolve("case2-jaargrens.json"));
+        String tijdlijnGemuteerd = tijdlijn.replace("\"attribute\": \"borgdagen\"", "\"attribute\": \"borgDagen\"");
+        assertNotEquals(waarde, waardeGemuteerd, "de mutatie moet het casebestand raken");
+        assertNotEquals(tijdlijn, tijdlijnGemuteerd, "de mutatie moet het casebestand raken");
+        Path[][] paren = {
+                { schouwrooster, Files.writeString(d.resolve("case2-hoofdletters.json"), waardeGemuteerd) },
+                { dagentelling, Files.writeString(d.resolve("case2-jaargrens-hoofdletters.json"), tijdlijnGemuteerd) } };
+        List<String> fouten = new ArrayList<>();
+        for (Path[] paar : paren) {
+            Path ir = paar[0].resolve("ir.json");
+            assertNull(CaseRunner.speelCase(ir, TmsDocumenten.JSON.readTree(paar[1].toFile())),
+                    "de replay speelt " + paar[1].getFileName());
+            ScenarioResultaat r = CaseRunner.rapport(ir, List.of(paar[1])).get(0);
+            if (r.status() != Status.PASS) fouten.add(r.status() + " " + r.diagnose());
+            for (VerwachtingResultaat v : r.verwachtingen())
+                if (!v.verwacht().equals(v.werkelijk())) fouten.add(r.naam() + ": " + v);
+        }
+        assertEquals(List.of(), fouten, "het rapport van de cases met een lid in een andere hoofdletter");
     }
 
     @Test void een_case_die_de_replay_niet_kan_spelen_faalt_alleen_zelf() throws Exception {
