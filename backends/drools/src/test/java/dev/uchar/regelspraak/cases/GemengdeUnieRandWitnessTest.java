@@ -22,14 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * lowering claims but no witness held, each measured against ref and clingo first (2026-09-03).
  *
  * <ol>
- *   <li><b>Scale.</b> {@code rsOoitBevat} compares the scalar against the timeline's ever-values with
- *       {@code stripTrailingZeros}, because ref compares LEXEMES of rationals: 7 and 7.00 are one number to
- *       ref and to clingo, so a backend that compares {@code BigDecimal} by {@code equals} (scale-sensitive)
- *       answers {@code consistent} where both other executors flag two instances.</li>
- *   <li><b>An absent scalar key.</b> Only the SUBJECT of a union rule binds its key parts non-null; the
- *       element side inside the accumulate has no such binder, so an instance that supplies no value at all
- *       reaches {@code rsOoitBevat} as {@code null}. It must claim nothing — ref and clingo call that case
- *       {@code consistent}.</li>
+ *   <li><b>Scale.</b> The union compares the scalar with each value the timeline ever carries by number, not
+ *       by scale: the analysis takes those values without trailing zeros ({@code rsOoitWaarden}) and compares
+ *       two keys with {@code compareTo} ({@code Uniciteitssleutel.botstMet}), because ref compares LEXEMES of
+ *       rationals: 7 and 7.00 are one number to ref and to clingo, so a backend that compares {@code BigDecimal}
+ *       by {@code equals} (scale-sensitive) answers {@code consistent} where both other executors flag two
+ *       instances.</li>
+ *   <li><b>An absent scalar key.</b> The key rule of a source inserts a key only where every component off the
+ *       timeline is gevuld, so an instance that supplies no value at all inserts none. It must claim nothing —
+ *       ref and clingo call that case {@code consistent}.</li>
  *   <li><b>The declared spelling in the DRL text.</b> The DRL text names bean members, and a source of the union
  *       reads its key through the standing of the member, which reads the bean field. The field must be the
  *       DECLARED spelling; the written one names a field the generated fact class does not carry. Until card
@@ -67,10 +68,9 @@ class GemengdeUnieRandWitnessTest {
     // ---------------- 2. an absent key on the scalar side ----------------
 
     @Test void een_afwezige_scalaire_sleutel_claimt_niets() throws Exception {
-        // W1 supplies no vondstnummer at all (only reekscode), so the union's element side hands
-        // rsOoitBevat a null: inside the accumulate there is no non-null binder — only the SUBJECT gets one —
-        // so this gate is the whole guard. ref on this model: "oracle: PASS (1 expectations)", consistent;
-        // clingo agrees. Let the gate claim membership instead and S1 is flagged against an absent value.
+        // W1 supplies no vondstnummer at all (only reekscode), so the key rule of its source, which tests every
+        // component off the timeline gevuld, inserts no key for it. ref on this model: "oracle: PASS (1
+        // expectations)", consistent; clingo agrees.
         assertEquals(Set.of(), vlaggen(gemengdeUnie(), gemengdGeval("null")),
                 "an instance without a key value collides with nothing");
     }

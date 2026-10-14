@@ -82,7 +82,8 @@ class NaamNormWitnessTest {
         // "coördinaat" is declared as an attribute, "COÖRDINAAT" carries the granulariteit: ref folds neither
         // into the other, so the key is SCALAR and the two scalar 7s collide. ref, measured on this exact
         // model: PASS (2 expectations) — S1 and S2 flagged; clingo agrees. With a Locale-folding norm the
-        // key read temporal, the join called rsOoitBotst on a BigDecimal bean member and the replay died:
+        // key read temporal, the join of the lowering of that time read a BigDecimal bean member as a timeline
+        // and the replay died:
         //   ERROR ConstraintEvaluationException — cause: "rsOoitWaarden: een temporele sleutel moet een
         //   List<Segment> zijn, kreeg java.math.BigDecimal"
         // Re-measured 2026-09-23 on the M1 form (see granulariteitOnder), with S1 and S2 expected flagged:

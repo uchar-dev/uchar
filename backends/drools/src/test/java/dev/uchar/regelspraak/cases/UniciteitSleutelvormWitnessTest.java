@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The ch. 5.9 key-SHAPE guard of both uniqueness forms, through {@link CaseRunner#speelCase} over corpus
  * {@code ir.json} files with cases authored HERE (no corpus expectation is read or touched): a uniqueness key
  * list carries AT MOST ONE temporal component, the arity ref ({@code Eval.ever_tuples}) and clingo
- * ({@code uni_key_guards}) have always held and the Drools back-end used to lower straight past — an
- * {@code rsOoitBotst} per component, running on to a model where the other two executors reject the shape.
+ * ({@code uni_key_guards}) have always held and the Drools back-end used to lower straight past — a temporal
+ * key test per component, running on to a model where the other two executors reject the shape.
  *
  * <p>Three claims, none of which the gates see on their own. Gate 8's red leg observes only the two-component
  * FAULT (the shape it pins), so the VALID one-component shape — the whole point of the arity, and the form

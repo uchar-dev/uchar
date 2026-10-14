@@ -174,8 +174,8 @@ class SleutelconventieWitnessTest {
     // ---------------- 5. the DRL text carries the same two conventions ----------------
 
     /* Until card drl-teksttak-op-truth-maintenance the DRL-text branch was a lowering of its own, which no gate fired at
-     * these documents, so three rows here read its emitted key sites: "rsOoitBotst(vondstnummer, $k0)" and no scalar
-     * "vondstnummer == $k0" for the mis-capitalised key, no mixed rsOoitBevat arm in the union, and both mixed arms in
+     * these documents, so three rows here read its emitted key sites: a temporal key test on vondstnummer and no scalar
+     * "vondstnummer == $k0" for the mis-capitalised key, no mixed membership arm in the union, and both mixed arms in
      * the cross-source union. Since that card the text renders the analysis, whose key sites are the exec-model
      * branch's; the rows below ask the DRL-text branch for the same session as the exec-model branch on the documents
      * and cases of the rows above (Takdumps: the verdict, the input, what lees gives and the facts at the fixpoint). */
