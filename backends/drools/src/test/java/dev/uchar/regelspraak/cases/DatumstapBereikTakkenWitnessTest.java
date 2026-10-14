@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * truth-maintenance branch refused day kinds by name, and the row pinned that refusal, until the card
  * tms-verdeling-en-tijdlijnen (2026-10-09), which carries them: since then its row faults as the other two do.
  *
- * <p>{@code DRL_TMS}, the analysis of the exec-model branch rendered as DRL text (card
+ * <p>{@code DRL_TEXT}, the analysis of the exec-model branch rendered as DRL text (card
  * drl-teksttak-op-truth-maintenance), faults on the four cases of the calendar step as the other branches do, and on
  * the step of a day kind since its step 5, which sets the predicates of the analysis as globals of the text; until then
  * it refused the day kinds by name, and this witness pinned that refusal. <b>Red</b> on {@code 2704d81d}, before the

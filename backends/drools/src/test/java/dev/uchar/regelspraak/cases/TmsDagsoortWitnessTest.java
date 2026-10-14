@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Day kinds on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3.8, IR-SPEC ch. 3.7, WF-031): a date or a
+ * Day kinds on the exec-model branch (RUNTIME-SEMANTICS ch. 3.8, IR-SPEC ch. 3.7, WF-031): a date or a
  * date-time plus or minus a count of days of a kind walks the calendar, and a duration in whole days of a kind counts
  * them. A definition reads nothing of working memory, so its predicate is a constant of the document, compiled where a
  * form steps or counts in its kind; the reads the step depends on are the date and the count.
@@ -193,7 +193,7 @@ class TmsDagsoortWitnessTest {
     }
 
     /** Every order of {@code regels}, and within each every order of {@code definities}, replayed on {@code zaak}
-     *  through the truth-maintenance branch: "[rule names] [definition names] " and what the replay gives. */
+     *  through the exec-model branch: "[rule names] [definition names] " and what the replay gives. */
     static List<String> inElkeVolgorde(String model, List<String> regels, List<String> definities, JsonNode zaak)
             throws Exception {
         List<String> uit = new ArrayList<>();
@@ -472,7 +472,7 @@ class TmsDagsoortWitnessTest {
                 weigering(document(MODEL_D, List.of(GETIJSPANNE), List.of(SPRINGTIJDAG))));
     }
 
-    /** The refusal of the document {@code ir} by the truth-maintenance branch, as the build raises it. */
+    /** The refusal of the document {@code ir} by the exec-model branch, as the build raises it. */
     static String weigering(Path ir) {
         return assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL)).getMessage();

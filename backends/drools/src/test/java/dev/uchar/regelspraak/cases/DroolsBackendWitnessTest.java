@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * construct lowered, so four of four HTTP answers called an excluded jutter entitled, with status 200 and no
  * marker. The replay IS the entry here ({@code CaseRunner} builds through it), so gate 12 plays the entry on
  * every golden; these rows pin what the gate cannot see — that the defaults family is in the KieBase the entry
- * hands out, on the truth-maintenance branch as eight rules of its own beside the one that reads it, that the DRL-text
+ * hands out, on the exec-model branch as eight rules of its own beside the one that reads it, that the DRL-text
  * branch plays the document as the exec-model branch does, and that no build of the analysis can leave a side table
  * out.
  */
@@ -66,7 +66,7 @@ class DroolsBackendWitnessTest {
         assertEquals(List.of("defaults: defaults K:Jutter.uitgesloten", "regel: penninggerechtigd tenzij uitgesloten"),
                 b.dekking().stream().map(Dekking::sleutel).sorted().toList());
         assertTrue(b.dekking().stream().allMatch(Dekking::lowered), "every entry lowered: " + b.dekking());
-        assertTrue(b.dagsoortGlobalen().isEmpty(), "the truth-maintenance branch declares no day-kind globals");
+        assertTrue(b.dagsoortGlobalen().isEmpty(), "the exec-model branch declares no day-kind globals");
     }
 
     /** What the build without the side tables handed out: the same model through the same transpiler with the

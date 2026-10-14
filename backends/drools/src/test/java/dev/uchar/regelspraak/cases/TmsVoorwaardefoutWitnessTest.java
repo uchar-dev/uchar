@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * An evaluation fault in a condition on the truth-maintenance branch. A condition is tested in the left-hand side,
+ * An evaluation fault in a condition on the exec-model branch. A condition is tested in the left-hand side,
  * where Drools cannot take a fault as a fact: a division by a numeric zero there left the fire as an exception of the
  * engine that named neither the rule nor the division. Its test now answers that the condition does not hold where it
  * faults, and a rule of the form's own inserts the fault logically, so the fault stands while the reads it rested on

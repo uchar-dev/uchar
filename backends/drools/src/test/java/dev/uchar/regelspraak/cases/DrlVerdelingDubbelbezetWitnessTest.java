@@ -27,10 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * rangaandeel, its rest into the rangrest. D2 receives in neither, and its empty weight is the §9.5 inconsistency of
  * each allocation on D2; D1 receives 600 and 600, D3 250 and 400, and the rests are 150 and 0.
  *
- * <p>Both orders of the two allocations in the document play on the exec-model branch and on {@code DRL_TMS}; and every
- * order of the four rules of the allocations, a recipient rule and a distribution rule each, the other rules in their
- * place, fires on both, on {@code DRL_TMS} with the rules of the text in that order ({@code Tekstvolgorde}), since the
- * order of the rules in the text is the order in which Drools loads them.
+ * <p>Both orders of the two allocations in the document play on the exec-model branch and on {@code DRL_TEXT}; and
+ * every order of the four rules of the allocations, a recipient rule and a distribution rule each, the other rules in
+ * their place, fires on both, on {@code DRL_TEXT} with the rules of the text in that order ({@code Tekstvolgorde}),
+ * since the order of the rules in the text is the order in which Drools loads them.
  *
  * <p><b>Measured</b> (2026-10-13; raw output with the measurements of the card, {@code stap5/dubbelbezet-ruw.txt}):
  * verifier PASS; the reference interpreter and the ASP runner PASS with the ten expectations of the case; the

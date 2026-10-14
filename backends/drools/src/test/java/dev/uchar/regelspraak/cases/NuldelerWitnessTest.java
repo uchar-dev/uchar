@@ -56,9 +56,9 @@ class NuldelerWitnessTest {
     @Test void een_nuldeler_in_de_consequentie_van_een_default() throws Exception {
         // "Afwijking van verhouding: gewogen" under the base 1,00, the division where the gewogen gewicht is gevuld. The
         // destructive exec-model branch carried the group as one rule, named by its target on its owner type, and gave
-        // the division by zero that name. The truth-maintenance branch refuses a division in a default by name: it
-        // computes a default as soon as what it reads stands, so a division by zero there is a fault on an intermediate
-        // state, and whether it counts waits on the norm decision of card 20261008-fout-op-tussenstand.
+        // the division by zero that name. The exec-model branch with truth maintenance refuses a division in a default
+        // by name: it computes a default as soon as what it reads stands, so a division by zero there is a fault on an
+        // intermediate state, and whether it counts waits on the norm decision of card 20261008-fout-op-tussenstand.
         Path ir = document("", groep(standaard(gevuld("gewogen gewicht"), deling("dividedBy")), standaard(ALTIJD, EEN)));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir,
                 JSON.readTree(NUL_EN_GEWOON), DroolsBackend.Branch.EXEC_MODEL));

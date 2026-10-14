@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * An evaluation fault in a rule's value on the truth-maintenance branch: a division by a numeric zero is a fault
+ * An evaluation fault in a rule's value on the exec-model branch: a division by a numeric zero is a fault
  * (RUNTIME-SEMANTICS ch. 1.4, point 4), and a fault, like a value, belongs to the fixpoint (ch. 5.2). The branch has no
  * strata and passes intermediate states the reference interpreter does not see, and a fault thrown out of a consequence
  * cannot be withdrawn, so the fault is a fact inserted logically, justified by the activation that raised it, and the
@@ -423,11 +423,11 @@ class TmsFoutWitnessTest {
         }
     }
 
-    /** {@link #speel} on the exec-model branch and on {@code DRL_TMS}, its analysis rendered as DRL text, which gives
+    /** {@link #speel} on the exec-model branch and on {@code DRL_TEXT}, its analysis rendered as DRL text, which gives
      *  the same outcome (card drl-teksttak-op-truth-maintenance, step 5): that outcome. */
     static String speelBeide(Path ir, JsonNode zaak) throws Exception {
         String exec = speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, speel(ir, zaak, DroolsBackend.Branch.DRL_TEXT), () -> "DRL_TMS speelt " + ir
+        assertEquals(exec, speel(ir, zaak, DroolsBackend.Branch.DRL_TEXT), () -> "DRL_TEXT speelt " + ir
                 + " anders dan de exec-model-tak");
         return exec;
     }

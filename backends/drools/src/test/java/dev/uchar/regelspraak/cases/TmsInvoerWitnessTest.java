@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The input of a session through {@link DroolsBackend#voegIn} (card tms-omschakeling, point 12): the beans, and what the
- * truth-maintenance branch reads beside them, named by the consumer in the words of the model ({@link Invoer}), so that
+ * branch reads beside them, named by the consumer in the words of the model ({@link Invoer}), so that
  * no consumer states a fact class of that branch.
  *
  * <ul>

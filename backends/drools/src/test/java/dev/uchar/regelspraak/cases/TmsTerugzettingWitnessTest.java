@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The write-back of the truth-maintenance branch ({@code DroolsBackend.zetAfgeleideWaarden}). The branch derives with
+ * The write-back of the exec-model branch ({@code DroolsBackend.zetAfgeleideWaarden}). The branch derives with
  * logical inserts and never writes a bean while it fires, so a derived characteristic reaches the bean through this call
  * only, after the fire. "Een Jutter is vergund indien hij erkend is" over J1 (erkend in the input), J2 (vergund in the
  * input, not erkend) and J3 (neither): before the call J1's bean is not vergund, though the session holds the
@@ -93,9 +93,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; lens on round 4:
  * these orders of rules and defaults groups ran on the executable model only): every row but the one of the DRL-text
- * branch runs on the exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, whose write-back is the same
+ * branch runs on the exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, whose write-back is the same
  * code; and a seeded sample of the orders of the generated rules fires the Vondsten and writes back on both, on
- * {@code DRL_TMS} with the rules of the text in each order ({@code Tekstvolgorde}). The sample passes no intermediate
+ * {@code DRL_TEXT} with the rules of the text in each order ({@code Tekstvolgorde}). The sample passes no intermediate
  * standing: each position of the two groups reads an input characteristic, whose standing is fixed before the fire, so
  * no lower default decides before a higher one (measured on the exec-model branch: no order of the sample withdrew a
  * control fact); it pins the write-back in every order the sample takes. <b>Red</b> on {@code e2bd685e}, before step 4: every row with the two
@@ -209,7 +209,7 @@ class TmsTerugzettingWitnessTest {
     }
 
     /** The same write-back in a seeded sample of the orders of the generated rules, on the exec-model branch and on
-     *  {@code DRL_TMS} with the rules of its text in each order. */
+     *  {@code DRL_TEXT} with the rules of its text in each order. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();

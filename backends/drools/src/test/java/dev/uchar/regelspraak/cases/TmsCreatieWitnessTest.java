@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Object and fact creation on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 5.5): a creation fires only at a
+ * Object and fact creation on the exec-model branch (RUNTIME-SEMANTICS ch. 5.5): a creation fires only at a
  * fixpoint of the rule layer, what it makes is stated and never lapses, and the driver fires in generations
  * ({@code DroolsBackend.vuur}). Each document runs once through the replay and then in a sample of orders of the rules
  * the branch generates (the order of the model, its reverse and a hundred shuffles), through the driver.
@@ -113,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>The samples of document A on the text</b> (card drl-teksttak-op-truth-maintenance, round 5b, on the lens of
  * round 5). The two samples where a lower default decides before a creation fire on the exec-model branch and on
- * {@code DRL_TMS}, its analysis rendered as DRL text, with the rules of the text in the same orders
+ * {@code DRL_TEXT}, its analysis rendered as DRL text, with the rules of the text in the same orders
  * ({@code Tekstvolgorde}), since the order of the rules in the text is the order in which Drools loads them; each
  * branch meets the same demands, among them an order in which the lower default decides first. <b>Red</b> on
  * {@code b4d83a69}, before the rendering carried the creations: both failed at the replay, "DRL_TMS speelt … anders
@@ -822,7 +822,7 @@ class TmsCreatieWitnessTest {
 
     /** {@link #vuur(DroolsBackend.Build, List, List, Consumer, Consumer)} through the rules of {@code b} named in
      *  {@code namen}, in that order, as its branch builds them ({@link TmsDocumenten#kieBaseVan}): on the exec-model
-     *  branch the rules of its executable model, on {@code DRL_TMS} those of its text (round 5b). */
+     *  branch the rules of its executable model, on {@code DRL_TEXT} those of its text (round 5b). */
     static String vuurInVolgorde(DroolsBackend.Build b, List<String> namen, List<Object> bonen,
                                  Consumer<KieSession> voor, Consumer<KieSession> na) throws Exception {
         return vuur(b, TmsDocumenten.kieBaseVan(b, namen), namen, bonen, voor, na);

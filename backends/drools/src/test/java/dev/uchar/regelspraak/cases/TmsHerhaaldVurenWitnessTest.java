@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Two fires in one session of the truth-maintenance branch, through the entry a consumer has ({@link DroolsBackend#voegIn},
+ * Two fires in one session of the exec-model branch, through the entry a consumer has ({@link DroolsBackend#voegIn},
  * {@link DroolsBackend#vuur}, {@link DroolsBackend#lees}), with an input change between them (card tms-omschakeling,
  * points 4 and 11). The beans hold the input alone between the fires, so a derivation whose reads change lapses, a
  * fault arises or lapses, and an initialisation fires again, and the second reading equals that of a fresh session of

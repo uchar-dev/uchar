@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Reads over a role on the truth-maintenance branch where the link is absent (RUNTIME-SEMANTICS ch. 5.8). A Vondst
+ * Reads over a role on the exec-model branch where the link is absent (RUNTIME-SEMANTICS ch. 5.8). A Vondst
  * reads over its vinder, a Jutter: the derived tarief ("Het tarief van een Jutter moet berekend worden als zijn
  * basistarief plus 1, indien hij erkend is"), the derived characteristic erkend ("Een Jutter is erkend indien hij
  * aangemeld is") and the input basistarief. Six characteristics of the Vondst test those reads: the tarief gevuld,

@@ -14,7 +14,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * A composite condition on the truth-maintenance branch, under each quantifier, read as a predicate over bound values:
+ * A composite condition on the exec-model branch, under each quantifier, read as a predicate over bound values:
  * "Een Jutter is ingedeeld indien hij aan Q van de volgende voorwaarden voldoet: hij is gemeld, hij is niet geschorst, hij
  * is vergund", with gemeld and geschorst case input, read off the bean, and vergund derived ("Een Jutter is vergund
  * indien hij erkend is"), read through its standing. Eight Jutters cover every combination of erkend, gemeld and

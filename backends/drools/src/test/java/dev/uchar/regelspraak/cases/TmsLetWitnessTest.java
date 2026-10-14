@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A {@code Let} (RUNTIME-SEMANTICS ch. 10.6), its {@code BinderRef} and an {@code IfThenElse} (ch. 10.2) on the
- * truth-maintenance branch, over a binder whose value another rule derives later: "De grondslag van een Jutter moet
+ * exec-model branch, over a binder whose value another rule derives later: "De grondslag van een Jutter moet
  * berekend worden als zijn inkomen" and "De heffing van een Jutter moet berekend worden als: k is zijn grondslag; als k
  * groter is dan 10,00 dan 5,00, anders k gedeeld door zijn restpost". The division in the else branch is a §6.5 place
  * (a leeg divisor gives leeg and a §9.5 inconsistency, ch. 1.2) and a fault place (a numeric zero, ch. 1.4): it is

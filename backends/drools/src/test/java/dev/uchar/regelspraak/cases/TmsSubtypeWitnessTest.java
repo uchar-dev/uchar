@@ -13,7 +13,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * A characteristic written on one type of a subtype chain and read on another, on the truth-maintenance branch. The
+ * A characteristic written on one type of a subtype chain and read on another, on the exec-model branch. The
  * branch keys a characteristic on the type that declares it, so a derivation and a check meet on one key whichever type
  * of the chain each names. Jutter declares erkend, vergund and onvergund; Strandjutter, a subtype, declares
  * strandbevoegd. First the writer on the supertype and the negated reader on the subtype: "Een Jutter is vergund indien

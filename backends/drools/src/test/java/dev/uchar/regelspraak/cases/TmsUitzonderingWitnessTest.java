@@ -59,10 +59,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; acceptance (a), the
  * unordered defaults with §9.5 and the nested exception groups of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2): every order of
- * the document's rules plays on the exec-model branch and on {@code DRL_TMS}, and the sample of orders runs on both, on
- * {@code DRL_TMS} with the rules of the text in each order ({@code Tekstvolgorde}); a control fact must be withdrawn on
- * the way there too. <b>Red</b> on {@code e2bd685e}, before step 4: both tests failed on {@code DRL_TMS} with "drl-tms:
- * de DRL-weergave draagt Afloop nog niet".
+ * the document's rules plays on the exec-model branch and on {@code DRL_TEXT}, and the sample of orders runs on both,
+ * on {@code DRL_TEXT} with the rules of the text in each order ({@code Tekstvolgorde}); a control fact must be
+ * withdrawn on the way there too. <b>Red</b> on {@code e2bd685e}, before step 4: both tests failed on {@code DRL_TMS}
+ * with "drl-tms: de DRL-weergave draagt Afloop nog niet".
  */
 class TmsUitzonderingWitnessTest {
 

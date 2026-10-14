@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * The value equality of a timeline in a fact of the truth-maintenance branch ({@link Tijdvak}), which the KieBase in
+ * The value equality of a timeline in a fact of the exec-model branch ({@link Tijdvak}), which the KieBase in
  * {@code EQUALITY} rests on: two equal logical facts are one fact, found through {@code hashCode} and confirmed through
  * {@code equals}, so the two must agree.
  *

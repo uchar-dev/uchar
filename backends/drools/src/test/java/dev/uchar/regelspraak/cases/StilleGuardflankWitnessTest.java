@@ -63,7 +63,7 @@ class StilleGuardflankWitnessTest {
         //     drl-tekst: EXCLUDE drl-transpiler MARKER: feitcreatie: vakbeseining door het kustvak
         //                — TODO voorwaarde niet naar anker of doel te lowereren — regel inert i.p.v. over-creatie
         // The guard is unreadable in every executor that reads it; this backend is the only one that answered.
-        // Since card tms-omschakeling (2026-10-10) the exec-model row runs on the truth-maintenance branch, which reads
+        // Since card tms-omschakeling (2026-10-10) the exec-model branch derives with truth maintenance and reads
         // the guard as ref does: the condition faults when it is evaluated, and the write-back throws that fault at
         // the fixpoint (WF-044), on both branches since card drl-teksttak-op-truth-maintenance; until then the DRL-text
         // branch refused the creation by name ("voorwaarde niet naar anker of doel te lowereren").

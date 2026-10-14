@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Allocations on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 4): the distribution is a computation over the
+ * Allocations on the exec-model branch (RUNTIME-SEMANTICS ch. 4): the distribution is a computation over the
  * recipients its left-hand side binds, with every weight, ordering key, cap and pot bound there, so it follows a value
  * that a rule derives later, a recipient a creation adds, and a condition, and a degradation counts on the §9.5 channel
  * at the fixpoint only.
@@ -234,7 +234,7 @@ class TmsVerdelingWitnessTest {
         return uit;
     }
 
-    /** The outcome of the case on the exec-model branch and on {@code DRL_TMS}, which must be one. */
+    /** The outcome of the case on the exec-model branch and on {@code DRL_TEXT}, which must be one. */
     private static String speel(Path ir, JsonNode zaak) throws Exception {
         return TmsFoutWitnessTest.speelBeide(ir, zaak);
     }
@@ -284,7 +284,7 @@ class TmsVerdelingWitnessTest {
      * holds one {@link Waarde} for each share; and in at least one order the allocation inserts a share of the state
      * before the toeslag is derived (J1 225 naar rato, J2 900 op rang), which truth maintenance withdraws.
      *
-     * <p>The sample fires on the exec-model branch and on {@code DRL_TMS}, its analysis rendered as DRL text, with the
+     * <p>The sample fires on the exec-model branch and on {@code DRL_TEXT}, its analysis rendered as DRL text, with the
      * rules of the text in the same orders ({@code Tekstvolgorde}), and each branch meets the same demands (card
      * drl-teksttak-op-truth-maintenance, round 5b, on the lens of round 5). <b>Red</b> on {@code abe891c1}, before the
      * rendering carried the recipients of an allocation: "Excluded drl-tms: de DRL-weergave draagt Ontvanger nog

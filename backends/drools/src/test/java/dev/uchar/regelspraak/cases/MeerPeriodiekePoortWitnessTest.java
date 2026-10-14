@@ -159,15 +159,16 @@ class MeerPeriodiekePoortWitnessTest {
         // The card's question 3 on the position a REPLAYING corpus document occupies: jutterswet-keurploeg states a
         // §8.2 whole-period matrix (a Kwantorvouw) over the MAAND-granular keurvergoeding. Measured rather than
         // assumed: THIS position routes through the fold's whole-period arm, whose gate elementTijdlijnLid
-        // (DrlTranspiler / TmsTranspiler's tijdlid) DOES consult the count table — and must classify an explicit 1 as
-        // single-periodic, where the PRE-FIX containsKey test refused it. That is exactly why the mutant kills this
-        // test, and it makes this a stronger witness than the cabinet position ever was (that one never consulted
-        // the table at all). The SET gates (isTemporeelSetAttribuut/isTemporeelSet82) are reached by no corpus
-        // document: every §8.2 operand in golden carries set:false (re-measured 2026-09-19).
-        // Verdict compared byte for byte on the DRL text and construct for construct on both coverage manifests.
-        // Since M1 every facet writes its count and the loader keeps it, 1 included: the loaded table carries the
-        // explicit 1 of the wire, and the probe REMOVES it for the other side — the absent entry the v0 wire wrote.
-        // It asserts the entry was the wire's 1; otherwise both sides would be the same document.
+        // (TmsTranspiler's tijdlid, and DrlTranspiler's until card drl-teksttak-op-truth-maintenance) DOES consult the
+        // count table — and must classify an explicit 1 as single-periodic, where the PRE-FIX containsKey test refused
+        // it. That is exactly why the mutant kills this test, and it makes this a stronger witness than the cabinet
+        // position ever was (that one never consulted the table at all). The SET gates
+        // (isTemporeelSetAttribuut/isTemporeelSet82) are reached by no corpus document: every §8.2 operand in golden
+        // carries set:false (re-measured 2026-09-19). Verdict compared byte for byte on the DRL text and construct for
+        // construct on both coverage manifests. Since M1 every facet writes its count and the loader keeps it, 1
+        // included: the loaded table carries the explicit 1 of the wire, and the probe REMOVES it for the other side —
+        // the absent entry the v0 wire wrote. It asserts the entry was the wire's 1; otherwise both sides would be the
+        // same document.
         Path keurploeg = ir(KEURPLOEG);
         java.util.function.Consumer<RegelSpraakModel> zonder = m -> assertEquals(1,
                 m.objecttypen.get("Keurmeester").attribuutTijdlijnAantal.remove("keurvergoeding"),
@@ -182,7 +183,7 @@ class MeerPeriodiekePoortWitnessTest {
         assertEquals(drl, drlTekst(keurploeg, met),
                 "de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek met en zonder de sleutel");
         assertEquals(dekking(keurploeg, zonder), dekking(keurploeg, met),
-                "en de dekking van de tak met truth maintenance eveneens");
+                "en de dekking van de exec-model-tak eveneens");
     }
 
     // ---------------- the over-acceptance flank ----------------
@@ -236,7 +237,7 @@ class MeerPeriodiekePoortWitnessTest {
         }
         return assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL),
-                "verwacht een weigering van de tak met truth maintenance").getMessage();
+                "verwacht een weigering van de exec-model-tak").getMessage();
     }
 
     private static String drlReden(Path ir, String golden) {
@@ -302,7 +303,7 @@ class MeerPeriodiekePoortWitnessTest {
         }
     }
 
-    /** The truth-maintenance branch's coverage manifest for a document, as comparable text; {@code ingreep} edits
+    /** The exec-model branch's coverage manifest for a document, as comparable text; {@code ingreep} edits
      *  the loaded model first. */
     private static List<String> dekking(Path irPath, java.util.function.Consumer<RegelSpraakModel> ingreep) throws Exception {
         IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));

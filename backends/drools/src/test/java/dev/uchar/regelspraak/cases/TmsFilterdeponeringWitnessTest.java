@@ -32,7 +32,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * The §6.5 deposit of a fold's filter on the truth-maintenance branch. The reference interpreter evaluates a fold's
+ * The §6.5 deposit of a fold's filter on the exec-model branch. The reference interpreter evaluates a fold's
  * filter per member of the fold's range, only where the evaluation of the form that reads the fold reaches the fold
  * (RUNTIME-SEMANTICS ch. 5.10, 5.11), with that form's collector of deposits: a filter that divides a filled dividend
  * by a leeg divisor deposits a §9.5 inconsistency under the reading form and its subject, the fold's subject (ch. 1.2,

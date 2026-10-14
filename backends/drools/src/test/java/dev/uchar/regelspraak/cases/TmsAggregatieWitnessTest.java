@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Aggregations on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 1.2 "Aggregations", ch. 3.4a-c): a fold over the
+ * Aggregations on the exec-model branch (RUNTIME-SEMANTICS ch. 1.2 "Aggregations", ch. 3.4a-c): a fold over the
  * members its range reaches recomputes when a member, or a value derived for a member, changes, and its activation
  * that fires again leaves one value for its target, not two.
  *

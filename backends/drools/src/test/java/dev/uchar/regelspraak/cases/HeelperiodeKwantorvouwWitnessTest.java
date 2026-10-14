@@ -515,7 +515,7 @@ class HeelperiodeKwantorvouwWitnessTest {
      * vergelijking die WEL niet-temporeel bedoeld is maar een TIJDSAFHANKELIJK operand leest
      * ({@code wachtwaarde} is MAAND-granulair): die draagt de bladvertaling niet, dus de weigering
      * blijft — met een andere, even benoemde reden. De bewering van de rij is onveranderd: buiten de
-     * scope is de vorm zichtbaar, nooit stil. Op de tak met truth maintenance (sinds kaart tms-omschakeling)
+     * scope is de vorm zichtbaar, nooit stil. Op de exec-model-tak met truth maintenance (sinds kaart tms-omschakeling)
      * noemt de reden het tijdsafhankelijke attribuut op een plek die één waarde leest.
      */
     @Test void een_matrix_buiten_de_scope_wordt_met_de_vorm_in_de_reden_overgeslagen() throws Exception {

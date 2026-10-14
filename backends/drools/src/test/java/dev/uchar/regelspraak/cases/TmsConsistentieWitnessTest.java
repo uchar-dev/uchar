@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Consistencies and the §9.5 channel on the truth-maintenance branch (IR-SPEC ch. 3.5, RUNTIME-SEMANTICS ch. 5.6). A
+ * Consistencies and the §9.5 channel on the exec-model branch (IR-SPEC ch. 3.5, RUNTIME-SEMANTICS ch. 5.6). A
  * consistency is a rule that inserts the {@code Inconsistentie} of its subject logically where its assertion does not
  * hold, so a violation found against a transient value goes when that value changes. The first document has the
  * consistency read an attribute a chain of two rules fills: "Het tussengewicht van een Vondst moet berekend worden als
@@ -83,8 +83,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * replay of one Vondst ended on "case: geen fixpunt (kringverwijzing?)".
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 3b): every row runs on the
- * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, and the orders of the generated rules are tried
- * on both: on {@code DRL_TMS} the rules of the plan rendered as text in each order ({@link Tekstvolgorde}), since the
+ * exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, and the orders of the generated rules are tried
+ * on both: on {@code DRL_TEXT} the rules of the plan rendered as text in each order ({@link Tekstvolgorde}), since the
  * order of the rules in the text is the order in which Drools loads them. <b>Red</b> on {@code 0458b2d0}, before the
  * step: both rows of the worked example failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Kanaalstand
  * nog niet", the row of the document through the replay and the row of the orders where it builds the branch. The rows
@@ -356,7 +356,7 @@ class TmsConsistentieWitnessTest {
         }
     }
 
-    /** The refusal of the cycle, which {@code DRL_TMS} takes from the analysis with its label. */
+    /** The refusal of the cycle, which {@code DRL_TEXT} takes from the analysis with its label. */
     private static final String KRING = "exec-model: kring in de afhankelijkheden over de knopen Vondst.verdacht en het"
             + " kanaal van \"controle verdenking\" via de regel \"verdenking\" en de consistentieregel \"controle"
             + " verdenking\" — een kring die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd"

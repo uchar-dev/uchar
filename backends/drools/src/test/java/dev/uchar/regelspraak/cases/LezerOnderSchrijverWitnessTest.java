@@ -320,7 +320,7 @@ class LezerOnderSchrijverWitnessTest {
     @Test void een_leegtoets_op_een_kring_met_zijn_schrijver_weigert_met_de_vorm() throws Exception {
         // "De afgeleide registratiedag … op zijn registratiedag indien zijn afgeleide controledag leeg is" and "De
         // afgeleide controledag … op zijn controledag indien zijn afgeleide registratiedag leeg is": a negative edge on a
-        // cycle, which WF-046 refuses; ref refuses the document too. The truth-maintenance branch refuses the cycle
+        // cycle, which WF-046 refuses; ref refuses the document too. The exec-model branch refuses the cycle
         // itself before it builds the KieBase, as WF-045 does (Kringen), and names its members and rules.
         String registratie = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", eigen("registratiedag"),
                 predicaat("empty", eigen("afgeleide controledag")));
@@ -339,7 +339,7 @@ class LezerOnderSchrijverWitnessTest {
     @Test void een_leegtoets_op_het_eigen_doel_weigert_met_de_vorm() throws Exception {
         // "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn vinddag indien zijn afgeleide
         // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses. The
-        // truth-maintenance branch refuses the cycle by name, as the row above.
+        // exec-model branch refuses the cycle by name, as the row above.
         String zelf = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", eigen("vinddag"),
                 predicaat("empty", eigen("afgeleide registratiedag")));
         String zaak = zaak(List.of(vondst("V", "2026-09-15", null, "")), dag("V", "afgeleide registratiedag", "2026-09-15"));
@@ -616,7 +616,7 @@ class LezerOnderSchrijverWitnessTest {
         return CaseRunner.speelCase(tmp, c, false);
     }
 
-    /** The truth-maintenance branch's verdict on one case. */
+    /** The exec-model branch's verdict on one case. */
     private static String speelTms(String ir, String zaak) throws Exception {
         Path tmp = Files.createTempFile("lezer-onder-schrijver", ".json");
         tmp.toFile().deleteOnExit();

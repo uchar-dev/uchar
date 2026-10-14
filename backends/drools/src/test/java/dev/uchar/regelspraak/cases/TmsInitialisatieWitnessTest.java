@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Initialisations on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 5.4: the guard reads the input, not the
+ * Initialisations on the exec-model branch (RUNTIME-SEMANTICS ch. 5.4: the guard reads the input, not the
  * initialisation's own write). The first document has the shape of the golden {@code jutterswet-initialisatievolgorde},
  * on whole numbers: "Het bergloon van een Vondst moet geïnitialiseerd worden op 2 maal zijn berekend gewicht indien zijn
  * gewicht groter is dan 10", "Het vindloon van een Vondst moet geïnitialiseerd worden op zijn berekend gewicht plus 5"

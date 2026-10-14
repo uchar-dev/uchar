@@ -21,10 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The form of card drl-aantal-filter-zink through {@code DRL_TMS} (card drl-teksttak-op-truth-maintenance, step 3a,
+ * The form of card drl-aantal-filter-zink through {@code DRL_TEXT} (card drl-teksttak-op-truth-maintenance, step 3a,
  * FABLE-2 §7.4): a whole-period qualification in the filter of a count, "het aantal posten van het Kustvak die
- * gedurende het gehele jaar bemand zijn", in a computation rule and in the guard of an object creation. The DRL-text
- * branch sank both documents with a compiler error in the accumulate of its anchor attempt
+ * gedurende het gehele jaar bemand zijn", in a computation rule and in the guard of an object creation. The
+ * destructive DRL-text lowering sank both documents with a compiler error in the accumulate of its anchor attempt
  * ({@code Unable to Analyse Expression rsGeheelPeriode($subject.getBemand(), "JAAR", 7, null)}). In the rendering of the
  * analysis the filter stands in the test of the rule that inserts a member's contribution, as a function that calls
  * the route of the whole period, and no accumulate holds it.
@@ -37,10 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * year its true periods touch is covered on every day, so a post manned for the first half of 2026 does not count, a
  * post manned through 2025 and 2026 does, and a post without any period counts vacuously.
  *
- * <p>This witness fires two branches only: the exec-model branch and {@code DRL_TMS}. The documents lie outside the
- * corpus, so no gate runs them through the verifier, the reference interpreter, the ASP backend or the DRL-text
- * branch; those were run by hand. Measured on {@code 4c8a687b}, before step 3a, per document (verifier, ref, clingo,
- * exec-model branch, DRL-text branch, {@code DRL_TMS}): the computation rule PASS, PASS 4, PASS 4, PLAYED 4, EXCLUDE
+ * <p>This witness fires both branches, the exec-model branch and {@code DRL_TEXT}. The documents lie outside the
+ * corpus, so no gate runs them through the verifier, the reference interpreter or the ASP backend; those were run by
+ * hand. Measured on {@code 4c8a687b}, before step 3a, per document (verifier, ref, clingo, exec-model branch, the
+ * destructive DRL-text branch, {@code DRL_TMS}): the computation rule PASS, PASS 4, PASS 4, PLAYED 4, EXCLUDE
  * on the compiler error above, EXCLUDE "drl-tms: de DRL-weergave draagt Bijdrage nog niet"; the creation guard PASS,
  * PASS 3, PASS 3, PLAYED 3, the same compiler error, and EXCLUDE "drl-tms: de DRL-weergave draagt Creatie nog niet".
  * Measured again at fix round 3a of the card, on {@code 85b9a970}, with the same outcomes but for {@code DRL_TMS}, which
@@ -49,8 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>} under {@code _build/default}). The raw output of
  * that run is not in the repository; it is kept with the measurements of the card, in
  * {@code stap3b/fix3a/heelperiode-ruw.txt} (verifier, ref, clingo) and {@code stap3b/fix3a/heelperiode-ruw-drools.txt}
- * (the three Drools branches through the CLI). The creation guard plays through {@code DRL_TMS} since the branch
- * carries a creation (step 5); until then the branch refused it for the creation, and this witness pinned that refusal.
+ * (the three Drools branches through the CLI). The creation guard plays through the rendering as DRL text since it
+ * carries a creation (step 5); until then it refused the guard for the creation, and this witness pinned that refusal.
+ * Since the switch-over (step 6) that rendering is the DRL-text branch.
  *
  * <p><b>Red</b> on {@code 4c8a687b}: the test of the computation rule fails on the refusal of the contribution. The
  * test of the creation guard held there too, since the rendering met the creation first: it pinned the loud refusal
@@ -67,14 +68,14 @@ class HeelperiodeAantalfilterWitnessTest {
     private static final Pattern GEHEEL_PERIODE = Pattern.compile(
             "function boolean (r\\d+_toets\\d+)\\([^)]*\\) \\{\\n    return Rekenhulpen\\.geheelPeriode\\(");
 
-    @Test void de_rekenregel_speelt_door_drl_tms_zoals_door_de_exec_model_tak() throws Exception {
+    @Test void de_rekenregel_speelt_door_de_drl_teksttak_zoals_door_de_exec_model_tak() throws Exception {
         Path ir = DOCUMENTEN.resolve("rekenregel").resolve("ir.json");
         List<Path> zaken = zaken(ir);
         assertEquals(4, zaken.size(), "de cases van de rekenregel");
         for (Path zaak : zaken) {
             JsonNode c = JSON.readTree(zaak.toFile());
             assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "exec-model — " + zaak);
-            assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TEXT), "drl-tms — " + zaak);
+            assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TEXT), "drl-tekst — " + zaak);
         }
         String tekst = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
         List<String> functies = new ArrayList<>();

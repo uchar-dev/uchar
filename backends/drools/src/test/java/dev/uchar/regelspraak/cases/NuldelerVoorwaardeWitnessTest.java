@@ -135,7 +135,7 @@ class NuldelerVoorwaardeWitnessTest {
     }
 
     @Test void een_afnemer_die_zelf_vuurt_leest_de_regel_en_de_voorwaarde() throws Exception {
-        // the distribution's service fires the KieBase itself, on the truth-maintenance branch through the entry: the
+        // the distribution's service fires the KieBase itself, on the exec-model branch through the entry: the
         // fire reaches its fixpoint with the fault of the condition standing as a fact, DroolsBackend.lees gives it as
         // data, and DroolsBackend.zetAfgeleideWaarden throws it in the sentence of the replay, which names the rule.
         // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which

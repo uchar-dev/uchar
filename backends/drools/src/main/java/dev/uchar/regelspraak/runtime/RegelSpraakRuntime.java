@@ -1428,10 +1428,11 @@ public final class RegelSpraakRuntime {
      *
      *  <p>It is not the authority for the getter and the setter of a member: the generator writes those with
      *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#lidnamen} of the member's property, and every reader and
-     *  writer of the branch with truth maintenance takes them from there. The reflective bridge here
-     *  ({@link #get}, {@link #set}) and the DRL-text branch still put this form after {@code get}, {@code is} and
-     *  {@code set}, which misses the generator's name where the first letter of a declared name, put in lower case
-     *  and back in upper case, is another letter ("İş": {@code getİş}, where the generator writes {@code getIş}). */
+     *  writer of both branches takes them from there. The reflective bridge here ({@link #get}, {@link #set}) still
+     *  puts this form after {@code get}, {@code is} and {@code set} (as the destructive DRL-text lowering did until
+     *  card drl-teksttak-op-truth-maintenance), which misses the generator's name where the first letter of a declared
+     *  name, put in lower case and back in upper case, is another letter ("İş": {@code getİş}, where the generator
+     *  writes {@code getIş}). */
     public static String pascal(String naam) {
         return dev.uchar.regelspraak.transpiler.kern.Namen.ident(naam, true);
     }

@@ -166,7 +166,7 @@ class TakgelijkheidWitnessTest {
         // written: WF-034 gated zetVeld, joinVeld and the tussenstappen until L2 and crosses the symbolic block since,
         // and WF-094 clause (d) gated the five KEYED tables while feitCreaties is a LIST. Since then WF-107 covers it:
         // the verifier rejects a nameless form ("form in factCreations carries no name", measured 2026-10-10), so the
-        // document is NOT well-formed, and the truth-maintenance branch refuses it by name. ref and clingo still run
+        // document is NOT well-formed, and the exec-model branch refuses it by name. ref and clingo still run
         // it. Measured on the pre-fix jar:
         //     verifier: PASS
         //     ref     : oracle: PASS (10 expectations)

@@ -135,8 +135,8 @@ class SubtypeRolvullerWitnessTest {
         Objecttype schuit = model.objecttypeOpNaam("Schuit");
         assertTrue(FactModelGenerator.heeftReferentieVeld(model, schuit, "ligger", model.objecttypeOpNaam("Ponton")));
         assertFalse(FactModelGenerator.heeftReferentieVeld(model, schuit, "ligger", model.objecttypeOpNaam("Vlot")));
-        // the truth-maintenance branch names the missing field in its own sentence; the DRL-text branch names who
-        // holds the field
+        // both branches name the missing field in the sentence of the analysis; until card
+        // drl-teksttak-op-truth-maintenance the DRL-text branch named who holds the field
         BeideTakken.geweigerd(schrijf(ir), JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [ { "label": "S1", "objectType": "Schuit", "attributes": {}, "roles": {},

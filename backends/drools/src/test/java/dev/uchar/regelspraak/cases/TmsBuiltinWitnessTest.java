@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * The builtin calls and the remaining value and condition forms on the truth-maintenance branch, each over an operand
+ * The builtin calls and the remaining value and condition forms on the exec-model branch, each over an operand
  * another rule derives later, in both orders of the two rules (the case input puts a value on the derived operand that
  * the derivation replaces): the day-precision extractors, the duration and the absolute duration in a calendar unit and
  * easterSunday (RUNTIME-SEMANTICS ch. 3.8); the absolute value and the square root under its rounding (ch. 2.2), with

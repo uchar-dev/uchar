@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Uniqueness over a key on a timeline on the truth-maintenance branch, ever-uniqueness (RUNTIME-SEMANTICS ch. 5.9, rule
+ * Uniqueness over a key on a timeline on the exec-model branch, ever-uniqueness (RUNTIME-SEMANTICS ch. 5.9, rule
  * 1): every value the key's timeline ever carries is claimed, so two instances collide where they carried one value
  * in different periods, and an instance that carries one value in two periods claims it once and does not collide
  * with itself. The key is a timeline a rule derives, behind a gate another rule derives, so it stands only at the

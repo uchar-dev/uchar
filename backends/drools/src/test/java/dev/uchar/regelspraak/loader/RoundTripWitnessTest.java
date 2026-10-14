@@ -24,9 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * input. The corpus {@code ir.json} files ARE emit(model) — the frontend's IrEmitter dump of a
  * resolved model — so loading one and building the exec-model transpiler over the result witnesses
  * that {@link IrLoader} faithfully inverts the emitter into a model the transpiler accepts and wholly
- * lowers; since card tms-omschakeling that is the transpiler of the truth-maintenance branch. Pinned on THREE structurally-different goldens: scalar arithmetic, a date
- * computation, and a feittype-role navigation. (The 41-golden played set of gate 12 is the stronger
- * end-to-end witness — those loaded models fire to the exact pinned ref≡clingo values.)
+ * lowers; since card tms-omschakeling that is the transpiler of the exec-model branch. Pinned on THREE
+ * structurally-different goldens: scalar arithmetic, a date computation, and a feittype-role navigation. (The 41-golden
+ * played set of gate 12 is the stronger end-to-end witness — those loaded models fire to the exact pinned ref≡clingo
+ * values.)
  */
 class RoundTripWitnessTest {
 

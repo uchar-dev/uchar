@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * wrong while the total still lands: a mint linked in ONE direction only (the defect this card fixed — the
  * fold found it, the navigation read leeg), a member written on the subject instead of the mint, a second
  * mint where the fact base already answered the question. Those are asserted directly here, on the
- * truth-maintenance branch, through the entry a consumer uses: one {@link DroolsBackend#vuur} to the fixpoint, the
+ * exec-model branch, through the entry a consumer uses: one {@link DroolsBackend#vuur} to the fixpoint, the
  * objects and links the creations made as {@link DroolsBackend#lees} gives them, and the beans after
  * {@link DroolsBackend#zetAfgeleideWaarden}, which puts the derived values and the links on them (the branch writes no
  * bean while it fires).
@@ -496,7 +496,7 @@ class ObjectCreatieWitnessTest {
                         """)));
     }
 
-    /** One case of {@code irPath} on the truth-maintenance branch, as a consumer plays it through the entry: the input
+    /** One case of {@code irPath} on the exec-model branch, as a consumer plays it through the entry: the input
      *  through {@link DroolsBackend#voegIn} (the replay's set-up), one {@link DroolsBackend#vuur} to the fixpoint, the
      *  fixpoint {@link DroolsBackend#lees} gives, and then {@link DroolsBackend#zetAfgeleideWaarden}, so that the beans
      *  of the input and of the made objects carry the derived values and the links. */
@@ -527,12 +527,12 @@ class ObjectCreatieWitnessTest {
         return uit;
     }
 
-    /** The full replay of case {@code c} on the truth-maintenance branch: null on a match. */
+    /** The full replay of case {@code c} on the exec-model branch: null on a match. */
     private static String speel(Path irPath, JsonNode c) throws Exception {
         String exec = CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
-        // DRL_TMS renders the same analysis as DRL text, and gives the same verdict (card
+        // DRL_TEXT renders the same analysis as DRL text, and gives the same verdict (card
         // drl-teksttak-op-truth-maintenance, step 5); a refusal of the analysis leaves above, before this
-        assertEquals(exec, CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS op " + irPath);
+        assertEquals(exec, CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.DRL_TEXT), "DRL_TEXT op " + irPath);
         return exec;
     }
 

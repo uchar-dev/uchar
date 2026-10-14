@@ -39,9 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The twisted rows are the positions the refusal was pinned at, now with an answer to compare. One literal of a
  * playing golden is turned into the node, the case's date is set where it had none, and the expectations are the
  * reference interpreter's answer on the twisted document. Where a branch does not lower the node, the row pins that
- * branch's refusal, so a branch that starts lowering there fails the row until the row expects its values. The rows of
- * the exec-model branch run on the truth-maintenance branch since card tms-omschakeling (2026-10-10), which plays the
- * assertion of a consistency and the filter of a fold that the destructive exec-model branch refused.
+ * branch's refusal, so a branch that starts lowering there fails the row until the row expects its values. Since card
+ * tms-omschakeling (2026-10-10) the exec-model branch derives with truth maintenance; it plays the assertion of a
+ * consistency and the filter of a fold that the destructive exec-model branch refused.
  */
 class RekenjaarWitnessTest {
 

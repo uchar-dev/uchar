@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * The timeline forms the truth-maintenance branch refuses by name (RUNTIME-SEMANTICS ch. 3), each in a document of its
+ * The timeline forms the exec-model branch refuses by name (RUNTIME-SEMANTICS ch. 3), each in a document of its
  * own, with every refusal of the document's manifest pinned in the words of the build's exclusion: what no golden with
  * cases asks, and what the branch cannot compute as the reference interpreter does with the runtime's helpers it has.
  * Every document is verifier-clean; its case holds the values computed by hand, which the reference interpreter

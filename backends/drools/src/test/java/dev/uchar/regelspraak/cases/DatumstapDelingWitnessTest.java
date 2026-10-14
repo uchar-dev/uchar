@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * 2023-12-31T21:00:00, and three springtijdagen from 2026-03-10, 2026-04-15 with and without its 09:15:30. The ASP
  * backend refuses the documents at translation ("a unit-carrying multiplicative operand is not translated").
  *
- * <p>The exact quotient is a {@code Breuk}, and the step's count has to accept one. On the truth-maintenance branch the
+ * <p>The exact quotient is a {@code Breuk}, and the step's count has to accept one. On the exec-model branch the
  * day-kind rows pinned the refusal of day kinds until the card tms-verdeling-en-tijdlijnen (2026-10-09), which carries
  * them; since then they expect that branch's values, the same as the DRL-text branch's.
  *
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * rsGedeeld(...), ...)", the method took no {@code Object}) and the replay refused the document, also where the
  * division terminates.
  *
- * <p>{@code DRL_TMS}, the analysis of the exec-model branch rendered as DRL text (card
+ * <p>{@code DRL_TEXT}, the analysis of the exec-model branch rendered as DRL text (card
  * drl-teksttak-op-truth-maintenance), gives the values of the calendar step, and those of the day-kind step since its
  * step 5, which sets the predicates of the analysis as globals of the text; until then it refused the day kinds by
  * name, and the day-kind rows pinned that refusal. <b>Red</b> on {@code 2704d81d}, before the day kinds of step 5: the

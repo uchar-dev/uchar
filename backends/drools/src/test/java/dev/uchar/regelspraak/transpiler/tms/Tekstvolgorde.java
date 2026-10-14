@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The rules of the analysis of a build in an order of one's choice, rendered as DRL text and built as {@code DRL_TMS}
+ * The rules of the analysis of a build in an order of one's choice, rendered as DRL text and built as {@code DRL_TEXT}
  * builds its text: so that a witness of the package {@code cases} that puts the rules of the executable model in every
  * order can do the same with the rules of the text (card drl-teksttak-op-truth-maintenance, step 3b). The order of the
  * rules in the text is the order in which Drools loads them, and with it the order of the agenda among matches of equal

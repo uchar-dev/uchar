@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The frame of the truth-maintenance branch, around its lowering: the build names the branch and carries the one
+ * The frame of the exec-model branch, around its lowering: the build names the branch and carries the one
  * transpiler, the KieBase is configured in EQUALITY mode as the branch's design requires (this row reads the
  * configuration and fires no session; what the branch needs from the merging of equal logical facts is
  * {@code TmsRechtvaardigingWitnessTest}'s), a form the branch does not carry is refused by its manifest entry, which

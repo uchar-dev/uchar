@@ -413,7 +413,7 @@ final class TmsDocumenten {
     }
 
     /** The branches a sample of orders of the rules fires on (card drl-teksttak-op-truth-maintenance, round 5b): the
-     *  exec-model branch, and {@code DRL_TMS}, its analysis rendered as DRL text, whose rules the sample puts in order
+     *  exec-model branch, and {@code DRL_TEXT}, its analysis rendered as DRL text, whose rules the sample puts in order
      *  in the text ({@code Tekstvolgorde}), since the order of the rules in the text is the order in which Drools loads
      *  them, and with it the order of the agenda among matches of equal standing. */
     static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
@@ -432,7 +432,7 @@ final class TmsDocumenten {
     }
 
     /** The names of the rules of {@code b}, in the order in which its branch generates them: those of its executable
-     *  model, or on {@code DRL_TMS} those of its text, which must be the same in the same order, so that one sample
+     *  model, or on {@code DRL_TEXT} those of its text, which must be the same in the same order, so that one sample
      *  gives both branches the same orders. */
     static List<String> gegenereerd(DroolsBackend.Build b) {
         List<String> model = b.execModelTranspiler().model().getRules().stream().map(org.drools.model.Rule::getName)
@@ -445,8 +445,8 @@ final class TmsDocumenten {
     }
 
     /** A KieBase of the rules of {@code b} named in {@code namen}, each once and in that order, as its branch builds
-     *  them: the rules of its executable model ({@link #kieBase}), or on {@code DRL_TMS} the rules of its plan rendered
-     *  as text ({@code Tekstvolgorde}). */
+     *  them: the rules of its executable model ({@link #kieBase}), or on {@code DRL_TEXT} the rules of its plan
+     *  rendered as text ({@code Tekstvolgorde}). */
     static org.kie.api.KieBase kieBaseVan(DroolsBackend.Build b, List<String> namen) {
         if (b.branch() == DroolsBackend.Branch.DRL_TEXT)
             return dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde.kieBase(b, namen);

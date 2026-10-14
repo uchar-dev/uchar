@@ -29,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * relation the second derives from its type pair, so it stands a stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3): J1
  * (14 vondsten against the vondstdrempel 12) is penninggerechtigd and gets no Afwijzing, J2 (11) gets one.
  *
- * <p>Both orders of the two creations in the document play on the exec-model branch and on {@code DRL_TMS}; and both
- * orders of the two creation rules fire on both, on {@code DRL_TMS} with the rules of the text in that order
+ * <p>Both orders of the two creations in the document play on the exec-model branch and on {@code DRL_TEXT}; and both
+ * orders of the two creation rules fire on both, on {@code DRL_TEXT} with the rules of the text in that order
  * ({@code Tekstvolgorde}), since the order of the rules in the text is the order in which Drools loads them, and with it
  * the order of the agenda among the creations of one generation.
  *

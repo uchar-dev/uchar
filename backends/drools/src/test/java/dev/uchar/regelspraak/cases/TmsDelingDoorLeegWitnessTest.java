@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The §6.5 deposit of a division by leeg on the truth-maintenance branch: a filled dividend over a leeg divisor
+ * The §6.5 deposit of a division by leeg on the exec-model branch: a filled dividend over a leeg divisor
  * computes leeg and deposits an inconsistency under the rule's name on the subject (RUNTIME-SEMANTICS ch. 1.2, the
  * exec-model branch's {@code delingCompanions}), and only where the rule's condition holds. "Een Vondst is geclaimd
  * indien hij gemeld is", "Een Vondst is vrij indien hij niet geclaimd is", "Het aandeel van een Vondst moet berekend

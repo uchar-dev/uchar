@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The evaluation date on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 8): a version with a bounded validity
+ * The evaluation date on the exec-model branch (RUNTIME-SEMANTICS ch. 8): a version with a bounded validity
  * gates on it (ch. 8.2) — a characteristic attribution, an initialisation, a consistency, an object creation, a fact
  * creation and a prioritized-defaults group — on both sides of the date and on the bounds themselves, both inclusive
  * (IR-SPEC ch. 3.10); in a session without the date such a form faults (ch. 8.1), in the reference interpreter's

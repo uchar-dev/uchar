@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Uniqueness on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 5.6, 5.9): a duplicate non-empty key marks every
+ * Uniqueness on the exec-model branch (RUNTIME-SEMANTICS ch. 5.6, 5.9): a duplicate non-empty key marks every
  * instance that carries it on the §9.5 channel, under the form's name, and the form counts at the fixpoint of its
  * stratum, so a duplicate that arises on an intermediate state and passes is not on the channel.
  *

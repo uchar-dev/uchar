@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Documents fired through {@code DRL_TMS}, the analysis of the exec-model branch rendered as DRL text (card
- * drl-teksttak-op-truth-maintenance, step 2b), each case a match of the expectations the reference interpreter, the
- * ASP backend and the exec-model branch give; the harness of the step compares every fact of these sessions with that
- * branch.
+ * Documents fired through the DRL-text branch ({@code DRL_TEXT}), the analysis of the exec-model branch rendered as DRL
+ * text (card drl-teksttak-op-truth-maintenance, since step 2b), each case a match of the expectations the reference
+ * interpreter, the ASP backend and the exec-model branch give; the harness of the card compares every fact of these
+ * sessions with that branch.
  *
  * <p><b>A link that is absent</b> (FABLE-2 §4 point 2): a read along a path is a function of the text that walks the
  * path with the route {@code langs} and gives null where a link is absent, as the executable model reads it; the
@@ -39,9 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * through the names the generator wrote.
  *
  * <p><b>Red</b> on {@code 5eda2eff}, before the branch: {@code DroolsBackend.Branch.DRL_TMS} did not exist, and this class
- * did not compile.
+ * did not compile. Until the switch-over (step 6 of the card) the analysis rendered as DRL text was a third branch,
+ * {@code DRL_TMS} with the flag {@code --drl-tms}, and this class was {@code DrlTmsWitnessTest}; since then that
+ * rendering is the DRL-text branch.
  */
-class DrlTmsWitnessTest {
+class DrlTekstWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
@@ -95,7 +97,7 @@ class DrlTmsWitnessTest {
     }
 
     /** The documents of {@code EigenschapWitnessTest} and the cases of {@code eigenschap/spelling}, each case through
-     *  {@code DRL_TMS}; that test fires them through the exec-model branch. */
+     *  the DRL-text branch; that test fires them through the exec-model branch. */
     @Test void de_documenten_met_lastige_namen_vuren() throws Exception {
         List<String[]> gevallen = new ArrayList<>();
         for (String document : List.of("turks-lid", "lastige-leden", "turks-kenmerk"))
@@ -118,11 +120,11 @@ class DrlTmsWitnessTest {
         assertEquals(List.of(), fouten);
     }
 
-    /** The CLI's {@code --drl-tms} replays through the branch: a golden plays, also one with day kinds, whose
+    /** The CLI's {@code --drl} replays through the branch: a golden plays, also one with day kinds, whose
      *  predicates the build gives as the globals the text declares ({@code Build.dagsoortGlobalen}). <b>Red</b> on
-     *  {@code 2704d81d}, before the day kinds of step 5: the branch refused the golden with day kinds, "EXCLUDE drl-tms:
-     *  een document met dagsoorten", and this test pinned that refusal. */
-    @Test void de_vlag_drl_tms_speelt_door_de_tak() throws Exception {
+     *  {@code 2704d81d}, before the day kinds of step 5: the branch, then behind {@code --drl-tms}, refused the golden
+     *  with day kinds, "EXCLUDE drl-tms: een document met dagsoorten", and this test pinned that refusal. */
+    @Test void de_vlag_drl_speelt_door_de_tak() throws Exception {
         java.io.ByteArrayOutputStream uit = new java.io.ByteArrayOutputStream();
         Path kustwacht = GOLDEN.resolve("anchor").resolve("jutterswet-kustwacht");
         int code = DroolsBackendMain.voer(new String[]{"--drl", kustwacht.resolve("ir.json").toString(),
@@ -151,9 +153,9 @@ class DrlTmsWitnessTest {
 
     /**
      * Two day kinds whose predicates differ on the dates the case reaches (round 5b, on the lens of round 5), so that a
-     * text that swaps two predicates cannot pass. On {@code DRL_TMS} the predicate of a day kind is a global of the
+     * text that swaps two predicates cannot pass. On the DRL-text branch the predicate of a day kind is a global of the
      * text, which the session sets by its name from {@code Build.dagsoortGlobalen}; the test of the names alone
-     * ({@link #de_vlag_drl_tms_speelt_door_de_tak}) passes with a swapped pair. The document
+     * ({@link #de_vlag_drl_speelt_door_de_tak}) passes with a swapped pair. The document
      * {@code src/test/resources/dagsoorten/twee-dagsoorten} is {@code jutterswet-getijklok} with a second day kind
      * beside the springtijdag (day 1 or 15 of the month): the doodtijdag (day 8 or 22), with a doodtermijn in
      * doodtijdagen and a doodsluiting, the meldtijdstip plus the doodtermijn. The case steps over both: the
@@ -164,10 +166,10 @@ class DrlTmsWitnessTest {
      * <p><b>Measured</b> (2026-10-14): verifier PASS; the reference interpreter and the ASP backend PASS (7
      * expectations). <b>Red</b> with a mutant that swaps the two predicates among the globals of the text (in
      * {@code DrlWeergave.render}, not committed): "rsDagsoort_Springtijdag: de springtijdag ==&gt; expected: &lt;[true,
-     * false]&gt; but was: &lt;[false, true]&gt;"; and with that check left out of a copy, the case on {@code DRL_TMS},
-     * "case: attribuut sluittijdstip: verwacht 2026-04-15T09:15:30, werkelijk 2026-04-22T09:15:30; attribuut
-     * doodsluiting: verwacht 2026-04-22T09:15:30, werkelijk 2026-04-15T09:15:30; attribuut openingstijdstip: verwacht
-     * 2026-02-01T09:15:30, werkelijk 2026-02-08T09:15:30; …".
+     * false]&gt; but was: &lt;[false, true]&gt;"; and with that check left out of a copy, the case on the DRL-text
+     * branch (then {@code DRL_TMS}), "case: attribuut sluittijdstip: verwacht 2026-04-15T09:15:30, werkelijk
+     * 2026-04-22T09:15:30; attribuut doodsluiting: verwacht 2026-04-22T09:15:30, werkelijk 2026-04-15T09:15:30;
+     * attribuut openingstijdstip: verwacht 2026-02-01T09:15:30, werkelijk 2026-02-08T09:15:30; …".
      */
     @Test void twee_dagsoorten_op_datums_waarop_hun_predicaten_verschillen() throws Exception {
         Path map = Path.of("src", "test", "resources", "dagsoorten", "twee-dagsoorten");

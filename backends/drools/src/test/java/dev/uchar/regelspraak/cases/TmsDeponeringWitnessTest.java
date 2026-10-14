@@ -28,7 +28,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * The §6.5 deposit on the truth-maintenance branch wherever the reference interpreter makes it (RUNTIME-SEMANTICS ch. 1.2,
+ * The §6.5 deposit on the exec-model branch wherever the reference interpreter makes it (RUNTIME-SEMANTICS ch. 1.2,
  * 5.6): every evaluated division of a filled dividend by a leeg divisor, whatever its operands, in a condition as well
  * as in a value, and in a condition whether it then holds or not, but only at the places the evaluation reaches
  * (ch. 5.10). Fixround 1 of the card, findings 1 and 2: until then a condition deposited nothing, and a value deposited

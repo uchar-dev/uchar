@@ -20,8 +20,9 @@ import java.nio.file.Path;
  *                          drl   EXCLUDE drl-transpiler MARKER … vouw TOTAAL over de tijdlijn … (both cases)
  * </pre>
  * Without a value the case loader has no date to refuse, the clip totals 0 (ch. 3.6: absence under a clip is 0),
- * and that BigDecimal reached a LocalDate field at fire. A crash names no form. The exec branch now asks the
- * DRL-text branch's own question of the DECLARATION ({@code Vouwwaarde.tijdlijnWeigering}), so both branches
+ * and that BigDecimal reached a LocalDate field at fire. A crash names no form. The exec branch then asked the
+ * DRL-text branch's own question of the DECLARATION ({@code Vouwwaarde.tijdlijnWeigering}, which went with the
+ * destructive lowering at card drl-teksttak-op-truth-maintenance), so both branches
  * refuse the document before any case is read, in one sentence, whatever the case supplies. WF-091 rejects the
  * document since the same card, so this refusal is the backend's second line, not a corpus route.
  *
@@ -41,7 +42,7 @@ class TijdlijnKlipvouwWitnessTest {
     private static final String REDEN = "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter:"
             + " de segmentwaarden zijn van type Datum in dagen en niet getalachtig";
 
-    /** The refusal of the truth-maintenance branch, which names the rule and the verifier's rule. */
+    /** The refusal of the exec-model branch, which names the rule and the verifier's rule. */
     private static final String TMS_REDEN = "regel: wachtsom van een klipjutter — een totaal over de eigen tijdlijn ('het"
             + " totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is') over"
             + " 'wachtvergoeding per maand', dat geen getal is (WF-091)";

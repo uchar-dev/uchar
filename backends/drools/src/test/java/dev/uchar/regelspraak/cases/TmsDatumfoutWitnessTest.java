@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The faults of date arithmetic on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3.8): a duration count outside
+ * The faults of date arithmetic on the exec-model branch (RUNTIME-SEMANTICS ch. 3.8): a duration count outside
  * [−2⁶², 2⁶² − 1] and a datum-tijd step that leaves the representable millisecond range are evaluation faults, which on
  * this branch are facts that count only where they stand at the fixpoint (PLAN §9, 2026-10-09), named as the reference
  * interpreter names them. Until this card they left the fire as an exception, so a count that lies outside the range

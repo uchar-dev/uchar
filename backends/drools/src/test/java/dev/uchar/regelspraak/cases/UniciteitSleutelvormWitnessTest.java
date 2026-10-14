@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * instance, during evaluation) and because a build-time throw would surface as a backend crash — gate 8's
  * ERROR — instead of a fault the red fence can pin. The instance-less arm pins exactly that.
  *
- * <p><b>On the truth-maintenance branch</b> (card tms-omschakeling, 2026-10-10) the claims about the malformed shape
- * are refusals: that branch refuses a key with two temporal components by name when it lowers the uniqueness, in every
- * world, since the same-moment tuple join has no corpus case (RUNTIME-SEMANTICS ch. 5.9); the red fence still pins
- * ref's and clingo's fault, and a refusal reaches gate 8 as an exclusion, not as an ERROR. Where ref answers because the
- * fault is not reached — no instance, or the evaluation date outside the window — the destructive exec-model branch
- * answered too; the truth-maintenance branch refuses there as well, a narrowing accepted with the card. The valid
- * one-component shapes (3.) play on every branch.
+ * <p><b>On the exec-model branch with truth maintenance</b> (card tms-omschakeling, 2026-10-10) the claims about the
+ * malformed shape are refusals: that branch refuses a key with two temporal components by name when it lowers the
+ * uniqueness, in every world, since the same-moment tuple join has no corpus case (RUNTIME-SEMANTICS ch. 5.9); the red
+ * fence still pins ref's and clingo's fault, and a refusal reaches gate 8 as an exclusion, not as an ERROR. Where ref
+ * answers because the fault is not reached — no instance, or the evaluation date outside the window — the destructive
+ * exec-model branch answered too; the exec-model branch with truth maintenance refuses there as well, a narrowing
+ * accepted with the card. The valid one-component shapes (3.) play on every branch.
  */
 class UniciteitSleutelvormWitnessTest {
 
@@ -48,7 +48,7 @@ class UniciteitSleutelvormWitnessTest {
         // vondstnummer AND kavelnummer are both JAAR-granular: the single form's key list is two ever-values
         // wide, which would need the same-moment tuple join. ref faults on it per instance with the shared ch. 5.9
         // wording, "a uniqueness key list carries at most one temporal key component (the same-moment tuple join has
-        // no corpus case; ch. 5.9)"; the truth-maintenance branch refuses the uniqueness by name.
+        // no corpus case; ch. 5.9)"; the exec-model branch refuses the uniqueness by name.
         geweigerd(ROOD.resolve("uni-two-temporal-keys").resolve("ir.json"), geval("Strandvondst", "kavelnummer"),
                 "uniciteit: dubbel temporeel enkelvoudig", "kavelnummer");
     }
@@ -66,7 +66,7 @@ class UniciteitSleutelvormWitnessTest {
     @Test void zonder_instanties_weigert_de_vorm_ook() throws Exception {
         // ref raises the shape error per instance during evaluation, so a subject type with no instances never
         // reaches it, and clingo's uni_key_guards fires at TRANSLATION time, instance-independent. The
-        // truth-maintenance branch refuses at build, as clingo does, where ref answers consistent: the narrowing of
+        // exec-model branch refuses at build, as clingo does, where ref answers consistent: the narrowing of
         // card tms-omschakeling, recorded here.
         String leeg = """
                 { "format": "uchar-case-v0", "asOfDate": null,
@@ -163,7 +163,7 @@ class UniciteitSleutelvormWitnessTest {
 
     @Test void buiten_het_geldigheidsvenster_weigert_de_unie_vorm_ook() throws Exception {
         // the union arm of the window witness. Same construction: window from 2030, evaluation date 2024 — ref
-        // stays silent; the truth-maintenance branch refuses the shape at build, as the row above.
+        // stays silent; the exec-model branch refuses the shape at build, as the row above.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(java.nio.file.Files.readString(
                         ROOD.resolve("uu-two-temporal-keys").resolve("ir.json")));
@@ -182,7 +182,7 @@ class UniciteitSleutelvormWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** The truth-maintenance branch refuses the uniqueness {@code vorm} of {@code ir} by name: its key {@code sleutel}
+    /** The exec-model branch refuses the uniqueness {@code vorm} of {@code ir} by name: its key {@code sleutel}
      *  is a second temporal component. */
     private static void geweigerd(Path ir, String caseJson, String vorm, String sleutel) throws Exception {
         JsonNode c = JSON.readTree(caseJson);

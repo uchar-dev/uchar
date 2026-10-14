@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * exists for, applied to the construct where the two branches had drifted furthest apart.
  *
  * <p>{@link ObjectCreatieWitnessTest} pins what the creation does to the fact base, but every row there
- * runs the exec-model branch alone. The DRL-TEXT branch lowers the same construct through
- * {@code DrlTranspiler.objectCreatie} — the PORTED PRODUCTION lowering — and production implements
+ * runs the exec-model branch alone. Until card drl-teksttak-op-truth-maintenance the DRL-TEXT branch lowered the same
+ * construct through {@code DrlTranspiler.objectCreatie} — the PORTED PRODUCTION lowering — and production implements
  * neither of the two ch. 5.5 clauses below, so four corpus goldens carrying exactly one creation went
  * through that branch answering leeg or faulting at fire while no witness said a word (measured
  * 2026-09-19, card drl-objectcreatie-defect):

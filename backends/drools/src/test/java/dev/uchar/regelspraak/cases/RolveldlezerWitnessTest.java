@@ -100,7 +100,7 @@ class RolveldlezerWitnessTest {
         // Since L2 of the v1 wire migration the fold's join is its binding's, read by the one derivation every
         // fold seam shares (FactModelGenerator.bereikjoin), so the refusal is that derivation's sentence.
         Path ir = temporeleSetSommatie(), c = geval(tempovouwGeval());
-        // the truth-maintenance branch refuses the sum before its join: it writes a timeline target only with a
+        // the exec-model branch refuses the sum before its join: it writes a timeline target only with a
         // time-proportional part or a day count
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));

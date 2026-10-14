@@ -245,7 +245,7 @@ class DatumLexeemWitnessTest {
         }
     }
 
-    /** As {@link #speel}, on the truth-maintenance branch. */
+    /** As {@link #speel}, on the exec-model branch. */
     private static String speelTms(String ir, String caseJson) throws Exception {
         Path tmp = Files.createTempFile("datum-lexeem-witness", ".json");
         try {

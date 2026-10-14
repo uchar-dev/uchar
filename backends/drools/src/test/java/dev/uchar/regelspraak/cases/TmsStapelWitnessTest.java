@@ -56,8 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A:Wrakvondst.bergloon: default 2] ==&gt; expected: &lt;true&gt; but was: &lt;false&gt;".
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): the replay runs on the
- * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, and the sample of orders on both: on
- * {@code DRL_TMS} the rules of the plan rendered as text in each order ({@code Tekstvolgorde}), since the order of the
+ * exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, and the sample of orders on both: on
+ * {@code DRL_TEXT} the rules of the plan rendered as text in each order ({@code Tekstvolgorde}), since the order of the
  * rules in the text is the order in which Drools loads them. <b>Red</b> on {@code e2bd685e}, before the step: both rows
  * failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet", the replay through the case and the
  * sample where it builds the branch.

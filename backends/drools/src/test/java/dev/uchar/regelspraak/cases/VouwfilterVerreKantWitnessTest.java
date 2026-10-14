@@ -294,8 +294,8 @@ class VouwfilterVerreKantWitnessTest {
         // "het aantal vondsten van de Jutter die gedateerd zijn en vondsten van de Jutter wier jutter actief is": a union
         // selection whose subselection reads through a role of the element. The selections share one element pattern
         // and its test, so the destructive exec-model branch had no join for it and refused the form; before, it
-        // counted with the characteristic as it stood at insertion. The truth-maintenance branch plays it as ref
-        // answers, 3, on this case (TmsZoalsRefWitnessTest, unieselectie-via-rol).
+        // counted with the characteristic as it stood at insertion. The exec-model branch with truth maintenance plays
+        // it as ref answers, 3, on this case (TmsZoalsRefWitnessTest, unieselectie-via-rol).
         String unie = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"InstanceSetUnion\",\"branches\":["
                 + tak(de(kenmerkcheck("gedateerd", false, null))) + "," + tak(de(kenmerkcheck("actief", false, JUTTER_VAN_DE_VONDST)))
                 + "],\"source\":{\"snippet\":\"vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}],\"type\":" + TELGETAL
@@ -630,7 +630,7 @@ class VouwfilterVerreKantWitnessTest {
         return speel(ir, zaak, true);
     }
 
-    /** The truth-maintenance branch's verdict on one case. */
+    /** The exec-model branch's verdict on one case. */
     private static String speelTms(String ir, String zaak) throws Exception {
         Path tmp = Files.createTempFile("vouwfilter-verre-kant", ".json");
         tmp.toFile().deleteOnExit();

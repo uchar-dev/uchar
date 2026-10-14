@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * So the witness fires a plan of its own, over the beans of {@code anchor/jutterswet-kustwacht}: one rule that gives a
  * Wachter a characteristic where some Wachter has its post ({@code $post : post}, then a Wachter with
  * {@code post == $post}), through the executable model, as the exec-model branch builds it, and through the DRL text, as
- * {@code DRL_TMS} builds it. Three inputs: two Wachters without a post, where both sides of every join read null and
+ * {@code DRL_TEXT} builds it. Three inputs: two Wachters without a post, where both sides of every join read null and
  * neither rendering gives a characteristic; two with one post, which both get it; and one with a post beside one
  * without, of which only the first gets it.
  *

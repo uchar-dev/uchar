@@ -214,7 +214,7 @@ class HerhaaldTypepaarWitnessTest {
     @Test void de_aangemaakte_koppeling_staat_op_het_veld_van_haar_eigen_feittype() throws Exception {
         // The creation path, at bean level after the fire: the new relation lands on `winterhaven` and the
         // relation it JOINED over (`thuishaven`) is untouched. The two are different fields over the same
-        // type pair, which is the whole construct. On the truth-maintenance branch, through the entry a consumer
+        // type pair, which is the whole construct. On the exec-model branch, through the entry a consumer
         // uses: one vuur to the fixpoint, then the write-back, which puts the link the creation laid on the field.
         CaseRunner.voorMeting(ir(DUBBELVERBINDING), DroolsBackend.Branch.EXEC_MODEL).metSessie(
                 JSON.readTree(golden("case1-binnen-venster.json")), (bouw, sessie, labels) -> {

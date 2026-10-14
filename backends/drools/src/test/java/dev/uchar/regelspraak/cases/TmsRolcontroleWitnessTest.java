@@ -23,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * The role check on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 5.8a): whether a link of the fact type holds
+ * The role check on the exec-model branch (RUNTIME-SEMANTICS ch. 5.8a): whether a link of the fact type holds
  * the subject in the named role and, where a counterpart type is written, an instance of that type at the other end;
  * negated, whether none does. The worked examples of ch. 5.8a on the Jutterswet: wachtindeling relates the to-many
  * role wachtjutter (Jutter) to the to-one role toegewezen wachtpost (Wachtpost), and a Strandjutter is a Jutter.

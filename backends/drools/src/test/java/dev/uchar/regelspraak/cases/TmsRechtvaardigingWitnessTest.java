@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * One logical fact with two justifications on the truth-maintenance branch, and what remains of it when one of them
+ * One logical fact with two justifications on the exec-model branch, and what remains of it when one of them
  * falls. "Een Jutter is vergund indien hij erkend is" beside "Een Jutter is vergund indien hij niet geblokkeerd is", with
  * "Een Jutter is geblokkeerd indien hij geschorst is"; erkend and geschorst are case input. J1 is erkend and geschorst:
  * in an order where the second rule fires before geblokkeerd is derived, both rules justify J1's vergund, and when

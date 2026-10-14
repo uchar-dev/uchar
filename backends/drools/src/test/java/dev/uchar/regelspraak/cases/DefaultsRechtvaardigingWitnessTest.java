@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * group reads what a later group writes answers {@code kenmerk zwaar: verwacht afwezig, werkelijk aanwezig} in its
  * first case, and its second case, run on its own, {@code kenmerk ijverig: verwacht afwezig, werkelijk aanwezig}; the
  * row over a quantifier fold is refused in that same lumped sentence, which names neither the form nor the condition.
- * That row pinned the exec-model branch's refusal by name until 2026-10-10; the truth-maintenance branch plays its
- * document as the reference interpreter answers it ({@code TmsZoalsRefWitnessTest},
- * {@code defaults-kwantorvouw-rechtvaardiging}), so the row is gone.
+ * That row pinned the exec-model branch's refusal by name until 2026-10-10; the exec-model branch with truth
+ * maintenance plays its document as the reference interpreter answers it ({@code TmsZoalsRefWitnessTest}, {@code
+ * defaults-kwantorvouw-rechtvaardiging}), so the row is gone.
  *
  * <p>Three rows came after the first fix (2026-09-30), and hold the band a group takes (groepVolgorde). The row where
  * the reached value is written after a group in band 0 could decide: on the transpiler of the claim refused in the
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * werkelijk aanwezig} — on the transpiler of the claim already for the document on the own type, which that
  * transpiler lowers, and on the band of the group for the document two roles away. *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): every row runs on the
- * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, with the same verdict, a refusal in the same
+ * exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, with the same verdict, a refusal in the same
  * words. <b>Red</b> on {@code e2bd685e}, before the step: every
  * row failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet".
  */
@@ -611,7 +611,7 @@ class DefaultsRechtvaardigingWitnessTest {
                 + "],\"parameters\":{" + parameters + "}},\"expected\":[" + verwacht + "]}";
     }
 
-    /** The verdict on one case of the exec-model branch and of {@code DRL_TMS}, which must be the same: null when
+    /** The verdict on one case of the exec-model branch and of {@code DRL_TEXT}, which must be the same: null when
      *  every expectation holds. */
     private static String speel(String ir, String zaak) throws Exception {
         Path tmp = Files.createTempFile("defaults-rechtvaardiging", ".json");
@@ -619,7 +619,7 @@ class DefaultsRechtvaardigingWitnessTest {
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
         String exec = CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS naast de exec-model-tak");
+        assertEquals(exec, CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.DRL_TEXT), "DRL_TEXT naast de exec-model-tak");
         return exec;
     }
 }

@@ -43,9 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * range (ch. 3.4a); a filter that divides by a numeric zero there faults the evaluation (ch. 1.4, point 4). Both
  * branches tested the filter on the element's pattern, which Drools tests for every element of the type as it is
  * inserted, so they faulted where a rule's condition did not hold, where a composite had settled before the fold, and
- * for an element in no fold's range. A filter that can fault ({@code kern.Faalbaar}) now goes on the element bound
- * again in the source of the accumulate, after the join to the subject and the walk of a path, where it is tested per
- * tuple that reaches the accumulate.
+ * for an element in no fold's range. A filter that can fault ({@code kern.Faalbaar}, which went with the destructive
+ * lowering at card drl-teksttak-op-truth-maintenance) then went on the element bound again in the source of the
+ * accumulate, after the join to the subject and the walk of a path, where it was tested per tuple that reached the
+ * accumulate.
  *
  * <p>The corpus golden {@code jutterswet-filterwacht} carries the two forms of the card, a computation under "indien
  * hij actief is" and a characteristic whose composite tests "hij is actief" before the fold, and gates 5, 6 and 12
@@ -137,13 +138,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fault where the reference interpreter answers ({@code atMost 1 EXEC_MODEL: DelingDoorNul: … 9 gedeeld door 0 …}).
  *
  * <p>Those refusals were the destructive exec-model branch's. Since card tms-omschakeling (2026-10-10) the rows that
- * pinned them run on the truth-maintenance branch, which plays every such form as the reference interpreter answers;
- * the rows whose form that branch refuses by name (a division in a member initialisation of a creation, in a default,
- * and a power whose exponent is no literal) pin its refusal. Since card drl-teksttak-op-truth-maintenance the DRL-text
- * branch renders the same analysis, and every row demands of it the verdict of the exec-model branch: where it faulted
- * at the constraint that holds the filter, with the quotient of that constraint ("deling rsGedeeld(gewicht,
- * deelnemers)"), it now gives the named division of the fixpoint, and where it played or refused a form in sentences of
- * its own ("drl-transpiler MARKER: regel: drukte"), it now plays or refuses as the exec-model branch does.
+ * pinned them run on the exec-model branch with truth maintenance, which plays every such form as the reference
+ * interpreter answers; the rows whose form that branch refuses by name (a division in a member initialisation of a
+ * creation, in a default, and a power whose exponent is no literal) pin its refusal. Since card
+ * drl-teksttak-op-truth-maintenance the DRL-text branch renders the same analysis, and every row demands of it the
+ * verdict of the exec-model branch: where it faulted at the constraint that holds the filter, with the quotient of that
+ * constraint ("deling rsGedeeld(gewicht, deelnemers)"), it now gives the named division of the fixpoint, and where it
+ * played or refused a form in sentences of its own ("drl-transpiler MARKER: regel: drukte"), it now plays or refuses as
+ * the exec-model branch does.
  */
 class FilterfoutWitnessTest {
 
@@ -223,7 +225,7 @@ class FilterfoutWitnessTest {
     }
 
     /** The red case {@code vouwfilter-deelt-door-nul}: J1 actief, both rules reach the fold and divide 9 by 0. The
-     *  truth-maintenance branch counts a fault at the fixpoint, so it gives both, ordered by the name of the rule; the
+     *  exec-model branch counts a fault at the fixpoint, so it gives both, ordered by the name of the rule; the
      *  destructive exec-model branch stopped at the first, in the order of its evaluation. */
     @Test void waar_de_vouw_bereikt_wordt_blijft_de_deling_een_fout() throws Exception {
         JsonNode zaak = TmsDocumenten.zaak(j1(true), List.of(consistent()));
@@ -602,13 +604,13 @@ class FilterfoutWitnessTest {
      *  and nested druk (measured 2026-10-09 on the RegelSpraak frontend's documents of these forms; the ASP runner
      *  agrees). The destructive exec-model branch lowered such a composite as one test after the accumulates of all its
      *  folds, and Drools folded those for every subject before the test read the members in their order, so that branch
-     *  divided 9 by 0 there and refused the form by name since 2026-10-09. The truth-maintenance branch plays it as the
-     *  reference interpreter answers ({@code TmsZoalsRefWitnessTest} holds these documents too), on both branches since
-     *  card drl-teksttak-op-truth-maintenance, before which the DRL-text branch refused a fold of dates in a condition.
-     *  The control: the same composites over "zijn gewicht is groter dan 5",
-     *  which cannot fault, play on the exec-model branch as the reference interpreter answers, on J1 and on J2, neither
-     *  actief nor beladen, whose V3 is heavy and was found after its peildatum, so that geen, ten minste 1 and precies 1
-     *  read the fold: not druk, druk, druk, druk. */
+     *  divided 9 by 0 there and refused the form by name since 2026-10-09. The exec-model branch with truth maintenance
+     *  plays it as the reference interpreter answers ({@code TmsZoalsRefWitnessTest} holds these documents too), on
+     *  both branches since card drl-teksttak-op-truth-maintenance, before which the DRL-text branch refused a fold of
+     *  dates in a condition. The control: the same composites over "zijn gewicht is groter dan 5", which cannot fault,
+     *  play on the exec-model branch as the reference interpreter answers, on J1 and on J2, neither actief nor beladen,
+     *  whose V3 is heavy and was found after its peildatum, so that geen, ten minste 1 and precies 1 read the fold: not
+     *  druk, druk, druk, druk. */
     @Test void een_vouw_die_kan_falen_onder_een_andere_kwantor_dan_alle_speelt_zoals_ref() throws Exception {
         List<String> j1 = List.of(metDatums(instantieMetRollen("J1", "Jutter", Map.of(), List.of("actief", "beladen"),
                 Map.of("vondsten", List.of("V1", "V2"))), Map.of("peildatum", "2020-01-01")),
@@ -680,9 +682,10 @@ class FilterfoutWitnessTest {
      *  over the fold alone, and where the fold is the second member of an alle composite that is the only member under
      *  geen, after "hij is actief" on a J1 that is not actief, the reference interpreter reads no fold and answers
      *  (druk, not druk, druk), and the branch before the refusal divided 9 by 0: the destructive exec-model branch kept
-     *  these forms refused, and the truth-maintenance branch plays them as the reference interpreter answers
-     *  ({@code TmsZoalsRefWitnessTest} holds these documents too). Measured 2026-10-09 on the RegelSpraak frontend's
-     *  documents of these forms, with the ASP runner and the branch before the refusal ({@code 4ada319d}). */
+     *  these forms refused, and the exec-model branch with truth maintenance plays them as the reference interpreter
+     *  answers ({@code TmsZoalsRefWitnessTest} holds these documents too). Measured 2026-10-09 on the RegelSpraak
+     *  frontend's documents of these forms, with the ASP runner and the branch before the refusal ({@code 4ada319d}).
+     *  */
     @Test void een_vouw_die_kan_falen_in_een_lid_dat_altijd_gelezen_wordt_speelt_zoals_ref() throws Exception {
         String deling = "DelingDoorNul: deling door nul in de regel \"drukte\": 9 gedeeld door 0 — een numerieke nul"
                 + " als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
@@ -867,7 +870,7 @@ class FilterfoutWitnessTest {
 
     /** The lower default "2 indien hij aan alle volgende voorwaarden voldoet: - {@link #vouw()} is groter dan 0", and
      *  the lower default "{@link #vouw()} indien hij druk is": the reference interpreter reads a lower default only where
-     *  no higher one decides (RUNTIME-SEMANTICS ch. 7.1), the truth-maintenance branch computes a default as soon as what
+     *  no higher one decides (RUNTIME-SEMANTICS ch. 7.1), the exec-model branch computes a default as soon as what
      *  it reads stands, one a higher default displaces among them. Where the fold's subselection divides, the branch
      *  refuses the group by name: a division by zero there is a fault on an intermediate state, and whether it counts
      *  waits on the norm decision of card {@code 20261008-fout-op-tussenstand} (until card

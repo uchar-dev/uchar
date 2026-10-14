@@ -132,7 +132,7 @@ class OverervingWeigeringWitnessTest {
 
     // ---------------- 1b. what STAYS refused ----------------
     //
-    // On the truth-maintenance branch, whose composition of ch. 7.10 is Stapels, in its sentences (card
+    // On the exec-model branch with truth maintenance, whose composition of ch. 7.10 is Stapels, in its sentences (card
     // tms-omschakeling, 2026-10-10); the destructive exec-model branch gave the same three refusals in English.
 
     @Test void een_geerfde_ongeordende_set_weigert_luid() throws Exception {
@@ -401,7 +401,7 @@ class OverervingWeigeringWitnessTest {
                 .put("sign", "nonNegative");
     }
 
-    /** The replay of one case on the truth-maintenance branch: null on a match. */
+    /** The replay of one case on the exec-model branch: null on a match. */
     private static String speelTms(Path ir, JsonNode c) throws Exception {
         return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL);
     }

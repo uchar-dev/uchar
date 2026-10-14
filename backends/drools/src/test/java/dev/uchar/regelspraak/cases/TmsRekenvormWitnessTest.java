@@ -29,7 +29,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * The arithmetic value forms on the truth-maintenance branch, each over an operand another rule derives later: a
+ * The arithmetic value forms on the exec-model branch, each over an operand another rule derives later: a
  * rounding (RUNTIME-SEMANTICS ch. 2.5), a clamp with both bounds (ch. 2.7), a power with a whole exponent (ch. 2.2), a
  * percentage of a value (ch. 2.2, 2.6), a sum of percentages, a comparison of percentages, a percentage that a rule
  * derives taken of a value, and the restatement of units (ch. 2.6) in an additive operand, at the write boundary, in a

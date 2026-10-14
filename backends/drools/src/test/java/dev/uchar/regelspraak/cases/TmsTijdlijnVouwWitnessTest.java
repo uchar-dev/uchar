@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A total and a sum per member over a timeline on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3.6, the
+ * A total and a sum per member over a timeline on the exec-model branch (RUNTIME-SEMANTICS ch. 3.6, the
  * per-element fold): each member's timeline collapses over time first, at its own granularity, in the member's
  * contribution rule, and the scalars fold over the set as any fold does; a member without a timeline contributes
  * nothing, so over no contribution the total is 0 and the sum leeg.

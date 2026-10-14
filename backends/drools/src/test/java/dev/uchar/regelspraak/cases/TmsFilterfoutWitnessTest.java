@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A fault in a fold's filter on the truth-maintenance branch is the fault of the form whose evaluation reaches the
+ * A fault in a fold's filter on the exec-model branch is the fault of the form whose evaluation reaches the
  * fold. The reference interpreter evaluates a rule's condition first and its value only where the rule fires, a
  * composite condition only up to the member after which its verdict stands (RUNTIME-SEMANTICS ch. 5.10), and a fold's
  * filter per member only where it evaluates the fold; a filter that divides by a numeric zero there faults the

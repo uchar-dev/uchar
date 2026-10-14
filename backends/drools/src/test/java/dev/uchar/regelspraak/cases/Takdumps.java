@@ -11,10 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * One case fired through both branches of the analysis of card drl-teksttak-op-truth-maintenance, the exec-model branch
- * and {@code DRL_TMS}, its rendering as DRL text: the same verdict, and the same dump of the session
+ * and the DRL-text branch, its rendering as DRL text: the same verdict, and the same dump of the session
  * ({@link Sessiedump}) in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint. The
  * firings are left out of the comparison: in a document with a fold their order and number follow the agenda, which
- * differs between the two renderings, while the fixpoint is the same. Made for {@link DrlTmsVouwpadWitnessTest} (fix
+ * differs between the two renderings, while the fixpoint is the same. Made for {@link DrlTekstVouwpadWitnessTest} (fix
  * round 3a), and shared since a second witness compares dumps over the two branches (fix round 3b).
  */
 final class Takdumps {

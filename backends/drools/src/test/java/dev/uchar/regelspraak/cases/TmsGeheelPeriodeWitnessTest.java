@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The whole-period qualifier on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3.9, 3.9a): "gedurende het gehele
+ * The whole-period qualifier on the exec-model branch (RUNTIME-SEMANTICS ch. 3.9, 3.9a): "gedurende het gehele
  * jaar" and "gedurende de gehele maand" fold a timeline that the left-hand side binds, the subject's own or one a step
  * over a to-one role reaches, over the calendar years or months it touches. Every timeline the documents fold is a day
  * count ("het aantal dagen in de maand dat …", ch. 3.8) that another rule derives, so the fold reads what is derived
@@ -171,7 +171,7 @@ class TmsGeheelPeriodeWitnessTest {
     }
 
     /** Every order of {@code regels} in the document of {@code model}, each replayed on every case of {@code zaken}
-     *  through the truth-maintenance branch: "[rule names] case i gespeeld" where it plays. */
+     *  through the exec-model branch: "[rule names] case i gespeeld" where it plays. */
     static List<String> inElkeVolgorde(String model, List<String> regels, List<JsonNode> zaken) throws Exception {
         List<String> uit = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {

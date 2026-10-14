@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * A BinderRef of a Let around a fold, read in the filter or the matrix of that fold: the truth-maintenance branch does
+ * A BinderRef of a Let around a fold, read in the filter or the matrix of that fold: the exec-model branch does
  * not carry it yet and refuses it as such, not as an ill-formed document. The branch computes a fold's filter and
  * matrix per member in the fold's contribution rules, which bind the member's reads but not the value of a Let in the
  * rule that reads the fold; carrying the binder would bind the Let's value, read on the fold's subject, in every

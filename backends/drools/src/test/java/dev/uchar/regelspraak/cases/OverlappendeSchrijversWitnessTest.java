@@ -33,10 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * that was the expected value, {@code verwacht 2026-03-04, werkelijk leeg} where the last writer evaluated leeg). The
  * three flank rows are green before and after.
  *
- * <p>Since card tms-omschakeling (2026-10-10) the rows of the exec-model branch run on the truth-maintenance branch. It
- * holds both writers' values as facts and finds the divergence at the fixpoint, where its write-back throws the fault
- * ({@code Schrijversconflict}) in the sentence the DRL-text branch gives as its verdict; the destructive exec-model branch
- * found it at its fire cap.
+ * <p>Since card tms-omschakeling (2026-10-10) the exec-model branch derives with truth maintenance, and since card
+ * drl-teksttak-op-truth-maintenance the DRL-text branch renders the same analysis. Each holds both writers' values as
+ * facts and finds the divergence at the fixpoint, where its write-back throws the fault ({@code Schrijversconflict});
+ * the destructive exec-model branch found it at its fire cap, and the destructive DRL-text lowering gave the same
+ * sentence as its verdict.
  */
 class OverlappendeSchrijversWitnessTest {
 
@@ -205,13 +206,12 @@ class OverlappendeSchrijversWitnessTest {
 
     // ---------------- assertions ----------------
 
-    /** The truth-maintenance branch, which gives the divergence as the fault its write-back throws at the fixpoint,
-     *  and the DRL-text branch, which gives it as the verdict of the case. */
+    /** Both branches, which give the divergence as the fault their write-back throws at the fixpoint. */
     private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
             DroolsBackend.Branch.DRL_TEXT);
 
     private static String tak(DroolsBackend.Branch tak) {
-        return tak == DroolsBackend.Branch.DRL_TEXT ? "DRL-teksttak" : "tak met truth maintenance";
+        return tak == DroolsBackend.Branch.DRL_TEXT ? "DRL-teksttak" : "exec-model-tak";
     }
 
     /** The verdict names the divergence with each of {@code fragmenten}, and no cycle. */
@@ -317,7 +317,7 @@ class OverlappendeSchrijversWitnessTest {
     }
 
     /** One branch's verdict on one case: null when every expectation holds, and the message of the fault the replay
-     *  throws, which on the truth-maintenance branch carries a divergence at the fixpoint. */
+     *  throws, which on both branches carries a divergence at the fixpoint. */
     private static String speel(String ir, String zaak, DroolsBackend.Branch tak) throws Exception {
         Path tmp = Files.createTempFile("overlappende-schrijvers", ".json");
         tmp.toFile().deleteOnExit();

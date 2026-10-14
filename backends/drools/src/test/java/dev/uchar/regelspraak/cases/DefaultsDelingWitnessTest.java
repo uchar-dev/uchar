@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * such group was refused, {@code kanaal-deponerende consequentie (deling) op defaults-target}, and the root in the same
  * words. A division under another operator ("(… gedeeld door …) plus 5,00") decides with the deposit and stays refused.
  *
- * <p><b>On the truth-maintenance branch every row is a refusal by name</b> (card tms-omschakeling, 2026-10-10). That
+ * <p><b>On the exec-model branch every row is a refusal by name</b> (card tms-omschakeling, 2026-10-10). That
  * branch computes a default as soon as what it reads stands, a default a higher one displaces among them, so a division
  * by zero there is a fault on an intermediate state, which the branch withdraws once the higher default decides; whether
  * such a fault counts waits on the norm decision of card {@code 20261008-fout-op-tussenstand}. A root there gets no
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * carried the five forms above the last row; the loss is accepted, and each row keeps the values {@code ref} answers, so
  * that the card that carries the form turns the row back into a replay. *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): every row runs on the
- * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, with the same verdict, a refusal in the same
+ * exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, with the same verdict, a refusal in the same
  * words. Green from the start on {@code DRL_TMS}: the refusal
  * comes from the analysis, which the two branches share, before the rendering.
  */
@@ -97,7 +97,7 @@ class DefaultsDelingWitnessTest {
 
     @Test void een_deling_onder_een_andere_bewerking_blijft_geweigerd() throws Exception {
         // "(zijn gewogen gewicht gedeeld door zijn geschatte gewicht) plus 5,00": over a leeg divisor the default decides
-        // 5,00 and its deposit persists (ref and clingo report the inconsistency). The truth-maintenance branch refuses
+        // 5,00 and its deposit persists (ref and clingo report the inconsistency). The exec-model branch refuses
         // it as every division in a default.
         String plus = "{\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + deling() + ",\"right\":{\"node\":\"Literal\",\"value\":"
                 + "{\"number\":\"5.00\"},\"type\":" + TWEE_DECIMALEN + ",\"source\":{\"snippet\":\"5,00\"}},\"type\":"
@@ -200,13 +200,13 @@ class DefaultsDelingWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
     }
 
-    /** The refusal of a division in a default on the truth-maintenance branch, after the prefix of its manifest. */
+    /** The refusal of a division in a default on the exec-model branch, after the prefix of its manifest. */
     private static final String DELING = "een deling in een default ('zijn gewogen gewicht gedeeld door zijn geschatte"
             + " gewicht'): deze tak rekent een default uit zodra wat hij leest staat, ook een die een hogere default"
             + " verdringt; een deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de hogere"
             + " default beslist: of zo'n fout telt, wacht op een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)";
 
-    /** The truth-maintenance branch refuses the group {@code ir} by name, before {@code zaak} is replayed. */
+    /** Both branches refuse the group {@code ir} by name, before {@code zaak} is replayed. */
     private static void geweigerd(String ir, String zaak, String vorm) throws Exception {
         Path tmp = Files.createTempFile("defaults-deling", ".json");
         tmp.toFile().deleteOnExit();

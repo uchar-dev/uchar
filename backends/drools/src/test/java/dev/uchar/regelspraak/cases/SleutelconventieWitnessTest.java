@@ -58,7 +58,7 @@ class SleutelconventieWitnessTest {
     private static final Path TWEE_TEMPOREEL = ROOD.resolve("uni-two-temporal-keys/ir.json");
 
     /** The shared ch. 5.9 key-shape wording, byte-equal to ref's ({@code eval.ml, ever_tuples}). */
-    /** The truth-maintenance branch's refusal of a key list with two temporal components. */
+    /** The exec-model branch's refusal of a key list with two temporal components. */
     private static final String TE_VEEL = "een uniciteitssleutel 'kavelnummer' van Strandvondst op een tijdlijn naast"
             + " een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel";
 
@@ -110,7 +110,7 @@ class SleutelconventieWitnessTest {
         // the guard counts the TEMPORAL components of a key list; counting them with an exact match made a
         // mis-capitalised component invisible, so a two-temporal key list read as one and ran on. ref on this
         // model: "EVALUATION FAULT: a uniqueness key list carries at most one temporal key component (…)";
-        // clingo raises the same wording at translation. The truth-maintenance branch refuses the shape by name when
+        // clingo raises the same wording at translation. The exec-model branch refuses the shape by name when
         // it lowers the uniqueness (UniciteitSleutelvormWitnessTest), so its count shows in the refusal.
         Path ir = metSleutels(TWEE_TEMPOREEL, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer").add("kavelnummer")));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,

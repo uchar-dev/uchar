@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Two parameters of one Java type on the truth-maintenance branch, each read by a rule of its own and both by one
+ * Two parameters of one Java type on the exec-model branch, each read by a rule of its own and both by one
  * condition and one value: "Een Vondst is zwaar indien zijn gewicht groter of gelijk is aan de drempel", "De toeslag van
  * een Vondst moet berekend worden als zijn gewicht plus het tarief", "Een Vondst is goedkoop indien het tarief kleiner
  * is dan de drempel" and "De korting van een Vondst moet berekend worden als het tarief plus de drempel". Drempel 10,

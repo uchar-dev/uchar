@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Two or more writers of one target on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 5.7, "Divergence by two
+ * Two or more writers of one target on the exec-model branch (RUNTIME-SEMANTICS ch. 5.7, "Divergence by two
  * writers of one target"; ch. 1.2g and 7.8 for a computed leeg; ch. 7.10 per concrete type).
  *
  * <p>The first document has three computing rules on the doel of a Vondst beside the rule that derives what two of

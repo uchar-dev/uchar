@@ -324,7 +324,7 @@ public final class Schaalproef {
         long gevuurd = System.nanoTime();
         sessie.removeEventListener(teller);
         if (vuring.geenFixpunt() != null) throw new GeenFixpunt(vuring, gevuurd - begin);
-        // counted before the write-back, which states the mark that closes the session on the truth-maintenance branch
+        // counted before the write-back, which states the mark that closes the session on the exec-model branch
         if (teller.stand != sessie.getFactCount())
             throw new IllegalStateException("de feitenteller staat op " + teller.stand + ", de sessie houdt "
                     + sessie.getFactCount() + " feiten");

@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * five folds pinned a refusal of the group until a consequence bound more than nine variables (2026-10-01); red against
  * that transpiler in {@code te veel gebonden variabelen (aggregaties, vouwen en globals)}, it plays since. *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4): every row runs on the
- * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, with the same verdict, a refusal in the same
+ * exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, with the same verdict, a refusal in the same
  * words. <b>Red</b> on {@code e2bd685e}, before the step: every
  * row that plays failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet"; the refusal row
  * held there already, since the refusal comes from the analysis, which the two branches share.
@@ -257,7 +257,7 @@ class DefaultsConsequentieVouwWitnessTest {
     @Test void een_vouw_zonder_beanveld_weigert_met_de_vorm() throws Exception {
         // "de laatste van de meldingsdatum van alle meldingen van de Berging" over "meerdere kennende bergingen kennen
         // meerdere meldingen": both roles plural, so the bean model stores the relation on neither end (§13.3.9), in a
-        // rule's value as in a consequence. ref and clingo answer 08-03-2026; the truth-maintenance branch refuses the
+        // rule's value as in a consequence. ref and clingo answer 08-03-2026; the exec-model branch refuses the
         // group and names it and the fold.
         String melding = objecttype("Melding", "Meldingen", List.of(attribuut("meldingsdatum", DATUM)), List.of());
         String kent = "{\"node\":\"FactType\",\"name\":\"BergingKentMelding\",\"reciprocal\":false,\"roles\":["
@@ -546,23 +546,23 @@ class DefaultsConsequentieVouwWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
     }
 
-    /** The verdict on one case of the exec-model branch and of {@code DRL_TMS}, which must be the same: null when
+    /** The verdict on one case of the exec-model branch and of {@code DRL_TEXT}, which must be the same: null when
      *  every expectation holds. */
     private static String speel(String ir, String zaak) throws Exception {
         String exec = speelTms(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, speelTms(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS naast de exec-model-tak");
+        assertEquals(exec, speelTms(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "DRL_TEXT naast de exec-model-tak");
         return exec;
     }
 
-    /** The verdict of the exec-model branch on one case, where {@code DRL_TMS} refuses the document in the same
+    /** The verdict of the exec-model branch on one case, where {@code DRL_TEXT} refuses the document in the same
      *  words if that branch refuses it. */
     private static String speelTms(String ir, String zaak) throws Exception {
         try {
             return speelTms(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
         } catch (CaseRunner.Excluded e) {
             CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
-                    () -> speelTms(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS weigert ook");
-            assertEquals(e.getMessage(), drl.getMessage(), "de weigering van DRL_TMS");
+                    () -> speelTms(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "DRL_TEXT weigert ook");
+            assertEquals(e.getMessage(), drl.getMessage(), "de weigering van DRL_TEXT");
             throw e;
         }
     }

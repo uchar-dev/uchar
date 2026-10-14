@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A chain of derived attributes on the truth-maintenance branch, behind a characteristic derived late through a
+ * A chain of derived attributes on the exec-model branch, behind a characteristic derived late through a
  * negation: "Een Vondst is geregistreerd indien hij gemeld is", "Een Vondst is onbeheerd indien hij niet geregistreerd
  * is", "Het bergloon van een Vondst moet berekend worden als zijn gewicht maal 2, indien hij onbeheerd is", "De uitkering
  * van een Vondst moet berekend worden als zijn bergloon plus 5". V1 is gemeld (gewicht 10): geregistreerd, not

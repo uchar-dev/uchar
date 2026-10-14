@@ -30,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li><b>the two fences.</b> The cross-unit guard in the ch. 10.2 branch condition (whose absence picks the
  *       WRONG branch — 500 m &gt; 1 km read as 500 &gt; 1) was a refusal of the destructive exec-model branch; the
- *       truth-maintenance branch restates the comparison and answers as ref, which that row pins since card
- *       tms-omschakeling. The ch. 7 defaults division fence (which must keep firing through a Let) is asserted as
+ *       exec-model branch with truth maintenance restates the comparison and answers as ref, which that row pins since
+ *       card tms-omschakeling. The ch. 7 defaults division fence (which must keep firing through a Let) is asserted as
  *       a reason-carrying exclusion, not as a value;</li>
  *   <li><b>the walks that must SEE.</b> The far-side reactivity ({@code navRefs}) and the defaults salience
  *       ({@code exprLeesnamen}) each over a producer FORCED by §9.2 stratification to fire after its consumer,
@@ -64,7 +64,7 @@ class LetDragerWandelingWitnessTest {
         // ref on this exact model+case: uit = 2.00 (the §5.1 Tabel 32 restatement makes it 500 m > 1000 m,
         // which is FALSE). The destructive exec-model branch applied NO restatement there, so it refused the
         // rule rather than compare the raw numbers 500 > 1 and take the DAN branch (1.00, silently wrong). The
-        // truth-maintenance branch restates the comparison (RUNTIME-SEMANTICS ch. 2.6) and answers 2.00, consistent,
+        // exec-model branch restates the comparison (RUNTIME-SEMANTICS ch. 2.6) and answers 2.00, consistent,
         // as ref; clingo answers 1.00, an existing fault of the ASP backend (card
         // 20261010-clingo-let-binder-vergelijking-over-eenheden). The document and case are those of
         // TmsZoalsRefWitnessTest's let-kruiseenheid.

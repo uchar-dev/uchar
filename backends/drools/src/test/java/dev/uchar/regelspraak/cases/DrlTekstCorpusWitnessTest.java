@@ -14,27 +14,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Every golden of the corpus with case files, replayed through {@code DRL_TMS}, the analysis of the exec-model branch
- * rendered as DRL text (card drl-teksttak-op-truth-maintenance, from step 2b until the switch-over), as the CLI replays
- * it with {@code --drl-tms}, against the expectations gates 5, 6 and 12 pin. A golden must play every case or be refused
- * with a reason; a golden the branch carries but computes wrong is a fault of the rendering, since the analysis is the
+ * Every golden of the corpus with case files, replayed through the DRL-text branch ({@code DRL_TEXT}), the analysis of
+ * the exec-model branch rendered as DRL text (card drl-teksttak-op-truth-maintenance), as the CLI replays it with
+ * {@code --drl}, against the expectations gates 5, 6 and 12 pin. A golden must play every case or be refused with a
+ * reason; a golden the branch carries but computes wrong is a fault of the rendering, since the analysis is the
  * exec-model branch's. A text the Drools compiler rejects is such a fault too: it fails this witness by the name of the
  * golden, never a refusal. The count of played goldens is held to a floor, raised per step of the card as the rendering
- * carries more.
+ * carried more.
  *
  * <p>The refusals are counted per family and reported in the message of a missed floor: a form the rendering does not
- * carry ({@code drl-tms: de DRL-weergave draagt <soort> nog niet}), and the refusals the branch shares with the
+ * carry ({@code drl: de DRL-weergave draagt <soort> nog niet}), and the refusals the branch shares with the
  * exec-model branch, which come from the same analysis: where this branch refuses with no
- * {@code drl-tms:} sentence of its own, the exec-model branch refuses the golden in the same words.
+ * {@code drl:} sentence of its own, the exec-model branch refuses the golden in the same words.
  *
  * <p><b>Red</b> on {@code 5eda2eff}, before the branch: {@code CaseRunner.viaDrlTms} did not exist, and this class did
  * not compile. With the floor of step 3a red on {@code 4c8a687b}, before that step: 113 goldens played, under the
  * floor of 161. With the floor of step 3b red on {@code 0458b2d0}, before that step: 161 goldens played, under the
  * floor of 166. With the floor of step 4 red on {@code e2bd685e}, before that step: 166 goldens played, under the floor
  * of 203. With the floor of step 5 red on {@code b4d83a69}, before the rendering of that step: 203 goldens played, under
- * the floor of 250.
+ * the floor of 250. Until the switch-over (step 6 of the card) the analysis rendered as DRL text was a third branch,
+ * {@code DRL_TMS} with the flag {@code --drl-tms}, beside the destructive DRL-text lowering, and this class, then
+ * {@code DrlTmsCorpusWitnessTest}, replayed that branch; since then it is the DRL-text branch.
  */
-class DrlTmsCorpusWitnessTest {
+class DrlTekstCorpusWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
@@ -77,10 +79,10 @@ class DrlTmsCorpusWitnessTest {
                 case "EXCLUDE" -> {
                     telling.merge(familie(r.reason()), 1, Integer::sum);
                     // a refusal of the shared analysis is the exec-model branch's, word for word
-                    if (!r.reason().startsWith("drl-tms: ")) {
+                    if (!r.reason().startsWith("drl: ")) {
                         CaseRunner.Result exec = CaseRunner.viaExecModel(g.resolve("ir.json"), zaken);
                         if (!exec.status().equals("EXCLUDE") || !exec.reason().equals(r.reason()))
-                            anders.add(naam + ": drl-tms " + r.reason() + " | exec-model " + exec);
+                            anders.add(naam + ": drl " + r.reason() + " | exec-model " + exec);
                     }
                 }
                 default -> fout.add(naam + ": " + r);
@@ -98,7 +100,7 @@ class DrlTmsCorpusWitnessTest {
      *  refuses first, the label of a branch (a cycle, two rules of one name), the loader, or two names on one bean
      *  member. */
     private static String familie(String reden) {
-        if (reden.startsWith("drl-tms: de DRL-weergave draagt ")) {
+        if (reden.startsWith("drl: de DRL-weergave draagt ")) {
             int nogNiet = reden.indexOf(" nog niet");
             return nogNiet < 0 ? reden : reden.substring(0, nogNiet);
         }
@@ -107,7 +109,7 @@ class DrlTmsCorpusWitnessTest {
             int dubbelepunt = rest.indexOf(':');
             return dubbelepunt < 0 ? "transpiler" : rest.substring(0, dubbelepunt);
         }
-        if (reden.startsWith("drl-tms: ")) return "drl-tms";
+        if (reden.startsWith("drl: ")) return "drl";
         // a cycle, refused by the shared analysis in its own words
         if (reden.startsWith("exec-model: ")) return "exec-model";
         if (reden.startsWith("loader: ")) return "loader";

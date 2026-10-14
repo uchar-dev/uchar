@@ -64,8 +64,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, step 4; acceptance (a), the ordered
  * defaults with fall-through of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2): every order of the document's rules plays on the
- * exec-model branch and on {@code DRL_TMS}, its rendering as DRL text, and the sample of orders runs on both: on
- * {@code DRL_TMS} the rules of the plan rendered as text in each order ({@code Tekstvolgorde}), since the order of the
+ * exec-model branch and on {@code DRL_TEXT}, its rendering as DRL text, and the sample of orders runs on both: on
+ * {@code DRL_TEXT} the rules of the plan rendered as text in each order ({@code Tekstvolgorde}), since the order of the
  * rules in the text is the order in which Drools loads them, and the takeover and the give-back must each happen there
  * too. <b>Red</b> on {@code e2bd685e}, before the step: both rows failed on {@code DRL_TMS} with "drl-tms: de
  * DRL-weergave draagt Afloop nog niet".

@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * before the division, and a read evaluated after it does not. This backend mirrors each measured order
  * (fix round 1 of the companion-onder-drager card: the Begrensd arm evaluated minimum first and fabricated
  * on one Begrensd flank while missing its mirror). Since then ref evaluates a {@code Begrensd} basis, minimum,
- * maximum (RUNTIME-SEMANTICS ch. 2.7); the rows of (i) pin that order on the truth-maintenance branch.
+ * maximum (RUNTIME-SEMANTICS ch. 2.7); the rows of (i) pin that order on the exec-model branch.
  *
  * <p><b>"Drager" / "carrier" below means the probe's HOST</b> — the OUTERMOST ch. 4.10 node on the path from
  * the value root down to the site, which the companion's condition re-evaluates
@@ -437,7 +437,7 @@ class CompanionPadWitnessTest {
         }
     }
 
-    /** As {@link #speel}, on the truth-maintenance branch. */
+    /** As {@link #speel}, on the exec-model branch. */
     private static String speelTms(String ir, String caseJson) throws Exception {
         Path tmp = Files.createTempFile("companion-pad-witness", ".json");
         try {

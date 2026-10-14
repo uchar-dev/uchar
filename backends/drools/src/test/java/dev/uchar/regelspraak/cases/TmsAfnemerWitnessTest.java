@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The entry for a consumer of the truth-maintenance branch (card tms-omschakeling, point 12): a model with a creation
+ * The entry for a consumer of the exec-model branch (card tms-omschakeling, point 12): a model with a creation
  * fires through {@link DroolsBackend#vuur} in generations, {@link DroolsBackend#lees} gives what the creations made, and
  * {@link DroolsBackend#zetAfgeleideWaarden} puts the links they laid on the reference fields of the beans, so that a
  * consumer that reads the beans reaches a made object as it reaches an object of the input.
@@ -353,7 +353,7 @@ class TmsAfnemerWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** Sets up case {@code zaak} of golden {@code golden} on the truth-maintenance branch as the replay does, through
+    /** Sets up case {@code zaak} of golden {@code golden} on the exec-model branch as the replay does, through
      *  {@link DroolsBackend#voegIn}, and hands the session, not yet fired, to {@code meting}. */
     private static void speel(String golden, String zaak, CaseRunner.Sessiemeting<Void> meting) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");

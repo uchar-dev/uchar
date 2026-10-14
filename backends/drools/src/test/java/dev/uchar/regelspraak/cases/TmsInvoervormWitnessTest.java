@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The two conventions of the case input of an attribute on a timeline on the truth-maintenance branch (RUNTIME-SEMANTICS
+ * The two conventions of the case input of an attribute on a timeline on the exec-model branch (RUNTIME-SEMANTICS
  * ch. 8.4): the asOfDate-bucket scalar, one value for the period of the attribute's grid that holds the evaluation date,
  * serves the subject's own total without a clip (ch. 3.6); the full timeline serves every other read; "an executor that
  * needs the one and finds the other faults — never guesses". The case runner states each bucket scalar beside the bean

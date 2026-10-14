@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A chain of two negations on the truth-maintenance branch: "Een Jutter is vergund indien hij erkend is", "Een Jutter
+ * A chain of two negations on the exec-model branch: "Een Jutter is vergund indien hij erkend is", "Een Jutter
  * is onvergund indien hij niet vergund is", "Een Jutter is bevoegd indien hij niet onvergund is". In the first document
  * erkend is case input; in the second it is derived itself, "Een Jutter is erkend indien hij aangemeld is". The strata
  * are 0, 1, 2 (one more where erkend is derived, RUNTIME-SEMANTICS ch. 6.4): J1, erkend, ends vergund, not onvergund,

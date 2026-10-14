@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * An exception group below a displaced default evaluates nothing on the truth-maintenance branch: no value, no fault.
+ * An exception group below a displaced default evaluates nothing on the exec-model branch: no value, no fault.
  * The reference interpreter reaches the exception groups of a default only where no higher default in its chain decides
  * ({@code decide} in {@code ref/lib/eval.ml}), at every depth (RUNTIME-SEMANTICS ch. 7.1, 7.9), and a form that does
  * not decide is not evaluated (PLAN §9, 2026-10-09). The rules of a member chain therefore wait on the positions above
@@ -75,8 +75,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; acceptance (a), the
  * nested exception groups of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2 under a displaced default): the document of the lens and
- * every place, form and order play on the exec-model branch and on {@code DRL_TMS}, and the sample of orders runs on
- * both, on {@code DRL_TMS} with the rules of the text in each order ({@code Tekstvolgorde}): there too a displaced
+ * every place, form and order play on the exec-model branch and on {@code DRL_TEXT}, and the sample of orders runs on
+ * both, on {@code DRL_TEXT} with the rules of the text in each order ({@code Tekstvolgorde}): there too a displaced
  * exception group is evaluated first in some order, and its fault goes again. <b>Red</b> on {@code e2bd685e}, before
  * step 4: the three tests failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet".
  */
@@ -189,8 +189,8 @@ class TmsVerdrongenUitzonderingWitnessTest {
      * consequence in every place: the fire reaches its fixpoint without throwing, no fault stands there, every
      * {@link Uitkomst} at the fixpoint decides 10, so no exception group below the displaced default settles anything,
      * and the heffing is 10. In some order a displaced exception group was evaluated before wrak was derived; its fault
-     * went again when the higher default decided. The same on {@code DRL_TMS}, with the rules of the text in a sample of
-     * orders.
+     * went again when the higher default decided. The same on {@code DRL_TEXT}, with the rules of the text in a sample
+     * of orders.
      */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         for (Plaats p : PLAATSEN)

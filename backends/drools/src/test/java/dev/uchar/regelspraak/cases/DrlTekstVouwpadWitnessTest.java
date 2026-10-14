@@ -14,15 +14,16 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.consistent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Two consequences of the rules of a fold that no session of the corpus or the suite fired on {@code DRL_TMS} at step
- * 3a of card drl-teksttak-op-truth-maintenance (lens on step 3a): the deposit of a filter ({@code Filterdeponering})
+ * Two consequences of the rules of a fold that no session of the corpus or the suite fired on the analysis rendered as
+ * DRL text ({@code DRL_TMS} then, the DRL-text branch since the switch-over) at step 3a of card
+ * drl-teksttak-op-truth-maintenance (lens on step 3a): the deposit of a filter ({@code Filterdeponering})
  * and the fault of a member ({@code Lidfout}). The documents are those of the witnesses of the exec-model branch that
  * make these facts, {@link TmsFilterdeponeringWitnessTest} and part E of {@link TmsInvoervormWitnessTest}, here fired
  * through both branches: each case gets the same verdict, and the dump of its session ({@link Sessiedump}) is the same
  * in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint ({@link Takdumps}), and holds
- * the fact. The third path the lens named, a member's place
- * over two steps, the corpus fires on {@code DRL_TMS} (measured at fix round 3a: in five goldens a contribution or the
- * fault of a filter with such a place, the same as on the exec-model branch).
+ * the fact. The third path the lens named, a member's place over two steps, the corpus fires on the DRL-text branch
+ * (measured at fix round 3a: in five goldens a contribution or the fault of a filter with such a place, the same as on
+ * the exec-model branch).
  *
  * <p><b>Red by mutation</b>, measured at fix round 3a on {@code e22775af} in a copy whose rendering puts the fold's
  * subject in place of the member, in the deposit and in the fault of a member: the first test failed on "de dumps van
@@ -30,9 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * exec-model branch against {@code element=J1} on {@code DRL_TMS}; the second on "de dumps van de twee takken, de zaak
  * van deel E", the three faults on V2, V5 and V6 against {@code element=J1}, {@code J4} and {@code J4}, with the same
  * verdict on both branches, which only the dump tells apart. With the fault of a member rendered without its place, the
- * second failed on the verdict: MVEL could not construct the fact.
+ * second failed on the verdict: MVEL could not construct the fact. Until the switch-over this class was
+ * {@code DrlTmsVouwpadWitnessTest}.
  */
-class DrlTmsVouwpadWitnessTest {
+class DrlTekstVouwpadWitnessTest {
 
     @Test void de_deponering_van_een_filter_is_op_beide_takken_gelijk() throws Exception {
         Path ir = TmsDocumenten.document(TmsFilterdeponeringWitnessTest.MODEL,

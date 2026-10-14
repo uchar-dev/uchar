@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Case input on an attribute that a rule computes, on the truth-maintenance branch: "Het bergloon van een Vondst moet
+ * Case input on an attribute that a rule computes, on the exec-model branch: "Het bergloon van een Vondst moet
  * gesteld worden op zijn taxatie" and "De uitkering van een Vondst moet berekend worden als zijn bergloon plus 5". The
  * rule is the bergloon's only writer, so the standing norm of RUNTIME-SEMANTICS ch. 7.8 holds: where the rule decides,
  * its value replaces the input; where it computes leeg, it writes nothing and the input stands. V1 has taxatie 30 and

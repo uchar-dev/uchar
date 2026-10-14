@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * creation phases stratum by stratum, each in generations, the rule layer under truth maintenance throughout
  * ({@code DroolsBackend.vuur}). Each document plays through the replay in every order of its creations and rules in the
  * document, and fires through the driver in the order of the rules the branch generates, its reverse and a hundred
- * shuffles, on the exec-model branch and on {@code DRL_TMS} (the last paragraph).
+ * shuffles, on the exec-model branch and on {@code DRL_TEXT} (the last paragraph).
  *
  * <ul>
  *   <li>An initialisation reads what a creation of a lower stratum made: "maak een afrekening" counts the Penning that
@@ -149,7 +149,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (the forged mark).
  *
  * <p><b>The samples on the text</b> (card drl-teksttak-op-truth-maintenance, round 5b, on the lens of round 5). Every
- * sample of this class fires on the exec-model branch and on {@code DRL_TMS}, its analysis rendered as DRL text, with
+ * sample of this class fires on the exec-model branch and on {@code DRL_TEXT}, its analysis rendered as DRL text, with
  * the rules of the text in the same orders ({@code Tekstvolgorde}), since the order of the rules in the text is the
  * order in which Drools loads them; each branch meets the same demands. <b>Red</b> on {@code b4d83a69}, before the
  * rendering carried the creations: fifteen of the sixteen failed at the replay, "DRL_TMS speelt … anders dan de

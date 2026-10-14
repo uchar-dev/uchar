@@ -41,7 +41,7 @@ import java.util.stream.Stream;
  * comparison runs over one fixed set. The directory must be empty or absent. It prints one line with the goldens,
  * the cases, the goldens that failed and the time, and exits with 1 where a golden failed.
  *
- * <p>The branch is {@code EXEC_MODEL} without the fourth argument. With {@code DRL_TMS} it dumps the sessions of the
+ * <p>The branch is {@code EXEC_MODEL} without the fourth argument. With {@code DRL_TEXT} it dumps the sessions of the
  * analysis rendered as DRL text (card drl-teksttak-op-truth-maintenance), over the same goldens, so that a step compares
  * {@code lees} and {@code feiten} of each case with the dump of the exec-model branch; a golden that branch refuses gets
  * a file of one line, {@code WEIGERING} and the reason, and counts among the refused, not among the failed.
@@ -82,7 +82,8 @@ public final class Vuurspoor {
             try {
                 cases += dump(golden.resolve(g), tak, uit);
             } catch (CaseRunner.Excluded | IrLoader.Refusal e) {
-                // only DRL_TMS refuses here: on the exec-model branch every golden of the table plays
+                // only DRL_TEXT can refuse here, for a form its rendering does not carry: on the exec-model branch
+                // every golden of the table plays
                 if (tak == DroolsBackend.Branch.EXEC_MODEL) {
                     fouten++;
                     uit.append("FOUT ").append(e).append('\n');

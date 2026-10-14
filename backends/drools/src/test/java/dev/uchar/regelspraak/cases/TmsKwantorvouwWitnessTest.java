@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The quantifier fold on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3.9a): one condition asked of every
+ * The quantifier fold on the exec-model branch (RUNTIME-SEMANTICS ch. 3.9a): one condition asked of every
  * member of a linked instance set, under all, none and the three counting quantifiers, over members whose derived
  * characteristic or attribute changes while the session fires.
  *

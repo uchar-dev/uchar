@@ -22,9 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The fire cap of the truth-maintenance branch grows with the input (card tms-omschakeling, point 10): {@code max(10 000,
+ * The fire cap of the exec-model branch grows with the input (card tms-omschakeling, point 10): {@code max(10 000,
  * FACTOR × R × N0)}, with R the rules of the KieBase and N0 the facts just before the fire, computed again at the start
- * of every creation phase. The exec-model and the DRL-text branch keep their fixed cap of 100 000.
+ * of every creation phase. The DRL-text branch kept a fixed cap of 100 000 until card
+ * drl-teksttak-op-truth-maintenance, which gave it the same cap.
  *
  * <p>The two rows the fix round of step 3 sharpened (point 3), so that each tells the computation it claims from a
  * near one. Through the public {@code vuur}, the values document of {@link TmsHerhaaldVurenWitnessTest} with J1 and

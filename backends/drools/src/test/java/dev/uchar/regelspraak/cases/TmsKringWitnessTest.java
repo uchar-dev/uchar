@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Cycles on the truth-maintenance branch, refused by name before the KieBase is built, in every order of their rules.
+ * Cycles on the exec-model branch, refused by name before the KieBase is built, in every order of their rules.
  * An even cycle of negations: "Een Jutter is wachtdoend indien hij niet vrijgesteld is" beside "Een Jutter is
  * vrijgesteld indien hij niet wachtdoend is". An odd one of length one: "Een Jutter is dwarsligger indien hij niet
  * dwarsligger is". An odd one of length two: "Een Jutter is wachtdoend indien hij niet afgelost is" beside "Een Jutter is

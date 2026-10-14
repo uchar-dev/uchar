@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Timelines as values on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3): a timeline in a fact is an immutable
+ * Timelines as values on the exec-model branch (RUNTIME-SEMANTICS ch. 3): a timeline in a fact is an immutable
  * {@code List<Tijdvak>}, bound in the left-hand side off its standing or off the bean, written by a pro-rata part or a
  * day count as a whole (ch. 3.7, 3.8, 3.11), read by the temporal total (ch. 3.6), and written back onto the bean as
  * its segments.

@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * voorwaarde and need the same test. The row without a relation is a flank: green before and after, it holds the
  * null alternative of the far-side join. The row over a displaced role field pins the refusal the far-side join of
  * a characteristic check gives where the bean carries no reference field. Since card tms-omschakeling (2026-10-10) the
- * marker row and that refusal run on the truth-maintenance branch, which refuses the fired-rule marker by name.
+ * marker row and that refusal run on the exec-model branch with truth maintenance, which refuses the fired-rule marker
+ * by name.
  */
 class GenavigeerdeVoorwaardeWitnessTest {
 
@@ -89,7 +90,7 @@ class GenavigeerdeVoorwaardeWitnessTest {
         // "Een Vondst is afgehandeld indien regelversie uitkomst is gevuurd", over the reproduction's rule. No arbiter:
         // ref faults on 'is gevuurd' and the ASP backend does not translate it. The destructive exec-model branch
         // carried it with a companion that repeated the host's voorwaarde, and this row pinned that reading, the host
-        // fired (V afgehandeld). The truth-maintenance branch refuses the predicate by name: it is no form of the
+        // fired (V afgehandeld). The exec-model branch refuses the predicate by name: it is no form of the
         // kernel but a predicate of the RegelSpraak dialect over the fixpoint (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS
         // row 30). Coverage lost against the destructive branch, accepted (card tms-omschakeling).
         String model = "{\"objectTypes\":[" + JUTTER_DATUMS + ",{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
@@ -189,7 +190,7 @@ class GenavigeerdeVoorwaardeWitnessTest {
         // attribute's, so the rule is refused by name, as every other reader of that field is (RolveldlezerWitnessTest,
         // OpslagrichtingWitnessTest). Measured 2026-09-28: ref and clingo answer toeslag leeg; on the jar of the claim
         // the check read the attribute as the relation, an unclassified fault at fire once it is filled
-        // (ERROR ConstraintEvaluationException). On the truth-maintenance branch, whose sentence names the missing
+        // (ERROR ConstraintEvaluationException). On the exec-model branch, whose sentence names the missing
         // reference field.
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
                 Path.of("..", "..", "corpus", "golden", "synth-navigatiepremie", "ir.json")));

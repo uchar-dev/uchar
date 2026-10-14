@@ -119,8 +119,8 @@ class OpslagrichtingWitnessTest {
         // `erflijn` relates Wachter to Wachter through TWO TO-MANY roles, so the bean model derives no field at
         // EITHER end — a to-many role's storage is the far end's field, and here both ends are to-many. The
         // destructive exec-model branch joined the aggregation over `erfvolgers` on such a field and refused it by
-        // name (§13.3.9 storage direction). The truth-maintenance branch joins over the links of the relation, which
-        // need no field, and answers as ref on the erflijn golden with this case: W1 1, W2 0
+        // name (§13.3.9 storage direction). The exec-model branch with truth maintenance joins over the links of the
+        // relation, which need no field, and answers as ref on the erflijn golden with this case: W1 1, W2 0
         // (TmsZoalsRefWitnessTest, dubbelmeervoudige-zelfrelatie).
         assertNull(speelTms(ir(ERFLIJN), JSON.readTree(ketenMetVerwachting("1", "0"))), "ref agrees: W1 1, W2 0");
     }
@@ -227,7 +227,7 @@ class OpslagrichtingWitnessTest {
         // The third reader of that field — the §5.8 fold's join (`het aantal opvolgers`) — asked for the name
         // only, so it lowered a join reading a BigDecimal. On the FULL model this is the first refusal reached,
         // which is why the creation witness above strips the rules. ref: `oracle: PASS (2 expectations)`. The
-        // truth-maintenance branch reaches the creation first, whose link to the mint has no field.
+        // exec-model branch reaches the creation first, whose link to the mint has no field.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> speelTms(naamdelendeWachter(true), JSON.readTree(ketenZonderRollen(true))));
         assertTrue(e.getMessage().contains("objectcreatie: werf de opvolger — de rol 'opvolger' op Wachter deelt haar naam"
@@ -313,7 +313,7 @@ class OpslagrichtingWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    /** The replay of one case on the truth-maintenance branch: null on a match. */
+    /** The replay of one case on the exec-model branch: null on a match. */
     private static String speelTms(Path ir, com.fasterxml.jackson.databind.JsonNode c) throws Exception {
         return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL);
     }

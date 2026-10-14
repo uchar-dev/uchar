@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The joins of the truth-maintenance branch carry an index (card tms-omschakeling, the scale test of point 9). An
+ * The joins of the exec-model branch carry an index (card tms-omschakeling, the scale test of point 9). An
  * unindexed join tests every fact of a pattern's class against every tuple on its other side, so a read of a derived
  * value costs one test per subject and a fire grows with the square of the input; {@code Schaalproef} measures it.
  * Which join carries an index is not observable in an outcome, only in time, and no witness may pin a time, so this
