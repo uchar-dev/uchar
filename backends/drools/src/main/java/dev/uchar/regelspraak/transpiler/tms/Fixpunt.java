@@ -4,15 +4,17 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * What stands in a session of the exec-model branch after a fire that reached its fixpoint, read without
- * writing anything on a bean ({@code DroolsBackend.lees}). The branch derives with logical facts and leaves the case
- * input alone on the beans, so a consumer that fires one session more than once reads the answer here between the
- * fires: a bean that carried a derived value would have it read as input by the next fire, and an initialisation of
- * that member would not fire again. {@link TmsTranspiler#zetAfgeleideWaarden} writes exactly this onto the beans, from
- * the same reading, once at the end of a session.
+ * What stands in a session of either branch, the exec-model branch or the DRL-text branch, after a fire that reached
+ * its fixpoint, read without writing anything on a bean ({@code DroolsBackend.lees}). Both branches derive with logical
+ * facts and leave the case input alone on the beans, so a consumer that fires one session more than once reads the
+ * answer here between the fires: a bean that carried a derived value would have it read as input by the next fire, and
+ * an initialisation of that member would not fire again. {@link TmsTranspiler#zetAfgeleideWaarden} writes exactly this
+ * onto the beans, from the same reading, once at the end of a session.
  *
- * <p>Every list is in no particular order. An object is a bean of the build's bean model, compared by identity; a member
- * is named as the model declares it.
+ * <p>Every list is in no particular order. The reader takes the facts in the order of the working memory and groups
+ * the derived values per object by identity, so the order can differ from one run to the next, and a consumer that
+ * shows a list sorts it itself. Only {@code fouten} is sorted, as its description below says. An object is a bean of
+ * the build's bean model, compared by identity; a member is named as the model declares it.
  *
  * @param waarden         the derived value of every attribute a rule, a default or an allocation derived
  * @param kenmerken       every characteristic derived to hold; a characteristic the input sets is on the bean already,

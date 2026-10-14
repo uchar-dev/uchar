@@ -191,8 +191,11 @@ import java.util.function.Supplier;
  */
 public final class TmsTranspiler {
 
-    /** The Drools package of this branch's rules. The rule of a form carries the form's name, as in the exec-model
-     *  branch, so a consumer that loads models of two branches side by side keeps them apart by package. */
+    /** The Drools package of the rules of both branches: the executable model of the exec-model branch is built in it,
+     *  and the DRL text of {@code DRL_TEXT} declares it and is added at its path. The rule of a form carries the form's
+     *  name on both branches, so the two builds of one document have rules of the same names in this one package. Each
+     *  build has a KieBase of its own, and a consumer that loads both branches keeps them apart by their builds; the
+     *  package does not tell them apart. */
     public static final String PKG = "dev.uchar.regelspraak.tms";
 
     /** The agenda group of the fact creations. A creation fires only at a fixpoint of the rule layer, so its rules are
