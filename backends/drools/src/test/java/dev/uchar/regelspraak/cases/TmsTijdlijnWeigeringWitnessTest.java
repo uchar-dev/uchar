@@ -203,8 +203,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 "59"))))),
                 List.of("transpiler SKIP: regel: jaardeel vanaf 2025 — een periodevenster in de voorwaarde van een"
                         + " regel met het tijdsafhankelijke doel 'jaardeel' van Jutter: daar knipt het venster de tijdlijn"
-                        + " (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet, zoals de"
-                        + " DRL-teksttak haar niet draagt")));
+                        + " (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet")));
         // a characteristic on a timeline as the target
         uit.add(new Rij("kenmerk-als-doel", TmsTijdlijnDocumenten.ir(MODEL_JAARDEEL, List.of(
                         TmsDocumenten.kenmerkregel("borgplicht", "Jutter", "borgplichtig",

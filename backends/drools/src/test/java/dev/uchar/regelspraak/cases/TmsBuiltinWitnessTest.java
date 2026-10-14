@@ -86,7 +86,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * dimensions and the eleven test over a path. The verifier passes both documents (measured 2026-10-10). <b>Red</b> on
  * {@code 3d50652a}, before that rewrite: "… ('zijn omzet in k2 in noord'): de exec-modeltak en deze tak lezen alleen
  * een cel van één dimensie" and "… ('elevenTest'): de exec-modeltak laat een afwezige link beide polariteiten onwaar
- * maken, …".
+ * maken, …". Step 6c of card drl-teksttak-op-truth-maintenance rewrote the eleven test's sentence once more, with what
+ * the analysis itself cannot tell apart instead of the behaviour of a branch. <b>Red</b> on {@code fbd2f2c0}, before
+ * that rewrite: "… ('elevenTest'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, …".
  */
 class TmsBuiltinWitnessTest {
 
@@ -300,8 +302,8 @@ class TmsBuiltinWitnessTest {
     }
 
     /** "Een Vondst is geldig indien het nummer van zijn vinder aan de elfproef voldoet": the eleven test over a path of
-     *  one role. The branch reads the operand as any value, so it cannot tell an absent link from a leeg nummer, where
-     *  the DRL-text branch makes an absent link fail both polarities; it refuses the form by name. */
+     *  one role. The branch reads the operand as any value, in which an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8,
+     *  rule 1), so it cannot tell an absent link from a leeg nummer; it refuses the form by name. */
     @Test void de_elfproef_over_een_pad_weigert_met_naam() throws Exception {
         String model = TmsDocumenten.model(List.of(
                 TmsDocumenten.objecttype("Jutter", List.of(attribuut("nummer", GEHEEL)), List.of()),
@@ -312,8 +314,9 @@ class TmsBuiltinWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
                 TmsDocumenten.document(model, List.of(geldig)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: geldig bij elfproef — een Predicate elevenTest over een pad"
-                + " ('elevenTest'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, wat een lege"
-                + " lezing hier niet van een lege waarde onderscheidt", e.getMessage());
+                + " ('elevenTest'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
+                + " (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege waarde"
+                + " kan onderscheiden", e.getMessage());
     }
 
     // ---------------- the sub-day extractors, dateWith and dateTimeWith ----------------

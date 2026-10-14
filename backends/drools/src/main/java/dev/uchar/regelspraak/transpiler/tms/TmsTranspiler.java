@@ -1006,7 +1006,7 @@ public final class TmsTranspiler {
         if (Conditie.bevatPeriode(r.voorwaarde()))
             throw new Weigering("een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '"
                     + lid.naam() + "' van " + lid.declarant().naam + ": daar knipt het venster de tijdlijn"
-                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + NOG_NIET + ", zoals de DRL-teksttak haar niet draagt");
+                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + NOG_NIET);
         if (!(r.waarde() instanceof Expr.Functie f && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN)))
             throw new Weigering("een waarde van het tijdsafhankelijke doel '" + lid.naam() + "' van "
@@ -5012,14 +5012,15 @@ public final class TmsTranspiler {
 
     /** The eleven test and the exact-digit test (§8.1.3, §8.1.4), through the runtime's
      *  {@code rsElfproef} and {@code rsNumeriekMetExact}, the written negation complementing the verdict: a leeg value
-     *  passes neither test. The operand is read as any value; over a path of roles that branch makes an absent link fail
-     *  both polarities, which a leeg read here cannot tell from a leeg value, so such an operand is refused by name. The
-     *  reference interpreter and the ASP backend do not evaluate these predicates. */
+     *  passes neither test. The operand is read as any value, in which an absent link over a path of roles is leeg
+     *  (RUNTIME-SEMANTICS ch. 5.8, rule 1), so the test cannot tell an absent link from a leeg value there; such an
+     *  operand is refused by name. The reference interpreter and the ASP backend do not evaluate these predicates. */
     private Term cijferproef(Conditie.Predicaat p, Lezingen lez) {
         if (p.operand() instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a))
             throw new Weigering("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " over een pad ('"
-                    + snippet(p) + "'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, wat"
-                    + " een lege lezing hier niet van een lege waarde onderscheidt");
+                    + snippet(p) + "'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
+                    + " (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege"
+                    + " waarde kan onderscheiden");
         Term operand = waarde(p.operand(), lez);
         boolean gewenst = !p.negatie();
         if (p.soort() == Conditie.Predicaatsoort.ELFPROEF)
