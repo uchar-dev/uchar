@@ -1287,7 +1287,17 @@ EXPECTED_CHANNEL=(
 # PLAYED 3, with the anchor's absolute values. Measured before and after over every golden in both branches: no other
 # report line moves. The DRL-text branch plays jutterswet-penningbesluit too, PLAYED 3, and still refuses
 # penninguitgifte (DRL_CHANNEL), so EXPECTED_DRL_PLAYED moves by one.
-EXPECTED_PLAYED=250
+# 250 -> 255 (2026-10-14, card drl-teksttak-op-truth-maintenance, step 6b): five own documents the card wrote for its
+# witnesses, with expectations computed by hand, leave the test resources of this backend and become goldens (the
+# owner's decision on norm question 2 of the card's fourth Fable advice): jutterswet-verdeling-dubbelbezet (two
+# allocations over one set of recipients, one of them with an empty weight), jutterswet-uniciteit-drie-bronnen (a
+# uniqueness over the union of three sources), jutterswet-uitsluiting-gedateerd (a defaults stack with a validity), and
+# jutterswet-aantalfilter-gehele-jaar with its -creatieguard twin (a whole-year filter on the operand of a count, in a
+# computation rule and in the guard of an object creation). Each is hand-written IR; ref and clingo replay every case,
+# and both branches play each golden with the same status line, PLAYED 1, 2, 5, 4 and 3. No source file of this backend
+# changed. The sixth case of the dated document, without an evaluation date, is the red case
+# jutterswet-uitsluiting-zonder-rekendatum (check-rood.sh), fault-pinned on the backend's own sentence.
+EXPECTED_PLAYED=255
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

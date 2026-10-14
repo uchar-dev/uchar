@@ -210,6 +210,13 @@
 #     the case input fills keeps its input while the condition holds; the
 #     absence and the standing are the assertions. Its case1 and case4 write
 #     and are not survivors.
+#   - jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing.json: a
+#     uniqueness over the union of three sources that holds on the input —
+#     D1 carries S1's key (7, 1) reversed, and the components compare by
+#     position (RS ch. 5.9), so "consistent" is true of the empty channel and
+#     the empty channel is the assertion: an executor that compares a key as
+#     a set reports a collision here. Its case1 collides and is not a
+#     survivor.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -253,7 +260,8 @@ corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json
 corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json
 corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json
 corpus/golden/jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json
-corpus/golden/jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json'
+corpus/golden/jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json
+corpus/golden/jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
