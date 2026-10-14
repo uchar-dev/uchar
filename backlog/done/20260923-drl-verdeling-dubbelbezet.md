@@ -27,3 +27,8 @@ andere Drools-kaarten.
 de destructieve verlaging van de DRL-teksttak en neemt deze vorm op als
 getuige; deze kaart gaat met die landing naar `done/`. Werk haar alleen los als
 dat eerder nodig is.*
+
+*Gesloten (2026-10-14) door `20261008-drl-teksttak-op-truth-maintenance`: de DRL-teksttak geeft sinds die kaart de
+analyse van de exec-model-tak als DRL-tekst weer; twee verdelingen op één ontvanger spelen op beide takken met de
+uitkomst van ref en clingo. De vorm is de golden `jutterswet-verdeling-dubbelbezet`, met de getuige
+`DrlVerdelingDubbelbezetWitnessTest` op beide takken.*

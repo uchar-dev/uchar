@@ -38,3 +38,10 @@ andere Drools-kaarten.
 de destructieve verlaging van de DRL-teksttak en neemt deze vorm op als
 getuige; deze kaart gaat met die landing naar `done/`. Werk haar alleen los als
 dat eerder nodig is.*
+
+*Gesloten (2026-10-14) door `20261008-drl-teksttak-op-truth-maintenance`: de DRL-teksttak geeft sinds die kaart de
+analyse van de exec-model-tak als DRL-tekst weer, en beide vormen spelen op beide takken met de uitkomst van ref en
+clingo. Ze zijn de goldens `jutterswet-aantalfilter-gehele-jaar` (rekenregel) en
+`jutterswet-aantalfilter-gehele-jaar-creatieguard`, zonder `bron.rgs`: hun filter staat met de hand in de IR, omdat de
+frontend de subselectie met een heelperiode niet omzet (kaart `20261014-frontend-heelperiode-in-aantalfilter`). Getuige
+`HeelperiodeAantalfilterWitnessTest`.*
