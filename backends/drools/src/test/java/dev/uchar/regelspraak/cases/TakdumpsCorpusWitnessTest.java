@@ -34,7 +34,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * ({@link CaseRunner#runRood(Path, Path, DroolsBackend.Branch)}), which must give the same {@code RoodResult}: the same
  * status and the same text. Gate 8's Drools leg plays the exec-model branch alone, so without this row no gate would
  * bring a red case to the DRL-text branch (decision 46 of the card). That the entry builds the branch it is given, which
- * this row cannot see while the two branches agree, is the witness {@link RodeTakkeuzeWitnessTest}.
+ * this row cannot see while the two branches agree, is the witness {@link RodeTakkeuzeWitnessTest}. A red path that
+ * throws instead of giving a {@code RoodResult} fails the row with its exception, on either branch: two branches that
+ * throw the same exception have given no result to compare (lens on step 6b).
  *
  * <p>Floors, measured 2026-10-14 at step 6b of the card, after its five goldens and its red case entered the corpus:
  * {@value #EXPECTED_MIN_GOLDENS} goldens compared and {@value #EXPECTED_MIN_RODE_CASES} red case files. A smaller
@@ -107,8 +109,8 @@ class TakdumpsCorpusWitnessTest {
         List<String> anders = new ArrayList<>();
         for (Path zaak : zaken) {
             Path ir = zaak.resolveSibling("ir.json");
-            String exec = rood(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-            String drl = rood(ir, zaak, DroolsBackend.Branch.DRL_TEXT);
+            CaseRunner.RoodResult exec = CaseRunner.runRood(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
+            CaseRunner.RoodResult drl = CaseRunner.runRood(ir, zaak, DroolsBackend.Branch.DRL_TEXT);
             if (!exec.equals(drl))
                 anders.add(CORPUS.resolve("rood").relativize(zaak) + ": exec-model " + exec + " | drl-tekst " + drl);
         }
@@ -116,16 +118,6 @@ class TakdumpsCorpusWitnessTest {
         int n = zaken.size();
         assertTrue(n >= EXPECTED_MIN_RODE_CASES, () -> "rode cases " + n + ", onder de vloer "
                 + EXPECTED_MIN_RODE_CASES);
-    }
-
-    /** The red path of {@code tak} on one case: its status and text, or the exception that left it. */
-    private static String rood(Path ir, Path zaak, DroolsBackend.Branch tak) {
-        try {
-            CaseRunner.RoodResult r = CaseRunner.runRood(ir, zaak, tak);
-            return r.status() + " " + r.detail();
-        } catch (RuntimeException e) {
-            return "ERROR " + e;
-        }
     }
 
     /** What the two branches must have alike in a dump: at a fixpoint everything but the firings, and without one only
