@@ -45,13 +45,19 @@ public final class Schrijversconflict extends IllegalStateException {
     static Schrijversconflict van(Object onderwerp, String attribuut, List<Waarde> waarden, List<?> documentvolgorde,
                                   List<?> typeklassen, List<?> typen) {
         List<Waarde> geordend = new ArrayList<>(waarden);
-        geordend.sort(Comparator.comparing((Waarde w) -> plaats(documentvolgorde, w.schrijver()))
-                .thenComparing(Waarde::schrijver));
+        geordend.sort(inDocumentvolgorde(documentvolgorde));
         List<Schrijfdaad> daden = new ArrayList<>();
         for (Waarde w : geordend) daden.add(new Schrijfdaad(w.schrijver(), w.waarde()));
         String klasse = onderwerp.getClass().getSimpleName();
         int t = typeklassen.indexOf(klasse);
         return new Schrijversconflict(onderwerp, attribuut, t < 0 ? klasse : (String) typen.get(t), daden);
+    }
+
+    /** The value facts of one target by their writers in the order of the document's rules {@code documentvolgorde}, a
+     *  writer the document has no rule of, such as a defaults group, after them by name: the order in which a conflict
+     *  names them, and the order in which the reader of the fixpoint takes the value of writers that agree. */
+    static Comparator<Waarde> inDocumentvolgorde(List<?> documentvolgorde) {
+        return Comparator.comparing((Waarde w) -> plaats(documentvolgorde, w.schrijver())).thenComparing(Waarde::schrijver);
     }
 
     /** The place of the rule {@code schrijver} in {@code documentvolgorde}; after every rule where it is none. */

@@ -617,6 +617,12 @@ public final class TmsTranspiler {
         List<Fixpunt.AfgeleideWaarde> waarden = new ArrayList<>();
         for (Map<ElementSleutel, List<Waarde>> perLid : perDoel.values())
             for (List<Waarde> geschreven : perLid.values()) {
+                // the writers in the order of the document: of values that agree up to their scale, 5,00 and 5, the bean
+                // gets that of the writer that comes first, on either branch and in every run, where the working memory
+                // gives them in an order that the firings and the hash of the facts decide; the values of one writer
+                // follow by their text
+                geschreven.sort(Schrijversconflict.inDocumentvolgorde(documentvolgorde)
+                        .thenComparing(w -> String.valueOf(w.waarde())));
                 Waarde eerste = geschreven.get(0);
                 if (geschreven.stream().anyMatch(w -> !gelijkeWaarde(eerste.waarde(), w.waarde()))) {
                     Schrijversconflict c = conflict(eerste.onderwerp(), eerste.attribuut(), geschreven);
