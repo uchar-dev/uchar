@@ -92,9 +92,10 @@ import java.util.function.Supplier;
  * holds, and goes, with everything that rested on it, when that condition stops holding. The outcome of an acyclic
  * rule set then does not depend on which rule the agenda fires first, which a lowering that writes the beans secures
  * only with measures of its own (a rule attribute against re-firing, a priority per stratum, class reactivity, a
- * conditional bean update, a record of an initialisation's own write), as the DRL-text branch does and the exec-model
- * branch did until card tms-omschakeling (2026-10-10). This branch carries none of them; the fire cap of
- * {@code DroolsBackend.vuur} stays.
+ * conditional bean update, a record of an initialisation's own write), as the exec-model branch did until card
+ * tms-omschakeling (2026-10-10) and the DRL-text branch until card drl-teksttak-op-truth-maintenance, which made it a
+ * rendering of this analysis. Neither branch carries any of them now; the fire cap of {@code DroolsBackend.vuur}
+ * stays.
  *
  * <p>Truth maintenance follows only what the left-hand side of a rule binds: a value a consequence reads with a
  * getter, or looks up in working memory itself, records no dependency, so a derived fact computed from it stays when
@@ -984,8 +985,8 @@ public final class TmsTranspiler {
      * the reference interpreter answers it in pass order; and any other value, among them a sum of timelines over a
      * set (ch. 3.5) and the arithmetic of two timelines (ch. 3.4), which no golden of this branch's gap asks. Refused
      * by name as well: a time window in the condition, which on a temporal target clips the timeline instead of
-     * gating the rule on the evaluation date (ch. 3.10), as the DRL-text branch refuses it; golden
-     * {@code jutterswet-pachtvenster} has it.
+     * gating the rule on the evaluation date (ch. 3.10), as the destructive DRL-text lowering refused it as well until
+     * card drl-teksttak-op-truth-maintenance; golden {@code jutterswet-pachtvenster} has it.
      */
     private List<Regelplan> tijdlijnregel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = tijdlid(doel.objecttype(), doel.attribuut(), false, "een tijdsafhankelijk doel");
@@ -2877,8 +2878,9 @@ public final class TmsTranspiler {
             case Expr.TekstReeks t -> tekstreeks(t, lez);
             case Expr.Functie f -> functie(f, lez);
             // IR-SPEC ch. 4.3: a union denotes instances and stands only as the argument of a count, which reads it in
-            // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)), the reference
-            // interpreter faults on and the DRL-text branch refuses in this sentence
+            // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)) and the reference
+            // interpreter faults on; both branches refuse it in this sentence, which the destructive DRL-text lowering
+            // gave until card drl-teksttak-op-truth-maintenance
             case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), "zij duidt de instanties van"
                     + " een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110 (a))");
             case Expr.Afgerond a -> afronding(a, lez);
@@ -3801,8 +3803,9 @@ public final class TmsTranspiler {
      * one: an additive fold over members that are no number (WF-091), and an ordering fold over members that are neither
      * a number nor a date (WF-038). The reference interpreter faults on the addition or the comparison itself and the
      * ASP runner declines the form, while this branch would hand the members to a BigDecimal sum, which fails at fire,
-     * or to the Java order of their values, which answers. The sentence opens as the DRL-text branch opens its own
-     * ({@code Vouwwaarde}), so a gate report names the same form in both.
+     * or to the Java order of their values, which answers. Both branches refuse in this sentence. It opens as the
+     * refusal of the destructive DRL-text lowering opened, so that a gate report named the same form on both branches
+     * while that lowering existed, until card drl-teksttak-op-truth-maintenance.
      */
     private String setbronweigering(Expr.FunctieKind kind, Objecttype elem, Expr.AttribuutRef arg) {
         boolean optellend = kind == Expr.FunctieKind.SOM || kind == Expr.FunctieKind.TOTAAL;
@@ -4591,8 +4594,7 @@ public final class TmsTranspiler {
      * path is absent the timeline is null, which touches no bucket and passes, as a characteristic without periods does,
      * where the unqualified check over an absent link holds in neither polarity. No executor writes a characteristic on
      * a timeline (ch. 3.11), so its periods are input. Refused by name: the negation inside the qualifier
-     * ("gedurende het gehele jaar niet …"), a per-day complement of the periods, which the DRL-text branch refuses as
-     * well (ch. 3.12).
+     * ("gedurende het gehele jaar niet …"), a per-day complement of the periods (ch. 3.12), on both branches.
      */
     private Term geheelPeriodeKenmerk(Conditie.Kenmerk k, Lezingen lez) {
         String wat = "een CharacteristicCheck met wholePeriod ('" + snippet(k) + "')";
@@ -4745,7 +4747,7 @@ public final class TmsTranspiler {
      * stores it ({@link FactModelGenerator#lidmaatschapsopslag}): a to-one other role is the subject's own reference
      * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
      * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
-     * refused in the sentence the DRL-text branch gives.
+     * refused in the sentence of {@code FactModelGenerator.geenReferentieveldReden}, on both branches.
      */
     private Term rolcontrole(Conditie.Rollidmaatschap r, Lezingen lez) {
         RolBindingRef rb = rolBindingen.get(r);
@@ -4818,8 +4820,8 @@ public final class TmsTranspiler {
      * model carries one.
      */
     private Term kwantorvouw(Conditie.Kwantorvouw kv, Lezingen lez) {
-        // WF-112, in the sentence of the DRL-text branch: a window in the filter or the test under none or a counting
-        // quantifier has no reading
+        // WF-112, in the sentence of Vensterpositie, on both branches: a window in the filter or the test under none
+        // or a counting quantifier has no reading
         String venster = Vensterpositie.weigering(kv);
         if (venster != null) throw new Weigering(venster + ": " + snippet(kv));
         Objecttype elem = kv.elementObjecttype();
