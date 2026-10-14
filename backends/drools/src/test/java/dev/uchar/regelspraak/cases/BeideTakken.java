@@ -34,17 +34,23 @@ final class BeideTakken {
         assertNull(CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);
     }
 
-    /** Both branches REFUSE the document, each naming {@code fragment} — the per-form-exclusion sibling of
-     *  {@link #groen}. A refusal is a diagnosis, and {@code FactModelGenerator}'s reason functions exist so that
-     *  the two branches give the SAME one: a producer reading the gate report must not have to know which branch
+    /** Both branches REFUSE the document in the SAME sentence, which names {@code fragment} — the per-form-exclusion
+     *  sibling of {@link #groen}. A refusal is a diagnosis, and {@code FactModelGenerator}'s reason functions exist so
+     *  that the two branches give the SAME one: a producer reading the gate report must not have to know which branch
      *  answered. A row that asserts one branch's wording pins one branch, and the other is then free to drift —
-     *  which it had, on the fold join's cardinality half, until 2026-09-18. */
+     *  which it had, on the fold join's cardinality half, until 2026-09-18. The fragment alone leaves the rest of the
+     *  sentence free on either branch, so the whole sentence of the DRL-text branch must equal that of the exec-model
+     *  branch, as gate 12 demands the same status line of both per golden; a row whose form no golden reaches has only
+     *  this check (lens on step 6a of card drl-teksttak-op-truth-maintenance). */
     static void geweigerd(Path ir, JsonNode c, String fragment, String boodschap) throws Exception {
+        String exec = null;
         for (boolean viaDrl : new boolean[] { false, true }) {
             String tak = viaDrl ? "drl-tekst" : "exec-model";
             CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                     () -> CaseRunner.speelCase(ir, c, viaDrl), tak + " — " + boodschap);
             assertTrue(e.getMessage().contains(fragment), tak + " names '" + fragment + "': " + e.getMessage());
+            if (exec == null) exec = e.getMessage();
+            else assertEquals(exec, e.getMessage(), "drl-tekst refuses in the sentence of exec-model — " + boodschap);
         }
     }
 
