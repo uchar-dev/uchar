@@ -207,6 +207,118 @@ class SessiedumpWitnessTest {
                     () -> "de dump in " + d.getKey());
     }
 
+    /**
+     * Every form in which the dump spells a value (Fable advice 4 §2.2), through the dump of one session and pinned as
+     * text, on both branches (fix round 5b, lens on round 5b): the pins of
+     * {@link #de_hele_dump_van_twee_documenten_staat_vast} hold no global, list, map, other collection, enumeration
+     * label, exception or record, so a change in their spelling passed unseen once the baseline of the harness was made
+     * again with the changed code. A global is a parameter the rule reads, set by the case; the other values are put
+     * into working memory right before the dump, as the facts of a fire that threw are written: a text with a quote, a
+     * backslash, a carriage return and a line feed; a list in its order, with a number in three scales and an empty
+     * element; a map and a set, sorted; an enumeration label; an exception with its class and its sentence; a record
+     * with its components; the five classes whose text stands unquoted ({@code Boolean}, {@code Integer},
+     * {@code Long}, {@code LocalDate}, {@code LocalDateTime}); another class with its own text, quoted; and the key of a
+     * characteristic. A bean without a name and an object whose class has no text of its own are refused, each in its
+     * own sentence.
+     *
+     * <p><b>Red</b> with a mutant of {@code Sessiedump} that writes a collection that is no list in its own order
+     * instead of sorted (not committed; the diff and the output are kept with fix round 5b of step 6a).
+     */
+    @Test void elke_spelling_van_de_dump_staat_vast() throws Exception {
+        String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(attribuut("merk", TEKST),
+                attribuut("tarief", TmsDocumenten.GEHEEL)), List.of())), List.of(), List.of("drempel"));
+        Path ir = TmsDocumenten.document(model, List.of(TmsDocumenten.rekenregel("tarief", "GELIJKSTELLING", "Vondst",
+                "tarief", TmsDocumenten.parameterlezing("drempel"), "null")));
+        JsonNode zaak = TmsDocumenten.zaak(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{\"merk\":"
+                + "{\"text\":\"x\"}},\"roles\":{},\"characteristics\":[]}"), Map.of("drempel", "3"),
+                List.of(TmsDocumenten.consistent()));
+        String verwacht = String.join("\n",
+                "invoer bean \"V1\" Vondst(merk=String(\"x\"), tarief=leeg)",
+                "invoer global \"drempel\" = BigDecimal(3)",
+                "vuringen gooit IllegalStateException: \"de proef vuurt niet\"",
+                "fixpunt gooit IllegalStateException: \"de proef vuurt niet\"",
+                "spoor-telling {}",
+                "spoor-volgorde []",
+                "feiten 15",
+                "feit \"vondst\".\"wrak\" (kenmerk)",
+                "feit Boolean(true)",
+                "feit IllegalArgumentException: \"een \\\"fout\\\"\"",
+                "feit Integer(7)",
+                "feit LocalDate(2026-10-14)",
+                "feit LocalDateTime(2026-10-14T09:15:30)",
+                "feit LocalTime(\"09:15\")",
+                "feit Long(8)",
+                "feit Proefrecord(naam=String(\"r\"), getal=BigDecimal(1.50), lijst=[Boolean(false)])",
+                "feit Proefsoort.EERSTE_SOORT",
+                "feit String(\"a\\\"b\\\\c\\rd\\ne\")",
+                "feit [BigDecimal(2), BigDecimal(2.0), BigDecimal(2.00), leeg, String(\"b\")]",
+                "feit bean \"V1\" Vondst(merk=String(\"x\"), tarief=leeg)",
+                "feit {String(\"a\"), String(\"z\")}",
+                "feit {String(\"a\")=Integer(2), String(\"b\")=Integer(1)}",
+                "");
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            String d = CaseRunner.voorMeting(ir, tak).metSessie(zaak, (bouw, sessie, labels) -> {
+                Sessiedump dump = Sessiedump.op(sessie, labels);
+                for (Object o : elkeVorm()) sessie.insert(o);
+                StringBuilder uit = new StringBuilder();
+                dump.schrijf(uit, new IllegalStateException("de proef vuurt niet"), labels);
+                return uit.toString();
+            });
+            assertEquals(verwacht, d, () -> "de dump op " + tak);
+        }
+        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL);
+        IllegalStateException naamloos = assertThrows(IllegalStateException.class, () -> runner.metSessie(zaak,
+                (bouw, sessie, labels) -> geweigerd(sessie, labels, naamlozeVondst(bouw.beanLoader()))));
+        assertEquals("de dump heeft geen naam voor een bean van Vondst: geen caselabel en geen creatie die haar maakte",
+                naamloos.getMessage());
+        IllegalStateException zonderTekst = assertThrows(IllegalStateException.class, () -> runner.metSessie(zaak,
+                (bouw, sessie, labels) -> geweigerd(sessie, labels, new Zonderzin())));
+        assertEquals("de dump schrijft geen identiteit: een " + Zonderzin.class.getName() + " heeft geen tekst van"
+                + " zichzelf", zonderTekst.getMessage());
+    }
+
+    /** An enumeration of the test, whose label the dump writes with its class. */
+    private enum Proefsoort { EERSTE_SOORT }
+
+    /** A record of the test, which the dump writes with its components. */
+    private record Proefrecord(String naam, BigDecimal getal, List<Object> lijst) {}
+
+    /** A class of the test without a text of its own, which the dump refuses: its text would be its identity. */
+    private static final class Zonderzin {}
+
+    /** The values of {@link #elke_spelling_van_de_dump_staat_vast}, one per form: the set is put in "z" before "a" and
+     *  the map holds two keys, so that the sorting shows. */
+    private static List<Object> elkeVorm() {
+        java.util.Set<Object> verzameling = new java.util.LinkedHashSet<>(List.of("z", "a"));
+        Map<Object, Object> kaart = new java.util.LinkedHashMap<>();
+        kaart.put("b", 1);
+        kaart.put("a", 2);
+        return List.of("a\"b\\c\rd\ne",
+                java.util.Arrays.asList(new BigDecimal("2"), new BigDecimal("2.0"), new BigDecimal("2.00"), null, "b"),
+                kaart, verzameling, Proefsoort.EERSTE_SOORT, new IllegalArgumentException("een \"fout\""),
+                new Proefrecord("r", new BigDecimal("1.50"), List.of(false)), Boolean.TRUE, 7, 8L,
+                java.time.LocalDate.of(2026, 10, 14), java.time.LocalDateTime.of(2026, 10, 14, 9, 15, 30),
+                java.time.LocalTime.of(9, 15), ElementSleutel.van("Vondst", "wrak", true));
+    }
+
+    /** The dump of a session into which {@code object} is put right before the dump, which must refuse it. */
+    private static String geweigerd(org.kie.api.runtime.KieSession sessie, Map<String, Object> labels, Object object) {
+        Sessiedump dump = Sessiedump.op(sessie, labels);
+        sessie.insert(object);
+        StringBuilder uit = new StringBuilder();
+        dump.schrijf(uit, new IllegalStateException("de proef vuurt niet"), labels);
+        return uit.toString();
+    }
+
+    /** A Vondst of {@code beanLoader} that no case label names and no creation made. */
+    private static Object naamlozeVondst(ClassLoader beanLoader) {
+        try {
+            return TmsDocumenten.boon(beanLoader, "Vondst", Map.of(), List.of());
+        } catch (Exception e) {
+            throw new AssertionError("de bean Vondst van de proef is niet te maken", e);
+        }
+    }
+
     /** The directory of the pinned dumps of {@link #de_hele_dump_van_twee_documenten_staat_vast}. */
     private static final Path PINMAP = Path.of("src", "test", "resources", "sessiedump");
 
