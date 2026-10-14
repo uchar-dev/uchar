@@ -219,10 +219,13 @@ class SessiedumpWitnessTest {
      * with its components; the five classes whose text stands unquoted ({@code Boolean}, {@code Integer},
      * {@code Long}, {@code LocalDate}, {@code LocalDateTime}); another class with its own text, quoted; and the key of a
      * characteristic. A bean without a name and an object whose class has no text of its own are refused, each in its
-     * own sentence.
+     * own sentence, on both branches (lens on step 6a: until then on the exec-model branch alone).
      *
      * <p><b>Red</b> with a mutant of {@code Sessiedump} that writes a collection that is no list in its own order
-     * instead of sorted (not committed; the diff and the output are kept with fix round 5b of step 6a).
+     * instead of sorted (not committed; the diff and the output are kept with fix round 5b of step 6a). The refusals
+     * stand in code both branches share; red on the DRL-text branch alone with a mutant that tells that branch by its
+     * session, the resource of its rules, and names a bean without a name there instead of refusing it (not committed;
+     * the diff and the output are kept with step 6b).
      */
     @Test void elke_spelling_van_de_dump_staat_vast() throws Exception {
         String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(attribuut("merk", TEKST),
@@ -257,7 +260,8 @@ class SessiedumpWitnessTest {
                 "feit {String(\"a\")=Integer(2), String(\"b\")=Integer(1)}",
                 "");
         for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
-            String d = CaseRunner.voorMeting(ir, tak).metSessie(zaak, (bouw, sessie, labels) -> {
+            CaseRunner runner = CaseRunner.voorMeting(ir, tak);
+            String d = runner.metSessie(zaak, (bouw, sessie, labels) -> {
                 Sessiedump dump = Sessiedump.op(sessie, labels);
                 for (Object o : elkeVorm()) sessie.insert(o);
                 StringBuilder uit = new StringBuilder();
@@ -265,16 +269,17 @@ class SessiedumpWitnessTest {
                 return uit.toString();
             });
             assertEquals(verwacht, d, () -> "de dump op " + tak);
+            IllegalStateException naamloos = assertThrows(IllegalStateException.class, () -> runner.metSessie(zaak,
+                    (bouw, sessie, labels) -> geweigerd(sessie, labels, naamlozeVondst(bouw.beanLoader()))),
+                    () -> "de bean zonder naam op " + tak);
+            assertEquals("de dump heeft geen naam voor een bean van Vondst: geen caselabel en geen creatie die haar"
+                    + " maakte", naamloos.getMessage(), () -> "de bean zonder naam op " + tak);
+            IllegalStateException zonderTekst = assertThrows(IllegalStateException.class, () -> runner.metSessie(zaak,
+                    (bouw, sessie, labels) -> geweigerd(sessie, labels, new Zonderzin())),
+                    () -> "het object zonder tekst op " + tak);
+            assertEquals("de dump schrijft geen identiteit: een " + Zonderzin.class.getName() + " heeft geen tekst van"
+                    + " zichzelf", zonderTekst.getMessage(), () -> "het object zonder tekst op " + tak);
         }
-        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL);
-        IllegalStateException naamloos = assertThrows(IllegalStateException.class, () -> runner.metSessie(zaak,
-                (bouw, sessie, labels) -> geweigerd(sessie, labels, naamlozeVondst(bouw.beanLoader()))));
-        assertEquals("de dump heeft geen naam voor een bean van Vondst: geen caselabel en geen creatie die haar maakte",
-                naamloos.getMessage());
-        IllegalStateException zonderTekst = assertThrows(IllegalStateException.class, () -> runner.metSessie(zaak,
-                (bouw, sessie, labels) -> geweigerd(sessie, labels, new Zonderzin())));
-        assertEquals("de dump schrijft geen identiteit: een " + Zonderzin.class.getName() + " heeft geen tekst van"
-                + " zichzelf", zonderTekst.getMessage());
     }
 
     /** An enumeration of the test, whose label the dump writes with its class. */
