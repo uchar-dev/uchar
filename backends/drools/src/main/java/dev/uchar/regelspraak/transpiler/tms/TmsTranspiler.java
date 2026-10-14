@@ -260,8 +260,9 @@ public final class TmsTranspiler {
      *  both branches share. */
     private StaandeDoelen staandeDoelen;
     /** The names of the document's rules in its order, each once: the sentence of two writers that disagree names them
-     *  in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7). A list, so that a plan
-     *  carries the order itself and a DRL text can spell it. */
+     *  in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7), and the reader of the
+     *  fixpoint takes, of writers that agree, the value of the first ({@link Schrijversconflict#inDocumentvolgorde}). A
+     *  list, so that a plan carries the order itself and a DRL text can spell it. */
     private final List<String> documentvolgorde = new ArrayList<>();
     /** The object types of the document in its order ({@link #typen}), and at the same place the simple name of each
      *  one's bean class (the one {@link #bonenklasse} loads): a sentence names an object by its own type. By name, so
@@ -619,10 +620,10 @@ public final class TmsTranspiler {
         List<Fixpunt.AfgeleideWaarde> waarden = new ArrayList<>();
         for (Map<ElementSleutel, List<Waarde>> perLid : perDoel.values())
             for (List<Waarde> geschreven : perLid.values()) {
-                // the writers in the order of the document: of values that agree up to their scale, 5,00 and 5, the bean
-                // gets that of the writer that comes first, on either branch and in every run, where the working memory
-                // gives them in an order that the firings and the hash of the facts decide; the values of one writer
-                // follow by their text
+                // the writers as Schrijversconflict.inDocumentvolgorde ranks them, the rules in the order of the
+                // document, and the values of one writer by their text: of values that agree up to their scale, 5,00
+                // and 5, the bean gets that of the rule that comes first, on either branch and in every run, where the
+                // working memory gives them in an order that the firings and the hash of the facts decide
                 geschreven.sort(Schrijversconflict.inDocumentvolgorde(documentvolgorde)
                         .thenComparing(w -> String.valueOf(w.waarde())));
                 Waarde eerste = geschreven.get(0);
@@ -698,9 +699,8 @@ public final class TmsTranspiler {
     }
 
     /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code sleutel} of
-     *  {@code onderwerp}: the writers in the order of the document ({@link #documentvolgorde}; a writer the document has
-     *  no rule of, such as a defaults group, after them by name), the attribute as declared, and the object's own
-     *  type. */
+     *  {@code onderwerp}: the writers as {@link Schrijversconflict#inDocumentvolgorde} ranks them over the document's
+     *  rules {@link #documentvolgorde}, the attribute as declared, and the object's own type. */
     private Schrijversconflict conflict(Object onderwerp, ElementSleutel sleutel, List<Waarde> waarden) {
         return Schrijversconflict.van(onderwerp, lidVan(onderwerp, sleutel).naam(), waarden, documentvolgorde, typeklassen,
                 typen);

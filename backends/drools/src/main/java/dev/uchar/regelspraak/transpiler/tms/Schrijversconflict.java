@@ -38,10 +38,9 @@ public final class Schrijversconflict extends IllegalStateException {
     }
 
     /** The conflict of the value facts {@code waarden} on attribute {@code attribuut} of {@code onderwerp}: the
-     *  writers in the order of the document's rules {@code documentvolgorde}, a writer the document has no rule of,
-     *  such as a defaults group, after them by name, and the object's own type named by the type in {@code typen} whose
-     *  bean class's simple name stands at the same place in {@code typeklassen}, or by that simple name where none
-     *  does. */
+     *  writers as {@link #inDocumentvolgorde} ranks them over the document's rules {@code documentvolgorde}, and the
+     *  object's own type named by the type in {@code typen} whose bean class's simple name stands at the same place in
+     *  {@code typeklassen}, or by that simple name where none does. */
     static Schrijversconflict van(Object onderwerp, String attribuut, List<Waarde> waarden, List<?> documentvolgorde,
                                   List<?> typeklassen, List<?> typen) {
         List<Waarde> geordend = new ArrayList<>(waarden);
@@ -53,9 +52,18 @@ public final class Schrijversconflict extends IllegalStateException {
         return new Schrijversconflict(onderwerp, attribuut, t < 0 ? klasse : (String) typen.get(t), daden);
     }
 
-    /** The value facts of one target by their writers in the order of the document's rules {@code documentvolgorde}, a
-     *  writer the document has no rule of, such as a defaults group, after them by name: the order in which a conflict
-     *  names them, and the order in which the reader of the fixpoint takes the value of writers that agree. */
+    /** The value facts of one target by their writers: the rules in the order of the document's rules
+     *  {@code documentvolgorde}, and after them, by name, a writer that is not among them, an effective defaults stack
+     *  or an allocation. This is the order in which a conflict names the writers, and the order in which the reader of
+     *  the fixpoint takes the value of writers that agree.
+     *
+     *  <p>The place by name only makes the order total; in a document the analysis lowers it decides nothing, since a
+     *  stack and an allocation are there the only writer of their target on an object. WF-026 allows one allocation per
+     *  target and WF-050 a defaults group no writer outside its effective stack; the analysis refuses an allocation
+     *  beside any other writer and a rule beside a group of its own type, and folds the rules of the other types of a
+     *  group's chain into the stack (RUNTIME-SEMANTICS ch. 7.10). The declared-unordered groups on one target of a type
+     *  are members of one stack, whose reconciliation writes, where they agree, the decision of the first deciding group
+     *  in the document (ch. 7.2). */
     static Comparator<Waarde> inDocumentvolgorde(List<?> documentvolgorde) {
         return Comparator.comparing((Waarde w) -> plaats(documentvolgorde, w.schrijver())).thenComparing(Waarde::schrijver);
     }
