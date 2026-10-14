@@ -120,6 +120,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * dan de exec-model-tak ==&gt; expected: &lt;gespeeld&gt; but was: &lt;Excluded: drl-tms: de DRL-weergave draagt
  * Creatie nog niet&gt;", and with the replay on {@code DRL_TMS} left out of a copy, at the sample on the text,
  * "Excluded drl-tms: de DRL-weergave draagt Creatie nog niet".
+ *
+ * <p><b>Every other sample on the text</b> (fix round 5b, in step 6a, on the lens of round 5b): those of documents B,
+ * G, H, C, D (both cases), F and the erflijn fire on both branches as well, each branch with the same demands; their
+ * intermediate states, a fault and a phase can depend on the order in which the rules are loaded while the replay in
+ * the order of the document passes. On the text a sample takes the first {@link TmsDocumenten#TEKSTSCHUDDINGEN}
+ * shuffles of the seed beside the order of the document and its reverse ({@link TmsDocumenten#schuddingen}), since
+ * every order there compiles a DRL text of its own; the two samples of document A keep their hundred.
  */
 class TmsCreatieWitnessTest {
 
@@ -248,21 +255,25 @@ class TmsCreatieWitnessTest {
     @Test void een_creatie_die_haar_eigen_uitvoer_leest_houdt_zichzelf_niet_in_stand() throws Exception {
         Path ir = documentB();
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakB()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of("startwachter"));
-            int[] lager = {0};
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(w1), sessie -> sessie.addEventListener(waardeteller("rang", "0", lager)),
-                    sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(w1, "opvolgeraantal"), "opvolgeraantal in volgorde " + namen);
-            assertGetal("5", TmsDocumenten.lees(w1, "rang"), "rang in volgorde " + namen);
-            assertEquals(0, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            if (lager[0] > 0) tussenstand++;
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int tussenstand = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of("startwachter"));
+                int[] lager = {0};
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(w1),
+                        sessie -> sessie.addEventListener(waardeteller("rang", "0", lager)),
+                        sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                assertGetal("0", TmsDocumenten.lees(w1, "opvolgeraantal"), "opvolgeraantal" + waar);
+                assertGetal("5", TmsDocumenten.lees(w1, "rang"), "rang" + waar);
+                assertEquals(0, gemaakt.size(), () -> "objecten" + waar);
+                if (lager[0] > 0) tussenstand++;
+            }
+            assertTrue(tussenstand > 0, tak + ": geen volgorde liet de lagere default eerst beslissen");
         }
-        assertTrue(tussenstand > 0, "geen volgorde liet de lagere default eerst beslissen");
     }
 
     // ---------------- document G: the rule layer after a creation ----------------
@@ -309,28 +320,31 @@ class TmsCreatieWitnessTest {
     @Test void een_creatie_vuurt_niet_terwijl_de_regellaag_op_een_creatie_reageert() throws Exception {
         Path ir = documentG();
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakG()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            List<String> volgordeVanWaarden = new ArrayList<>();
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> sessie.addEventListener(
-                    new DefaultRuleRuntimeEventListener() {
-                        @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof Waarde w && w.waarde() instanceof BigDecimal x
-                                    && x.compareTo(BigDecimal.ONE) == 0)
-                                volgordeVanWaarden.add(w.attribuut().naam().toLowerCase(java.util.Locale.ROOT));
-                        }
-                    }), sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(j1, "waarschuwingaantal"), "waarschuwingaantal in volgorde " + namen);
-            assertEquals(1, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            // the aantal became 1 while the kopie was still 0: the state on which "waarschuw" would hold
-            if (volgordeVanWaarden.indexOf("aantal") >= 0 && volgordeVanWaarden.indexOf("aantal")
-                    < volgordeVanWaarden.indexOf("kopie")) tussenstand++;
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int tussenstand = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                List<String> volgordeVanWaarden = new ArrayList<>();
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1), sessie -> sessie.addEventListener(
+                        new DefaultRuleRuntimeEventListener() {
+                            @Override public void objectInserted(ObjectInsertedEvent e) {
+                                if (e.getObject() instanceof Waarde w && w.waarde() instanceof BigDecimal x
+                                        && x.compareTo(BigDecimal.ONE) == 0)
+                                    volgordeVanWaarden.add(w.attribuut().naam().toLowerCase(java.util.Locale.ROOT));
+                            }
+                        }), sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                assertGetal("0", TmsDocumenten.lees(j1, "waarschuwingaantal"), "waarschuwingaantal" + waar);
+                assertEquals(1, gemaakt.size(), () -> "objecten" + waar);
+                // the aantal became 1 while the kopie was still 0: the state on which "waarschuw" would hold
+                if (volgordeVanWaarden.indexOf("aantal") >= 0 && volgordeVanWaarden.indexOf("aantal")
+                        < volgordeVanWaarden.indexOf("kopie")) tussenstand++;
+            }
+            assertTrue(tussenstand > 0, tak + ": geen volgorde liet het aantal voor de kopie veranderen");
         }
-        assertTrue(tussenstand > 0, "geen volgorde liet het aantal voor de kopie veranderen");
     }
 
     // ---------------- document H: the rule layer after a creation phase, read positively ----------------
@@ -375,28 +389,32 @@ class TmsCreatieWitnessTest {
     @Test void een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand() throws Exception {
         Path ir = documentH();
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakG()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        assertTrue(b.execModelTranspiler().creatieregels().contains("waarschuw"), () -> "creatieregels "
-                + b.execModelTranspiler().creatieregels());
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            Tussenstand stand = new Tussenstand(j1);
-            List<String> matches = new ArrayList<>();
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(j1), sessie -> {
-                sessie.addEventListener(stand);
-                sessie.addEventListener(new DefaultAgendaEventListener() {
-                    @Override public void matchCreated(MatchCreatedEvent e) {
-                        if (e.getMatch().getRule().getName().equals("waarschuw")) matches.add(stand.standen.toString());
-                    }
-                });
-            }, sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
-            assertEquals(1, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(j1, "waarschuwingaantal"), "waarschuwingaantal in volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(j1, "kopie"), "kopie in volgorde " + namen);
-            assertEquals(List.of(), matches, () -> "matches van waarschuw, met de standen, in volgorde " + namen);
-            assertTrue(stand.gezien, () -> "geen aantal boven de kopie terwijl een Creatiefase stond, in volgorde " + namen);
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            assertTrue(b.execModelTranspiler().creatieregels().contains("waarschuw"), () -> "creatieregels "
+                    + b.execModelTranspiler().creatieregels());
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                Tussenstand stand = new Tussenstand(j1);
+                List<String> matches = new ArrayList<>();
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(j1), sessie -> {
+                    sessie.addEventListener(stand);
+                    sessie.addEventListener(new DefaultAgendaEventListener() {
+                        @Override public void matchCreated(MatchCreatedEvent e) {
+                            if (e.getMatch().getRule().getName().equals("waarschuw"))
+                                matches.add(stand.standen.toString());
+                        }
+                    });
+                }, sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                assertEquals(1, gemaakt.size(), () -> "objecten" + waar);
+                assertGetal("0", TmsDocumenten.lees(j1, "waarschuwingaantal"), "waarschuwingaantal" + waar);
+                assertGetal("1", TmsDocumenten.lees(j1, "kopie"), "kopie" + waar);
+                assertEquals(List.of(), matches, () -> "matches van waarschuw, met de standen," + waar);
+                assertTrue(stand.gezien, () -> "geen aantal boven de kopie terwijl een Creatiefase stond," + waar);
+            }
         }
     }
 
@@ -469,27 +487,30 @@ class TmsCreatieWitnessTest {
     @Test void een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt() throws Exception {
         Path ir = documentC();
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakC()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> gemaakt.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            assertGetal("1", TmsDocumenten.lees(w1, "stand"), "stand van W1 in volgorde " + namen);
-            assertGetal("0", TmsDocumenten.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + namen);
-            // one phase per generation: W1 makes W2 in phase 1, W2 makes W3 in phase 2, W3 makes W4 in phase 3, and
-            // W4, of rang 4, makes nothing
-            assertEquals(3, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            Object onderwerp = w1;
-            for (int i = 0; i < 3; i++) {
-                Object[] g = gemaakt.get(i);
-                int fase = i + 1;
-                assertTrue(g[0] == onderwerp, () -> "keten in volgorde " + namen);
-                assertEquals(fase, g[2], () -> "fase in volgorde " + namen);
-                assertGetal(String.valueOf(i + 2), TmsDocumenten.lees(g[1], "rang"), "rang in volgorde " + namen);
-                assertGetal("0", TmsDocumenten.lees(g[1], "beginstand"), "beginstand in volgorde " + namen);
-                onderwerp = g[1];
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(w1), sessie -> { },
+                        sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                assertGetal("1", TmsDocumenten.lees(w1, "stand"), "stand van W1" + waar);
+                assertGetal("0", TmsDocumenten.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1" + waar);
+                // one phase per generation: W1 makes W2 in phase 1, W2 makes W3 in phase 2, W3 makes W4 in phase 3,
+                // and W4, of rang 4, makes nothing
+                assertEquals(3, gemaakt.size(), () -> "objecten" + waar);
+                Object onderwerp = w1;
+                for (int i = 0; i < 3; i++) {
+                    Object[] g = gemaakt.get(i);
+                    int fase = i + 1;
+                    assertTrue(g[0] == onderwerp, () -> "keten" + waar);
+                    assertEquals(fase, g[2], () -> "fase" + waar);
+                    assertGetal(String.valueOf(i + 2), TmsDocumenten.lees(g[1], "rang"), "rang" + waar);
+                    assertGetal("0", TmsDocumenten.lees(g[1], "beginstand"), "beginstand" + waar);
+                    onderwerp = g[1];
+                }
             }
         }
     }
@@ -541,27 +562,30 @@ class TmsCreatieWitnessTest {
     @Test void een_feitcreatie_legt_elke_link_een_keer() throws Exception {
         Path ir = documentD();
         assertEquals("gespeeld", TmsFoutWitnessTest.speelBeide(ir, zaakD1()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
-            Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            zetRol(h1, "kustwacht", k1);
-            zetRol(j1, "werver", k1);
-            zetRol(j2, "werver", k1);
-            zetRol(j1, "haven", h1);
-            List<Object[]> links = new ArrayList<>();
-            assertNull(vuur(b, volgorde, List.of(k1, h1, j1, j2), sessie -> { },
-                    sessie -> links.addAll(koppelingen(sessie, "havenlid"))), () -> "volgorde " + namen);
-            assertGetal("2", TmsDocumenten.lees(h1, "jutteraantal"), "jutteraantal in volgorde " + namen);
-            // the link of the input, and the one link the creation made, in the phase of generation 1; the creation
-            // fired once
-            assertEquals(2, links.size(), () -> "links in volgorde " + namen);
-            for (Object[] l : links) {
-                assertTrue(l[0] == h1, () -> "haven in volgorde " + namen);
-                assertEquals(l[1] == j1 ? 0 : 1, l[2], () -> "fase in volgorde " + namen);
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
+                Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                zetRol(h1, "kustwacht", k1);
+                zetRol(j1, "werver", k1);
+                zetRol(j2, "werver", k1);
+                zetRol(j1, "haven", h1);
+                List<Object[]> links = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, List.of(k1, h1, j1, j2), sessie -> { },
+                        sessie -> links.addAll(koppelingen(sessie, "havenlid"))), () -> "de vuring" + waar);
+                assertGetal("2", TmsDocumenten.lees(h1, "jutteraantal"), "jutteraantal" + waar);
+                // the link of the input, and the one link the creation made, in the phase of generation 1; the
+                // creation fired once
+                assertEquals(2, links.size(), () -> "links" + waar);
+                for (Object[] l : links) {
+                    assertTrue(l[0] == h1, () -> "haven" + waar);
+                    assertEquals(l[1] == j1 ? 0 : 1, l[2], () -> "fase" + waar);
+                }
             }
         }
     }
@@ -571,23 +595,25 @@ class TmsCreatieWitnessTest {
         String zin = "IllegalStateException: de naar-één-rol \"haven\" van een Jutter heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
         assertEquals(zin, TmsFoutWitnessTest.speelBeide(ir, zaakD2()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
-            Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
-            Object h2 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
-            zetRol(h1, "kustwacht", k1);
-            zetRol(h2, "kustwacht", k1);
-            zetRol(j1, "werver", k1);
-            String fout = null;
-            try {
-                vuur(b, volgorde, List.of(k1, h1, h2, j1), sessie -> { }, sessie -> { });
-            } catch (IllegalStateException e) {
-                fout = "IllegalStateException: " + e.getMessage();
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
+                Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
+                Object h2 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                zetRol(h1, "kustwacht", k1);
+                zetRol(h2, "kustwacht", k1);
+                zetRol(j1, "werver", k1);
+                String fout = null;
+                try {
+                    vuurInVolgorde(b, namen, List.of(k1, h1, h2, j1), sessie -> { }, sessie -> { });
+                } catch (IllegalStateException e) {
+                    fout = "IllegalStateException: " + e.getMessage();
+                }
+                assertEquals(zin, fout, () -> "op " + tak + " in volgorde " + namen);
             }
-            assertEquals(zin, fout, () -> "volgorde " + namen);
         }
     }
 
@@ -622,22 +648,25 @@ class TmsCreatieWitnessTest {
     @Test void een_object_is_pas_in_de_volgende_generatie_onderwerp() throws Exception {
         Path ir = documentF();
         assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speelBeide(ir, zaakF()));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of());
-            List<Object[]> gemaakt = new ArrayList<>();
-            assertEquals(BUDGET, vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> gemaakt.addAll(gemaakt(sessie))),
-                    () -> "volgorde " + namen);
-            // one object in each phase, the subject of each the object of the one before
-            assertEquals(100, gemaakt.size(), () -> "objecten in volgorde " + namen);
-            Object onderwerp = w1;
-            for (int i = 0; i < gemaakt.size(); i++) {
-                Object[] g = gemaakt.get(i);
-                int fase = i + 1;
-                assertTrue(g[0] == onderwerp, () -> "keten in volgorde " + namen);
-                assertEquals(fase, g[2], () -> "fase in volgorde " + namen);
-                onderwerp = g[1];
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of());
+                List<Object[]> gemaakt = new ArrayList<>();
+                assertEquals(BUDGET, vuurInVolgorde(b, namen, List.of(w1), sessie -> { },
+                        sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "de vuring" + waar);
+                // one object in each phase, the subject of each the object of the one before
+                assertEquals(100, gemaakt.size(), () -> "objecten" + waar);
+                Object onderwerp = w1;
+                for (int i = 0; i < gemaakt.size(); i++) {
+                    Object[] g = gemaakt.get(i);
+                    int fase = i + 1;
+                    assertTrue(g[0] == onderwerp, () -> "keten" + waar);
+                    assertEquals(fase, g[2], () -> "fase" + waar);
+                    onderwerp = g[1];
+                }
             }
         }
     }
@@ -656,27 +685,31 @@ class TmsCreatieWitnessTest {
         Path d = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-erflijn");
         assertEquals("PLAYED", CaseRunner.viaExecModel(d.resolve("ir.json"), List.of(d.resolve("case.json")))
                 .status());
-        DroolsBackend.Build b = DroolsBackend.build(d.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            List<Object> w = new ArrayList<>();
-            for (int i = 0; i < 4; i++) w.add(TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of()));
-            for (int i = 0; i < 3; i++) {
-                zetRol(w.get(i), "opvolger", w.get(i + 1));
-                zetRol(w.get(i + 1), "voorganger", w.get(i));
+        assertEquals("PLAYED", CaseRunner.viaDrlTms(d.resolve("ir.json"), List.of(d.resolve("case.json"))).status());
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(d.resolve("ir.json"), tak);
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                List<Object> w = new ArrayList<>();
+                for (int i = 0; i < 4; i++) w.add(TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of()));
+                for (int i = 0; i < 3; i++) {
+                    zetRol(w.get(i), "opvolger", w.get(i + 1));
+                    zetRol(w.get(i + 1), "voorganger", w.get(i));
+                }
+                List<Object[]> links = new ArrayList<>();
+                assertNull(vuurInVolgorde(b, namen, w, sessie -> { },
+                        sessie -> links.addAll(koppelingen(sessie, "erflijn"))), () -> "de vuring" + waar);
+                assertEquals(6, links.size(), () -> "links" + waar);
+                for (Object[] l : links) {
+                    int afstand = w.indexOf(l[1]) - w.indexOf(l[0]);
+                    assertEquals(afstand == 1 ? 1 : afstand + 1, l[2],
+                            () -> "fase van een link over " + afstand + waar);
+                }
+                for (int i = 0; i < 4; i++)
+                    assertGetal(String.valueOf(3 - i), TmsDocumenten.lees(w.get(i), "erfvolgeraantal"),
+                            "erfvolgeraantal van W" + (i + 1) + waar);
             }
-            List<Object[]> links = new ArrayList<>();
-            assertNull(vuur(b, volgorde, w, sessie -> { }, sessie -> links.addAll(koppelingen(sessie, "erflijn"))),
-                    () -> "volgorde " + namen);
-            assertEquals(6, links.size(), () -> "links in volgorde " + namen);
-            for (Object[] l : links) {
-                int afstand = w.indexOf(l[1]) - w.indexOf(l[0]);
-                assertEquals(afstand == 1 ? 1 : afstand + 1, l[2],
-                        () -> "fase van een link over " + afstand + " in volgorde " + namen);
-            }
-            for (int i = 0; i < 4; i++)
-                assertGetal(String.valueOf(3 - i), TmsDocumenten.lees(w.get(i), "erfvolgeraantal"),
-                        "erfvolgeraantal van W" + (i + 1) + " in volgorde " + namen);
         }
     }
 

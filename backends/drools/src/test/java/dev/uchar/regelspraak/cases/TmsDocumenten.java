@@ -419,6 +419,18 @@ final class TmsDocumenten {
     static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
             DroolsBackend.Branch.DRL_TMS);
 
+    /** The shuffles of a sample on the text in the samples brought to the text after round 5b ({@link #schuddingen}). */
+    static final int TEKSTSCHUDDINGEN = 40;
+
+    /** The shuffles of a sample of orders on {@code tak} ({@link #steekproef}): {@code opHetModel} on the exec-model
+     *  branch, and on the text at most {@link #TEKSTSCHUDDINGEN}, since there every order renders and compiles a DRL
+     *  text of its own, which costs some 70 ms where the executable model adds its rules in a millisecond, and the
+     *  suite has a budget for the samples on the text (fix round 5b, in step 6a). With the same seed the orders on the
+     *  text are the first of those on the model: the document's order, its reverse and the first shuffles. */
+    static int schuddingen(DroolsBackend.Branch tak, int opHetModel) {
+        return tak == DroolsBackend.Branch.EXEC_MODEL ? opHetModel : Math.min(opHetModel, TEKSTSCHUDDINGEN);
+    }
+
     /** The names of the rules of {@code b}, in the order in which its branch generates them: those of its executable
      *  model, or on {@code DRL_TMS} those of its text, which must be the same in the same order, so that one sample
      *  gives both branches the same orders. */

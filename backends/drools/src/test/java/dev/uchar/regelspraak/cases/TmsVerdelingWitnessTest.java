@@ -6,7 +6,6 @@ import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Stand;
 import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
-import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.BeforeMatchFiredEvent;
@@ -144,6 +143,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * allocation (v0 mirror hole, ch. 4.4)", and G's sample, "ingevoegd op de lege pot in volgorde […] ==> expected:
  * &lt;[]&gt; but was: &lt;[Fout(Berging@…, verdeel de opbrengst gelijk, fout in de regel "verdeel de opbrengst gelijk":
  * empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4))]&gt;".
+ *
+ * <p><b>The samples on the text.</b> A's sample fires on both branches since round 5b; those of B, C, G and of D, E and
+ * F since fix round 5b in step 6a (lens on round 5b): the empty weights, a deposit that lapses, a pot that is empty
+ * first and the edge cases can depend on the order in which the rules are loaded while the replay in the order of the
+ * document passes. On the text a sample takes at most {@link TmsDocumenten#TEKSTSCHUDDINGEN} shuffles of the seed
+ * beside the order of the document and its reverse ({@link TmsDocumenten#schuddingen}), since every order there
+ * compiles a DRL text of its own.
  */
 class TmsVerdelingWitnessTest {
 
@@ -370,22 +376,26 @@ class TmsVerdelingWitnessTest {
 
     /** The deposits of part B are those two and no more, in a seeded sample of orders of the generated rules. */
     @Test void b_alleen_de_lege_gewichten_deponeren() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(List.of(), B_VERDELINGEN, List.of()),
-                DroolsBackend.Branch.EXEC_MODEL);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 20)) {
-            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "1000"), List.of());
-            Object d1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("gewicht", "3", "jaar", "2019",
-                    "maximum", "600"), List.of());
-            Object d2 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("jaar", "2020", "maximum", "600"), List.of());
-            Object d3 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("gewicht", "1", "jaar", "2020",
-                    "maximum", "600"), List.of());
-            for (Object d : List.of(d1, d2, d3)) koppel(d, b1);
-            Map<Object, String> labels = labels(List.of(b1, d1, d2, d3), List.of("B1", "D1", "D2", "D3"));
-            List<String> kanaal = new ArrayList<>();
-            TmsDocumenten.vuur(b, volgorde, List.of(b1, d1, d2, d3), sessie -> {},
-                    sessie -> kanaal.addAll(TmsDocumenten.inconsistenties(sessie, labels)));
-            assertEquals(List.of("verdeel de opbrengst naar rato @ D2", "verdeel de opbrengst op jaar @ D2"), kanaal,
-                    () -> "volgorde " + volgorde.stream().map(Rule::getName).toList());
+        Path ir = document(List.of(), B_VERDELINGEN, List.of());
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261009L,
+                    TmsDocumenten.schuddingen(tak, 20))) {
+                Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "1000"), List.of());
+                Object d1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("gewicht", "3", "jaar", "2019",
+                        "maximum", "600"), List.of());
+                Object d2 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("jaar", "2020", "maximum", "600"),
+                        List.of());
+                Object d3 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("gewicht", "1", "jaar", "2020",
+                        "maximum", "600"), List.of());
+                for (Object d : List.of(d1, d2, d3)) koppel(d, b1);
+                Map<Object, String> labels = labels(List.of(b1, d1, d2, d3), List.of("B1", "D1", "D2", "D3"));
+                List<String> kanaal = new ArrayList<>();
+                TmsDocumenten.vuur(b, TmsDocumenten.kieBaseVan(b, namen), namen, List.of(b1, d1, d2, d3), sessie -> {},
+                        sessie -> kanaal.addAll(TmsDocumenten.inconsistenties(sessie, labels)));
+                assertEquals(List.of("verdeel de opbrengst naar rato @ D2", "verdeel de opbrengst op jaar @ D2"), kanaal,
+                        () -> "op " + tak + " in volgorde " + namen);
+            }
         }
     }
 
@@ -428,41 +438,45 @@ class TmsVerdelingWitnessTest {
      * before the maximum was derived, and that deposit went again.
      */
     @Test void c_een_deponering_van_een_tussenstand_vervalt() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(C_REGELS, List.of(C_NAAR_RATO), List.of()),
-                DroolsBackend.Branch.EXEC_MODEL);
-        int onderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "1200"), List.of());
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "3"), List.of());
-            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "2", "basismaximum", "-5"),
-                    List.of());
-            Object j3 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "1", "basismaximum", "300"),
-                    List.of());
-            Object j4 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basismaximum", "300"), List.of());
-            for (Object j : List.of(j1, j2, j3, j4)) koppel(j, b1);
-            Map<Object, String> labels = labels(List.of(b1, j1, j2, j3, j4), List.of("B1", "J1", "J2", "J3", "J4"));
-            List<String> kanaal = new ArrayList<>();
-            int[] opJ3 = new int[1];
-            TmsDocumenten.vuur(b, volgorde, List.of(b1, j1, j2, j3, j4), sessie -> sessie.addEventListener(
-                    new DefaultRuleRuntimeEventListener() {
-                        @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject().getClass().getSimpleName().equals("Inconsistentie")
-                                    && onderwerp(e.getObject()) == j3) opJ3[0]++;
-                        }
-                    }), sessie -> kanaal.addAll(TmsDocumenten.inconsistenties(sessie, labels)));
-            assertEquals(List.of("verdeel de opbrengst naar rato @ J1", "verdeel de opbrengst naar rato @ J2",
-                    "verdeel de opbrengst naar rato @ J4"), kanaal, () -> "volgorde " + namen);
-            Map<String, Object> eind = new LinkedHashMap<>();
-            eind.put("J1", nul(TmsDocumenten.lees(j1, "bergingsaandeel")));
-            eind.put("J2", nul(TmsDocumenten.lees(j2, "bergingsaandeel")));
-            eind.put("J3", nul(TmsDocumenten.lees(j3, "bergingsaandeel")));
-            eind.put("J4", nul(TmsDocumenten.lees(j4, "bergingsaandeel")));
-            eind.put("B1", nul(TmsDocumenten.lees(b1, "onverdeelde rest")));
-            assertEquals("{J1=600, J2=400, J3=200, J4=leeg, B1=0}", getallen(eind), () -> "volgorde " + namen);
-            if (opJ3[0] > 0) onderweg++;
+        Path ir = document(C_REGELS, List.of(C_NAAR_RATO), List.of());
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int onderweg = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261009L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = "op " + tak + " in volgorde " + namen;
+                Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "1200"), List.of());
+                Object j1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "3"), List.of());
+                Object j2 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "2",
+                        "basismaximum", "-5"), List.of());
+                Object j3 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "1",
+                        "basismaximum", "300"), List.of());
+                Object j4 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basismaximum", "300"), List.of());
+                for (Object j : List.of(j1, j2, j3, j4)) koppel(j, b1);
+                Map<Object, String> labels = labels(List.of(b1, j1, j2, j3, j4), List.of("B1", "J1", "J2", "J3", "J4"));
+                List<String> kanaal = new ArrayList<>();
+                int[] opJ3 = new int[1];
+                TmsDocumenten.vuur(b, TmsDocumenten.kieBaseVan(b, namen), namen, List.of(b1, j1, j2, j3, j4),
+                        sessie -> sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                            @Override public void objectInserted(ObjectInsertedEvent e) {
+                                if (e.getObject().getClass().getSimpleName().equals("Inconsistentie")
+                                        && onderwerp(e.getObject()) == j3) opJ3[0]++;
+                            }
+                        }), sessie -> kanaal.addAll(TmsDocumenten.inconsistenties(sessie, labels)));
+                assertEquals(List.of("verdeel de opbrengst naar rato @ J1", "verdeel de opbrengst naar rato @ J2",
+                        "verdeel de opbrengst naar rato @ J4"), kanaal, () -> waar);
+                Map<String, Object> eind = new LinkedHashMap<>();
+                eind.put("J1", nul(TmsDocumenten.lees(j1, "bergingsaandeel")));
+                eind.put("J2", nul(TmsDocumenten.lees(j2, "bergingsaandeel")));
+                eind.put("J3", nul(TmsDocumenten.lees(j3, "bergingsaandeel")));
+                eind.put("J4", nul(TmsDocumenten.lees(j4, "bergingsaandeel")));
+                eind.put("B1", nul(TmsDocumenten.lees(b1, "onverdeelde rest")));
+                assertEquals("{J1=600, J2=400, J3=200, J4=leeg, B1=0}", getallen(eind), () -> waar);
+                if (opJ3[0] > 0) onderweg++;
+            }
+            assertTrue(onderweg > 0, tak + ": geen volgorde liet de verdeling op J3 deponeren voordat zijn maximum"
+                    + " afgeleid was");
         }
-        assertTrue(onderweg > 0, "geen volgorde liet de verdeling op J3 deponeren voordat zijn maximum afgeleid was");
     }
 
     // ---------------- D: the edge rows of ch. 4.4 ----------------
@@ -633,51 +647,55 @@ class TmsVerdelingWitnessTest {
      *  rest, no fault and no deposit (ch. 4.4: an empty pot is no distribution); in at least one order the allocation
      *  fires so. */
     @Test void g_een_lege_pot_op_een_tussenstand_laat_niets_achter() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(List.of(POT), List.of(F_GELIJK), List.of()),
-                DroolsBackend.Branch.EXEC_MODEL);
-        int opLegePot = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("bruto", "90"), List.of());
-            List<Object> bergers = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                Object j = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of(), List.of());
-                koppel(j, b1);
-                bergers.add(j);
+        Path ir = document(List.of(POT), List.of(F_GELIJK), List.of());
+        for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+            int opLegePot = 0;
+            for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261009L,
+                    TmsDocumenten.schuddingen(tak, 100))) {
+                String waar = " op " + tak + " in volgorde " + namen;
+                Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("bruto", "90"), List.of());
+                List<Object> bergers = new ArrayList<>();
+                for (int i = 0; i < 3; i++) {
+                    Object j = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of(), List.of());
+                    koppel(j, b1);
+                    bergers.add(j);
+                }
+                List<Object> bonen = new ArrayList<>(List.of(b1));
+                bonen.addAll(bergers);
+                boolean[] legePot = new boolean[1];
+                int[] vuringen = new int[1];
+                List<String> ingevoegd = new ArrayList<>();
+                TmsDocumenten.vuur(b, TmsDocumenten.kieBaseVan(b, namen), namen, bonen, sessie -> {
+                    sessie.addEventListener(new DefaultAgendaEventListener() {
+                        @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
+                            legePot[0] = e.getMatch().getRule().getName().equals("verdeel de opbrengst gelijk")
+                                    && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof Stand s
+                                            && s.onderwerp() == b1 && s.attribuut().naam().equals("opbrengst")
+                                            && s.waarde() == null);
+                            if (legePot[0]) vuringen[0]++;
+                        }
+                        @Override public void afterMatchFired(AfterMatchFiredEvent e) {
+                            legePot[0] = false;
+                        }
+                    });
+                    sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                        @Override public void objectInserted(ObjectInsertedEvent e) {
+                            if (legePot[0]) ingevoegd.add(String.valueOf(e.getObject()));
+                        }
+                    });
+                }, sessie -> { });
+                Map<String, Object> eind = new LinkedHashMap<>();
+                for (int i = 0; i < 3; i++)
+                    eind.put("J" + (i + 1), TmsDocumenten.lees(bergers.get(i), "bergingsaandeel"));
+                eind.put("B1", TmsDocumenten.lees(b1, "onverdeelde rest"));
+                assertEquals("{J1=30, J2=30, J3=30, B1=0}", getallen(eind), () -> "volgorde" + waar);
+                assertEquals(List.of(), ingevoegd, () -> "ingevoegd op de lege pot" + waar);
+                if (vuringen[0] > 0) opLegePot++;
             }
-            List<Object> bonen = new ArrayList<>(List.of(b1));
-            bonen.addAll(bergers);
-            boolean[] legePot = new boolean[1];
-            int[] vuringen = new int[1];
-            List<String> ingevoegd = new ArrayList<>();
-            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> {
-                sessie.addEventListener(new DefaultAgendaEventListener() {
-                    @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
-                        legePot[0] = e.getMatch().getRule().getName().equals("verdeel de opbrengst gelijk")
-                                && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof Stand s
-                                        && s.onderwerp() == b1 && s.attribuut().naam().equals("opbrengst")
-                                        && s.waarde() == null);
-                        if (legePot[0]) vuringen[0]++;
-                    }
-                    @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                        legePot[0] = false;
-                    }
-                });
-                sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
-                    @Override public void objectInserted(ObjectInsertedEvent e) {
-                        if (legePot[0]) ingevoegd.add(String.valueOf(e.getObject()));
-                    }
-                });
-            }, sessie -> { });
-            Map<String, Object> eind = new LinkedHashMap<>();
-            for (int i = 0; i < 3; i++) eind.put("J" + (i + 1), TmsDocumenten.lees(bergers.get(i), "bergingsaandeel"));
-            eind.put("B1", TmsDocumenten.lees(b1, "onverdeelde rest"));
-            assertEquals("{J1=30, J2=30, J3=30, B1=0}", getallen(eind), () -> "volgorde " + namen);
-            assertEquals(List.of(), ingevoegd, () -> "ingevoegd op de lege pot in volgorde " + namen);
-            if (vuringen[0] > 0) opLegePot++;
+            assertTrue(opLegePot > 0, tak + ": geen volgorde liet de verdeling op de lege pot vuren voordat de"
+                    + " opbrengst afgeleid was");
         }
-        assertTrue(opLegePot > 0,
-                "geen volgorde liet de verdeling op de lege pot vuren voordat de opbrengst afgeleid was");
     }
 
     // ---------------- H: a second writer of a target ----------------
@@ -746,24 +764,28 @@ class TmsVerdelingWitnessTest {
             Path ir = (Path) d.getValue()[0];
             JsonNode zaak = (JsonNode) d.getValue()[1];
             String replay = speel(ir, zaak);
-            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-            for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 20)) {
-                String sleutel = d.getKey() + " " + volgorde.stream().map(Rule::getName).toList();
-                uitkomsten.put(sleutel, speelInVolgorde(b, volgorde, zaak));
-                verwacht.put(sleutel, replay);
+            for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
+                DroolsBackend.Build b = DroolsBackend.build(ir, tak);
+                for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261009L,
+                        TmsDocumenten.schuddingen(tak, 20))) {
+                    String sleutel = d.getKey() + " op " + tak + " " + namen;
+                    uitkomsten.put(sleutel, speelInVolgorde(b, namen, zaak));
+                    verwacht.put(sleutel, replay);
+                }
             }
         }
         assertEquals(verwacht, uitkomsten);
     }
 
     /**
-     * Case {@code zaak} of this class's model fired through the rules of {@code b} added in {@code volgorde}, with the
-     * backend's own driver: the beans as the case input makes them (whole numbers, the bergers of a Berging), the
-     * evaluation date as the global the case runner sets, then the expectations against the beans written back and the
-     * §9.5 facts of the session, the rule compared as the case runner compares it. Returns "gespeeld", the mismatches,
-     * or the fault of the fixpoint as "SimpleName: message", as {@link TmsFoutWitnessTest#speel} reports them.
+     * Case {@code zaak} of this class's model fired through the rules of {@code b} named in {@code namen}, in that
+     * order, as its branch builds them ({@link TmsDocumenten#kieBaseVan}), with the backend's own driver: the beans as
+     * the case input makes them (whole numbers, the bergers of a Berging), the evaluation date as the global the case
+     * runner sets, then the expectations against the beans written back and the §9.5 facts of the session, the rule
+     * compared as the case runner compares it. Returns "gespeeld", the mismatches, or the fault of the fixpoint as
+     * "SimpleName: message", as {@link TmsFoutWitnessTest#speel} reports them.
      */
-    private static String speelInVolgorde(DroolsBackend.Build b, List<Rule> volgorde, JsonNode zaak) throws Exception {
+    private static String speelInVolgorde(DroolsBackend.Build b, List<String> namen, JsonNode zaak) throws Exception {
         Map<String, Object> bonen = new LinkedHashMap<>();
         Map<Object, String> labels = new IdentityHashMap<>();
         for (JsonNode i : zaak.get("input").get("instances")) {
@@ -778,7 +800,7 @@ class TmsVerdelingWitnessTest {
         String datum = zaak.get("asOfDate").isNull() ? null : zaak.get("asOfDate").asText();
         List<String> kanaal = new ArrayList<>();
         try {
-            TmsCreatieWitnessTest.vuur(b, volgorde, new ArrayList<>(bonen.values()), sessie -> {
+            TmsCreatieWitnessTest.vuurInVolgorde(b, namen, new ArrayList<>(bonen.values()), sessie -> {
                 if (datum != null) sessie.setGlobal("rekendatum", java.time.LocalDate.parse(datum));
             }, sessie -> kanaal.addAll(TmsDocumenten.inconsistenties(sessie, labels)));
         } catch (RuntimeException e) {
