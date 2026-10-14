@@ -57,10 +57,23 @@
 # golden against target/uchar-drools-backend-*-shaded.jar. Since 2026-08-30 the gate itself rebuilds
 # that jar unconditionally (the one `mvn package` below, which also runs the suite), so the replay
 # can never run a jar that predates the source under review.
+#
+# --fast (card drl-teksttak-op-truth-maintenance, 2026-10-14, at the maintainer's request) serves a
+# builder who changes a pin or a list of this gate. The jar is rebuilt as always, so the replay never
+# runs a stale jar, but WITHOUT the JUnit suite; the exec-model replay runs with every pin and list;
+# the DRL-text sweep is left out. Its report says what did not run, and its last line that it is no
+# landing run: a landing always runs the full gate, without a flag.
 set -u
 cd "$(dirname "$0")/.."
 
 fail() { echo "check-drools: FAIL — $*" >&2; exit 1; }
+
+FAST=0
+case "$#:${1:-}" in
+  0:) ;;
+  1:--fast) FAST=1 ;;
+  *) echo "usage: scripts/check-drools.sh [--fast]" >&2; exit 2 ;;
+esac
 
 command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime needs a JDK/JRE 21+)"
 
@@ -93,19 +106,27 @@ command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar
 # same count since the switch-over of card drl-teksttak-op-truth-maintenance: its sweep below holds every
 # status line equal to the exec-model branch's, so it needs neither a pin nor a list of its own.
 EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239 (backends/drools, the surefire run)
-suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
+if [ "$FAST" -eq 1 ]; then
+  # --fast: the jar is rebuilt as always (never a stale one), but the suite does not run
+  suite_out=$(mvn -o -f backends/drools/pom.xml -DskipTests package 2>&1)
+else
+  suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
+fi
 suite_status=$?
 if [ $suite_status -ne 0 ]; then
   echo "$suite_out" | tail -25 >&2
+  [ "$FAST" -eq 1 ] && fail "the backend's build is red (--fast: the JUnit suite did not run)"
   fail "the backend's build+JUnit suite is red"
 fi
-summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][0-9]*\), Failures: [0-9]*, Errors: [0-9]*, Skipped: \([0-9][0-9]*\).*/\1 \2/p' | tail -1)
-[ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
-tests=${summary%% *}; skipped=${summary##* }
-[ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
-[ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
-  || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
-[ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
+if [ "$FAST" -eq 0 ]; then
+  summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][0-9]*\), Failures: [0-9]*, Errors: [0-9]*, Skipped: \([0-9][0-9]*\).*/\1 \2/p' | tail -1)
+  [ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
+  tests=${summary%% *}; skipped=${summary##* }
+  [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
+  [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
+    || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
+  [ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
+fi
 
 JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
 [ -n "$JAR" ] || fail "the build produced no shaded jar"
@@ -1437,6 +1458,24 @@ done
 [ "$played" -gt 0 ] || fail "empty played set — no golden replayed through Drools (an empty played set is a failure)"
 # (c) the count closes the direction the played-by-default list cannot see: a NEW golden that plays
 [ "$played" -eq "$EXPECTED_PLAYED" ] || fail "played $played, but EXPECTED_PLAYED pins $EXPECTED_PLAYED — a golden entered or left the played channel without the list noticing (a new golden plays: raise the number; a golden went away: the corpus lost a player)"
+
+# --fast stops here, with the square above green: the JUnit suite did not run, and the DRL-text sweep
+# below belongs to the full gate.
+if [ "$FAST" -eq 1 ]; then
+  echo ""
+  echo "check-drools: PASS --fast (the exec-model replay with every pin and list)"
+  echo "  played $played  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)"
+  echo "  auto-excluded $auto_excl  (per-form refusals: loader / transpiler marker / contract / unsupported input)"
+  if [ ${#AUTO_REASONS[@]} -gt 0 ]; then
+    printf '%s\n' "${AUTO_REASONS[@]}" | sort | uniq -c | sort -rn | sed 's/^ *\([0-9][0-9]*\) /    \1x  /'
+  fi
+  echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
+  echo "  no-case $nocase  (goldens without a case file)"
+  echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
+  echo "  NOT RUN under --fast: the JUnit suite and the DRL-text sweep"
+  echo "check-drools: --fast is no landing run; a landing runs the full gate, without a flag"
+  exit 0
+fi
 
 # --- the DRL-TEXT sweep: the second rendering of the one analysis ---------------------------------
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
