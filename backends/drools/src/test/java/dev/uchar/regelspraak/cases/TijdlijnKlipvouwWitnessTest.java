@@ -8,8 +8,13 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 
 /**
- * The gedurende-clipped total (RUNTIME-SEMANTICS ch. 3.6) over a Date timeline, in the exec branch (card
- * ref-klipvouw-nul) — the exec half that {@link TijdlijnDatumvouwWitnessTest} left to its case loader.
+ * The gedurende-clipped total (RUNTIME-SEMANTICS ch. 3.6) over a Date timeline, on both branches (card
+ * ref-klipvouw-nul) — the half that {@link TijdlijnDatumvouwWitnessTest} left to its case loader.
+ *
+ * <p>The analysis asks the question of the DECLARATION: a total over a timeline takes a member whose value is a number
+ * ({@code TmsTranspiler.integreerbaar}). So both branches refuse the document when they build it, before any case is
+ * read, in one sentence that names the rule and WF-091, whatever the case supplies. WF-091 rejects the document since
+ * card ref-klipvouw-nul, so this refusal is the backend's second line, not a corpus route.
  *
  * <p>RED FIRST, measured 2026-09-25 with the exec code of main 2f47d80e on {@code wf091-klipvouw-datum} (until
  * then the red case {@code datumtijdlijn-klipvouw}, byte-identical):
@@ -19,12 +24,11 @@ import java.nio.file.Path;
  *   value clipped away     exec  EXCLUDE non-numeric timeline value on 'wachtvergoeding per maand' …
  *                          drl   EXCLUDE drl-transpiler MARKER … vouw TOTAAL over de tijdlijn … (both cases)
  * </pre>
- * Without a value the case loader has no date to refuse, the clip totals 0 (ch. 3.6: absence under a clip is 0),
- * and that BigDecimal reached a LocalDate field at fire. A crash names no form. The exec branch then asked the
- * DRL-text branch's own question of the DECLARATION ({@code Vouwwaarde.tijdlijnWeigering}, which went with the
- * destructive lowering at card drl-teksttak-op-truth-maintenance), so both branches
- * refuse the document before any case is read, in one sentence, whatever the case supplies. WF-091 rejects the
- * document since the same card, so this refusal is the backend's second line, not a corpus route.
+ * Without a value the case loader had no date to refuse, the clip totalled 0 (ch. 3.6: absence under a clip is 0),
+ * and that BigDecimal reached a LocalDate field at fire; a crash names no form. The exec branch of that day then asked
+ * the question of the declaration that the destructive DRL-text lowering asked ({@code Vouwwaarde.tijdlijnWeigering},
+ * gone with that lowering at card drl-teksttak-op-truth-maintenance), until the analysis with truth maintenance took
+ * it over.
  *
  * <p>The last row is the other side: a NUMERIC clip target without a value plays 0 in both branches, the ch. 3.6
  * norm {@code ref} and clingo answer and {@code golden/jutterswet-getijdenwacht} pins in the square.
@@ -39,10 +43,7 @@ class TijdlijnKlipvouwWitnessTest {
     private static final Path KLIP_GETAL =
             Path.of("..", "..", "corpus", "golden", "jutterswet-erfwacht", "ir.json");
 
-    private static final String REDEN = "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter:"
-            + " de segmentwaarden zijn van type Datum in dagen en niet getalachtig";
-
-    /** The refusal of the exec-model branch, which names the rule and the verifier's rule. */
+    /** The refusal of the analysis, on both branches, which names the rule and the verifier's rule. */
     private static final String TMS_REDEN = "regel: wachtsom van een klipjutter — een totaal over de eigen tijdlijn ('het"
             + " totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is') over"
             + " 'wachtvergoeding per maand', dat geen getal is (WF-091)";
