@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "D1",
+        "objectType": "Deling",
+        "attributes": {
+          "teller": {
+            "number": "1"
+          },
+          "noemer": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "D1",
+      "attribute": "quotient",
+      "value": {
+        "number": "1/3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
