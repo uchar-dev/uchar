@@ -5,7 +5,8 @@
 the multiple-inheritance refusal, the wire form unchanged), §11.2 (no
 `inheritedExceptions` field; the layer boundary is fixed-ordered,
 subtype-own above inherited) and §11.3 (clingo carries the closure in
-ASP). Points 4, 5 and 6 stay open. Working prose, not normative. This
+ASP). Revised 2026-10-14: points 4, 5 and 6 are settled as well, so all
+six are (§11). Working prose, not normative. This
 is the deliverable of the research card
 `backlog/new/20260910-subtype-onderzoek.md` and answers its seven
 numbered questions in decided form, so that
@@ -1422,9 +1423,10 @@ named cycle path).
 ## 11. The points only the maintainer can settle
 
 Six points were put to the maintainer. **Three came back settled on
-2026-09-12** and are carried through the whole document above; three
-are still open. The numbering is kept as it was, so references from
-the three cards and from the previous revision still land.
+2026-09-12** and are carried through the whole document above; the
+other three were settled afterwards and are recorded below as of
+2026-10-14. The numbering is kept as it was, so references from the
+three cards and from the previous revision still land.
 
 ### Settled by the maintainer (2026-09-12)
 
@@ -1480,17 +1482,26 @@ the three cards and from the previous revision still land.
    carries the point over the effort argument (49 join sites). §6.4
    and the kernel card now state it as decided, not recommended.
 
-### Still open
+### Settled afterwards (recorded by the maintainer 2026-10-14)
+
+Until this record, the status line above still called these three
+open.
 
 4. **Whether the F-logic slice may be widened** by `c[|attr->v|]` and
    `c[|attr=>type|]` (§8.6). The mandate fixed the slice; this
    document's finding is that the slice as fixed cannot express the
    card's own use case. Widening is a mandate amendment, not a card
    decision.
+   **Settled 2026-09-12, at the landing of the F-logic frontend:** the
+   slice is widened by exactly these two forms, and the unbarred
+   class-level value `c[attr->v]` is a refusal, as §8.6 recommends
+   (`frontends/flogic/README.md`, "The slice" and "Refusals"; Result of
+   `backlog/done/20260910-flogic-frontend-minimaal.md`).
 5. **Depth.** Mandate decision 2 says chains are unbounded. Nothing
    here needs a bound, and the measured data has chains deeper than
    one level in 44 cases, so no bound is proposed — recorded only so
    that the absence of a limit is a decision rather than an oversight.
+   **Settled:** chains stay unbounded, as mandate decision 2 has it.
 6. **The mandate document cannot be committed as it stands.** It uses
    one of the terms the 2026-08-29 prioritized-defaults rename
    retired, and gate 1's rename tripwire runs `git grep` over tracked
@@ -1502,13 +1513,18 @@ the three cards and from the previous revision still land.
    `scripts/check-self-contained.sh`. Both are maintainer moves. The
    same constraint applies to this document, which is why it describes
    the retired term instead of quoting it.
+   **Settled 2026-09-19:** the mandate document is absorbed into this
+   proposal, which is the citable source from then on (see the status
+   above; commit `fc309af2`). The mandate stays untracked, so neither
+   the mandate nor the tripwire changes.
 
 ## 12. Summary of positions — proposed, not ratified
 
-Three of the six §11 points came back settled on 2026-09-12 and are
-marked as such below; everything else is still a proposal, and the
-maintainer's reading round remains the gate for the document as a
-whole — a settled point does not ratify the section that carries it.
+All six §11 points are settled: three on 2026-09-12, marked as such
+below, and three afterwards (§11). Everything else is still a
+proposal, and the maintainer's reading round remains the gate for the
+document as a whole — a settled point does not ratify the section that
+carries it.
 
 1. `ObjectType.supertype: string?`, an additive optional extension
    field; single parenthood by wire shape, not by a checked rule —
