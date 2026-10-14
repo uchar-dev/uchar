@@ -426,11 +426,20 @@ public final class CaseRunner {
      *  bereikt, …" at the fire cap, and two writers of one attribute that disagree are a fault at the fixpoint, which
      *  the write-back throws. Gate 8 therefore pins only
      *  this backend's own sentence, never platform text, since a pin on a JDK message would pin a crash; for a
-     *  refusal while the case is read, that sentence names position and lexeme. */
+     *  refusal while the case is read, that sentence names position and lexeme. The same red path on either branch is
+     *  {@link #runRood(Path, Path, DroolsBackend.Branch)}. */
     public static RoodResult runRood(Path irPath, Path casePath) {
+        return runRood(irPath, casePath, DroolsBackend.Branch.EXEC_MODEL);
+    }
+
+    /** {@link #runRood(Path, Path)} on the branch {@code tak}: the red path of either rendering of the analysis, so that
+     *  a witness can demand the same {@link RoodResult} of both branches on every red case (card
+     *  drl-teksttak-op-truth-maintenance, step 6b). Gate 8's Drools leg ({@code DroolsRoodMain}) drives the exec-model
+     *  branch through the entry above. */
+    public static RoodResult runRood(Path irPath, Path casePath, DroolsBackend.Branch tak) {
         CaseRunner runner;
         try {
-            runner = build(irPath);
+            runner = build(irPath, tak);
         } catch (Excluded e) {
             return new RoodResult("EXCLUDE", e.getMessage());
         } catch (IrLoader.Refusal e) {

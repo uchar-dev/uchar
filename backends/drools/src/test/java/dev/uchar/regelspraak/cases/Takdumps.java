@@ -49,6 +49,25 @@ final class Takdumps {
         });
     }
 
+    /** The dump of the session of {@code zaak} on the branch of {@code runner}, whose KieBase is built once, fired as a
+     *  consumer fires it; a fire that throws gives the dump of a session whose fire threw. Made for
+     *  {@link TakdumpsCorpusWitnessTest}, which fires every case of a golden on one build per branch. */
+    static String dump(CaseRunner runner, JsonNode zaak) {
+        return runner.metSessie(zaak, (bouw, sessie, labels) -> {
+            Sessiedump d = Sessiedump.op(sessie, labels);
+            StringBuilder uit = new StringBuilder();
+            DroolsBackend.Vuring v;
+            try {
+                v = DroolsBackend.vuur(bouw, sessie);
+            } catch (RuntimeException e) {
+                d.schrijf(uit, e, labels);
+                return uit.toString();
+            }
+            d.schrijf(uit, bouw, v, labels);
+            return uit.toString();
+        });
+    }
+
     /** {@code dump} without the lines of the firings. */
     static String zonderVuringen(String dump) {
         return Stream.of(dump.split("\n")).filter(r -> !r.startsWith("vuringen ") && !r.startsWith("spoor-"))
