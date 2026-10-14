@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Every case under {@code corpus/rood} is played through the red path of both branches
  * ({@link CaseRunner#runRood(Path, Path, DroolsBackend.Branch)}), which must give the same {@code RoodResult}: the same
  * status and the same text. Gate 8's Drools leg plays the exec-model branch alone, so without this row no gate would
- * bring a red case to the DRL-text branch (decision 46 of the card).
+ * bring a red case to the DRL-text branch (decision 46 of the card). That the entry builds the branch it is given, which
+ * this row cannot see while the two branches agree, is the witness {@link RodeTakkeuzeWitnessTest}.
  *
  * <p>Floors, measured 2026-10-14 at step 6b of the card, after its five goldens and its red case entered the corpus:
  * {@value #EXPECTED_MIN_GOLDENS} goldens compared and {@value #EXPECTED_MIN_RODE_CASES} red case files. A smaller
