@@ -108,6 +108,17 @@ class DroolsBackendWitnessTest {
         assertEquals(4, exec.casesPlayed());
     }
 
+    /** Every build carries the analysis of its document, on either branch: the record refuses one without it. The
+     *  scenario report reads the form of each fired rule off that analysis ({@code CaseRunner.luisteraar}); until step 6c
+     *  of card drl-teksttak-op-truth-maintenance it guarded a missing analysis itself, in a sentence from the time when
+     *  only the exec-model branch had one, a guard this record made unreachable (the end lens on the card). */
+    @Test void een_build_draagt_altijd_de_analyse_van_zijn_document() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new DroolsBackend.Build(
+                b.model(), b.beanLoader(), null, null, b.dekking(), b.kieBase()));
+        assertEquals("a Build carries the analysis of its document", e.getMessage());
+    }
+
     // ---------------- no build of the analysis leaves a side table out ----------------
 
     /** What the loader returns beside the model is the list of side tables a document can carry, so it is the

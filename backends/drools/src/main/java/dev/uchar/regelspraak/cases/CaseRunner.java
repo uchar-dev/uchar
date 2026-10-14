@@ -1368,7 +1368,6 @@ public final class CaseRunner {
      *  form of the document has none to name it after. */
     private DefaultAgendaEventListener luisteraar(Waarneming w) {
         TmsTranspiler tms = bouw.execModelTranspiler();
-        if (tms == null) throw new IllegalStateException("het scenariorapport speelt alleen de exec-model-tak");
         return new DefaultAgendaEventListener() {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                 String naam = e.getMatch().getRule().getName();
