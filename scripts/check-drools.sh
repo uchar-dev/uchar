@@ -43,15 +43,19 @@
 # the exec-model branch plays, and refuses in the same sentences. So it has NO list and NO pin of its
 # own: per golden its status line must be the exec-model branch's status line, verbatim (PLAYED n, or
 # EXCLUDE with the same sentence; "(no case file)" on both where there is no case). A different line
-# is a fault of a rendering and fails the gate by name — a FAIL or ERROR on this leg is such a
-# difference by construction, since the exec line is PLAYED, EXCLUDE or a listed divergence, so nothing
-# on this leg is ever listable. The one list of non-players for BOTH branches is EXPECTED_CHANNEL
+# is a fault of a rendering and fails the gate by name. The exec line is PLAYED, EXCLUDE, "(no case
+# file)" or, for a golden listed in EXCLUDE_KNOWN, the FAIL of its divergence; so while EXCLUDE_KNOWN
+# is empty, as it is since card tms-omschakeling, a FAIL or ERROR on this leg is such a difference by
+# construction, and a listed golden passes this leg only with the exec line's FAIL verbatim. Nothing on
+# this leg is ever listable. The one list of non-players for BOTH branches is EXPECTED_CHANNEL
 # (plus EXCLUDE_KNOWN), and the one count is EXPECTED_PLAYED. Until the switch-over the branch had an
 # equality pin (EXPECTED_DRL_PLAYED, last 197) and a reason-carrying list (DRL_CHANNEL, last 101
 # names); both went with the destructive lowering they described.
 #
 # The backend's own JUnit suite must ALSO pass with a NON-ZERO test count (maintainer decision
 # 2026-08-30, the gate-10 model): a zero-test or skipped suite is a failure, never silently green.
+# Since card drl-teksttak-op-truth-maintenance the build must also have run TakdumpsCorpusWitnessTest,
+# both its rows by name: the suite's comparison of the two branches per case, which no count covers.
 #
 # The REPLAY runs JAR-ONLY (decision V2-B, the gate-10 pattern): the gate invokes `java -jar` per
 # golden against target/uchar-drools-backend-*-shaded.jar. Since 2026-08-30 the gate itself rebuilds
@@ -61,8 +65,9 @@
 # --fast (card drl-teksttak-op-truth-maintenance, 2026-10-14, at the maintainer's request) serves a
 # builder who changes a pin or a list of this gate. The jar is rebuilt as always, so the replay never
 # runs a stale jar, but WITHOUT the JUnit suite; the exec-model replay runs with every pin and list;
-# the DRL-text sweep is left out. Its report says what did not run, and its last line that it is no
-# landing run: a landing always runs the full gate, without a flag.
+# the DRL-text sweep is left out. So under --fast nothing compares the two branches: neither the sweep
+# nor the suite's per-case comparison runs. Its report says what did not run, and its last line that
+# it is no landing run: a landing always runs the full gate, without a flag.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -91,6 +96,10 @@ command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime need
 # and skipped tests fail the gate: a skipped witness is a green subset, and a green subset is not
 # green. CI already builds through mvn; locally mvn is a hard requirement of the gate, deliberately.
 command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar and runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
+# the moment the build begins, as a file the build leaves alone: the surefire report of the witness below
+# must be newer, so a report an earlier build left cannot stand in for this one
+suite_begin=backends/drools/target/check-drools-begin
+{ mkdir -p backends/drools/target && touch "$suite_begin"; } || fail "cannot mark the start of the build in backends/drools/target"
 
 # --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
 # A lower bound, never an equality: it catches SHRINK — the suite that quietly runs half — while
@@ -105,7 +114,10 @@ command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar
 # file set gate 5 floors, held per name here by EXPECTED_CHANNEL. The DRL-text branch's count is the
 # same count since the switch-over of card drl-teksttak-op-truth-maintenance: its sweep below holds every
 # status line equal to the exec-model branch's, so it needs neither a pin nor a list of its own.
-EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239 (backends/drools, the surefire run)
+# Raised 2026-10-14 from 239 (measured 2026-09-10) to the suite as measured that day, at card
+# drl-teksttak-op-truth-maintenance: the card moved the comparison of the two branches per case into the
+# suite, so a suite that quietly ran less would now also compare less.
+EXPECTED_MIN_TESTS=1573   # 2026-10-14: measured 1573 (backends/drools, the surefire run, step 6c of that card)
 if [ "$FAST" -eq 1 ]; then
   # --fast: the jar is rebuilt as always (never a stale one), but the suite does not run
   suite_out=$(mvn -o -f backends/drools/pom.xml -DskipTests package 2>&1)
@@ -126,6 +138,18 @@ if [ "$FAST" -eq 0 ]; then
   [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
     || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
   [ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
+  # TakdumpsCorpusWitnessTest is the comparison of the two branches per case, over every played golden and every
+  # red case, that card drl-teksttak-op-truth-maintenance put in the suite (the owner's decision on norm question 1
+  # of its fourth Fable advice), where the sweep below compares status lines only; so this build must have run
+  # both its rows, by name, as its surefire report written after the build began says.
+  takdumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.TakdumpsCorpusWitnessTest.xml
+  [ -f "$takdumps" ] && [ "$takdumps" -nt "$suite_begin" ] \
+    || fail "TakdumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $takdumps) — the suite's comparison of the two branches per case is required"
+  for rij in elke_case_van_elke_gespeelde_golden_heeft_op_beide_takken_dezelfde_dump \
+             elke_rode_case_geeft_op_beide_takken_hetzelfde_roodresultaat; do
+    grep -q "<testcase name=\"$rij\"" "$takdumps" \
+      || fail "TakdumpsCorpusWitnessTest ran without its row '$rij' — the comparison of the two branches per case is required whole"
+  done
 fi
 
 JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
@@ -186,11 +210,13 @@ EXCLUDE_KNOWN=(
   # They were never the class the banner above describes — neither carried a v0 production-semantics
   # divergence — and both underlying defects were BUILT, so all three PLAY+PASS and removing them is
   # mandatory (a listed golden that plays trips the stale guard):
-  #   (c) TERMINATION: ExecModelTranspiler's rsTijdreeksGelijk idempotency guard was scoped to ANCHORED
-  #       temporal writes, while the §9.9 freshness expr leaves EVERY temporal write whose value reads an
-  #       own attribute class-reactive — so unanchored siblings on one subject re-activated each other past
-  #       the 100k cap. The guard now covers every timeline write (werkBijTijdlijn), which is
-  #       semantics-neutral: it skips a write only when the recomputed timeline is segment-for-segment equal.
+  #   (c) TERMINATION: ExecModelTranspiler's idempotency guard, a segment-for-segment comparison of two
+  #       timelines in the runtime, was scoped to ANCHORED temporal writes, while the §9.9 freshness expr
+  #       leaves EVERY temporal write whose value reads an own attribute class-reactive — so unanchored
+  #       siblings on one subject re-activated each other past the 100k cap. The guard now covers every
+  #       timeline write (werkBijTijdlijn), which is semantics-neutral: it skips a write only when the
+  #       recomputed timeline is segment-for-segment equal. (The comparison left the runtime at card
+  #       drl-teksttak-op-truth-maintenance, when nothing called it any more.)
   #   (d) The ch. 7.8 timeline arm (settled spec: ref's Desugar.standing_temporal_targets + eval.ml's
   #       pro-rata/day-count arms, and clingo) is now implemented in the same helper — on a standing temporal
   #       target an empty fold result writes nothing and the case-supplied input timeline stands whole.
@@ -204,7 +230,8 @@ EXCLUDE_KNOWN=(
   #       ported into the SHARED transpiler/kern/StaandeDoelen — one derivation, read by BOTH Drools branches:
   #       the exec-model branch at its scalar write boundary (werkBij) and the DRL-text branch at its emitted
   #       modify guard (card drl-staande-waarden, 2026-09-18, which built the DRL-text arm; the timeline
-  #       emptiness test is RegelSpraakRuntime.rsTijdreeksGevuld, likewise shared): on such a target a
+  #       emptiness test was a helper of RegelSpraakRuntime, likewise shared, which left the runtime at card
+  #       drl-teksttak-op-truth-maintenance when nothing called it any more): on such a target a
   #       leeg (null) computed value decides nothing, so the case input — or, in the desugaring domain, the
   #       initialisatie — stands. waardestelling was class (d) all along, not the class (b) its old reason
   #       line claimed: the spec DECIDED the doorval at ch. 7.8 and the backend simply had not built it.
@@ -301,6 +328,11 @@ EXPECTED_CHANNEL=(
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
 # AND raises this number by one.
+# NB 2026-10-14 (card drl-teksttak-op-truth-maintenance): where an entry below says what the DRL-text
+# branch does, it means the destructive DRL-text lowering of the entry's date, with its own pin
+# EXPECTED_DRL_PLAYED and its list DRL_CHANNEL; the lowering, the pin and the list went with that card.
+# The DRL-text branch is since then a rendering of the analysis and gives every golden the status line
+# of the exec-model branch. The entries from 233 -> 234 on say so in the past tense.
 # 2026-09-09: 117 -> 118, jutterswet-tegenwacht (the negated gedurende clip). The Drools loader and
 # transpiler already carried the form, so the golden arrived playing and matched the pinned values
 # on the first run — the square holds on it without a backend change.
@@ -533,8 +565,9 @@ EXPECTED_CHANNEL=(
 # 2026-09-16 (card tellende-kwantoren), 145 -> 147: TWO new players, one per matrix route, because the
 # counting quantifiers over an instance range are built and each branch of this backend grew an arm for
 # them. `jutterswet-reddingsvloot` is the §8.2 WHOLE-PERIOD matrix under ten minste / ten hoogste /
-# precies: the exec branch reads the counting TWIN of the two ch. 3.9 fold helpers
-# (rsGeheelPeriodeTelling) and compares the count with the threshold, and the DRL-text branch markers it
+# precies: the exec branch reads the counting TWIN of the two ch. 3.9 fold helpers of the runtime
+# (all three left the runtime at card drl-teksttak-op-truth-maintenance, when nothing called them any
+# more) and compares the count with the threshold, and the DRL-text branch markers it
 # for its whole-period matrix exactly as it markers the ALLE/GEEN sibling — the standing channel split,
 # unmoved. `jutterswet-vuurtoren` is the same three quantifiers over a NON-temporal matrix: the exec
 # branch counts over the collectList accumulate of the contributors, and it is the one corpus document
@@ -1221,16 +1254,16 @@ EXPECTED_CHANNEL=(
 # branch ran into its fire cap and reported "geen fixpunt (kringverwijzing?)", a cycle the document does not contain,
 # and the replay now names the two rules, their values and the attribute (cases.Schrijfconflict). The form whose
 # conditions exclude each other played before and plays after, PLAYED 2, with ref's and clingo's values. Measured
-# before and after over ALL goldens in both branches: no report line moves. The DRL-text branch plays the new golden
-# too, PLAYED 2, so EXPECTED_DRL_PLAYED moves by one as well.
+# before and after over ALL goldens in both branches: no report line moves. The DRL-text branch played the new golden
+# too, PLAYED 2, so EXPECTED_DRL_PLAYED moved by one as well.
 # 234 -> 235 (2026-10-01, an exception of a subtype under its supertype's base): jutterswet-meldtermijn-strandjutter,
 # new, from bron.rgs and scenario.rgs and hand-computed: an `Afwijking van` written for the Strandjutter under the base
 # rule of the Jutter, which the RegelSpraak frontend lowers as the Strandjutter's own exception without an own base, a
 # defaults group on the Strandjutter whose one default is a group-default, so the composition of RUNTIME-SEMANTICS
 # ch. 7.10 keeps the Jutter's base below it and a Strandjutter without a vergunningseinde falls through to that base. No
 # source file of this backend changed: the exec branch plays the two cases on the first run, PLAYED 2, with ref's and
-# clingo's values. The DRL-text branch refuses the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so
-# EXPECTED_DRL_PLAYED does not move.
+# clingo's values. The DRL-text branch refused the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so
+# EXPECTED_DRL_PLAYED did not move.
 # 235 -> 236 (2026-10-01, a fold whose subselection reads through a role of the element): jutterswet-late-vondst, new,
 # from bron.rgs and scenario.rgs and hand-computed: the earliest vinddag and the number of the vondsten of a Jutter whose
 # vinddag is later than the sluitdag of the jutter of the Vondst, the sluitdag derived by a rule declared after the folds,
@@ -1239,15 +1272,15 @@ EXPECTED_CHANNEL=(
 # does not run again, and failed case 1 (the earliest vinddag leeg, the count 0); it now joins, in the source of each
 # accumulate, the object a role of the element reaches, tests the subselection on the element bound again after that
 # join, and plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in
-# both branches: no report line moves. The DRL-text branch refuses the new golden on its marker 'TODO aggregatie EERSTE'
-# (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+# both branches: no report line moves. The DRL-text branch refused the new golden on its marker 'TODO aggregatie EERSTE'
+# (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED did not move.
 # 236 -> 237 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new, from bron.rgs and scenario.rgs
 # and hand-computed: "het percentage P van Y" with P a Percentage parameter written without the '%', and Y read one step
 # over a role, Y a sum between parentheses, and Y a variable of a "Daarbij geldt" part, over four cases, among them a
 # vondst without a taxatie. The RegelSpraak frontend refused the three rules before (an undeclared member, a syntax
 # error, a variable that names no role); it now lowers each to the percentageOf node the '%' form emits. No source file
 # of this backend changed: the exec branch plays the four cases on the first run, PLAYED 4, with ref's and clingo's
-# values. The DRL-text branch plays the new golden too, PLAYED 4, so EXPECTED_DRL_PLAYED moves by one as well.
+# values. The DRL-text branch played the new golden too, PLAYED 4, so EXPECTED_DRL_PLAYED moved by one as well.
 # 237 -> 238 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, new, from bron.rgs
 # and scenario.rgs and hand-computed: the maximum, the earliest date and the sum over the jutters of a Ploeg of a member
 # read through to-one steps after the set (two steps under a subselection on the jutter, one step to a date, one step
@@ -1255,7 +1288,7 @@ EXPECTED_CHANNEL=(
 # frontend left the first three folds markers before; it now generates a member on the jutter, set by a generated rule
 # from the chain, and folds over it. No source file of this backend changed: the exec branch plays the two cases on the
 # first run, PLAYED 2, with ref's and clingo's values (the per-jutter sum 240 beside the union 140). The DRL-text branch
-# refuses the new golden on its marker 'TODO aggregatie EERSTE' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does
+# refused the new golden on its marker 'TODO aggregatie EERSTE' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED did
 # not move.
 # 238 -> 239 (2026-10-02, the opgave marker on a number with a unit): jutterswet-opgave-bedrag, new, from bron.rgs and
 # scenario.rgs and hand-computed: the opgave marker on an amount in €, computed by an addition in the same unit and
@@ -1263,14 +1296,14 @@ EXPECTED_CHANNEL=(
 # reads the marked amount, over the seven cases of the date golden's shape. The RegelSpraak frontend refused the marker
 # on a number with a unit before; it now admits one unit and lowers the same five pieces. No source file of this backend
 # changed: the exec branch plays the seven cases on the first run, PLAYED 7, with ref's and clingo's values. The
-# DRL-text branch refuses the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED
-# does not move.
+# DRL-text branch refused the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED
+# did not move.
 # 239 -> 240 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new, from bron.rgs and
 # scenario.rgs and hand-computed: an object creation gives every Haven a Premiepot whose pot counts its havenjutters,
 # a fact creation links those Jutters to the Premiepot, and a role check reads the link. The verifier and ref refused
 # the document under WF-045 before, through the fact creation's population proxy (RUNTIME-SEMANTICS ch. 6.1); this
 # backend played it all along. No source file of this backend changed: the exec branch plays the case, PLAYED 1, with
-# ref's and clingo's values. The DRL-text branch plays it too, PLAYED 1, so EXPECTED_DRL_PLAYED moves by one as well.
+# ref's and clingo's values. The DRL-text branch played it too, PLAYED 1, so EXPECTED_DRL_PLAYED moved by one as well.
 # 240 -> 241 (2026-10-09, a fold whose subselection divides, under a condition that does not hold):
 # jutterswet-filterwacht, new, from bron.rgs and scenario.rgs and hand-computed: "het aantal vondsten van de Jutter die
 # aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2" as the value of a
@@ -1280,15 +1313,15 @@ EXPECTED_CHANNEL=(
 # ref never evaluates the fold ("DelingDoorNul: deling door nul in de regel "zware vondsten": 9 gedeeld door 0 …"); a
 # subselection that divides now goes on the element bound again in the source of the accumulate, and the exec branch
 # plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
-# branches: no report line moves but this golden's. The DRL-text branch plays it too, PLAYED 2, so EXPECTED_DRL_PLAYED
-# moves by one as well.
+# branches: no report line moves but this golden's. The DRL-text branch played it too, PLAYED 2, so EXPECTED_DRL_PLAYED
+# moved by one as well.
 # 241 -> 242 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new, from bron.rgs and
 # hand-computed: a recursive creation makes a chain of 100 Wachters in one stratum, exactly the ch. 5.5 creation budget,
 # read back through a rule in the chain's stratum and a consistency that flags the Wachter of rang 101; a second case
 # runs two such chains side by side. ref, clingo and the branch with truth maintenance faulted on it before the card
 # chain of 2026-10-09; the exec branch, which has no creation budget, played it all along and needed no change: it plays
-# the two cases, PLAYED 2, with ref's and clingo's values. The DRL-text branch plays them too, PLAYED 2, so
-# EXPECTED_DRL_PLAYED moves by one as well. Its red twin jutterswet-budgetgrens-over is listed in check-rood.sh.
+# the two cases, PLAYED 2, with ref's and clingo's values. The DRL-text branch played them too, PLAYED 2, so
+# EXPECTED_DRL_PLAYED moved by one as well. Its red twin jutterswet-budgetgrens-over is listed in check-rood.sh.
 # 242 -> 248 (2026-10-10, card tms-omschakeling): the exec-model branch is the lowering with truth maintenance
 # (transpiler/tms); the destructive lowering is gone. The corpus did not change. Measured over every golden with cases
 # before the switch, the new branch plays all 242 the destructive lowering played, with the same pinned values, and six
@@ -1296,7 +1329,7 @@ EXPECTED_CHANNEL=(
 # with both sides to-many), anchor/jutterswet-vindersloon, jutterswet-vondsttarief and synth2-afrondingscombinaties
 # (a value outside its scope), jutterswet-afdrachtstapel (a comparison of percentages) and jutterswet-klipwacht (the
 # gedurende clip as a member of a composite). They leave EXPECTED_CHANNEL. The six refusals that stay keep their
-# channel; their reasons follow the new branch's sentence. The DRL-text branch does not move.
+# channel; their reasons follow the new branch's sentence. The DRL-text branch did not move.
 # 248 -> 250 (2026-10-11, card objectcreatie-zonder-connectingrole-binding): the exec-model branch carries an object
 # creation without a connectingRole binding again, the form the frontend writes when the sentence names the type
 # instead of a role. The back-link is the one the shared decision (FactModelGenerator.creatiekoppeling) derives from
@@ -1306,8 +1339,8 @@ EXPECTED_CHANNEL=(
 # creations make 'penningbezit', and the branch reads a created relation over its link facts, not over the one bean
 # field the §13.3.9 refusal stands on (as it already did for a creation with a binding); it plays its three cases,
 # PLAYED 3, with the anchor's absolute values. Measured before and after over every golden in both branches: no other
-# report line moves. The DRL-text branch plays jutterswet-penningbesluit too, PLAYED 3, and still refuses
-# penninguitgifte (DRL_CHANNEL), so EXPECTED_DRL_PLAYED moves by one.
+# report line moves. The DRL-text branch played jutterswet-penningbesluit too, PLAYED 3, and still refused
+# penninguitgifte (DRL_CHANNEL), so EXPECTED_DRL_PLAYED moved by one.
 # 250 -> 255 (2026-10-14, card drl-teksttak-op-truth-maintenance, step 6b): five own documents the card wrote for its
 # witnesses, with expectations computed by hand, leave the test resources of this backend and become goldens (the
 # owner's decision on norm question 2 of the card's fourth Fable advice): jutterswet-verdeling-dubbelbezet (two
@@ -1472,7 +1505,7 @@ if [ "$FAST" -eq 1 ]; then
   echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
   echo "  no-case $nocase  (goldens without a case file)"
   echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
-  echo "  NOT RUN under --fast: the JUnit suite and the DRL-text sweep"
+  echo "  NOT RUN under --fast: the JUnit suite and the DRL-text sweep, so nothing compared the two branches"
   echo "check-drools: --fast is no landing run; a landing runs the full gate, without a flag"
   exit 0
 fi
@@ -1481,7 +1514,8 @@ fi
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
 # above is green, so an exec-side break still fails in the time it always did and the extra wall
 # clock is only ever paid by an otherwise-passing gate. Per golden the line must be the exec-model
-# branch's line (the header says why); a FAIL or ERROR here is a difference by construction.
+# branch's line (the header says why); while EXCLUDE_KNOWN is empty, a FAIL or ERROR here is a difference by
+# construction (the header says when it is not).
 # MEASURED COST: the text compiles its Java functions per golden, so this sweep is the more expensive
 # of the two (FABLE-3 §3.3 A: 202 s against 96–100 s for the old text); the figure printed below is
 # the one to believe, and it is printed on the failing path too.
