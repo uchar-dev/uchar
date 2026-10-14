@@ -29,29 +29,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * analysis the filter stands in the test of the rule that inserts a member's contribution, as a function that calls
  * the route of the whole period, and no accumulate holds it.
  *
- * <p>The two documents under {@code heelperiode-aantalfilter} are own work: written in RegelSpraak ({@code bron.rgs})
- * and emitted by the frontend, which does not lower a die/dat-subselection with a qualifier on the operand of an
+ * <p>The two documents, the corpus goldens {@code jutterswet-aantalfilter-gehele-jaar} (the computation rule) and
+ * {@code jutterswet-aantalfilter-gehele-jaar-creatieguard} (the creation guard), are own work: written in RegelSpraak and
+ * emitted by the frontend, which does not lower a die/dat-subselection with a qualifier on the operand of an
  * aggregation yet (it writes an {@code Unresolved} filter and a warning). The filter of each count is therefore written
  * in by hand, the check of the characteristic "bemand" of the member under the qualifier of the whole year, and the
- * warning is dropped. The expectations are computed by hand from RUNTIME-SEMANTICS ch. 3.9: a post counts where each
+ * warning is dropped; so the goldens carry no {@code bron.rgs}, which gate 10 would hold to their IR, and their NOTE.md
+ * quotes the source. The expectations are computed by hand from RUNTIME-SEMANTICS ch. 3.9: a post counts where each
  * year its true periods touch is covered on every day, so a post manned for the first half of 2026 does not count, a
  * post manned through 2025 and 2026 does, and a post without any period counts vacuously.
  *
- * <p>This witness fires both branches, the exec-model branch and {@code DRL_TEXT}. The documents lie outside the
- * corpus, so no gate runs them through the verifier, the reference interpreter or the ASP backend; those were run by
- * hand. Measured on {@code 4c8a687b}, before step 3a, per document (verifier, ref, clingo, exec-model branch, the
- * destructive DRL-text branch, {@code DRL_TMS}): the computation rule PASS, PASS 4, PASS 4, PLAYED 4, EXCLUDE
- * on the compiler error above, EXCLUDE "drl-tms: de DRL-weergave draagt Bijdrage nog niet"; the creation guard PASS,
- * PASS 3, PASS 3, PLAYED 3, the same compiler error, and EXCLUDE "drl-tms: de DRL-weergave draagt Creatie nog niet".
- * Measured again at fix round 3a of the card, on {@code 85b9a970}, with the same outcomes but for {@code DRL_TMS}, which
- * plays the computation rule (PLAYED 4): the verifier PASS on both documents, ref and clingo PASS on each of the seven
- * cases, one case per call ({@code ref/bin/runner.exe <ir.json> <case.json>} and
- * {@code backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>} under {@code _build/default}). The raw output of
- * that run is not in the repository; it is kept with the measurements of the card, in
- * {@code stap3b/fix3a/heelperiode-ruw.txt} (verifier, ref, clingo) and {@code stap3b/fix3a/heelperiode-ruw-drools.txt}
- * (the three Drools branches through the CLI). The creation guard plays through the rendering as DRL text since it
- * carries a creation (step 5); until then it refused the guard for the creation, and this witness pinned that refusal.
- * Since the switch-over (step 6) that rendering is the DRL-text branch.
+ * <p>This witness fires both branches, the exec-model branch and {@code DRL_TEXT}. Measured on {@code 4c8a687b}, before
+ * step 3a, when the documents were the card's own and lay in the test resources, per document (verifier, ref, clingo,
+ * exec-model branch, the destructive DRL-text branch, {@code DRL_TMS}): the computation rule PASS, PASS 4, PASS 4,
+ * PLAYED 4, EXCLUDE on the compiler error above, EXCLUDE "drl-tms: de DRL-weergave draagt Bijdrage nog niet"; the
+ * creation guard PASS, PASS 3, PASS 3, PLAYED 3, the same compiler error, and EXCLUDE "drl-tms: de DRL-weergave draagt
+ * Creatie nog niet". The creation guard plays through the rendering as DRL text since it carries a creation (step 5);
+ * until then it refused the guard for the creation, and this witness pinned that refusal. Since the switch-over (step 6)
+ * that rendering is the DRL-text branch, and since step 6b both documents are goldens, which gates 5, 6 and 12 replay
+ * in the reference interpreter, the ASP backend and both branches.
  *
  * <p><b>Red</b> on {@code 4c8a687b}: the test of the computation rule fails on the refusal of the contribution. The
  * test of the creation guard held there too, since the rendering met the creation first: it pinned the loud refusal
@@ -61,15 +57,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HeelperiodeAantalfilterWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    // cwd under surefire is the module dir (backends/drools)
-    private static final Path DOCUMENTEN = Path.of("src", "test", "resources", "heelperiode-aantalfilter");
+    // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
+    private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
+    private static final Path REKENREGEL = GOLDEN.resolve("jutterswet-aantalfilter-gehele-jaar");
+    private static final Path CREATIEGUARD = GOLDEN.resolve("jutterswet-aantalfilter-gehele-jaar-creatieguard");
 
     /** A function of the text that holds the route of the whole period, and its name. */
     private static final Pattern GEHEEL_PERIODE = Pattern.compile(
             "function boolean (r\\d+_toets\\d+)\\([^)]*\\) \\{\\n    return Rekenhulpen\\.geheelPeriode\\(");
 
     @Test void de_rekenregel_speelt_door_de_drl_teksttak_zoals_door_de_exec_model_tak() throws Exception {
-        Path ir = DOCUMENTEN.resolve("rekenregel").resolve("ir.json");
+        Path ir = REKENREGEL.resolve("ir.json");
         List<Path> zaken = zaken(ir);
         assertEquals(4, zaken.size(), "de cases van de rekenregel");
         for (Path zaak : zaken) {
@@ -95,7 +93,7 @@ class HeelperiodeAantalfilterWitnessTest {
      *  Green from the start, on {@code 0458b2d0}: truth maintenance reaches the same fixpoint in either order, and no
      *  step of card drl-teksttak-op-truth-maintenance changes that; the row guards it for the text. */
     @Test void de_rekenregel_speelt_ook_in_de_andere_volgorde_van_haar_twee_regels() throws Exception {
-        Path ir = DOCUMENTEN.resolve("rekenregel").resolve("ir.json");
+        Path ir = REKENREGEL.resolve("ir.json");
         JsonNode document = JSON.readTree(ir.toFile());
         ArrayNode regels = (ArrayNode) document.get("rules").get("rules");
         assertEquals(List.of("postental van een kustvak", "waaktarief van een kustvak"),
@@ -116,7 +114,7 @@ class HeelperiodeAantalfilterWitnessTest {
     }
 
     @Test void de_creatieguard_speelt_op_beide_takken() throws Exception {
-        Path ir = DOCUMENTEN.resolve("creatieguard").resolve("ir.json");
+        Path ir = CREATIEGUARD.resolve("ir.json");
         List<Path> zaken = zaken(ir);
         assertEquals(3, zaken.size(), "de cases van de creatieguard");
         for (Path zaak : zaken) {

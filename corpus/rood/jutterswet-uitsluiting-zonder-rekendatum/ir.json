@@ -1,0 +1,207 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vergunning geweigerd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "weigering herroepen",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "herroeping vervallen",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "uitgesloten",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "penninggerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "penninggerechtigd tenzij uitgesloten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "uitgesloten",
+              "negated": true,
+              "source": {
+                "snippet": "hij niet uitgesloten is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "uitsluiting van het penningrecht",
+        "subject": "Jutter",
+        "characteristic": "uitgesloten",
+        "defaults": [
+          {
+            "node": "Default",
+            "decision": true,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geweigerd",
+                  "negated": false,
+                  "source": {
+                    "snippet": "zijn raapvergunning is geweigerd"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "weigering herroepen",
+                  "negated": false,
+                  "source": {
+                    "snippet": "de weigering is herroepen"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "herroeping vervallen",
+                  "negated": false,
+                  "source": {
+                    "snippet": "de herroeping is vervallen"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "de weigering is herroepen maar de herroeping is vervallen"
+              }
+            },
+            "source": {
+              "snippet": "art. 4, derde laag"
+            }
+          },
+          {
+            "node": "Default",
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geweigerd",
+                  "negated": false,
+                  "source": {
+                    "snippet": "zijn raapvergunning is geweigerd"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "weigering herroepen",
+                  "negated": false,
+                  "source": {
+                    "snippet": "de weigering is herroepen"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "de weigering is herroepen"
+              }
+            },
+            "source": {
+              "snippet": "art. 4, tweede laag"
+            }
+          },
+          {
+            "node": "Default",
+            "decision": true,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "vergunning geweigerd",
+              "negated": false,
+              "source": {
+                "snippet": "zijn raapvergunning is geweigerd"
+              }
+            },
+            "source": {
+              "snippet": "art. 4, eerste laag"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "art. 4"
+        },
+        "validity": {
+          "node": "Validity",
+          "from": "2026-01-01"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

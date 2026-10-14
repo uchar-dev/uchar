@@ -19,8 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Two allocations over one shared recipient with an empty weight, through both branches with truth maintenance (card
- * drl-verdeling-dubbelbezet, taken up as acceptance (a) of card drl-teksttak-op-truth-maintenance). The document of its
- * own, {@code src/test/resources/verdeling/dubbelbezet}, is part B of {@link TmsVerdelingWitnessTest}: a Berging B1 with
+ * drl-verdeling-dubbelbezet, taken up as acceptance (a) of card drl-teksttak-op-truth-maintenance). The document, the
+ * corpus golden {@code jutterswet-verdeling-dubbelbezet}, is part B of {@link TmsVerdelingWitnessTest}: a Berging B1 with
  * opbrengst 1000 over the Bergers D1 (gewicht 3, jaar 2019), D2 (no gewicht, jaar 2020) and D3 (gewicht 1, jaar 2020),
  * each with maximum 600; "verdeel de opbrengst naar rato" over the gewicht into the bergingsaandeel, its rest into the
  * onverdeelde rest, and "verdeel de opbrengst op jaar" in the order of the jaar, weighted by the gewicht, into the
@@ -32,18 +32,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * their place, fires on both, on {@code DRL_TEXT} with the rules of the text in that order ({@code Tekstvolgorde}),
  * since the order of the rules in the text is the order in which Drools loads them.
  *
- * <p><b>Measured</b> (2026-10-13; raw output with the measurements of the card, {@code stap5/dubbelbezet-ruw.txt}):
- * verifier PASS; the reference interpreter and the ASP runner PASS with the ten expectations of the case; the
- * exec-model branch PLAYED 1. The old DRL-text branch, which card drl-teksttak-op-truth-maintenance leaves as it is until
- * the switch-over, fails the case with "ConsequenceException: Exception executing consequence for rule "verdeel de
- * opbrengst naar rato" … cannot invoke method: setBergingsaandeel", under it a NullPointerException on the empty weight
- * of D2. <b>Red</b> on {@code abe891c1}, before the rendering carried the allocations: both tests failed on
- * {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Ontvanger nog niet".
+ * <p><b>Measured</b> (2026-10-13, when the document was the card's own and lay in the test resources): verifier PASS;
+ * the reference interpreter and the ASP runner PASS with the ten expectations of the case; the exec-model branch
+ * PLAYED 1. The old DRL-text branch, which card drl-teksttak-op-truth-maintenance left as it was until the switch-over,
+ * failed the case with "ConsequenceException: Exception executing consequence for rule "verdeel de opbrengst naar rato"
+ * … cannot invoke method: setBergingsaandeel", under it a NullPointerException on the empty weight of D2. Since step 6b
+ * of the card the document is a golden of the corpus, which gates 5, 6 and 12 replay in the reference interpreter, the
+ * ASP backend and both branches; its NOTE.md carries the hand computation. <b>Red</b> on {@code abe891c1}, before the
+ * rendering carried the allocations: both tests failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt
+ * Ontvanger nog niet".
  */
 class DrlVerdelingDubbelbezetWitnessTest {
 
-    // cwd under surefire is the module dir (backends/drools)
-    private static final Path MAP = Path.of("src", "test", "resources", "verdeling", "dubbelbezet");
+    // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
+    private static final Path MAP = Path.of("..", "..", "corpus", "golden", "jutterswet-verdeling-dubbelbezet");
 
     private static JsonNode zaak() throws Exception {
         return TmsDocumenten.JSON.readTree(Files.readString(MAP.resolve("case.json")));

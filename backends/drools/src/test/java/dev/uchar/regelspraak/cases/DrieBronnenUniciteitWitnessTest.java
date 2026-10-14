@@ -22,13 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code DrlWeergaveWitnessTest} has sources 0 and 1 and is only compiled, and the witnesses of a uniqueness that fire
  * have two sources at most. Each case plays on both branches, and its dump is the same on both ({@link Takdumps}).
  *
- * <p>The document under {@code uniciteit-drie-bronnen} is own work on Jutterswet material: a key of two components,
- * whose order counts, over three object types. In the first case S1 (Strandvondst) and D1 (Drijfvondst) carry the key
- * (7, 1) and collide, while W1 (Wrakvondst) carries (1, 7); in the second D1 carries (1, 7) and nothing collides. The
- * document lies outside the corpus, so no gate runs it through the verifier, the reference interpreter or the ASP
- * backend; measured at fix round 3b, on {@code 55a24e61} with the dump of that round: the verifier PASS, ref and clingo
- * PASS on both cases, and on the first case with the expectation "consistent" both name exactly S1 and D1. The raw
- * output is kept with the measurements of the card, in {@code stap4/fix3b/unie-ruw.txt}.
+ * <p>The document, the corpus golden {@code jutterswet-uniciteit-drie-bronnen}, is own work on Jutterswet material: a
+ * key of two components, whose order counts, over three object types. In the first case S1 (Strandvondst) and D1
+ * (Drijfvondst) carry the key (7, 1) and collide, while W1 (Wrakvondst) carries (1, 7); in the second D1 carries (1, 7)
+ * and nothing collides. It was the card's own document in the test resources, measured by hand at fix round 3b (the
+ * verifier PASS, ref and clingo PASS on both cases); since step 6b of the card it is a golden, which gates 5, 6 and 12
+ * replay in the reference interpreter, the ASP backend and both branches, and its NOTE.md carries the hand
+ * computation. Its second case satisfies a do-nothing executor, since "consistent" is true of an empty channel, and gate
+ * 7 lists it among its survivors: what it pins is that the channel stays empty.
  *
  * <p><b>Red by mutation</b>, measured at fix round 3b on {@code 6313a221} in a copy whose rendering swaps the first two
  * components of a key of source 2 and of no other source, the mutation the lens on step 3b found no red witness for:
@@ -39,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DrieBronnenUniciteitWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    // cwd under surefire is the module dir (backends/drools)
-    private static final Path DOCUMENT = Path.of("src", "test", "resources", "uniciteit-drie-bronnen");
+    // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
+    private static final Path DOCUMENT = Path.of("..", "..", "corpus", "golden", "jutterswet-uniciteit-drie-bronnen");
 
     @Test void de_unie_over_drie_bronnen_speelt_op_beide_takken_met_gelijke_dumps() throws Exception {
         Path ir = DOCUMENT.resolve("ir.json");

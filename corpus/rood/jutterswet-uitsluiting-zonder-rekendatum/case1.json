@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "vergunning geweigerd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "a validity-bounded form needs an evaluation date; this session is time-free",
+    "clingo": "a validity-bounded form needs an evaluation date; this session is time-free",
+    "drools": "fout in de regel \"defaults K:Jutter.uitgesloten\": a validity-bounded form needs an evaluation date; this session is time-free"
+  }
+}
