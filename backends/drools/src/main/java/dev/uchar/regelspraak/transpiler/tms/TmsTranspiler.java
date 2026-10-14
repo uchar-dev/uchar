@@ -87,9 +87,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * The lowering of the exec-model branch: a uchar IR document to a Drools executable model that derives with
- * {@code drools.logicalInsert}. A derived fact stands exactly as long as the condition of a rule that inserted it
- * holds, and goes, with everything that rested on it, when that condition stops holding. The outcome of an acyclic
+ * The analysis that both branches of the backend render: a uchar IR document to the plan of its rules, which the
+ * exec-model branch renders as a Drools executable model ({@link PatternDslWeergave}) and the DRL-text branch as DRL text
+ * ({@code DrlWeergave}), each deriving with {@code drools.logicalInsert}. A derived fact stands exactly as long as the
+ * condition of a rule that inserted it holds, and goes, with everything that rested on it, when that condition stops
+ * holding. The outcome of an acyclic
  * rule set then does not depend on which rule the agenda fires first, which a lowering that writes the beans secures
  * only with measures of its own (a rule attribute against re-firing, a priority per stratum, class reactivity, a
  * conditional bean update, a record of an initialisation's own write), as the exec-model branch did until card
