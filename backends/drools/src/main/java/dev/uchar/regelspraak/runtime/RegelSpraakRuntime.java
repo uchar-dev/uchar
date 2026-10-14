@@ -15,8 +15,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Shippable runtime support for both branches of the backend, the exec-model branch ({@code TmsTranspiler}) and the
- * DRL-text branch. Two roles:
+ * Shippable runtime support for both branches of the backend, the two renderings of one analysis
+ * ({@code TmsTranspiler}): the exec-model branch and the DRL-text branch. Two roles:
  *
  * <ol>
  *   <li><b>The reflective fact bridge</b> — the model's constraint/consequence lambdas reach a RegelSpraak
@@ -27,10 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
  *       uses {@link Accessors} — TYPED LambdaMetafactory accessors that inline to a direct call (the Phase-H
  *       codegen path). This bridge serves the genuinely dynamic sites (navigation targets, Segment/Inconsistentie
  *       fields, multi-hop joins).</li>
- *   <li><b>The leegwaarde + arithmetic helpers</b> — since single-runtime principle the ONE rs* implementation: the exec model's
- *       lambdas call these directly, and the generated DRL imports the same methods via
- *       {@code import function}, so the two back-ends compute the SAME value by construction (the
- *       differential gate now compares wiring, not re-implementations).</li>
+ *   <li><b>The leegwaarde + arithmetic helpers</b> — since single-runtime principle the ONE rs* implementation: the
+ *       closures of the exec-model branch call these directly, and the DRL text calls the same methods
+ *       class-qualified, never through an {@code import function} ({@code plan.Functie}), so the two branches compute
+ *       the SAME value by construction (the differential gate compares wiring, not re-implementations). Where a
+ *       method below says "the DRL imports it", that dates from the destructive DRL-text lowering, which imported
+ *       these methods as DRL functions until card drl-teksttak-op-truth-maintenance.</li>
  * </ol>
  */
 public final class RegelSpraakRuntime {
@@ -115,24 +117,12 @@ public final class RegelSpraakRuntime {
         }
     }
 
-    public static BigDecimal num(Object o) { return (BigDecimal) o; }
-
     /** §8.1.6 value equality matching mvel's {@code ==}: two BigDecimals compare by VALUE (scale-insensitive,
      *  100 == 100.0), everything else by {@code equals}. Used for the uniciteit key join (mvel reads
      *  {@code key == $k0} as compareTo==0, not the scale-sensitive BigDecimal.equals). */
     public static boolean gelijkWaarde(Object a, Object b) {
         if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
         return java.util.Objects.equals(a, b);
-    }
-
-    /** §13.4.6.4 kenmerkwaardetoekenning, RUNTIME-SEMANTICS ch. 5.5: whether the mark {@code attr} is SET on the
-     *  created object. True sets it; false or leeg leaves it unset (the closed-world reading of an absent
-     *  initialisation). Any other value is a WF-027 violation the verifier rejects and ref faults on at
-     *  evaluation, so it faults here too instead of reading as "unset" — the DRL-text branch calls this from the
-     *  consequence; the exec-model branch refuses such an initialisation by name while it builds the model. */
-    public static boolean rsKenmerkWaarde(Object v, String attr) {
-        if (v == null || v instanceof Boolean) return Boolean.TRUE.equals(v);
-        throw new IllegalStateException("kenmerkinitialisatie van '" + attr + "' is niet booleaans: " + v + " (WF-027)");
     }
 
     /** An enumeration value read as the DECLARED NAME it is: ref's {@code Checks.norm} through
@@ -179,12 +169,6 @@ public final class RegelSpraakRuntime {
         throw new IllegalStateException("kan accumulate-resultaat niet naar BigDecimal omzetten: " + o.getClass());
     }
 
-    /** Coerce any number-like value (BigDecimal / Breuk / other Number) to an EXACT {@link Breuk}, preserving a
-     *  non-terminating rational instead of truncating it. {@code null} stays {@code null} (the leegwaarde tables run
-     *  in the callers). The exact-path twin of {@link #toBd}; use it wherever an rs* helper computes on the exact
-     *  rational. */
-    public static Breuk numeriek(Object o) { return Breuk.van(o); }
-
     /** Whether any of the operands is already an exact {@link Breuk} — the trigger for exactness to PROPAGATE
      *  through +,-,×,÷ (a Breuk-tainted operand keeps the result exact even for an otherwise-terminating op). */
     private static boolean enigeBreuk(Object a, Object b) { return a instanceof Breuk || b instanceof Breuk; }
@@ -221,23 +205,6 @@ public final class RegelSpraakRuntime {
     // ---- §6.x leegwaarde / arithmetic (ported from the DRL helper bodies as phases land) ----
     /** §6.2-6.4 Tabel: an empty (null) numeric operand counts as 0 in +/-. The single implementation; the DRL imports it (single-runtime principle). */
     public static BigDecimal rsNul(Object o) { return o == null ? BigDecimal.ZERO : toBd(o); }
-
-    /** §13.2.5/§389 an EXACT rational literal factory — the DRL emits {@code rsBreuk("t", "n")} for a non-terminating
-     *  rational literal (1/3) so its arithmetic stays exact (the exec back-end lowers the same literal to a Breuk
-     *  constant). A terminating literal never reaches this — it stays a plain BigDecimal on both sides. */
-    public static Breuk rsBreuk(String teller, String noemer) {
-        return Breuk.van(new java.math.BigInteger(teller), new java.math.BigInteger(noemer));
-    }
-
-    /** §6.1.2 write-boundary collapse: a computed value assigned to a decimal-typed field must be a BigDecimal, so a
-     *  remaining exact {@link Breuk} (an unrounded terminating result; a non-terminating one is resolver-guarded)
-     *  collapses to {@link Breuk#naarDecimal()} — exact when terminating, defensive DECIMAL64 otherwise. The DRL
-     *  wraps its final scalar assignment value in this so the idempotent {@code Objects.equals(field, value)} guard
-     *  compares like-typed values (a Breuk vs a BigDecimal field would never be equal — an infinite modify loop). A
-     *  null / non-Breuk passes through. Mirrors the exec back-end's {@code collapseBreuk} at werkBij. */
-    public static BigDecimal rsWaarde(Object o) {
-        return toBd(o);   // BigDecimal as-is, Breuk collapses (exact/DECIMAL64), a Long/Number (accumulate count) widens
-    }
 
     // ---- Breuk-aware +,-,×,÷ and percentage (Precisie §389/§486): exactness PROPAGATES through +,-,×,÷ when any
     // operand is a Breuk, and division/percentage RETURN a Breuk when their exact result does not terminate. Both
@@ -332,13 +299,6 @@ public final class RegelSpraakRuntime {
         return toBd(basis).pow(exponent);
     }
 
-    /** §13.4.17.14 "tot de macht" with a FRACTIONAL/runtime exponent: Math.pow at double precision; any leeg
-     *  operand -> leeg. The single implementation; the DRL imports it (single-runtime principle). */
-    public static BigDecimal rsMachtReeel(Object basis, Object exponent) {
-        if (basis == null || exponent == null) return null;
-        return BigDecimal.valueOf(Math.pow(toBd(basis).doubleValue(), toBd(exponent).doubleValue()));
-    }
-
     /** §8.1.3 elfproef: weight each digit from the last (the controlecijfer, weight -1), the next 2, 3, … and the
      *  weighted sum must be a POSITIEF geheel getal divisible by 11 and not all zeros. Admits a Numeriek (geheel
      *  getal) — leading zeros already gone — or a Tekst of digits (which preserves voor-/achterloopnullen); a null,
@@ -392,31 +352,6 @@ public final class RegelSpraakRuntime {
         if (x == null) return null;
         if (x instanceof Breuk b) return b.abs();
         return toBd(x).abs();
-    }
-
-    /** §6.x the null-safe navigated-leg read of a numeric attribute reached through a to-ONE relation INSIDE
-     *  arithmetic or an eval: an absent relation reads a leegwaarde (null) — never a pattern short-circuit or an
-     *  NPE — so the surrounding §6.2/§6.3 leegwaarde handling (rsNul/rsVerminderd/…) applies. The DRL constraint
-     *  mirror of the exec back-end's null-safe navReader. */
-    public static BigDecimal rsRelGetal(Object relatie, String attribuut) {
-        return relatie == null ? null : toBd(get(relatie, attribuut));
-    }
-
-    /** §4 null-safe unit restatement (single ratio): a leeg operand restates to leeg, never an NPE on
-     *  {@code .multiply} (which would abort the session). Returns BigDecimal so mvel strict-mode can resolve the
-     *  helper param it feeds (a comparison grens, rsGeheelPeriode); a {@link Breuk} operand — only reachable on the
-     *  value side of a cross-unit restatement of a non-terminating intermediate — COLLAPSES via toBd first (a
-     *  bounded early-collapse, the cross-unit counterpart of the documented DECIMAL64 rate-conversion residual). */
-    public static BigDecimal rsHerschaal(Object x, BigDecimal f) {
-        return x == null ? null : toBd(x).multiply(f);
-    }
-
-    /** §4 null-safe EXACT unit restatement (×fv ÷fn at DECIMAL64, one rounding AT THE END) — the exact mirror of
-     *  the value side's inline ×fv ÷fn ternary, so mnd→jr never truncates to 0.0833… A leeg operand restates to
-     *  leeg. Returns BigDecimal (mvel-resolvable); a {@link Breuk} operand collapses via toBd first (see
-     *  {@link #rsHerschaal}). */
-    public static BigDecimal rsHerschaalExact(Object x, BigDecimal fv, BigDecimal fn) {
-        return x == null ? null : toBd(x).multiply(fv).divide(fn, java.math.MathContext.DECIMAL64);
     }
 
     /** §5.4 text coercion for a §13.4.17.9 tekstreeks: a value's text form, null-safe (leeg -> "", not "null"); a
@@ -653,15 +588,6 @@ public final class RegelSpraakRuntime {
         return BigDecimal.valueOf(absoluut ? Math.abs(result) : result);
     }
 
-    /** §6.10 "de (absolute) tijdsduur van A tot B in &lt;dagsoort&gt;" over datum-EN-tijd operands: typeringen §4.16 (L676)
-     *  admits datum-en-tijd operands (both the SAME precision) and the result is a COUNT (no time is carried). A dagsoort
-     *  is day-granular, so count over the DATE parts via {@link #rsTijdsduurDagsoort}. Any leeg operand -> leeg.
-     *  The single implementation; the DRL imports it (single-runtime principle). */
-    public static BigDecimal rsTijdsduurTijdDagsoort(java.time.LocalDateTime van, java.time.LocalDateTime tot,
-            java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean absoluut) {
-        return rsTijdsduurDagsoort(van == null ? null : van.toLocalDate(), tot == null ? null : tot.toLocalDate(), isDagsoort, absoluut);
-    }
-
     /** §6.10 / §13.4.17.32 "de (absolute) tijdsduur van A tot B in &lt;tijdseenheid&gt;": the number of COMPLETE
      *  units between two dates ({@code ChronoUnit.<U>.between}, signed — A later than B gives a negative result, §6.10
      *  Tabel 14 +52/-52); absolute when asked. A kwartaal (no ChronoUnit.QUARTERS) is 3×MONTHS, §3.7. Any leeg operand
@@ -822,38 +748,6 @@ public final class RegelSpraakRuntime {
         return out;
     }
 
-    /** Two key timelines EVER collide: their ever-value sets intersect — a VALUE intersection, never a
-     *  time intersection, so two instances carrying the same number over non-overlapping periods
-     *  collide (a number once issued stays issued; date-bound numbering is modelled explicitly). */
-    public static boolean rsOoitBotst(Object a, Object b) {
-        var sa = rsOoitWaarden(a);
-        if (sa.isEmpty()) return false;
-        for (BigDecimal w : rsOoitWaarden(b)) if (sa.contains(w)) return true;
-        return false;
-    }
-
-    /** §8.1.6 the CROSS-SOURCE MIXED key component of a "verenigd met" union: every source declares its own
-     *  key list, so one component can be temporal on source A and plain on source B. A scalar claims exactly
-     *  its own value, so the collision is membership of that value in the timeline's ever-set — which is what
-     *  ref computes per source ({@code ever_tuples}: one tuple per ever-value on the temporal side, one tuple
-     *  with the value on the scalar side, compared as lexemes). Scale-insensitive like {@link #rsOoitWaarden},
-     *  so 7 and 7.00 collide (ref's Num is a RATIONAL and its lexeme carries no scale, where
-     *  {@code BigDecimal.equals} does).
-     *
-     *  <p>Anything that is not a number claims NOTHING, and the reachable reason is an ABSENT key: only the
-     *  SUBJECT of a union rule binds its key parts non-null, the element side inside the accumulate has no
-     *  such binder, so an instance that supplies no value at all arrives here as {@code null} and must not be
-     *  counted (ref and clingo call that document consistent). A non-numeric VALUE would be the second
-     *  reason — ref compares a Tekst lexeme quoted and a Datum as ISO, neither of which ever equals a
-     *  number's — but that shape is shielded: WF-030 rejects a union whose sources disagree on a key
-     *  position's datatype kind, so it never reaches a played model.
-     *
-     *  <p>The timeline side still fails fast on a non-List (through {@link #rsOoitWaarden}) — a
-     *  declared-temporal key supplied as a bucket scalar stays the loud form error it is. */
-    public static boolean rsOoitBevat(Object tijdlijn, Object scalair) {
-        if (!(scalair instanceof BigDecimal w)) return false;
-        return rsOoitWaarden(tijdlijn).contains(w.stripTrailingZeros());
-    }
     /** Construct a Segment(van, tot, waarde) of the given fact class reflectively — the model analog of the DRL
      *  {@code new ….Segment(van, tot, waarde)} (the class is a runtime objecttype, unknown at compile time). */
     public static Object newSegment(Class<?> segCls, LocalDate van, LocalDate tot, BigDecimal waarde) {
@@ -988,37 +882,6 @@ public final class RegelSpraakRuntime {
         return uit;
     }
 
-    /** §8.4.2 OR-compound union: merge two TRUE-period timelines into their union — drop empty/null-bounded
-     *  segments, selection-sort by start, then sweep coalescing overlapping OR ADJACENT intervals ([a,b) ∪ [b,c)
-     *  = [a,c)). The result carries a null waarde (boolean true-periods, re-stamped by a later rsTijdKnip). A null
-     *  input contributes nothing. The single implementation; the DRL imports it (single-runtime principle). */
-    public static List<Object> rsTijdUnie(List<?> a, List<?> b, Class<?> segCls) {
-        List<LocalDate[]> segs = new ArrayList<>();
-        if (a != null) for (Object o : a) {
-            LocalDate v = segVan(o), t = segTot(o);
-            if (v != null && t != null && v.isBefore(t)) segs.add(new LocalDate[]{v, t});
-        }
-        if (b != null) for (Object o : b) {
-            LocalDate v = segVan(o), t = segTot(o);
-            if (v != null && t != null && v.isBefore(t)) segs.add(new LocalDate[]{v, t});
-        }
-        for (int i = 0; i < segs.size(); i++) {
-            int min = i;
-            for (int j = i + 1; j < segs.size(); j++)
-                if (segs.get(j)[0].isBefore(segs.get(min)[0])) min = j;
-            LocalDate[] t = segs.get(i); segs.set(i, segs.get(min)); segs.set(min, t);
-        }
-        List<Object> uit = new ArrayList<>();
-        LocalDate van = null, tot = null;
-        for (LocalDate[] s : segs) {
-            if (van == null) { van = s[0]; tot = s[1]; }
-            else if (!s[0].isAfter(tot)) { if (s[1].isAfter(tot)) tot = s[1]; }
-            else { uit.add(newSegment(segCls, van, tot, null)); van = s[0]; tot = s[1]; }
-        }
-        if (van != null) uit.add(newSegment(segCls, van, tot, null));
-        return uit;
-    }
-
     /** §7.2/§13.4.17.57 "het aantal dagen in <de maand|het jaar> dat <conditie>": bucket a condition's TRUE
      *  timeline into calendar months (or years) and count, per bucket, the days the condition holds — one output
      *  Segment per non-empty bucket [start, eind) whose waarde is that day-count. A null condition -> empty.
@@ -1064,33 +927,6 @@ public final class RegelSpraakRuntime {
         return uit;
     }
 
-    /** Whether two timelines are segment-for-segment equal (van, tot, waarde) — the temporal analogue of the
-     *  scalar idempotent-write guard (Objects.equals): Segment declares no equals, so List.equals degenerates
-     *  to reference identity and every rebuild would look "changed". An anchored temporal write (whose exec
-     *  pattern is class-reactive for §9.9 freshness) uses this to reach a fixpoint instead of ping-ponging
-     *  with a sibling writer. The single implementation; the DRL imports it (single-runtime principle). */
-    public static boolean rsTijdreeksGelijk(List<?> a, List<?> b) {
-        int na = a == null ? 0 : a.size(), nb = b == null ? 0 : b.size();
-        if (na != nb) return false;
-        for (int i = 0; i < na; i++) {
-            Object x = a.get(i), y = b.get(i);
-            if (!java.util.Objects.equals(segVan(x), segVan(y)) || !java.util.Objects.equals(segTot(x), segTot(y)))
-                return false;
-            BigDecimal wx = segWaarde(x), wy = segWaarde(y);
-            if (wx == null ? wy != null : wy == null || wx.compareTo(wy) != 0) return false;
-        }
-        return true;
-    }
-
-    /** RUNTIME-SEMANTICS ch. 7.8 (the timeline arm): does a computed timeline DECIDE? A null or empty result
-     *  is the temporal leeg (empty == never-written, ch. 3.1), which decides nothing — so on a standing
-     *  temporal target the write is skipped and the case-supplied input timeline stands WHOLE. The DRL text
-     *  imports it into its emitted guard (single-runtime principle); the exec-model branch, which computes a
-     *  timeline as a list of {@code Tijdvak}s, tests the same emptiness where it writes one. */
-    public static boolean rsTijdreeksGevuld(List<?> t) {
-        return t != null && !t.isEmpty();
-    }
-
     /** The start of the bucket containing {@code d}: calendar-aligned for a null {@code anker}, else the
      *  greatest anker+k·eenheid ≤ d (k may be negative — §3.8 allows periods before the startpunt). All
      *  bounds are computed as anker.plusMonths/Years(k), so a clamped month-end anchor yields the same
@@ -1125,12 +961,6 @@ public final class RegelSpraakRuntime {
      *  The single implementation; the DRL imports it (single-runtime principle). */
     public static List<Object> rsTijdsevenredig(List<?> conditie, List<?> basis, String granulariteit, Class<?> segCls) {
         return rsTijdsevenredig(conditie, basis, granulariteit, null, segCls);
-    }
-
-    /** The §3.8 anchored form of {@link #rsTijdsevenredig} — variable-startpunt buckets, see
-     *  {@link #rsAantalDagenInVanaf}. A null anker -> empty. */
-    public static List<Object> rsTijdsevenredigVanaf(List<?> conditie, List<?> basis, String granulariteit, LocalDate anker, Class<?> segCls) {
-        return anker == null ? new ArrayList<>() : rsTijdsevenredig(conditie, basis, granulariteit, anker, segCls);
     }
 
     private static List<Object> rsTijdsevenredig(List<?> conditie, List<?> basis, String granulariteit, LocalDate anker, Class<?> segCls) {
@@ -1170,145 +1000,6 @@ public final class RegelSpraakRuntime {
             uit.add(newSegment(segCls, start, eind, deelB.naarDecimal()));
         }
         return uit;
-    }
-
-    /** §7.3.1 the standaard jaar/maand omrekening: restate a per-tijdseenheid RATE timeline into another rate unit by
-     *  scaling every segment value by the EXACT integer unit ratio at DECIMAL64 (§4.22, no auto-round); a leeg segment
-     *  stays leeg. §7.3.1 specifies a DIVISION ("120 gedeeld door de omrekenfactor 12"), so when the restatement is
-     *  ÷N the caller passes {@code deel=true} (divide by the exact 12), and ×N passes {@code deel=false} — never a
-     *  pre-rounded reciprocal (1/12), which would lose precision for non-clean bases. Applied to the §7.3.2
-     *  tijdsevenredig BASE BEFORE proration. The single implementation; the DRL imports it (single-runtime principle). */
-    public static List<Object> rsTijdSchaal(List<?> tijdlijn, BigDecimal factor, boolean deel) {
-        List<Object> uit = new ArrayList<>();
-        if (tijdlijn == null) return uit;
-        for (Object o : tijdlijn) {
-            BigDecimal w = segWaarde(o);
-            BigDecimal nw = w == null ? null : (deel ? w.divide(factor, MathContext.DECIMAL64) : w.multiply(factor, MathContext.DECIMAL64));
-            uit.add(newSegment(o.getClass(), segVan(o), segTot(o), nw));
-        }
-        return uit;
-    }
-
-    /** §5.1.4 the result of a tijdsafhankelijke arithmetic expression: apply {@code op} (PLUS/MIN) per period on the
-     *  MERGED knip timeline of the two operands. The result's cut-points are the UNION of both operands' van/tot; in a
-     *  period where an operand has no value it is leeg, treated as 0 (§5.1.4 note: "een lege waarde als een 0-waarde").
-     *  Adjacent equal-value segments are coalesced (so an unchanged value carries no knip). The single implementation; the DRL imports it (single-runtime principle). */
-    public static List<Object> rsTijdReken(List<?> a, List<?> b, String op, Class<?> segCls) {
-        TreeMap<LocalDate, Boolean> knipSet = new TreeMap<>();
-        for (Object o : leeg(a)) { LocalDate v = segVan(o), t = segTot(o); if (v != null && t != null && v.isBefore(t)) { knipSet.put(v, true); knipSet.put(t, true); } }
-        for (Object o : leeg(b)) { LocalDate v = segVan(o), t = segTot(o); if (v != null && t != null && v.isBefore(t)) { knipSet.put(v, true); knipSet.put(t, true); } }
-        List<Object> uit = new ArrayList<>();
-        LocalDate prev = null, lopendeVan = null; BigDecimal lopendeWaarde = null;
-        for (LocalDate t : knipSet.keySet()) {
-            if (prev != null) {
-                BigDecimal x = nul(waardeOpDag(a, prev)), y = nul(waardeOpDag(b, prev));
-                BigDecimal r = "MIN".equals(op) ? x.subtract(y) : x.add(y);   // PLUS default (§6.2)
-                if (lopendeVan == null) { lopendeVan = prev; lopendeWaarde = r; }
-                else if (lopendeWaarde.compareTo(r) != 0) { uit.add(newSegment(segCls, lopendeVan, prev, lopendeWaarde)); lopendeVan = prev; lopendeWaarde = r; }
-            }
-            prev = t;
-        }
-        if (lopendeVan != null) uit.add(newSegment(segCls, lopendeVan, prev, lopendeWaarde));
-        return uit;
-    }
-    private static List<?> leeg(List<?> l) { return l == null ? java.util.Collections.emptyList() : l; }
-    private static BigDecimal nul(BigDecimal w) { return w == null ? BigDecimal.ZERO : w; }
-
-    /** §5.8.2 the SOMMATIE ("de som van") of MANY temporal operands' timelines, evaluated PER PERIOD on the MERGED
-     *  knip timeline of every operand — the temporal analogue of {@link #rsTijdTotaal} for a SET. This is the
-     *  §5.1.4 "voor elke periode tussen twee knips" fold, but with the §5.8.2 (NOT §6.1.4 plus) leegwaarde rule:
-     *  in a period, an operand that carries no value is SKIPPED (not treated as 0), and only when EVERY operand is
-     *  leeg in that period is the result leeg — "een lege waarde plus een lege waarde is nog steeds een lege
-     *  waarde" (§5.8.2 line 2120). {@code fallbackNul}=true is the "of 0 als die er niet zijn" clause (§5.8.2 line
-     *  2128): an all-empty period then yields 0 instead of leeg. Adjacent equal-value (incl. equal-leeg) segments
-     *  are coalesced, so an unchanged value carries no knip. An empty operand LIST (no elements at all) yields an
-     *  empty timeline (the SOM over 0 contributors is leeg everywhere — or a single 0-span under fallbackNul is not
-     *  emitted, since there is no knip to bound it). The single implementation; the DRL imports it (single-runtime principle). */
-    public static List<Object> rsTijdSomAlle(List<? extends List<?>> reeksen, boolean fallbackNul, Class<?> segCls) {
-        TreeMap<LocalDate, Boolean> knipSet = new TreeMap<>();
-        if (reeksen != null) for (List<?> r : reeksen) for (Object o : leeg(r)) {
-            LocalDate v = segVan(o), t = segTot(o);
-            if (v != null && t != null && v.isBefore(t)) { knipSet.put(v, true); knipSet.put(t, true); }
-        }
-        List<Object> uit = new ArrayList<>();
-        LocalDate prev = null, lopendeVan = null; BigDecimal lopendeWaarde = null; boolean lopendeGezet = false;
-        for (LocalDate t : knipSet.keySet()) {
-            if (prev != null) {
-                // §5.8.2 sum the NON-leeg operands in this period; leeg iff every operand is leeg (unless fallbackNul).
-                BigDecimal som = null;
-                if (reeksen != null) for (List<?> r : reeksen) {
-                    BigDecimal w = waardeOpDag(r, prev);
-                    if (w != null) som = som == null ? w : som.add(w);
-                }
-                if (som == null && fallbackNul) som = BigDecimal.ZERO;
-                if (!lopendeGezet) { lopendeVan = prev; lopendeWaarde = som; lopendeGezet = true; }
-                else if (!gelijkeWaarde(lopendeWaarde, som)) {
-                    uit.add(newSegment(segCls, lopendeVan, prev, lopendeWaarde)); lopendeVan = prev; lopendeWaarde = som;
-                }
-            }
-            prev = t;
-        }
-        if (lopendeGezet) uit.add(newSegment(segCls, lopendeVan, prev, lopendeWaarde));
-        return uit;
-    }
-    private static boolean gelijkeWaarde(BigDecimal a, BigDecimal b) {
-        return a == null ? b == null : (b != null && a.compareTo(b) == 0);
-    }
-
-    /** §8.2 over a NAVIGATED to-many temporal set ("de X van alle Y ... gedurende het gehele jaar &lt;op&gt; grens"):
-     *  the whole-period check holds iff it holds for EVERY element's timeline (a forall across the accumulated set) —
-     *  the §8.2 predicate applied per element via {@link #rsGeheelPeriode}, AND-ed over the set. An EMPTY set is
-     *  vacuously WAAR (no element violates; consistent with rsGeheelPeriode's empty-timeline true). The single
-     *  implementation; the DRL imports it (single-runtime principle). */
-    public static boolean rsGeheelPeriodeAlle(List<? extends List<?>> reeksen, String granulariteit, int toets, BigDecimal grens) {
-        if (reeksen == null) return true;
-        for (List<?> r : reeksen) if (!rsGeheelPeriode(r, granulariteit, toets, grens)) return false;
-        return true;
-    }
-
-    /** RUNTIME-SEMANTICS ch. 3.9a, the GEEN arm of the quantifier fold: the verdict is WAAR iff NO contributor
-     *  satisfies the whole-period matrix — the exact dual of {@link #rsGeheelPeriodeAlle} over the same collected
-     *  {@code List<List<Segment>>}. An EMPTY contributor set is vacuously WAAR, the same rule both quantifiers
-     *  carry (ch. 3.9a: nothing violates, and nothing satisfies).
-     *
-     *  <p>It is a SEPARATE helper rather than a negation of the ALLE fold because the two differ: {@code !alle}
-     *  is "some contributor fails the matrix", which is not "no contributor satisfies it". The caller's NIET
-     *  prefix does not need a third helper — a negated matrix turns ALLE into GEEN and GEEN into ALLE
-     *  (∀c.¬P = ¬∃c.P and ¬∃c.¬P = ∀c.P), so the transpiler flips the quantifier and picks the other fold.
-     *  The DRL-text branch imports it as a DRL function and calls it from the eval after its own (2026-09-18 —
-     *  until then that branch markered the whole-period matrix, which is what this sentence used to record); the
-     *  exec-model branch folds the qualifier per member with {@link #rsGeheelPeriode}, a contribution of its
-     *  quantifier fold. */
-    public static boolean rsGeheelPeriodeGeen(List<? extends List<?>> reeksen, String granulariteit, int toets, BigDecimal grens) {
-        if (reeksen == null) return true;
-        for (List<?> r : reeksen) if (rsGeheelPeriode(r, granulariteit, toets, grens)) return false;
-        return true;
-    }
-
-    /** RUNTIME-SEMANTICS ch. 3.9a, the COUNTING arms of the quantifier fold: how MANY contributors satisfy the
-     *  whole-period matrix. The counting twin of {@link #rsGeheelPeriodeAlle} and {@link #rsGeheelPeriodeGeen}
-     *  over the same collected {@code List<List<Segment>>} — those two answer a witness question ("does any
-     *  contributor fail / satisfy"), and a threshold needs the SIZE of the satisfier set, which no boolean
-     *  fold yields. Those two remain what ALLE and GEEN read: their early exit is the ch. 5.10 short circuit,
-     *  and rewriting them as {@code telling == n} / {@code telling == 0} would read every contributor where
-     *  today they stop at the first that decides. An EMPTY contributor set counts 0, which answers each
-     *  counting quantifier by itself — no vacuous rule is applied here. The caller applies the NIET prefix to
-     *  the COUNT (count(¬P) = n − count(P); this predicate is total), because a negation cannot flip a
-     *  threshold the way it flips ALLE into GEEN. */
-    public static int rsGeheelPeriodeTelling(List<? extends List<?>> reeksen, String granulariteit, int toets, BigDecimal grens) {
-        if (reeksen == null) return 0;
-        int telling = 0;
-        for (List<?> r : reeksen) if (rsGeheelPeriode(r, granulariteit, toets, grens)) telling++;
-        return telling;
-    }
-
-    /** The value of the segment covering {@code dag} (van &le; dag &lt; tot), or null (leeg) when no segment covers it. */
-    private static BigDecimal waardeOpDag(List<?> lijst, LocalDate dag) {
-        for (Object o : leeg(lijst)) {
-            LocalDate v = segVan(o), t = segTot(o);
-            if (v != null && t != null && !v.isAfter(dag) && dag.isBefore(t)) return segWaarde(o);
-        }
-        return null;
     }
 
     /** §8.2/§13.4.15.70 "gedurende de/het gehele &lt;periode&gt;": is the predicate {@code true at EVERY moment} of

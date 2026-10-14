@@ -14,7 +14,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Two witnesses on the temporal WRITE, both through {@link CaseRunner#speelCase} over corpus goldens'
@@ -142,14 +141,16 @@ class TemporeelFixpuntWitnessTest {
                 "a deciding pro-rata fold displaces the input timeline");
     }
 
-    // ---------------- the premise of the timeline idempotency guard ----------------
+    // ---------------- the premise of the timeline value of the analysis ----------------
 
     @Test void een_echt_segment_draagt_geen_equals() throws Exception {
         // NOT mirrored, and branch-independently so: this row stops at the INPUT layer (invoerBeans), before
         // any rule fires, so there is no transpiler branch in it to choose.
-        // WHY the timeline write cannot use the scalar guard: the generated Segment bean declares no equals,
-        // so Objects.equals is unequal on two segment-for-segment identical timelines and an equals-guarded
-        // write would re-propagate its subject on EVERY recompute. rsTijdreeksGelijk compares per segment.
+        // WHY a fact cannot hold a timeline of beans: the generated Segment bean declares no equals, so
+        // Objects.equals is unequal on two segment-for-segment identical timelines, and truth maintenance merges
+        // equal facts by equals. The analysis therefore holds a timeline as its own value (transpiler.tms.Tijdvak).
+        // Until card drl-teksttak-op-truth-maintenance this row also held the runtime's per-segment comparison,
+        // rsTijdreeksGelijk, the guard of the lowering before truth maintenance; nothing else called it, and it went.
         String c = """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -163,8 +164,7 @@ class TemporeelFixpuntWitnessTest {
         List<?> a = tijdreeks(ir, c, "J1", "borgtarief");
         List<?> b = tijdreeks(ir, c, "J1", "borgtarief");   // a SECOND load: equal values, distinct instances
         assertEquals(1, a.size());
-        assertFalse(java.util.Objects.equals(a, b), "Segment declares no equals — the scalar guard always differs");
-        assertTrue(RegelSpraakRuntime.rsTijdreeksGelijk(a, b), "the per-segment comparison sees them as equal");
+        assertFalse(java.util.Objects.equals(a, b), "Segment declares no equals — two equal timelines are unequal");
     }
 
     // ---------------- helpers ----------------
