@@ -23,17 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * plan (mutation W4 of Fable advice 4) and a plan without it (A1) passed every measurement of behaviour; only the pins
  * of the text and of the plan saw them.
  *
- * <p>The three executors give three outcomes, each by the spec (RUNTIME-SEMANTICS ch. 2.4, point 3 and the paragraph
- * after its worked example of the unbounded form):
+ * <p>The norm is the exact value: an unbounded target is exempt from the assignment gate, and 1/3 written into it is
+ * 1/3 (RUNTIME-SEMANTICS ch. 2.4, point 3 and its worked example of the unbounded form). Of the three executors only
+ * the reference interpreter writes it. The other two have a limit of their own, which the same chapter records after
+ * that worked example; neither limit is the norm:
  * <ul>
- *   <li>the reference interpreter writes the exact value 1/3, the worked example of ch. 2.4, and plays the case, whose
- *       expectation is 1/3;</li>
- *   <li>the ASP backend holds the unbounded form as a whole number and refuses a written result that is not whole by
- *       name (ch. 2.4; {@code ASP-TRANSLATION.md} S2, S19): "a division into a number declared without decimals is
- *       not whole, and this encoding holds the unbounded form as a whole number";</li>
- *   <li>the Drools backend carries a decimal on the unbounded form in both branches, 0.3333333333333333, and refuses
- *       the case value written as the rational 1/3 by name (ch. 2.4): "rational value on 'quotient' is not carried by
- *       the v0 backend"; with the expectation 0.3333333333333333 both branches play the case.</li>
+ *   <li>the reference interpreter writes the exact value 1/3 and plays the case, whose expectation is 1/3;</li>
+ *   <li>the ASP backend holds the unbounded form as a whole number, its recorded limit, and refuses a written result
+ *       that is not whole by name ({@code ASP-TRANSLATION.md} S2, S19): "a division into a number declared without
+ *       decimals is not whole, and this encoding holds the unbounded form as a whole number";</li>
+ *   <li>the Drools backend carries a decimal on the unbounded form in both branches, its recorded limit,
+ *       0.3333333333333333, and refuses the case value written as the rational 1/3 by name: "rational value on
+ *       'quotient' is not carried by the v0 backend"; with the expectation 0.3333333333333333 both branches play the
+ *       case.</li>
  * </ul>
  * The square does not hold, so the document is no golden: it stays in the test resources ({@code breuk/een-derde}).
  * Measured 2026-10-14 on {@code b53713ed}; the raw output of the verifier (PASS), the reference interpreter and the
@@ -42,7 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * the spec asks for a rule (the v0 mirror note of ch. 2.4), not for a change in a branch.
  *
  * <p>The witness fires the case on both branches, demands the same verdict and the same dump ({@link Takdumps}), and
- * pins the value in the facts at the fixpoint as both branches hold it, and what {@code DroolsBackend.lees} gives.
+ * pins the value in the facts at the fixpoint as both branches hold it, and what {@code DroolsBackend.lees} gives. The
+ * pins guard the recorded limit of this backend, so that a change to it shows; they do not make the approximation the
+ * norm, which stays the exact 1/3 of ch. 2.4.
  *
  * <p><b>Red</b> with two mutations of Fable advice 4, each in a copy (not committed; the diffs and the output are kept
  * with step 6b of the card): W4, a DRL rendering that ignores the collapse of the plan, leaves a {@code Breuk} in the
@@ -60,13 +64,15 @@ class BreukInRustWitnessTest {
         Path ir = DOCUMENT.resolve("ir.json");
         JsonNode zaak = TmsDocumenten.JSON.readTree(Files.readString(DOCUMENT.resolve("case.json")));
         String dump = Takdumps.gelijk(ir, zaak, "een derde");
-        // the decimal of 1/3 at DECIMAL64, sixteen significant digits, with its scale: the BigDecimal of the collapse
+        // the decimal of 1/3 at DECIMAL64, sixteen significant digits, with its scale: the BigDecimal of the collapse,
+        // the recorded limit of this backend, not the exact value the norm asks for (ch. 2.4)
         assertEquals(List.of("feit Waarde(onderwerp=\"D1\", attribuut=\"deling\".\"quotient\","
                         + " waarde=BigDecimal(0.3333333333333333), schrijver=String(\"quotient van een deling\"))"),
                 regels(dump, "feit ", "0.3333", "Breuk"), () -> "de waarde in de feiten:\n" + dump);
         assertEquals(List.of("lees waarde \"D1\".\"quotient\" = BigDecimal(0.3333333333333333)"),
                 regels(dump, "lees ", "quotient", "quotient"), () -> "lees:\n" + dump);
-        // the expectation pins the spec's exact 1/3, which this backend refuses by name on both branches (ch. 2.4)
+        // the expectation pins the norm's exact 1/3, which this backend refuses by name on both branches, its recorded
+        // limit (ch. 2.4)
         assertEquals("Excluded: rational value on 'quotient' is not carried by the v0 backend",
                 TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL),
                 "het oordeel over de verwachting 1/3");
