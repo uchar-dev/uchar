@@ -212,9 +212,11 @@ reviewer's duty on a machine that has catala. Current gates:
    transpiler must fail): every golden case run through the reference
    runner's `--noop` mode (expectations against the raw input, no
    evaluation) must fail; the cases that legitimately survive — they pin
-   defeasible standing — live in the script's explicit, reason-carrying
-   survivor list, which fails when stale; an empty case set is a
-   failure.
+   defeasible standing, or a consistency that already holds on the input
+   (`jutterswet-vondstnummer/case-consistent`, and since 2026-10-14
+   `jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing`) — live in
+   the script's explicit, reason-carrying survivor list, which fails
+   when stale; an empty case set is a failure.
 8. `scripts/check-rood.sh` — the red corpus: every
    `corpus/rood/**/case*.json` declares `expectedFault {ref, clingo}`
    and MUST fail observably — at load or at
@@ -316,14 +318,33 @@ reviewer's duty on a machine that has catala. Current gates:
     newly arrived player. The gate rebuilds the jar and runs the
     backend's own JUnit suite, which must pass with a non-zero, zero-skip
     test count (maintainer decision 2026-08-30). Since 2026-09-19 the
-    gate also counts the DRL-TEXT branch (card gate12-drl-takteller):
-    its own sweep over every golden through the replay runner's branch
-    flag, an EXPECTED_DRL_PLAYED equality pin plus a reason-carrying
-    DRL_CHANNEL non-player list (played is the default; both lists
-    share one guard function), stale-failing in both directions by
-    name; the sweep runs as the gate's final block, so only an
-    otherwise-green gate pays its cost. An empty played set is
-    a failure. CI leg unconditional and blocking.
+    gate also sweeps the DRL-TEXT branch (card gate12-drl-takteller)
+    through the replay runner's branch flag. Since the card
+    `drl-teksttak-op-truth-maintenance` (2026-10-14) that branch is the
+    second rendering of the one analysis the exec-model branch fires
+    (`transpiler/tms`: the analysis yields a plan per rule, rendered once
+    as PatternDSL and once as DRL text), so it derives with truth
+    maintenance too and carries no list and no pin of its own: per
+    golden its status line must equal the exec-model branch's line
+    verbatim (`PLAYED n`, or `EXCLUDE` in the same sentence), and any
+    other line fails the gate by name — a refusal of the DRL rendering
+    alone or a text the Drools compiler rejects is such a difference,
+    never an entry of a list. Until then the leg had an
+    `EXPECTED_DRL_PLAYED` equality pin and a reason-carrying
+    `DRL_CHANNEL` list; both went with the destructive lowering they
+    described. The sweep runs as the gate's final block, so only an
+    otherwise-green gate pays its cost (measured 2026-10-14 on a copy:
+    220 s of 635 s). The gate also fails when the backend's suite did
+    not run `TakdumpsCorpusWitnessTest`, the case-by-case comparison of
+    the two branches over every golden and red case. An empty played
+    set is a failure. For a builder who changes a pin or a list,
+    `scripts/check-drools.sh --fast` rebuilds the jar without the JUnit
+    suite, runs the exec-model replay with every pin and list, and
+    leaves out the DRL-text sweep, so nothing compares the two branches
+    under it; its report names what did not run and its last line says
+    it is no landing run (maintainer request 2026-10-14). A landing
+    always runs the full gate, without a flag. CI leg unconditional and
+    blocking.
 
 13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
     harness (maintainer decision 2026-09-04). For every golden with case
@@ -337,12 +358,16 @@ reviewer's duty on a machine that has catala. Current gates:
     is deterministically twisted (a convertible
     sister unit, or decimals+1) and ref, clingo and BOTH Drools
     transpiler branches (the exec-model gate-12 path and, since
-    2026-09-04, the classic DRL-text branch behind the runner's own
-    flag) MUST all reproduce the pinned, untwisted outcomes — consumers
+    2026-09-04, the DRL-text branch behind the runner's own flag — since
+    2026-10-14 the second rendering of the same analysis) MUST all
+    reproduce the pinned, untwisted outcomes — consumers
     derive units from declarations and the effective-type law
     (`RUNTIME-SEMANTICS.md` §2.10), never from the wire annotation.
-    Each leg is compared against its OWN untouched status line, with a
-    floor: a DRL-text branch that PLAYS nothing fails the gate.
+    Each leg is compared against its OWN untouched status line. Since
+    2026-10-14 the DRL-text leg's untouched line must moreover equal the
+    exec-model branch's, and it must play exactly as many twistable
+    goldens as the exec-model branch, never zero; the floor that leg had
+    of its own (`EXPECTED_MIN_DRL_PLAYED`) is gone.
     Reason-carrying exemption positions (the Literal lexeme, the
     duration operand of date arithmetic, the `duration` builtin's own unit) are named
     in the script; a bookkeeping clamp FAILS the gate when a
