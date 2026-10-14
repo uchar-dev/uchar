@@ -69,9 +69,12 @@ for a `Diepwrak` — the inherited exception, then its own base.
 
 The verifier passes the document; `ref` and clingo pass both cases (4
 expectations each); the Drools backend's exec-model branch plays both cases
-(PLAYED 2), and its DRL-text branch refuses the document on its defaults
+(PLAYED 2). Its DRL-text branch refused the document then on its defaults
 sentence (`ch. 7 prioritizedDefaults — the DRL-text branch has no defaults
-lowering`), class (A) of `DRL_CHANNEL` in `scripts/check-drools.sh`.
+lowering`), class (A) of `DRL_CHANNEL` in `scripts/check-drools.sh`. Since
+card `drl-teksttak-op-truth-maintenance` that branch renders the analysis of
+the exec-model branch and plays both cases as well (PLAYED 2, measured
+2026-10-14).
 
 ## noop refutation (gate 7)
 

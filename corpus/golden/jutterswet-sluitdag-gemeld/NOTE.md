@@ -84,9 +84,11 @@ value leeg (case 1: 13 mismatches, case 2: 8).
 
 `ref` and the ASP backend replay both cases (`oracle: PASS (20
 expectations)`, `(12 expectations)`; clingo the same). The exec-model branch
-plays them, `PLAYED 2`; the DRL-text branch refuses the document by name
+plays them, `PLAYED 2`. The DRL-text branch refused the document by name
 (`drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults
-lowering`).
+lowering`) until card `drl-teksttak-op-truth-maintenance`; since that card it
+renders the same analysis and plays them too (`PLAYED 2`, measured
+2026-10-14).
 
 Measured on the exec-model branch before the card
 drools-exec-defaults-consequentie-vouw (2026-09-30):

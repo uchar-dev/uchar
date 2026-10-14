@@ -80,9 +80,11 @@ regel maakt die knopen, dus er staat geen annotatie boven.
 
 De vier cases van het anker, byte-gelijk. Gemeten op dit `ir.json`: ref en
 clingo `PASS` op alle vier (in case2 het feit `Jutter.vrijgesteld/0`), de
-Drools exec-tak `PLAYED 4`; de DRL-teksttak weigert het document op zijn
+Drools exec-tak `PLAYED 4`. De DRL-teksttak weigerde het document op zijn
 defaults-zin (`EXCLUDE drl: ch. 7 prioritizedDefaults — the DRL-text branch
-has no defaults lowering`). `case1-y-wint` houdt stand onder een uitvoerder
+has no defaults lowering`) tot de kaart `drl-teksttak-op-truth-maintenance`;
+sinds die kaart geeft hij dezelfde analyse weer en speelt hij ze ook
+(`PLAYED 4`, gemeten 2026-10-14). `case1-y-wint` houdt stand onder een uitvoerder
 die niets doet, zoals in het anker, en staat met de reden van het anker op
 de overleverslijst van gate 7 (`scripts/check-noop.sh`); de andere drie
 weerleggen hem.

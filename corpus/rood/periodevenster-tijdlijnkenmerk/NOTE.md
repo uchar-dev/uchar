@@ -31,18 +31,24 @@ words, and its own suite pins it.
                         characteristic timeline … Declined at evaluation
     clingo              TRANSLATION FAULT: … is ch. 3.10's CLIP over a
                         characteristic timeline … Declined in translation
-    Drools exec-model   EXCLUDE transpiler SKIP: periodevergelijking op
-                        tijdsafhankelijk doel — §8.4.3 clip
-    Drools DRL-tekst    EXCLUDE drl-transpiler MARKER: TODO
-                        periodevergelijking op een tijdsafhankelijk doel
-                        (§8.4.3)
+    Drools, both        EXCLUDE transpiler SKIP: regel: berging van een
+    branches            vondst — het tijdsafhankelijke kenmerk 'geborgen'
+                        van Vondst als doel: deze tak draagt deze vorm nog
+                        niet; … (RUNTIME-SEMANTICS ch. 3.11)
 
 Both pins run to the **phase tail**, `Declined at evaluation` against
 `Declined in translation`, so a swap of the two phases fails here and
 cannot pass unseen. The Drools branches are in the gate's exclusion list,
 not fragment-pinned: the transpiler raises the refusal as an Excluded,
 which the red run reports as EXCLUDE, and that leg pins a fragment only
-on a FAULT.
+on a FAULT. The Drools row is measured 2026-10-14: since card
+`drl-teksttak-op-truth-maintenance` both branches render one analysis and
+refuse in one sentence, at the target, one step before the window. The
+destructive lowerings refused at the clip: the exec-model branch until card
+`tms-omschakeling`, "periodevergelijking op tijdsafhankelijk doel — §8.4.3
+clip", and the DRL-text branch until card
+`drl-teksttak-op-truth-maintenance`, "drl-transpiler MARKER: TODO
+periodevergelijking op een tijdsafhankelijk doel (§8.4.3)".
 
 This directory becomes a golden when temporal characteristic writes land
 (ch. 3.11). The gate's stale guards will report it then.
