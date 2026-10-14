@@ -1226,21 +1226,25 @@ branches with every status line equal, JUnit 1574 tests against the floor
 (15:03–15:10): the exec-model branch equal to the baseline of the claim, the
 plan, model and DRL dumps unchanged, 680 cases equal on both branches, 47
 known trace differences (the order and number of firings at an accumulate,
-with an equal fixpoint) and 2 006 suite sessions equal. Next: the distribution
-moves its pin with the list in the card's `Result:` (in the CLI and the
-playground `.drlTranspiler().drl()` becomes `.drl()`, and both catch the
-`IllegalStateException` of a DRL text that does not compile; the branch guard
-in `CaseSessie` goes; `Namen.getter`/`setter` follow the bean generator).
-Cards in `backlog/new/`: `beanlidnamen-zonder-java-identifier`,
-`caselezer-zoals-ref` (an expectation on an undeclared spelling passes in the
-Drools case reader, where ref refuses it),
-`frontend-heelperiode-in-aantalfilter`, `weergaven-als-getuige` (the plan,
-model and DRL dumps of the corpus held in the repository; the card's baselines
-lived outside it), `clingo-default-literaalschaal` (clingo refuses a default
-whose literal has a smaller scale than its target, where the verifier and ref
-accept and play the document) and `uitvoerdernotities-na-truth-maintenance`
-(IR-SPEC ch. 5.5 and javadoc in the backend's tests still describe the
-destructive lowerings as current).
+with an equal fixpoint) and 2 006 suite sessions equal. The distribution moved
+its pin the same day (regelspraak-toolchain `dba5864`, pin `f752a5c9`, with
+the `jackson-databind` 2.21.7 of card `jackson-databind-kwetsbaarheden`): the
+CLI and the playground read `build.drl()` and catch the
+`IllegalStateException` of a DRL text that does not compile, and
+`Namen.getter`/`setter` follow the bean generator. The branch guard in
+`CaseSessie` stays, as `build.branch() != Branch.EXEC_MODEL`: the scenario
+explanation compares its firings with the trace of `CaseRunner.rapport`, which
+plays the exec-model branch, and the DRL-text branch reaches the same fixpoint
+with the 47 known differences in that trace. Cards in `backlog/new/`:
+`beanlidnamen-zonder-java-identifier`, `caselezer-zoals-ref` (an expectation
+on an undeclared spelling passes in the Drools case reader, where ref refuses
+it), `frontend-heelperiode-in-aantalfilter`, `weergaven-als-getuige` (the
+plan, model and DRL dumps of the corpus held in the repository; the card's
+baselines lived outside it), `clingo-default-literaalschaal` (clingo refuses a
+default whose literal has a smaller scale than its target, where the verifier
+and ref accept and play the document) and
+`uitvoerdernotities-na-truth-maintenance` (IR-SPEC ch. 5.5 and javadoc in the
+backend's tests still describe the destructive lowerings as current).
 
 ## 10. Rough effort
 
