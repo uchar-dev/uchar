@@ -53,10 +53,6 @@ class NaamNormWitnessTest {
     private static final Path NUMMERREGISTER = GOLDEN.resolve("anchor/jutterswet-nummerregister/ir.json");
     private static final Path TWEE_TEMPOREEL = ROOD.resolve("uni-two-temporal-keys/ir.json");
 
-    /** The DRL twin's ch. 5.9 refusal sentinel. */
-    private static final String ONOPGELOSTE_SLEUTELVORM =
-            "// onopgelost uniciteitscontrole (ch. 5.9: at most one temporal key component)";
-
     @TempDir static Path tmp;
 
     // ---------------- 1. the norm contract itself, axis by axis ----------------
@@ -149,39 +145,50 @@ class NaamNormWitnessTest {
                 "a union source's key resolves to its declared spelling before the bean is read");
     }
 
-    // ---------------- 4. the dormant DRL twin holds both conventions ----------------
+    // ---------------- 4. the DRL text holds both conventions ----------------
 
-    @Test void de_drl_tweeling_noemt_het_gedeclareerde_veld() throws Exception {
+    @Test void de_drl_tekst_noemt_het_gedeclareerde_veld() throws Exception {
         // the text route emits a PROPERTY NAME, so the same resolution has to happen there: ident() of the
-        // written key would render "vondstNummer", a field the fact class does not carry.
+        // written key would render "vondstNummer", a field the fact class does not carry. Since card
+        // drl-teksttak-op-truth-maintenance the text is the analysis rendered, which reads the key through the standing
+        // of the declared member, and the standing reads the bean field.
         Path ir = bewerk(STRANDREGISTER, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
         String drl = drl(ir);
-        assertTrue(drl.contains("rsOoitBotst(vondstnummer, $k0)"), drl);
+        assertTrue(drl.contains(".Strandvondst( $invoer : (Rekenhulpen.tijdvakken(vondstnummer)) )"), drl);
         assertFalse(drl.contains("vondstNummer"), "the written spelling must not reach the DRL text: " + drl);
     }
 
-    @Test void de_drl_tweeling_weigert_de_dubbel_temporele_sleutel() throws Exception {
+    @Test void de_dubbel_temporele_sleutel_wordt_in_beide_takken_geweigerd() throws Exception {
         // ref FAULTS on this shape ("a uniqueness key list carries at most one temporal key component (…)"),
-        // clingo raises the same wording at translation and the exec model faults on fire. The text route has
-        // no fire moment, so it refuses in ITS loud idiom: the onopgelost sentinel, which books the construct
-        // as a MARKER. It used to render two rsOoitBotst joins and say nothing.
-        String drl = drl(TWEE_TEMPOREEL);
-        assertTrue(drl.contains(ONOPGELOSTE_SLEUTELVORM), drl);
-        assertFalse(drl.contains("rsOoitBotst"), "a rejected key shape must not render a join: " + drl);
+        // clingo raises the same wording at translation, and the analysis refuses it by name, on both branches. Until
+        // card drl-teksttak-op-truth-maintenance the DRL-text branch booked it as a MARKER with its onopgelost
+        // sentinel ("// onopgelost uniciteitscontrole (ch. 5.9: at most one temporal key component)").
+        weigertDubbelTemporeel(TWEE_TEMPOREEL, "uniciteit: dubbel temporeel enkelvoudig — een uniciteitssleutel"
+                + " 'kavelnummer' van Strandvondst op een tijdlijn naast een tweede");
     }
 
-    @Test void de_drl_tweeling_weigert_de_dubbel_temporele_uniesleutel() throws Exception {
+    @Test void de_dubbel_temporele_uniesleutel_wordt_in_beide_takken_geweigerd() throws Exception {
         // the same guard per SOURCE. ref on this model: "EVALUATION FAULT: a uniqueness key list carries at
-        // most one temporal key component (…)"; the exec model faults on the "eenmalig vondstnummer
-        // (Strandvondst 1)" rule. Both source rules of the twin must carry the sentinel.
+        // most one temporal key component (…)"; the analysis refuses the union by name, on both branches. Until card
+        // drl-teksttak-op-truth-maintenance both source rules of the DRL-text branch carried the sentinel.
         Path ir = bewerk(NUMMERREGISTER, o -> {
             for (JsonNode b : IrPad.versie(o, "uniquenesses", 0, 0).get("sources"))
                 ((ObjectNode) b).set("keys", JSON.createArrayNode().add("vondstnummer").add("volgnummer"));
             IrPad.rulesLijst(o, "uniquenesses").remove(1);
         });
-        String drl = drl(ir);
-        assertEquals(2, tel(drl, ONOPGELOSTE_SLEUTELVORM), "one refusal per source: " + drl);
-        assertFalse(drl.contains("rsOoitBotst"), "a rejected key shape must not render a join: " + drl);
+        weigertDubbelTemporeel(ir, "uniciteit-unie: eenmalig vondstnummer — een uniciteitssleutel 'volgnummer' van"
+                + " Strandvondst op een tijdlijn naast een tweede");
+    }
+
+    /** Both branches refuse {@code ir} at the build, by name, in the sentence that holds {@code fragment}: a key with
+     *  two temporal parts (RUNTIME-SEMANTICS ch. 5.9). */
+    private static void weigertDubbelTemporeel(Path ir, String fragment) {
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
+            CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                    () -> DroolsBackend.build(ir, tak), tak.toString());
+            assertTrue(e.getMessage().contains(fragment) && e.getMessage().contains("(RUNTIME-SEMANTICS ch. 5.9)"),
+                    tak + ": " + e.getMessage());
+        }
     }
 
     // ---------------- models ----------------
@@ -248,12 +255,9 @@ class NaamNormWitnessTest {
         return uit;
     }
 
-    /** The dormant DRL back-end's rendering of one model. */
+    /** The text of the DRL-text branch of one model: the analysis rendered as DRL text. */
     private static String drl(Path ir) throws Exception {
-        dev.uchar.regelspraak.loader.IrLoader.Loaded l =
-                dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
-        return dev.uchar.regelspraak.transpiler.DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(),
-                l.bronPaden(), l.rolBindingen(), l.navigatieBindingen()).drl();
+        return DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     // ---------------- cases ----------------
@@ -325,11 +329,5 @@ class NaamNormWitnessTest {
             uit.add(f.getClass().getMethod("getRegel").invoke(f) + " @ " + label);
         }
         return uit;
-    }
-
-    private static int tel(String tekst, String naald) {
-        int n = 0;
-        for (int i = tekst.indexOf(naald); i >= 0; i = tekst.indexOf(naald, i + naald.length())) n++;
-        return n;
     }
 }

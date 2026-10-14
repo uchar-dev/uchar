@@ -11,8 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * RUNTIME-SEMANTICS ch. 7.8 (the SCALAR standing norm) and the ch. 7.7 desugaring domain ref's scalar arm
@@ -179,25 +177,14 @@ class StaandeScalaireNormWitnessTest {
         try {
             Files.writeString(tmp, ir.toString());
             // The destructive exec-model branch replayed the erase-refill oscillation and reported "geen fixpunt",
-            // as ref faults on this model (ch. 5.7). The truth-maintenance branch refuses the document by name, as
-            // the verifier does (WF-050): a target has one writer, the group or the rule.
-            CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(tmp,
-                    JSON.readTree(vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"",
-                            waarde("12.00"))), DroolsBackend.Branch.EXEC_MODEL));
-            assertTrue(tms.getMessage().contains("een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel"
-                    + " ('geschatte waarde' van Vondst): een doel heeft één schrijver, de groep of de regel (WF-050)"),
-                    tms.getMessage());
-
-            // THE ONE ROW THAT DOES NOT MIRROR, named rather than dropped: the DRL-text branch has no ch. 7
-            // defaults lowering and refuses such a document WHOLE, so it never reaches the outcome above.
-            // Asserting the refusal keeps the exception honest — a DRL branch that silently started PLAYING
-            // a defaults document (and therefore answering with an unwritten default) fails here.
-            CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
-                    () -> CaseRunner.speelCase(tmp, JSON.readTree(
-                            vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("12.00"))),
-                            true),
-                    "the DRL-text branch must refuse a prioritizedDefaults document, not play it");
-            assertTrue(weigering.getMessage().contains("prioritizedDefaults"), weigering.getMessage());
+            // as ref faults on this model (ch. 5.7). The analysis refuses the document by name, as the verifier does
+            // (WF-050): a target has one writer, the group or the rule; on both branches since card
+            // drl-teksttak-op-truth-maintenance, before which the DRL-text branch refused every prioritizedDefaults
+            // document whole ("… the DRL-text branch has no defaults lowering"), the one row that did not mirror.
+            BeideTakken.geweigerd(tmp, JSON.readTree(vondst("\"geschatte waarde\": { \"number\": \"77.00\" }",
+                    "\"gemeld\"", waarde("12.00"))), "een regel naast een defaultsgroep van hetzelfde type op hetzelfde"
+                    + " doel ('geschatte waarde' van Vondst): een doel heeft één schrijver, de groep of de regel (WF-050)",
+                    "a rule beside a defaults group on one target");
         } finally {
             Files.deleteIfExists(tmp);
         }

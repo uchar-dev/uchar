@@ -80,7 +80,7 @@ class RolveldlezerWitnessTest {
         String zin = "rollidmaatschap (ligplaats, werf): beide rollen zijn meervoudig, dus geen bean draagt de link"
                 + " (§13.3.9 opslagrichting)";
         assertTrue(e.getMessage().contains(zin), e.getMessage());
-        assertTrue(drlReden(ir, c).contains(zin), drlReden(ir, c));
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
     // ---------------- 2. the two fold joins outside the gated aggregation ----------------
@@ -107,9 +107,9 @@ class RolveldlezerWitnessTest {
         assertTrue(e.getMessage().contains("regel: bewaarlast van een jutter — een waarde van het tijdsafhankelijke doel"
                 + " 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van het"
                 + " bewaartarief van alle vondsten van de Jutter')"), e.getMessage());
-        String zin = "aggregatie-bereik: de wire-binding wijst de rol 'vondst' aan, wiens zusterrol 'bewarende jutter'"
-                + " MEERVOUDIG is";
-        assertTrue(drlReden(ir, c).contains(zin), drlReden(ir, c));
+        // until card drl-teksttak-op-truth-maintenance the DRL-text branch reached the join and refused it there:
+        // "aggregatie-bereik: de wire-binding wijst de rol 'vondst' aan, wiens zusterrol 'bewarende jutter' MEERVOUDIG is"
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
     // The §8.2 whole-period fold over a NAVIGATED SET (geheelPeriodeAlle) got no gate and no witness, and the reason
@@ -142,7 +142,7 @@ class RolveldlezerWitnessTest {
         assertTrue(e.getMessage().contains("regel: toeslag van een schuit — een CharacteristicCheck met wholePeriod ('de"
                 + " werf van de Schuit gedurende het gehele jaar bedrijvig is'): Schuit heeft geen referentieveld 'werf'"
                 + " naar Werf (§13.3.9 opslagrichting)"), e.getMessage());
-        assertTrue(drlReden(ir, c).contains("genavigeerde kenmerktijdreeks"), drlReden(ir, c));
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
     // ---------------- 4. the §13.4.10 verdeling's recipient join ----------------
@@ -164,7 +164,7 @@ class RolveldlezerWitnessTest {
         assertTrue(e.getMessage().contains("verdeling: verdeel de opbrengst van een berging — een verdeling over de"
                 + " enkelvoudige ontvangerrol 'berger' wiens zusterrol 'berging' meervoudig is: dat feittype heeft één"
                 + " beanveld voor beide richtingen"), e.getMessage());
-        assertTrue(drlReden(ir, c).contains("verdeling"), drlReden(ir, c));
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
     // ---------------- 5. the §13.4.7 feitcreatie's three field positions ----------------
@@ -181,10 +181,11 @@ class RolveldlezerWitnessTest {
         Path ir = feitcreatieMetVerdringer("Sein", "seinvak"), c = geval(postwachtGeval());
         // The destructive exec-model branch refused the creation by name once it was gated. The truth-maintenance
         // branch lays the link as a fact while it fires and answers as ref on this case (TmsZoalsRefWitnessTest,
-        // feitcreatie-naamdelende-schrijfrol). The DRL-text branch still refuses.
+        // feitcreatie-naamdelende-schrijfrol), on both branches since card drl-teksttak-op-truth-maintenance, before
+        // which the DRL-text branch refused it.
         assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL),
                 "tms — ref agrees");
-        assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
+        assertEquals("PLAYED", CaseRunner.viaDrlTekst(ir, List.of(c)).status(), "drl-tekst — ref agrees");
     }
 
     @Test void de_feitcreatie_weigert_een_join_zonder_veld() throws Exception {
@@ -204,7 +205,7 @@ class RolveldlezerWitnessTest {
         assertTrue(e.getMessage().contains("feitcreatie: berging door de kustgemeente — het pad van de feitcreatie"
                 + " 'berging door de kustgemeente': de stap over 'aanmelding' heeft twee rollen naar veel, waarvoor het"
                 + " beanmodel geen veld heeft (§13.3.9 opslagrichting)"), e.getMessage());
-        assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
     @Test void de_feitcreatie_weigert_een_verdrongen_tussenstapveld() throws Exception {
@@ -222,7 +223,7 @@ class RolveldlezerWitnessTest {
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("feitcreatie: berging door de kustgemeente — het pad van de feitcreatie"
                 + " 'berging door de kustgemeente': " + reden), e.getMessage());
-        assertTrue(drlReden(ir, c).contains("feitcreatie: " + reden), drlReden(ir, c));
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
     @Test void de_ongestoorde_feitcreatie_speelt_nog() throws Exception {
@@ -304,6 +305,8 @@ class RolveldlezerWitnessTest {
     }
 
     /** The DRL-TEXT branch's verdict on the same pair — the harness entry, never a gate path. */
+    /** The refusal of the DRL-text branch, which renders the analysis and so refuses in the sentence of the exec-model
+     *  branch; until card drl-teksttak-op-truth-maintenance each row asked a sentence of its own lowering. */
     private static String drlReden(Path ir, Path c) {
         CaseRunner.Result r = CaseRunner.viaDrlTekst(ir, List.of(c));
         assertEquals("EXCLUDE", r.status(), "de DRL-tak weigert de vorm ook: " + r.reason());

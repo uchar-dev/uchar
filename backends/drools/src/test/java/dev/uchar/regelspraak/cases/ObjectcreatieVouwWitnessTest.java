@@ -12,7 +12,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A fold over a role in the toekenning of an object creation ("Een Jutter heeft een afrekening met heffing gelijk aan
@@ -74,12 +73,12 @@ class ObjectcreatieVouwWitnessTest {
 
     @Test void r3_de_eerste_vinddag() throws Exception {
         // The card's R3: "… met afrekendag gelijk aan de eerste van de vinddag van alle vondsten van de Jutter". ref and
-        // clingo: 05-03-2026, leeg, leeg and 20-03-2026. The DRL-text branch markers the fold by name.
+        // clingo: 05-03-2026, leeg, leeg and 20-03-2026. Both branches play it since card
+        // drl-teksttak-op-truth-maintenance; until then the DRL-text branch markered the fold ("TODO aggregatie EERSTE").
         String ir = document(false, creatie(null, toekenning("afrekendag", EERSTE)), leesTerug("afrekendag"));
         String zaak = zaak(situatie(), perJutter("afrekendag", datum("2026-03-05"), null, null, datum("2026-03-20")));
         assertNull(speel(ir, zaak), "de eerste vinddag");
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(ir, zaak));
-        assertTrue(drl.getMessage().contains("TODO aggregatie EERSTE"), drl.getMessage());
+        assertNull(speelDrl(ir, zaak), "de eerste vinddag, drl-tekst");
     }
 
     // ---------------- the folds as an operand, and their empty source ----------------

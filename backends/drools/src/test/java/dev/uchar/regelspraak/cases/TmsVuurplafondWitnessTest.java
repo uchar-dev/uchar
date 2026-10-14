@@ -116,27 +116,6 @@ class TmsVuurplafondWitnessTest {
         });
     }
 
-    @Test void de_andere_takken_houden_hun_vaste_plafond() throws Exception {
-        // the DRL-text branch alone: the exec-model branch becomes the branch with truth maintenance at this card
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
-            DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(TmsDocumenten.model(List.of("erkend",
-                    "vergund")), List.of(TmsDocumenten.kenmerkregel("vergund indien erkend", "vergund",
-                    TmsDocumenten.check("erkend", false)))), tak);
-            TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
-                KieSession sessie = b.kieBase().newKieSession();
-                try {
-                    DroolsBackend.voegIn(b, sessie, new Invoer().bean(TmsDocumenten.jutterBoon(b.beanLoader(),
-                            List.of("erkend"))));
-                    DroolsBackend.Vuring vuring = DroolsBackend.vuur(b, sessie);
-                    assertEquals(100_000, vuring.plafond(), tak + ": the fixed cap");
-                    assertNull(vuring.geenFixpunt(), tak + ": the fixpoint");
-                } finally {
-                    sessie.dispose();
-                }
-            });
-        }
-    }
-
     /** The Vondsten of the public run: enough that FACTOR × R × N0 lies above the floor. */
     private static final int VONDSTEN = 600;
 

@@ -11,15 +11,14 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The VALUE fold over a set source whose members are NOT numbers — a crash in both branches until
  * 2026-09-20, and a named refusal since (card datum-setbron-breuk). The ORDERING fold over a date
- * plays in the exec-model branch since 2026-09-30 (card drools-exec-datumvouw-over-rol); the DRL-text
- * branch still refuses it by name.
+ * plays in the exec-model branch since 2026-09-30 (card drools-exec-datumvouw-over-rol), and in the
+ * DRL-text branch since card drl-teksttak-op-truth-maintenance, which made it the second rendering of
+ * the same analysis; until then that branch refused it by name.
  *
  * <p>RED FIRST, measured on the jar built from the commit before this card, on the documents below:
  * <pre>
@@ -86,21 +85,13 @@ class DatumSetvouwWitnessTest {
               "value": { "text": "aa" } } ] }
         """;
 
-    @Test void de_ordenende_vouw_over_een_datumbron_speelt_in_de_exectak() throws Exception {
-        // The golden as it stands, both cases, with the values ref and clingo answer: the exec-model branch folds
-        // the dates by their order, through the accumulate it folds eerste/laatste with.
+    @Test void de_ordenende_vouw_over_een_datumbron_speelt_in_beide_takken() throws Exception {
+        // The golden as it stands, both cases, with the values ref and clingo answer: the analysis folds the dates
+        // by their order, through the accumulate it folds eerste/laatste with, and both branches render it. Until
+        // card drl-teksttak-op-truth-maintenance the DRL-text branch refused it by name ("… terwijl de DRL-teksttak
+        // elke waardevouw in BigDecimal accumuleert …").
         for (String c : new String[] { "case1-bereik.json", "case2-volgorde.json" })
-            assertNull(CaseRunner.speelCase(ir(BEREIK), zaak(BEREIK, c), false), "exec-model — " + c);
-    }
-
-    @Test void de_drl_tak_weigert_de_ordenende_datumvouw_bij_naam() throws Exception {
-        // The DRL-text branch still accumulates every value fold in BigDecimal. It must name the fold, the member
-        // type, the fact that the reading exists AND that it is this branch that does not carry it.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir(BEREIK), zaak(BEREIK, "case1-bereik.json"), true));
-        assertTrue(e.getMessage().contains("vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van"
-                + " type Datum in dagen en niet getalachtig, terwijl de DRL-teksttak elke waardevouw in BigDecimal"
-                + " accumuleert. De ordenende lezing KIEST één bijgedragen waarde"), e.getMessage());
+            BeideTakken.groen(ir(BEREIK), zaak(BEREIK, c), "the ordering fold over a date set source, " + c);
     }
 
     @Test void de_optellende_vouw_over_een_datumbron_weigert_om_een_andere_reden() throws Exception {
@@ -109,12 +100,10 @@ class DatumSetvouwWitnessTest {
             String vouw = "vouw " + Spelling.AGGREGATION_KIND.waarde("Aggregation.kind", kind).name()
                     + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type Datum in dagen en niet "
                     + "getalachtig";
-            BeideTakken.geweigerdApart(tijdelijk("datumsetbron-" + kind, metKind(BEREIK, kind)),
+            BeideTakken.geweigerd(tijdelijk("datumsetbron-" + kind, metKind(BEREIK, kind)),
                     zaak(BEREIK, "case1-bereik.json"),
                     vouw + "; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter faalt op de "
                             + "optelling zelf: geen enkele uitvoerder draagt deze vorm",
-                    vouw + ", terwijl beide takken elke waardevouw in BigDecimal accumuleren. Optellen is rekenkunde "
-                            + "en alleen bedragen tellen op",
                     "an additive fold over a date set source refuses by name in both branches");
         }
     }
@@ -128,11 +117,9 @@ class DatumSetvouwWitnessTest {
         // and never reaches the transpiler at all.
         String vouw = "vouw SOM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en niet "
                 + "getalachtig";
-        BeideTakken.geweigerdApart(tijdelijk("tekstsetbron", alsTekst(BEREIK, "sum")), JSON.readTree(TEKSTZAAK),
+        BeideTakken.geweigerd(tijdelijk("tekstsetbron", alsTekst(BEREIK, "sum")), JSON.readTree(TEKSTZAAK),
                 vouw + "; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter faalt op de "
                         + "optelling zelf: geen enkele uitvoerder draagt deze vorm",
-                vouw + ", terwijl beide takken elke waardevouw in BigDecimal accumuleren. Optellen is rekenkunde en "
-                        + "alleen bedragen tellen op",
                 "a text set source under an additive fold refuses by name in both branches");
     }
 
@@ -145,14 +132,10 @@ class DatumSetvouwWitnessTest {
         // "unordered comparison: \"bb\" vs \"aa\"" and the ASP backend declines. A refusal that
         // misdiagnoses points its reader at the wrong card, which is the whole cost of getting a
         // reason wrong.
-        BeideTakken.geweigerdApart(tijdelijk("tekstordening", alsTekst(BEREIK, null)), JSON.readTree(TEKSTZAAK),
+        BeideTakken.geweigerd(tijdelijk("tekstordening", alsTekst(BEREIK, null)), JSON.readTree(TEKSTZAAK),
                 "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en kennen geen "
                         + "ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de "
                         + "referentie-interpreter faalt op de vergelijking zelf: geen enkele uitvoerder draagt deze vorm",
-                "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en "
-                        + "niet getalachtig, terwijl beide takken elke waardevouw in BigDecimal "
-                        + "accumuleren. De ordenende lezing vraagt een ORDENING op de leden en dit type "
-                        + "heeft er geen",
                 "a text set source under an ordering fold gets the nobody-carries-it sentence");
     }
 

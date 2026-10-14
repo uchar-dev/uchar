@@ -74,9 +74,9 @@ class HeelperiodeAantalfilterWitnessTest {
         for (Path zaak : zaken) {
             JsonNode c = JSON.readTree(zaak.toFile());
             assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "exec-model — " + zaak);
-            assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TMS), "drl-tms — " + zaak);
+            assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TEXT), "drl-tms — " + zaak);
         }
-        String tekst = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS).drl();
+        String tekst = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
         List<String> functies = new ArrayList<>();
         Matcher m = GEHEEL_PERIODE.matcher(tekst);
         while (m.find()) functies.add(m.group(1));
@@ -109,7 +109,7 @@ class HeelperiodeAantalfilterWitnessTest {
         Files.writeString(andere, JSON.writeValueAsString(document));
         for (Path zaak : zaken(ir)) {
             JsonNode c = JSON.readTree(zaak.toFile());
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
                 assertNull(CaseRunner.speelCase(andere, c, tak), tak + " — " + zaak);
         }
     }
@@ -120,7 +120,7 @@ class HeelperiodeAantalfilterWitnessTest {
         assertEquals(3, zaken.size(), "de cases van de creatieguard");
         for (Path zaak : zaken) {
             JsonNode c = JSON.readTree(zaak.toFile());
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
                 assertNull(CaseRunner.speelCase(ir, c, tak), tak + " — " + zaak);
         }
     }

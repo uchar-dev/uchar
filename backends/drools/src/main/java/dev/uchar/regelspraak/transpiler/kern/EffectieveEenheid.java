@@ -322,16 +322,14 @@ public final class EffectieveEenheid {
      * before it ever asks, and never an invented factor — and {@code exacteHerschaalFactoren} is null):
      * <ul>
      *   <li>a site that REFUSES on {@code convertibleNaar} — the §4.1/§5.1.4 TEMPORAL restatements
-     *       ({@code DrlTranspiler.schaalbaarNaarDoel} / {@code schaalTijd}, and until card tms-omschakeling the
-     *       fold- and timeline-restatement guards of the destructive exec-model lowering) — gets a false and turns
-     *       the whole construct into an honest marker/skip;</li>
+     *       (until card drl-teksttak-op-truth-maintenance those of the destructive DRL-text lowering, and until
+     *       card tms-omschakeling the fold- and timeline-restatement guards of the destructive exec-model
+     *       lowering) — gets a false and turns the whole construct into an honest marker/skip;</li>
      *   <li>a site that merely COMPUTES a factor — the scalar §4 write boundary, the additive operand
      *       boundary, the §5.1 Tabel 32 comparison restatement — gets the IDENTITY and the restatement becomes
      *       a NO-OP. {@code TmsTranspiler.herschaald} returns the value unchanged, as the destructive exec-model
-     *       lowering did until card tms-omschakeling; {@code DrlTranspiler.herschaalExact}
-     *       and {@code herschaalConditie} likewise return the expression unchanged, one
-     *       line ABOVE their "an OPAQUE product unit stays an honest marker" branch (which an opaque product
-     *       never reaches, having already failed the convertibility guard). No marker on either side.</li>
+     *       lowering did until card tms-omschakeling and the destructive DRL-text lowering until card
+     *       drl-teksttak-op-truth-maintenance. No marker.</li>
      * </ul>
      *
      * <p>So on a scalar restatement the value simply stands UNRESTATED, in whatever unit it was computed in.

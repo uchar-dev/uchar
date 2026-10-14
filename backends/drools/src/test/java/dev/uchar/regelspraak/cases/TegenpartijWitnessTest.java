@@ -4,12 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.engine.BeanCompiler;
-import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -73,24 +68,16 @@ class TegenpartijWitnessTest {
         // wachtjutter made to-one: the post itself holds its jutter, so the check reads the post's reference and,
         // narrowed, asks what it holds. This row pins the LOWERING, not a value: no case can fill that reference
         // with a Strandjutter, because the case writer refuses a subtype instance on a to-one field its supertype
-        // types (measured; a limit of the case input, not of the check). Both branches lower all four rules, and
-        // the DRL text tests the narrowed class exactly where the document narrows.
-        IrLoader.Loaded l = IrLoader.loadAll(eenOpEen());
-        DrlTranspiler drl = DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(),
-                l.rolBindingen(), l.navigatieBindingen());
-        List<Dekking> tms = tmsDekking(l);
-        for (String regel : REGELS) {
-            assertTrue(dekkingVan(drl.dekking(), regel).lowered(), "drl-tekst lowert " + regel);
-            assertTrue(dekkingVan(tms, regel).lowered(), "tms lowert " + regel);
-        }
-        assertTrue(drl.drl().contains("instanceof Strandjutter"), "de vernauwde check toetst de klasse:\n" + drl.drl());
+        // types (measured; a limit of the case input, not of the check). The analysis lowers all four rules, and the
+        // text of the DRL-text branch tests the narrowed class exactly where the document narrows.
+        DroolsBackend.Build b = DroolsBackend.build(eenOpEen(), DroolsBackend.Branch.DRL_TEXT);
+        for (String regel : REGELS) assertTrue(dekkingVan(b.dekking(), regel).lowered(), "de analyse lowert " + regel);
+        assertTrue(b.drl().contains("Strandjutter"), "de vernauwde check toetst de klasse:\n" + b.drl());
 
         ObjectNode zonder = eenOpEen();
         for (int r : new int[] { 2, 3 }) regel(zonder, r).remove("counterpartType");
-        IrLoader.Loaded lz = IrLoader.loadAll(zonder);
-        String drlZonder = DrlTranspiler.build(lz.model(), lz.lets(), lz.prioritizedDefaults(), lz.bronPaden(),
-                lz.rolBindingen(), lz.navigatieBindingen()).drl();
-        assertFalse(drlZonder.contains("instanceof"), "zonder vernauwing is er geen typetoets:\n" + drlZonder);
+        String drlZonder = DroolsBackend.build(zonder, DroolsBackend.Branch.DRL_TEXT).drl();
+        assertFalse(drlZonder.contains("Strandjutter"), "zonder vernauwing is er geen typetoets:\n" + drlZonder);
     }
 
     private static final List<String> REGELS = List.of("regel: bemande wachtpost", "regel: onbemande wachtpost",
@@ -99,18 +86,6 @@ class TegenpartijWitnessTest {
     private static Dekking dekkingVan(List<Dekking> dekking, String sleutel) {
         for (Dekking d : dekking) if (sleutel.equals(d.sleutel())) return d;
         throw new AssertionError("geen manifestregel " + sleutel + " in " + dekking);
-    }
-
-    private static List<Dekking> tmsDekking(IrLoader.Loaded l) {
-        ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(l.model()));
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(cl);
-        try {
-            return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.rolBindingen(), l.lets(),
-                    l.bronPaden(), l.navigatieBindingen()).dekking();
-        } finally {
-            Thread.currentThread().setContextClassLoader(vorige);
-        }
     }
 
     // ---------------- fixtures ----------------

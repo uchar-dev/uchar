@@ -212,7 +212,7 @@ class DefaultsDelingWitnessTest {
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
             CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(tmp, c, tak),
                     tak.toString());
             assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + vorm), tak + ": "

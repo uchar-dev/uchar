@@ -118,7 +118,7 @@ class TmsStapelWitnessTest {
     }
 
     @Test void de_gevouwen_initialisatie_vult_onder_haar_voorwaarde() throws Exception {
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
             assertNull(CaseRunner.speelCase(document(), zaak(), tak), tak.toString());
     }
 
@@ -129,7 +129,7 @@ class TmsStapelWitnessTest {
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
             vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(), gevouwen);
         assertTrue(gevouwen[0] > 0, "de initialisatiedefault van de stapel vuurde nooit op W2");
-        DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         int[] inDeTekst = {0};

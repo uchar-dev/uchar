@@ -71,11 +71,11 @@ class TemporeleSetvouwBereikWitnessTest {
               { "from": "2026-03-01", "to": "2026-04-01", "value": { "number": "12" } } ] } ] }
         """;
 
-    @Test void de_temporele_setvouw_over_een_uniek_paar_blijft_spelen() throws Exception {
+    @Test void de_temporele_setvouw_over_een_uniek_paar_wordt_geweigerd() throws Exception {
         // The regression mirror: ONE feittype over the pair. Green before this card as well — the row that says
         // the new arm reached only the case the old one could not answer; since L2 of the v1 wire migration the
         // binding decides here too.
-        drlSpeeltTmsWeigert(tijdelijk("setvouw-uniek", setvouw()), JSON.readTree(ZAAK),
+        beideWeigeren(tijdelijk("setvouw-uniek", setvouw()), JSON.readTree(ZAAK),
                 "per-period sum over a uniquely connected pair: 19 / 17 / 12");
     }
 
@@ -83,20 +83,18 @@ class TemporeleSetvouwBereikWitnessTest {
         // THE ROW. A SECOND feittype relates Jutter to Vondst, so the by-pair search is ambiguous and only the
         // ch. 4.3 binding names the relation. Same timeline, both branches — this fold now takes the same LAST
         // arm the instance fold takes, out of the same shared derivation.
-        drlSpeeltTmsWeigert(tijdelijk("setvouw-herhaald", herhaaldPaar()), JSON.readTree(ZAAK),
+        beideWeigeren(tijdelijk("setvouw-herhaald", herhaaldPaar()), JSON.readTree(ZAAK),
                 "the wire's range carries the fold over a repeated type pair");
     }
 
-    /** The DRL-text branch plays {@code c}; the truth-maintenance branch refuses the rule by name, since it writes a
-     *  timeline target only with a time-proportional part or a day count (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11), a
-     *  form the destructive exec-model branch carried; the loss is accepted with card tms-omschakeling. */
-    private static void drlSpeeltTmsWeigert(Path ir, JsonNode c, String boodschap) throws Exception {
-        org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms — " + boodschap);
-        org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("regel: bewaarlast van een jutter — een"
-                + " waarde van het tijdsafhankelijke doel 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen"
-                + " dagentelling is ('de som van het bewaartarief van alle vondsten van de Jutter')"), e.getMessage());
+    /** Both branches refuse the rule by name, since the analysis writes a timeline target only with a
+     *  time-proportional part or a day count (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11), a form the destructive exec-model
+     *  branch carried, and the destructive DRL-text branch until card drl-teksttak-op-truth-maintenance, which played
+     *  {@code c} (the loss is accepted with card tms-omschakeling). */
+    private static void beideWeigeren(Path ir, JsonNode c, String boodschap) throws Exception {
+        BeideTakken.geweigerd(ir, c, "regel: bewaarlast van een jutter — een waarde van het tijdsafhankelijke doel"
+                + " 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van het"
+                + " bewaartarief van alle vondsten van de Jutter')", boodschap);
     }
 
     @Test void de_setvouw_zonder_binding_is_een_documentfout() throws Exception {

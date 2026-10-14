@@ -175,60 +175,31 @@ class NietTemporeleKwantorvouwWitnessTest {
      *   ref      : oracle: PASS (2 expectations)
      *   clingo   : clingo: PASS (2 expectations)
      * </pre>
-     * De DRL-teksttak draagt hem niet, en dat is de bewering van deze rij: zij moet hem BIJ NAAM weigeren,
-     * met de matrixvorm in de reden; de destructieve exec-modeltak deed dat ook. De tak met truth maintenance
-     * speelt hem zoals {@code ref} antwoordt, met de case van deze rij ({@code TmsZoalsRefWitnessTest},
-     * {@code geneste-vouw-als-matrix}).
-     *
-     * <p><b>Waarom juist deze vorm.</b> Zij is de eerste conditie die haar clausule RECHTSTREEKS in de Acc
-     * hijst en een LEGE inline teruggeeft — de lowering van deze kaart doet dat zelf, dus zij kan zichzelf
-     * als matrix niet aan. {@code conditieInline} ziet dat niet: die kent alleen het {@code extra}-kanaal.
-     * Vóór de vangst van 2026-09-16 kwam er daarom een weesclausule uit die tegen {@code $subject} joinde met
-     * een veld van het VERKEERDE type, plus een lege {@code !(  )}-constraint, en stierf het pakket op
-     * {@code [ERR 101] no viable alternative at input ')'} — luid, maar een parsefout is niet de benoemde
-     * weigering die ch. 3.12 belooft. Deze rij faalt zodra die vangst wegvalt.
+     * De analyse met truth maintenance speelt hem zoals {@code ref} antwoordt, met de case van deze rij
+     * ({@code TmsZoalsRefWitnessTest}, {@code geneste-vouw-als-matrix}), en sinds kaart
+     * drl-teksttak-op-truth-maintenance in beide takken. Tot die kaart droeg de destructieve DRL-teksttak hem niet
+     * en weigerde hem BIJ NAAM, met de matrixvorm in de reden, zoals de destructieve exec-modeltak deed; vóór de
+     * vangst van 2026-09-16 stierf het pakket daar op een parsefout, en de rij {@code de_drl_markertekst_scheidt_de_redenen}
+     * hield de reden per weigering vast. Met die tak vervallen beide beweringen: hier geldt één oordeel.
      */
-    @Test void een_geneste_vouw_als_matrix_weigert_de_drl_teksttak_bij_naam() throws Exception {
+    @Test void een_geneste_vouw_als_matrix_speelt_in_beide_takken() throws Exception {
         Path ir = genesteVouw();
         Path c = tmp.resolve("genest-case.json");
         Files.writeString(c, GENEST_CASE);
-
         CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
-
+        assertEquals("PLAYED", tms.status(), "de exec-model-tak antwoordt zoals ref: " + tms);
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-        assertEquals("EXCLUDE", drl.status(), "de DRL-tekst-tak mag dit document niet stil draaien");
-        assertFalse(drl.reason().contains("drl compile"),
-                "een parsefout is geen benoemde weigering — de vangst op het Acc-kanaal ontbreekt: " + drl.reason());
-        assertTrue(drl.reason().contains("kwantorvouw") && drl.reason().contains("Kwantorvouw"),
-                "de DRL-reden noemt de knoop EN de matrixvorm waarop hij afketst: " + drl.reason());
+        assertEquals("PLAYED", drl.status(), "de DRL-teksttak antwoordt zoals ref: " + drl);
+        assertEquals(tms.casesPlayed(), drl.casesPlayed());
     }
 
-    /**
-     * De markertekst van de DRL-tekst-tak is PER REDEN waar. Tot 2026-09-16 zei elke weigering "ch. 3.9a
-     * wordt alleen in de exec-model-tak gelowerd", ook waar de exec-tak juist óók weigert (zoals hierboven);
-     * de redenen zijn sindsdien per decline.
-     *
-     * <p><b>De rij verschoof op 2026-09-18</b> (kaart drl-heelperiode-arm) en met haar de bewering. Tot dan
-     * was de HEELPERIODEMATRIX de ene weigering die wél echt exec-only was, en zij was hier de tegenhanger
-     * van de geneste vouw. Die kanaalsplitsing is dicht: die matrix speelt nu in beide takken, dus de rij
-     * leest hem als een PLAY en houdt daarnaast vast dat de geneste vouw haar EIGEN reden draagt — en dat
-     * geen enkele weigering nog beweert dat een vorm alleen in de exec-tak zou lowerden.
-     */
-    @Test void de_drl_markertekst_scheidt_de_redenen() throws Exception {
+    /** De heelperiodevouw speelt in beide takken (kaart drl-heelperiode-arm, 2026-09-18): de vroegere
+     *  kanaalsplitsing blijft dicht. */
+    @Test void de_heelperiodevouw_speelt_in_de_drl_teksttak() throws Exception {
         Path ploegpremie = GOLDEN.resolveSibling("jutterswet-ploegpremie");
         CaseRunner.Result heel = CaseRunner.viaDrlTekst(ploegpremie.resolve("ir.json"),
                 List.of(ploegpremie.resolve("case1-allen-boven-de-grens.json")));
-        assertEquals("PLAYED", heel.status(),
-                "de heelperiodevouw is geen kanaalsplitsing meer: " + heel.reason());
-
-        Path c = tmp.resolve("genest-case-2.json");
-        Files.writeString(c, GENEST_CASE);
-        String genest = CaseRunner.viaDrlTekst(genesteVouw(), List.of(c)).reason();
-        assertTrue(genest.contains("kwantorvouw") && genest.contains("Kwantorvouw"),
-                "de geneste vouw draagt haar eigen reden, met de matrixvorm erin: " + genest);
-        assertFalse(genest.contains("alleen in de exec-model-tak"),
-                "de geneste vouw wordt door de exec-tak óók geweigerd, dus die zin is daar onwaar: " + genest);
+        assertEquals("PLAYED", heel.status(), "de heelperiodevouw is geen kanaalsplitsing meer: " + heel.reason());
     }
 
     // ================= the nested-fold document, spliced into the corpus golden =================

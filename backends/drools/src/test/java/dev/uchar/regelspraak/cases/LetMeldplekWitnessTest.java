@@ -87,23 +87,16 @@ class LetMeldplekWitnessTest {
 
     // ---------------- the boundary: what a binding is NOT responsible for ----------------
 
-    @Test void een_literale_deeltal_meldt_alleen_met_truth_maintenance() throws Exception {
-        // The OTHER reason a §6.5 site carries no companion, separated from the binding so the two are never
-        // confused again: a LITERAL (or parameter, or to-many) operand lowers to no re-readable leeg/vol guard,
-        // so the companion is dropped — with or without a `Let` around it. "uit := 100,00 gedeeld door
-        // restpost", restpost ABSENT: ref uit leeg, INCONSISTENT; the DRL-text branch answers CONSISTENT, as the
-        // destructive exec-model branch did. That is the documented scope limit of the companion machinery (see
-        // companionDeel), it predates this card, and on the DRL-text branch it is pinned RED here so that lifting it
-        // is a deliberate act with a failing row to its name rather than a silent widening. The truth-maintenance
-        // branch has no companions: it deposits where the division reads leeg, whatever the dividend, and answers
-        // as ref (TmsZoalsRefWitnessTest, literaal-deeltal-1 and -2).
-        Path ir = schrijf(literaalModel());
-        com.fasterxml.jackson.databind.JsonNode c = jutter("", leeg() + ", " + inconsistent());
-        String drl = CaseRunner.speelCase(ir, c, true);
-        org.junit.jupiter.api.Assertions.assertNotNull(drl, "drl-tekst — het literale deeltal draagt geen herleesbaar hek");
-        org.junit.jupiter.api.Assertions.assertTrue(drl.contains("verwacht inconsistent"), "drl-tekst: " + drl);
-        org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL),
-                "tms — de deling door een lege deler deponeert");
+    @Test void een_literale_deeltal_meldt_in_beide_takken() throws Exception {
+        // The OTHER reason a §6.5 site carried no companion, separated from the binding so the two are never confused
+        // again: a LITERAL (or parameter, or to-many) operand lowered to no re-readable leeg/vol guard, so the
+        // destructive lowerings dropped the companion, with or without a `Let` around it. "uit := 100,00 gedeeld door
+        // restpost", restpost ABSENT: ref uit leeg, INCONSISTENT; the destructive DRL-text branch answered CONSISTENT
+        // until card drl-teksttak-op-truth-maintenance, as the destructive exec-model branch did. The analysis with
+        // truth maintenance has no companions: it deposits where the division reads leeg, whatever the dividend, and
+        // answers as ref (TmsZoalsRefWitnessTest, literaal-deeltal-1 and -2), on both branches.
+        BeideTakken.groen(schrijf(literaalModel()), jutter("", leeg() + ", " + inconsistent()),
+                "de deling door een lege deler deponeert");
     }
 
     // ---------------- helpers: replay ----------------

@@ -47,13 +47,12 @@ class TijdlijnKlipvouwWitnessTest {
             + " 'wachtvergoeding per maand', dat geen getal is (WF-091)";
 
     @Test void de_klip_zonder_waarde_over_datums_weigert_bij_naam() throws Exception {
-        BeideTakken.geweigerdApart(KLIP_DATUM, zaak(null, "\"attributeEmpty\"", ""), TMS_REDEN, REDEN,
+        BeideTakken.geweigerd(KLIP_DATUM, zaak(null, "\"attributeEmpty\"", ""), TMS_REDEN,
                 "no value timeline under the clip: a refusal, never a crash");
     }
 
     @Test void de_weggeklipte_datumwaarde_weigert_in_dezelfde_zin() throws Exception {
-        BeideTakken.geweigerdApart(KLIP_DATUM, zaak("{\"date\": \"2024-01-15\"}", "\"attributeEmpty\"", ""), TMS_REDEN,
-                REDEN,
+        BeideTakken.geweigerd(KLIP_DATUM, zaak("{\"date\": \"2024-01-15\"}", "\"attributeEmpty\"", ""), TMS_REDEN,
                 "a value the clip removes entirely: the same document, the same sentence");
     }
 

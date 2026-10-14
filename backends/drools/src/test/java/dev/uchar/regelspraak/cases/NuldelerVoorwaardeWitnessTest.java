@@ -139,24 +139,20 @@ class NuldelerVoorwaardeWitnessTest {
         // fire reaches its fixpoint with the fault of the condition standing as a fact, DroolsBackend.lees gives it as
         // data, and DroolsBackend.zetAfgeleideWaarden throws it in the sentence of the replay, which names the rule.
         // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which
-        // DroolsBackend.benoem named.
-        CaseRunner.voorMeting(document(zwaar(DELING_GROTER_DAN_EEN)), DroolsBackend.Branch.EXEC_MODEL)
-                .metSessie(JSON.readTree(NUL_EN_GEWOON), (bouw, sessie, labels) -> {
-                    assertEquals(null, DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fire reaches its fixpoint");
-                    List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();
-                    assertEquals(1, fouten.size(), fouten::toString);
-                    assertEquals(zin("zwaar", "60"), fouten.get(0).melding(), "the fault as data");
-                    benoemd(zin("zwaar", "60"), assertThrows(RuntimeException.class,
-                            () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)));
-                    return null;
-                });
-    }
-
-    @Test void de_drl_teksttak_noemt_regel_en_voorwaarde_zoals_voorheen() throws Exception {
-        Path ir = document(zwaar(DELING_GROTER_DAN_EEN));
-        RuntimeException e = assertThrows(RuntimeException.class, () -> speel(ir, true, NUL_EN_GEWOON));
-        assertEquals("ConstraintEvaluationException", e.getClass().getSimpleName(), e::toString);
-        assertTrue(e.getMessage().contains("[Rule \"zwaar\""), e.getMessage());
+        // DroolsBackend.benoem named, and so did the destructive DRL-text branch until card
+        // drl-teksttak-op-truth-maintenance ("[Rule "zwaar" …"); since that card both branches render the analysis.
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values())
+            CaseRunner.voorMeting(document(zwaar(DELING_GROTER_DAN_EEN)), tak)
+                    .metSessie(JSON.readTree(NUL_EN_GEWOON), (bouw, sessie, labels) -> {
+                        assertEquals(null, DroolsBackend.vuur(bouw, sessie).geenFixpunt(),
+                                tak + ": the fire reaches its fixpoint");
+                        List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();
+                        assertEquals(1, fouten.size(), fouten::toString);
+                        assertEquals(zin("zwaar", "60"), fouten.get(0).melding(), tak + ": the fault as data");
+                        benoemd(zin("zwaar", "60"), assertThrows(RuntimeException.class,
+                                () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)));
+                        return null;
+                    });
     }
 
     // ---------------- documents ----------------

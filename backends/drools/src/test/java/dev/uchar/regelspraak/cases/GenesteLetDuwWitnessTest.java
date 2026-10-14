@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A ch. 4.10 {@code Let} standing between a NEED and the ch. 10.2 branch node that reads it, pinned in BOTH
@@ -138,28 +135,19 @@ class GenesteLetDuwWitnessTest {
 
     // ---------------- the SCOPE, second direction: the shape no route reaches ----------------
 
-    @Test void een_wikkel_tussen_de_twee_lets_wordt_luid_geweigerd_in_de_drl_tak() throws Exception {
+    @Test void een_wikkel_tussen_de_twee_lets_speelt_in_beide_takken() throws Exception {
         // "… Let z = k gedeeld door restpost in ((Let w = k in (als w groter dan 10,00 dan 0,00 anders z))
         //  plus 5,00)" — the exchange cannot step OVER the arithmetic wrapper standing between the two
         // `Let`s, and there is no branch node at `z`'s own position to distribute into. ref answers 5,00 here
-        // (inkomen 40,00, restpost ABSENT) and the exec branch reproduces it; the DRL-text branch refuses BY
-        // NAME, and clingo raises its own loud TRANSLATION FAULT on the same document. The boundary is thus
-        // the same one on both rewriting branches, which is the point of pinning it.
-        //
-        // {@link BeideTakken} has no shape for "one branch plays, the other refuses" on purpose — a row that
-        // asserts a per-branch verdict is how a branch silently stops being covered. So this one is spelled
-        // out, and it fails the day the refusal turns into an answer, which is exactly when carrying this
-        // shape must become a deliberate act with a measured value behind it.
-        Path ir = schrijf(wikkelTussenModel());
-        JsonNode c = jutter(n("inkomen", "40.00"), waarde("5.00") + ", " + consistent());
-        assertNull(CaseRunner.speelCase(ir, c, false), "exec-model — de wikkel tussen de twee Lets speelt");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true),
-                "drl-tekst — de wikkel tussen de twee Lets wordt geweigerd");
-        assertTrue(e.getMessage().contains("takgarde van een voorwaardelijk gelezen behoefte (ch. 10.2)"),
-                "drl-tekst noemt de weigering bij naam: " + e.getMessage());
+        // (inkomen 40,00, restpost ABSENT) and the analysis reproduces it, on both branches since card
+        // drl-teksttak-op-truth-maintenance; until then the destructive DRL-text lowering refused it BY NAME ("takgarde
+        // van een voorwaardelijk gelezen behoefte (ch. 10.2)"), and clingo raises its own loud TRANSLATION FAULT on the
+        // same document.
+        BeideTakken.groen(schrijf(wikkelTussenModel()), jutter(n("inkomen", "40.00"), waarde("5.00") + ", "
+                + consistent()), "de wikkel tussen de twee Lets speelt");
     }
 
-    @Test void een_takgarde_wier_binder_tussendoor_herbonden_wordt_wordt_luid_geweigerd() throws Exception {
+    @Test void een_takgarde_wier_binder_tussendoor_herbonden_wordt_speelt_in_beide_takken() throws Exception {
         // "uit := Let w = saldo in ((Let z = w gedeeld door restpost in (Let w = inkomen in
         //         (als w groter dan 10,00 dan 0,00 anders z))) plus w)" — `z`'s need is read in the anders-arm
         // alone, so its guard is "NOT (w > 10,00)"; but the `w` that guard means is the INNER one, and at `z`'s
@@ -170,9 +158,10 @@ class GenesteLetDuwWitnessTest {
         // resolved against the outer binding, and with saldo 5,00, inkomen 40,00 and restpost ABSENT that made
         // this branch FABRICATE an Inconsistentie — ref answers uit 5,00 CONSISTENT (the dan-arm runs, `z` is
         // never read, the division never happens), the exec branch reproduces it, and clingo refuses the
-        // document with its own loud fault. An invented fault is the worst answer available, so the shape is
-        // refused by name now. A sibling spelling whose two bindings happened to AGREE played correctly before
-        // and is refused too: the coincidence was not a reason to keep it.
+        // document with its own loud fault. An invented fault is the worst answer available, so the destructive
+        // DRL-text lowering refused the shape by name, and a sibling spelling whose two bindings happened to AGREE as
+        // well; since card drl-teksttak-op-truth-maintenance both branches render the analysis, which reads each `w`
+        // where it is bound, and play both flanks as ref answers.
         Path ir = schrijf(herbondenModel());
         // saldo 5,00 / inkomen 40,00 / restpost ABSENT — the fabricage flank: ref uit 5,00, CONSISTENT.
         // saldo 5,00 / inkomen  8,00 / restpost 2,00  — the VALUE flank: ref uit 7,50 (5,00/2,00 + 5,00), and
@@ -181,13 +170,8 @@ class GenesteLetDuwWitnessTest {
         for (JsonNode c : new JsonNode[] {
                 jutter(n("saldo", "5.00") + ", " + n("inkomen", "40.00"), waarde("5.00") + ", " + consistent()),
                 jutter(n("saldo", "5.00") + ", " + n("inkomen", "8.00") + ", " + n("restpost", "2.00"),
-                        waarde("7.50") + ", " + consistent()) }) {
-            assertNull(CaseRunner.speelCase(ir, c, false), "exec-model — de herbonden takgarde speelt");
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true),
-                    "drl-tekst — de herbonden takgarde wordt geweigerd");
-            assertTrue(e.getMessage().contains("takgarde van een voorwaardelijk gelezen behoefte (ch. 10.2)"),
-                    "drl-tekst noemt de weigering bij naam: " + e.getMessage());
-        }
+                        waarde("7.50") + ", " + consistent()) })
+            BeideTakken.groen(ir, c, "de herbonden takgarde speelt");
     }
 
     // ---------------- helpers: replay ----------------

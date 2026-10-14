@@ -23,8 +23,6 @@ import java.util.Objects;
  *       where a fold reads its members one by one and stops at the first fault (RUNTIME-SEMANTICS ch. 5.11), and
  *       never a value. Without it a list holds its members in the order of the beans.</li>
  * </ul>
- *
- * The DRL-text branch reads the beans alone and puts in nothing else.
  */
 public final class Invoer {
 

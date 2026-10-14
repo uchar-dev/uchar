@@ -49,10 +49,6 @@ class StilleGuardflankWitnessTest {
      *  §5.8 AANTAL over the created relation — so what the creation does is a NUMBER on the anker. */
     private static final String POSTWACHT = "jutterswet-postwacht";
 
-    /** The reason both branches must carry. The DRL-text branch has printed it since the creation's guard arm was
-     *  written; this is the sentence the exec branch adopts rather than a second wording for one limit. */
-    private static final String REDEN = "voorwaarde niet naar anker of doel te lowereren";
-
     // ---------------- 1. the Onopgelost guard: a fault that became a zero ----------------
 
     @Test void de_onopgeloste_feitcreatie_guard_faalt_of_weigert() throws Exception {
@@ -69,15 +65,15 @@ class StilleGuardflankWitnessTest {
         // The guard is unreadable in every executor that reads it; this backend is the only one that answered.
         // Since card tms-omschakeling (2026-10-10) the exec-model row runs on the truth-maintenance branch, which reads
         // the guard as ref does: the condition faults when it is evaluated, and the write-back throws that fault at
-        // the fixpoint (WF-044). The DRL-text branch refuses the creation by name.
+        // the fixpoint (WF-044), on both branches since card drl-teksttak-op-truth-maintenance; until then the DRL-text
+        // branch refused the creation by name ("voorwaarde niet naar anker of doel te lowereren").
         Path ir = metGuard(onopgelost());
         JsonNode c = geval("[\"risicopost\"]", "[]", "0");
-        RuntimeException tms = assertThrows(RuntimeException.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("Rekenfout", tms.getClass().getSimpleName(), tms::toString);
-        assertTrue(tms.getMessage().contains("Unresolved condition reached in evaluation"), tms.getMessage());
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true));
-        assertTrue(drl.getMessage().contains(REDEN), drl.getMessage());
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
+            RuntimeException e = assertThrows(RuntimeException.class, () -> CaseRunner.speelCase(ir, c, tak));
+            assertEquals("Rekenfout", e.getClass().getSimpleName(), () -> tak + ": " + e);
+            assertTrue(e.getMessage().contains("Unresolved condition reached in evaluation"), tak + ": " + e.getMessage());
+        }
     }
 
     // ---------------- 2. the third-type owner: a hosting no pattern carries ----------------
@@ -99,9 +95,9 @@ class StilleGuardflankWitnessTest {
         // not lower is a recorded skip there. Only the creation, with its second pattern and its inert fallback,
         // swallowed it.
         Path ir = metGuard(kenmerkGuard("risicopost", "Post", "de post risicopost is"));
-        BeideTakken.geweigerdApart(ir, geval("[\"risicopost\"]", "[]", "0"), "feitcreatie: vakbeseining door het"
+        BeideTakken.geweigerd(ir, geval("[\"risicopost\"]", "[]", "0"), "feitcreatie: vakbeseining door het"
                         + " kustvak — een CharacteristicCheck met een host die het onderwerp niet is ('de post risicopost"
-                        + " is')", REDEN, "een eigenaar die anker noch doel is, is een weigering en geen nul-creatie");
+                        + " is')", "een eigenaar die anker noch doel is, is een weigering en geen nul-creatie");
     }
 
     // ---------------- 3+4. the flanks: a guard that DOES lower still plays ----------------

@@ -137,15 +137,13 @@ class SubtypeRolvullerWitnessTest {
         assertFalse(FactModelGenerator.heeftReferentieVeld(model, schuit, "ligger", model.objecttypeOpNaam("Vlot")));
         // the truth-maintenance branch names the missing field in its own sentence; the DRL-text branch names who
         // holds the field
-        BeideTakken.geweigerdApart(schrijf(ir), JSON.readTree("""
+        BeideTakken.geweigerd(schrijf(ir), JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [ { "label": "S1", "objectType": "Schuit", "attributes": {}, "roles": {},
                                               "characteristics": [] } ], "parameters": {} },
                   "expected": [ { "kind": "attributeEmpty", "label": "S1", "attribute": "ligdiepte" } ] }
                 """), "regel: ligdiepte van een schuit — de lezing 'het draagvlak van de ligger van de Schuit': Schuit"
                         + " heeft geen referentieveld 'ligger' naar Vlot (§13.3.9 opslagrichting)",
-                "de rol 'ligger' op Schuit heeft geen eigen referentieveld naar Vlot: de beaneigenschap"
-                + " Schuit.ligger draagt de rol 'ligger' (feittype 'pontonligging')",
                 "het veld van pontonligging leest geen vlotligging, en de zin noemt wie het veld houdt");
     }
 

@@ -229,25 +229,16 @@ class TekstLexeemWitnessTest {
         beideTakkenSpelen(ir, geval("platgeslagen-invoer", PLATGESLAGEN, false, null));
     }
 
-    @Test void een_waarde_die_op_een_backslash_eindigt_weigert_luid_in_de_tekst_tak() throws Exception {
-        // The flank the escaping does NOT rescue, pinned as LOUD rather than left unstated. The backslash was
-        // already escaped before this card, and the doubled backslash makes the DRL consequence pre-processor read
-        // the closing quote as escaped and run off the end of the block. That is a per-form compile refusal — the
-        // back-end reports the form as not carried, with the reason — never a wrong answer, which is what the card
-        // required of this shape. Measured on the fixed jar, unchanged by the line-terminator escaping:
-        //     exec-model      : PLAYED 1
-        //     Drools DRL-tekst: EXCLUDE drl compile: … Unable to build expression for 'consequence' …
-        //     verifier: PASS / ref: oracle: PASS (3 expectations) / clingo: clingo: PASS (3 expectations)
-        // The shape is "ENDS in a backslash", not "is a backslash": `pad\` refuses the same way and a backslash in
-        // the MIDDLE (`pad\naar`, a real backslash) plays in both branches — both measured 2026-09-18.
-        Path ir = model("tekstlexeem-backslash", "equal", "\\", "\\");
-        Path c = geval("backslash-raakt", "\\", true, "\\");
-
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("PLAYED", exec.status(), exec.reason() + " " + exec.caseFailures());
-        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-        assertEquals("EXCLUDE", drl.status(), drl.reason() + " " + drl.caseFailures());
-        assertTrue(drl.reason().startsWith("drl compile: "), drl.reason());
+    @Test void een_waarde_die_op_een_backslash_eindigt_speelt_in_beide_takken() throws Exception {
+        // The flank the escaping of the destructive DRL-text lowering did NOT rescue: there the doubled backslash made
+        // the DRL consequence pre-processor read the closing quote as escaped and run off the end of the block, a
+        // per-form compile refusal ("drl compile: … Unable to build expression for 'consequence' …"), measured on
+        // 2026-09-18 beside exec-model PLAYED 1 and verifier, ref and clingo PASS (3 expectations). Since card
+        // drl-teksttak-op-truth-maintenance the text renders the analysis, whose comparison is a Java function of the
+        // text with the lexeme as a Java string literal, and both branches play it. A backslash in the MIDDLE
+        // (`pad\naar`, a real backslash) played in both branches before.
+        beideTakkenSpelen(model("tekstlexeem-backslash", "equal", "\\", "\\"), geval("backslash-raakt", "\\", true,
+                "\\"));
     }
 
     // ---------------- the two-branch assertion ----------------

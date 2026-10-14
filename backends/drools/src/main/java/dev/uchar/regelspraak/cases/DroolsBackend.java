@@ -12,7 +12,6 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Bewaking;
@@ -62,13 +61,14 @@ import java.util.function.Predicate;
  * the path gate 12 replays. {@link CaseRunner} builds every golden through {@link #build(JsonNode, Branch)}, so what
  * a consumer fires is what the gate plays; there is no second copy of this path to drift from it.
  *
- * <p>The backend has two branches ({@link Branch}), each a lowering of the IR of its own. The exec-model branch
- * ({@link TmsTranspiler}, Drools' executable model) derives with truth maintenance: a derived value is a logical fact,
- * every read it depends on is a pattern in the rule's left-hand side, and the beans hold the input until the
- * write-back. Gate 12's square replays it, and the distribution builds with it. The DRL-text branch
- * ({@link DrlTranspiler}) lowers to DRL text whose rules write the beans as they fire, in an order of salience bands,
- * the design the exec-model branch had until card tms-omschakeling (2026-10-10); gate 12 counts it apart, and its
- * rebuild on truth maintenance is the card drl-teksttak-op-truth-maintenance.
+ * <p>The backend has two branches ({@link Branch}), two renderings of one analysis of the IR ({@link TmsTranspiler}),
+ * which derives with truth maintenance: a derived value is a logical fact, every read it depends on is a pattern in
+ * the rule's left-hand side, and the beans hold the input until the write-back. The exec-model branch renders the
+ * analysis through Drools' executable model, the DRL-text branch as DRL text ({@link TmsTranspiler#drl}), which the
+ * classic DRL build compiles. Both derive over the same facts, and every entry of a session treats them alike. Gate 12
+ * replays every golden through both and demands the same status line of each; the distribution builds with the
+ * exec-model branch and shows the text. Until card drl-teksttak-op-truth-maintenance the DRL-text branch was a
+ * lowering of its own, whose rules wrote the beans as they fired.
  *
  * <p>The consumer it exists for is the toolchain distribution — CLI, decision service, scenario runner — that
  * builds this repository as a git submodule and fires rule sets through it: a source goes through the frontend
@@ -81,27 +81,20 @@ import java.util.function.Predicate;
  * <p>The refusals are the replay's own, sentence for sentence: an {@link IrLoader.Refusal} for a form the loader
  * does not carry, an {@link IrLoader.Documentfout} for a document that is not well-formed, and a
  * {@link CaseRunner.Excluded} for a form the backend does not carry past the loader — among them every construct
- * the chosen branch does not lower, so no KieBase is handed out that silently lacks a rule.
+ * the analysis does not lower, so no KieBase is handed out that silently lacks a rule.
  *
  * <p>A session of a build goes through four calls, as the replay makes them ({@link CaseRunner}): a fresh
  * {@link org.kie.api.runtime.KieSession} of {@link Build#kieBase()}, with {@link Build#beanLoader()} as the thread's
  * context class loader, the parameters and the evaluation date ({@code rekendatum}) as globals and on the DRL-text
- * branch also {@link Build#dagsoortGlobalen()}; then {@link #voegIn}, which puts in the fact beans and, on the
- * exec-model branch, what that branch reads beside them; then {@link #vuur}, which fires to the fixpoint under a cap
- * and, for a model with a creation, in generations; then {@link #lees} or {@link #zetAfgeleideWaarden}. On the
- * exec-model branch, which derives with truth maintenance, the beans hold the input alone until the write-back, which
- * comes once, at the end of the session, and closes it: a consumer that fires one session more than once, changing
- * input in between with {@code update}, reads every answer but the last with {@link #lees}, each after a
- * {@link #vuur}: the two readings refuse a session in which something happened outside {@code vuur} after the last
- * one. A session of a model with a creation fires once, since what a creation made is stated and does not lapse: such
- * a consumer opens a fresh session per input. On the DRL-text branch the rules write the beans as they fire, the
- * write-back does nothing and {@link #lees} refuses. An evaluation fault is on the exec-model branch a fact of the
- * fixpoint, which {@link #lees} gives as data and {@link #zetAfgeleideWaarden} throws; on the DRL-text branch it
- * leaves the fire as a {@code ConsequenceException}, which {@link #benoem} names.
- *
- * <p>{@link Branch#DRL_TMS} renders the analysis of the exec-model branch as DRL text, which derives with truth
- * maintenance over the same facts: every entry treats it as the exec-model branch, and what this says of that branch
- * holds for it.
+ * branch also {@link Build#dagsoortGlobalen()}; then {@link #voegIn}, which puts in the fact beans and what the
+ * branch reads beside them; then {@link #vuur}, which fires to the fixpoint under a cap and, for a model with a
+ * creation, in generations; then {@link #lees} or {@link #zetAfgeleideWaarden}. The beans hold the input alone until
+ * the write-back, which comes once, at the end of the session, and closes it: a consumer that fires one session more
+ * than once, changing input in between with {@code update}, reads every answer but the last with {@link #lees}, each
+ * after a {@link #vuur}: the two readings refuse a session in which something happened outside {@code vuur} after the
+ * last one. A session of a model with a creation fires once, since what a creation made is stated and does not lapse:
+ * such a consumer opens a fresh session per input. An evaluation fault is a fact of the fixpoint, which {@link #lees}
+ * gives as data and {@link #zetAfgeleideWaarden} throws.
  */
 public final class DroolsBackend {
 
@@ -109,42 +102,34 @@ public final class DroolsBackend {
 
     private DroolsBackend() {}
 
-    /** Which transpiler lowers the document. The exec-model branch ({@code TmsTranspiler}) is the one gate 12's square
-     *  replays: it derives with truth maintenance, with logical inserts instead of writing the beans. The DRL-text
-     *  branch is narrower — no ch. 7 defaults lowering, more markers — and the gate counts it apart. {@code DRL_TMS}
-     *  renders the analysis of the exec-model branch as DRL text ({@link TmsTranspiler#drl}), which derives with truth
-     *  maintenance over the same facts: the DRL-text branch to be, beside the other two until the switch-over of card
-     *  drl-teksttak-op-truth-maintenance, which replaces the DRL-text branch with it; no gate replays it. */
-    public enum Branch { EXEC_MODEL, DRL_TEXT, DRL_TMS }
+    /** Which rendering of the analysis ({@code TmsTranspiler}) the build compiles. Both derive with truth maintenance,
+     *  with logical inserts instead of writing the beans, over the same facts: the exec-model branch through Drools'
+     *  executable model, the DRL-text branch as DRL text ({@link TmsTranspiler#drl}) through the classic DRL build.
+     *  Gate 12 replays every golden through both and demands the same status line of each. */
+    public enum Branch { EXEC_MODEL, DRL_TEXT }
 
-    /** A built document, in one of three forms, from which {@link #branch()} follows: on the exec-model branch the
-     *  analysis ({@code execModelTranspiler}) and no text; on {@code DRL_TMS} the analysis and its DRL text
-     *  ({@link TmsTranspiler#drl}); on the DRL-text branch its own transpiler and that one's text
-     *  ({@link DrlTranspiler#drl}). {@code dekking} is the coverage manifest of the transpiler, every entry lowered,
+    /** A built document, from which {@link #branch()} follows: the analysis ({@code execModelTranspiler}), on the
+     *  exec-model branch without a text and on the DRL-text branch with the DRL text of that analysis
+     *  ({@link TmsTranspiler#drl}). {@code dekking} is the coverage manifest of the analysis, every entry lowered,
      *  because the build refuses a document with any other entry. */
-    public record Build(RegelSpraakModel model, ClassLoader beanLoader, TmsTranspiler execModelTranspiler,
-                        DrlTranspiler drlTranspiler, String drl, List<Dekking> dekking, KieBase kieBase) {
+    public record Build(RegelSpraakModel model, ClassLoader beanLoader, TmsTranspiler execModelTranspiler, String drl,
+                        List<Dekking> dekking, KieBase kieBase) {
         public Build {
-            if ((execModelTranspiler == null) == (drlTranspiler == null))
-                throw new IllegalArgumentException("a Build carries exactly one transpiler, got "
-                        + (execModelTranspiler == null ? "none" : 2));
-            if (drlTranspiler != null && !drlTranspiler.drl().equals(drl))
-                throw new IllegalArgumentException("a Build of the DRL-text branch carries the text of its transpiler");
-            if (execModelTranspiler != null && drl != null && !drl.equals(execModelTranspiler.drl()))
-                throw new IllegalArgumentException("a Build of DRL_TMS carries the DRL text of its analysis");
+            if (execModelTranspiler == null)
+                throw new IllegalArgumentException("a Build carries the analysis of its document");
+            if (drl != null && !drl.equals(execModelTranspiler.drl()))
+                throw new IllegalArgumentException("a Build of the DRL-text branch carries the DRL text of its analysis");
         }
 
         public Branch branch() {
-            if (drlTranspiler != null) return Branch.DRL_TEXT;
-            return drl != null ? Branch.DRL_TMS : Branch.EXEC_MODEL;
+            return drl != null ? Branch.DRL_TEXT : Branch.EXEC_MODEL;
         }
 
         /** The §9.8 day-kind predicates the DRL text declares as globals (name -> predicate); a session must have
-         *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas; on
-         *  {@code DRL_TMS} those of the analysis, whose rendering names their globals
-         *  ({@link TmsTranspiler#drlDagsoortGlobalen}); on the DRL-text branch those of its own transpiler. */
+         *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas; on the
+         *  DRL-text branch those of the analysis, whose rendering names their globals
+         *  ({@link TmsTranspiler#drlDagsoortGlobalen}). */
         public Map<String, Predicate<LocalDate>> dagsoortGlobalen() {
-            if (drlTranspiler != null) return drlTranspiler.dagsoortGlobalen();
             return drl == null ? Map.of() : execModelTranspiler.drlDagsoortGlobalen();
         }
     }
@@ -155,18 +140,17 @@ public final class DroolsBackend {
     }
 
     /** Load {@code document}, refuse the forms the backend does not carry, generate and contract-check the fact
-     *  beans, lower every construct through {@code branch}'s transpiler with every side table the loader returns,
-     *  and build the {@link KieBase}.
+     *  beans, analyse every construct with every side table the loader returns, render the analysis as
+     *  {@code branch} has it, and build the {@link KieBase}.
      *
      *  @throws IrLoader.Refusal      a form the loader does not carry; the replay reports it as {@code loader: …}
      *  @throws IrLoader.Documentfout a document that is not well-formed {@code uchar-ir-v1}
      *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
-     *      violation, a construct the branch does not lower, on the DRL-text branch a prioritized-defaults
-     *      extension or a DRL text the Drools compiler rejects, on the exec-model branch a cycle of the
-     *      dependency graph that WF-045 or WF-046 forbids, and on {@code DRL_TMS} what the exec-model branch
-     *      refuses, a kind its DRL rendering does not carry yet and a document with day kinds
-     *  @throws IllegalStateException on {@code DRL_TMS} a DRL text the Drools compiler rejects: a fault of the
+     *      violation, a construct the analysis does not lower, a cycle of the dependency graph that WF-045 or WF-046
+     *      forbids, two rules of one name, and on the DRL-text branch a kind its rendering does not carry
+     *      ({@link TmsTranspiler.DrlWeigering})
+     *  @throws IllegalStateException on the DRL-text branch a DRL text the Drools compiler rejects: a fault of the
      *      rendering, never a form the branch does not carry */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
@@ -211,7 +195,6 @@ public final class DroolsBackend {
             return switch (branch) {
                 case EXEC_MODEL -> execModelTak(loaded, cl);
                 case DRL_TEXT -> drlTak(loaded, cl);
-                case DRL_TMS -> drlTmsTak(loaded, cl);
             };
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
@@ -257,15 +240,15 @@ public final class DroolsBackend {
 
     /** Two rules of one name in one package: the KieBase keeps one rule per name, so the second would replace the first
      *  and the document would play without it (measured 2026-10-02 on two forms of one name, which WF-020 forbids and a
-     *  hand-written document can still carry). The DRL-text branch's compiler refuses the same document with
-     *  "Duplicate rule name"; the exec-model branch refuses it in those words, after its {@code tak}, before the
-     *  KieBase is built. A rule without a name (a nameless form, WF-107) has no name to share and is not counted; the
-     *  exec-model branch refuses a nameless creation from its manifest ({@code TakgelijkheidWitnessTest}). */
-    private static void weigerDubbeleRegelnaam(org.drools.model.Model model, String tak) {
+     *  hand-written document can still carry). The analysis refuses it in the words Drools' DRL compiler uses,
+     *  "Duplicate rule name", after the label of the analysis, before a KieBase of either branch is built. A rule
+     *  without a name (a nameless form, WF-107) has no name to share and is not counted; the analysis refuses a
+     *  nameless creation from its manifest ({@code TakgelijkheidWitnessTest}). */
+    private static void weigerDubbeleRegelnaam(org.drools.model.Model model) {
         java.util.Set<String> namen = new java.util.HashSet<>();
         for (org.drools.model.Rule r : model.getRules())
             if (r.getName() != null && !namen.add(r.getFullName()))
-                throw new Excluded(tak + ": Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
+                throw new Excluded("exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
                         + "pakket " + r.getPackage() + "; de KieBase houdt één regel per naam, zodat de tweede de eerste "
                         + "zou vervangen (vormnamen zijn uniek, WF-020)");
     }
@@ -279,16 +262,16 @@ public final class DroolsBackend {
      *  toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is
      *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Kringen}). */
     private static Build execModelTak(IrLoader.Loaded loaded, ClassLoader cl) {
-        TmsTranspiler t = analyse(loaded, cl, "exec-model");
+        TmsTranspiler t = analyse(loaded, cl);
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
-        return new Build(loaded.model(), cl, t, null, null, List.copyOf(t.dekking()), kieBase);
+        return new Build(loaded.model(), cl, t, null, List.copyOf(t.dekking()), kieBase);
     }
 
-    /** The analysis of the document ({@link TmsTranspiler}) with the refusals of the exec-model branch, which
-     *  {@code DRL_TMS} shares: a form the transpiler does not lower, from its manifest, in the {@code transpiler SKIP:}
+    /** The analysis of the document ({@link TmsTranspiler}) with its refusals, which both branches share in one
+     *  sentence each: a form the transpiler does not lower, from its manifest, in the {@code transpiler SKIP:}
      *  sentence the toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids; and two rules of one
-     *  name, with {@code tak} the label of the branch in the sentence. */
-    private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl, String tak) {
+     *  name, after the label {@code exec-model:}, the name of the analysis. */
+    private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.rolBindingen(),
                 loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
         for (Dekking d : t.dekking())
@@ -298,26 +281,26 @@ public final class DroolsBackend {
         // graph over the forms it carries
         String kring = Kringen.weigering(loaded);
         if (kring != null) throw new Excluded(kring);
-        weigerDubbeleRegelnaam(t.model(), tak);
+        weigerDubbeleRegelnaam(t.model());
         return t;
     }
 
-    /** The branch {@code DRL_TMS}, until the switch-over of card drl-teksttak-op-truth-maintenance: the analysis of the
-     *  exec-model branch, with its refusals ({@link #analyse}), rendered into DRL text ({@link TmsTranspiler#drl}) and
-     *  compiled by the classic DRL build ({@code KieHelper}) in EQUALITY mode, as the executable model of that branch
-     *  is. The text derives with truth maintenance over the same facts as the executable model, so every entry of a
-     *  session treats this branch as the exec-model branch. It refuses as well, loudly and with the reason, a kind the
-     *  rendering does not carry ({@link TmsTranspiler.DrlWeigering}). The predicates of the day kinds are globals of the
-     *  text, which {@link Build#dagsoortGlobalen} gives from the analysis. A text the Drools compiler rejects is a
-     *  fault of the rendering, not a form the branch does not carry: it fails with an {@link IllegalStateException},
-     *  which a caller that knows the document names. */
-    private static Build drlTmsTak(IrLoader.Loaded loaded, ClassLoader cl) {
-        TmsTranspiler t = analyse(loaded, cl, "drl-tms");
+    /** The DRL-text branch: the analysis, with its refusals ({@link #analyse}), rendered into DRL text
+     *  ({@link TmsTranspiler#drl}) and compiled by the classic DRL build ({@code KieHelper}) in EQUALITY mode, as the
+     *  executable model of the exec-model branch is. The text derives with truth maintenance over the same facts as the
+     *  executable model, so every entry of a session treats the two branches alike. It refuses as well, loudly and with
+     *  the reason, a kind the rendering does not carry ({@link TmsTranspiler.DrlWeigering}), after the label
+     *  {@code drl:}, since the analysis does not refuse it. The predicates of the day kinds are globals of the text,
+     *  which {@link Build#dagsoortGlobalen} gives from the analysis. A text the Drools compiler rejects is a fault of the
+     *  rendering, not a form the branch does not carry: it fails with an {@link IllegalStateException}, which a caller
+     *  that knows the document names. */
+    private static Build drlTak(IrLoader.Loaded loaded, ClassLoader cl) {
+        TmsTranspiler t = analyse(loaded, cl);
         String drl;
         try {
             drl = t.drl();
         } catch (TmsTranspiler.DrlWeigering w) {
-            throw new Excluded("drl-tms: " + w.getMessage());
+            throw new Excluded("drl: " + w.getMessage());
         }
         KieHelper helper = new KieHelper();
         helper.setClassLoader(cl);
@@ -327,25 +310,25 @@ public final class DroolsBackend {
         try {
             kieBase = helper.build(EqualityBehaviorOption.EQUALITY);
         } catch (RuntimeException e) {
-            // shortened as drlTak shortens it: the header of Drools' message carries the path, the error comes after it
+            // Drools' message opens with a header that carries the path above, 127 characters up to "text=" on the
+            // first message, and only then the error itself (line, column, what failed); the bound leaves that standing
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
-            throw new IllegalStateException("drl-tms: de DRL-tekst van de weergave compileert niet, een fout van de"
+            throw new IllegalStateException("drl: de DRL-tekst van de weergave compileert niet, een fout van de"
                     + " weergave: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m), e);
         }
-        return new Build(loaded.model(), cl, t, null, drl, List.copyOf(t.dekking()), kieBase);
+        return new Build(loaded.model(), cl, t, drl, List.copyOf(t.dekking()), kieBase);
     }
 
     /**
-     * Puts {@code invoer} into {@code sessie}, a fresh session of {@code build}: the fact beans, and on the
-     * exec-model branch what that branch reads beside them and the bean model does not hold, as that branch's own
-     * facts, so that a consumer names it in the words of the model and states none of them. That is an
+     * Puts {@code invoer} into {@code sessie}, a fresh session of {@code build}: the fact beans, and what the branch
+     * reads beside them and the bean model does not hold, as the branch's own facts, so that a consumer names it in
+     * the words of the model and states none of them. That is an
      * {@code Emmerinvoer} for every bucket scalar {@code invoer} names ({@link Invoer#emmerscalair}), without which the
      * branch reads an input timeline as a full timeline (RUNTIME-SEMANTICS ch. 8.4); and where a rule of the model reads
      * the order of a to-many list ({@code TmsTranspiler.lijstvelden}), a {@code Lijstplaats} for every member of every
-     * such list, in the order {@link Invoer#lijst} gives or else in the order of the beans. On the DRL-text branch it
-     * inserts the beans alone, since that branch reads nothing else.
+     * such list, in the order {@link Invoer#lijst} gives or else in the order of the beans.
      *
-     * <p>On the exec-model branch it checks all of it before it inserts anything, and refuses by name: a session
+     * <p>It checks all of it before it inserts anything, and refuses by name: a session
      * that already holds a fact, since the places of a list are numbered over the beans of one input and a bean
      * inserted without this call has none; a bean that is not of the build's bean model or that comes twice; a reference
      * field of a bean that holds an object outside the input, named with the bean, the field and the object's type, since
@@ -363,19 +346,14 @@ public final class DroolsBackend {
      * and the relations of one input, so a bean inserted later has neither, and a relation changed later keeps the
      * place it had or has none. A consumer opens a fresh session to add or remove an object or to change a relation.
      *
-     * @throws IllegalStateException    {@code sessie} is not fresh, on the exec-model branch
-     * @throws IllegalArgumentException a statement of {@code invoer} that does not fit its beans or the model, on the
-     *                                  exec-model branch
+     * @throws IllegalStateException    {@code sessie} is not fresh
+     * @throws IllegalArgumentException a statement of {@code invoer} that does not fit its beans or the model
      */
     public static void voegIn(Build build, KieSession sessie, Invoer invoer) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(invoer, "invoer");
         List<Object> bonen = invoer.beans();
-        if (!heeftAnalyse(build)) {
-            for (Object boon : bonen) sessie.insert(boon);
-            return;
-        }
         TmsTranspiler tms = build.execModelTranspiler();
         if (sessie.getFactCount() != 0)
             throw new IllegalStateException("voegIn vult een verse sessie, maar deze houdt al " + sessie.getFactCount()
@@ -594,7 +572,7 @@ public final class DroolsBackend {
     }
 
     /**
-     * What stands in {@code sessie} of the exec-model branch after a {@link #vuur} that reached its fixpoint,
+     * What stands in {@code sessie} after a {@link #vuur} that reached its fixpoint,
      * read without writing anything on a bean: per object the derived attribute values, in the form the bean field takes
      * them, a timeline as the bean model's segments, and the derived characteristics; the objects and links the
      * creations made; the evaluation faults that stand, as data and not thrown; and the §9.5 deposits, the
@@ -611,8 +589,6 @@ public final class DroolsBackend {
      * with {@code vuur} before it reads again; where {@code vuur} refuses the session, the sentence says to open a fresh
      * one.
      *
-     * @throws UnsupportedOperationException on the DRL-text branch, whose rules write the derived values on the beans
-     *                                       as they fire
      * @throws IllegalStateException         a session that was not fired through {@link #vuur}, among them one fired
      *                                       with a plain {@code fireAllRules}, whose last {@code vuur} ended without a
      *                                       fixpoint ({@link Vuring#geenFixpunt}) or with an exception, or in which a
@@ -638,23 +614,19 @@ public final class DroolsBackend {
     private static Fixpunt lezing(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        if (!heeftAnalyse(build))
-            throw new UnsupportedOperationException("lees leest wat de tak met truth maintenance afleidde; op de "
-                    + build.branch() + "-tak schrijven de regels de afgeleide waarden al tijdens het vuren op de beans");
         return build.execModelTranspiler().lees(sessie, label);
     }
 
     /**
-     * Puts what the exec-model branch derived in {@code sessie} on the fact beans, after the last {@link #vuur}
+     * Puts what the branch derived in {@code sessie} on the fact beans, after the last {@link #vuur}
      * of the session, which reached its fixpoint: exactly what {@link #lees} gives, read by the same code. It sets each
      * derived characteristic and attribute value on its bean, and each link a creation laid on the reference fields that
-     * hold it (§13.3.9). Until this call the beans hold the input alone, since that branch writes no bean while it fires.
-     * On the DRL-text branch it does nothing, since its rules write the beans as they fire.
+     * hold it (§13.3.9). Until this call the beans hold the input alone, since the branch writes no bean while it fires.
      *
      * <p>Before anything is written, it throws the evaluation faults that stand at the fixpoint, and then writes nothing:
      * one fault as its own exception, which is a {@link Breuk.DelingDoorNul} for a division by a numeric zero (an
-     * {@code ArithmeticException}, named after the rule with the operands, as the DRL-text branch's fire gives it
-     * through {@link #benoem}), a {@code Rekenfout} for a fault of a computation or of the evaluation date, a
+     * {@code ArithmeticException}, named after the rule with the operands), a {@code Rekenfout} for a fault of a
+     * computation or of the evaluation date, a
      * {@code Schrijversconflict} for two writers of one attribute that disagree (an {@code IllegalStateException},
      * RUNTIME-SEMANTICS ch. 5.7) and an {@code Invoervormfout} for a timeline input in the other convention (ch. 8.4);
      * two or more as {@code Evaluatiefouten}, ordered by the name of the form and then by the sentence, with the faults
@@ -671,7 +643,7 @@ public final class DroolsBackend {
     public static void zetAfgeleideWaarden(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        if (heeftAnalyse(build)) build.execModelTranspiler().zetAfgeleideWaarden(sessie);
+        build.execModelTranspiler().zetAfgeleideWaarden(sessie);
     }
 
     /** As {@link #zetAfgeleideWaarden(Build, KieSession)}, with {@code label} giving the case label of an input bean
@@ -682,22 +654,11 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(label, "label");
-        if (heeftAnalyse(build)) build.execModelTranspiler().zetAfgeleideWaarden(sessie, label);
+        build.execModelTranspiler().zetAfgeleideWaarden(sessie, label);
     }
-
-    /** Whether {@code build} carries the analysis of the exec-model branch: on that branch, and on {@code DRL_TMS}, whose
-     *  text derives with truth maintenance over the same facts. Every entry of a session chooses on this, so that it
-     *  treats the two alike; only the DRL-text branch writes the beans as its rules fire. */
-    private static boolean heeftAnalyse(Build build) {
-        return build.execModelTranspiler() != null;
-    }
-
-    /** The fixed fire cap of the DRL-text branch: its rules write the beans as they fire, and the cap ends a run whose
-     *  rules keep overwriting each other. */
-    static final int VAST_PLAFOND = 100_000;
 
     /**
-     * The factor of the fire cap of the exec-model branch, {@code FACTOR × R × N0} ({@link #vuur}), with N0 the
+     * The factor of the fire cap, {@code FACTOR × R × N0} ({@link #vuur}), with N0 the
      * facts before the fire and, for a model with a creation, the facts at the start of each phase. Every firing of that
      * branch makes or renews a logical fact of one rule on one subject, and without a cycle, which the build refuses
      * ({@code Kringen}), the renewals per rule and subject are bounded by the depth of the dependency graph, so a run
@@ -712,34 +673,33 @@ public final class DroolsBackend {
      */
     static final int FACTOR = 4;
 
-    /** The least fire cap of the exec-model branch: below it a small document would get a cap of a few hundred
+    /** The least fire cap: below it a small document would get a cap of a few hundred
      *  firings, which a fixpoint can need. */
     static final int VLOER = 10_000;
 
-    /** What {@link #vuur} did: the firings of all its fires together; the cap it fired under, on the exec-model branch
-     *  the cap of its last phase; and the sentence of a run that ends without a fixpoint, at the cap or at the
+    /** What {@link #vuur} did: the firings of all its fires together; the cap it fired under, the cap of its last
+     *  phase; and the sentence of a run that ends without a fixpoint, at the cap or at the
      *  creation budget ({@code Creatiebudget}), and null at a fixpoint. A run that ends at the budget counts the firings
      *  of its fires before the one in which the creation rule threw. */
     public record Vuring(int vuringen, int plafond, String geenFixpunt) {}
 
     /**
-     * Fires {@code sessie} of {@code build} to its fixpoint under a cap on the firings of the run. On the DRL-text
-     * branch the cap is a fixed {@value #VAST_PLAFOND}. On the exec-model branch it is
+     * Fires {@code sessie} of {@code build} to its fixpoint under a cap on the firings of the run, of
      * {@code max(}{@value #VLOER}{@code , FACTOR × R × N0)}, with {@code R} the rules of the session's KieBase and
      * {@code N0} the facts the session holds just before it fires ({@link #FACTOR}): the cap is a safeguard against a
      * fault of the lowering, not a norm, so it grows with the input. The sentence at the cap names {@code R}, {@code N0}
      * and the cap. A run that reaches the cap or the creation budget has no fixpoint, and {@link Vuring#geenFixpunt}
-     * says so. On the exec-model branch every run leaves a stated mark of how it ended, at its fixpoint, without
+     * says so. Every run leaves a stated mark of how it ended, at its fixpoint, without
      * one, or with an exception out of the fire ({@code Gevuurd}), and keeps a watch on the session from then on
      * ({@code Bewaking}), a listener that it takes off while it fires itself; {@link #lees} and
      * {@link #zetAfgeleideWaarden} read a session only where the last run reached its fixpoint and the watch saw nothing
      * happen outside {@code vuur} since.
      *
-     * <p>On the exec-model branch it refuses a session that {@link #zetAfgeleideWaarden} wrote back, whose beans
+     * <p>It refuses a session that {@link #zetAfgeleideWaarden} wrote back, whose beans
      * hold derived values beside their input: a consumer that fires more than once reads between the fires with
      * {@link #lees}, or opens a fresh session with beans that hold input alone.
      *
-     * <p>On the exec-model branch it refuses, before it fires, a session in which, since {@link #voegIn} or the
+     * <p>It refuses, before it fires, a session in which, since {@link #voegIn} or the
      * last {@code vuur}, more happened outside it than an update of an attribute or a characteristic of a bean
      * {@code voegIn} put in: a fact inserted or deleted, among them a bean, a bucket input, a list place or a fact of
      * the branch; an update of a fact that is no such bean, or one that changed a relation, a reference field; a rule
@@ -753,7 +713,7 @@ public final class DroolsBackend {
      * field of a bean {@code voegIn} put in holds another object than it held then, set without an update, which no
      * event shows and after which Drools keeps reading the old relation.
      *
-     * <p>On the exec-model branch it fires a session of a model with a creation once, and refuses it at every
+     * <p>It fires a session of a model with a creation once, and refuses it at every
      * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
      * and the fault of a failed initialisation it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Gevuurd}): after an input
      * change a second fire would keep them beside an input they no longer follow from, a state no fresh evaluation
@@ -766,7 +726,7 @@ public final class DroolsBackend {
     public static Vuring vuur(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        return heeftAnalyse(build) ? vuur(build, sessie, FACTOR, VLOER) : vuur(build, sessie, VAST_PLAFOND);
+        return vuur(build, sessie, FACTOR, VLOER);
     }
 
     /** As {@link #vuur(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded
@@ -779,13 +739,13 @@ public final class DroolsBackend {
     /**
      * Fires {@code sessie} of {@code build} to its fixpoint, at most {@code plafond} firings in all, a cap that does not
      * grow: the seam of the scale harness, which sets a cap that never cuts it off, and of a witness that sets a small
-     * one. On the DRL-text branch, and on the exec-model branch without a lowered creation, that is one fire.
+     * one. Without a lowered creation that is one fire.
      *
-     * <p>On the exec-model branch with a creation a creation fires only at a fixpoint of the rule layer, and
+     * <p>With a creation a creation fires only at a fixpoint of the rule layer, and
      * what it makes is stated and never lapses, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5): a logical
      * object could keep itself standing through its own output after the state that made it passed, and its
      * initialisations would follow later changes, where ch. 5.5 evaluates them when the object is made. So this fires
-     * in generations, here and not in the rules, so that a second rendering of the branch can share it. The creation
+     * in generations, here and not in the rules, so that the two renderings of the analysis share it. The creation
      * rules sit in agenda groups of their own ({@code TmsTranspiler.FEITCREATIE}, {@code TmsTranspiler.OBJECTCREATIE}),
      * so a fire without their focus takes the rule layer to rest and leaves them pending. A generation is one phase: it
      * opens a new {@code Creatiefase}, puts both groups on the focus stack, the fact creations on top, and fires. That
@@ -876,7 +836,7 @@ public final class DroolsBackend {
         }
     }
 
-    /** The driver of every {@code vuur}. On the exec-model branch it refuses a session of a model with a creation
+    /** The driver of every {@code vuur}. It refuses a session of a model with a creation
      *  that it fired before, and a session that was written back, and it marks how the run ended ({@link Gevuurd}),
      *  which {@link #lees} and {@link #zetAfgeleideWaarden} read: the mark
      *  of the previous run goes before the fire, so none stands while the session fires, and a fire that throws leaves
@@ -890,7 +850,6 @@ public final class DroolsBackend {
      *  run it puts the watch on where
      *  {@code voegIn} did not, with the beans the session holds as the input, and keeps the globals. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
-        if (!heeftAnalyse(build)) return vuurOnderPlafond(build, sessie, plafond);
         TmsTranspiler tms = build.execModelTranspiler();
         // per class: Drools keeps the facts of a class apart and hands out only those for a ClassObjectFilter, where a
         // filter of another kind walks every fact the session holds, at every vuur
@@ -966,10 +925,10 @@ public final class DroolsBackend {
     }
 
     /** Fires {@code sessie} as {@link #vuur(Build, KieSession, int)} describes, under {@code plafond}: in one go, or for
-     *  a model with a creation on the exec-model branch in generations per stratum. */
+     *  a model with a creation in generations per stratum. */
     private static Vuring vuurOnderPlafond(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.execModelTranspiler();
-        Set<String> creaties = heeftAnalyse(build) ? tms.creatieregels() : Set.of();
+        Set<String> creaties = tms.creatieregels();
         plafond.herreken(sessie);
         if (creaties.isEmpty()) {
             int gevuurd = sessie.fireAllRules(plafond.waarde);
@@ -1026,59 +985,14 @@ public final class DroolsBackend {
         return null;
     }
 
-    /** The DRL-TEXT branch: {@link DrlTranspiler} emits DRL, which is compiled to a {@link KieBase} by the classic
-     *  DRL build ({@code KieHelper}, mvel dialect). Three forms are refused here, each loudly and with the reason,
-     *  because the text branch is NARROWER than the exec-model one:
-     *  <ul>
-     *    <li>a ch. 7 prioritizedDefaults extension — that lowering exists only in the exec branch, so a DRL
-     *        KieBase would silently omit the default and answer with an unwritten attribute;</li>
-     *    <li>any construct the text branch markers (its {@code TODO} discipline) — the DRL still compiles,
-     *        which is exactly why the marker must be refused rather than fired;</li>
-     *    <li>a DRL the Drools compiler rejects — a text-branch limit, not a semantic divergence.</li>
-     *  </ul> */
-    private static Build drlTak(IrLoader.Loaded loaded, ClassLoader cl) {
-        if (!loaded.prioritizedDefaults().isEmpty())
-            throw new Excluded("drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering");
-        // ch. 4.10: the DRL branch lowers the §11 variabelendeel's Let chain, so it gets the document's Let INDEX
-        // beside the model — the ch. 2.10 unit derivation needs it to answer a BinderRef read, which carries no
-        // route back up to its own binding (the exec branch has taken the same index since the Let-node card).
-        // The defaults list is empty by the refusal above; it is passed rather than defaulted because the
-        // ch. 7.8 standing classification's other_writer clause reads it (see DrlTranspiler.build).
-        // ch. 4.3: and the symbolic role bindings, for the same reason the exec branch has taken them since
-        // 2026-08-30 — a fold whose argument is an ATTRIBUTE name has no written role to resolve its range
-        // from, so on a repeated or self-typed pair the wire's sourceRole is the only route there is. Withheld,
-        // this branch markered exactly the folds its sister played.
-        DrlTranspiler t = DrlTranspiler.build(loaded.model(), loaded.lets(), loaded.prioritizedDefaults(),
-                loaded.bronPaden(), loaded.rolBindingen(), loaded.navigatieBindingen());
-        for (Dekking d : t.dekking())
-            if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
-                    + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-        KieHelper helper = new KieHelper();
-        helper.setClassLoader(cl);
-        // Without a name KieHelper files the text as file0.drl in the resource root, and KieBuilder warns that a
-        // file in folder '' declares DRL_PACKAGE. The path's folders follow the package; the extension gives the type.
-        helper.addContent(t.drl(), DrlTranspiler.DRL_PACKAGE.replace('.', '/') + "/regels.drl");
-        KieBase kieBase;
-        try {
-            kieBase = helper.build();
-        } catch (RuntimeException e) {
-            // Drools' message opens with a header that carries the path above, 127 characters up to "text=" on the
-            // first message, and only then the error itself (line, column, what failed). The bound has to leave that
-            // text standing; at 200, 73 characters of it remained.
-            String m = String.valueOf(e.getMessage()).replace('\n', ' ');
-            throw new Excluded("drl compile: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m));
-        }
-        return new Build(loaded.model(), cl, null, t, t.drl(), List.copyOf(t.dekking()), kieBase);
-    }
-
     /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence
-     *  throws: on the DRL-text branch a division by a numeric zero in a rule's value becomes
-     *  {@link Breuk.DelingDoorNul} naming the rule and the operands, with what the consequence threw as its cause; any
-     *  other {@code e} is returned unchanged. The exec-model branch throws no evaluation fault out of its fire, so what
-     *  comes here from it is a broken contract or a bug. {@link CaseRunner} calls it where it fires, so the replay, the
-     *  red path and the scenario report read the sentence; a consumer that fires a KieBase of the DRL-text branch
-     *  itself gets Drools' {@code ConsequenceException}, which names the rule, and can call this the same way. A
-     *  division in a condition is evaluated outside a consequence and does not come here.
+     *  throws: a {@link Breuk.DelingDoorNul} in its cause chain becomes one naming the rule, with what the consequence
+     *  threw as its cause; any other {@code e} is returned unchanged. Neither branch throws an evaluation fault out of
+     *  its fire, which stands as a fact at the fixpoint, so what comes here is a broken contract or a bug, and this
+     *  hands it on as it is. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw a division by a
+     *  numeric zero out of the fire, and this named it. {@link CaseRunner} calls it where it fires, so the replay, the
+     *  red path and the scenario report read the sentence; a consumer that fires a KieBase itself can call it the same
+     *  way.
      *
      *  <p>The KieBases built here keep Drools' default consequence handler on purpose. Drools takes a handler by class
      *  name and instantiates it in every new session; where the kie API and this backend are loaded by different

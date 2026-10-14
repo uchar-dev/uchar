@@ -160,7 +160,7 @@ class TmsVerdrongenUitzonderingWitnessTest {
                 List.of(waarde("V1", "heffing", "10"), consistent()));
         JsonNode geenWrak = TmsDocumenten.zaakOp(null, List.of(instantieMet("V2", "Vondst", Map.of(), List.of())),
                 List.of(consistent()));
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
             assertEquals(List.of("gespeeld", fout(FOUTEN.get(0))), List.of(TmsFoutWitnessTest.speel(ir, wrak, tak),
                     TmsFoutWitnessTest.speel(ir, geenWrak, tak)), tak.toString());
     }
@@ -172,7 +172,7 @@ class TmsVerdrongenUitzonderingWitnessTest {
                 for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
                     Path ir = TmsDocumenten.document(MODEL, volgorde, List.of(), List.of(groep(p, f)));
                     for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL,
-                            DroolsBackend.Branch.DRL_TMS)) {
+                            DroolsBackend.Branch.DRL_TEXT)) {
                         String wat = tak + ", " + p.naam() + ", " + f.naam() + ", " + TmsDocumenten.regelnamen(volgorde);
                         uitkomsten.add(wat + ", V1: " + TmsFoutWitnessTest.speel(ir, verdrongen(), tak));
                         verwacht.add(wat + ", V1: gespeeld");
@@ -205,7 +205,7 @@ class TmsVerdrongenUitzonderingWitnessTest {
                             .toList(), wat)) tussenstand++;
                 assertTrue(tussenstand > 0, wat + ": geen volgorde rekende de verdrongen uitzonderingsgroep eerst uit");
                 DroolsBackend.Build t = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS, List.of(),
-                        List.of(groep(p, f))), DroolsBackend.Branch.DRL_TMS);
+                        List.of(groep(p, f))), DroolsBackend.Branch.DRL_TEXT);
                 List<String> regels = Tekstvolgorde.regels(t);
                 assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, wat + ": de regels van de tekst");
                 int inDeTekst = 0;

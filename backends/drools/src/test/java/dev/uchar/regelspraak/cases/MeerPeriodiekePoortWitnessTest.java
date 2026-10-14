@@ -8,7 +8,6 @@ import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
@@ -178,7 +177,7 @@ class MeerPeriodiekePoortWitnessTest {
         // The guard that keeps this witness from emptying silently: it pins that the document under probe still
         // EMITS the construct being gated. This test once stood on jutterswet-vormenkabinet and went trivially true
         // when that cabinet shrank (2026-09-19) and stopped reading its temporal attribute at all — no gate saw it.
-        assertTrue(drl.contains("rsGeheelPeriode"),
+        assertTrue(drl.contains("Rekenhulpen.geheelPeriode("),
                 "het probe-document moet de §8.2-vergelijking nog emitteren, anders is de gelijkheid hieronder leeg");
         assertEquals(drl, drlTekst(keurploeg, met),
                 "de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek met en zonder de sleutel");
@@ -190,21 +189,21 @@ class MeerPeriodiekePoortWitnessTest {
 
     @Test void een_echt_raster_blijft_geweigerd() throws Exception {
         // Without this, deleting the gate outright would satisfy every test above. A count of TWO is a §13.3.6.7
-        // multi-period raster whose producer semantics no branch carries, and BOTH must keep refusing it by name: the
-        // truth-maintenance branch and the DRL-text branch.
+        // multi-period raster whose producer semantics no branch carries, and BOTH must keep refusing it by name, in
+        // the one sentence of the analysis they render (until card drl-teksttak-op-truth-maintenance the DRL-text
+        // branch refused it in sentences of its own lowering: "§8.2 gehele-periode" and "meer-periodieke temporele
+        // toekenning (§13.3.6.7)").
         Path kenmerk = metAantal(GEHELEJAARKENMERK, "Werf", "characteristics", "bedrijvig", 2);
         assertTrue(tmsReden(kenmerk, GEHELEJAARKENMERK).contains("regel: toeslag van een schuit — een CharacteristicCheck"
                         + " met wholePeriod ('de werf van de Schuit gedurende het gehele jaar bedrijvig is') over het kenmerk"
                         + " 'bedrijvig' van Werf op een raster van meer perioden, dat geen bewerking draagt"),
                 tmsReden(kenmerk, GEHELEJAARKENMERK));
-        assertTrue(drlReden(kenmerk, GEHELEJAARKENMERK).contains("§8.2 gehele-periode"),
-                drlReden(kenmerk, GEHELEJAARKENMERK));
+        assertEquals(tmsReden(kenmerk, GEHELEJAARKENMERK), drlReden(kenmerk, GEHELEJAARKENMERK));
 
         Path attribuut = metAantal(CLIPPRORATA, "Jutter", "attributes", "borgdeel", 2);
         assertTrue(tmsReden(attribuut, CLIPPRORATA).contains("op een raster van meer perioden, dat geen bewerking draagt"),
                 tmsReden(attribuut, CLIPPRORATA));
-        assertTrue(drlReden(attribuut, CLIPPRORATA).contains("meer-periodieke temporele toekenning (§13.3.6.7)"),
-                drlReden(attribuut, CLIPPRORATA));
+        assertEquals(tmsReden(attribuut, CLIPPRORATA), drlReden(attribuut, CLIPPRORATA));
     }
 
     // ---------------- fixtures ----------------
@@ -286,13 +285,21 @@ class MeerPeriodiekePoortWitnessTest {
         return tmp;
     }
 
-    /** The DRL TEXT the classic branch emits for a document — no case, no fire; {@code ingreep} edits the loaded
-     *  model first. */
+    /** The DRL TEXT of the DRL-text branch for a document, the analysis rendered as text — no case, no fire;
+     *  {@code ingreep} edits the loaded model first. */
     private static String drlTekst(Path irPath, java.util.function.Consumer<RegelSpraakModel> ingreep) throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
-        ingreep.accept(l.model());
-        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
-                l.navigatieBindingen()).drl();
+        IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
+        RegelSpraakModel model = loaded.model();
+        ingreep.accept(model);
+        ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(model));
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(cl);
+        try {
+            return TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(), loaded.rolBindingen(), loaded.lets(),
+                    loaded.bronPaden(), loaded.navigatieBindingen()).drl();
+        } finally {
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
     }
 
     /** The truth-maintenance branch's coverage manifest for a document, as comparable text; {@code ingreep} edits

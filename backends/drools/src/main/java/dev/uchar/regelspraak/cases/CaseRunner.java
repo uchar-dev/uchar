@@ -16,7 +16,6 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
@@ -83,11 +82,11 @@ public final class CaseRunner {
     /** §9.8 the dagsoort predicates the DRL-text branch declares as globals (name -> predicate). The exec-model
      *  branch wires those predicates straight into its lambdas and needs none, so it passes an empty map. */
     private final Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen;
-    /** The exec branch's coverage manifest, every construct lowered (a build refuses any other): what the scenario
-     *  report's coverage ranges over ({@link #rapport}). Empty for the DRL-text branch, which reports nothing. */
+    /** The coverage manifest of the analysis, every construct lowered (a build refuses any other): what the scenario
+     *  report's coverage ranges over ({@link #rapport}). */
     private List<Dekking> dekking = List.of();
-    /** The build this runner fires: the exec-model branch puts its derivations on the beans only after a fire
-     *  ({@link DroolsBackend#zetAfgeleideWaarden}), and that needs the transpiler that made them. */
+    /** The build this runner fires: a branch puts its derivations on the beans only after a fire
+     *  ({@link DroolsBackend#zetAfgeleideWaarden}), and that needs the analysis that made them. */
     private DroolsBackend.Build bouw;
     /** The hash of the document this runner built, which names the files of the seam in {@link #vuurTotFixpunt}; null
      *  without the property {@value Sessiedump#EIGENSCHAP}, and then the seam does nothing. */
@@ -117,14 +116,12 @@ public final class CaseRunner {
         return replay(irPath, casePaths, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** The same replay through the OTHER transpiler branch: {@link DrlTranspiler} emits DRL TEXT, which
-     *  {@link DroolsBackend} compiles to a {@link KieBase} (the classic DRL build; the exec-model branch is untouched).
-     *  SINCE 2026-09-19 THIS IS A GATE-12 PATH (card gate12-drl-takteller): check-drools.sh sweeps every
-     *  golden through it (a {@code --drl} run of {@link DroolsBackendMain}) and pins the result in
-     *  {@code EXPECTED_DRL_PLAYED} plus a reason-carrying non-player list, so gate 12's numbers DO move
-     *  with it — alongside, and separately from, the exec-model square's own {@code EXPECTED_PLAYED}.
-     *  Before that card it was the harness/measurement entry only; gate 13 has driven it since
-     *  2026-09-04. */
+    /** The same replay through the OTHER branch: the analysis rendered as DRL text, which {@link DroolsBackend}
+     *  compiles to a {@link KieBase} with the classic DRL build. A GATE-12 PATH since 2026-09-19 (card
+     *  gate12-drl-takteller): check-drools.sh sweeps every golden through it (a {@code --drl} run of
+     *  {@link DroolsBackendMain}); since card drl-teksttak-op-truth-maintenance, which made the text the second
+     *  rendering of the analysis, the gate demands per golden the status line of the exec-model branch. Gate 13 has
+     *  driven it since 2026-09-04. */
     public static Result viaDrlTekst(Path irPath, List<Path> casePaths) {
         return replay(irPath, casePaths, DroolsBackend.Branch.DRL_TEXT);
     }
@@ -139,14 +136,6 @@ public final class CaseRunner {
      *  public way in. */
     static Result viaExecModel(Path irPath, List<Path> casePaths) {
         return replay(irPath, casePaths, DroolsBackend.Branch.EXEC_MODEL);
-    }
-
-    /** The same replay through {@link DroolsBackend.Branch#DRL_TMS}, the analysis of the exec-model branch rendered as
-     *  DRL text, until the switch-over of card drl-teksttak-op-truth-maintenance: the entry of the CLI's
-     *  {@code --drl-tms} and of the witnesses of that branch. Package-private: no gate replays the branch, and the card
-     *  removes it at the switch-over. */
-    static Result viaDrlTms(Path irPath, List<Path> casePaths) {
-        return replay(irPath, casePaths, DroolsBackend.Branch.DRL_TMS);
     }
 
     private static Result replay(Path irPath, List<Path> casePaths, DroolsBackend.Branch tak) {
@@ -399,9 +388,8 @@ public final class CaseRunner {
         return build(irPath, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** As above, with {@code tak} choosing WHICH transpiler branch produces the KieBase: the exec-model branch, which
-     *  derives with truth maintenance, {@link DrlTranspiler}'s DRL TEXT, or {@code DRL_TMS}, the analysis of the
-     *  exec-model branch rendered as DRL text. The whole prelude — load,
+    /** As above, with {@code tak} choosing WHICH rendering of the analysis produces the KieBase: the executable
+     *  model, or the DRL text. The whole prelude — load,
      *  refuse, beans, contract, lowering with every side table, coverage check, KieBase — is
      *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
      *  the red probe and every witness seam build exactly as a consumer of the backend does. */
@@ -410,8 +398,7 @@ public final class CaseRunner {
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
         runner.bouw = b;
         if (Sessiedump.NAADMAP != null) runner.documenthash = Sessiedump.hash(irPath);
-        // the exec branch's coverage manifest feeds the scenario report; the DRL-text branch reports nothing
-        if (tak == DroolsBackend.Branch.EXEC_MODEL) runner.dekking = b.dekking();
+        runner.dekking = b.dekking();
         return runner;
     }
 
@@ -437,8 +424,7 @@ public final class CaseRunner {
      *  exception: on the exec-model branch, which this path drives, it says what {@link DroolsBackend#vuur} says,
      *  "creation budget exhausted …" at the creation budget or "geen fixpunt: het vuurplafond van … vuringen is
      *  bereikt, …" at the fire cap, and two writers of one attribute that disagree are a fault at the fixpoint, which
-     *  the write-back throws. "geen fixpunt (kringverwijzing?)" is the sentence of the DRL-text branch at its cap where
-     *  no writers kept overwriting each other ({@link #vuurTotFixpunt}). Gate 8 therefore pins only
+     *  the write-back throws. Gate 8 therefore pins only
      *  this backend's own sentence, never platform text, since a pin on a JDK message would pin a crash; for a
      *  refusal while the case is read, that sentence names position and lexeme. */
     public static RoodResult runRood(Path irPath, Path casePath) {
@@ -572,31 +558,16 @@ public final class CaseRunner {
     }
 
     /** Fires {@code sessie} through the backend's entry ({@link DroolsBackend#vuur}), under the cap a consumer gets, and
-     *  returns null at a fixpoint. A run without one returns its sentence: at the cap on the DRL-text branch, whose
-     *  rules write the beans as they fire, the writers of one attribute that kept overwriting each other with
-     *  different values in the last firings (RUNTIME-SEMANTICS ch. 5.7, {@link Schrijfconflict}), and where those
-     *  show none only that the cap was reached; on the exec-model branch, which writes no bean while it fires,
-     *  the sentence of {@code vuur}, which names the cap and what it was computed from, or that of the creation budget. A
-     *  consequence that throws leaves the fire as {@link DroolsBackend#benoem} names it; every replay, red path and
-     *  report of this class fires here, on any branch.
-     *  At a fixpoint the exec-model branch's derivations go onto the beans before anything reads them, or the
-     *  evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
-     *  DRL-text branch); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean.
-     *  With the property {@value Sessiedump#EIGENSCHAP} a seam writes the dump of the session ({@link Sessiedump}) right
-     *  after the fire, before the write-back, also where the fire throws, on the exec-model branch and on
-     *  {@code DRL_TMS}, which derives as that branch does; not on the DRL-text branch, whose rules write the beans as
-     *  they fire, so that {@link DroolsBackend#lees} refuses it. */
+     *  returns null at a fixpoint. A run without one returns the sentence of {@code vuur}, which names the cap and what
+     *  it was computed from, or that of the creation budget. A consequence that throws leaves the fire as
+     *  {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on either
+     *  branch. At a fixpoint the derivations go onto the beans before anything reads them, or the evaluation faults
+     *  that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}); without a fixpoint nothing is written
+     *  back, since the replay reports the sentence and reads no bean. With the property
+     *  {@value Sessiedump#EIGENSCHAP} a seam writes the dump of the session ({@link Sessiedump}) right after the fire,
+     *  before the write-back, also where the fire throws, on either branch. */
     private String vuurTotFixpunt(KieSession sessie) {
-        // only the DRL-text branch writes the beans as it fires, so only its cap can come from writers that keep
-        // overwriting each other; on the branches with truth maintenance nothing reads the listener, and it cost every
-        // firing a call
-        Schrijfconflict schrijvers = null;
-        if (bouw.branch() == DroolsBackend.Branch.DRL_TEXT) {
-            schrijvers = new Schrijfconflict(model, cl);
-            sessie.addEventListener(schrijvers);
-        }
-        Sessiedump spoor = documenthash == null || bouw.branch() == DroolsBackend.Branch.DRL_TEXT ? null
-                : Sessiedump.op(sessie, labelNaarBean);
+        Sessiedump spoor = documenthash == null ? null : Sessiedump.op(sessie, labelNaarBean);
         DroolsBackend.Vuring vuring;
         try {
             vuring = DroolsBackend.vuur(bouw, sessie);
@@ -609,10 +580,6 @@ public final class CaseRunner {
         if (vuring.geenFixpunt() == null) {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
             return null;
-        }
-        if (schrijvers != null && vuring.vuringen() >= vuring.plafond()) {
-            String conflict = schrijvers.conflict(this::labelVanBean);
-            return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
         }
         return vuring.geenFixpunt();
     }
@@ -838,14 +805,13 @@ public final class CaseRunner {
      * Puts the case input into {@code sessie} through the backend's entry ({@link DroolsBackend#voegIn}), as a consumer
      * does: the beans, in the order of the case, every scalar input on a temporal attribute as a bucket scalar, and the
      * order of every to-many list. The bean shows such a scalar as the one segment of its bucket, which a full timeline
-     * of one segment would be as well, while the exec-model branch reads the two conventions of
+     * of one segment would be as well, while the analysis reads the two conventions of
      * RUNTIME-SEMANTICS ch. 8.4 apart: the bucket scalar serves the subject's own total, the full timeline every other
      * read, and a form that needs the one and finds the other faults. The bean model keeps a to-many role as a reference
-     * field on each member and no order, while that branch names the first member in fold order whose filter faults
+     * field on each member and no order, while the analysis names the first member in fold order whose filter faults
      * (RUNTIME-SEMANTICS ch. 5.11). The order is that of the list the reference interpreter folds over: the written
      * members first, in the order the case wrote them, then the members whose own link the loader mirrors into the
      * list, in ascending label order (ch. 5.7a, "member ORDER"), a member in both counting once, where it was written.
-     * The DRL-text branch reads the beans alone.
      */
     private void voegInvoerIn(KieSession sessie) {
         Invoer invoer = new Invoer().beans(labelNaarBean.values());
@@ -1001,7 +967,7 @@ public final class CaseRunner {
         }
         if (rekendatum != null) setGlobalVeilig(sessie, "rekendatum", rekendatum);
         // §9.8 the DRL-text branch reaches its dagsoort predicates through globals (the exec branch closes over
-        // them); empty for the exec branch, so this loop is a no-op on every gate path.
+        // them); empty for the exec branch.
         for (Map.Entry<String, java.util.function.Predicate<LocalDate>> e : dagsoortGlobalen.entrySet())
             setGlobalVeilig(sessie, e.getKey(), e.getValue());
     }
@@ -1036,10 +1002,9 @@ public final class CaseRunner {
      *  timeline ("the asOfDate-bucket convention carries the total", eval.ml). The divergence surface is thus
      *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
      *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
-     *  looks, by construction. That holds for the DRL-text branch, which reads the bean alone;
-     *  for the exec-model branch the caller records each scalar as a bucket scalar, which
-     *  {@link #voegInvoerIn} names to {@link DroolsBackend#voegIn}, and that branch reads the two conventions apart and faults
-     *  where a form needs the one and finds the other (RUNTIME-SEMANTICS ch. 8.4). */
+     *  looks, by construction. The caller records each scalar as a bucket scalar, which
+     *  {@link #voegInvoerIn} names to {@link DroolsBackend#voegIn}, and the analysis reads the two conventions apart and
+     *  faults where a form needs the one and finds the other (RUNTIME-SEMANTICS ch. 8.4). */
     private List<Object> temporeleInvoer(JsonNode w, String attr, String plek, Rooster gran) {
         if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
         if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, plek, gran, false);

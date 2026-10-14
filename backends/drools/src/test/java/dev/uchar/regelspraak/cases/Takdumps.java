@@ -25,9 +25,9 @@ final class Takdumps {
      *  dump of the exec-model branch without them; {@code welke} names the case in a failure. */
     static String gelijk(Path ir, JsonNode zaak, String welke) throws Exception {
         String exec = TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.DRL_TMS), "het oordeel, " + welke);
+        assertEquals(exec, TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "het oordeel, " + welke);
         String uit = zonderVuringen(fixpunt(dump(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), welke));
-        assertEquals(uit, zonderVuringen(fixpunt(dump(ir, zaak, DroolsBackend.Branch.DRL_TMS), welke)),
+        assertEquals(uit, zonderVuringen(fixpunt(dump(ir, zaak, DroolsBackend.Branch.DRL_TEXT), welke)),
                 "de dumps van de twee takken, " + welke);
         return uit;
     }

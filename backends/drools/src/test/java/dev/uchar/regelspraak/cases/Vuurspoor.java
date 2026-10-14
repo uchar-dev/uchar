@@ -44,8 +44,7 @@ import java.util.stream.Stream;
  * <p>The branch is {@code EXEC_MODEL} without the fourth argument. With {@code DRL_TMS} it dumps the sessions of the
  * analysis rendered as DRL text (card drl-teksttak-op-truth-maintenance), over the same goldens, so that a step compares
  * {@code lees} and {@code feiten} of each case with the dump of the exec-model branch; a golden that branch refuses gets
- * a file of one line, {@code WEIGERING} and the reason, and counts among the refused, not among the failed. The
- * DRL-text branch writes the beans as it fires and has no dump.
+ * a file of one line, {@code WEIGERING} and the reason, and counts among the refused, not among the failed.
  */
 public final class Vuurspoor {
 
@@ -58,8 +57,6 @@ public final class Vuurspoor {
             throw new IllegalArgumentException("gebruik: Vuurspoor <corpus/golden> <tabel> <verse uitmap> [<tak>]");
         DroolsBackend.Branch tak = args.length == 4 ? DroolsBackend.Branch.valueOf(args[3])
                 : DroolsBackend.Branch.EXEC_MODEL;
-        if (tak == DroolsBackend.Branch.DRL_TEXT)
-            throw new IllegalArgumentException("de DRL-teksttak schrijft de beans tijdens het vuren en heeft geen dump");
         Path golden = Path.of(args[0]);
         if (!Files.isDirectory(golden))
             throw new IllegalArgumentException("geen map " + golden.toAbsolutePath()

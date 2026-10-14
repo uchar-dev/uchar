@@ -87,7 +87,7 @@ class TmsKenmerkbesluitWitnessTest {
     }
 
     @Test void het_besluit_onwaar_verdringt_en_de_invoer_blijft_staan() throws Exception {
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
             assertNull(CaseRunner.speelCase(document(), zaak(), tak), tak.toString());
     }
 
@@ -99,7 +99,7 @@ class TmsKenmerkbesluitWitnessTest {
             vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(), verdrongen);
         assertTrue(verdrongen[0] > 0,
                 "geen volgorde liet de toekenning eerst vuren en het besluit onwaar haar verdringen");
-        DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         int[] inDeTekst = {0};

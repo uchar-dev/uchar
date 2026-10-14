@@ -70,10 +70,10 @@ class DrlTmsWitnessTest {
         for (Geval g : gevallen) {
             Path ir = GOLDEN.resolve(g.golden()).resolve("ir.json");
             JsonNode zaak = JSON.readTree(GOLDEN.resolve(g.golden()).resolve(g.zaak()).toFile());
-            String tekst = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS).drl();
+            String tekst = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
             if (!g.vorm().matcher(tekst).find()) fouten.add(g + ": de tekst heeft de vorm niet");
             if (!zonderLink(zaak, g)) fouten.add(g + ": de case geeft de link");
-            String uitkomst = CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.DRL_TMS);
+            String uitkomst = CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.DRL_TEXT);
             if (uitkomst != null) fouten.add(g.golden() + " " + g.zaak() + ": " + uitkomst);
         }
         assertEquals(List.of(), fouten);
@@ -111,7 +111,7 @@ class DrlTmsWitnessTest {
         List<String> fouten = new ArrayList<>();
         for (String[] g : gevallen) {
             String uitkomst = CaseRunner.speelCase(Path.of(g[0]), JSON.readTree(Path.of(g[1]).toFile()),
-                    DroolsBackend.Branch.DRL_TMS);
+                    DroolsBackend.Branch.DRL_TEXT);
             if (uitkomst != null) fouten.add(g[1] + ": " + uitkomst);
         }
         assertEquals(9, gevallen.size(), "de cases van de documenten");
@@ -125,14 +125,14 @@ class DrlTmsWitnessTest {
     @Test void de_vlag_drl_tms_speelt_door_de_tak() throws Exception {
         java.io.ByteArrayOutputStream uit = new java.io.ByteArrayOutputStream();
         Path kustwacht = GOLDEN.resolve("anchor").resolve("jutterswet-kustwacht");
-        int code = DroolsBackendMain.voer(new String[]{"--drl-tms", kustwacht.resolve("ir.json").toString(),
+        int code = DroolsBackendMain.voer(new String[]{"--drl", kustwacht.resolve("ir.json").toString(),
                 kustwacht.resolve("case1.json").toString(), kustwacht.resolve("case2.json").toString()},
                 new java.io.PrintStream(uit, true, java.nio.charset.StandardCharsets.UTF_8));
         assertEquals("PLAYED 2", uit.toString(java.nio.charset.StandardCharsets.UTF_8).trim());
         assertEquals(0, code);
         uit.reset();
         Path getijklok = GOLDEN.resolve("jutterswet-getijklok");
-        List<String> argumenten = new ArrayList<>(List.of("--drl-tms", getijklok.resolve("ir.json").toString()));
+        List<String> argumenten = new ArrayList<>(List.of("--drl", getijklok.resolve("ir.json").toString()));
         try (Stream<Path> s = Files.list(getijklok)) {
             s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().forEach(p -> argumenten.add(p.toString()));
         }
@@ -140,7 +140,7 @@ class DrlTmsWitnessTest {
                 new java.io.PrintStream(uit, true, java.nio.charset.StandardCharsets.UTF_8));
         assertEquals("PLAYED 2", uit.toString(java.nio.charset.StandardCharsets.UTF_8).trim());
         assertEquals(0, code);
-        DroolsBackend.Build b = DroolsBackend.build(getijklok.resolve("ir.json"), DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build b = DroolsBackend.build(getijklok.resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT);
         java.util.Set<String> gedeclareerd = new java.util.TreeSet<>();
         java.util.regex.Matcher m = Pattern.compile("(?m)^global java\\.util\\.function\\.Predicate (\\w+);$")
                 .matcher(b.drl());
@@ -174,7 +174,7 @@ class DrlTmsWitnessTest {
         Path ir = map.resolve("ir.json");
         JsonNode zaak = JSON.readTree(map.resolve("case.json").toFile());
         Map<String, Predicate<LocalDate>> predicaten =
-                DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS).dagsoortGlobalen();
+                DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).dagsoortGlobalen();
         assertEquals(Set.of("rsDagsoort_Springtijdag", "rsDagsoort_Doodtijdag"), predicaten.keySet(),
                 "de predicaatglobals van de tekst");
         LocalDate vijftien = LocalDate.of(2026, 3, 15), tweeëntwintig = LocalDate.of(2026, 3, 22);
@@ -184,7 +184,7 @@ class DrlTmsWitnessTest {
                 "rsDagsoort_Springtijdag: de springtijdag");
         assertEquals(List.of(false, true), List.of(dood.test(vijftien), dood.test(tweeëntwintig)),
                 "rsDagsoort_Doodtijdag: de doodtijdag");
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
             assertEquals(null, CaseRunner.speelCase(ir, zaak, tak), tak + ": twee dagsoorten");
     }
 }

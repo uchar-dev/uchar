@@ -12,8 +12,9 @@ import java.util.function.Function;
  * leeg wrote nothing and is not among them (ch. 7.8).
  *
  * <p>The sentence names the writers in the order of the document, each with its value, the attribute as declared and
- * the object, as the reference interpreter names them and in the words the replay gives the writers of the DRL-text
- * branch at its fire cap ({@code cases.Schrijfconflict}), so the fragment a red case pins for Drools matches it. The
+ * the object, as the reference interpreter names them and in the words the replay gave the writers of the DRL-text
+ * branch at its fire cap until card drl-teksttak-op-truth-maintenance, so the fragment a red case pins for Drools
+ * matches it. The
  * object is named by its case label where the write-back is given one ({@link #benoemd}), "een aangemaakte" type where
  * the object has none because a creation made it, and by type and identity where no labels are known, as for a consumer
  * that fires a KieBase itself.

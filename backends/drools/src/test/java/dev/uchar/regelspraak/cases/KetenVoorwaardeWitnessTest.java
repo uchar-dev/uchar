@@ -10,8 +10,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A voorwaarde that reads through a CHAIN of to-one roles ("de afgeleide openingsdag van de haven van de jutter van
@@ -47,9 +45,10 @@ class KetenVoorwaardeWitnessTest {
                 datum("V", "2026-09-15") + ", " + leeg("W"));
         assertNull(speel(document(AFGELEIDE_OPENINGSDAG, uitkomst), zaak), "de afleiding voor de lezer");
         assertNull(speel(document(uitkomst, AFGELEIDE_OPENINGSDAG), zaak), "de afleiding na de lezer");
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
-                () -> speelDrl(document(AFGELEIDE_OPENINGSDAG, uitkomst), zaak));
-        assertTrue(drl.getMessage().contains("TODO voorwaarde"), drl.getMessage());
+        // the DRL-text branch renders the same analysis since card drl-teksttak-op-truth-maintenance, and plays both
+        // orders; until then it refused the comparison ("TODO voorwaarde")
+        assertNull(speelDrl(document(AFGELEIDE_OPENINGSDAG, uitkomst), zaak), "drl-tekst: de afleiding voor de lezer");
+        assertNull(speelDrl(document(uitkomst, AFGELEIDE_OPENINGSDAG), zaak), "drl-tekst: de afleiding na de lezer");
     }
 
     @Test void r2_gevuld_twee_rollen_ver_op_een_invoerwaarde() throws Exception {

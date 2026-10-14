@@ -3,7 +3,6 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.tms.HeeftKenmerk;
 import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import dev.uchar.regelspraak.transpiler.tms.Waarde;
@@ -110,7 +109,7 @@ class TmsTerugzettingWitnessTest {
 
     /** The two branches with truth maintenance, whose write-back is one implementation. */
     private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
-            DroolsBackend.Branch.DRL_TMS);
+            DroolsBackend.Branch.DRL_TEXT);
 
     @Test void de_replay_leest_het_afgeleide_en_de_ingevoerde_kenmerken() throws Exception {
         for (DroolsBackend.Branch tak : TAKKEN)
@@ -152,29 +151,6 @@ class TmsTerugzettingWitnessTest {
         } finally {
             sessie.dispose();
             Thread.currentThread().setContextClassLoader(vorige);
-        }
-    }
-
-    /** On the DRL-text branch the rule writes J1 vergund while it fires; the witness takes the value off the bean again
-     *  and the write-back leaves it so. The destructive exec-model branch did the same until card tms-omschakeling. */
-    @Test void op_de_drl_teksttak_zet_de_terugzetting_niets() throws Exception {
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
-            DroolsBackend.Build b = DroolsBackend.build(document(), tak);
-            ClassLoader vorige = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(b.beanLoader());
-            KieSession sessie = b.kieBase().newKieSession();
-            try {
-                Object j1 = jutterBoon(b.beanLoader(), List.of("erkend"));
-                sessie.insert(j1);
-                sessie.fireAllRules(100_000);
-                assertTrue(heeft(j1, "vergund"), tak + ": the rule wrote J1 vergund while it fired");
-                j1.getClass().getMethod(Namen.setter("vergund"), boolean.class).invoke(j1, false);
-                DroolsBackend.zetAfgeleideWaarden(b, sessie);
-                assertFalse(heeft(j1, "vergund"), tak + ": the write-back wrote J1");
-            } finally {
-                sessie.dispose();
-                Thread.currentThread().setContextClassLoader(vorige);
-            }
         }
     }
 
@@ -243,7 +219,7 @@ class TmsTerugzettingWitnessTest {
                     + volgorde.stream().map(Rule::getName).toList());
             volgordes++;
         }
-        DroolsBackend.Build t = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261013L, 100)) {

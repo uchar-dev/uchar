@@ -36,9 +36,6 @@ class HeelperiodeDoelpogingWitnessTest {
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
     private static final Path BASIS = Path.of("..", "..", "corpus", "negatief", "wf109-doelgastheer-periode", "ir.json");
 
-    /** The sentence both branches carry — the creation guard's standing refusal plus its reason here. */
-    private static final String REDEN = "voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie";
-
     private static final String JAAR = "[{\"from\":\"2024-01-01\",\"to\":\"2025-01-01\"}]";
     private static final String HALF = "[{\"from\":\"2024-01-01\",\"to\":\"2024-07-01\"}]";
 
@@ -79,40 +76,24 @@ class HeelperiodeDoelpogingWitnessTest {
                 """.formatted(getal())));
         String s1 = "\"attributes\": { \"seinhoogte\": { \"timeline\": " + metWaarde(JAAR) + " } }";
         String s2 = "\"attributes\": { \"seinhoogte\": { \"timeline\": " + metWaarde(HALF) + " } }";
-        // The two branches name different causes here, both true: the DRL-text report cites the FIRST marker the
-        // rule collected, which is the anker attempt's bean limit; the exec branch cites the declined doel attempt.
+        // Both branches render the analysis and name the declined doel attempt; until card
+        // drl-teksttak-op-truth-maintenance the DRL-text report cited the FIRST marker its rule collected, the anker
+        // attempt's bean limit ("de rol 'vlagsein' op Kustvak deelt haar naam met een gedeclareerd lid").
         Path p = schrijf(ir);
         JsonNode c = geval("\"characteristics\": [\"gehesen\"], \"attributes\": {}", ", \"vlagsein\": [\"S2\"]", s1, s2, "0");
-        geweigerdTms(p, c, "feitcreatie: vakbeseining door het kustvak — een Comparison met wholePeriod ('de seinhoogte"
-                + " van het vlagsein gedurende het gehele jaar groter is dan 0') over een tijdlijn langs een pad ('de"
-                + " seinhoogte van het vlagsein'): de referentie-interpreter vouwt alleen een eigen tijdsafhankelijk"
-                + " attribuut van het onderwerp (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
-        geweigerd(p, c, true, "de rol 'vlagsein' op Kustvak deelt haar naam met een gedeclareerd lid");
-    }
-
-    private static void geweigerdTms(Path ir, JsonNode c, String fragment) {
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms weigert");
-        org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains(fragment),
-                "tms names '" + fragment + "': " + e.getMessage());
-    }
-
-    private static void geweigerd(Path ir, JsonNode c, boolean viaDrl, String fragment) {
-        String tak = viaDrl ? "drl-tekst" : "exec-model";
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, viaDrl), tak + " weigert");
-        org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains(fragment),
-                tak + " names '" + fragment + "': " + e.getMessage());
-        org.junit.jupiter.api.Assertions.assertFalse(e.getMessage().contains("drl compile"),
-                tak + " refuses per construct, not by a package-wide compile error: " + e.getMessage());
+        BeideTakken.geweigerd(p, c, "feitcreatie: vakbeseining door het kustvak — een Comparison met wholePeriod ('de"
+                + " seinhoogte van het vlagsein gedurende het gehele jaar groter is dan 0') over een tijdlijn langs een pad"
+                + " ('de seinhoogte van het vlagsein'): de referentie-interpreter vouwt alleen een eigen tijdsafhankelijk"
+                + " attribuut van het onderwerp (RUNTIME-SEMANTICS ch. 3.9, 3.12)", "the navigated comparison");
     }
 
     // ---------------- 2. the route that answered from the wrong object ----------------
 
-    @Test void de_naamnorm_route_speelt_in_de_drl_teksttak_en_weigert_de_gastheer() throws Exception {
+    @Test void de_naamnorm_route_weigert_de_gastheer_in_beide_takken() throws Exception {
         // NOT verifier-clean: the document keeps the host 'Sein' of its basis, and the verifier rejects it (WF-109, the
         // check is hosted on 'Sein', which no object bound there can be; measured 2026-10-10), where the measurement
-        // below gave PASS. The truth-maintenance branch refuses that host by name; the DRL-text branch answers 0.
+        // below gave PASS. The analysis refuses that host by name, on both branches since card
+        // drl-teksttak-op-truth-maintenance; until then the DRL-text branch answered 0.
         // Guard "gedurende het gehele jaar Gehesen": under the verifier's key the check is the ANKER's
         // `gehesen` (names compare case-insensitively, as in every reader). The anker attempt of both branches looks
         // the time-dependent characteristic up by exact spelling and declines; the doel declares `Gehesen` itself,
@@ -138,10 +119,8 @@ class HeelperiodeDoelpogingWitnessTest {
         JsonNode c = geval("\"characteristics\": [], \"characteristicTimelines\": { \"gehesen\": " + HALF + " }, \"attributes\": {}",
                 "", "\"characteristicTimelines\": { \"Gehesen\": " + JAAR + " }",
                 "\"characteristicTimelines\": { \"Gehesen\": " + HALF + " }", "0");
-        org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(p, c, true),
-                "drl-tekst — een gekwalificeerde guard wordt op de anker gelezen, niet op het doel");
-        geweigerdTms(p, c, "feitcreatie: vakbeseining door het kustvak — een CharacteristicCheck met een host die het"
-                + " onderwerp niet is ('het sein gedurende het gehele jaar gehesen is')");
+        BeideTakken.geweigerd(p, c, "feitcreatie: vakbeseining door het kustvak — een CharacteristicCheck met een host"
+                + " die het onderwerp niet is ('het sein gedurende het gehele jaar gehesen is')", "the host of the guard");
     }
 
     // ---------------- 3. the fenced witness no longer sinks the package ----------------
@@ -151,13 +130,12 @@ class HeelperiodeDoelpogingWitnessTest {
         //     ref / clingo : FAULT (the host names an object this position does not bind)
         //     exec         : PLAYED — 1, the doel reading of a verifier-rejected document
         //     drl-tekst    : EXCLUDE drl compile: … rsGeheelPeriode($subject.getGehesen(), "JAAR", 7, null)
-        BeideTakken.geweigerdApart(schrijf(basis()),
+        BeideTakken.geweigerd(schrijf(basis()),
                 geval("\"characteristics\": [\"gehesen\"], \"attributes\": {}", "",
                         "\"characteristicTimelines\": { \"gehesen\": " + JAAR + " }",
                         "\"characteristicTimelines\": { \"gehesen\": " + HALF + " }", "1"),
                 "feitcreatie: vakbeseining door het kustvak — een CharacteristicCheck met een host die het onderwerp niet"
-                        + " is ('het sein gedurende het gehele jaar gehesen is')",
-                REDEN, "de doelgastheer onder een kwalificatie is een benoemde weigering, geen compilerfout");
+                        + " is ('het sein gedurende het gehele jaar gehesen is')", "de doelgastheer onder een kwalificatie is een benoemde weigering, geen compilerfout");
     }
 
     // ---------------- 4. the flank: an anker-lowerable qualified guard still plays ----------------

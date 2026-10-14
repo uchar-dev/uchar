@@ -171,45 +171,38 @@ class SleutelconventieWitnessTest {
                 "two timelines that ever carry 7 collide across the sources, as they always did");
     }
 
-    // ---------------- 5. the dormant DRL twin carries the same two conventions ----------------
+    // ---------------- 5. the DRL text carries the same two conventions ----------------
 
-    @Test void de_drl_tweeling_leest_een_anders_gekapitaliseerde_sleutel_temporeel() throws Exception {
-        // the DRL back-end is the golden-text twin; it is not fired by any gate, so its two key sites have no
-        // behavioural witness — only the emitted text can say which join it chose. An exact-match temporality
-        // test rendered "vondstnummer == $k0", the List-identity compare that never fires.
+    /* Until card drl-teksttak-op-truth-maintenance the DRL-text branch was a lowering of its own, which no gate fired at
+     * these documents, so three rows here read its emitted key sites: "rsOoitBotst(vondstnummer, $k0)" and no scalar
+     * "vondstnummer == $k0" for the mis-capitalised key, no mixed rsOoitBevat arm in the union, and both mixed arms in
+     * the cross-source union. Since that card the text renders the analysis, whose key sites are the exec-model
+     * branch's; the rows below ask the DRL-text branch for the same session as the exec-model branch on the documents
+     * and cases of the rows above (Takdumps: the verdict, the input, what lees gives and the facts at the fixpoint). */
+
+    @Test void de_drl_tekst_leest_een_anders_gekapitaliseerde_sleutel_temporeel() throws Exception {
         Path ir = metSleutels(STRANDREGISTER, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
+        Takdumps.gelijk(ir, tweeStrandvondsten(), "the mis-capitalised key");
         String drl = drl(ir);
-        assertTrue(drl.contains("rsOoitBotst(vondstnummer, $k0)"), drl);
-        assertTrue(!drl.contains("vondstnummer == $k0"), "the mis-capitalised key must not render a scalar join: " + drl);
+        assertTrue(!drl.contains("Vondstnummer"), "the written spelling must not reach the DRL text: " + drl);
     }
 
-    @Test void de_drl_tweeling_normaliseert_ook_de_uniesleutel() throws Exception {
-        // the union has its OWN key site in the twin, and it reads the pair: with an exact match the
-        // mis-capitalised source turns the whole union MIXED (one arm rendering rsOoitBevat, the other a
-        // scalar ==) where both sources are in truth temporal. Mutation-checked: without this arm a
-        // containsKey restored at that one site survives every other witness here.
+    @Test void de_drl_tekst_normaliseert_ook_de_uniesleutel() throws Exception {
         Path ir = metSleutels(NUMMERREGISTER, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
+        Takdumps.gelijk(ir, tweeStrandvondsten(), "the mis-capitalised key of a union");
         String drl = drl(ir);
-        assertTrue(!drl.contains("rsOoitBevat"), "both sources are temporal — no mixed arm may appear: " + drl);
-        assertTrue(!drl.contains("vondstnummer == $k0"), "nor a scalar join: " + drl);
+        assertTrue(!drl.contains("Vondstnummer"), "the written spelling must not reach the DRL text: " + drl);
     }
 
-    @Test void de_drl_tweeling_rendert_de_gemengde_unie_in_beide_richtingen() throws Exception {
-        // both mixed arms, in one union: the Strandvondst rule counts Wrakvondsten with its own timeline as
-        // the haystack, the Wrakvondst rule counts Strandvondsten with its own value as the needle.
-        String drl = drl(gemengdeUnie());
-        assertTrue(drl.contains("Wrakvondst( rsOoitBevat($k0, vondstnummer) )"), drl);
-        assertTrue(drl.contains("Strandvondst( rsOoitBevat(vondstnummer, $k0) )"), drl);
+    @Test void de_drl_tekst_speelt_de_gemengde_unie_in_beide_richtingen() throws Exception {
+        Takdumps.gelijk(gemengdeUnie(), gemengdGeval("7", "7"), "the cross-source mixed union");
     }
 
     // ---------------- models ----------------
 
-    /** The dormant DRL back-end's rendering of one model. */
+    /** The text of the DRL-text branch of one model: the analysis rendered as DRL text. */
     private static String drl(Path ir) throws Exception {
-        dev.uchar.regelspraak.loader.IrLoader.Loaded l =
-                dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
-        return dev.uchar.regelspraak.transpiler.DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(),
-                l.bronPaden(), l.rolBindingen(), l.navigatieBindingen()).drl();
+        return DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     /** {@code vondstnummer} temporal on Strandvondst, SCALAR on Wrakvondst: the cross-source mixed key. The

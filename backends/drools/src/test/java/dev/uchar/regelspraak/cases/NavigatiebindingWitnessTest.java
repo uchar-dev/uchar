@@ -89,19 +89,15 @@ class NavigatiebindingWitnessTest {
 
     @Test void een_binding_die_niet_past_valt_niet_terug_op_een_afleiding() throws Exception {
         // thuisligging.ligger is reached FROM a Haven, not from the Schuit this rule reads on. A branch that fell
-        // back to a derivation of its own — the pair, the rule's text — would play. Both must refuse instead.
-        // Each branch must refuse for the NAVIGATION, in its own words for it — the rule name alone would let any
-        // refusal of this rule pass.
+        // back to a derivation of its own — the pair, the rule's text — would play. Both must refuse instead, for the
+        // NAVIGATION — the rule name alone would let any refusal of this rule pass — in the one sentence of the
+        // analysis; until card drl-teksttak-op-truth-maintenance the DRL-text branch said it in its own words ("TODO
+        // navigatie: het kadegeld van de vlaghaven van de Schuit").
         ObjectNode ir = lees();
         waarde(ir).set("path", bindingen("thuisligging", "ligger"));
-        Path p = tijdelijk("nav-past-niet", ir);
-        JsonNode c = casus(1);
-        CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(p, c, DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(tms.getMessage().contains("regel: vlagprijs van een schuit — de lezing 'het kadegeld van de vlaghaven"
-                + " van de Schuit': de navigatie resolvet niet vanaf Schuit"), tms.getMessage());
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, true));
-        assertTrue(drl.getMessage().contains("TODO navigatie: het kadegeld van de vlaghaven van de Schuit"), drl.getMessage());
+        BeideTakken.geweigerd(tijdelijk("nav-past-niet", ir), casus(1), "regel: vlagprijs van een schuit — de lezing 'het"
+                + " kadegeld van de vlaghaven van de Schuit': de navigatie resolvet niet vanaf Schuit",
+                "a binding that does not fit is refused for the navigation");
     }
 
     @Test void een_gebonden_paarlezing_in_een_voorwaarde_is_geen_eigen_lezing() throws Exception {

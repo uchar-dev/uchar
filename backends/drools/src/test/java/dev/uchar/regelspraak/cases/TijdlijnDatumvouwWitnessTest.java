@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -69,22 +68,18 @@ class TijdlijnDatumvouwWitnessTest {
 
     @Test void de_eigen_tijdlijntotaal_over_datums_weigert_bij_naam() throws Exception {
         weigert(TOTAAL, JSON.readTree(TOTAAL_ZAAK),
-                "vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand' van Jutter: de segmentwaarden zijn"
-                        + " van type Datum in dagen en niet getalachtig",
                 "regel: bewaargeld van een jutter — een totaal over de eigen tijdlijn ('het totaal van zijn bewaarvergoeding per"
                         + " maand') over 'bewaarvergoeding per maand', dat geen getal is (WF-091)");
     }
 
     @Test void de_gedurende_klip_over_datums_weigert_bij_naam() throws Exception {
         weigert(KLIP, JSON.readTree(KLIP_ZAAK),
-                "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter: de segmentwaarden zijn"
-                        + " van type Datum in dagen en niet getalachtig",
                 "regel: wachtsom van een klipjutter — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is') over 'wachtvergoeding"
                         + " per maand', dat geen getal is (WF-091)");
     }
 
-    @Test void de_drl_marker_hangt_aan_de_declaratie_en_niet_aan_de_casus() throws Exception {
+    @Test void de_weigering_hangt_aan_de_declaratie_en_niet_aan_de_casus() throws Exception {
         // J1 without a value: ref answers leeg, but the document still asks both branches to scale a date, so both
         // decline — the same document-level stance as the ASP backend (the exec branch played leeg until the card
         // ref-klipvouw-nul).
@@ -92,15 +87,11 @@ class TijdlijnDatumvouwWitnessTest {
         ((ObjectNode) leeg.get("input").get("instances").get(0)).set("attributes", JSON.createObjectNode());
         leeg.set("expected", JSON.readTree(
                 "[{\"kind\":\"attributeEmpty\",\"label\":\"J1\",\"attribute\":\"bewaargeld\"}]"));
-        Path ir = NEGATIEF.resolve(TOTAAL).resolve("ir.json");
-        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, leeg, DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(x.getMessage().contains("een totaal over de eigen tijdlijn ('het totaal van zijn bewaarvergoeding per"
-                + " maand') over 'bewaarvergoeding per maand', dat geen getal is (WF-091)"), "tms names the form: "
-                + x.getMessage());
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, leeg, true));
-        assertTrue(e.getMessage().contains("vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand'"),
-                "drl-tekst names the form: " + e.getMessage());
+        // Until card drl-teksttak-op-truth-maintenance the DRL-text branch named it in its own words ("vouw TOTAAL over
+        // de tijdlijn 'bewaarvergoeding per maand' …"); both branches refuse in the sentence of the analysis since.
+        BeideTakken.geweigerd(NEGATIEF.resolve(TOTAAL).resolve("ir.json"), leeg, "een totaal over de eigen tijdlijn ('het"
+                + " totaal van zijn bewaarvergoeding per maand') over 'bewaarvergoeding per maand', dat geen getal is"
+                + " (WF-091)", "the refusal hangs on the declaration");
     }
 
     @Test void de_getalwaardige_originelen_blijven_spelen() throws Exception {
@@ -113,16 +104,12 @@ class TijdlijnDatumvouwWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    /** Both branches refuse the negatief document {@code dir}: the DRL-text branch naming {@code drl}, the
-     *  truth-maintenance branch naming {@code tms}. */
-    private static void weigert(String dir, JsonNode c, String drl, String tms) throws Exception {
+    /** Both branches refuse the negatief document {@code dir} in the one sentence of the analysis, which names
+     *  {@code tms}; until card drl-teksttak-op-truth-maintenance the DRL-text branch named the fold in its own words. */
+    private static void weigert(String dir, JsonNode c, String tms) throws Exception {
         Path ir = NEGATIEF.resolve(dir).resolve("ir.json");
         assertTrue(Files.exists(ir), "negatief ir.json present: " + ir.toAbsolutePath());
-        CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true));
-        assertTrue(d.getMessage().contains(drl), "drl-tekst names '" + drl + "': " + d.getMessage());
-        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(x.getMessage().contains(tms), "tms names '" + tms + "': " + x.getMessage());
+        BeideTakken.geweigerd(ir, c, tms, "the timeline total over dates");
     }
 
     private static JsonNode zaak(Path zone, String dir, String bestand) throws Exception {

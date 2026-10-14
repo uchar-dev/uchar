@@ -289,21 +289,22 @@ class HerhaaldTypepaarWitnessTest {
         // hold the relation. Saying "beide zijden meervoudig" there would diagnose a cardinality defect the
         // document does not have; measured on the corpus, `anchor/jutterswet-gemeenteberging` is exactly this
         // shape, and the first cut of the shared sentence said it of that golden.
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(elementrolToOne(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), true));
-        assertTrue(drl.getMessage().contains("is meervoudig, dus haar opslag is het veld aan de overzijde"), drl.getMessage());
-        assertTrue(!drl.getMessage().contains("beide zijden meervoudig"),
-                "the far end DOES derive a field, so the sentence stops there: " + drl.getMessage());
-        // The truth-maintenance branch refuses the same document EARLIER, on its own conservative arm (a to-one
-        // element role whose sister is to-many: the fact type has one bean field for both directions), as the
-        // destructive exec-model branch did. Pinned so the asymmetry is a recorded decision rather than an unnoticed
-        // drift.
-        CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(elementrolToOne(),
-                JSON.readTree(tweeRollenCase("2", "0", "0", "1")), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(tms.getMessage().endsWith("regel: liggertal van een haven — een Aggregation over de enkelvoudige"
-                + " elementrol 'ligger' wiens zusterrol 'thuishaven' meervoudig is ('het aantal liggers van de Haven'):"
-                + " dat feittype heeft één beanveld voor beide richtingen, en deze tak weigert de vorm voorzichtig tot"
-                + " een eigen kaart haar meet (§13.3.9 opslagrichting)"), tms.getMessage());
+        // The analysis refuses the document EARLIER, on its own conservative arm (a to-one element role whose sister
+        // is to-many: the fact type has one bean field for both directions), as the destructive exec-model branch did,
+        // and so on both branches since card drl-teksttak-op-truth-maintenance. Until that card the destructive
+        // DRL-text branch reached the shared reason function and said "is meervoudig, dus haar opslag is het veld aan de
+        // overzijde", stopping there; neither branch now says "beide zijden meervoudig" of this document.
+        String zin = "regel: liggertal van een haven — een Aggregation over de enkelvoudige elementrol 'ligger' wiens"
+                + " zusterrol 'thuishaven' meervoudig is ('het aantal liggers van de Haven'): dat feittype heeft één"
+                + " beanveld voor beide richtingen, en deze tak weigert de vorm voorzichtig tot een eigen kaart haar meet"
+                + " (§13.3.9 opslagrichting)";
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(elementrolToOne(),
+                    JSON.readTree(tweeRollenCase("2", "0", "0", "1")), tak));
+            assertTrue(e.getMessage().endsWith(zin), tak + ": " + e.getMessage());
+            assertTrue(!e.getMessage().contains("beide zijden meervoudig"),
+                    "the far end DOES derive a field, so no sentence claims both ends: " + e.getMessage());
+        }
     }
 
     @Test void een_consument_zonder_bereik_laadt_niet() throws Exception {

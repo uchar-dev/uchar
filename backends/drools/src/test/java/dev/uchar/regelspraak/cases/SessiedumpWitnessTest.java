@@ -192,7 +192,7 @@ class SessiedumpWitnessTest {
         // every dump is made, and written under the property, before the first comparison can stop the test
         Map<Path, String> dumps = new java.util.LinkedHashMap<>();
         for (Map.Entry<String, Path> doc : documenten.entrySet())
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
                 String d = Takdumps.dump(doc.getValue(), zaken.get(doc.getKey()), tak);
                 Path bestand = Path.of(doc.getKey(), "dump." + tak.name().toLowerCase(java.util.Locale.ROOT) + ".txt");
                 dumps.put(bestand, d);

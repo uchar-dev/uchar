@@ -127,7 +127,7 @@ class TmsDoorvalWitnessTest {
         int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
                 assertNull(CaseRunner.speelCase(document(volgorde), zaak(), tak), () -> tak + ": volgorde " + namen);
                 volgordes++;
             }
@@ -148,7 +148,7 @@ class TmsDoorvalWitnessTest {
                     teruggave);
         assertTrue(overname[0] > 0, "geen volgorde liet de lagere default eerst beslissen en de hogere overnemen");
         assertTrue(teruggave[0] > 0, "geen volgorde liet de hogere default beslissen en zijn besluit weer verliezen");
-        DroolsBackend.Build t = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         int[] tekstOvername = {0}, tekstTeruggave = {0};

@@ -317,21 +317,20 @@ class LetResultaatTakWitnessTest {
                 waarde("sprong", "11.00") + ", " + waarde("takgat", "10.00")));
     }
 
-    @Test void twee_verschillende_takgardes_op_een_lezing_worden_bij_naam_geweigerd() throws Exception {
+    @Test void twee_verschillende_takgardes_op_een_lezing_spelen_in_beide_takken() throws Exception {
         // dubbelgarde := Let k = inkomen in Let z = k maal 2 in ((als k groter dan 10,00 dan z anders 0,00) plus
         // (als k kleiner dan 99,00 dan z anders 0,00)). `z` is read under TWO different branch guards, so the
-        // conjunction its prelude would need has no guarantee that its operands are assigned by the time the
-        // line runs. This branch refuses the shape BY NAME rather than guessing; the exec branch, whose needs
-        // are genuine thunks, plays it (ref: 160.00). The refusal is the honest half of the ONBEPAALD answer in
-        // the read-guard lattice, and this is its only witness. clingo refuses the document outright
-        // ("TRANSLATION FAULT: expression kind not translated").
+        // conjunction a prelude of the destructive DRL-text lowering would need had no guarantee that its operands
+        // were assigned by the time the line ran, and that lowering refused the shape BY NAME ("behoefte gelezen onder
+        // twee verschillende takgardes") until card drl-teksttak-op-truth-maintenance. The analysis, whose needs are
+        // genuine thunks, plays it (ref: 160.00), on both branches since that card. clingo refuses the document
+        // outright ("TRANSLATION FAULT: expression kind not translated").
         java.nio.file.Path ir = tijdelijk("let-dubbelgarde-ir", DUBBELGARDE_MODEL);
         java.nio.file.Path c = tijdelijk("let-dubbelgarde-case", DUBBELGARDE_CASE);
         try {
             assertEquals("PLAYED", CaseRunner.viaExecModel(ir, List.of(c)).status(), "exec speelt de vorm");
             CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-            assertEquals("EXCLUDE", drl.status(), "de DRL-tak weigert bij naam: " + drl.reason());
-            assertTrue(drl.reason().contains("behoefte gelezen onder twee verschillende takgardes"), drl.reason());
+            assertEquals("PLAYED", drl.status(), "de DRL-tak speelt de vorm: " + drl);
         } finally {
             Files.deleteIfExists(ir);
             Files.deleteIfExists(c);

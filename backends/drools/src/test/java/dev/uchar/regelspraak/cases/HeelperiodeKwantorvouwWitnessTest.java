@@ -457,123 +457,49 @@ class HeelperiodeKwantorvouwWitnessTest {
         }
     }
 
-    // ---------------- the REFUSAL AXES: named, symmetric, and written before anything else is ----------------
+    // ---------------- the former REFUSAL AXES: one verdict on both branches ----------------
 
     /**
-     * Een weigeringsas van de heelperiodearm schrijft GEEN clausule voordat hij afketst. De vorm: een
-     * matrixgrens die het EIGEN attribuut van het element leest — niet-scalair, want de eval na de
-     * accumulate bindt geen {@code $subject} — mét een ledenfilter ernaast, zodat de arm al door de join
-     * en de subselectie heen is als hij de grens afkeurt.
-     *
-     * <p>De assertie die telt is de LAATSTE: de geëmitteerde DRL bevat geen {@code accumulate(}. Een
-     * markering die haar accumulate al geschreven had laat een weesclausule achter die tegen een
-     * {@code $subject} van het verkeerde type joint, en het pakket sterft dan op een parsefout in plaats
-     * van bij naam te weigeren — de modus die op 2026-09-16 gemeten is. De destructieve exec-modeltak
-     * weigerde hier op DEZELFDE as, met dezelfde reden. De tak met truth maintenance speelt de vorm zoals
-     * {@code ref} antwoordt: zeewaardig afwezig, waar de case van de DRL-rij aanwezig zegt
-     * ({@code TmsZoalsRefWitnessTest}, {@code heelperiode-niet-scalaire-grens}).
+     * Three shapes the destructive DRL-text lowering refused by name, with a test that it wrote no clause before it
+     * refused, until card drl-teksttak-op-truth-maintenance: a matrix bound that reads the element's OWN attribute
+     * beside a member filter ({@code nietScalaireGrens}), a die/dat-subselection that is itself a fold
+     * ({@code filterDatHijst}), and a fold under a NON-conjunctive quantifier, on the whole-period matrix and on the
+     * non-temporal one ({@code vouwOnderDisjunctie}). The destructive exec-model lowering refused them on the same
+     * axes; the analysis with truth maintenance plays each as {@code ref} answers ({@code TmsZoalsRefWitnessTest},
+     * {@code heelperiode-niet-scalaire-grens}, {@code heelperiode-filter-dat-hijst},
+     * {@code heelperiode-niet-conjunctieve-kwantor}). Since that card the DRL-text branch renders the same analysis,
+     * so each row now asks one verdict of both branches, case for case, where the case of the former DRL row says
+     * the characteristic is present and the analysis, like {@code ref}, answers it absent on the first shape. The
+     * text that wrote a clause before it refused went with that lowering.
      */
-    @Test void een_weigeringsas_schrijft_geen_clausule_voor_hij_afketst() throws Exception {
-        Path ir = schrijf("ir-grens.json", nietScalaireGrens());
-        Path c = schrijf("case-grens.json", caseDoc(schepen(
+    @Test void de_vroegere_weigeringsassen_krijgen_op_beide_takken_een_oordeel() throws Exception {
+        Path aanwezig = schrijf("case-grens.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicPresent"));
-
-        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-        assertEquals("EXCLUDE", drl.status(), "een niet-gelowerde vouw mag nooit meespelen");
-        assertFalse(drl.reason().contains("drl compile"),
-                "een parsefout is geen benoemde weigering: " + drl.reason());
-        assertTrue(drl.reason().contains("niet-scalaire matrixgrens"),
-                "de reden noemt de AS waarop hij afketst: " + drl.reason());
-
         Path afwezig = schrijf("case-grens-afwezig.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicAbsent"));
-        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(afwezig));
-        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
+        Path grens = schrijf("ir-grens.json", nietScalaireGrens());
+        assertEquals("PLAYED", zelfdeOordeel(grens, afwezig).status(), "de niet-scalaire grens, zoals ref");
+        assertEquals("FAIL", zelfdeOordeel(grens, aanwezig).status(), "de niet-scalaire grens met de oude DRL-case");
 
-        assertFalse(drlTekst(ir).contains("accumulate("),
-                "de arm hoort niets te hebben geschreven voordat hij de grens afkeurde:\n" + drlTekst(ir));
-    }
-
-    /**
-     * En de tegenhanger waar er WEL iets terug te draaien valt: een die/dat-subselectie die zelf een vouw
-     * is. Die hijst haar clausule rechtstreeks in de {@code Acc} en geeft een LEGE inline terug zonder
-     * markering, dus geen van de twee gewone kanalen ziet haar; de arm vangt haar op de clausuleteller en
-     * draait terug ({@code kvTerug}). Zonder die terugdraai blijft er een {@code not Uitrusting( … )}
-     * staan op een regel die verder een markering is.
-     *
-     * <p>Mutatieproef uitgevoerd: {@code kvTerug} kortgesloten tot een kale markering (geen
-     * {@code aggTerug}) laat de weesclausule staan en deze rij wordt rood. De destructieve exec-modeltak
-     * weigerde de vorm op dezelfde as; de tak met truth maintenance speelt haar zoals {@code ref} antwoordt
-     * ({@code TmsZoalsRefWitnessTest}, {@code heelperiode-filter-dat-hijst}).
-     */
-    @Test void een_filter_dat_hijst_wordt_teruggedraaid_en_bij_naam_geweigerd() throws Exception {
-        Path ir = schrijf("ir-filterhijs.json", filterDatHijst());
-        Path c = schrijf("case-filterhijs.json", caseDoc(schepen(
+        Path hijst = schrijf("case-filterhijs.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
+        assertEquals("PLAYED", zelfdeOordeel(schrijf("ir-filterhijs.json", filterDatHijst()), hijst).status(),
+                "het filter dat hijst, zoals ref");
 
-        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-        assertEquals("EXCLUDE", drl.status(), "een niet-gelowerde vouw mag nooit meespelen");
-        assertFalse(drl.reason().contains("drl compile"),
-                "een parsefout is geen benoemde weigering — de terugdraai ontbreekt: " + drl.reason());
-        assertTrue(drl.reason().contains("die/dat-subselectie"),
-                "de reden noemt de AS waarop hij afketst: " + drl.reason());
-
-        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
-
-        String tekst = drlTekst(ir);
-        assertFalse(tekst.contains("accumulate("), "geen accumulate op een gemarkeerde regel:\n" + tekst);
-        assertFalse(tekst.contains("Uitrusting("),
-                "en geen weesclausule van het gehesen filter:\n" + tekst);
-    }
-
-    /**
-     * Een vouw als kind van een NIET-conjunctieve {@code Samengesteld} ("ten minste één van: alle schepen
-     * halen de matrix; de Vloot is vlaggend"). Beide routes van de vouw — de heelperiodematrix en de
-     * niet-temporele — antwoorden met een EIGEN when-clausule en een lege inline, en een {@code ||}/{@code !}
-     * -vouw kan die niet hosten: een aparte clausule beweert onvoorwaardelijk wat de vouw juist weegt.
-     *
-     * <p>De vorm is welgevormd en {@code ref} speelt hem — gemeten op beide documenten:
-     * <pre>
-     *   verifier : PASS
-     *   ref      : oracle: PASS (2 expectations)
-     * </pre>
-     * De DRL-teksttak weigert hem, en de eis is dat die weigering BENOEMD is:
-     * tot 2026-09-18 schreef de tak haar clausule toch en stierf het pakket op
-     * {@code [ERR 101] … no viable alternative at input ')'}. De niet-temporele route had datzelfde defect
-     * al vóór deze kaart; beide zijn met dezelfde vangst dicht. De destructieve exec-modeltak weigerde hem
-     * ook; de tak met truth maintenance speelt beide documenten zoals {@code ref} antwoordt
-     * ({@code TmsZoalsRefWitnessTest}, {@code heelperiode-niet-conjunctieve-kwantor}).
-     */
-    @Test void een_vouw_onder_een_niet_conjunctieve_kwantor_weigert_bij_naam() throws Exception {
-        Path c = schrijf("case-disjunctie.json", caseDoc(schepen(
-                schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicPresent"));
         for (boolean heelperiode : new boolean[]{true, false}) {
             String wat = heelperiode ? "heelperiodematrix" : "niet-temporele matrix";
             Path ir = schrijf("ir-disjunctie-" + heelperiode + ".json", vouwOnderDisjunctie(heelperiode));
-
-            CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-            assertEquals("EXCLUDE", drl.status(), wat + ": een niet-gelowerde vouw mag nooit meespelen");
-            assertFalse(drl.reason().contains("drl compile"),
-                    wat + ": een parsefout is geen benoemde weigering: " + drl.reason());
-            assertTrue(drl.reason().contains("kwantorvouw")
-                            && drl.reason().contains("niet-conjunctieve kwantor"),
-                    wat + ": de reden noemt de KNOOP en de positie: " + drl.reason());
-
-            CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
-            assertEquals("PLAYED", tms.status(), wat + ": de tak met truth maintenance antwoordt zoals ref: " + tms);
+            assertEquals("PLAYED", zelfdeOordeel(ir, aanwezig).status(), wat + ": de niet-conjunctieve kwantor, zoals ref");
         }
     }
 
-    /** De DRL-TEKST van één document, zonder te compileren of te spelen — de enige naad waarop een
-     *  weesclausule zichtbaar is: een gemarkeerde regel compileert vaak gewoon, en dan is het de TEKST en
-     *  niet de status die zegt of er iets is achtergebleven. */
-    private static String drlTekst(Path ir) throws Exception {
-        dev.uchar.regelspraak.loader.IrLoader.Loaded loaded =
-                dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
-        return dev.uchar.regelspraak.transpiler.DrlTranspiler
-                .build(loaded.model(), loaded.lets(), loaded.prioritizedDefaults(), loaded.bronPaden(),
-                        loaded.rolBindingen(), loaded.navigatieBindingen()).drl();
+    /** The replay of {@code zaak} on the exec-model branch, after asserting that the DRL-text branch gives the same
+     *  result, status, reason and failures alike. */
+    private static CaseRunner.Result zelfdeOordeel(Path ir, Path zaak) {
+        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(zaak));
+        assertEquals(exec.toString(), CaseRunner.viaDrlTekst(ir, List.of(zaak)).toString(),
+                () -> "de DRL-teksttak geeft op " + ir.getFileName() + " een ander oordeel dan de exec-model-tak");
+        return exec;
     }
 
     // ---------------- an unlowerable shape SKIPS by name, never fires a wrong verdict ----------------

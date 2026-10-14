@@ -156,11 +156,12 @@ class TakgelijkheidWitnessTest {
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("feitcreatie: vakbeseining door het kustvak — een feitcreatie zonder opgelost"
                 + " anker, doel, feittype of pad"), e.getMessage());
-        String drl = drlReden(ir, c);
-        assertTrue(drl.contains("onopgelost feitcreatie (onopgelost): vakbeseining door het kustvak"), drl);
+        // the DRL-text branch renders the analysis since card drl-teksttak-op-truth-maintenance and refuses in its
+        // sentence; until then it said "onopgelost feitcreatie (onopgelost): vakbeseining door het kustvak"
+        assertEquals(e.getMessage(), drlReden(ir, c));
     }
 
-    @Test void de_drl_feitcreatie_speelt_een_naamloze_creatie() throws Exception {
+    @Test void de_drl_feitcreatie_weigert_een_naamloze_creatie() throws Exception {
         // `naam` is a wire-nullable position of this construct that no well-formedness rule covered when this row was
         // written: WF-034 gated zetVeld, joinVeld and the tussenstappen until L2 and crosses the symbolic block since,
         // and WF-094 clause (d) gated the five KEYED tables while feitCreaties is a LIST. Since then WF-107 covers it:
@@ -172,41 +173,29 @@ class TakgelijkheidWitnessTest {
         //     clingo  : clingo: PASS (10 expectations)
         //     Drools exec-model : PLAYED 1 — the null goes straight into the rule header and the creation FIRES
         //     Drools DRL-tekst  : ERROR NullPointerException: Cannot invoke "String.replace(…)" because "naam" is null
-        // Here the aligned answer is to PLAY, not to refuse: three executors run this document, so a refusal would
-        // be the DRL branch inventing a limit the wire does not have. That the creation really fires is pinned by
-        // the mutation probe below and not by the bare PLAYED — V1.vakseinaantal counts the CREATED vakbeseining
-        // relation, so 2 is only reachable through the nameless rule.
+        // Until card drl-teksttak-op-truth-maintenance the destructive DRL-text branch played it, with a mutation probe
+        // that pinned the creation firing (vakseinaantal 2 where 99 was asked); since that card it renders the
+        // analysis and refuses the nameless form by name, as the verifier does (WF-107).
         Path ir = naamlozeCreatie(), c = ir(POSTWACHT).resolveSibling("case.json");
         naamloosGeweigerd(ir, c);
-        assertEquals("PLAYED", CaseRunner.viaDrlTekst(ir, List.of(c)).status());
-
-        Path mut = vakseinaantalOp(c, "99");
-        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(mut));
-        assertEquals("FAIL", drl.status(), drl.reason());
-        assertTrue(drl.caseFailures().toString().contains("vakseinaantal: verwacht 99, werkelijk 2"),
-                drl.caseFailures().toString());
     }
 
     @Test void twee_naamloze_creaties_botsen_niet_op_hun_terugvalnaam() throws Exception {
         // The flank the nameless fallback itself opens: a DRL package refuses duplicate rule names, so ONE flat
         // fallback string turns two nameless creations into "Duplicate rule name: <unnamed ResolvedFeitCreatie>"
         // — measured — where the destructive exec-model branch played them. That would have replaced the inequality
-        // this card closes with another one, so the fallback carries the construct's WIRE POSITION, and the DRL-text
-        // branch plays. The verifier rejects a nameless form (WF-107), and the truth-maintenance branch refuses it.
-        Path ir = tweeNaamlozeCreaties(), c = ir(POSTWACHT).resolveSibling("case.json");
-        naamloosGeweigerd(ir, c);
-        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
-        assertEquals("PLAYED", drl.status(), drl.reason());
+        // this card closes with another one, so the fallback carried the construct's WIRE POSITION, and the destructive
+        // DRL-text branch played until card drl-teksttak-op-truth-maintenance. The verifier rejects a nameless form
+        // (WF-107), and the analysis refuses it, on both branches since that card.
+        naamloosGeweigerd(tweeNaamlozeCreaties(), ir(POSTWACHT).resolveSibling("case.json"));
     }
 
     // ---------------- fixtures ----------------
 
-    /** The truth-maintenance branch refuses a nameless fact creation by name, as the verifier does (WF-107). */
+    /** The analysis refuses a nameless fact creation by name, as the verifier does (WF-107), on both branches. */
     private static void naamloosGeweigerd(Path ir, Path c) throws Exception {
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains("feitcreatie: (zonder naam) — een feitcreatie zonder naam (WF-107)"),
-                e.getMessage());
+        BeideTakken.geweigerd(ir, JSON.readTree(Files.readString(c)), "feitcreatie: (zonder naam) — een feitcreatie"
+                + " zonder naam (WF-107)", "a nameless fact creation");
     }
 
         private static Path ir(String golden) {
@@ -306,19 +295,5 @@ class TakgelijkheidWitnessTest {
         fc.putNull("name");
         IrPad.rulesLijst(ir, "factCreations").add(fc.deepCopy());
         return model("feitcreatie-twee-naamloos", ir);
-    }
-
-    /** The postwacht case with the ONE expectation that observes the created relation retuned — the mutation probe
-     *  that turns a bare PLAYED into proof the nameless rule fired. */
-    private static Path vakseinaantalOp(Path caseFile, String waarde) throws Exception {
-        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(caseFile));
-        int geraakt = 0;
-        for (JsonNode e : c.get("expected"))
-            if (e.has("attribute") && "vakseinaantal".equals(e.get("attribute").asText())) {
-                ((ObjectNode) e.get("value")).put("number", waarde);
-                geraakt++;
-            }
-        assertEquals(1, geraakt, "de case draagt precies één vakseinaantal-verwachting");
-        return geval(c.toString());
     }
 }

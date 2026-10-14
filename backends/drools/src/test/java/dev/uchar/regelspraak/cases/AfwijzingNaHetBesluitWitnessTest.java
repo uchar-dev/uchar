@@ -68,7 +68,7 @@ class AfwijzingNaHetBesluitWitnessTest {
         int rijen = 0;
         for (List<Integer> volgorde : TmsDocumenten.permutaties(List.of(0, 1))) {
             Path ir = document(volgorde);
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
                 assertNull(CaseRunner.speelCase(ir, zaak(), tak), tak + ": de creaties in volgorde " + volgorde);
                 rijen++;
             }
@@ -80,7 +80,7 @@ class AfwijzingNaHetBesluitWitnessTest {
         Path ir = MAP.resolve("ir.json");
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         List<Integer> plaatsen = new ArrayList<>();

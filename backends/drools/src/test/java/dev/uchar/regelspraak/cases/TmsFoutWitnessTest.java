@@ -427,7 +427,7 @@ class TmsFoutWitnessTest {
      *  the same outcome (card drl-teksttak-op-truth-maintenance, step 5): that outcome. */
     static String speelBeide(Path ir, JsonNode zaak) throws Exception {
         String exec = speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, speel(ir, zaak, DroolsBackend.Branch.DRL_TMS), () -> "DRL_TMS speelt " + ir
+        assertEquals(exec, speel(ir, zaak, DroolsBackend.Branch.DRL_TEXT), () -> "DRL_TMS speelt " + ir
                 + " anders dan de exec-model-tak");
         return exec;
     }

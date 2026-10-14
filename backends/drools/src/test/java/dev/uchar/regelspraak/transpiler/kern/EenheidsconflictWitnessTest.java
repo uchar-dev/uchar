@@ -13,7 +13,6 @@ import dev.uchar.regelspraak.model.Eenheid;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
@@ -496,10 +495,10 @@ class EenheidsconflictWitnessTest {
 
     private static boolean lowertTms(JsonNode ir) { return vangTms(ir) == null; }
 
+    /** The text of the DRL-text branch: the analysis rendered as DRL text, through the backend's entry. */
     private static String drl(JsonNode ir) {
-        IrLoader.Loaded l = IrLoader.loadAll(ir);
-        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
-                l.navigatieBindingen()).drl();
+        return dev.uchar.regelspraak.cases.DroolsBackend.build(ir,
+                dev.uchar.regelspraak.cases.DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     private static void tms(JsonNode ir) {

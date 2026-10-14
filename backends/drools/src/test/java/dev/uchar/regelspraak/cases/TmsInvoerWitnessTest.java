@@ -222,26 +222,6 @@ class TmsInvoerWitnessTest {
         });
     }
 
-    @Test void op_de_drl_teksttak_voegt_voegIn_alleen_de_beans_in() throws Exception {
-        // the DRL-text branch alone: since card tms-omschakeling the exec-model branch derives with truth maintenance
-        // and states what it reads beside the beans
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
-            DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
-                    tak);
-            TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
-                List<Object> jv = jutterMetVondsten(b);
-                KieSession sessie = b.kieBase().newKieSession();
-                try {
-                    DroolsBackend.voegIn(b, sessie, new Invoer().beans(jv).lijst(jv.get(0), "aanmelder",
-                            List.of(jv.get(2), jv.get(1))).emmerscalair(jv.get(1), "gewicht"));
-                    assertEquals(jv.size(), sessie.getFactCount(), tak + ": the beans alone");
-                } finally {
-                    sessie.dispose();
-                }
-            });
-        }
-    }
-
     // ---------------- helpers ----------------
 
     private static DroolsBackend.Build vondstbouw() throws Exception {

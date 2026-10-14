@@ -619,7 +619,7 @@ class DefaultsRechtvaardigingWitnessTest {
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
         String exec = CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.DRL_TMS), "DRL_TMS naast de exec-model-tak");
+        assertEquals(exec, CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS naast de exec-model-tak");
         return exec;
     }
 }

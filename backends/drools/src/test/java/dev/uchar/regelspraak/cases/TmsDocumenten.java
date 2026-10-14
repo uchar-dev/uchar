@@ -417,7 +417,7 @@ final class TmsDocumenten {
      *  in the text ({@code Tekstvolgorde}), since the order of the rules in the text is the order in which Drools loads
      *  them, and with it the order of the agenda among matches of equal standing. */
     static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
-            DroolsBackend.Branch.DRL_TMS);
+            DroolsBackend.Branch.DRL_TEXT);
 
     /** The shuffles of a sample on the text in the samples brought to the text after round 5b ({@link #schuddingen}). */
     static final int TEKSTSCHUDDINGEN = 40;
@@ -435,8 +435,6 @@ final class TmsDocumenten {
      *  model, or on {@code DRL_TMS} those of its text, which must be the same in the same order, so that one sample
      *  gives both branches the same orders. */
     static List<String> gegenereerd(DroolsBackend.Build b) {
-        if (b.branch() == DroolsBackend.Branch.DRL_TEXT)
-            throw new IllegalArgumentException("een steekproef vuurt de analyse, niet de oude DRL-teksttak");
         List<String> model = b.execModelTranspiler().model().getRules().stream().map(org.drools.model.Rule::getName)
                 .toList();
         if (b.branch() == DroolsBackend.Branch.EXEC_MODEL) return model;
@@ -450,7 +448,7 @@ final class TmsDocumenten {
      *  them: the rules of its executable model ({@link #kieBase}), or on {@code DRL_TMS} the rules of its plan rendered
      *  as text ({@code Tekstvolgorde}). */
     static org.kie.api.KieBase kieBaseVan(DroolsBackend.Build b, List<String> namen) {
-        if (b.branch() == DroolsBackend.Branch.DRL_TMS)
+        if (b.branch() == DroolsBackend.Branch.DRL_TEXT)
             return dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde.kieBase(b, namen);
         Map<String, org.drools.model.Rule> perNaam = new java.util.HashMap<>();
         for (org.drools.model.Rule r : b.execModelTranspiler().model().getRules())

@@ -45,23 +45,19 @@ import java.util.function.Function;
  * instead of at first fire. None is reachable by the value pipeline (kenmerks only ever get {@code TRUE}, the only
  * primitive setters are boolean kenmerks, and the fact-bean getters are pure field reads).
  *
- * <p>Two entries. {@link #getter} and {@link #setter} take a DECLARED name and derive the method from it through
- * {@link RegelSpraakRuntime#pascal}, as the reflective bridge does; the DRL-text branch and its replay read that way.
- * {@link #eigenschapGetter}, {@link #eigenschapSetter} and {@link #leesEigenschap} take the member's bean PROPERTY and
- * the names {@code Namen.lidnamen} gives it, the very names the fact-model generator writes, without deriving them
+ * <p>{@link #eigenschapGetter}, {@link #eigenschapSetter} and {@link #leesEigenschap} take the member's bean PROPERTY
+ * and the names {@code Namen.lidnamen} gives it, the very names the fact-model generator writes, without deriving them
  * again: {@code pascal} of a property is not always its getter ("日 X" has the property {@code 日X}, which
  * {@code pascal} reads as a shouted word, {@code 日x}), and the Pascal form of a declared name is not always the
  * generator's getter either ({@code İş} where the generator writes {@code Iş}). Every reader and writer of a bean member
- * in the executable-model branch goes through the property entry.
+ * goes through this entry. Until card drl-teksttak-op-truth-maintenance a second entry took a DECLARED name and derived
+ * the method through {@link RegelSpraakRuntime#pascal}, for the DRL-text branch of that day and its replay.
  */
 public final class Accessors {
     private Accessors() {}
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final Map<Class<?>, Map<String, Function<Object, Object>>> GETTERS = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Map<String, BiConsumer<Object, Object>>> SETTERS = new ConcurrentHashMap<>();
-    /** The property entry's own caches: a key there is a property, here a declared name, and the two resolve a string
-     *  to a method differently. */
+    /** The caches of the property entry, per owner and property. */
     private static final Map<Class<?>, Map<String, Function<Object, Object>>> EIGENSCHAPGETTERS = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Map<String, BiConsumer<Object, Object>>> EIGENSCHAPSETTERS =
             new ConcurrentHashMap<>();
@@ -101,26 +97,6 @@ public final class Accessors {
     /** Diagnostics: count of accessor builds that fell off the typed LMF path onto the reflective bridge. */
     public static int lmfFallbacks() { return lmfFallbacks; }
 
-    /** A null-safe typed getter for {@code owner.get<Prop>()} / {@code is<Prop>()}: {@code apply(null) -> null}
-     *  (a null to-one navigation reads leeg, matching {@link RegelSpraakRuntime#get}). Throws at THIS call (model
-     *  build time) when the bean has no such getter. It takes a DECLARED name and derives the method again through
-     *  {@link RegelSpraakRuntime#pascal}, which is not always the name the generator wrote: not for the branch with
-     *  truth maintenance, whose readers take {@link #eigenschapGetter}; the DRL-text branch reads through it until its
-     *  switch-over to the branch's rendering. */
-    public static Function<Object, Object> getter(Class<?> owner, String prop) {
-        return GETTERS.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
-                      .computeIfAbsent(prop, p -> buildGetter(owner, p));
-    }
-
-    /** A typed setter for {@code owner.set<Prop>(v)}. Falls back to the value-type-directed reflective bridge when
-     *  the bean has 0 or &gt;1 single-arg {@code set<Prop>} (so overload resolution stays identical to
-     *  {@link RegelSpraakRuntime#set}). Like {@link #getter} it derives the method from a declared name, and it is not
-     *  for the branch with truth maintenance, whose writers take {@link #eigenschapSetter}. */
-    public static BiConsumer<Object, Object> setter(Class<?> owner, String prop) {
-        return SETTERS.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
-                      .computeIfAbsent(prop, p -> buildSetter(owner, p));
-    }
-
     /** A null-safe typed getter for the member of {@code owner} whose bean property is {@code eigenschap}
      *  ({@code Namen.eigenschap} of its declared name): the {@code get} or else the {@code is} method that
      *  {@code Namen.lidnamen} names, as the fact-model generator wrote it, never derived again. Throws at THIS call when
@@ -145,18 +121,6 @@ public final class Accessors {
      *  Null where {@code bean} is null, a link that is absent. */
     public static Object leesEigenschap(Object bean, String eigenschap) {
         return bean == null ? null : eigenschapGetter(bean.getClass(), eigenschap).apply(bean);
-    }
-
-    private static Function<Object, Object> buildGetter(Class<?> owner, String prop) {
-        String p = RegelSpraakRuntime.pascal(prop);
-        Method m = getterMethod(owner, "get" + p, "is" + p);
-        if (m == null) throw new IllegalStateException("geen getter voor '" + prop + "' op " + owner.getName());
-        Function<Object, Object> raw = getypeerd(owner, m);
-        if (raw == null) return o -> RegelSpraakRuntime.get(o, prop);
-        // null owner -> null (leeg). A non-owner instance (only possible if a future objecttype specialisatie /
-        // a relation field broader than the navigation target ever feeds a SUBTYPE/sibling here) defers to the
-        // bridge, which re-resolves on the ACTUAL class -- so the typed path stays a true drop-in, not a cast trap.
-        return o -> o == null ? null : owner.isInstance(o) ? raw.apply(o) : RegelSpraakRuntime.get(o, prop);
     }
 
     private static Function<Object, Object> buildEigenschapGetter(Class<?> owner, String eigenschap) {
@@ -189,14 +153,6 @@ public final class Accessors {
             lmfFallbacks++;
             return null;
         }
-    }
-
-    private static BiConsumer<Object, Object> buildSetter(Class<?> owner, String prop) {
-        Method m = uniqueSetterMethod(owner, "set" + RegelSpraakRuntime.pascal(prop));
-        if (m == null) return (o, v) -> RegelSpraakRuntime.set(o, prop, v);   // 0 or >1 overloads: value-directed bridge
-        BiConsumer<Object, Object> raw = getypeerdeSetter(owner, m, prop);
-        if (raw == null) return (o, v) -> RegelSpraakRuntime.set(o, prop, v);
-        return (o, v) -> { if (owner.isInstance(o)) raw.accept(o, v); else RegelSpraakRuntime.set(o, prop, v); };   // subtype-safe drop-in
     }
 
     private static BiConsumer<Object, Object> buildEigenschapSetter(Class<?> owner, String eigenschap) {

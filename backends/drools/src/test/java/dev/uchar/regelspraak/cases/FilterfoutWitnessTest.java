@@ -2,7 +2,6 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.runtime.Breuk;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -141,7 +139,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Those refusals were the destructive exec-model branch's. Since card tms-omschakeling (2026-10-10) the rows that
  * pinned them run on the truth-maintenance branch, which plays every such form as the reference interpreter answers;
  * the rows whose form that branch refuses by name (a division in a member initialisation of a creation, in a default,
- * and a power whose exponent is no literal) pin its refusal, and the DRL-text branch keeps its own expectations.
+ * and a power whose exponent is no literal) pin its refusal. Since card drl-teksttak-op-truth-maintenance the DRL-text
+ * branch renders the same analysis, and every row demands of it the verdict of the exec-model branch: where it faulted
+ * at the constraint that holds the filter, with the quotient of that constraint ("deling rsGedeeld(gewicht,
+ * deelnemers)"), it now gives the named division of the fixpoint, and where it played or refused a form in sentences of
+ * its own ("drl-transpiler MARKER: regel: drukte"), it now plays or refuses as the exec-model branch does.
  */
 class FilterfoutWitnessTest {
 
@@ -159,29 +161,12 @@ class FilterfoutWitnessTest {
     }
 
     /** Both branches fault on {@code zaak}, where rule {@code regel} reaches its fold and the filter divides
-     *  {@code deeltal} by zero for a member: the exec-model branch with its division named after the rule, the DRL-text
-     *  branch with Drools' exception for the constraint that holds the filter, the division in its cause chain. */
+     *  {@code deeltal} by zero for a member: with the division named after the rule, a fault of the fixpoint. */
     private static void faalt(Path ir, JsonNode zaak, String regel, String deeltal) throws Exception {
-        assertEquals("DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + deeltal + " gedeeld door 0 — een"
-                + " numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
-                TmsFoutWitnessTest.speel(ir, zaak, EXEC), "exec-model");
-        faaltDrl(ir, zaak);
-    }
-
-    /** The DRL-text branch's half of {@link #faalt}. */
-    private static void faaltDrl(Path ir, JsonNode zaak) throws Exception {
-        RuntimeException drl = assertThrows(RuntimeException.class, () -> CaseRunner.speelCase(ir, zaak, DRL));
-        assertEquals("ConstraintEvaluationException", drl.getClass().getSimpleName(), () -> "drl-tekst: " + drl);
-        assertTrue(drl.getMessage().startsWith("Error evaluating constraint '") && drl.getMessage().contains("rsGedeeld("),
-                () -> "drl-tekst: " + drl.getMessage());
-        assertTrue(deling(drl), () -> "drl-tekst zonder de deling in de oorzaken: " + drl);
-    }
-
-    /** Whether {@code t} or a cause of it is the division by a numeric zero. */
-    private static boolean deling(Throwable t) {
-        for (Throwable o = t; o != null; o = o.getCause() == o ? null : o.getCause())
-            if (o instanceof Breuk.DelingDoorNul) return true;
-        return false;
+        for (DroolsBackend.Branch tak : List.of(EXEC, DRL))
+            assertEquals("DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + deeltal + " gedeeld door 0 —"
+                    + " een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
+                    TmsFoutWitnessTest.speel(ir, zaak, tak), tak.toString());
     }
 
     private static String vondst(String label, String gewicht, String deelnemers) {
@@ -247,9 +232,8 @@ class FilterfoutWitnessTest {
         assertEquals("Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels \"drukte\", \"zware"
                 + " vondsten\": deling door nul in de regel \"drukte\": " + deling + "; deling door nul in de regel \"zware"
                 + " vondsten\": " + deling, TmsFoutWitnessTest.speel(FILTERWACHT, zaak, EXEC), "exec-model");
-        RuntimeException drl = assertThrows(RuntimeException.class, () -> CaseRunner.speelCase(FILTERWACHT, zaak, DRL));
-        assertTrue(drl.getMessage().startsWith("Error evaluating constraint '(rsAggVergelijk(rsGedeeld(gewicht, deelnemers)")
-                && deling(drl), () -> "drl-tekst: " + drl);
+        assertEquals(TmsFoutWitnessTest.speel(FILTERWACHT, zaak, EXEC), TmsFoutWitnessTest.speel(FILTERWACHT, zaak, DRL),
+                "drl-tekst");
     }
 
     // ---------------- the other places where a fold stands under a condition ----------------
@@ -348,25 +332,23 @@ class FilterfoutWitnessTest {
     }
 
     /** "Een Jutter heeft een melding met telling gelijk aan het aantal vondsten … indien hij actief is": the fold is
-     *  the creation's initialisation. J2 counts 1, J3 0, on the DRL-text branch. The truth-maintenance branch refuses
-     *  the creation by name ({@link #initialisatieGeweigerd}). */
+     *  the creation's initialisation. The analysis refuses the creation by name ({@link #initialisatieGeweigerd}), on
+     *  both branches; until card drl-teksttak-op-truth-maintenance the DRL-text branch played it, J2 counting 1 and J3
+     *  0, and faulted on J1 at the constraint that held the filter. */
     @Test void een_vouw_in_de_initialisatie_van_een_creatie() throws Exception {
         Path ir = document(List.of(MELDTELLING), List.of(creatie(vouw(), check("actief", false))));
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(false),
-                List.of(waarde("J1", "meldtelling", null), consistent())), DRL), "drl-tekst");
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j2j3(), List.of(
-                waarde("J2", "meldtelling", "1"), waarde("J3", "meldtelling", "0"), consistent())), DRL), "drl-tekst");
-        faaltDrl(ir, TmsDocumenten.zaak(j1(true), List.of(consistent())));
         initialisatieGeweigerd(ir);
     }
 
-    /** The truth-maintenance branch refuses a creation whose member initialisation divides, by name: it makes no §6.5
-     *  deposit there. Coverage lost against the destructive exec-model branch, accepted (card tms-omschakeling). */
+    /** The analysis refuses a creation whose member initialisation divides, by name, on both branches: it makes no
+     *  §6.5 deposit there. Coverage lost against the destructive exec-model branch, accepted (card tms-omschakeling). */
     private static void initialisatieGeweigerd(Path ir) throws Exception {
-        String tms = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(false), List.of(consistent())), EXEC);
-        assertTrue(tms.startsWith("Excluded: ") && tms.contains("objectcreatie: meld — een deling in een"
-                + " ledeninitialisatie ('zijn gewicht gedeeld door zijn deelnemers'), waarvan deze tak de"
-                + " §6.5-deponering niet maakt"), "exec-model: " + tms);
+        for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
+            String tms = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(false), List.of(consistent())), tak);
+            assertTrue(tms.startsWith("Excluded: ") && tms.contains("objectcreatie: meld — een deling in een"
+                    + " ledeninitialisatie ('zijn gewicht gedeeld door zijn deelnemers'), waarvan deze tak de"
+                    + " §6.5-deponering niet maakt"), tak + ": " + tms);
+        }
     }
 
     /** The filter of a quantifier fold, after "hij is actief" in a composite, under ten minste één (druk), alle
@@ -493,34 +475,24 @@ class FilterfoutWitnessTest {
     }
 
     /** What {@code tak} gives on {@code zaak}: "gespeeld", the verdict of an expectation that failed, or the fault with
-     *  its class. For the DRL-text branch, whose exception names the constraint, a division by a numeric zero in the
-     *  cause chain is "deling" with the quotient of that constraint. */
+     *  its class. */
     static String waarneming(Path ir, JsonNode zaak, DroolsBackend.Branch tak) throws Exception {
         try {
             String v = CaseRunner.speelCase(ir, zaak, tak);
             return v == null ? "gespeeld" : v;
         } catch (RuntimeException e) {
-            if (tak == DRL && deling(e)) {
-                java.util.regex.Matcher m = java.util.regex.Pattern.compile("rsGedeeld\\([^()]*\\)")
-                        .matcher(String.valueOf(e.getMessage()));
-                return "deling " + (m.find() ? m.group() : "zonder quotiënt in '" + e.getMessage() + "'");
-            }
             return e.getClass().getSimpleName() + ": " + e.getMessage();
         }
     }
 
-    /** The quotient of each member's division as the DRL-text branch writes it in the constraint it names. */
-    private static final Map<Character, String> QUOTIENT = Map.of('F', "rsGedeeld(gewicht, ploeg)",
-            'D', "rsGedeeld(saldo, noemer)", 'K', "rsGedeeld(gewicht, deelnemers)");
-
-    /** What {@code tak} must give where the verdict on rule {@code regel} is {@code verdict}: for a fault, the
-     *  exec-model branch's division with its dividend, the DRL-text branch's exception with the member's quotient. */
-    static String verwachting(String verdict, String regel, DroolsBackend.Branch tak) {
+    /** What each branch must give where the verdict on rule {@code regel} is {@code verdict}: for a fault, the division
+     *  of the fixpoint with its dividend, named after the rule. Until card drl-teksttak-op-truth-maintenance the DRL-text
+     *  branch gave Drools' exception for the constraint that held the member's quotient. */
+    static String verwachting(String verdict, String regel) {
         if (verdict.equals("W") || verdict.equals("O")) return "gespeeld";
-        if (tak == EXEC) return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + verdict.substring(2)
+        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + verdict.substring(2)
                 + " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
                 + " punt 4)";
-        return "deling " + QUOTIENT.get(verdict.charAt(0));
     }
 
     /** Every order of the four members, on the four cases, on both branches: a member is evaluated only where every
@@ -542,7 +514,7 @@ class FilterfoutWitnessTest {
                 JsonNode zaak = TmsDocumenten.zaak(g.instanties(), verdict.equals("W") || verdict.equals("O")
                         ? List.of(verwacht(g.label(), "druk", verdict.equals("W")), consistent()) : List.of(consistent()));
                 for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
-                    String gekregen = waarneming(ir, zaak, tak), verwacht = verwachting(verdict, "drukte", tak);
+                    String gekregen = waarneming(ir, zaak, tak), verwacht = verwachting(verdict, "drukte");
                     if (!gekregen.equals(verwacht))
                         afwijkend.add(volgorde + " " + g.label() + " " + tak + ": verwacht " + verwacht + ", kreeg " + gekregen);
                 }
@@ -591,8 +563,8 @@ class FilterfoutWitnessTest {
     }
 
     /** "de eerste van de vinddatum van alle vondsten van de Jutter die {@link #FILTER} is later dan zijn peildatum"
-     *  beside "hij is actief", in both orders, on the exec-model branch; the DRL-text branch refuses a fold of dates in a
-     *  condition by name (measured 2026-10-09). J1 is not actief and its V2 divides 9 by 0: with the fold first the
+     *  beside "hij is actief", in both orders, on both branches (until card drl-teksttak-op-truth-maintenance the
+     *  DRL-text branch refused a fold of dates in a condition by name, measured 2026-10-09). J1 is not actief and its V2 divides 9 by 0: with the fold first the
      *  composite faults, after "hij is actief" the fold is not read. J2 is actief, and its one contributor V3 was found
      *  on 2026-01-05, later than its peildatum 2020-01-01. */
     @Test void een_datumvouw_naast_een_lid_in_beide_volgordes() throws Exception {
@@ -609,14 +581,10 @@ class FilterfoutWitnessTest {
                 List.of(datumvouw, check("actief", false))))), List.of());
         Path actiefEerst = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0,
                 List.of(check("actief", false), datumvouw)))), List.of());
-        assertEquals("DelingDoorNul: deling door nul in de regel \"drukte\": 9 gedeeld door 0 — een numerieke nul als"
-                + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
-                TmsFoutWitnessTest.speel(vouwEerst, TmsDocumenten.zaak(j1, List.of(consistent())), EXEC));
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(actiefEerst, TmsDocumenten.zaak(j1,
-                List.of(verwacht("J1", "druk", false), consistent())), EXEC));
+        faalt(vouwEerst, TmsDocumenten.zaak(j1, List.of(consistent())), "drukte", "9");
+        gespeeld(actiefEerst, TmsDocumenten.zaak(j1, List.of(verwacht("J1", "druk", false), consistent())));
         for (Path ir : List.of(vouwEerst, actiefEerst))
-            assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j2,
-                    List.of(verwacht("J2", "druk", true), consistent())), EXEC));
+            gespeeld(ir, TmsDocumenten.zaak(j2, List.of(verwacht("J2", "druk", true), consistent())));
     }
 
     /** "de eerste van de vinddatum van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen:
@@ -635,8 +603,9 @@ class FilterfoutWitnessTest {
      *  agrees). The destructive exec-model branch lowered such a composite as one test after the accumulates of all its
      *  folds, and Drools folded those for every subject before the test read the members in their order, so that branch
      *  divided 9 by 0 there and refused the form by name since 2026-10-09. The truth-maintenance branch plays it as the
-     *  reference interpreter answers ({@code TmsZoalsRefWitnessTest} holds these documents too); the DRL-text branch
-     *  refuses a fold of dates in a condition. The control: the same composites over "zijn gewicht is groter dan 5",
+     *  reference interpreter answers ({@code TmsZoalsRefWitnessTest} holds these documents too), on both branches since
+     *  card drl-teksttak-op-truth-maintenance, before which the DRL-text branch refused a fold of dates in a condition.
+     *  The control: the same composites over "zijn gewicht is groter dan 5",
      *  which cannot fault, play on the exec-model branch as the reference interpreter answers, on J1 and on J2, neither
      *  actief nor beladen, whose V3 is heavy and was found after its peildatum, so that geen, ten minste 1 and precies 1
      *  read the fold: not druk, druk, druk, druk. */
@@ -665,8 +634,10 @@ class FilterfoutWitnessTest {
             for (JsonNode zaak : List.of(TmsDocumenten.zaak(j1, List.of(verwacht("J1", "druk",
                     Boolean.parseBoolean(k[3])), consistent())), TmsDocumenten.zaak(j2, List.of(verwacht("J2", "druk",
                     Boolean.parseBoolean(k[4])), consistent())))) {
-                String v = TmsFoutWitnessTest.speel(controle, zaak, EXEC);
-                if (!v.equals("gespeeld")) afwijkend.add(k[0] + " controle " + EXEC + ": " + v);
+                for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
+                    String v = TmsFoutWitnessTest.speel(controle, zaak, tak);
+                    if (!v.equals("gespeeld")) afwijkend.add(k[0] + " controle " + tak + ": " + v);
+                }
             }
         }
         Path genest = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0, List.of(
@@ -677,15 +648,14 @@ class FilterfoutWitnessTest {
         assertEquals(List.of(), afwijkend);
     }
 
-    /** Adds to {@code afwijkend} where the truth-maintenance branch does not play {@code zaak} on {@code ir}, a
-     *  composite ({@code bron}) whose fold divides, with the reference interpreter's answer, or the DRL-text branch does
-     *  not refuse the rule "drukte". */
+    /** Adds to {@code afwijkend} where a branch does not play {@code zaak} on {@code ir}, a composite ({@code bron})
+     *  whose fold divides, with the reference interpreter's answer. Until card drl-teksttak-op-truth-maintenance the
+     *  DRL-text branch refused the rule "drukte" here ("drl-transpiler MARKER: regel: drukte — …"). */
     private static void zoalsRef(Path ir, JsonNode zaak, String bron, List<String> afwijkend) throws Exception {
-        String tms = TmsFoutWitnessTest.speel(ir, zaak, EXEC);
-        if (!tms.equals("gespeeld")) afwijkend.add(bron + " " + EXEC + ": " + tms);
-        String drl = TmsFoutWitnessTest.speel(ir, zaak, DRL);
-        if (!drl.startsWith("Excluded: drl-transpiler MARKER: regel: drukte — "))
-            afwijkend.add(bron + " " + DRL + ": " + drl);
+        for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
+            String v = TmsFoutWitnessTest.speel(ir, zaak, tak);
+            if (!v.equals("gespeeld")) afwijkend.add(bron + " " + tak + ": " + v);
+        }
     }
 
     /** J1 with the characteristics {@code kenmerken}, the peildatum 2020-01-01 and V1, 10 by 2, found on 2026-01-05,
@@ -738,14 +708,13 @@ class FilterfoutWitnessTest {
             @SuppressWarnings("unchecked") List<String> kenmerken = (List<String>) w[1], metV2 = (List<String>) w[3];
             JsonNode antwoord = TmsDocumenten.zaak(peiljutter(kenmerken, false), List.of(verwacht("J1", "druk",
                     (Boolean) w[2]), consistent()));
-            String exec = TmsFoutWitnessTest.speel(ir, antwoord, EXEC);
-            if (!exec.equals("gespeeld")) afwijkend.add(v.getKey() + " " + EXEC + ": " + exec);
             JsonNode fout = TmsDocumenten.zaak(peiljutter(metV2, true), List.of(consistent()));
-            exec = TmsFoutWitnessTest.speel(ir, fout, EXEC);
-            if (!exec.equals(deling)) afwijkend.add(v.getKey() + " met V2 " + EXEC + ": " + exec);
-            String drl = TmsFoutWitnessTest.speel(ir, antwoord, DRL);
-            if (!drl.startsWith("Excluded: drl-transpiler MARKER: regel: drukte — "))
-                afwijkend.add(v.getKey() + " " + DRL + ": " + drl);
+            for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
+                String gegeven = TmsFoutWitnessTest.speel(ir, antwoord, tak);
+                if (!gegeven.equals("gespeeld")) afwijkend.add(v.getKey() + " " + tak + ": " + gegeven);
+                gegeven = TmsFoutWitnessTest.speel(ir, fout, tak);
+                if (!gegeven.equals(deling)) afwijkend.add(v.getKey() + " met V2 " + tak + ": " + gegeven);
+            }
         }
         zoalsRef(document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("atMost", 1,
                 List.of(vouw)))), List.of()), TmsDocumenten.zaak(peiljutter(List.of(), true),
@@ -781,16 +750,12 @@ class FilterfoutWitnessTest {
         Path creatie = document(List.of(MELDTELLING), List.of(creatie(vouw(), voorwaarde)));
         String v6 = vondst("V6", "60", "2");
         gespeeld(regel, TmsDocumenten.zaak(j1(false), List.of(waarde("J1", "zwaarte", null), consistent())));
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(creatie, TmsDocumenten.zaak(j1(false),
-                List.of(waarde("J1", "meldtelling", null), consistent())), DRL), "drl-tekst");
         List<String> j2 = List.of(jutter("J2", false, List.of("V6", "V4")), v6, vondst("V4", "3", "3"));
         gespeeld(regel, TmsDocumenten.zaak(j2, List.of(waarde("J2", "zwaarte", "1"), consistent())));
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(creatie, TmsDocumenten.zaak(j2,
-                List.of(waarde("J2", "meldtelling", "1"), consistent())), DRL), "drl-tekst");
         List<String> j4 = List.of(jutter("J4", false, List.of("V6", "V2")), v6, vondst("V2", "9", "0"));
         faalt(regel, TmsDocumenten.zaak(j4, List.of(consistent())), "zwaarte", "9");
-        faaltDrl(creatie, TmsDocumenten.zaak(j4, List.of(consistent())));
-        // the creation, whose initialisation divides, the truth-maintenance branch refuses by name
+        // the creation, whose initialisation divides, the analysis refuses by name on both branches; until card
+        // drl-teksttak-op-truth-maintenance the DRL-text branch played it on J1 and J2 and faulted on J4
         initialisatieGeweigerd(creatie);
     }
 
@@ -885,20 +850,11 @@ class FilterfoutWitnessTest {
             ir.toFile().deleteOnExit();
             List<String> h1Zaak = new ArrayList<>(List.of(h1));
             h1Zaak.addAll(schuiten1);
-            if (leden.get(0).equals(vouw)) faaltIn(ir, TmsDocumenten.zaak(h1Zaak, List.of(consistent())),
-                    "winterberging door de haven", "9", "rsGedeeld(lengte, breedte)");
+            if (leden.get(0).equals(vouw)) faalt(ir, TmsDocumenten.zaak(h1Zaak, List.of(consistent())),
+                    "winterberging door de haven", "9");
             else gespeeld(ir, TmsDocumenten.zaak(h1Zaak, List.of(waarde("H1", "wintertal", "0"), consistent())));
             gespeeld(ir, TmsDocumenten.zaak(List.of(h2, s3), List.of(waarde("H2", "wintertal", "1"), consistent())));
         }
-    }
-
-    /** {@code zaak} faults on both branches in a division by 0 of {@code deeltal} in rule {@code regel}: the exec-model
-     *  branch's named division, the DRL-text branch's exception for the constraint holding {@code quotient}. */
-    private static void faaltIn(Path ir, JsonNode zaak, String regel, String deeltal, String quotient) throws Exception {
-        assertEquals("DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + deeltal + " gedeeld door 0 — een"
-                + " numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
-                TmsFoutWitnessTest.speel(ir, zaak, EXEC), "exec-model");
-        assertEquals("deling " + quotient, waarneming(ir, zaak, DRL), "drl-tekst");
     }
 
     // ---------------- a defaults group reads its defaults by priority ----------------
@@ -914,8 +870,8 @@ class FilterfoutWitnessTest {
      *  no higher one decides (RUNTIME-SEMANTICS ch. 7.1), the truth-maintenance branch computes a default as soon as what
      *  it reads stands, one a higher default displaces among them. Where the fold's subselection divides, the branch
      *  refuses the group by name: a division by zero there is a fault on an intermediate state, and whether it counts
-     *  waits on the norm decision of card {@code 20261008-fout-op-tussenstand} (the DRL-text branch refuses every
-     *  defaults group). */
+     *  waits on the norm decision of card {@code 20261008-fout-op-tussenstand} (until card
+     *  drl-teksttak-op-truth-maintenance the DRL-text branch refused every defaults group). */
     @Test void een_defaultsgroep_met_een_vouw_die_kan_falen_wordt_geweigerd() throws Exception {
         JsonNode zaak = TmsDocumenten.zaak(j1(true), List.of(waarde("J1", "zwaarte", "1"), consistent()));
         for (String lager : List.of(
@@ -1003,16 +959,16 @@ class FilterfoutWitnessTest {
         return b.toString();
     }
 
-    /** Each operation on the closed list of {@code kern.Faalbaar} other than the division, in the subselection of a fold
-     *  under "indien hij actief is", on a Jutter that is not actief, whose one vondst makes the operation fault: a step of
-     *  one nooitdag, which no day is of; a step of 2 000 000 000 jaren; zijn gewicht 0 to the power -1; the date of
-     *  maand 13; the Rekenjaar of a case without an evaluation date; the eerste paasdag of the year 2 000 000 000. The
-     *  reference interpreter does not evaluate the fold and answers (measured 2026-10-09); both branches tested the
-     *  subselection on the element's pattern and faulted, the DRL-text branch for all six, the exec-model branch for
-     *  the three it lowers in a subselection (it refuses the date of parts, the Rekenjaar and the paasdag there by name).
-     *  The rows of the exec-model branch run on the truth-maintenance branch, which answers as the reference interpreter
-     *  for the step and the range, and refuses the power by name: an exponent that is no literal whole number of at
-     *  least 0 is a real power, which is OPEN (RUNTIME-SEMANTICS ch. 2.1).
+    /** Each operation that can fault other than the division (the closed list the destructive DRL-text lowering kept),
+     *  in the subselection of a fold under "indien hij actief is", on a Jutter that is not actief, whose one vondst makes
+     *  the operation fault: a step of one nooitdag, which no day is of; a step of 2 000 000 000 jaren; zijn gewicht 0 to
+     *  the power -1; the date of maand 13; the Rekenjaar of a case without an evaluation date; the eerste paasdag of the
+     *  year 2 000 000 000. The reference interpreter does not evaluate the fold and answers (measured 2026-10-09); the
+     *  destructive lowering tested the subselection on the element's pattern and faulted for all six. The analysis
+     *  answers as the reference interpreter for five, and refuses the power by name: an exponent that is no literal
+     *  whole number of at least 0 is a real power, which is OPEN (RUNTIME-SEMANTICS ch. 2.1). Since card
+     *  drl-teksttak-op-truth-maintenance the DRL-text branch renders that analysis, so both branches answer the five and
+     *  refuse the power in one sentence.
      *  Where J1 is actief, the reference interpreter faults on the day-kind walk and on the Rekenjaar too, and so do
      *  both branches, with the runtime's sentence in the cause chain; for the other four it answers or crashes where
      *  this backend faults (reported with the fix round, not pinned here). */
@@ -1042,7 +998,7 @@ class FilterfoutWitnessTest {
                 "dagsoortstap", Map.of("wachttijd", "1"), "datumbereik", Map.of("termijn", "2000000000"),
                 "macht", Map.of("gewicht", "0", "deelnemers", "-1"), "datum met", Map.of("jaar", "2026", "maand", "13"),
                 "rekenjaar", Map.of("gewicht", "10"), "paasdag", Map.of("jaar", "2000000000"));
-        java.util.Set<String> inExec = java.util.Set.of("dagsoortstap", "datumbereik");
+        java.util.Set<String> geweigerd = java.util.Set.of("macht");
         Map<String, String> fout = Map.of("dagsoortstap", "day-kind walk: no day of the kind within 40000 calendar days",
                 "rekenjaar", "the evaluationYear context value needs an evaluation date");
         List<String> afwijkend = new ArrayList<>();
@@ -1050,7 +1006,16 @@ class FilterfoutWitnessTest {
             Path ir = vondsttal(f.getValue());
             String v1 = metDatums(instantieMetRollen("V1", "Vondst", getallen.get(f.getKey()), List.of(), Map.of()),
                     Map.of("vinddatum", "2026-01-05"));
-            for (DroolsBackend.Branch tak : inExec.contains(f.getKey()) ? List.of(EXEC, DRL) : List.of(DRL)) {
+            if (geweigerd.contains(f.getKey())) {
+                // the analysis refuses the form by name, on both branches in one sentence
+                JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("J1", "Jutter", Map.of(), List.of(),
+                        Map.of("vondsten", List.of("V1"))), v1), List.of(waarde("J1", "vondsttal", null), consistent()));
+                String exec = TmsFoutWitnessTest.speel(ir, zaak, EXEC), drl = TmsFoutWitnessTest.speel(ir, zaak, DRL);
+                if (!exec.startsWith("Excluded: ") || !exec.equals(drl))
+                    afwijkend.add(f.getKey() + ": " + EXEC + " " + exec + ", " + DRL + " " + drl);
+                continue;
+            }
+            for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
                 String niet = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(List.of(instantieMetRollen("J1", "Jutter",
                         Map.of(), List.of(), Map.of("vondsten", List.of("V1"))), v1),
                         List.of(waarde("J1", "vondsttal", null), consistent())), tak);

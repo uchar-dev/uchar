@@ -17,10 +17,10 @@ import java.util.Set;
 
 /**
  * THE target classification of RUNTIME-SEMANTICS ch. 7.8 (the standing norm, scalar and timeline arms) and
- * ch. 7.7 (the v0 desugaring domain) — the one derivation BOTH Drools back-ends read. It is a port of ref's
- * {@code Desugar} ({@code standing_targets_gen}, {@code standing_targets}, {@code standing_temporal_targets},
- * {@code desugared_targets}), clause for clause, so a target is standing for the exec-model branch exactly
- * when it is standing for the DRL-text branch, and both exactly when it is standing for ref.
+ * ch. 7.7 (the v0 desugaring domain) — the one derivation the analysis of both Drools branches reads. It is a port of
+ * ref's {@code Desugar} ({@code standing_targets_gen}, {@code standing_targets}, {@code standing_temporal_targets},
+ * {@code desugared_targets}), clause for clause, so a target is standing for the Drools backend exactly when it is
+ * standing for ref.
  *
  * <p>WHY it is one class and not two mirrored methods: the two branches carried the arm independently for a
  * month — the exec branch had it, the text branch had nothing — and the corpus said so (four goldens whose

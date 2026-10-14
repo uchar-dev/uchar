@@ -67,7 +67,7 @@ class DrlTmsCorpusWitnessTest {
             String naam = GOLDEN.relativize(g).toString();
             CaseRunner.Result r;
             try {
-                r = CaseRunner.viaDrlTms(g.resolve("ir.json"), zaken);
+                r = CaseRunner.viaDrlTekst(g.resolve("ir.json"), zaken);
             } catch (RuntimeException e) {
                 fout.add(naam + ": " + e);
                 continue;

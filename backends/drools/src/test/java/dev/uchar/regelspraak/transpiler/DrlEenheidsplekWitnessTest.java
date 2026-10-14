@@ -83,9 +83,17 @@ class DrlEenheidsplekWitnessTest {
             String a, b;
             try {
                 a = drl(eerlijk);
+            } catch (IrLoader.Refusal | dev.uchar.regelspraak.cases.CaseRunner.Excluded weigering) {
+                continue;                            // the loader or the analysis does not carry this form at all
+            }
+            try {
                 b = drl(liegend);
             } catch (IrLoader.Refusal weigering) {
-                continue;                            // the loader does not carry this form at all
+                continue;                            // the loader does not carry the lying form, as before the analysis
+            } catch (dev.uchar.regelspraak.cases.CaseRunner.Excluded weigering) {
+                // a lie that makes the analysis refuse what it carried honestly is a place that reads the repetition
+                afwijkend.add(naam(ir) + " — the lying document is refused: " + weigering.getMessage());
+                continue;
             }
             twists += n;
             geraakt.add(naam(ir));
@@ -223,14 +231,11 @@ class DrlEenheidsplekWitnessTest {
         return CORPUS.relativize(ir.getParent()).toString();
     }
 
-    /** The emitted text, built exactly as {@code DroolsBackend}'s DRL branch builds it — the model AND every side
-     *  table the loader returns, the document's ch. 4.10 Let index among them. The index is not decoration here: a {@link dev.uchar.regelspraak.ir.Expr.BinderRef}
-     *  asked for its unit in isolation has no route back up to its binding, so without it the read falls back to
-     *  its own wire annotation and this witness would measure a transpiler no branch uses. */
+    /** The text of the DRL-text branch, built through the backend's entry — the model AND every side table the
+     *  loader returns, the document's ch. 4.10 Let index among them, analysed and rendered as DRL text. */
     private static String drl(JsonNode ir) {
-        IrLoader.Loaded l = IrLoader.loadAll(ir);
-        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
-                l.navigatieBindingen()).drl();
+        return dev.uchar.regelspraak.cases.DroolsBackend.build(ir,
+                dev.uchar.regelspraak.cases.DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     /** The first line that moved, as "honest | lying" — the diagnostic a bare inequality cannot give. */

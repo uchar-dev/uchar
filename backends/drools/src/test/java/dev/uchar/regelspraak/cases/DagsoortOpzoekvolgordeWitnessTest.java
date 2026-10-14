@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,9 +99,9 @@ class DagsoortOpzoekvolgordeWitnessTest {
         // must call the calendar helper with the table's own unit, and must not deposit the day-kind walk.
         // A replay that happened to agree by arithmetic accident could not say which route produced it.
         String drl = drl(splijtdocument());
-        assertTrue(drl.contains("rsDatumReken") && drl.contains("\"WEEKS\""),
+        assertTrue(drl.contains("Rekenhulpen.datumstap(") && drl.contains("\"WEEKS\""),
                 "date arithmetic on a `wk` duration lowers to the calendar helper: " + eersteDatumRegel(drl));
-        assertFalse(drl.contains("rsDatumPlusDagsoort"),
+        assertFalse(drl.contains("Rekenhulpen.dagsoortstap("),
                 "and never to the day-kind walk: " + eersteDatumRegel(drl));
         assertFalse(drl.contains("rsTijdsduurDagsoort"),
                 "the tijdsduur position takes the same route: " + eersteDatumRegel(drl));
@@ -138,7 +136,7 @@ class DagsoortOpzoekvolgordeWitnessTest {
 
     @Test void de_drl_tekst_laat_de_dagsoortroute_zien_voor_een_spelling_buiten_de_tabel() throws Exception {
         String drl = drl((ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(BERGINGSKLOK).resolve("ir.json"))));
-        assertTrue(drl.contains("rsDatumPlusDagsoort"), "the day-kind step survives the reversal");
+        assertTrue(drl.contains("Rekenhulpen.dagsoortstap("), "the day-kind step survives the reversal");
         assertTrue(drl.contains("rsTijdsduurDagsoort"), "and so does the day-kind count");
     }
 
@@ -177,18 +175,16 @@ class DagsoortOpzoekvolgordeWitnessTest {
         }
     }
 
-    /** The emitted text, built exactly as {@code DroolsBackend}'s DRL branch builds it (the model plus every side
-     *  table the loader returns), so what this asserts is the transpiler the branch actually runs. */
+    /** The text of the DRL-text branch, built through the backend's entry, so what this asserts is the text the branch
+     *  actually compiles: the analysis rendered as DRL text. */
     private static String drl(ObjectNode ir) {
-        IrLoader.Loaded l = IrLoader.loadAll(ir);
-        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
-                l.navigatieBindingen()).drl();
+        return DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     /** The first emitted line that mentions a date helper — the diagnostic a bare contains() cannot give. */
     private static String eersteDatumRegel(String drl) {
         for (String r : drl.split("\n"))
-            if (r.contains("rsDatumReken") || r.contains("rsDatumPlusDagsoort")
+            if (r.contains("Rekenhulpen.datumstap(") || r.contains("Rekenhulpen.dagsoortstap(")
                     || r.contains("rsTijdsduur")) return r.trim();
         return "(no date helper in the emitted text at all)";
     }

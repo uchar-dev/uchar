@@ -30,9 +30,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *       element side inside the accumulate has no such binder, so an instance that supplies no value at all
  *       reaches {@code rsOoitBevat} as {@code null}. It must claim nothing — ref and clingo call that case
  *       {@code consistent}.</li>
- *   <li><b>The declared spelling in the union's twin.</b> The DRL text names bean members, and the union has
- *       its own two key sites (the subject binder and the element match, once per source). Both must render
- *       the DECLARED spelling; the written one names a field the generated fact class does not carry.</li>
+ *   <li><b>The declared spelling in the DRL text.</b> The DRL text names bean members, and a source of the union
+ *       reads its key through the standing of the member, which reads the bean field. The field must be the
+ *       DECLARED spelling; the written one names a field the generated fact class does not carry. Until card
+ *       drl-teksttak-op-truth-maintenance the text was a lowering of its own, with two key sites per source.</li>
  * </ol>
  *
  * <p>Every model is authored in memory on top of a corpus {@code ir.json} — no corpus file is written, and
@@ -74,23 +75,23 @@ class GemengdeUnieRandWitnessTest {
                 "an instance without a key value collides with nothing");
     }
 
-    // ---------------- 3. the union's own key sites in the dormant DRL twin ----------------
+    // ---------------- 3. the declared field in the DRL text ----------------
 
-    @Test void de_drl_tweeling_noemt_het_gedeclareerde_veld_ook_in_de_unie() throws Exception {
+    @Test void de_drl_tekst_noemt_het_gedeclareerde_veld_ook_in_de_unie() throws Exception {
         // "vondstNummer" is deliberate: ident()'s de-shout rule repairs "Vondstnummer" by accident (it
         // lower-cases the first letter of a title-cased word) and leaves this one intact, so only a real
-        // resolution through the name contract can render the declared field here. The union renders TWO key
-        // sites per source rule: the subject binder and, inside each accumulate, the element match. With one
-        // union and two sources that is 2 binders and 4 matches — a count, because the sibling source spells
-        // the key as declared and would keep the bare "contains" green on its own.
+        // resolution through the name contract can render the declared field here. Each source reads its key
+        // through the standing of the member, and the standing of each source type reads the bean field: with two
+        // sources that is a read of the field on both types, a count, because the sibling source spells the key as
+        // declared and would keep a bare "contains" green on its own.
         String drl = drl(bewerk(NUMMERREGISTER, o -> {
             IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer"));
             ((ArrayNode) o.get("rules").get("uniquenesses")).remove(1);
         }));
-        assertEquals(2, tel(drl, "$k0 : vondstnummer != null"),
-                "both source rules bind the declared field: " + drl);
-        assertEquals(4, tel(drl, "rsOoitBotst(vondstnummer, $k0)"),
-                "every element match names the declared field too: " + drl);
+        assertEquals(2, tel(drl, ".Strandvondst( $invoer : (Rekenhulpen.tijdvakken(vondstnummer)) )"),
+                "the respelled source reads the declared field: " + drl);
+        assertEquals(2, tel(drl, ".Wrakvondst( $invoer : (Rekenhulpen.tijdvakken(vondstnummer)) )"),
+                "and so does its sibling: " + drl);
         assertFalse(drl.contains("vondstNummer"), "the written spelling must not reach the DRL text: " + drl);
     }
 
@@ -135,12 +136,9 @@ class GemengdeUnieRandWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** The dormant DRL back-end's rendering of one model. */
+    /** The text of the DRL-text branch of one model, the analysis rendered as DRL text. */
     private static String drl(Path ir) throws Exception {
-        dev.uchar.regelspraak.loader.IrLoader.Loaded l =
-                dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
-        return dev.uchar.regelspraak.transpiler.DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(),
-                l.bronPaden(), l.rolBindingen(), l.navigatieBindingen()).drl();
+        return DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     /** Non-overlapping occurrences of a literal. */

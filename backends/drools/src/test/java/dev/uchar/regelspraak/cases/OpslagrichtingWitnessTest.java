@@ -267,10 +267,9 @@ class OpslagrichtingWitnessTest {
             String rol = stap == 1 ? "de rol 'werf' op Schuit" : "de rol 'thuishaven' op Werf";
             String veld = stap == 1 ? "Schuit heeft geen referentieveld 'werf' naar Werf"
                     : "Werf heeft geen referentieveld 'thuishaven' naar Haven";
-            BeideTakken.geweigerdApart(naamdelendeKeten(stap), JSON.readTree(schuitZonderRol("premie", "0")),
+            BeideTakken.geweigerd(naamdelendeKeten(stap), JSON.readTree(schuitZonderRol("premie", "0")),
                     "regel: premie van een schuit — de lezing 'het havengeld van de thuishaven van de werf van de Schuit': "
                             + veld + " (§13.3.9 opslagrichting)",
-                    "genavigeerde lezing: " + rol + " deelt haar naam met een gedeclareerd lid",
                     "the displaced field at hop " + stap + " of a two-binding chain");
         }
     }

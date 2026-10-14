@@ -10,8 +10,8 @@ import java.util.List;
 /**
  * The Drools-backend CLI the differential gate (scripts/check-drools.sh) drives, jar-only (decision
  * V2-B, the gate-10 pattern): given one golden's {@code ir.json} and its {@code case*.json} files, it
- * loads the IR off the wire, builds the Drools KieBase through the exec-model branch, and
- * replays every case. It prints exactly one status line and exits with a code the gate classifies:
+ * loads the IR off the wire, builds the Drools KieBase through the exec-model branch, or with {@code --drl}
+ * through the DRL-text branch, and replays every case. It prints exactly one status line and exits with a code the gate classifies:
  *
  * <pre>
  *   PLAYED &lt;n&gt;              exit 0   loaded, wholly lowered, every case matched the pinned expectations
@@ -30,26 +30,21 @@ public final class DroolsBackendMain {
     /** The CLI without its exit: prints the status line on {@code uit} and returns the exit code. A witness runs the
      *  CLI through here inside the test JVM, which {@code System.exit} would end. */
     static int voer(String[] args, PrintStream uit) {
-        // --drl replays through the OTHER transpiler branch (DrlTranspiler's DRL text, compiled here) instead of
-        // the exec-model branch. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12
-        // path: the gate sweeps every golden through it and pins the played count (EXPECTED_DRL_PLAYED) beside
-        // the exec-model square's own. The two sweeps stay separate — a flagless run reaches the exec-model
-        // branch, and that run alone is the differential square.
+        // --drl replays through the OTHER branch, the analysis rendered as DRL text and compiled here, instead of the
+        // executable model. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12 path: the gate
+        // sweeps every golden through it and, since card drl-teksttak-op-truth-maintenance, demands per golden the
+        // status line of the flagless run, which reaches the exec-model branch and alone is the differential square.
         boolean viaDrl = args.length > 0 && args[0].equals("--drl");
-        // --drl-tms replays through DRL_TMS, the analysis of the exec-model branch rendered as DRL text, until the
-        // switch-over of card drl-teksttak-op-truth-maintenance; no gate sweeps it
-        boolean viaDrlTms = args.length > 0 && args[0].equals("--drl-tms");
-        if (viaDrl || viaDrlTms) args = java.util.Arrays.copyOfRange(args, 1, args.length);
+        if (viaDrl) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         if (args.length < 2) {
-            System.err.println("usage: DroolsBackendMain [--drl | --drl-tms] <ir.json> <case*.json>...");
+            System.err.println("usage: DroolsBackendMain [--drl] <ir.json> <case*.json>...");
             return 3;
         }
         Path ir = Path.of(args[0]);
         List<Path> cases = new ArrayList<>();
         for (int i = 1; i < args.length; i++) cases.add(Path.of(args[i]));
         try {
-            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases)
-                    : viaDrlTms ? CaseRunner.viaDrlTms(ir, cases) : CaseRunner.runGolden(ir, cases);
+            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
                 case "PLAYED" -> { uit.println("PLAYED " + r.casesPlayed()); return 0; }
                 case "EXCLUDE" -> { uit.println("EXCLUDE " + r.reason()); return 2; }
@@ -61,10 +56,9 @@ public final class DroolsBackendMain {
         }
     }
 
-    /** The message of {@code e} for the ERROR line. Flattened as the DRL compile path does it (DroolsBackend.drlTak),
-     *  and bounded at 200: every caller reads the LAST line of this output as the status line, so a multi-line
+    /** The message of {@code e} for the ERROR line, flattened to one line and bounded at 200: every caller reads the LAST line of this output as the status line, so a multi-line
      *  exception message would push the ERROR head off it and hand the harness a fragment of a stack trace to diagnose
-     *  with. The faults that stand at the fixpoint of the exec-model branch keep the head that names the rule of
+     *  with. The faults that stand at the fixpoint keep the head that names the rule of
      *  each whole, and the bound applies to their sentences only: a bound across the whole message would drop from the
      *  line every rule whose fault comes past it. */
     private static String melding(RuntimeException e) {

@@ -532,7 +532,7 @@ class ObjectCreatieWitnessTest {
         String exec = CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
         // DRL_TMS renders the same analysis as DRL text, and gives the same verdict (card
         // drl-teksttak-op-truth-maintenance, step 5); a refusal of the analysis leaves above, before this
-        assertEquals(exec, CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.DRL_TMS), "DRL_TMS op " + irPath);
+        assertEquals(exec, CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS op " + irPath);
         return exec;
     }
 

@@ -51,7 +51,7 @@ class DrieBronnenUniciteitWitnessTest {
         assertEquals(2, zaken.size(), "de cases van het document");
         List<String> oordelen = new ArrayList<>();
         for (Path zaak : zaken)
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
                 String oordeel = CaseRunner.speelCase(ir, JSON.readTree(zaak.toFile()), tak);
                 if (oordeel != null) oordelen.add(tak + " — " + zaak.getFileName() + ": " + oordeel);
             }

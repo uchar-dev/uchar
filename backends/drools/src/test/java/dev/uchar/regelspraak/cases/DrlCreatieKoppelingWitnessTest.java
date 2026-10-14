@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -70,13 +69,17 @@ class DrlCreatieKoppelingWitnessTest {
     }
 
     @Test void de_gegenereerde_drl_draagt_geen_koppelloze_insert() throws Exception {
-        // The transpiler itself, not the replay: before the fix the rule text held
-        // "// onopgelost terugkoppeling naar Wachter" followed by insert($new), and only meet()'s scan refused it.
+        // The text itself, not the replay: before the fix of 2026-09-23 the rule text of the destructive DRL-text
+        // lowering held "// onopgelost terugkoppeling naar Wachter" followed by insert($new), and only meet()'s scan
+        // refused it; after it, the mint and the subject referenced each other through their setters. Since card
+        // drl-teksttak-op-truth-maintenance the text renders the analysis, whose creation lays the link as a fact of
+        // its own, beside the mark of the mint, and writes no bean while it fires.
         String drl = drl(ir(WACHTERSKETEN));
         assertFalse(drl.contains("// onopgelost"), drl);
-        assertTrue(drl.contains("$new.setVoorganger( $subject );"), "the mint references the subject: " + drl);
-        assertTrue(drl.contains("setOpvolger( $new )"), "and the subject references the mint: " + drl);
-        assertTrue(drl.contains("opvolger == null"), "the 1:1 guard reads the forward field: " + drl);
+        assertTrue(drl.contains("feiten.add(new Koppeling(\"opvolging\", $onderwerp, nieuw, fase));"),
+                "the creation links the subject to the mint: " + drl);
+        assertTrue(drl.contains("dev.uchar.regelspraak.facts.Wachter( opvolger == null )"),
+                "the 1:1 guard reads the forward field of the input: " + drl);
     }
 
     @Test void een_binding_zonder_rolpaar_wordt_in_beide_takken_bij_naam_geweigerd() throws Exception {
@@ -126,18 +129,13 @@ class DrlCreatieKoppelingWitnessTest {
 
     // ---------------- WF-027: a non-boolean characteristic initialisation faults ----------------
 
-    @Test void een_niet_booleaanse_kenmerkwaarde_faalt_in_beide_takken() throws Exception {
+    @Test void een_niet_booleaanse_kenmerkwaarde_wordt_in_beide_takken_geweigerd() throws Exception {
         // ref: EVALUATION FAULT "characteristic initialisation of "overzees" is not boolean: 5"; the verifier rejects
-        // the document (WF-027). The DRL-text branch faults at fire; the truth-maintenance branch refuses the creation
-        // by name when it lowers it, on the effective type of the value, so no case reaches a fire there.
-        Path ir = kenmerkGetal();
-        RuntimeException e = assertThrows(RuntimeException.class, () -> CaseRunner.speelCase(ir, overzeeJutter(), true));
-        String keten = oorzaken(e);
-        assertTrue(keten.contains("niet booleaans: 5") && keten.contains("(WF-027)"), "drl-tekst: " + keten);
-        CaseRunner.Excluded w = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, overzeeJutter(), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(w.getMessage().contains("een kenmerkinitialisatie van 'overzees' met een waarde van type Numeriek"
-                + " ('5'): een kenmerk is waar of onwaar (WF-027)"), "exec-model: " + w.getMessage());
+        // the document (WF-027). The analysis refuses the creation by name when it lowers it, on the effective type of
+        // the value, so no case reaches a fire on either branch. Until card drl-teksttak-op-truth-maintenance the
+        // DRL-text branch faulted at fire instead ("… niet booleaans: 5 … (WF-027)").
+        BeideTakken.geweigerd(kenmerkGetal(), overzeeJutter(), "een kenmerkinitialisatie van 'overzees' met een waarde"
+                + " van type Numeriek ('5'): een kenmerk is waar of onwaar (WF-027)", "a non-boolean characteristic value");
     }
 
     // ---------------- the authored documents ----------------
@@ -150,10 +148,9 @@ class DrlCreatieKoppelingWitnessTest {
         return (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
     }
 
+    /** The text of the DRL-text branch of one model: the analysis rendered as DRL text. */
     private static String drl(Path ir) throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
-        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(),
-                l.rolBindingen(), l.navigatieBindingen()).drl();
+        return DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
     }
 
     /** The rekenkamer model plus a second fact type `reservetaxatie` between Jutter and Rekenkamer. */
@@ -270,11 +267,5 @@ class DrlCreatieKoppelingWitnessTest {
                                   "value": { "number": "%s" } },
                                 { "kind": "inconsistent", "rule": "rangdetector" } ] }
                 """).formatted(opvolgerrang));
-    }
-
-    private static String oorzaken(Throwable t) {
-        StringBuilder sb = new StringBuilder();
-        for (Throwable c = t; c != null; c = c.getCause()) sb.append(c).append(" <- ");
-        return sb.toString();
     }
 }

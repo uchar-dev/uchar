@@ -59,7 +59,7 @@ final class BeideTakken {
      *  {@link #NOG_NIET}; any other refusal leaves here. */
     private static String drlTms(Path ir, JsonNode c) throws Exception {
         try {
-            return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TMS);
+            return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TEXT);
         } catch (CaseRunner.Excluded e) {
             if (nogNiet(e.getMessage())) return NIET_GEDRAGEN;
             throw e;
@@ -70,7 +70,7 @@ final class BeideTakken {
      *  of {@link #NOG_NIET}. */
     private static void drlTmsWeigert(Path ir, JsonNode c, String fragment, String boodschap) {
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TMS), "drl-tms — " + boodschap);
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.DRL_TEXT), "drl-tms — " + boodschap);
         if (!nogNiet(e.getMessage()))
             assertTrue(e.getMessage().contains(fragment), "drl-tms names '" + fragment + "': " + e.getMessage());
     }
@@ -96,19 +96,6 @@ final class BeideTakken {
             assertTrue(e.getMessage().contains(fragment), tak + " names '" + fragment + "': " + e.getMessage());
         }
         drlTmsWeigert(ir, c, fragment, boodschap);
-    }
-
-    /** Both branches REFUSE the document where they name the form in their own words: the exec-model branch
-     *  {@code tms}, after the prefix of its manifest, and the DRL-text branch {@code drl}. The row of {@link #geweigerd}
-     *  for a form whose refusal the exec-model branch words apart from the DRL-text branch. */
-    static void geweigerdApart(Path ir, JsonNode c, String tms, String drl, String boodschap) throws Exception {
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms — " + boodschap);
-        assertTrue(e.getMessage().contains(tms), "tms names '" + tms + "': " + e.getMessage());
-        e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);
-        assertTrue(e.getMessage().contains(drl), "drl-tekst names '" + drl + "': " + e.getMessage());
-        drlTmsWeigert(ir, c, tms, boodschap);
     }
 
     /** Both branches MISMATCH, each naming {@code fragment} — the flank form: what the expectation claims is

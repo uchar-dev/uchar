@@ -333,24 +333,6 @@ class TmsAfnemerWitnessTest {
         });
     }
 
-    @Test void lees_weigert_op_de_andere_takken() throws Exception {
-        // the DRL-text branch alone: the exec-model branch becomes the branch with truth maintenance at this card
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
-            DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(TmsDocumenten.model(List.of("erkend",
-                    "vergund")), List.of(TmsDocumenten.kenmerkregel("vergund indien erkend", "vergund",
-                    TmsDocumenten.check("erkend", false)))), tak);
-            KieSession sessie = b.kieBase().newKieSession();
-            try {
-                assertEquals("lees leest wat de tak met truth maintenance afleidde; op de " + tak + "-tak schrijven de"
-                        + " regels de afgeleide waarden al tijdens het vuren op de beans",
-                        assertThrows(UnsupportedOperationException.class, () -> DroolsBackend.lees(b, sessie))
-                                .getMessage());
-            } finally {
-                sessie.dispose();
-            }
-        }
-    }
-
     @Test void de_ingang_is_publiek_en_de_naden_niet() throws Exception {
         Class<?> d = DroolsBackend.class;
         for (Method m : List.of(

@@ -95,8 +95,8 @@ class GastheerObjectWitnessTest {
         // patterns and this names a third object. WF-109 refuses the document before execution; this row
         // pins that the backend does not quietly host it somewhere either, in either branch.
         Path ir = metGastheer(SEINHIJSING, 0, "Post");
-        BeideTakken.geweigerdApart(ir, geval(SEINHIJSING), "feitcreatie: vakbeseining door het kustvak — een"
-                        + " CharacteristicCheck met een host die het onderwerp niet is ('het sein gehesen is')", REDEN,
+        BeideTakken.geweigerd(ir, geval(SEINHIJSING), "feitcreatie: vakbeseining door het kustvak — een"
+                        + " CharacteristicCheck met een host die het onderwerp niet is ('het sein gehesen is')",
                 "een gastheer die anker noch doel is, is een weigering en geen nul-creatie");
     }
 

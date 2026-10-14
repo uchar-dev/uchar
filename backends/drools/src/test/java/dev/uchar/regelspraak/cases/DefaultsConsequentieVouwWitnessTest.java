@@ -1,6 +1,5 @@
 package dev.uchar.regelspraak.cases;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
@@ -55,8 +54,8 @@ class DefaultsConsequentieVouwWitnessTest {
                 vondst("V2", "B", "2026-03-09", null, null)), datum("B", "sluitdag", "2026-03-09"))), "zonder gemelde sluitdag");
         assertNull(speel(ir, zaak(List.of(berging("B", "2026-03-12", null, null), vondst("V1", "B", "2026-03-03", null, null)),
                 datum("B", "sluitdag", "2026-03-12"))), "met gemelde sluitdag");
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(ir, zaak(List.of(), "")));
-        assertTrue(drl.getMessage().contains("no defaults lowering"), drl.getMessage());
+        // until card drl-teksttak-op-truth-maintenance the DRL-text branch refused the document ("… no defaults
+        // lowering"); since then speel holds it to the verdict of the exec-model branch on both cases
     }
 
     @Test void r3_de_opgave_boven_een_afwijking_waarvan_de_basis_vouwt() throws Exception {
@@ -551,12 +550,8 @@ class DefaultsConsequentieVouwWitnessTest {
      *  every expectation holds. */
     private static String speel(String ir, String zaak) throws Exception {
         String exec = speelTms(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(exec, speelTms(ir, zaak, DroolsBackend.Branch.DRL_TMS), "DRL_TMS naast de exec-model-tak");
+        assertEquals(exec, speelTms(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS naast de exec-model-tak");
         return exec;
-    }
-
-    private static String speelDrl(String ir, String zaak) throws Exception {
-        return speel(ir, zaak, true);
     }
 
     /** The verdict of the exec-model branch on one case, where {@code DRL_TMS} refuses the document in the same
@@ -566,7 +561,7 @@ class DefaultsConsequentieVouwWitnessTest {
             return speelTms(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
         } catch (CaseRunner.Excluded e) {
             CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
-                    () -> speelTms(ir, zaak, DroolsBackend.Branch.DRL_TMS), "DRL_TMS weigert ook");
+                    () -> speelTms(ir, zaak, DroolsBackend.Branch.DRL_TEXT), "DRL_TMS weigert ook");
             assertEquals(e.getMessage(), drl.getMessage(), "de weigering van DRL_TMS");
             throw e;
         }
@@ -578,13 +573,5 @@ class DefaultsConsequentieVouwWitnessTest {
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         return CaseRunner.speelCase(tmp, JSON.readTree(zaak), tak);
-    }
-
-    private static String speel(String ir, String zaak, boolean drl) throws Exception {
-        Path tmp = Files.createTempFile("defaults-consequentie", ".json");
-        tmp.toFile().deleteOnExit();
-        Files.writeString(tmp, ir);
-        JsonNode c = JSON.readTree(zaak);
-        return CaseRunner.speelCase(tmp, c, drl);
     }
 }

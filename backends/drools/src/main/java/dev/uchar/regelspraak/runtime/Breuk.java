@@ -93,11 +93,10 @@ public final class Breuk extends Number implements Comparable<Breuk> {
      * A division whose divisor is a numeric zero. RUNTIME-SEMANTICS ch. 1.4, point 4 keeps it a fault, where a leeg
      * divisor gives leeg and a §9.5 inconsistency; ref and clingo fault on it too. {@link #delen} throws it with the
      * dividend and the message it always had, so whatever caught or matched the {@link ArithmeticException} still does
-     * (gate 8 pins that message). On the DRL-text branch, out of a consequence it leaves the fire in the cause chain of
-     * Drools' {@code ConsequenceException}, which {@code DroolsBackend.benoem} turns into a second one naming the rule
-     * it ran in ({@link #inDeRegel}), with the first in its cause chain; out of a condition Drools' exception for the
-     * constraint carries it. The exec-model branch keeps it as a fault of the fixpoint, which the write-back throws
-     * named after its rule in the same way.
+     * (gate 8 pins that message). Both branches keep it as a fault of the fixpoint, which the write-back throws named
+     * after the rule it ran in ({@link #inDeRegel}), with the first in its cause chain. Until card
+     * drl-teksttak-op-truth-maintenance the DRL-text branch let it leave the fire in the cause chain of Drools'
+     * {@code ConsequenceException}, which {@code DroolsBackend.benoem} named in the same way.
      */
     public static final class DelingDoorNul extends ArithmeticException {
         private static final long serialVersionUID = 1L;

@@ -64,15 +64,17 @@ class TmsSkeletWitnessTest {
                 List.of(kenmerkregel("vergund indien erkend", "vergund", check("erkend", false))));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         assertEquals(DroolsBackend.Branch.EXEC_MODEL, b.branch());
-        assertNull(b.drlTranspiler());
+        assertNull(b.drl());
         assertEquals(List.of("regel: vergund indien erkend"), b.dekking().stream().map(Dekking::sleutel).toList());
         assertTrue(b.dekking().stream().allMatch(Dekking::lowered), b.dekking()::toString);
         assertEquals(RuleBaseConfiguration.AssertBehaviour.EQUALITY, gelijkheid(b.kieBase()));
         // the rule of a form carries the form's name; vergund is read by nothing, so it has no standing rules
         assertEquals(List.of(TmsTranspiler.PKG + ":vergund indien erkend"), regels(b.kieBase()));
+        // until card drl-teksttak-op-truth-maintenance the DRL-text branch kept the default of Drools, IDENTITY; it
+        // renders the same analysis since, whose design asks EQUALITY
         DroolsBackend.Build drl = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
-        assertEquals(RuleBaseConfiguration.AssertBehaviour.IDENTITY, gelijkheid(drl.kieBase()),
-                "the DRL-text branch keeps the default of Drools");
+        assertEquals(RuleBaseConfiguration.AssertBehaviour.EQUALITY, gelijkheid(drl.kieBase()),
+                "the DRL-text branch builds its text in EQUALITY as well");
     }
 
     /** "Het lampental van een Vuurtoren moet berekend worden als het aantal dagen in het jaar dat hij helder is": a

@@ -12,7 +12,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A §6.5 division or a §6.6 root in a rule's value whose operand folds over a role: "(100 gedeeld door (de som van het
@@ -109,26 +108,24 @@ class VouwBegeleiderWitnessTest {
         assertNull(speelDrl(ir, consistent), "DRL-teksttak, J3 zonder drempel");
     }
 
-    @Test void een_vouw_onder_een_let_naast_een_deling_speelt_met_truth_maintenance() throws Exception {
+    @Test void een_vouw_onder_een_let_naast_een_deling_speelt_in_beide_takken() throws Exception {
         // "(de vangst gedeeld door zijn deler) rekenkundig afgerond op 2 decimalen. Daarbij geldt: de vangst is de som
         // …": J1's vangst is 11 over no deler and deposits; a leeg vangst ends the Let before the division (ch. 10.6), so
         // J2 and J3 deposit nothing. ref and clingo: leeg, leeg, leeg and 4,50, inconsistent. A companion re-reads the
-        // site's need and the need is a fold, which the DRL-text branch cannot read there, as the destructive
-        // exec-model branch could not; it refuses the rule by name. The truth-maintenance branch has no companions: it
-        // deposits where the division reads leeg, and answers as ref (TmsZoalsRefWitnessTest,
-        // vouw-onder-let-naast-deling).
+        // site's need and the need is a fold, which the destructive DRL-text lowering could not read there, as the
+        // destructive exec-model branch could not; it refused the rule by name ("een vouw over een setbron en een deling
+        // of wortel onder één Let of IfThenElse") until card drl-teksttak-op-truth-maintenance. The analysis with truth
+        // maintenance has no companions: it deposits where the division reads leeg, and answers as ref
+        // (TmsZoalsRefWitnessTest, vouw-onder-let-naast-deling), on both branches since that card.
         String let = "{\"node\":\"Let\",\"type\":" + TWEE_DECIMALEN + ",\"binder\":\"vangst\",\"value\":" + SOM + ",\"body\":"
                 + afgerond(binair("dividedBy", "{\"node\":\"BinderRef\",\"name\":\"vangst\",\"source\":{\"snippet\":\"de vangst\"}}",
                         eigen("deler"), ONBEGRENSD)) + ",\"source\":{\"snippet\":\"de vangst is de som …\"}}";
         String ir = document(regel(let, null));
         String zaak = zaak(situatie(), heffing(null, null, null, "4.50"), INCONSISTENT);
-        String zin = "een vouw over een setbron en een deling of wortel onder één Let of IfThenElse";
         Path tmp = Files.createTempFile("vouw-begeleider", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
-        assertNull(CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.EXEC_MODEL), "tms");
-        CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(ir, zaak));
-        assertTrue(d.getMessage().contains(zin), d.getMessage());
+        BeideTakken.groen(tmp, JSON.readTree(zaak), "a fold under a Let beside a division");
     }
 
     // ---------------- the flanks ----------------

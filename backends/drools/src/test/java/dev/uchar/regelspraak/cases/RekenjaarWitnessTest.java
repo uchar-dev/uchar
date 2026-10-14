@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
@@ -120,15 +119,14 @@ class RekenjaarWitnessTest {
                 zaak("\"2026-03-15\"", "peildatum", "{\"date\":\"2026-03-15\"}"), "Rekendatum as a rule value still plays");
     }
 
-    // ---------------- without the replay: each transpiler lowers the node ----------------
+    // ---------------- without the replay: the analysis lowers the node ----------------
 
-    @Test void beide_transpilers_verlagen_de_knoop() throws Exception {
+    /** The manifest of the analysis, which both branches render; until card drl-teksttak-op-truth-maintenance the
+     *  DRL-text branch had a lowering, and a manifest, of its own, and the row asked both. */
+    @Test void de_analyse_verlaagt_de_knoop() throws Exception {
         for (String regel : List.of(waardeRegel(), rekenRegel(), vergelijkRegel())) {
             IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(document(regel))));
             String sleutel = "regel: " + l.model().resolvedRegels.get(0).naam();
-            Dekking drl = dekkingVan(DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(),
-                    l.rolBindingen(), l.navigatieBindingen()).dekking(), sleutel);
-            assertEquals(Dekking.Verdict.LOWERED, drl.verdict(), "drl-tekst — " + sleutel + ": " + drl.reden());
             Dekking tms = dekkingVan(tmsDekking(l), sleutel);
             assertEquals(Dekking.Verdict.LOWERED, tms.verdict(), "tms — " + sleutel + ": " + tms.reden());
         }
@@ -138,31 +136,33 @@ class RekenjaarWitnessTest {
 
     /** One twisted position. {@code waarden} patches the case's expectations by {@code label.attribute} (a JSON value,
      *  or null for leeg); {@code inconsistent} turns its {@code consistent} into {@code inconsistent}; a null refusal
-     *  means the branch must play the patched case. */
+     *  means both branches must play the patched case. Until card drl-teksttak-op-truth-maintenance the DRL-text
+     *  branch had a refusal of its own per position, "the DRL-text branch has no defaults lowering" on the two
+     *  positions in a prioritized default. */
     private record Plek(String golden, String pointer, String zaak, String datum, Map<String, String> waarden,
-                        boolean inconsistent, String tmsWeigering, String drlWeigering, String omschrijving) {}
+                        boolean inconsistent, String weigering, String omschrijving) {}
 
     @Test void op_de_andere_plekken_het_antwoord_van_ref_of_de_weigering_van_de_tak() throws Exception {
         List<Plek> plekken = List.of(
             new Plek("synth2-budgetgrens-onder", "/rules/consistencies/0/versions/0/assertion/right", "case1.json",
                     "2026-03-15", Map.of(), false,
-                    null, null, "the assertion of a consistency"),
+                    null, "the assertion of a consistency"),
             new Plek("synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/initialisations/0/value/right",
                     "case1.json", "2026-03-15", Map.of("W1.opvolgerrang", "{\"number\":\"2027\"}"), true,
-                    null, null, "an initialisation of an object creation"),
+                    null, "an initialisation of an object creation"),
             new Plek("jutterswet-voorwaardedeling", "/rules/allocations/0/versions/0/condition/right", "case.json",
                     "2026-03-15", mapMetLeeg("J1.bergdeel", "J2.bergdeel"), false,
-                    null, null, "the guard of an allocation"),
+                    null, "the guard of an allocation"),
             new Plek("jutterswet-dubbelverbinding", "/rules/factCreations/1/versions/0/condition/right",
                     "case1-binnen-venster.json", null, Map.of("H1.keurtal", "{\"number\":\"0\"}"), false,
-                    null, null, "the guard of a fact creation"),
+                    null, "the guard of a fact creation"),
             new Plek("jutterswet-drempelvangst", "/rules/rules/0/versions/0/value/filter/right", "case.json",
                     "2026-03-15", Map.of("J1.drempelgewicht", "{\"number\":\"0\"}", "J1.drempelaandeel", "{\"number\":\"0\"}"),
-                    false, null, null, "the filter of a fold"),
+                    false, null, "the filter of a fold"),
             new Plek("anchor/jutterswet-strandrechtketen", "/rules/prioritizedDefaults/1/defaults/1/consequence/right",
                     "case1-basis.json", "2026-03-15",
                     Map.of("W1.uitkering", "{\"number\":\"20260.00\"}", "K1.uitkeringstotaal", "{\"number\":\"20270.00\"}"),
-                    false, null, "the DRL-text branch has no defaults lowering", "the consequence of a prioritized default"),
+                    false, null, "the consequence of a prioritized default"),
             // "zijn bergingsdiepte groter is dan het Rekenjaar": W1's depth of 25 is not greater than 2026, so the
             // exception for a deep wreck no longer applies and the wreck rule's grondslag maal 2, 20.00, stands (ref
             // and clingo, measured 2026-09-26). The exec branch declined the justification as a whole until
@@ -171,14 +171,13 @@ class RekenjaarWitnessTest {
             new Plek("jutterswet-wrakrecht", "/rules/prioritizedDefaults/1/defaults/0/justification/right",
                     "case3-eigen-uitzondering.json", "2026-03-15",
                     Map.of("W1.uitkering", "{\"number\":\"20.00\"}", "K1.uitkeringstotaal", "{\"number\":\"20.00\"}"),
-                    false, null, "the DRL-text branch has no defaults lowering",
-                    "the justification of a prioritized default"));
+                    false, null, "the justification of a prioritized default"));
         for (Plek p : plekken) {
             Path ir = getwist(p.golden(), p.pointer());
             JsonNode c = zaakVan(p);
             String waar = p.omschrijving() + " (" + p.golden() + p.pointer() + ")";
-            tak(ir, c, DroolsBackend.Branch.EXEC_MODEL, p.tmsWeigering(), "tms — " + waar);
-            tak(ir, c, DroolsBackend.Branch.DRL_TEXT, p.drlWeigering(), "drl-tekst — " + waar);
+            for (DroolsBackend.Branch tak : DroolsBackend.Branch.values())
+                tak(ir, c, tak, p.weigering(), tak + " — " + waar);
         }
     }
 

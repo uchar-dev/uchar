@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
@@ -41,8 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * construct lowered, so four of four HTTP answers called an excluded jutter entitled, with status 200 and no
  * marker. The replay IS the entry here ({@code CaseRunner} builds through it), so gate 12 plays the entry on
  * every golden; these rows pin what the gate cannot see — that the defaults family is in the KieBase the entry
- * hands out, on the truth-maintenance branch as eight rules of its own beside the one that reads it, that the entry
- * refuses in the replay's sentence, and that no build of either transpiler can leave a side table out.
+ * hands out, on the truth-maintenance branch as eight rules of its own beside the one that reads it, that the DRL-text
+ * branch plays the document as the exec-model branch does, and that no build of the analysis can leave a side table
+ * out.
  */
 class DroolsBackendWitnessTest {
 
@@ -90,31 +90,36 @@ class DroolsBackendWitnessTest {
         }
     }
 
-    // ---------------- the refusals are the replay's ----------------
+    // ---------------- the DRL-text branch builds what the exec-model branch builds ----------------
 
-    @Test void de_drl_tak_weigert_in_de_zin_van_de_replay() throws Exception {
-        String zin = "drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT));
-        assertEquals(zin, e.getMessage());
+    /** Until card drl-teksttak-op-truth-maintenance the DRL-text branch refused this document in the replay's sentence,
+     *  "drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering"; since then it renders the same
+     *  analysis, and the entry hands out a KieBase of the text that plays the four cases as the exec-model branch
+     *  does. */
+    @Test void de_drl_tak_speelt_wat_de_exec_model_tak_speelt() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT);
+        assertEquals(DroolsBackend.Branch.DRL_TEXT, b.branch());
+        assertEquals(b.execModelTranspiler().drl(), b.drl());
         CaseRunner.Result replay = CaseRunner.viaDrlTekst(UITSLUITING.resolve("ir.json"), zaken());
-        assertEquals("EXCLUDE", replay.status());
-        assertEquals(zin, replay.reason());
+        assertEquals("PLAYED", replay.status(), "the DRL-text replay: " + replay);
+        assertEquals(4, replay.casesPlayed());
         CaseRunner.Result exec = CaseRunner.viaExecModel(UITSLUITING.resolve("ir.json"), zaken());
         assertEquals("PLAYED", exec.status(), "the exec-model replay of the same document: " + exec);
         assertEquals(4, exec.casesPlayed());
     }
 
-    // ---------------- no build of either transpiler leaves a side table out ----------------
+    // ---------------- no build of the analysis leaves a side table out ----------------
 
     /** What the loader returns beside the model is the list of side tables a document can carry, so it is the
      *  oracle here: every public static member of a transpiler that takes a model must take each of them, and no
      *  public constructor may exist (an instance made that way had lowered nothing and reported an empty
-     *  manifest). A side table the loader gains fails this row until both builds take it. */
+     *  manifest). A side table the loader gains fails this row until the build takes it. Until card
+     *  drl-teksttak-op-truth-maintenance the row held for the transpiler of the DRL-text branch as well, which that
+     *  card removed. */
     @Test void elke_publieke_ingang_die_een_model_neemt_neemt_elke_zijtafel() {
         List<Type> geladen = Arrays.stream(IrLoader.Loaded.class.getRecordComponents())
                 .map(RecordComponent::getGenericType).toList();
-        for (Class<?> t : List.of(TmsTranspiler.class, DrlTranspiler.class)) {
+        for (Class<?> t : List.of(TmsTranspiler.class)) {
             assertEquals(0, t.getConstructors().length, t.getSimpleName() + " has a public constructor");
             List<Method> ingangen = modelIngangen(t);
             for (Method m : ingangen) {
@@ -131,7 +136,7 @@ class DroolsBackendWitnessTest {
      *  stand for "empty", which is the silent omission again by another route. */
     @Test void een_ontbrekende_zijtafel_wordt_luid_geweigerd() throws Exception {
         IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(UITSLUITING.resolve("ir.json"))));
-        for (Class<?> t : List.of(TmsTranspiler.class, DrlTranspiler.class)) {
+        for (Class<?> t : List.of(TmsTranspiler.class)) {
             Method build = modelIngangen(t).get(0);
             Class<?>[] soorten = build.getParameterTypes();
             int getoetst = 0;

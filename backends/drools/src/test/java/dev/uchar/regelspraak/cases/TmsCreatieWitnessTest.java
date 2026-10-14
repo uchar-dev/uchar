@@ -685,7 +685,7 @@ class TmsCreatieWitnessTest {
         Path d = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-erflijn");
         assertEquals("PLAYED", CaseRunner.viaExecModel(d.resolve("ir.json"), List.of(d.resolve("case.json")))
                 .status());
-        assertEquals("PLAYED", CaseRunner.viaDrlTms(d.resolve("ir.json"), List.of(d.resolve("case.json"))).status());
+        assertEquals("PLAYED", CaseRunner.viaDrlTekst(d.resolve("ir.json"), List.of(d.resolve("case.json"))).status());
         for (DroolsBackend.Branch tak : TmsDocumenten.TAKKEN) {
             DroolsBackend.Build b = DroolsBackend.build(d.resolve("ir.json"), tak);
             for (List<String> namen : TmsDocumenten.steekproef(TmsDocumenten.gegenereerd(b), 20261008L,

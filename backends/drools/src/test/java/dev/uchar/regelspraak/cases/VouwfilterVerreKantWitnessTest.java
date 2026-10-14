@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A set fold whose test per element reads through a role of the ELEMENT: "de eerste van de vinddag van alle vondsten
@@ -307,9 +305,11 @@ class VouwfilterVerreKantWitnessTest {
         assertNull(speelTms(ir, zaak(DRIE_VONDSTEN, getal("J", "aantal late vondsten", 3))), "ref agrees: 3");
     }
 
-    @Test void de_teksttak_weigert_een_toets_via_de_rol_van_het_element() throws Exception {
-        // The DRL-text branch writes the subselection and the matrix into the element pattern, where a later write on the
-        // far object is not seen (before: verwacht 2, werkelijk 0; verwacht 1, werkelijk leeg); it refuses them by name.
+    @Test void de_teksttak_speelt_een_toets_via_de_rol_van_het_element() throws Exception {
+        // The destructive DRL-text lowering wrote the subselection and the matrix into the element pattern, where a
+        // later write on the far object is not seen (before: verwacht 2, werkelijk 0; verwacht 1, werkelijk leeg), and
+        // refused them by name ("via een rol van het element") until card drl-teksttak-op-truth-maintenance; since then
+        // the text renders the analysis, which binds the far object's standing, and plays all three forms.
         String laatklasse = regel("laatklasse", "Jutter", "laatklasse", getalLiteraal(1),
                 vergelijking("greater", telling(LATER_DAN_DE_SLUITDAG), getalLiteraal(0)));
         String matrix = regel("laatklasse", "Jutter", "laatklasse", getalLiteraal(1), kwantorvouw("atLeast", 1, null,
@@ -322,8 +322,7 @@ class VouwfilterVerreKantWitnessTest {
                 new String[] { document(List.of(matrix, AFGELEIDE_OPENINGSDAG)), zaak(HAVENS, getal("J", "laatklasse", 1)) });
         for (String[] v : vormen) {
             assertNull(speel(v[0], v[1]), "de exectak speelt");
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(v[0], v[1]));
-            assertTrue(e.getMessage().contains("via een rol van het element"), e.getMessage());
+            assertNull(speelDrl(v[0], v[1]), "de teksttak speelt");
         }
     }
 

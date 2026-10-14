@@ -3,17 +3,17 @@
 The Drools leg of the uchar differential square. It **consumes the uchar IR**: it loads a
 golden's `ir.json` off the wire — exactly as `ref/` and `backends/clingo` do — builds a
 Drools `KieBase` through its exec-model branch, which derives with truth maintenance, and
-replays the `case*.json` files. The RegelSpraak source-compile path is **never** the gate path (the maintainer
+replays the `case*.json` files; its DRL-text branch renders the same analysis as DRL text. The RegelSpraak source-compile path is **never** the gate path (the maintainer
 architecture anchor, 2026-08-27); a source path may serve only as an internal comparison
 in tests.
 
 ## Layout
 
-- `transpiler/tms/` — the exec-model branch (`TmsTranspiler`, Drools' executable model), which
-  derives with truth maintenance, with the fact classes it inserts (below, "The exec-model branch").
-- `transpiler/DrlTranspiler.java`, `transpiler/Stratificatie.java` — the DRL-text branch: DRL
-  text whose rules write the beans as they fire, ordered by salience bands.
-- `transpiler/kern/` — parts of the lowering the branches share: names, the coverage manifest,
+- `transpiler/tms/` — the analysis (`TmsTranspiler`), which derives with truth maintenance, with
+  the fact classes it inserts, and its two renderings: `PatternDslWeergave`, Drools' executable
+  model, for the exec-model branch (below, "The exec-model branch"), and `DrlWeergave`, DRL text,
+  for the DRL-text branch (below, "The DRL-text branch").
+- `transpiler/kern/` — parts of the lowering the analysis shares with the rest of the backend: names, the coverage manifest,
   the classification of standing targets, units, day kinds, the plans of fold sources.
 - `runtime/` — the production runtime (`RegelSpraakRuntime`, `Breuk`, `Accessors`, …). It
   lives **only here**; `ref/` and `spec/verifier/` share no code with it (gate 1's
@@ -43,18 +43,19 @@ compiles them in-tree from `frontends/regelspraak/src/main/java` (the ANTLR-coup
 `cases/DroolsBackend.java` is the backend's public entry, and the one a consumer builds with — the toolchain
 distribution (CLI, decision service, scenario runner) that builds this repository as a git submodule.
 `DroolsBackend.build(document, branch)` takes a loaded `uchar-ir-v1` document (a `JsonNode`, or a path) and
-returns a `Build` record: the model, the bean class loader, the transpiler of the chosen branch (`Branch` has two
-values, `EXEC_MODEL` and `DRL_TEXT`), its coverage manifest and the `KieBase`. It is the whole prelude of the case
+returns a `Build` record: the model, the bean class loader, the analysis (`execModelTranspiler()`), on the DRL-text
+branch its DRL text (`drl()`; null on the exec-model branch), the coverage manifest of the analysis and the `KieBase`
+(`Branch` has two values, `EXEC_MODEL` and `DRL_TEXT`, the two renderings of the analysis). It is the whole prelude of the case
 runner, which builds every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the
-replay's sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). Each transpiler has one build,
+replay's sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). The analysis has one build,
 and it takes every side table the loader returns beside the model: a build that left one out still produced a KieBase —
 a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker said so, which is why
 there is no shorter way in. A document whose lowering holds two rules of one name in one package — two forms of one
 name, which WF-020 forbids and a hand-written document can still carry — is refused on both branches before the KieBase
 is built: the KieBase keeps one rule per name, and the destructive exec-model lowering played such a document with the
 second rule in the place of the first (measured 2026-10-02: "kenmerk actief: verwacht aanwezig, werkelijk afwezig"). The
-DRL-text branch's compiler refuses it with "Duplicate rule name: actief", the exec-model branch with "exec-model:
-Duplicate rule name: actief — …" (witness `DubbeleRegelnaamWitnessTest`).
+analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence: "exec-model: Duplicate rule
+name: actief — …" (witness `DubbeleRegelnaamWitnessTest`).
 
 **A session in four calls.** The replay makes them for every case (`CaseRunner`), so the gate fires a session as a
 consumer does.
@@ -63,22 +64,21 @@ consumer does.
    beans are made and the session fires. The globals go on it before the fire: each parameter under its name as an
    identifier (`Namen.ident(name, false)`), the evaluation date as `rekendatum` (a `LocalDate`; a session without one
    sets none), and on the DRL-text branch every entry of `build.dagsoortGlobalen()`. A global the KieBase does not
-   declare is one no rule reads; `setGlobal` refuses it, and the replay passes it over. On the exec-model branch a
-   global keeps its value from the first `vuur` on: the branch states it as a fact once, at the first fire,
+   declare is one no rule reads; `setGlobal` refuses it, and the replay passes it over. A global keeps its value from
+   the first `vuur` on: the branch states it as a fact once, at the first fire,
    so `vuur`, `lees` and `zetAfgeleideWaarden` refuse a session whose global changed after it.
 2. `DroolsBackend.voegIn(build, session, invoer)`, with an `Invoer` that holds the beans, instances of the classes
-   `build.beanLoader()` loads with their attributes, characteristics and reference fields set, and on the
-   exec-model branch what that branch reads beside them: `emmerscalair(bean, attribute)` for every attribute on
+   `build.beanLoader()` loads with their attributes, characteristics and reference fields set, and what the branch
+   reads beside them: `emmerscalair(bean, attribute)` for every attribute on
    a timeline whose input the bean holds as the asOfDate-bucket scalar, the one segment of the period of the
    attribute's grid that holds the evaluation date (RUNTIME-SEMANTICS ch. 8.4), and `lijst(holder, role, members)`
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it. `voegIn` states the facts the branch reads from these
-   (`Emmerinvoer`, `Lijstplaats`), so a consumer states no fact class of the branch itself. On the DRL-text branch it
-   inserts the beans alone.
+   (`Emmerinvoer`, `Lijstplaats`), so a consumer states no fact class of the branch itself.
 3. `DroolsBackend.vuur(build, session)`, which fires to the fixpoint under a cap, a model with a creation in
    generations per stratum (below), and returns a `Vuring`: the firings, the cap, and `geenFixpunt`, the sentence of a
-   run without a fixpoint, at the cap or at the creation budget, or null. The cap is a fixed 100 000 on the DRL-text
-   branch. On the exec-model branch it is `max(10 000, FACTOR × R × N0)`, with R the rules of
+   run without a fixpoint, at the cap or at the creation budget, or null. The cap is `max(10 000, FACTOR × R × N0)`,
+   with R the rules of
    the KieBase and N0 the facts just before the fire, computed again at the start of every creation phase and never
    lowered; FACTOR is 4, at least twice the largest number of firings per rule per fact measured over the played
    goldens and the scale model (`DroolsBackend.FACTOR`, with the measurement). The cap is a safeguard against a fault
@@ -92,7 +92,7 @@ consumer does.
    `lees` gives is always a fixpoint, that of the input as the session knows it: an attribute or a characteristic set
    without `session.update` is not seen (below).
 
-**One write-back per session.** On the exec-model branch the beans hold the input alone until the write-back.
+**One write-back per session.** The beans hold the input alone until the write-back.
 `lees` reads what stands at the fixpoint without writing anything, as a `Fixpunt` (`transpiler/tms`): per object the
 derived attribute values in the form the bean field takes them (a timeline as the bean model's `Segment`s, a leeg as
 null), the derived characteristics, the objects the creations made with the creation and its subject, the links they
@@ -103,8 +103,8 @@ object as it reaches one of the input. Then it closes the session with a stated 
 on with a sentence that says what to do instead. `vuur` leaves a stated mark of its own after every run, of how the run
 ended, and `lees` and `zetAfgeleideWaarden` refuse a session without one, fired with a plain `fireAllRules` or not at
 all, a session whose last `vuur` ended at the cap, at the creation budget or with an exception, and a session in which
-something happened outside `vuur` after its last run (below), each with a sentence that says what is missing. On the
-DRL-text branch the rules write the beans as they fire: `zetAfgeleideWaarden` does nothing there and `lees` refuses.
+something happened outside `vuur` after its last run (below), each with a sentence that says what is missing. Both
+branches do so alike: the DRL-text branch renders the same analysis, and its rules write no bean either.
 
 **Firing again.** A consumer that fires one session more than once changes an attribute or a characteristic of a
 bean `voegIn` put in between the fires, with `session.update(handle, bean)`, fires with `vuur`, and reads every answer
@@ -151,15 +151,13 @@ After
 the write-back the beans hold derived values beside their input, so a fresh session takes beans that hold the input
 alone.
 
-**Faults.** On the exec-model branch an evaluation fault is a fact of the fixpoint, not an exception out of the
-fire: `lees` gives it as data (`Fixpunt.fouten`, the subject, the rule and the exception), and `zetAfgeleideWaarden`
+**Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire: `lees` gives it as data (`Fixpunt.fouten`, the subject, the rule and the exception), and `zetAfgeleideWaarden`
 throws what stands before it writes anything, and then writes nothing: one fault as its own exception, a
 `Breuk.DelingDoorNul` (an `ArithmeticException`) for a division by a numeric zero, a `Rekenfout` for a fault of a
 computation or of the evaluation date, a `Schrijversconflict` (an `IllegalStateException`) for two writers of one
 attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `Invoervormfout` for a timeline input in the other
-convention (ch. 8.4); two or more as `Evaluatiefouten`, with each fault in `fouten()`. On the DRL-text branch a fault
-leaves the fire as Drools' `ConsequenceException`, which `DroolsBackend.benoem` names, or, from a condition, as Drools'
-exception for the constraint. Any other exception is no evaluation fault: a broken contract or a bug.
+convention (ch. 8.4); two or more as `Evaluatiefouten`, with each fault in `fouten()`. Any other exception is no
+evaluation fault: a broken contract or a bug.
 
 **Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistentie`, with
 the rule and the subject: `lees` gives them, and on both branches a consumer reads them from the working memory. A made
@@ -247,9 +245,10 @@ branch is the square: a golden whose forms the loader+transpiler carry **must** 
 pinned expectations gates 5 (ref) and 6 (clingo) verify — a played pass is the square — and
 `EXPECTED_PLAYED` pins the played count as an equality, 250 since card
 `objectcreatie-zonder-connectingrole-binding` (2026-10-11), every golden the destructive
-exec-model lowering played among them. The
-DRL-text branch is swept apart, with an equality pin of its own, `EXPECTED_DRL_PLAYED`
-(197), and its non-players listed by name with their reasons (`DRL_CHANNEL`). Not-carried
+exec-model lowering played among them. The DRL-text branch is swept after it and must give
+every golden the status line of the exec-model branch, `PLAYED n` or the same refusal; it has
+no list and no pin of its own (proposed with card `drl-teksttak-op-truth-maintenance`; until
+then it had `EXPECTED_DRL_PLAYED`, 197, and a list of non-players, `DRL_CHANNEL`). Not-carried
 forms never vanish silently: per-form auto-refusals print their reason, and a
 reason-carrying value-divergence list in the script (the check-noop survivor pattern)
 names each golden whose fired outcome differs from ref/clingo and fails when stale.
@@ -257,13 +256,27 @@ names each golden whose fired outcome differs from ref/clingo and fails when sta
 suite and reports its refusals per family and form, which the gate does not; the pin of
 the gate is the truth.
 
-The DRL-text branch writes the beans as its rules fire, ordered by the salience bands of
-`Stratificatie`, the design the exec-model branch had until card `tms-omschakeling`; it has
-no defaults lowering, and its rebuild on truth maintenance is the card
-`drl-teksttak-op-truth-maintenance`. Its limits measured on hand-written documents stood in
-the sections "Recorded: …" that described both destructive lowerings; those sections left
-this README with the destructive exec-model lowering, and the history of this file keeps
-them.
+## The DRL-text branch
+
+`DroolsBackend.Branch.DRL_TEXT`, the flag `--drl` of the CLI: the analysis of the exec-model
+branch rendered as DRL text (`transpiler/tms/DrlWeergave`, through `TmsTranspiler.drl()`) and
+compiled by the classic DRL build (`KieHelper`) in EQUALITY mode. It is the second rendering of
+one analysis (card `drl-teksttak-op-truth-maintenance`, 2026-10-14): the same rules under the
+same names, the same facts, the same truth maintenance and the same driver, so every entry of
+a session treats it as the exec-model branch, and what this README says of that branch holds
+for it. Every RegelSpraak comparison or computation is a Java function of the text, with the
+source sentence above it; the structural constraints stay DRL. The predicates of the day kinds
+are globals of the text (`Build.dagsoortGlobalen()`). Its one refusal of its own is a member
+whose name Drools reads as a keyword where a pattern spells it, "drl: …"; a text the compiler
+rejects is a fault of the rendering, an `IllegalStateException`. Gate 12 holds it to the status
+line of the exec-model branch on every golden; the price is the time of the fire, 1.8 to 2.3
+times that of the executable model on the scale model.
+
+Until that card the DRL-text branch was a lowering of its own (`DrlTranspiler`, with
+`Stratificatie`): its rules wrote the beans as they fired, ordered by salience bands, the
+design the exec-model branch had until card `tms-omschakeling`, without a defaults lowering.
+Its limits measured on hand-written documents stood in the sections "Recorded: …" that
+described both destructive lowerings; the history of this file keeps them.
 
 ## The exec-model branch
 
@@ -339,8 +352,8 @@ and the fault goes when a read it rested on changes. A condition is tested in th
 take an exception as a fact; there the test answers that the condition does not hold where it faults, and a rule of the
 form's own, `<rule>: fout in de voorwaarde`, with the same left-hand side and the test that the condition faults,
 inserts the `Fout`. The write-back reports the faults that stand at the fixpoint before it writes anything: one division
-as the `DelingDoorNul` that `DroolsBackend.benoem` makes of one out of the fire of the DRL-text branch, with the same
-sentence ("deling door nul in de regel "aandeel": 100 gedeeld door 0 — …"), one other fault as its `Rekenfout`, named
+as a `DelingDoorNul`, named after the rule, in the sentence the destructive DRL-text lowering gave it out of its fire
+until card `drl-teksttak-op-truth-maintenance` ("deling door nul in de regel "aandeel": 100 gedeeld door 0 — …"), one other fault as its `Rekenfout`, named
 after the rule and in the reference interpreter's sentence wherever that executor names the fault ("fout in de regel
 "meldtermijn": duration count … is out of range"), two or more as `Evaluatiefouten`, ordered by the name of the form and
 then by the sentence, so the report does not depend on the order of the rules. That message opens with a head that names
@@ -649,7 +662,7 @@ An object creation's rule binds the subject, the reads of its condition and of i
 the absence of its own `Gemaakt` mark for the subject (one object per creation per subject) and the absence of a
 `Gemaakt` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
 which is the input world, since the branch writes no bean. Which roles link the subject and the new object, with the
-guards on the reference fields and the refusal sentences, is one decision shared with the DRL-text branch
+guards on the reference fields and the refusal sentences, is one decision of the bean model
 (`FactModelGenerator.creatiekoppeling`, with `verbindendeFeittypen`): the creation's `connectingRole` binding, or
 without one the derivation from the type pair of ch. 5.5, the one fact type that relates the subject's type and the
 created type. The connecting relation of a derived pair is the fact type of the two derived roles, with the fillers
@@ -682,7 +695,7 @@ never as a silent fall:
   total;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
-  which clips the timeline (ch. 3.10), as the DRL-text branch refuses it (golden `jutterswet-pachtvenster`); a
+  which clips the timeline (ch. 3.10), as the destructive DRL-text lowering refused it (golden `jutterswet-pachtvenster`); a
   characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part or a day count,
   among them a sum of timelines over a set (ch. 3.5); the comparisons "gelijk aan" and "ongelijk aan" in a clip, where
   `rsTijdConditie` reads an empty side as no period and ch. 3.6 applies the comparison of ch. 1.2 per period; a rate
@@ -699,7 +712,7 @@ never as a silent fall:
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
   fixed start point. Witness `TmsTijdlijnWeigeringWitnessTest`;
 - of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
-  check ("gedurende het gehele jaar niet …"), which the DRL-text branch refuses as well (ch. 3.12); and what the
+  check ("gedurende het gehele jaar niet …"), which the destructive DRL-text lowering refused as well (ch. 3.12); and what the
   reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
   with none, and a date ordering (ch. 3.9, 3.12);
 - of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse
@@ -707,11 +720,12 @@ never as a silent fall:
   well (ch. 3.8, 3.12); and a form that steps or counts in a day kind whose definition does not compile: one that tests
   a day kind on another day than the bound day, which no executor carries (red case `dagsoortverwijzing-andere-dag`),
   one that reads a parameter, which WF-031 admits and the other two executors read and this branch does not (golden
-  `jutterswet-havenrooster`, which the DRL-text branch refuses as well), and any other shape outside the compiler.
+  `jutterswet-havenrooster`, which the destructive DRL-text lowering refused as well), and any other shape outside the compiler.
   Witness `TmsDagsoortWitnessTest`;
 - what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
-  either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the DRL-text branch;
+  either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the destructive DRL-text
+  lowering;
 - the creations it does not build yet: an object creation whose back-link is ambiguous, which ch. 5.5 makes a fault of
   the program and this branch refuses when it builds (red case `ambiguous-backlink`), an object creation without a
   `connectingRole` whose type pair reaches the connecting relation only through a supertype of the subject or of the
@@ -726,7 +740,7 @@ never as a silent fall:
   subject, in every contribution rule, with a leeg value ending the `Let` across the rule boundary (ch. 10.6). A
   binder that no `Let` encloses keeps its WF-064 refusal, and a `Let` inside the filter plays. Witness
   `TmsVouwbinderWitnessTest`;
-- the shapes of a fold's range the bean model gives no field, refused as the DRL-text branch refuses them (§13.3.9):
+- the shapes of a fold's range the bean model gives no field, refused as the destructive DRL-text lowering refused them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many, over a relation no form creates (a created relation is read over its `Koppeling`
   facts);
@@ -734,7 +748,7 @@ never as a silent fall:
   composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
   ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power
   that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112), in
-  the sentence of the DRL-text branch;
+  the sentence of the destructive DRL-text lowering;
 - a parameter whose Java name is `rekendatum` beside a form that reads the evaluation date, since the case runner sets
   the date under that name;
 - what the design cannot carry: two initialisations on one target that apply to one instance, on one type or on a
@@ -761,7 +775,7 @@ never as a silent fall:
   that reads the reader's target, the verifier sees no cycle and the reference interpreter computes the document, while
   this branch refuses it. It refuses none of the goldens the loader loads (`TmsKringVerifierWitnessTest`).
 
-The loader and the bean model refuse on this branch as on the DRL-text branch.
+The loader and the bean model refuse on both branches alike, before the analysis.
 
 ## The rule graph and gate 15
 
@@ -806,15 +820,10 @@ order of the document and the object by its case label. A difference on an inter
 three writers the sentence names every writer that stands at the fixpoint, where the reference interpreter names the
 two that its last passes saw change the attribute.
 
-On the DRL-text branch, whose rules write the beans as they fire, two such writers fire each other again until the fire
-cap. The replay keeps the last writes of every session of that branch (`cases.Schrijfconflict`, an agenda listener
-`CaseRunner` hangs on each session of that branch it fires) and at the cap names the writers that kept changing one
-attribute of one object to different values, in document order, with their values, in the same sentence. With three
-writers that branch can let two of them fire each other while the third waits on the agenda, so its sentence names at
-least two. A run of that branch that reaches the cap otherwise, such as a creation that keeps minting, says "geen
-fixpunt (kringverwijzing?)". A computing rule there that writes a target another rule writes (a computing rule or an
-initialisatie) watches that target as well (`DrlTranspiler.gedeeldDoel`), so the branch reaches the cap where the writer
-that fired last would otherwise keep its value without a word. Both branches fault on a computing rule that evaluates
+The DRL-text branch renders the same analysis and gives the same fault. Until card
+`drl-teksttak-op-truth-maintenance` its rules wrote the beans as they fired, two such writers fired each other again
+until the fire cap, and the replay named the writers that kept changing the attribute from their last writes. Both
+branches fault on a computing rule that evaluates
 leeg beside a conditional initialisatie outside the ch. 7.7 domain, where `ref` faults and the ASP backend derives its
 `viol/2` witness. Writers whose conditions exclude each other, or that write the same value, play in both branches
 (golden `jutterswet-melding-naar-aard`, red case `jutterswet-dubbele-melding`, witnesses
@@ -830,7 +839,7 @@ in de regel "verhouding": 60 gedeeld door 0 — een numerieke nul als deler is e
 1.4, punt 4)". The replay (`ERROR DelingDoorNul: …`) reads that sentence on both branches, and the red path and the
 scenario report, which play the exec-model branch, read it as well.
 
-On the exec-model branch the fault is a logical fact of the fixpoint (above, "Evaluation faults are logical facts"). The
+On both branches the fault is a logical fact of the fixpoint (above, "Evaluation faults are logical facts"). The
 consequence that computes a value inserts the fault in place of the value, a condition that divides gets the rule
 `<rule>: fout in de voorwaarde`, and a fold's filter that divides makes the form that reads the fold fault where its
 evaluation reaches the fold, so a division by zero on an intermediate state, or in a filter no form reaches, is no
@@ -838,21 +847,18 @@ fault. At the fixpoint `lees` gives the fault as data and `zetAfgeleideWaarden` 
 named as above. A division in a default is refused by name (above, "What it refuses"). Witnesses `NuldelerWitnessTest`,
 `NuldelerVoorwaardeWitnessTest`, `TmsFoutWitnessTest`, `TmsVoorwaardefoutWitnessTest` and `TmsFilterfoutWitnessTest`.
 
-On the DRL-text branch the fault leaves the fire. Out of a consequence it is in the cause chain of Drools'
-`ConsequenceException`, and `DroolsBackend.benoem`, which `CaseRunner` calls where it fires a session, turns that into a
-second `DelingDoorNul` named as above, with what the consequence threw as its cause; any other `ConsequenceException`
-passes `benoem` unchanged, and the red path keeps its pinned fragments, since the cause chain still carries "Breuk
-deling door 0". A division in a condition throws Drools' MVEL exception, which names the rule and the condition in DRL;
-for a subselection that can fault it names no rule. That branch has no defaults lowering.
+Until card `drl-teksttak-op-truth-maintenance` the fault left the fire of the DRL-text branch, in the cause chain of
+Drools' `ConsequenceException`, and `DroolsBackend.benoem`, which `CaseRunner` calls where it fires a session, turned
+that into a second `DelingDoorNul` named as above. `benoem` stays public for a consumer that fires a KieBase itself; on
+the KieBases of both branches today no evaluation fault leaves the fire, so what comes to it is a broken contract or a
+bug, and it hands that on unchanged.
 
-The naming sits after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
+The naming sat after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
 name (`ConsequenceExceptionHandlerOption`) and instantiates it in every new session; where the kie API and this
 backend are loaded by different class loaders, the instance does not cast to the kie interface and no session opens.
 Measured 2026-10-02, when this backend set such a handler, in the distribution's Quarkus test of its decision service
 (`GoldenOverQuarkusTest`): `ClassCastException: class dev.uchar.regelspraak.cases.DroolsBackend$Nuldelingmelder cannot
 be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `DefaultAgenda.<init>`, on every request;
 the packaged Quarkus service and the JDK service opened their sessions. The KieBases `DroolsBackend` builds therefore
-keep Drools' default handler. A consumer that fires a KieBase of the DRL-text branch itself gets Drools'
-`ConsequenceException`, which names the rule and carries `DelingDoorNul` in its cause chain, and can name it the same
-way: `DroolsBackend.benoem(e)` is public for that. On the exec-model branch a consumer meets the fault in `lees` or at
-`zetAfgeleideWaarden`. Witness `NuldelerAfnemerWitnessTest`.
+keep Drools' default handler. A consumer meets the fault in `lees` or at `zetAfgeleideWaarden`, on either branch.
+Witness `NuldelerAfnemerWitnessTest`.

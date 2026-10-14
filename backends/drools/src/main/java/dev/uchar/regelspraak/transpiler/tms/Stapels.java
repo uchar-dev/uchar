@@ -20,9 +20,9 @@ import java.util.Set;
 /**
  * The effective defaults stacks of RUNTIME-SEMANTICS ch. 7.10, one per (concrete type, target), composed as the
  * reference interpreter composes them ({@code Desugar.effective_defaults}), with the refusals in this branch's words.
- * This class is the backend's only composition of ch. 7.10: the DRL-text branch lowers no defaults group, and until
- * card tms-omschakeling (2026-10-10) it was a copy of the destructive exec-model lowering's, kept apart so that the
- * trial of truth maintenance left that lowering untouched.
+ * This class is the backend's only composition of ch. 7.10, which both renderings of the analysis carry; until card
+ * tms-omschakeling (2026-10-10) it was a copy of the destructive exec-model lowering's, kept apart so that the trial of
+ * truth maintenance left that lowering untouched.
  *
  * <p>A subtype's own declarations fold over its supertype's effective stack, highest first: its own exceptions, the
  * inherited exceptions, the base (its own replaces the inherited one), the initialisations. A level that declares no

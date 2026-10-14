@@ -97,7 +97,7 @@ class TmsConsistentieWitnessTest {
 
     /** The branches of the analysis: the executable model and its rendering as DRL text. */
     private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
-            DroolsBackend.Branch.DRL_TMS);
+            DroolsBackend.Branch.DRL_TEXT);
 
     // ---------------- a consistency over a chain ----------------
 
@@ -141,7 +141,7 @@ class TmsConsistentieWitnessTest {
             if (vuurKeten(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList()))
                 tussenstand++;
         assertTrue(tussenstand > 0, "geen volgorde vuurde de consistentie op V1");
-        DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         int tekst = 0;
@@ -234,7 +234,7 @@ class TmsConsistentieWitnessTest {
             vuurSaldo(b, kieBase, namen, "5");
             volgordes++;
         }
-        DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TMS);
+        DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> regels = Tekstvolgorde.regels(t);
         assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
