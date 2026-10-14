@@ -36,18 +36,19 @@
 # An empty played set is a FAILURE, never silently green. Report: played N, auto-excluded M,
 # value-divergence K (per reason), no-case L.
 #
-# SINCE 2026-09-19 the gate ALSO counts the backend's OTHER transpiler branch (card
-# gate12-drl-takteller). The DRL-TEXT branch — DrlTranspiler's emitted DRL text, compiled to a
-# KieBase behind the runner's own `--drl` entry — is deliberately NARROWER than the exec-model one:
-# it has no ch. 7 prioritizedDefaults lowering and it markers forms the exec branch lowers. So it is
-# NOT the differential square and its count is NOT EXPECTED_PLAYED. What it was until now is
-# UNCOUNTED: its standing lived in card Results and in this file's prose, and the only machine that
-# looked at it was gate 13's twist floor, over thirteen goldens. It now has its own EQUALITY pin
-# (EXPECTED_DRL_PLAYED) and its own reason-carrying NON-PLAYER list (DRL_CHANNEL), built exactly like
-# the two above and stale in exactly the same two directions. One difference is recorded rather than
-# hidden: here an ERROR is LISTABLE. In the exec branch a crash at fire fails the gate outright,
-# because that branch IS the square; in this one a crash is a defect of a branch nothing yet holds to
-# the corpus's values, and the list is what makes it visible instead of making the gate red.
+# SINCE 2026-09-19 the gate ALSO sweeps the backend's DRL-TEXT branch (card gate12-drl-takteller), behind
+# the runner's own `--drl` entry. Since card drl-teksttak-op-truth-maintenance that branch is the SECOND
+# RENDERING of the one analysis the exec-model branch fires (transpiler/tms/DrlWeergave beside
+# PatternDslWeergave): it derives with truth maintenance over the same facts, plays exactly the goldens
+# the exec-model branch plays, and refuses in the same sentences. So it has NO list and NO pin of its
+# own: per golden its status line must be the exec-model branch's status line, verbatim (PLAYED n, or
+# EXCLUDE with the same sentence; "(no case file)" on both where there is no case). A different line
+# is a fault of a rendering and fails the gate by name — a FAIL or ERROR on this leg is such a
+# difference by construction, since the exec line is PLAYED, EXCLUDE or a listed divergence, so nothing
+# on this leg is ever listable. The one list of non-players for BOTH branches is EXPECTED_CHANNEL
+# (plus EXCLUDE_KNOWN), and the one count is EXPECTED_PLAYED. Until the switch-over the branch had an
+# equality pin (EXPECTED_DRL_PLAYED, last 197) and a reason-carrying list (DRL_CHANNEL, last 101
+# names); both went with the destructive lowering they described.
 #
 # The backend's own JUnit suite must ALSO pass with a NON-ZERO test count (maintainer decision
 # 2026-08-30, the gate-10 model): a zero-test or skipped suite is a failure, never silently green.
@@ -88,10 +89,9 @@ command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar
 # that could halve unseen. The gate's OTHER counts stay as they are — the played set keeps its
 # EQUALITY pin (EXPECTED_PLAYED below, the precedent this regime generalised from, deliberately not
 # reopened), and the replayed-case total is the played goldens' case files, i.e. a subset of the
-# file set gate 5 floors, held per name here by EXPECTED_CHANNEL. The DRL-text branch's count, added
-# 2026-09-19, follows the played set and not the suite: an EQUALITY (EXPECTED_DRL_PLAYED) beside a
-# per-name list, for the same reason — a floor would let a branch that loses one golden and gains
-# another pass while the pair went unnoticed.
+# file set gate 5 floors, held per name here by EXPECTED_CHANNEL. The DRL-text branch's count is the
+# same count since the switch-over of card drl-teksttak-op-truth-maintenance: its sweep below holds every
+# status line equal to the exec-model branch's, so it needs neither a pin nor a list of its own.
 EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239 (backends/drools, the surefire run)
 suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
 suite_status=$?
@@ -1289,460 +1289,6 @@ EXPECTED_CHANNEL=(
 # penninguitgifte (DRL_CHANNEL), so EXPECTED_DRL_PLAYED moves by one.
 EXPECTED_PLAYED=250
 
-# --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
-# Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
-# PLAYED is the default, only NON-players are listed. Three of the four listable channels are status
-# tokens the runner's --drl entry prints verbatim, so what is pinned IS what is measured; the fourth
-# is the sweep's own. The branch's FIFTH token, PLAYED, is deliberately not listable — it is the
-# default and pinning it would exempt a golden instead of holding it.
-#   EXCLUDE  printed — a per-form refusal: a loader Refusal, a DrlTranspiler MARKER, the branch's
-#            own ch. 7 defaults refusal, or the bean name collision both branches share
-#   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
-#   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
-#   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: ninety-four of the hundred and one
-# entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
-# noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
-# comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
-DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 41 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 52 below the exec one: the exec branch grew a
-  # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, the lowering with truth maintenance carries one of its own since card
-  # tms-omschakeling, and DrlTranspiler never did. 40 of the 41 lines refuse on that one
-  # sentence; the 40th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. All 40 ARE that asymmetry — the exec branch plays them.
-  # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
-  # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 52 is 52 exec-only players — those 40, the ten of class (C) that the exec branch plays
-  # (jutterswet-afrekening, jutterswet-havenketen, jutterswet-late-vondst, jutterswet-vouwrand,
-  # jutterswet-vondstbereik, jutterswet-vondstvenster, jutterswet-vroegste-vondst,
-  # jutterswet-zwaarste-weging, anchor/jutterswet-erflijn and jutterswet-klipwacht), and
-  # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D); since card
-  # tms-omschakeling no golden plays in this branch and not in the exec one. Until that card the
-  # number was 46: 50 exec-only players minus 4 goldens this branch played and the destructive exec
-  # branch did not (anchor/jutterswet-vindersloon, jutterswet-vondsttarief, synth2-afrondingscombinaties,
-  # all three a transpiler SKIP over there, and jutterswet-afdrachtstapel, whose percentage comparison
-  # the exec arms refused); the history of the count follows. Recounted 2026-09-25
-  # (card dialect-uitzondering-op-uitzondering): until then the header said 22 and 3, which stopped
-  # holding when jutterswet-afdrachtstapel arrived (166 -> 167 at EXPECTED_DRL_PLAYED). Recounted
-  # again the same day (card verifier-supertype-dubbele-schrijver, fix round): jutterswet-diepwrakbasis
-  # joins the class, 28 -> 29 lines and 23 -> 24 (196 -> 197 at EXPECTED_PLAYED). And again the same
-  # day (card dialect-opgave-boven-berekening): jutterswet-opgave-boven-berekening joins the class,
-  # 29 -> 30 lines and 24 -> 25 (199 -> 200 at EXPECTED_PLAYED). Recounted again the same day (card
-  # verifier-allocatie-keten): jutterswet-strandmelding joins the class, 30 -> 31 lines and 25 -> 26
-  # (200 -> 201 at EXPECTED_PLAYED). Recounted again the same day (card
-  # clingo-tarief-decimalen): ww-herleving-inkomen-rgs joins the class, 31 -> 32 lines and 26 -> 27
-  # (201 -> 202 at EXPECTED_PLAYED). Recounted again the same day (card
-  # dialect-opgave-boven-berekening, lens round): jutterswet-opgave-vormen joins the class, 32 -> 33
-  # lines and 27 -> 28 (204 -> 205 at EXPECTED_PLAYED). Recounted again the same day (the fold keeps
-  # an initialisation's condition): jutterswet-wrakinitialisatie joins the class, 33 -> 34 lines and
-  # 28 -> 29 (207 -> 208 at EXPECTED_PLAYED). Recounted 2026-09-26 (card rekenjaar-als-waarde): the 29
-  # stopped holding at 208 -> 209 at EXPECTED_PLAYED, when jutterswet-initialisatievolgorde entered
-  # class (D) as a golden the exec branch plays and this one does not, so the gap is 30 (210 - 180).
-  # jutterswet-rekenjaar plays in both branches and moves neither number; the five class heads (A 34,
-  # B 37, C 10, D 2, E 3 = 86 lines) were counted against the list and hold. Recounted again the same
-  # day (fix round on the union of the wave): jutterswet-gehele-periode-leeg, jutterswet-vast-startpunt
-  # and jutterswet-breukliteral play in both branches and move neither the gap nor a class head, so the
-  # gap is 30 (213 - 183) and the heads hold at 86 lines. jutterswet-erfketen and
-  # jutterswet-gehele-periode-leeg-rgs, the same fix round, play in both branches too: the gap stays 30
-  # (215 - 185), the heads 86 lines. Recounted 2026-09-28 (card opgave-markering-datum):
-  # jutterswet-jaarvaststelling, jutterswet-vocabulaires and jutterswet-premierecht play in both
-  # branches and moved neither the gap nor a class head (218 - 188); jutterswet-opgave-datum joins the
-  # class, 34 -> 35 lines and 30 -> 31 (218 -> 219 at EXPECTED_PLAYED), and the five class heads (A 35,
-  # B 37, C 10, D 2, E 3 = 87 lines) were counted against the list. Recounted again the same day (the
-  # bean name collision): anchor/jutterswet-toelagegronden leaves the class for class (F), 35 -> 34
-  # lines, and the two new goldens of (F) move neither played count, so the gap stays 31 (219 - 188);
-  # the six class heads (A 34, B 37, C 10, D 2, E 3, F 3 = 89 lines) were counted against the list.
-  # Recounted again the same day (the condition over a navigated derived value): jutterswet-meldingsketen
-  # joins the class, 34 -> 35 lines, and anchor/jutterswet-kustwacht now plays in the exec branch and not in
-  # this one, so the gap is 33 (222 - 189); the six class heads (A 35, B 37, C 10, D 2, E 3, F 3 = 90 lines)
-  # were counted against the list. Recounted 2026-09-30 (the justification that counts or reads further than one
-  # role): jutterswet-premiestaffel joins the class, 35 -> 36 lines, and plays in the exec branch only, so the gap
-  # is 34 (224 - 190, jutterswet-zinkende-jutter of the same day playing in both); the six class heads (A 36, B 37,
-  # C 10, D 2, E 3, F 3 = 91 lines) were counted against the list. Recounted again the same day (the operand under a
-  # quantifier condition): jutterswet-sluitdag plays in both branches and moves neither the gap nor a class head, so
-  # the gap is 34 (225 - 191) and the heads hold at 91 lines. Recounted again the same day (card
-  # opgave-markering-schrijver-op-subtype): jutterswet-opgave-subtype joins the class, 36 -> 37 lines, and plays in
-  # the exec branch only, so the gap is 35 (226 - 191); the six class heads (A 37, B 37, C 10, D 2, E 3, F 3 = 92
-  # lines) were counted against the list. Recounted again the same day (the date fold over a role):
-  # jutterswet-vondstvenster and the new jutterswet-vroegste-vondst play in the exec branch only (class (C)), so the
-  # gap is 37 (228 - 191); the six class heads (A 37, B 37, C 11, D 2, E 3, F 3 = 93 lines) were counted against the
-  # list. Recounted again the same day (the minimum and maximum over a date): jutterswet-vondstbereik plays in the exec
-  # branch only (class (C)), so the gap is 38 (229 - 191), and the six class heads hold at 93 lines. Recounted again
-  # the same day (the fold whose subselection tests a value derived later): jutterswet-zwaarste-vondst joins the class,
-  # 37 -> 38 lines, and plays in the exec branch only, so the gap is 39 (230 - 191); the six class heads (A 38, B 37,
-  # C 11, D 2, E 3, F 3 = 94 lines) were counted against the list. Recounted 2026-10-01 (the consequence of a default
-  # that folds over a role): jutterswet-sluitdag-gemeld joins the class, 38 -> 39 lines, and plays in the exec branch
-  # only, so the gap is 40 (231 - 191); the six class heads (A 39, B 37, C 11, D 2, E 3, F 3 = 95 lines) were counted
-  # against the list. Recounted again the same day (the condition over a chain of roles): jutterswet-havenketen joins
-  # class (C), 11 -> 12 lines, and plays in the exec branch only, so the gap is 41 (232 - 191); the six class heads
-  # (A 39, B 37, C 12, D 2, E 3, F 3 = 96 lines) were counted against the list. Recounted again the same day (a fold
-  # in the toekenning of an object creation): jutterswet-afrekening joins class (C), 12 -> 13 lines, and plays in the
-  # exec branch only, so the gap is 42 (233 - 191); the six class heads (A 39, B 37, C 13, D 2, E 3, F 3 = 97 lines)
-  # were counted against the list. Recounted again the same day (two writers of one target): jutterswet-melding-naar-aard
-  # plays in both branches and moves neither the gap nor a class head, so the gap is 42 (234 - 192) and the heads hold
-  # at 97 lines. Recounted again the same day (an exception of a subtype under its supertype's base):
-  # jutterswet-meldtermijn-strandjutter joins the class, 39 -> 40 lines, and plays in the exec branch only, so the gap
-  # is 43 (235 - 192); the six class heads (A 40, B 37, C 13, D 2, E 3, F 3 = 98 lines) were counted against the list.
-  # Recounted again the same day (a fold whose subselection reads through a role of the element): jutterswet-late-vondst
-  # joins class (C), 13 -> 14 lines, and plays in the exec branch only, so the gap is 44 (236 - 192); the six class heads
-  # (A 40, B 37, C 14, D 2, E 3, F 3 = 99 lines) were counted against the list. Recounted 2026-10-02 (the percentage of
-  # a navigated read): jutterswet-havengeld plays in both branches and moves neither the gap nor a class head, so the gap
-  # is 44 (237 - 193). Recounted again the same day (a fold over a set followed by to-one steps):
-  # jutterswet-zwaarste-weging joins class (C), 14 -> 15 lines, and plays in the exec branch only, so the gap is 45
-  # (238 - 193); the six class heads (A 40, B 37, C 15, D 2, E 3, F 3 = 100 lines) were counted against the list.
-  # Recounted again the same day (the opgave marker on a number with a unit): jutterswet-opgave-bedrag joins the class,
-  # 40 -> 41 lines, and plays in the exec branch only, so the gap is 46 (239 - 193); the six class heads (A 41, B 37,
-  # C 15, D 2, E 3, F 3 = 101 lines) were counted against the list. Recounted 2026-10-10 (card tms-omschakeling, the
-  # switch): the exec branch plays 248, the six it played on top of the 242 among them; four of the six played here
-  # already, and anchor/jutterswet-erflijn and jutterswet-klipwacht of class (C) did not, so the gap is 52
-  # (248 - 196); this list does not move, and the six class heads hold at 101 lines.
-  "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-nestuitzondering|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-strandrechtketen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-uitsluiting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-vondstwaardering|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/ww-herleving-inkomen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-bergingsdrempel|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-bergingstoeslag|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-diepwrakbasis|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-hardheidsaftrek-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-havenrooster|EXCLUDE|drl-transpiler MARKER: TODO datum-rekenkunde (dagsoort) — the same limit as the exec branch, one sentence earlier: the shared day-kind compiler carries no PARAMETER operand, so this branch markers the arithmetic instead of skipping the rule"
-  "jutterswet-meldingsketen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-meldtermijn-strandjutter|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-nestkenmerk-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-opgave-bedrag|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-opgave-boven-berekening|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-opgave-datum|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-opgave-subtype|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-opgave-vormen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-overzeelezing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-penningrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-premiestaffel|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-samenloop|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-schorsing|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-sluitdag-gemeld|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-strandmelding|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-tariefrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-uitsluiting-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-vangstheffing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wachtgeld|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wrakbasis|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wrakconflict|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wrakerfbasis|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wrakinitialisatie|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wrakrecht|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-wrakrecht-flogic|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "jutterswet-zwaarste-vondst|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "synth3-nestkorting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "ww-herleving-inkomen-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  # (B) loader Refusals — 37, and SHARED with the exec branch: both branches read the wire through
-  # the same IrLoader, so a v1 node neither carries refuses identically in both. Every one of these
-  # names an EXPECTED_CHANNEL entry above with the same reason; they are repeated here because this
-  # list must be readable on its own, and because the day the loader grows one of these forms BOTH
-  # counts move and both lists have to say so.
-  "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead"
-  "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs"
-  "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
-  "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
-  "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
-  "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-aanspraakherziening|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-ketenkwantor|EXCLUDE|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. What stands behind it is INFERRED, not measured, since nothing past the loader runs while it refuses: the golden's middle relation 'berging' is many-to-many — the shared element it exists for needs a to-many reverse role on the last step — and that is the relation anchor/jutterswet-bootberging and jutterswet-muntketen are refused on one layer deeper, so lifting the loader alone would most likely move this refusal rather than make the golden play. Its flat-count pins are a ref = clingo pair"
-  "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderkwart|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
-  "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
-  "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
-  "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
-  "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
-  "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
-  "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
-  "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
-  "synth3-letbeslag|EXCLUDE|loader Refusal: Datatype:SumType"
-  "synth3-metingtal|EXCLUDE|loader Refusal: Datatype:ListType"
-  "synth3-nestwaarde|EXCLUDE|loader Refusal: Datatype:StructType"
-  "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
-  "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
-  "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 15, this branch's own per-form refusals, each naming the rule it
-  # could not lower. The count's history, oldest first:
-  # Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and the class header
-  # was carrying 12 over a list of 13: the v8-enum-emitter addition had not been counted. It went
-  # 11 -> 12 the same day (card datum-setbron-breuk): jutterswet-vondstbereik, the
-  # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
-  # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
-  # reason.
-  # Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under a header of
-  # 12, because anchor/jutterswet-bergingstoezicht (the unresolved verdeling) left it at 156 -> 157
-  # and the header did not follow; jutterswet-seinjaar, a NEW golden refused in both branches by one
-  # sentence, makes it 12 again and moves neither played count.
-  # 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie markers are gone, see
-  # EXPECTED_DRL_PLAYED.
-  # 10 -> 11 the same day (card tijdvenster-conditie-normeren): jutterswet-pachtvenster, the ch. 3.10
-  # clip on a temporal target, a NEW golden refused in both branches by name, so neither played count
-  # moves.
-  # 11 -> 10 the same day (card drools-temporele-naamnorm): jutterswet-seinjaar plays, see
-  # EXPECTED_DRL_PLAYED.
-  # 10 -> 11 (2026-09-30, the date fold over a role): jutterswet-vroegste-vondst, a NEW golden this
-  # branch markers by name ('TODO aggregatie EERSTE') and the exec branch plays; EXPECTED_DRL_PLAYED
-  # does not move (reason block at EXPECTED_PLAYED). The same day (the minimum and maximum over a
-  # date) jutterswet-vondstbereik stays here and plays in the exec branch; the count stays 11.
-  # 11 -> 12 (2026-10-01, the condition over a chain of roles): jutterswet-havenketen, a NEW golden this
-  # branch markers by name ('TODO voorwaarde') and the exec branch plays; EXPECTED_DRL_PLAYED does not
-  # move (reason block at EXPECTED_PLAYED).
-  # 12 -> 13 (2026-10-01, a fold in the toekenning of an object creation): jutterswet-afrekening, a NEW golden
-  # this branch markers by name ('TODO aggregatie LAATSTE', in the rule that reads the zeebrieven back) and the
-  # exec branch plays; EXPECTED_DRL_PLAYED does not move (reason block at EXPECTED_PLAYED).
-  # 13 -> 14 (2026-10-01, a fold whose subselection reads through a role of the element): jutterswet-late-vondst, a
-  # NEW golden this branch markers by name ('TODO aggregatie EERSTE'; behind it the count over the same subselection,
-  # which reads through a role of the element and is refused by name since that day) and the exec branch plays;
-  # EXPECTED_DRL_PLAYED does not move (reason block at EXPECTED_PLAYED).
-  # 14 -> 15 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, a NEW golden this
-  # branch markers by name ('TODO aggregatie EERSTE', the earliest vinddag over a set source) and the exec branch
-  # plays; EXPECTED_DRL_PLAYED does not move (reason block at EXPECTED_PLAYED).
-  # FIVE of the fifteen are goldens the exec branch refuses too, on its own wording of the
-  # same limit (the many-to-many bean field, the bean field a consistency's count shares with its
-  # sister role, and the §8.4.3 clip on a temporal target). Until card tms-omschakeling (2026-10-10)
-  # they were SEVEN: the destructive exec branch refused anchor/jutterswet-erflijn and
-  # jutterswet-klipwacht as well, and the branch with truth maintenance plays both (exec PLAYED 1 each).
-  # TEN are this branch alone, and the exec branch PLAYS them — those two and the eight that follow:
-  #   jutterswet-afrekening (exec PLAYED 2) — the ordering fold over a date set source, in the rule that reads
-  #   the zeebrieven back, and behind it in the toekenningen of both creations;
-  #   jutterswet-havenketen (exec PLAYED 2) — a TODO voorwaarde on a read over two roles;
-  #   jutterswet-late-vondst (exec PLAYED 2) — the ordering fold over a date set source, and behind it a
-  #   subselection that reads through a role of the element, which this branch would test on the element alone;
-  #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons;
-  #   jutterswet-vondstbereik, jutterswet-vondstvenster and jutterswet-vroegste-vondst (exec PLAYED 2
-  #   each) — the ordering fold over a date set source, which the exec branch lowers since 2026-09-30
-  #   and this one refuses (the minimum/maximum) or markers (the eerste/laatste);
-  #   jutterswet-zwaarste-weging (exec PLAYED 2) — the ordering fold over a date set source, over a member the
-  #   RegelSpraak frontend generates on the element for the to-one steps after the set.
-  # Until 2026-09-23 two more stood here, anchor/jutterswet-wachtersketen and
-  # synth2-budgetgrens-onder, an OBJECTCREATIE marker on the unresolved back-link to Wachter; they
-  # left with card drl-creatie-koppelloos (reason block at EXPECTED_DRL_PLAYED).
-  "anchor/jutterswet-bootberging|EXCLUDE|MARKER regel: bronPad step Boot -> Vondst has no bean field — the middle relation is many-to-many (§13.3.9)"
-  "anchor/jutterswet-erflijn|EXCLUDE|MARKER regel: aggregation join with both sides plural — neither end stores a bean field (§13.3.9)"
-  "anchor/jutterswet-gemeenteberging|EXCLUDE|MARKER regel: aggregation join whose storage direction is the far side (§13.3.9)"
-  "anchor/jutterswet-penninguitgifte|EXCLUDE|MARKER consistentie: unresolved consistency rule over every Penning"
-  "jutterswet-afrekening|EXCLUDE|MARKER regel: TODO aggregatie LAATSTE over a set source — in the rule that reads the zeebrieven back; behind it the branch markers both creations as well (TODO aggregatie EERSTE in 'maak een afrekening', TODO datum-rekenkunde in 'geef een zeebrief', measured 2026-10-01)"
-  "jutterswet-havenketen|EXCLUDE|MARKER regel: TODO voorwaarde — a read over two roles"
-  "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
-  "jutterswet-late-vondst|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source — behind it the count over the same subselection, refused by name as a subselection that reads through a role of the element (measured 2026-10-01)"
-  "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
-  "jutterswet-pachtvenster|EXCLUDE|MARKER regel: TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3) — the ch. 3.10 clip, built in ref and clingo since 2026-09-23; shared with the exec branch, each in its own words"
-  "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the member-type reason of kern.Vouwwaarde (card datum-setbron-breuk, 2026-09-20), which since 2026-09-30 names this branch as the one that does not carry the fold: the exec branch plays the golden. Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
-  "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
-  "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
-  "jutterswet-vroegste-vondst|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
-  "jutterswet-zwaarste-weging|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
-  # (D) The TWO goldens on which this branch still answers wrong values (measured 2026-09-25).
-  # jutterswet-initialisatievolgorde: this branch's initialisatie keeps the leeg-guard alone, so a
-  # value computed against a read another rule has not yet written stays (0 and 5 where 26 and 18 are
-  # right); the exec branch was repaired, see EXPECTED_PLAYED. anchor/jutterswet-kustwacht answers two
-  # wrong values in both cases, and both have one cause: this branch writes a navigated characteristic
-  # check into the subject's pattern, and an update of the reached post does not test it again. So
-  # rustwacht ("zijn post geen risicopost is") stays present and gevarenwacht ("zijn post risicopost
-  # is") stays absent after the post becomes a risicopost. Until 2026-09-28 the exec branch shared the
-  # rustwacht half; it now tests such a condition after a far-side join and plays both cases (reason at
-  # EXCLUDE_KNOWN above). The §13.4.6 class that stood here until
-  # 2026-09-19 — four goldens reading leeg or faulting at fire on a creation — is gone, repaired
-  # rather than pinned (card drl-objectcreatie-defect), and with it the last ERROR entry.
-  "anchor/jutterswet-kustwacht|FAIL|a navigated characteristic check in a condition sits in the Wachter's pattern and is not tested again when the post becomes a risicopost: rustwacht stays present and gevarenwacht absent in both cases, where ref, clingo and the exec branch answer the reverse (measured 2026-09-28)"
-  "jutterswet-initialisatievolgorde|FAIL|the initialisatie's leeg-guard reads the running fact base, so the value it computed against a read another rule had not yet written stays (bergloon 0 and vindloon 5 where ref, clingo and the exec branch answer 26 and 18); RUNTIME-SEMANTICS ch. 5.4 reads the guard off the input"
-  # (E) No case file — nothing to replay, in either branch.
-  "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
-  "jutterswet-seizoenvouw|NOCASE|a golden with no case file"
-  "jutterswet-vormenkabinet|NOCASE|a golden with no case file"
-  # (F) Bean name collisions — 3, SHARED with the exec branch and refused before either branch lowers
-  # the document: two declarations fall on one Java name of the bean model, an object type on a fact
-  # class another type already has, or a member the document uses on a bean property another member
-  # carries. The sentence is the exec branch's word for word, and each line names an EXPECTED_CHANNEL
-  # entry above. jutterswet-halfstokspelling and jutterswet-premiespelling are new goldens refused in
-  # both branches, so neither played count moves.
-  "anchor/jutterswet-toelagegronden|EXCLUDE|bean name collision: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property; a defaults group writes the characteristic. Until 2026-09-28 this branch refused it on its defaults sentence, class (A)"
-  "jutterswet-halfstokspelling|EXCLUDE|bean name collision: the characteristic 'half stok' falls on the bean property Sein.halfStok of the attribute 'half-stok'; a rule writes it"
-  "jutterswet-premiespelling|EXCLUDE|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class"
-)
-# The count that closes the direction a played-by-default list cannot see: a NEW golden that plays in
-# THIS branch. An equality, for the reason EXPECTED_PLAYED is one.
-# 2026-09-19, FIRST measurement at 132 (card gate12-drl-takteller), over 209 goldens: 132 played, 70
-# per-form refusals, 3 wrong values, 2 faults at fire, 2 without a case file. The number was not
-# invented here — it was carried in card Results through the parity programme and last moved by the
-# two Let cards of 2026-09-19 (drl-let-meldplek and drl-geneste-let-duw, 130 -> 132, recorded in the
-# EXPECTED_PLAYED block above). That card re-measured it from scratch and got the same 132.
-# 132 -> 136, same day, card drl-objectcreatie-defect: the §13.4.6 creation lowering now writes BOTH
-# ends of the back-link and leaves a kenmerkwaardetoekenning's false-or-empty value unset
-# (RUNTIME-SEMANTICS ch. 5.5, the two clauses the ported production lowering does not have), so the
-# four goldens of the old class D answer the values gates 5 and 6 pin instead of reading leeg or
-# faulting at fire. Measured over 210 goldens: 136 played, 71 per-form refusals, 1 wrong value, no
-# faults at fire, 2 without a case file — 136 + 74 pinned non-players, and the 71 is the EXCLUDE
-# count of THIS list (A 24 + B 35 + C 12), recounted rather than carried over from the block above,
-# where it was 70 against a corpus of 209; the exec sweep beside it is byte-identical and
-# EXPECTED_PLAYED does not move. Every movement from here carries its reason at this pin, exactly as
-# the exec one does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
-# 136 -> 138 (2026-09-19, card dagsoort-semantiek): jutterswet-bergingsklok and jutterswet-getijklok
-# play in this branch too — the DRL-text branch routes the day-kind duration forms to the same runtime
-# statics the exec branch does, through a session global holding the compiled predicate, so the two
-# branches were never going to differ here. Reason block at EXPECTED_PLAYED above.
-# 138 -> 140 (2026-09-19, card eigenaar-gastheer-object): the same two new goldens, for the same
-# reason — this branch already read the doel through its `$doel` pattern, and the card changed the
-# OTHER two executors to meet it. Reason block at EXPECTED_PLAYED above.
-# 140 -> 141 (2026-09-19, same card, lens round): jutterswet-bakensein, the supertype host. This
-# branch refused it too and for the same reason, and the fix is shared between the two. Reason block
-# at EXPECTED_PLAYED above.
-# 141 -> 142 (2026-09-20, card v4-verre-rol-getuige): jutterswet-postbezetting, the far-side role
-# check's first corpus carrier. This branch lowers the form as an `exists`/`not` clause beside the
-# subject pattern and played it unchanged; the card's work was in ref and the ASP backend. Reason
-# block at EXPECTED_PLAYED above.
-# 142 -> 145 (2026-09-20, card aantal-gevulde-backends): the three filled-count goldens. This branch
-# needed its own change — the `!= null` source guard the sum/min/max folds carry for §4.12 is for
-# the filled count the FOLD ITSELF, so it had to be lifted out of the "not a count" condition that
-# had always excluded it. Reason block at EXPECTED_PLAYED above.
-# 145 -> 146 (2026-09-20, same card): jutterswet-gevuldegemiddelde, the guarded hand-spelled average.
-# This branch needed nothing beyond the filled count itself. Reason block at EXPECTED_PLAYED above.
-# 146 -> 148 (2026-09-20, card drools-enumlabel-lezer): jutterswet-keurstaat and
-# jutterswet-vondstklasse. This branch refused both on its own wording of the SAME shared-reader limit
-# (`TODO voorwaarde`, and `TODO literal` on the write half), so the one-line repair moved the two
-# branches together and neither needed a change of its own. Reason block at EXPECTED_PLAYED above.
-# 148 -> 149 (2026-09-20, card ref-periodeconditie-arm): jutterswet-premievenster. This branch
-# carried the window already too, in its own lowering; measured PLAYED 6 beside the exec branch's
-# PLAYED 6 on the same six cases. Reason block at EXPECTED_PLAYED above.
-# 149 -> 151 (2026-09-20, card unie-telling): jutterswet-vondstunie and jutterswet-keurunie. This
-# branch got its own arm — the same disjunctive single pattern, written as DRL text — and plays both
-# goldens on the same absolute numbers as the exec branch, ref and clingo. Reason block at
-# EXPECTED_PLAYED above.
-# 151 -> 152 (2026-09-22, fix round of the same card): jutterswet-unievoorwaarde. This branch needed
-# nothing of its own — the union count in a condition rides the same accumulate. Reason block at
-# EXPECTED_PLAYED above.
-# 152 -> 153 (2026-09-22, naronde of the same card): jutterswet-uniestratum. The stratification
-# analysis is SHARED, so this branch carried the same gap and is repaired by the same walk; measured
-# diverging before it and PLAYED after. Reason block at EXPECTED_PLAYED above.
-# 153 -> 154 (2026-09-22, fix round 3): jutterswet-uniekwantor. The stratification analysis is SHARED,
-# so this branch carried the same polarity gap and is repaired by the same context. Reason block at
-# EXPECTED_PLAYED above.
-# 154 -> 155 (2026-09-22, card drools-enumnaam-identiteit): jutterswet-keurspelling. This branch
-# compared the same enumerations with an mvel `==` and is repaired by wrapping both operands in the
-# same runtime call; measured diverging before it on the same three cases and PLAYED 4 after. Reason
-# block at EXPECTED_PLAYED above.
-# 155 -> 156 (2026-09-22, card p5-datumtijd-lexeem): jutterswet-sluitstip. This branch reads the ISO
-# datum-tijd lexeme through the same shared reader and needed nothing of its own. Reason block at
-# EXPECTED_PLAYED above.
-# 156 -> 157 (2026-09-22, card p3-drools-verbindenderol-verdeling): anchor/jutterswet-bergingstoezicht.
-# The recipient join is the same shared derivation in this branch. Reason block at EXPECTED_PLAYED above.
-# 157 -> 159 (2026-09-23, card drl-creatie-koppelloos): anchor/jutterswet-wachtersketen and
-# synth2-budgetgrens-onder. Their creation runs over a SELF-TYPED pair (Wachter creates Wachter over
-# `opvolging`), where the type-pair derivation this branch used for the back-link answers nothing; the
-# lowering then emitted an insert with no link, and only the marker scan refused it. It now reads the
-# creation's verbindendeRol binding, as the exec branch has since 2026-08-30 and as ref does, and plays
-# both. Measured over every golden and rood document in both branches: the exec output and every
-# other document are byte-identical.
-# 159 -> 160 (2026-09-23, card clingo-leeg-negatie): jutterswet-waardemelding. The loader's lowering
-# serves both branches. Reason block at EXPECTED_PLAYED above.
-# 160 -> 161 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar. The temporal lookups
-# this branch shares the name contract for are the same; its anker attempt now lowers the guard, and
-# the MARKER the golden stood on in class (C) is gone. Reason block at EXPECTED_PLAYED above.
-# 161 -> 162 (2026-09-23, card drools-venster-vouwtoets): jutterswet-wachtvenster, new. This branch
-# carried all three window positions before the card; the golden enters its played set together with
-# the exec branch's. Reason block at EXPECTED_PLAYED above.
-# 162 -> 163 (2026-09-23, card verifier-leegtest-negafhankelijkheid, second fix round):
-# jutterswet-opvolgerquorum. This branch plays the same four cases with no change of its own, PLAYED 4.
-# The pin is the sum 161 + jutterswet-wachtvenster + jutterswet-opvolgerquorum = 163. Reason block at
-# EXPECTED_PLAYED above.
-# 163 -> 164 (2026-09-23, card m1-schema-en-container, builder C): jutterswet-kaletabel, new. This branch
-# plays both cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 164 -> 166 (2026-09-24, card l2-referentielaag, builder C2): ambiguous-fold-role-name and
-# near-side-rolcheck-to-many, new. This branch plays both on the first run, PLAYED 1 each. Reason block
-# at EXPECTED_PLAYED above.
-# 166 -> 167 (2026-09-24, card l3-typesysteem, builder C, fix round): jutterswet-afdrachtstapel, new —
-# the sum and the difference of two percentages in a condition, which L3 reads as percentages. This
-# branch plays its one case on the first run, PLAYED 1, with ref's and clingo's values; the exec-model
-# branch refuses it (EXPECTED_CHANNEL above), so EXPECTED_PLAYED does not move.
-# 167 -> 171 (2026-09-25, card rgs-getuigen-bronloze-constructen): the four new goldens of the block at
-# EXPECTED_PLAYED above. This branch plays each on the first run with no change of its own, PLAYED 1, 5,
-# 3 and 2. Reason block at EXPECTED_PLAYED above.
-# 171 -> 172 (2026-09-25, card rgs-getuigen-bronloze-constructen): jutterswet-wrakboekwaarde, new. This
-# branch plays its one case on the first run with no change of its own, PLAYED 1. Reason block at
-# EXPECTED_PLAYED above.
-# 172 -> 173 (2026-09-25, card ref-klipvouw-nul, fix round): jutterswet-aandelensom, new. This branch
-# plays both cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 173 -> 175 (2026-09-25, card frontend-emitterrestanten): jutterswet-dagentelling-rgs and
-# jutterswet-wachtersketen-rgs, new. This branch plays each on the first run with no change of its own,
-# PLAYED 4 and 2. Reason block at EXPECTED_PLAYED above.
-# 175 -> 176 (2026-09-25, card aantal-bronarm-en-drools-lader): jutterswet-keurcriteria, new. This
-# branch plays both cases through the card's consistency arm, PLAYED 2. Reason block at EXPECTED_PLAYED
-# above.
-# 176 -> 177 (2026-09-25, the WF-052 decision): jutterswet-opvolgerversies, new. This branch plays its
-# three cases on the first run with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED
-# above.
-# 177 -> 178 (2026-09-25, WF-039 reads the literal's value): jutterswet-nulspelling, new. This branch
-# plays its two cases on the first run with no change of its own, PLAYED 2. Reason block at
-# EXPECTED_PLAYED above.
-# 178 -> 179 (2026-09-25, the ASP initialisation arm): jutterswet-voorwaardelijke-initialisatie, new.
-# This branch plays its four cases on the first run with no change of its own, PLAYED 4. Reason block
-# at EXPECTED_PLAYED above.
-# 179 -> 180 (2026-09-26, card rekenjaar-als-waarde): jutterswet-rekenjaar, new. This branch lowers the
-# node as rsRekenjaar(rekendatum) and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED
-# above.
-# 180 -> 181 (2026-09-26, card gehele-periode-leeg-gevuld): jutterswet-gehele-periode-leeg, new. This
-# branch plays its three cases once the shared loader no longer refuses the form, PLAYED 3. Reason
-# block at EXPECTED_PLAYED above.
-# 181 -> 182 (2026-09-26, card vast-startpunt-tijdlijn): jutterswet-vast-startpunt, new. This branch plays
-# its four cases through the constant anchor it now gives a doel on a fixed start point, PLAYED 4.
-# Reason block at EXPECTED_PLAYED above.
-# 182 -> 183 (2026-09-26, fix round on the union of the wave): jutterswet-breukliteral, new. This branch
-# plays its two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 183 -> 184 (2026-09-26, the same fix round): jutterswet-erfketen, new. This branch plays its two cases with
-# no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 184 -> 185 (2026-09-26, the same fix round): jutterswet-gehele-periode-leeg-rgs, new. This branch plays its
-# three cases with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED above.
-# 185 -> 186 (2026-09-27, card scenario-parametersets): jutterswet-jaarvaststelling, new. This branch plays its
-# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 186 -> 187 (2026-09-27, card vocabulaires-benamingen): jutterswet-vocabulaires, new. This branch plays its
-# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 187 -> 188 (2026-09-28, card namen-in-declaratiekoppen): jutterswet-premierecht, new. This branch plays its
-# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 188 -> 189 (2026-09-28, card drools-subtype-in-supertype-rol): jutterswet-wrakmelding, new. This branch plays
-# its three cases through the same bean-model change, PLAYED 3. Reason block at EXPECTED_PLAYED above.
-# 189 -> 190 (2026-09-29, card frontend-ontkende-kwantor): jutterswet-zinkende-jutter, new. This branch plays its
-# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 190 -> 191 (2026-09-30, the operand under a quantifier condition): jutterswet-sluitdag, new. This branch plays its
-# three cases with no change of its own, PLAYED 3: its rules watch what their value reads. Reason block at
-# EXPECTED_PLAYED above.
-# 191 -> 192 (2026-10-01, two writers of one target): jutterswet-melding-naar-aard, new. This branch plays its two cases,
-# PLAYED 2. A computing rule on a target that a second computing rule writes now watches that target, so a write by the
-# one fires the other again where its condition holds; where the conditions exclude each other nothing fires again.
-# Reason block at EXPECTED_PLAYED above.
-# 192 -> 193 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new. This branch plays its four
-# cases with no change of its own, PLAYED 4. Reason block at EXPECTED_PLAYED above.
-# 193 -> 194 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new. This branch plays its
-# case with no change of its own, PLAYED 1. Reason block at EXPECTED_PLAYED above.
-# 194 -> 195 (2026-10-09, a fold whose subselection divides, under a condition that does not hold):
-# jutterswet-filterwacht, new. This branch tested the subselection on the element's pattern too and faulted where the
-# fold is not reached ("ConstraintEvaluationException: Error evaluating constraint '(rsAggVergelijk(rsGedeeld(gewicht,
-# deelnemers), …"); it now tests a subselection that divides on the element bound again in the source of the
-# accumulate and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 195 -> 196 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new. This branch plays its two
-# cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-# 196 -> 197 (2026-10-11, card objectcreatie-zonder-connectingrole-binding): jutterswet-penningbesluit, new. This
-# branch plays its three cases with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=197
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
@@ -1779,7 +1325,6 @@ keur_kanaallijst() {   # <list name> <legal channels> <entry>...
   done
 }
 keur_kanaallijst EXPECTED_CHANNEL "EXCLUDE DIVERGE NOCASE" "${EXPECTED_CHANNEL[@]}"
-keur_kanaallijst DRL_CHANNEL "EXCLUDE FAIL ERROR NOCASE" "${DRL_CHANNEL[@]}"
 
 expected_channel() {
   local n="$1" rest
@@ -1789,16 +1334,9 @@ expected_channel() {
   echo PLAYED
 }
 
-drl_expected_channel() {
-  local n="$1" rest
-  for e in "${DRL_CHANNEL[@]}"; do
-    if [ "${e%%|*}" = "$n" ]; then rest="${e#*|}"; echo "${rest%%|*}"; return 0; fi
-  done
-  echo PLAYED
-}
-
 declare -a KNOWN_HIT=()
 declare -a SEEN=()
+declare -a SEEN_LINE=()   # "<golden>|<status line>", the line the DRL-text sweep must equal
 played=0; auto_excl=0; div_excl=0; nocase=0
 declare -a AUTO_REASONS=()
 declare -a FAILED=()
@@ -1807,7 +1345,7 @@ while IFS= read -r ir; do
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   cases=$(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
   if [ -z "$cases" ]; then
-    nocase=$((nocase + 1)); SEEN+=("$name|NOCASE")
+    nocase=$((nocase + 1)); SEEN+=("$name|NOCASE"); SEEN_LINE+=("$name|(no case file)")
     echo "  no-case  $name (a golden without a case file — not playable)"; continue
   fi
   out=$(java -jar "$JAR" "$ir" $cases 2>/dev/null | tail -1)
@@ -1824,17 +1362,17 @@ while IFS= read -r ir; do
       # token itself was hollow-able, and this floor is about what THIS gate can still be told.
       n_played=${out#PLAYED }
       [ "${n_played:-0}" -gt 0 ] || fail "'$name' reports PLAYED 0 — counted as a player but replayed no case at all"
-      played=$((played + 1)); SEEN+=("$name|PLAYED") ;;
+      played=$((played + 1)); SEEN+=("$name|PLAYED"); SEEN_LINE+=("$name|$out") ;;
     EXCLUDE)
       if known_reason "$name" >/dev/null; then
         fail "double-listed: '$name' auto-excludes per form AND sits in EXCLUDE_KNOWN — drop the static entry"
       fi
-      auto_excl=$((auto_excl + 1)); SEEN+=("$name|EXCLUDE"); AUTO_REASONS+=("${out#EXCLUDE }") ;;
+      auto_excl=$((auto_excl + 1)); SEEN+=("$name|EXCLUDE"); SEEN_LINE+=("$name|$out"); AUTO_REASONS+=("${out#EXCLUDE }") ;;
     FAIL)
       # A value-divergence is a VALUE difference (FAIL: verwacht X, werkelijk Y) — the exec-model genuinely
       # differs from ref/clingo. It must be listed with a reason; an unlisted FAIL breaks the square.
       if reason=$(known_reason "$name"); then
-        div_excl=$((div_excl + 1)); KNOWN_HIT+=("$name"); SEEN+=("$name|DIVERGE")
+        div_excl=$((div_excl + 1)); KNOWN_HIT+=("$name"); SEEN+=("$name|DIVERGE"); SEEN_LINE+=("$name|$out")
       else
         FAILED+=("$name :: $out")
       fi ;;
@@ -1890,65 +1428,59 @@ done
 # (c) the count closes the direction the played-by-default list cannot see: a NEW golden that plays
 [ "$played" -eq "$EXPECTED_PLAYED" ] || fail "played $played, but EXPECTED_PLAYED pins $EXPECTED_PLAYED — a golden entered or left the played channel without the list noticing (a new golden plays: raise the number; a golden went away: the corpus lost a player)"
 
-# --- the DRL-TEXT sweep (card gate12-drl-takteller, 2026-09-19) --------------------------------
+# --- the DRL-TEXT sweep: the second rendering of the one analysis ---------------------------------
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
 # above is green, so an exec-side break still fails in the time it always did and the extra wall
-# clock is only ever paid by an otherwise-passing gate.
-# MEASURED COST 2026-09-19 on this branch, all four numbers from runs on one machine: this sweep
-# ~96s wall clock for 207 java invocations (the two case-less goldens are answered without one),
-# against ~84s for the exec sweep beside it — so the DRL leg is the MORE expensive of the two, not
-# a doubling of a longer one. The gate as a whole goes from ~1m35 to ~3m20. Elsewhere the sweep has
-# measured 100s, so read all of these as magnitudes; the figure the sweep prints below is the one
-# to believe, and it is printed on the failing path too.
+# clock is only ever paid by an otherwise-passing gate. Per golden the line must be the exec-model
+# branch's line (the header says why); a FAIL or ERROR here is a difference by construction.
+# MEASURED COST: the text compiles its Java functions per golden, so this sweep is the more expensive
+# of the two (FABLE-3 §3.3 A: 202 s against 96–100 s for the old text); the figure printed below is
+# the one to believe, and it is printed on the failing path too.
 drl_begin=$(date +%s)
-declare -a DRL_SEEN=()
 declare -a DRL_DRIFT=()
-drl_played=0
+drl_played=0; drl_seen=0
+exec_line() {   # the status line the exec sweep recorded for a golden; nothing where it recorded none
+  local n="$1" s
+  for s in "${SEEN_LINE[@]:-}"; do
+    [ -n "$s" ] || continue
+    if [ "${s%%|*}" = "$n" ]; then echo "${s#*|}"; return 0; fi
+  done
+  return 1
+}
 while IFS= read -r ir; do
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   drl_cases=()
   while IFS= read -r c; do drl_cases+=("$c"); done < <(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
   if [ ${#drl_cases[@]} -eq 0 ]; then
-    actual=NOCASE; out="(no case file)"
+    out="(no case file)"
   else
     out=$(java -jar "$JAR" --drl "$ir" "${drl_cases[@]}" 2>/dev/null | tail -1)
-    case "${out%% *}" in
-      PLAYED)
-        # the same hollow-token guard the exec arm carries: PLAYED 0 replayed nothing at all
-        n_drl_cases=${out#PLAYED }
-        [ "${n_drl_cases:-0}" -gt 0 ] || fail "'$name' reports PLAYED 0 in the DRL-text branch — counted as a player but replayed no case at all"
-        drl_played=$((drl_played + 1)); actual=PLAYED ;;
-      EXCLUDE) actual=EXCLUDE ;;
-      FAIL)    actual=FAIL ;;
-      ERROR)   actual=ERROR ;;
-      *) fail "the DRL-text branch printed an unexpected status for '$name': $out" ;;
-    esac
+    if [ "${out%% *}" = PLAYED ]; then
+      # the same hollow-token guard the exec arm carries: PLAYED 0 replayed nothing at all
+      n_drl_cases=${out#PLAYED }
+      [ "${n_drl_cases:-0}" -gt 0 ] || fail "'$name' reports PLAYED 0 in the DRL-text branch — counted as a player but replayed no case at all"
+      drl_played=$((drl_played + 1))
+    fi
   fi
-  DRL_SEEN+=("$name")
-  want=$(drl_expected_channel "$name")
-  [ "$actual" = "$want" ] || DRL_DRIFT+=("$name :: pinned $want, measured $actual — $out")
+  drl_seen=$((drl_seen + 1))
+  want=$(exec_line "$name") || fail "the DRL-text sweep met '$name', which the exec-model sweep did not record — the two sweeps walk different corpora"
+  [ "$out" = "$want" ] || DRL_DRIFT+=("$name :: exec-model '$want' | drl-text '$out'")
 done < <(find corpus/golden -name ir.json | sort)
 # computed BEFORE the checks, and printed here: a FAILING sweep costs exactly as much as a passing
 # one, so hiding the figure behind a pass would hide it from the run that most wants to know it.
 drl_kosten=$(( $(date +%s) - drl_begin ))
-echo "  DRL-text sweep: ${drl_kosten}s wall clock over ${#DRL_SEEN[@]} goldens"
+echo "  DRL-text sweep: ${drl_kosten}s wall clock over ${drl_seen} goldens"
 
 if [ ${#DRL_DRIFT[@]} -gt 0 ]; then
-  echo "check-drools: FAIL — ${#DRL_DRIFT[@]} golden(s) changed channel in the DRL-TEXT branch:" >&2
+  echo "check-drools: FAIL — ${#DRL_DRIFT[@]} golden(s) whose DRL-text status line differs from the exec-model branch's:" >&2
   for d in "${DRL_DRIFT[@]}"; do echo "    $d" >&2; done
-  echo "  A golden that GAINED its PLAYED status must leave DRL_CHANNEL and raise EXPECTED_DRL_PLAYED by one." >&2
-  echo "  A golden that LOST it is this branch shrinking: fix the cause, or pin it in DRL_CHANNEL with the" >&2
-  echo "  reason and drop EXPECTED_DRL_PLAYED by one. (A NEWLY ADDED golden that does not play was never" >&2
-  echo "  counted: pin it and leave EXPECTED_DRL_PLAYED alone.)" >&2
+  echo "  The two branches render ONE analysis: a different line is a fault of a rendering (or of the analysis'" >&2
+  echo "  refusal label), never an entry of a list. Fix the rendering; there is nothing to pin." >&2
   exit 1
 fi
-for e in "${DRL_CHANNEL[@]}"; do
-  n="${e%%|*}"; seen=0
-  for s in "${DRL_SEEN[@]:-}"; do [ "$s" = "$n" ] && seen=1; done
-  [ $seen -eq 1 ] || fail "stale DRL channel pin: '$n' is pinned in DRL_CHANNEL but no such golden was measured (gone, or renamed) — remove it"
-done
 [ "$drl_played" -gt 0 ] || fail "empty DRL-text played set — no golden replayed through the DRL-text branch"
-[ "$drl_played" -eq "$EXPECTED_DRL_PLAYED" ] || fail "the DRL-text branch played $drl_played, but EXPECTED_DRL_PLAYED pins $EXPECTED_DRL_PLAYED — a golden entered or left that branch's played channel without the list noticing (a new golden plays: raise the number; a golden went away: the branch lost a player)"
+# implied by the line equality above; kept as the sweep's own self-check
+[ "$drl_played" -eq "$played" ] || fail "the DRL-text branch played $drl_played goldens where the exec-model branch played $played, with every line equal — the sweep itself is broken"
 
 echo ""
 echo "check-drools: PASS"
@@ -1962,6 +1494,5 @@ fi
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
 echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
-echo "  DRL-text branch played $drl_played  (its OWN count — the narrower branch, not the square; pin $EXPECTED_DRL_PLAYED)"
-echo "  DRL-text floor ${#DRL_CHANNEL[@]} non-PLAYED goldens pinned by name; sweep cost ${drl_kosten}s wall clock"
+echo "  DRL-text branch played $drl_played  (the second rendering of the analysis: every status line equal to the exec-model branch's; sweep cost ${drl_kosten}s wall clock)"
 echo "  JUnit $tests tests, floor $EXPECTED_MIN_TESTS  (the backend's own suite, green with a non-zero count)"

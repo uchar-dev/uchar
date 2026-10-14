@@ -52,11 +52,11 @@
 # there on the UNTOUCHED corpus long before it is green here. Indifference is the half no other
 # gate can see, precisely because a lying document is one no other gate may hold.
 #
-# With ONE exception, and this script carries it: the DRL-TEXT branch has no value gate at all —
-# gate 12 replays the exec-model path only. Comparing that branch against its own untouched status
-# line would therefore be satisfied by a branch that had stopped restating units altogether, whose
-# baseline is simply wrong in both runs. So its BASELINE is pinned here too, for exactly the goldens
-# this harness probes (the DRL_BASIS_UIT list below).
+# The DRL-TEXT branch is the second rendering of the analysis the exec-model branch fires (card
+# drl-teksttak-op-truth-maintenance), and gate 12 holds its every status line to the exec-model
+# branch's over the whole corpus. Here its UNTOUCHED line must be the exec-model branch's untouched
+# line as well (so a text branch that refused everything, or that stopped restating units, is red
+# here on the untouched golden), and its twisted line its own untouched one.
 #
 # Two twist classes, Rounding and Clamp, are for BOTH DROOLS legs a no-op by construction: their Java
 # IR records (in memory still Afgerond and Begrensd) DERIVE their type() from the basis and hold no
@@ -233,21 +233,9 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 # the right reading — not merely that it is the current one.
 SURVIVORS=''
 
-# --- the DRL-branch baseline list (reason-carrying; fails when stale) ------------------------
-# A twistable golden's DRL-TEXT baseline must be PLAYED (the branch ran and matched the corpus's
-# ABSOLUTE expectations — the same ones gates 5, 6 and 12 pin) or EXCLUDE (the branch does not carry
-# the form, and says which). Anything else is a value the corpus does not pin anywhere, and must be
-# listed here with the reason. Entries are "<golden-dir>|<reason>"; an entry whose golden is gone, or
-# whose baseline is back in line, is stale and fails. EMPTY today, measured 2026-09-04: of the 11
-# twistable replayable goldens the text branch PLAYS 9 and markers 2 (the ch. 4.10 Let, which it does
-# not lower). NB this pins the branch on the twistable subset only — over the WHOLE corpus it has 7
-# value divergences and 2 fire-time errors, which is gate-12 territory and deliberately not re-fought
-# here.
-DRL_BASIS_UIT=''
-
 # --- the DRL-text branch and ch. 5.10: the divergence class is EMPTY (measured 2026-09-07) ---
-# This gate owns the DRL-TEXT branch, so it records the branch's relationship to
-# RUNTIME-SEMANTICS ch. 5.10. Until 2026-09-07 that relationship was a divergence, and this file
+# This gate measured the DRL-TEXT branch's relationship to RUNTIME-SEMANTICS ch. 5.10 when no other
+# gate held that branch (since card drl-teksttak-op-truth-maintenance gate 12 holds it line for line). Until 2026-09-07 that relationship was a divergence, and this file
 # carried a watchlist over every at-most carrier in the corpus.
 #
 # THE MAINTAINER DECISION OF 2026-09-07 CLOSED IT. Including at-most's TRUE trigger (`at most d`
@@ -267,8 +255,7 @@ DRL_BASIS_UIT=''
 # and the fourth answered.
 #
 # So there is no shape left to watch, and the watchlist that stood here is gone rather than left to
-# rot. The live check on this branch is the DRL_BASIS_UIT baseline above, which still requires the
-# text branch to PLAY or EXCLUDE per twistable golden.
+# rot. The live check on this branch is gate 12, and the line equality with the exec-model branch below.
 #
 # WHAT "0 divergences" DOES AND DOES NOT BUY: the reservations against reading this as a proof — and
 # what a second, independent model did and did not confirm — are recorded with the measurement in
@@ -313,8 +300,7 @@ LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 ONGEDEKT=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-DRLRAKERS=$(mktemp) || exit 2  # "<golden>" per DRL-baseline entry whose baseline is ACTUALLY off
-trap 'rm -rf "$TWISTER" "$VTWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS" "$DRLRAKERS"' EXIT
+trap 'rm -rf "$TWISTER" "$VTWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -734,15 +720,6 @@ vermeld() {
     [ -n "$treffer" ]
 }
 
-# The same read for the DRL baseline list, which is keyed on the golden alone.
-basisvrij() {
-    treffer=$(printf '%s\n' "$DRL_BASIS_UIT" | while IFS= read -r s; do
-        [ -n "$s" ] || continue
-        [ "${s%%|*}" = "$1" ] && echo hit
-    done)
-    [ -n "$treffer" ]
-}
-
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
 # Lower bounds, never equalities: they catch SHRINK — the harness that quietly probes half — while
 # growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
@@ -751,21 +728,15 @@ basisvrij() {
 # removal lowers the floor in the same commit.
 # Both counts are this harness's discriminating power, not a file count: the twist total is what
 # the twist TABLE meets in the corpus, so a narrowed table would shrink it with every corpus file
-# still in place, and no other gate would see it. The DRL floor extends the "-eq 0" bottom below,
-# whose own comment records the measured mutant that dropped the leg from 9 played goldens to 0:
-# that mutant would today be caught at 8, not only at 0.
+# still in place, and no other gate would see it. The DRL leg has no floor of its own since the
+# switch-over of card drl-teksttak-op-truth-maintenance: it must PLAY exactly the twistable goldens the
+# exec-model branch plays (the line equality below).
 EXPECTED_MIN_TWISTS=38      # 2026-09-24: measured 38 annotations twisted over 21 goldens. LOWERED
                             # from 74 (2026-09-10) in the L2 commit that took the four reference
                             # classes out of the twist table (the L2 card,
                             # backlog/done/20260923-l2-referentielaag.md): a reference writes no type since
                             # B13, so there is nothing left to twist there; the composite twists
                             # are untouched (same 38 before and after the table change)
-EXPECTED_MIN_DRL_PLAYED=20  # 2026-09-24: measured 20 goldens PLAYED by the DRL-text branch, on the
-                            # corpus and the jar of the L2 landing. RAISED from 13 (measured
-                            # 2026-09-10): a floor catches shrink only below itself, and at 13 the
-                            # leg could lose seven PLAYED goldens without this gate failing. The
-                            # growth from 13 to 20 came with the goldens and lowerings that landed
-                            # between the two dates; 20 is the count measured now, not a target
 
 # The vocabulary leg's floors (see the script header), measured 2026-09-27 at the card that brought the
 # side table, on its one golden jutterswet-vocabulaires: a golden count, so a leg that stops finding
@@ -782,6 +753,7 @@ n_twists=0
 n_gecontroleerd=0
 n_survivors=0
 n_drl=0
+n_exec_gespeeld=0
 n_eenheid=0
 n_vrijgesteld=0
 n_zonderzusje=0
@@ -838,6 +810,7 @@ while IFS= read -r ir; do
     n_gecontroleerd=$((n_gecontroleerd + 1))
     basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
     verdraaid=$(java -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
+    [ "${basis%% *}" = PLAYED ] && n_exec_gespeeld=$((n_exec_gespeeld + 1))
     if [ "$basis" != "$verdraaid" ]; then
         if vermeld "$naam" drools; then
             n_survivors=$((n_survivors + 1)); echo "$naam|drools" >> "$RAKERS"
@@ -848,30 +821,19 @@ while IFS= read -r ir; do
         fi
     fi
 
-    # The SECOND Drools transpiler branch, through the same twist: DrlTranspiler emits DRL TEXT, which the
-    # runner's --drl entry compiles to a KieBase (the classic DRL build) and replays against the SAME pinned
-    # expectations. Same baseline discipline as the exec leg — its OWN untwisted status line, never PLAYED —
-    # and for the same reason, twice over: the text branch is NARROWER than the exec one (it has no ch. 7
-    # prioritizedDefaults lowering, and it markers constructs the exec branch lowers, the ch. 4.10 Let among
-    # them), and on a handful of goldens it also answers differently. Neither is this harness's question. What
-    # IS its question is whether the answer it does give follows the declarations, and for that a refusal that
-    # stays exactly as refusing is a perfectly good observation.
+    # The SECOND rendering of the same analysis, through the same twist: the DRL text behind the runner's
+    # --drl entry, compiled by the classic DRL build and replayed against the SAME pinned expectations. Its
+    # untouched line must be the exec-model branch's untouched line (the two render one analysis; gate 12
+    # holds this over the whole corpus), and its twisted line its own untouched one.
     n_gecontroleerd=$((n_gecontroleerd + 1))
     dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
     dverdraaid=$(java -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
-    dkop=${dbasis%% *}
-    if [ "$dkop" = PLAYED ]; then
-        n_drl=$((n_drl + 1))
-    elif [ "$dkop" != EXCLUDE ]; then
-        # the baseline pin: nothing else holds this branch to the corpus's absolute values
-        if basisvrij "$naam"; then
-            echo "$naam" >> "$DRLRAKERS"
-        else
-            printf 'FAIL: %s — the DRL-text branch neither played nor refused the UNTOUCHED golden, so its\n      value is pinned by nothing:\n  %s\n' \
-                "$naam" "$dbasis" >&2
-            status=1
-        fi
+    if [ "$dbasis" != "$basis" ]; then
+        printf 'FAIL: %s — the DRL-text branch, the second rendering of the analysis, gives another status line than the exec-model branch on the UNTOUCHED golden:\n  exec-model: %s\n  drl-text:   %s\n' \
+            "$naam" "$basis" "$dbasis" >&2
+        status=1
     fi
+    [ "${dbasis%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
     if [ "$dbasis" != "$dverdraaid" ]; then
         if vermeld "$naam" drl; then
             n_survivors=$((n_survivors + 1)); echo "$naam|drl" >> "$RAKERS"
@@ -973,21 +935,6 @@ if [ -n "$weg" ]; then
     status=1
 fi
 
-# The DRL baseline list, the same both halves.
-drlweg=$(printf '%s\n' "$DRL_BASIS_UIT" | while IFS= read -r s; do
-    [ -n "$s" ] || continue
-    g=${s%%|*}
-    if [ ! -d "corpus/golden/$g" ]; then
-        echo "  $g — no such golden"
-    elif ! grep -qxF "$g" "$DRLRAKERS" 2>/dev/null; then
-        echo "  $g — the DRL-text branch plays or refuses it again; drop the entry"
-    fi
-done)
-if [ -n "$drlweg" ]; then
-    printf 'FAIL: stale DRL-baseline entry:\n%s\n' "$drlweg" >&2
-    status=1
-fi
-
 if [ "$n_twists" -eq 0 ]; then
     echo 'FAIL: no annotation was twisted — the harness probed nothing (an empty twist set is never green)' >&2
     exit 1
@@ -997,21 +944,19 @@ if [ "$n_twists" -lt "$EXPECTED_MIN_TWISTS" ]; then
     exit 1
 fi
 
-# The same bottom for the DRL leg, and it is NOT implied by the baseline clamp above. That clamp demands
-# PLAYED or EXCLUDE per golden, so a text branch that REFUSED EVERY golden would satisfy it for all of
-# them, be indifferent by construction (both runs refuse identically), and leave the leg silently green
-# while measuring nothing at all. Measured 2026-09-04 with exactly that mutant — a refusal at the front of
-# CaseRunner's DRL branch: the leg fell from 9 played goldens to 0 and the gate still said PASS. NB the
-# count is the STATUS HEAD, so a golden whose every case file carried expectedFault would replay nothing
-# and still print "PLAYED 0", counting here — the corpus zone discipline gate 4 pins (golden carries
-# expected, rood carries expectedFault) makes that shape unreachable today, and this bottom must not come
-# to lean on it.
+# The same bottom for the DRL leg, kept beside the line equality above (which already makes a text branch
+# that refused every golden red on every untouched golden the exec-model branch plays): an empty played set
+# is never green. Measured 2026-09-04 with exactly that mutant — a refusal at the front of CaseRunner's DRL
+# branch: the leg fell from 9 played goldens to 0 and the gate still said PASS. NB the count is the STATUS
+# HEAD, so a golden whose every case file carried expectedFault would replay nothing and still print
+# "PLAYED 0", counting here — the corpus zone discipline gate 4 pins (golden carries expected, rood carries
+# expectedFault) makes that shape unreachable today, and this bottom must not come to lean on it.
 if [ "$n_drl" -eq 0 ]; then
     echo 'FAIL: the DRL-text branch PLAYED no golden — the leg measured nothing (an empty played set is never green)' >&2
     exit 1
 fi
-if [ "$n_drl" -lt "$EXPECTED_MIN_DRL_PLAYED" ]; then
-    echo "FAIL: the DRL-text branch PLAYED $n_drl golden(s), but EXPECTED_MIN_DRL_PLAYED pins at least $EXPECTED_MIN_DRL_PLAYED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_drl" -ne "$n_exec_gespeeld" ]; then
+    echo "FAIL: the DRL-text branch PLAYED $n_drl twistable golden(s) where the exec-model branch PLAYED $n_exec_gespeeld — the two render one analysis, so the counts are equal or a line above already failed" >&2
     exit 1
 fi
 
@@ -1046,9 +991,8 @@ if [ "$status" -eq 0 ]; then
     printf '       read-set model (n = 1..7, 6646 combinations, both directions, all five quantifiers):\n'
     printf '       0 verdict divergences, 0 extra reads, 0 skipped reads, for the text branch and for clingo.\n'
     printf '       The former watchlist is retired; see the comment above.\n'
-    printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens, floor %s; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch, floor %s; %s pinned survivors)\n' \
-        "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_gecontroleerd" "$n_drl" \
-        "$EXPECTED_MIN_DRL_PLAYED" "$n_survivors"
+    printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens, floor %s; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch, equal to the exec-model branch; %s pinned survivors)\n' \
+        "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_gecontroleerd" "$n_drl" "$n_survivors"
     printf '  vocabulary leg: %s golden(s) with vocabularies, floor %s; %s designations stripped (floor %s), %s exchanged, %s rotated (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_vgoldens" "$EXPECTED_MIN_VOCABULAIRE_GOLDENS" "$n_vgestript" "$EXPECTED_MIN_VOCABULAIRE_GESTRIPT" \
         "$n_vverwisseld" "$n_vgeroteerd" "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" "$n_vreplays"
