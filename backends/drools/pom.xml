@@ -45,9 +45,11 @@
       <artifactId>drools-engine</artifactId>
       <version>${drools.version}</version>
     </dependency>
-    <!-- The mvel DIALECT. WHY it is here: DrlTranspiler emits DRL text with `dialect "mvel"`, and compiling
-         that text (KieHelper, the classic DRL build the DRL-measurement entry drives, behind the runner's
-         `drl` flag) needs the dialect implementation, which drools-engine does not carry.
+    <!-- The mvel DIALECT. WHY it is here: the DRL-text branch renders the analysis as DRL text whose rules
+         carry `dialect "mvel"` (DrlWeergave), and compiling that text (KieHelper, the classic DRL build of
+         that branch, behind the runner's `drl` flag) needs the dialect implementation, which drools-engine
+         does not carry. Until card drl-teksttak-op-truth-maintenance the text came from DrlTranspiler, a
+         lowering of its own, with the same dialect.
          WHAT it changes is NOT confined to that branch, and this comment must not pretend otherwise
          (measured 2026-09-04 against a jar built without the artifact). It lands SIX service entries in META-INF/services — five global KieServices plus javax.script.ScriptEngineFactory (MvelScriptEngineFactory, non-Kie) —
          in META-INF/services, each resolved ONCE PER JVM, so they are in force on the FLAGLESS exec path too.
