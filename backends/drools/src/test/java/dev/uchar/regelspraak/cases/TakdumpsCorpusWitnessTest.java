@@ -39,9 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * throw the same exception have given no result to compare (lens on step 6b).
  *
  * <p>Floors, measured 2026-10-14 at step 6b of the card, after its five goldens and its red case entered the corpus:
- * {@value #EXPECTED_MIN_GOLDENS} goldens compared and {@value #EXPECTED_MIN_RODE_CASES} red case files. A smaller
- * count is a corpus that lost goldens, or a selection that silently stopped comparing; a growing corpus needs no change
- * here. The two rows take about 17 s together (measured 2026-10-14).
+ * {@value #EXPECTED_MIN_GOLDENS} goldens compared, with {@value #EXPECTED_MIN_CASES} cases, and
+ * {@value #EXPECTED_MIN_RODE_CASES} red case files. A smaller count is a corpus that lost goldens or cases, or a
+ * selection that silently stopped comparing; a growing corpus needs no change here. The floor on the cases came with
+ * step 6c (lens on step 6b): a golden that loses one of its cases still counts as compared. The two rows take about
+ * 17 s together (measured 2026-10-14).
  *
  * <p><b>Red</b> with mutation W2 of Fable advice 4, in a copy (not committed; the diff and the output are kept with
  * step 6b of the card): a DRL rendering that inserts every consequence as a stated fact instead of a logical one, so
@@ -52,9 +54,10 @@ class TakdumpsCorpusWitnessTest {
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path CORPUS = Path.of("..", "..", "corpus");
 
-    /** The goldens compared, measured 2026-10-14: the 250 the exec-model branch played before step 6b and its five,
-     *  with 695 cases. */
+    /** The goldens compared, measured 2026-10-14: the 250 the exec-model branch played before step 6b and its five. */
     static final int EXPECTED_MIN_GOLDENS = 255;
+    /** The cases of the goldens compared, measured 2026-10-14 at step 6b and again at step 6c, on the same corpus. */
+    static final int EXPECTED_MIN_CASES = 695;
     /** The case files under {@code corpus/rood}, measured 2026-10-14: the 49 of before step 6b and its one. */
     static final int EXPECTED_MIN_RODE_CASES = 50;
     /** The cases of played goldens whose fire reaches no fixpoint, measured 2026-10-14: none. */
@@ -99,6 +102,8 @@ class TakdumpsCorpusWitnessTest {
         int n = vergeleken, m = cases;
         assertTrue(n >= EXPECTED_MIN_GOLDENS, () -> "vergeleken goldens " + n + " (" + m + " cases), onder de vloer "
                 + EXPECTED_MIN_GOLDENS);
+        assertTrue(m >= EXPECTED_MIN_CASES, () -> "vergeleken cases " + m + " (in " + n + " goldens), onder de vloer "
+                + EXPECTED_MIN_CASES);
     }
 
     @Test void elke_rode_case_geeft_op_beide_takken_hetzelfde_roodresultaat() throws Exception {
