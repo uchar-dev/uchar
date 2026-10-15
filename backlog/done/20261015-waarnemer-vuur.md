@@ -74,3 +74,71 @@ Out of scope:
 - `spec/`, het schema, het corpus, de gate-scripts.
 
 Gate set: alle 16 gates van `CLAUDE.md`, groen op de eindstand van de branch.
+
+## Result (2026-10-15)
+
+`2885aae2` maakt in `DroolsBackend` publiek wat het scenariorapport tot dan privé deed: een waarnemer op het vuren en
+de dekking als functie. Geen wijziging van spec, schema, corpus of gate-scripts.
+
+- **Ingang** (`backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackend.java`):
+  - `public static final class Waarnemer`, met `Waarnemer(Function<Object, String> label)`,
+    `List<ScenarioResultaat.Vuring> vuringen()` en `Set<String> vormen()`. De listener registreert per vuring van een
+    regel met een vorm (`TmsTranspiler.vormVan`) de exacte vormnaam, en per `RegelSpraakModel.vormnaam` de telling en
+    de labels die `label` geeft (null: geen label), elk label één keer. De eerste `vuur` bindt de waarnemer aan zijn
+    sessie (gesynchroniseerd); een `vuur` van een andere sessie geeft een `IllegalArgumentException`.
+  - `public static Vuring vuur(Build, KieSession, Waarnemer)`: zet de listener op de sessie, roept dezelfde run aan als
+    `vuur(Build, KieSession)` en haalt de listener in een `finally` weer weg, ook bij een weigering of een fout uit het
+    vuren.
+  - `public static List<ScenarioResultaat.DekkingRegel> dekking(Build, Set<String>)`: één regel per post van
+    `Build.dekking()`, in die volgorde, GEVUURD bij een exacte naamgelijkheid, anders NIET_GERAAKT; een gevuurde vorm
+    die geen post is, geeft een `IllegalArgumentException` (vormen van een andere build). `TmsTranspiler.meet` schrijft
+    de post en de vorm van elke regel onder dezelfde naam, dus een sessie van de build zelf komt daar niet.
+- **Rapport** (`CaseRunner.java`): `rapport` maakt per case een `DroolsBackend.Waarnemer(runner::labelVanBean)`, vuurt
+  via `vuurTotFixpunt(sessie, waarnemer)` → `DroolsBackend.vuur(bouw, sessie, waarnemer)`, en neemt trace en dekking
+  uit `vuringen()` en `DroolsBackend.dekking(bouw, vormen())`. Weg: `luisteraar`, `gevuurd`, het veld `dekking` en de
+  velden `telling`, `labels` en `vormen` van `Waarneming`. De listener stond eerst vanaf vóór `voegInvoerIn` op de
+  sessie en nu alleen tijdens `vuur`; buiten `vuur` vuurt de replay niets, dus dat verschil is onzichtbaar (zie (b)).
+- **Tekst**: `backends/drools/README.md`, "A session in four calls", stap 3; de klassen-Javadoc van `DroolsBackend`.
+
+### Acceptatie
+
+- (a) Gehaald, met de signaturen hierboven.
+- (b) Gehaald. Harnas buiten de gates (één JVM, `CaseRunner.rapport` per golden met case-bestanden, één regel
+  `ScenarioResultaat.toString()` per case): de jar van `56dc218b` tweemaal en de jar die gate 12 op `2885aae2` bouwde
+  geven alle drie 300 goldens, 823 rapporten (695 PASS, 128 MARKER), sha1
+  `405dd7c691b6a3db576c697501930023631a1b99`; bytegelijk. Geen rapport gooit op de manifesttoets van `dekking`.
+- (c) Gehaald. Nieuw: `backends/drools/src/test/java/dev/uchar/regelspraak/cases/WaarnemerWitnessTest.java`, 9 tests:
+  trace, vormen en dekking op `jutterswet-uitsluiting-rgs` op beide takken en gelijk aan het rapport; de versie in
+  `vormen()` op `anchor/jutterswet-jutheffing`; één label per rij op `jutterswet-premiestaffel` (20 vuringen, 14
+  labels); de creatie op `jutterswet-wrakboeking`; twee sessies van één build, met eigen beans via `voegIn`, 20 rondes
+  tegelijk op twee threads (een `CyclicBarrier` vlak vóór `vuur`), elk gelijk aan de solo-uitkomst; dezelfde
+  listeners na `vuur`, en een kale `fireAllRules` na een `update` telt niet mee; dezelfde listeners na een geweigerde
+  tweede `vuur` op een creatiemodel; de weigering van een waarnemer van een andere sessie (de tweede sessie vuurt daarna
+  gewoon met een eigen waarnemer); de weigering van een vorm buiten het manifest. Acht tijdelijke mutaties van
+  `DroolsBackend.java`, elk na de run teruggezet: gedeelde (statische) toestand (o.a. de twee-sessies-test:
+  `expected: <[penninggerechtigd tenzij uitgesloten [B] 1]> but was: <[defaults K:Jutter.uitgesloten [A] 2,
+  penninggerechtigd tenzij uitgesloten [B] 1]>`), listener niet weggehaald (2 tests), geen sessiebinding, geen
+  manifesttoets, vormnaam zonder versie, creatieregels overgeslagen, labels niet ontdubbeld: elk laat minstens één
+  test vallen. De rij over premiestaffel kwam erbij nadat de mutatie "labels niet ontdubbeld" de eerste acht rijen
+  overleefde (in de bestaande `ScenarioRapportWitnessTest` viel zij wel). Grens van de twee-sessies-test: de fires
+  duren een paar vuringen, dus hoeveel ze in de tijd overlappen is niet gemeten; gedeelde toestand valt ook zonder
+  overlap. Geen bestaand testbestand gewijzigd.
+- (d) Gehaald.
+- (e) Alle 16 gates groen op `2885aae2` (boom `0d87f63b`), 15:25:36–15:45:41; deze commit raakt daarna alleen
+  `backlog/`: 1 PASS; 2 348 bestanden valideren en round-trippen, 854 documenten in sleutelvolgorde; 3 348 golden
+  schoon, 506 negatief afgewezen, 349 op hun arm; 4 873 case-bestanden; 5 ref-suite 1286, 823 cases; 6 clingo-suite
+  2198 checks, 823 cases; 7 778 cases, 45 survivors; 8 50 rode cases; 9 241 checks, 12 catala-goldens; 10 JUnit 1185
+  tests, 125 rgs-goldens bytegelijk; 11 45 TOKA-bronnen bytegelijk, 29 TOKA-cases op ref, clingo en Drools; 12 255
+  gespeeld op beide takken, JUnit 1587 (was 1578, plus de 9 nieuwe); 13 43 twists over 24 goldens, 122 replays,
+  vocabulaireleg 18 replays (46 gestript, 36 geroteerd); 14 150 checks, 2 goldens; 15 266 van 303 goldens
+  vergeleken, 125 op de bronroute, 69 unittests; 16 30 scenario-goldens, 102 case-bestanden en hun `ir.json`
+  bytegelijk.
+
+Geen registerrij voor `spec/CONSTRUCTS.md` en geen wijziging van `spec/PLAN.md`: geen construct, wire, schema of
+case-formaat verandert.
+
+Open:
+- De distributie kan na een pin-bump de listener in `CaseSessie` (de velden `telling` en `labels`, de
+  `addEventListener`, de opbouw van de vuringen en `luisteraar()`) vervangen door een `DroolsBackend.Waarnemer` met
+  haar eigen labelfunctie, en de dekking geven met `DroolsBackend.dekking`; dat is haar eigen kaart.
+- Het fixpunt als deel van de waarneming: volgende kaart van de reeks.
