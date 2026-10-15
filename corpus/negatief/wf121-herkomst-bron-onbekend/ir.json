@@ -1,0 +1,655 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Valuta",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingskosten",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Valuta",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Valuta",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Valuta",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Valuta",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waard"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verzekerde waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Valuta",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ter controle",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave waarde",
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Valuta",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Valuta",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "waarde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De waarde van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "bergingskosten",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn bergingskosten"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Valuta",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "zijn taxatie plus zijn bergingskosten"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn taxatie gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3k lid 1"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "controle bij afwijkende waarde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ter controle",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is ter controle"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave waarde",
+              "negated": false,
+              "source": {
+                "snippet": "hij afwijkende opgave waarde heeft"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3k lid 4"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verzekerde waarde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verzekerde waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De verzekerde waarde van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn waarde"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2.50"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Valuta",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "2,50 \u20ac"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Valuta",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "zijn waarde plus 2,50 \u20ac"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3k lid 5"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave waarde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave waarde"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven waarde"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven waarde is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende waarde"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende waarde is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven waarde"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende waarde"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven waarde is ongelijk aan zijn berekende waarde"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde."
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave waarde",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave waarde",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave waarde"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de waarde Numeriek (getal met 2 decimalen) met eenheid \u20ac (mag opgegeven worden)",
+              "line": 7
+            }
+          }
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening waarde",
+        "subject": "Vondst",
+        "attribute": "waarde",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven waarde"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven waarde"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende waarde"
+              }
+            },
+            "source": {
+              "snippet": "berekende waarde"
+            }
+          },
+          {
+            "node": "Default",
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "25.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Valuta",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "25,00 \u20ac"
+              }
+            },
+            "initialisation": true,
+            "source": {
+              "snippet": "art. 3k lid 2"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

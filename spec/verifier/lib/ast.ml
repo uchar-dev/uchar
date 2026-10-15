@@ -766,14 +766,17 @@ type function_def = {
 
 (* --- the vocabulary side table (IR-SPEC ch. 2.12) ---------------------- *)
 
-(* The named vocabularies and the designations of a document: a side table
-   without semantics. It is not a field of [document], and on purpose: the
-   document record is built whole by every producer of this library (the
-   Catala and F-logic frontends among them), and no reader but the verifier
-   keeps the table. [Loader.vocabulaires] reads it from the JSON the
-   document is read from, structurally for every reader ([Loader.document]
-   calls it) and for its content in the verifier alone (WF-116 to WF-120,
-   [Checks.vocabulaires]). *)
+(* The named vocabularies and the designations of a document, and the
+   origin of every declaration a producer made itself (IR-SPEC ch. 2.13): a
+   side table without semantics. It is not a field of [document], and on
+   purpose: the document record is built whole by every producer of this
+   library (the Catala and F-logic frontends among them), and no reader but
+   the verifier keeps the table. [Loader.vocabulaires] reads it from the
+   JSON the document is read from, structurally for every reader
+   ([Loader.document] calls it) and for its content in the verifier alone
+   (WF-116 to WF-121, [Checks.vocabulaires]); an executor refuses at load
+   only an origin whose form or kind is outside its closed set (WF-121 (a),
+   [Checks.herkomst_refusal]). *)
 type vocabulaire = {
   voc_naam : string;
   voc_standaard : bool;
@@ -799,17 +802,33 @@ type benoembaar_soort =
    an enumeration value). *)
 type benaming = { ben_vocabulaire : string; ben_tekst : string; ben_at : string }
 
+(* The origin of a declaration a producer made itself (IR-SPEC ch. 2.13),
+   as written: the form, and the kind, owner and name of the declaration it
+   comes from, with the pointer of the origin record. The form and the kind
+   are kept as strings, so that WF-121 (a), not this load, names a value
+   outside their sets to the verifier. *)
+type herkomst = {
+  hk_vorm : string;
+  hk_soort : string;
+  hk_eigenaar : string option;
+  hk_naam : string;
+  hk_at : string;
+}
+
 (* A designatable declaration: its kind, the declaration that scopes it (the
    object type of an attribute or a characteristic, the fact type of a role,
    the domain of an enumeration value; [None] for the other kinds), its
    canonical name, the pointer of its node (of the value in its list, for an
-   enumeration value), and its designations in document order. *)
+   enumeration value), its designations in document order, and its origin
+   where a producer made it (never on an enumeration value, which has no
+   node to carry one). *)
 type benoembaar = {
   bn_soort : benoembaar_soort;
   bn_eigenaar : string option;
   bn_naam : string;
   bn_at : string;
   bn_benamingen : benaming list;
+  bn_herkomst : herkomst option;
 }
 
 type vocabulaire_tafel = {

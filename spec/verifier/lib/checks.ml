@@ -10253,9 +10253,170 @@ let wf120 (doc : document) (t : vocabulaire_tafel) : violation list =
         b.bn_benamingen)
     t.vt_benoembaar
 
-(* The vocabulary rules, beside [all]: the verifier runs both. *)
+(* --- WF-121: the origin of a made declaration (IR-SPEC ch. 2.13) -------- *)
+
+(* The closed set of forms, in the order of the spec's table. *)
+let herkomst_vormen =
+  [ "inputAboveComputation"; "exceptionForSubtype"; "decisionTableRow"; "stepsAfterSet"; "startPoint" ]
+
+(* The closed set of kinds, each with the kind of declaration it names;
+   [decisionTable] names none, since a decision table is no declaration on
+   the wire (its rows are). *)
+let herkomst_soorten =
+  [ ("objectType", Some Bn_objecttype); ("attribute", Some Bn_attribuut);
+    ("characteristic", Some Bn_kenmerk); ("factType", Some Bn_feittype); ("role", Some Bn_rol);
+    ("enumerationValue", Some Bn_enumeratiewaarde); ("parameter", Some Bn_parameter);
+    ("namedForm", Some Bn_vorm); ("ruleGroup", Some Bn_regelgroep); ("decisionTable", None) ]
+
+(* The kind of 'from' each form names (WF-121 (d)). *)
+let herkomst_bronsoort = function
+  | "inputAboveComputation" | "stepsAfterSet" -> Some "attribute"
+  | "exceptionForSubtype" | "startPoint" -> Some "namedForm"
+  | "decisionTableRow" -> Some "decisionTable"
+  | _ -> None
+
+(* The kinds whose declaration is scoped by an owner. *)
+let herkomst_met_eigenaar = [ "attribute"; "characteristic"; "role"; "enumerationValue" ]
+
+(* WF-121 (a), the pointer and the sentence: the verifier cites it under the
+   rule's number, and every other reader refuses the document at load in the
+   same sentence ([Loader.document]), because a reader that keeps the origin
+   cannot hold a value its set does not name. *)
+let herkomst_refusal (h : herkomst) : (string * string) option =
+  let lijst xs = String.concat ", " (List.map (Printf.sprintf "'%s'") xs) in
+  if not (List.mem h.hk_vorm herkomst_vormen) then
+    Some
+      ( h.hk_at ^ "/form",
+        Printf.sprintf "the origin form '%s' is none of the forms of IR-SPEC ch. 2.13 (%s)" h.hk_vorm
+          (lijst herkomst_vormen) )
+  else if not (List.mem_assoc h.hk_soort herkomst_soorten) then
+    Some
+      ( h.hk_at ^ "/from/kind",
+        Printf.sprintf "the origin's source kind '%s' is none of the kinds of IR-SPEC ch. 2.13 (%s)"
+          h.hk_soort (lijst (List.map fst herkomst_soorten)) )
+  else None
+
+(* The declaration an origin's 'from' names: of its kind, under the name
+   identity of ch. 2.1, within its owner for a scoped kind. An attribute or a
+   characteristic is found on the object type that declares it, which is the
+   owner the table records for it. [None] for an unknown kind, for
+   'decisionTable', and for a name no declaration of the kind carries. *)
+let herkomst_bron (t : vocabulaire_tafel) (h : herkomst) : benoembaar option =
+  match List.assoc_opt h.hk_soort herkomst_soorten with
+  | Some (Some soort) ->
+      List.find_opt
+        (fun (b : benoembaar) ->
+          b.bn_soort = soort && norm b.bn_naam = norm h.hk_naam
+          && (match (b.bn_eigenaar, h.hk_eigenaar) with
+             | Some e, Some o -> norm e = norm o
+             | None, _ -> true
+             | Some _, None -> false))
+        t.vt_benoembaar
+  | Some None | None -> None
+
+(* An origin's source as a phrase: the kind as written, its owner where
+   written, and its name. *)
+let herkomst_noemt (h : herkomst) =
+  match h.hk_eigenaar with
+  | Some o -> Printf.sprintf "the %s '%s' of '%s'" h.hk_soort h.hk_naam o
+  | None -> Printf.sprintf "the %s '%s'" h.hk_soort h.hk_naam
+
+(* WF-121: (a) the closed sets; (b) 'owner' exactly on a scoped kind, and a
+   source that resolves; (c) no origin naming its own declaration, and no
+   cycle — each reported once, at its member that comes first in the
+   document; (d) the kind the form names. A clause that needs a value (a)
+   refuses is not asked. *)
+let wf121 (t : vocabulaire_tafel) : violation list =
+  let v at reason = { wf = "WF-121"; at; reason } in
+  let dragers =
+    List.filter_map
+      (fun (b : benoembaar) -> Option.map (fun h -> (b, h)) b.bn_herkomst)
+      t.vt_benoembaar
+  in
+  let index (b : benoembaar) =
+    let rec zoek i = function
+      | [] -> max_int
+      | (x : benoembaar) :: rest -> if x.bn_at = b.bn_at then i else zoek (i + 1) rest
+    in
+    zoek 0 t.vt_benoembaar
+  in
+  List.concat_map
+    (fun ((b : benoembaar), (h : herkomst)) ->
+      let a = match herkomst_refusal h with Some (at, r) -> [ v at r ] | None -> [] in
+      let soort_bekend = List.mem_assoc h.hk_soort herkomst_soorten in
+      let bv =
+        if not soort_bekend then []
+        else
+          let scoped = List.mem h.hk_soort herkomst_met_eigenaar in
+          let eigenaar =
+            match (scoped, h.hk_eigenaar) with
+            | true, None ->
+                [ v (h.hk_at ^ "/from")
+                    (Printf.sprintf
+                       "the origin of %s comes from the %s '%s' without an owner, and a source of that kind \
+                        names the declaration that scopes it"
+                       (beschrijving b) h.hk_soort h.hk_naam) ]
+            | false, Some o ->
+                [ v (h.hk_at ^ "/from/owner")
+                    (Printf.sprintf
+                       "the origin of %s comes from the %s '%s' with the owner '%s', and a source of that \
+                        kind has none"
+                       (beschrijving b) h.hk_soort h.hk_naam o) ]
+            | _ -> []
+          in
+          let bestaat =
+            if h.hk_soort = "decisionTable" || eigenaar <> [] || herkomst_bron t h <> None then []
+            else
+              [ v (h.hk_at ^ "/from")
+                  (Printf.sprintf "the origin of %s comes from %s, which the document does not declare"
+                     (beschrijving b) (herkomst_noemt h)) ]
+          in
+          eigenaar @ bestaat
+      in
+      let c =
+        match herkomst_bron t h with
+        | Some x when x.bn_at = b.bn_at ->
+            [ v (h.hk_at ^ "/from")
+                (Printf.sprintf "the origin of %s names that declaration itself" (beschrijving b)) ]
+        | Some first -> (
+            (* follow the origins from [b]; report a cycle through [b] at the
+               member of it that comes first in the document *)
+            let rec loop pad (x : benoembaar) =
+              if x.bn_at = b.bn_at then Some (List.rev pad)
+              else if List.exists (fun (y : benoembaar) -> y.bn_at = x.bn_at) pad then None
+              else
+                match x.bn_herkomst with
+                | None -> None
+                | Some hx -> (
+                    match herkomst_bron t hx with
+                    | Some y -> loop (x :: pad) y
+                    | None -> None)
+            in
+            match loop [] first with
+            | Some kring when List.for_all (fun y -> index b < index y) kring ->
+                [ v (h.hk_at ^ "/from")
+                    (Printf.sprintf "following 'from' from %s through %s comes back to it: the origins form a cycle"
+                       (beschrijving b)
+                       (String.concat ", " (List.map beschrijving kring))) ]
+            | _ -> [])
+        | None -> []
+      in
+      let d =
+        match herkomst_bronsoort h.hk_vorm with
+        | Some verwacht when soort_bekend && verwacht <> h.hk_soort ->
+            [ v (h.hk_at ^ "/from/kind")
+                (Printf.sprintf
+                   "the origin of %s has the form '%s', which comes from a source of kind '%s', and its \
+                    source is of kind '%s'"
+                   (beschrijving b) h.hk_vorm verwacht h.hk_soort) ]
+        | _ -> []
+      in
+      a @ bv @ c @ d)
+    dragers
+
+(* The side-table rules, beside [all]: the verifier runs both. *)
 let vocabulaires (doc : document) (t : vocabulaire_tafel) : violation list =
-  wf116 t @ wf117 t @ wf118 doc t @ wf119 t @ wf120 doc t
+  wf116 t @ wf117 t @ wf118 doc t @ wf119 t @ wf120 doc t @ wf121 t
 
 let all (doc : document) : violation list =
   let ctx = { doc } in

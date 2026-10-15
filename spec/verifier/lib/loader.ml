@@ -1060,7 +1060,7 @@ let timeline_facet ~named path j =
 let objecttype path j : string * objecttype =
   let kvs = obj path j in
   expect_node path kvs "ObjectType";
-  check_keys path kvs ~ext:[ "supertype"; "plural"; "designations" ]
+  check_keys path kvs ~ext:[ "supertype"; "plural"; "origin"; "designations" ]
     [ "node"; "name"; "animate"; "attributes"; "characteristics" ];
   let f name = field path kvs name in
   let name = str (path / "name") (f "name") in
@@ -1070,7 +1070,7 @@ let objecttype path j : string * objecttype =
         let ap = path / "attributes" / string_of_int i in
         let akvs = obj ap a in
         expect_node ap akvs "Attribute";
-        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline"; "designations" ]
+        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline"; "origin"; "designations" ]
           [ "node"; "name"; "datatype" ];
         ( str (ap / "name") (field ap akvs "name"),
           opt (ap / "datatype") datatype (field ap akvs "datatype"),
@@ -1086,7 +1086,7 @@ let objecttype path j : string * objecttype =
         let cp = path / "characteristics" / string_of_int i in
         let ckvs = obj cp c in
         expect_node cp ckvs "Characteristic";
-        check_keys cp ckvs ~ext:[ "timeline"; "designations" ] [ "node"; "name"; "kind" ];
+        check_keys cp ckvs ~ext:[ "timeline"; "origin"; "designations" ] [ "node"; "name"; "kind" ];
         ( str (cp / "name") (field cp ckvs "name"),
           enum Spelling.characteristic_kind (cp / "kind") (field cp ckvs "kind"),
           ext_field cp ckvs "timeline" (timeline_facet ~named:false) ))
@@ -1145,7 +1145,7 @@ let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : 
 let parameter path j : string * parameter =
   let kvs = obj path j in
   expect_node path kvs "Parameter";
-  check_keys path kvs ~ext:[ "timeline"; "designations" ] [ "node"; "name"; "datatype" ];
+  check_keys path kvs ~ext:[ "timeline"; "origin"; "designations" ] [ "node"; "name"; "datatype" ];
   let name = str (path / "name") (field path kvs "name") in
   let facet = ext_field path kvs "timeline" (timeline_facet ~named:false) in
   ( name,
@@ -1181,7 +1181,7 @@ let dagsoort path j : dagsoort =
 let rol path j : rol =
   let kvs = obj path j in
   expect_node path kvs "Role";
-  check_keys path kvs ~ext:[ "plural"; "designations" ] [ "node"; "name"; "objectType"; "many" ];
+  check_keys path kvs ~ext:[ "plural"; "origin"; "designations" ] [ "node"; "name"; "objectType"; "many" ];
   {
     rol_naam = str_opt (path / "name") (field path kvs "name");
     rol_objecttype_naam = str_opt (path / "objectType") (field path kvs "objectType");
@@ -1192,7 +1192,7 @@ let rol path j : rol =
 let feittype path j : feittype =
   let kvs = obj path j in
   expect_node path kvs "FactType";
-  check_keys path kvs ~ext:[ "designations" ] [ "node"; "name"; "reciprocal"; "roles" ];
+  check_keys path kvs ~ext:[ "origin"; "designations" ] [ "node"; "name"; "reciprocal"; "roles" ];
   {
     ft_naam = str_opt (path / "name") (field path kvs "name");
     wederkerig = bool_ (path / "reciprocal") (field path kvs "reciprocal");
@@ -1260,7 +1260,7 @@ let named_form ~node ?(ext = []) path j =
   expect_node path kvs node;
   (* the form's designations (IR-SPEC ch. 2.12) stand on the form, as its
      name does; [vocabulaires] reads them *)
-  check_keys path kvs ~ext:("designations" :: ext) [ "node"; "name"; "versions" ];
+  check_keys path kvs ~ext:("origin" :: "designations" :: ext) [ "node"; "name"; "versions" ];
   let name =
     match str_opt (path / "name") (field path kvs "name") with
     | Some n when versioned_name n ->
@@ -1558,7 +1558,7 @@ let resolved_startpunt path j : resolved_startpunt =
 let resolved_regel_groep path j : resolved_regel_groep =
   let kvs = obj path j in
   expect_node path kvs "RuleGroup";
-  check_keys path kvs ~ext:[ "source"; "designations" ] [ "node"; "name"; "recursive"; "members" ];
+  check_keys path kvs ~ext:[ "source"; "origin"; "designations" ] [ "node"; "name"; "recursive"; "members" ];
   let f name = field path kvs name in
   let bron, line = source_with_line path kvs in
   {
@@ -1637,7 +1637,7 @@ and exception_group path j : exception_group =
 let prioritized_defaults path j : prioritized_defaults =
   let kvs = obj path j in
   expect_node path kvs "PrioritizedDefaults";
-  check_keys path kvs ~ext:[ "characteristic"; "attribute"; "unordered"; "source"; "designations" ]
+  check_keys path kvs ~ext:[ "characteristic"; "attribute"; "unordered"; "source"; "origin"; "designations" ]
     [ "node"; "name"; "subject"; "defaults"; "validity" ];
   let f name = field path kvs name in
   {
@@ -1730,9 +1730,30 @@ let benamingen path kvs : benaming list =
         ben_at = bp;
       })
 
+(* The origin of the declaration at [path], whose members are [kvs]
+   (IR-SPEC ch. 2.13): a closed record whose closed record 'from' carries
+   'owner' when written. The form and the kind are read as strings: a value
+   outside their sets is WF-121 (a)'s to name, and an executor's to refuse
+   ([document]). *)
+let herkomst path kvs : herkomst option =
+  ext_field path kvs "origin" (fun op x ->
+      let okvs = obj op x in
+      check_keys op okvs [ "form"; "from" ];
+      let fp = op / "from" in
+      let fkvs = obj fp (field op okvs "from") in
+      check_keys fp fkvs ~ext:[ "owner" ] [ "kind"; "name" ];
+      {
+        hk_vorm = str (op / "form") (field op okvs "form");
+        hk_soort = str (fp / "kind") (field fp fkvs "kind");
+        hk_eigenaar = ext_field fp fkvs "owner" str;
+        hk_naam = str (fp / "name") (field fp fkvs "name");
+        hk_at = op;
+      })
+
 (* The vocabulary side table, read from the document as written: the
    vocabularies of the root list, and every designatable declaration with
-   its designations, those without any included (WF-119 asks after them). It
+   its designations and its origin, those without any included (WF-119 asks
+   after them). It
    is read as strictly as every node here — a closed record, a string where
    the schema has one, no empty list — and what a
    designation says is never refused here: that is the verifier's (WF-116 to
@@ -1758,7 +1779,7 @@ let vocabulaires (j : json) : vocabulaire_tafel =
     | None -> []
     | Some n ->
         [ { bn_soort = soort; bn_eigenaar = eigenaar; bn_naam = n; bn_at = at;
-            bn_benamingen = benamingen at ekvs } ]
+            bn_benamingen = benamingen at ekvs; bn_herkomst = herkomst at ekvs } ]
   in
   let naam_van p ekvs = str_opt (p / "name") (field p ekvs "name") in
   let objecttypen =
@@ -1834,7 +1855,7 @@ let vocabulaires (j : json) : vocabulaire_tafel =
                    | None -> []
                    | Some v ->
                        [ { bn_soort = Bn_enumeratiewaarde; bn_eigenaar = Some domein; bn_naam = v;
-                           bn_at = dp / "values" / string_of_int i;
+                           bn_at = dp / "values" / string_of_int i; bn_herkomst = None;
                            bn_benamingen =
                              List.filter_map
                                (fun (w, b) -> if eerste w = Some i then Some b else None)
@@ -2011,11 +2032,19 @@ let document ?(reader = Executor) (j : json) : document =
     }
   in
   (* the side table is read structurally by every reader, and for its
-     content by none here (IR-SPEC ch. 2.12) *)
-  ignore (vocabulaires j);
+     content by none here (IR-SPEC ch. 2.12 and 2.13), except that an
+     executor cannot keep an origin whose form or kind is no value of its
+     set (WF-121 (a)) *)
+  let tafel = vocabulaires j in
   (match reader with
   | Executor -> (
       executor_refusals j;
+      List.iter
+        (fun (b : benoembaar) ->
+          match Option.bind b.bn_herkomst Checks.herkomst_refusal with
+          | Some (at, sentence) -> fail at sentence
+          | None -> ())
+        tafel.vt_benoembaar;
       match Checks.wf115_bevindingen doc with (at, sentence) :: _ -> fail at sentence | [] -> ())
   | Verifier -> ());
   doc
