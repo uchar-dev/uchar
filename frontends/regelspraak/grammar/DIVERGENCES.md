@@ -1926,7 +1926,9 @@ naming the name read.
 ### Emission
 
 Nothing about emission is new: the generated attributes, characteristic, rule,
-group and consistency go out through the writers every other form uses. A
+group and consistency go out through the writers every other form uses, each
+with the designations the frontend composes from the marked attribute's where
+the document declares vocabularies (section "Gegenereerde elementen"). A
 document that does not write the marker emits exactly what it emitted before,
 which is the measurement above stated as a property.
 
@@ -1948,7 +1950,10 @@ which is the measurement above stated as a property.
   inheritance line and an initialisation with a window or with versions stay
   refused.
 - The generated names are fixed by the attribute's name; they carry no type
-  name, so the form names of two marked attributes of one name collide.
+  name, so the form names of two marked attributes of one name collide. Their
+  designations follow the attribute's designations (section "Gegenereerde
+  elementen"), so in a vocabulary the forms of two marked attributes with one
+  designation there collide as well, under WF-118.
 - A computation of X that reads X, directly or through another attribute, is a
   dependency cycle the verifier refuses under WF-045 with or without the marker;
   with the marker the cycle runs through the generated group and WF-046 and
@@ -2158,7 +2163,11 @@ declarations it reads every vocabulary head, then every annotation of every
 designatable declaration, and adds each designation to the model's side
 table (`RegelSpraakModel.vocabulaires`, `.benamingen`) under the declaration
 — its kind, its owner where the kind is scoped, and its model name. After
-the rule check, when the model holds every form the emitter writes, it
+the rule check it composes the designations of the elements a lowered opgave
+marker generates, from the designations of the marked attribute (section
+"Gegenereerde elementen", since 2026-10-15): those are designations like the
+written ones, in the same side table, written to the wire the same way.
+Then, when the model holds every form the emitter writes, it
 judges what needs the whole model: a rule's designation needs a named form of
 that rule on the wire; the default vocabulary names every designatable
 declaration; the effective names are unique per scope; a redundant
@@ -2219,8 +2228,12 @@ every sentence on its line):
 - `<Declaratie> draagt geen benaming in het standaardvocabulaire '<v>', dat
   elke declaratie noemt (WF-119)`, with `; de frontend schreef deze
   declaratie zelf, zonder plaats voor een annotatie` where the declaration is
-  one the frontend wrote (a row of a decision table, a member a marker
-  generates)
+  one the frontend wrote (a row of a decision table, a start point's anchor,
+  the group of a subtype's blocks, the member and rule of a fold with steps
+  after the set), and, for a member or form a lowered opgave marker
+  generates, with `; de frontend stelt de benaming van deze declaratie samen
+  uit die van het attribuut '<X>' van '<T>', en dat draagt er geen`, on the
+  line of X
 - `<Declaratie a> en <declaratie b> hebben in het vocabulaire '<v>' dezelfde
   effectieve naam '<n>'; binnen hun reikwijdte is die uniek,
   hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord
@@ -2228,7 +2241,11 @@ every sentence on its line):
   the fact types, the parameters, the named forms and the rule groups each on
   their own, the attributes and the characteristics of an object type with
   the ones it inherits (reported at the subtype's own member), the roles of a
-  fact type, the values of a domain
+  fact type, the values of a domain. For each designation of the pair the
+  frontend composed, the sentence ends in `; de frontend stelde de benaming
+  van <declaratie> samen uit de benaming '<b>' van het attribuut '<X>' van
+  '<T>'`, and where it is reported at a generated declaration it stands on
+  the line of that declaration's X
 
 <declaratie> is `het objecttype '<T>'`, `het attribuut '<a>' van '<T>'`,
 `het kenmerk '<k>' van '<T>'`, `het feittype '<F>'`, `de rol '<r>' van
@@ -2266,10 +2283,15 @@ on the corpus).
   table and on an exception block a named refusal.
 - A default vocabulary names every declaration, also the ones the frontend
   writes itself: the rules of a decision table's rows, the members and forms
-  the opgave marker generates (§7), a start point's anchor. Those have no
-  place for an annotation, so a document with a default vocabulary cannot use
-  those constructs; the refusal says so. A vocabulary without `(standaard)`
-  has no such limit.
+  the opgave marker generates (§7), a start point's anchor, the group of a
+  subtype's blocks and the member of a fold with steps after the set. Those
+  have no place for an annotation. Since 2026-10-15 the members and forms of
+  the opgave marker carry the designations the frontend composes from the
+  marked attribute's (section "Gegenereerde elementen"), so the marker stands
+  in a document with a default vocabulary wherever the attribute carries a
+  designation there. The others carry none, so a document with a default
+  vocabulary cannot use those constructs; the refusal says so. A vocabulary
+  without `(standaard)` has no such limit.
 - Not built, and deliberately: a service or an explanation per vocabulary, a
   status per designation (preferred, deprecated), a vocabulary per language
   beside another, an output that strips the annotations from a source, and
@@ -3347,20 +3369,83 @@ group under the member's own name; an anchor the author declared himself is his.
 The table is filled once, at the end of the rule checker, for the elements still
 in the model: a withdrawn marker's members and a refused form get no entry.
 
+**Designations** (card `gegenereerde-namen-in-elk-vocabulaire`, 2026-10-15).
+An element the opgave marker generates carries a designation in every
+vocabulary in which its source, the marked attribute X, carries one: its own
+name with X replaced by X's designation there, which is taken over literally,
+a capital in the middle of the name included (maintainer decision
+2026-10-15). The attribute `de beëindigingsdatum (cgm: Datum einde recht op
+uitkering) (handboek: ingangsdatum van de eindiging)` gives `opgegeven
+beëindigingsdatum` the designation `opgegeven Datum einde recht op uitkering`
+in `cgm` and `opgegeven ingangsdatum van de eindiging` in `handboek`, and
+likewise `berekende …`, `afwijkende opgave …`, `afwijking opgave …`,
+`controle opgave …` and `opgave boven berekening …`. Where X carries no
+designation in a vocabulary, the element carries none there either, and its
+effective name there is its canonical name (maintainer decision the same
+day). In a vocabulary that is not the default, a composed designation that
+spells the element's canonical name byte for byte is not written: that
+happens only where X's designation spells X, which WF-120 warns already, and
+the effective name is the same without it.
+
+A composed designation is a designation like a written one. It stands in the
+side table of "Vocabulaires en benamingen", the emitter writes it as a
+`designations` entry of the generated attribute, characteristic, rule,
+consistency or defaults group, and the checks of WF-117 to WF-120 judge it as
+they judge a written one. It belongs on the wire because the elements are
+declarations of the IR document, which IR-SPEC ch. 2.12 lets carry
+designations, and because no reader of the wire could compose it: the origin
+is this table, which the wire does not carry. A model the IR loader reads
+therefore has the same effective names as the frontend's. The wire, the
+schema and WF-116 to WF-120 are unchanged, and no golden combines the marker
+with a vocabulary, so every IR document of the corpus stays byte-identical
+(gates 10, 11 and 16).
+
+A collision. A composed designation takes part in WF-118 as a written one
+does. Two marked attributes on two object types with one designation in one
+vocabulary give their three forms one effective name each there, in the one
+namespace of the named forms, and are refused, as their canonical form names
+are where the two attributes share a name (§7, "Scope"). The WF-118 sentence
+then names the designation it was composed from and stands on the line of X
+("Vocabulaires en benamingen", "Fail-fast refusals"); the wire of such a
+collision is the negatief case `wf118-effectieve-naam-vormen`.
+
+The other forms of the table carry no designation, each for a reason:
+
+- `uitzondering-voor-subtype`: the name `B voor S` is made of two names, the
+  base rule B's (the source in the table) and the subtype S's, and each can
+  carry a designation of its own. Which designation the group carries where
+  only one of the two has one in a vocabulary is not decided, and
+  `<designation of B> voor S` would mix a designation and a canonical name in
+  one name, which WF-119 rules out for a default vocabulary.
+- `stappen-na-de-verzameling`: the same, with the member and each role as the
+  parts of the name `<lid> via <rol 1>, … en <rol n>`.
+- `beslistabelrij`: the source is the table, and a table carries no
+  designation (refused by name, "Vocabulaires en benamingen"), so the rule for
+  a source without a designation gives the rows none.
+- `startpunt`: the anchor's name `startpunt <tijdlijn>` is made of the
+  timeline's name, not of its source's (the rule that writes it), and a
+  timeline carries no designation (IR-SPEC ch. 2.12).
+- `defaultsstapel` and `versie`, the keys of the Drools backend: their names
+  are entries of a coverage manifest, no declarations, and no vocabulary
+  names them.
+
 **What it is not.** No semantics: no transpiler reads it, the emitter writes
-nothing of it, and a model the IR loader reads leaves it empty, so every IR
-document and every case file is byte-identical with and without it (gates 10,
-11 and 16). A version of a form with several versions is no element (the
-element is the form; the model entry is `<form> #<k>`), and an effective
-defaults stack is no element either: both are names of the Drools backend's
-coverage manifest, and its TMS transpiler gives their source the same way
-(`TmsTranspiler.gegenereerd()`: a stack `defaults A:<type>.<member>` or
-`defaults K:<type>.<member>` from the member as declared, key `defaultsstapel`;
-a version from its form, key `versie`).
+nothing of the table itself, and a model the IR loader reads leaves it empty.
+What reaches the wire through it are the composed designations (above), which
+are the vocabulary side table's and carry no semantics either; a document
+without vocabularies or without the marker emits exactly what it emitted
+before (gates 10, 11 and 16). A version of a form with several versions is no
+element (the element is the form; the model entry is `<form> #<k>`), and an
+effective defaults stack is no element either: both are names of the Drools
+backend's coverage manifest, and its TMS transpiler gives their source the
+same way (`TmsTranspiler.gegenereerd()`: a stack `defaults A:<type>.<member>`
+or `defaults K:<type>.<member>` from the member as declared, key
+`defaultsstapel`; a version from its form, key `versie`).
 
 Not covered: the names the Drools backend gives the rules inside a form
 (`<form>: …`), which the manifest and the trace do not show, and the names of
 the fixpoint that are no form (the key of a defaults conflict, `<type>.<member>`
 with `/<i>` per level below the root, and the relation named by a second
 filling). Witnesses: `GegenereerdUitTest` (frontend) and
-`GegenereerdeNamenWitnessTest` (backend).
+`GegenereerdeNamenWitnessTest` (backend); for the designations
+`GegenereerdeBenamingenTest` (frontend).
