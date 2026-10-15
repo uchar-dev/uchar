@@ -369,8 +369,11 @@ public final class IrLoader {
         });
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         lijst(rules, "/rules", "ruleGroups", (p, n) -> {
-            velden(n, p, "RuleGroup", List.of("node", "name", "recursive", "members"), List.of("source", "designations"));
-            if (text(n, "name") != null) benamingen(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
+            velden(n, p, "RuleGroup", List.of("node", "name", "recursive", "members"), List.of("source", "origin", "designations"));
+            if (text(n, "name") != null) {
+                herkomst(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
+                benamingen(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
+            }
             m.regelGroepen.add(new ResolvedRegelGroep(
                     text(n, "name"), bool(n, "recursive"), stringList(n.get("members")), bron(n), bronregel(n)));
         });
@@ -699,7 +702,7 @@ public final class IrLoader {
         return s.length() > 60 ? s.substring(0, 60) + "…" : s;
     }
 
-    // --- the vocabulary side table (IR-SPEC ch. 2.12) ----------------------
+    // --- the side table: vocabularies (IR-SPEC ch. 2.12) and origins (ch. 2.13)
 
     /** The root list {@code vocabularies} into the model. A side table without semantics: read as strictly as every
      *  node here, in the shared loader's sentences, and never read for evaluation; what a vocabulary or a designation
@@ -711,6 +714,41 @@ public final class IrLoader {
             m.vocabulaires.add(new RegelSpraakModel.Vocabulaire(tekst(v, p, "name"), waarheid(v, p, "default"),
                     optTekst(v, p, "language")));
         }
+    }
+
+    /** The origin of the declaration {@code n} at {@code pad} (IR-SPEC ch. 2.13), into the model's table
+     *  {@code gegenereerd} under {@code element}: read as strictly as every node here, and the form and the kind
+     *  refused outside their closed sets in WF-121 (a)'s sentence, as the shared loader refuses them for every
+     *  executor, since the model cannot hold a value its set does not name. What the source names — whether it resolves,
+     *  whether it fits the form — is the verifier's (WF-121 (b) to (d)), so nothing here refuses it. */
+    private void herkomst(JsonNode n, String pad, RegelSpraakModel.Benoembaar element) {
+        if (!n.has("origin")) return;
+        String p = pad + "/origin";
+        JsonNode o = n.get("origin");
+        velden(o, p, null, List.of("form", "from"), List.of());
+        String vp = p + "/from";
+        JsonNode van = o.get("from");
+        velden(van, vp, null, List.of("kind", "name"), List.of("owner"));
+        String vorm = tekst(o, p, "form");
+        RegelSpraakModel.Herkomstvorm hv = Spelling.ORIGIN_FORM.waarde("Origin.form", vorm);
+        if (hv == null)
+            throw new Documentfout(p + "/form", "the origin form '" + vorm + "' is none of the forms of IR-SPEC ch. 2.13 ("
+                    + opgesomd(Spelling.ORIGIN_FORM.rijen().values()) + ")");
+        String kind = tekst(van, vp, "kind");
+        RegelSpraakModel.Benoembaar.Soort soort = Spelling.originSoort(kind);
+        if (soort == null) {
+            List<String> soorten = new ArrayList<>(Spelling.ORIGIN_KIND.rijen().values());
+            soorten.add(Spelling.ORIGIN_DECISION_TABLE);
+            throw new Documentfout(vp + "/kind", "the origin's source kind '" + kind
+                    + "' is none of the kinds of IR-SPEC ch. 2.13 (" + opgesomd(soorten) + ")");
+        }
+        m.gegenereerd.put(element, new RegelSpraakModel.GegenereerdUit(
+                new RegelSpraakModel.Benoembaar(soort, optTekst(van, vp, "owner"), tekst(van, vp, "name")), hv));
+    }
+
+    /** The values, each quoted, joined as the shared loader joins them in WF-121 (a)'s sentence. */
+    private static String opgesomd(java.util.Collection<String> waarden) {
+        return String.join(", ", waarden.stream().map(w -> "'" + w + "'").toList());
     }
 
     /** The designations of the declaration {@code n} at {@code pad}, into the model's side table under {@code element}
@@ -759,8 +797,9 @@ public final class IrLoader {
 
     private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
         velden(n, padVan(n), "PrioritizedDefaults", List.of("node", "name", "subject", "defaults", "validity"),
-                List.of("characteristic", "attribute", "unordered", "source", "designations"));
+                List.of("characteristic", "attribute", "unordered", "source", "origin", "designations"));
         if (text(n, "name") != null)
+            herkomst(n, padVan(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
             benamingen(n, padVan(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
         String onderwerp = text(n, "subject");
         String kenmerk = text(n, "characteristic");
@@ -917,8 +956,9 @@ public final class IrLoader {
      *  (ch. 2.2: untagged = nominal). */
     private Objecttype objecttype(String pad, JsonNode n) {
         velden(n, pad, "ObjectType", List.of("node", "name", "animate", "attributes", "characteristics"),
-                List.of("supertype", "plural", "designations"));
+                List.of("supertype", "plural", "origin", "designations"));
         Objecttype ot = new Objecttype(naam(n, pad, "name"));
+        herkomst(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
         benamingen(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
         ot.bezield = waarheid(n, pad, "animate");
         ot.meervoud = optTekst(n, pad, "plural");
@@ -926,8 +966,9 @@ public final class IrLoader {
         supertypePad.put(ot, pad + "/supertype");
         lijst(n, pad, "attributes", (ap, a) -> {
             velden(a, ap, "Attribute", List.of("node", "name", "datatype"),
-                    List.of("plural", "dimensions", "timeline", "designations"));
+                    List.of("plural", "dimensions", "timeline", "origin", "designations"));
             String lid = naam(a, ap, "name");
+            herkomst(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, lid));
             benamingen(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, lid));
             String eerder = botsing(ot.attributen.keySet(), lid);
             if (eerder != null) throw new Documentfout(ap + "/name", dubbel(lid, eerder));
@@ -959,8 +1000,9 @@ public final class IrLoader {
             }
         });
         lijst(n, pad, "characteristics", (cp, c) -> {
-            velden(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline", "designations"));
+            velden(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline", "origin", "designations"));
             String lid = naam(c, cp, "name");
+            herkomst(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, lid));
             benamingen(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, lid));
             // WF-002: read leniently, a second declaration's kind replaced the first one's and its timeline did not
             String eerder = botsing(ot.kenmerken, lid);
@@ -1032,8 +1074,9 @@ public final class IrLoader {
      *  multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12), so another count is no document (WF-005), refused in
      *  the verifier's words. The model's parameter holds the granularity. */
     private Parameter parameter(String pad, JsonNode n) {
-        velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline", "designations"));
+        velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline", "origin", "designations"));
         String naam = naam(n, pad, "name");
+        herkomst(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
         benamingen(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
         JsonNode dt = n.get("datatype");
         if (!dt.isObject()) throw new Documentfout(pad + "/datatype", "expected a datatype object, got " + kort(dt));
@@ -1150,16 +1193,19 @@ public final class IrLoader {
     /** IR-SPEC ch. 2.6: a fact type and its roles. A role's plural is written whole or not at all: absent is the
      *  record's null. */
     private Feittype feittype(String pad, JsonNode n) {
-        velden(n, pad, "FactType", List.of("node", "name", "reciprocal", "roles"), List.of("designations"));
+        velden(n, pad, "FactType", List.of("node", "name", "reciprocal", "roles"), List.of("origin", "designations"));
         Feittype ft = new Feittype(naam(n, pad, "name"));
         ft.wederkerig = bool(n, "reciprocal");
+        herkomst(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
         benamingen(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
         elementen(n, "roles", r -> {
-            velden(r, padVan(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural", "designations"));
+            velden(r, padVan(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural", "origin", "designations"));
             ft.rollen.add(new RegelSpraakModel.Rol(
                     text(r, "name"), text(r, "objectType"), text(r, "plural"), bool(r, "many")));
-            if (text(r, "name") != null)
+            if (text(r, "name") != null) {
+                herkomst(r, padVan(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
                 benamingen(r, padVan(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
+            }
         });
         return ft;
     }
@@ -2200,13 +2246,17 @@ public final class IrLoader {
      */
     private List<Versie> vorm(JsonNode n, String pad, String knoop, List<String> optioneel) {
         List<String> opt = new ArrayList<>(optioneel);
+        opt.add("origin");     // the origin of a declaration a producer made itself (IR-SPEC ch. 2.13)
         opt.add("designations");   // a named form's names in the vocabularies (IR-SPEC ch. 2.12), on the form
         velden(n, pad, knoop, List.of("node", "name", "versions"), opt);
         JsonNode nm = n.get("name");
         if (!nm.isNull() && !nm.isTextual())
             throw new Documentfout(pad + "/name", "expected a string or null, got " + kort(nm));
         String naam = nm.isNull() ? null : nm.asText();
-        if (naam != null) benamingen(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
+        if (naam != null) {
+            herkomst(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
+            benamingen(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
+        }
         if (naam != null && VERSIENAAM.matcher(naam).matches()) throw new Documentfout(pad + "/name", VORMNAAM);
         String vp = pad + "/versions";
         JsonNode vs = n.get("versions");

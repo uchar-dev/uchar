@@ -49,8 +49,11 @@ Acceptance (in deze volgorde, elke stap een eigen commit):
   draad, de spelling van `form` en `kind`, en een document zonder gegenereerd element is byte voor byte het document van
   vóór de kaart (zoals `VocabulaireDialectTest.zonder_de_extensie_is_het_document_hetzelfde`).
 - (d) `IrLoader` leest `origin` terug in `m.gegenereerd`; een nieuwe getuige
-  `backends/drools/src/test/java/dev/uchar/regelspraak/loader/HerkomstWitnessTest.java`: per rgs-golden is de tabel van
-  het geladen model gelijk aan die van de frontend. De zinnen "a model the IR loader reads leaves it empty"
+  `backends/drools/src/test/java/dev/uchar/regelspraak/loader/HerkomstWitnessTest.java` (het lezen, de weigering van
+  (a) in de zin van de gedeelde lader, wat de bron noemt is geen laadweigering) en, omdat de Maven-build van de backend
+  de resolver niet compileert, een getuige in de bronroutesuite van gate 15,
+  `backends/drools/src/bronroute/java/dev/uchar/regelspraak/loader/HerkomstBronrouteTest.java`: per rgs-golden is de
+  tabel van het geladen model gelijk aan die van de frontend. De zinnen "a model the IR loader reads leaves it empty"
   (`RegelSpraakModel.java`, `grammar/DIVERGENCES.md`) bijgewerkt.
 - (e) Goldens met gegenereerde elementen en de TOKA-dump en -slices heruitgezonden, per stuk genoemd, met een
   divergentie in `toka/README.md`; elk ander document byte-gelijk (gate 10, 11, 16). `corpus/golden/anchor/` blijft
@@ -72,7 +75,7 @@ gegenereerde elementen buiten `corpus/golden/anchor/`,
 `frontends/regelspraak/src/main/java/dev/uchar/regelspraak/ir/Spelling.java`,
 `frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/RegelSpraakModel.java`,
 `frontends/regelspraak/grammar/DIVERGENCES.md`,
-`backends/drools/src/main/java/dev/uchar/regelspraak/loader/IrLoader.java`, de twee nieuwe testklassen,
+`backends/drools/src/main/java/dev/uchar/regelspraak/loader/IrLoader.java`, de drie nieuwe testklassen,
 `toka/casus/ir.json`, `toka/cases/*/ir.json`, `toka/README.md`, `scripts/check-reftype-derivation.sh`, deze kaart.
 
 Out of scope: de delen van een samengestelde naam (`B voor S`, `<lid> via <rollen>`) op de draad: één `from` drukt

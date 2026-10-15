@@ -72,10 +72,12 @@ public final class RegelSpraakModel {
     public final Map<Benoembaar, List<Benaming>> benamingen = new LinkedHashMap<>();
     /** Every element of {@link #benoembaar()} the frontend made itself, under a name no declaration in the source
      *  carries, with the declared element it comes from and the form that made it (grammar/DIVERGENCES.md,
-     *  "Gegenereerde elementen"). A side table without semantics, like {@link #benamingen}: no transpiler reads it and
-     *  the emitter writes nothing of it, so a model the IR loader reads leaves it empty. An element whose name the
-     *  author wrote has no entry, also where the frontend made the element (a defaults group named after its base
-     *  rule). Keyed as {@link #benoembaar()} spells the element; read it through {@link #gegenereerdUit}. */
+     *  "Gegenereerde elementen"). A side table without semantics, like {@link #benamingen}: no transpiler reads it.
+     *  The emitter writes each entry as the field {@code origin} of the element's node (IR-SPEC ch. 2.13), and the
+     *  Drools IR loader reads it back, so a model read from the wire has the table the frontend's had. An element
+     *  whose name the author wrote has no entry, also where the frontend made the element (a defaults group named
+     *  after its base rule). Keyed as {@link #benoembaar()} spells the element; read it through
+     *  {@link #gegenereerdUit}. */
     public final Map<Benoembaar, GegenereerdUit> gegenereerd = new LinkedHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
 
