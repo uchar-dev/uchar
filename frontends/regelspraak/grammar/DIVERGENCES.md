@@ -548,7 +548,9 @@ van Strandjutter; de basis 'meldtermijn' is geërfd van Jutter`, and the
 group-default and its exception group carry the heads that made them (`Afwijking
 van meldtermijn`, or the two heads joined by `en`). A block under a subtype's own
 block nests in it as on the base's own type. Under the opgave marker (§7) the
-subtype's group moves to `berekende X` as every group on the line does.
+subtype's group moves to `berekende X` as every group on the line does. In a
+vocabulary the group's designation is composed part by part from B's and S's
+(section "Gegenereerde elementen", "Part by part").
 
 Refused, each one ERROR at the block, the sentence naming what can be written
 instead (witness: `AfwijkingOpSubtypeTest`, every sentence literal):
@@ -1306,7 +1308,9 @@ the type reached. Where they reach a scalar member, a member is generated:
   names element-outward (`gewicht via vondst en weging`, `vinddag via vondst`,
   `ijkdatum via vondst, weging en weger`); a name of two steps or more holds
   `en`, which no declared name and no read in rule text can carry, so no read
-  elsewhere binds it by accident;
+  elsewhere binds it by accident; in a vocabulary its designation, and its
+  rule's, is composed part by part from the member's and the roles' (section
+  "Gegenereerde elementen", "Part by part");
 - its datatype is the reached member's;
 - it stands on the type that fills the other role of the first step's fact
   type, where the element type is that type or a subtype of it and the steps
@@ -2164,9 +2168,12 @@ designatable declaration, and adds each designation to the model's side
 table (`RegelSpraakModel.vocabulaires`, `.benamingen`) under the declaration
 — its kind, its owner where the kind is scoped, and its model name. After
 the rule check it composes the designations of the elements a lowered opgave
-marker generates, from the designations of the marked attribute (section
-"Gegenereerde elementen", since 2026-10-15): those are designations like the
-written ones, in the same side table, written to the wire the same way.
+marker generates, from the designations of the marked attribute, and those
+of the group of a subtype's blocks and of the member and rule of a fold with
+steps after the set, part by part from the designations of the names their
+own name is made of (section "Gegenereerde elementen", both since
+2026-10-15): those are designations like the written ones, in the same side
+table, written to the wire the same way.
 Then, when the model holds every form the emitter writes, it
 judges what needs the whole model: a rule's designation needs a named form of
 that rule on the wire; the default vocabulary names every designatable
@@ -2228,12 +2235,16 @@ every sentence on its line):
 - `<Declaratie> draagt geen benaming in het standaardvocabulaire '<v>', dat
   elke declaratie noemt (WF-119)`, with `; de frontend schreef deze
   declaratie zelf, zonder plaats voor een annotatie` where the declaration is
-  one the frontend wrote (a row of a decision table, a start point's anchor,
-  the group of a subtype's blocks, the member and rule of a fold with steps
-  after the set), and, for a member or form a lowered opgave marker
-  generates, with `; de frontend stelt de benaming van deze declaratie samen
-  uit die van het attribuut '<X>' van '<T>', en dat draagt er geen`, on the
-  line of X
+  one the frontend wrote (a row of a decision table, a start point's anchor);
+  for a member or form a lowered opgave marker generates, with `; de frontend
+  stelt de benaming van deze declaratie samen uit die van het attribuut '<X>'
+  van '<T>', en dat draagt er geen`, on the line of X; and for the group of a
+  subtype's blocks and the member and rule of a fold with steps after the
+  set, with `; de frontend stelt de benaming van deze declaratie samen uit
+  die van <deel 1>, … en <deel n>, en geen daarvan draagt er een`, each part
+  a <declaratie>, on the line of the first part the source declares (B, or
+  S where B is a row; the member, or the first role where the member is
+  generated)
 - `<Declaratie a> en <declaratie b> hebben in het vocabulaire '<v>' dezelfde
   effectieve naam '<n>'; binnen hun reikwijdte is die uniek,
   hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord
@@ -2243,9 +2254,12 @@ every sentence on its line):
   the ones it inherits (reported at the subtype's own member), the roles of a
   fact type, the values of a domain. For each designation of the pair the
   frontend composed, the sentence ends in `; de frontend stelde de benaming
-  van <declaratie> samen uit de benaming '<b>' van het attribuut '<X>' van
-  '<T>'`, and where it is reported at a generated declaration it stands on
-  the line of that declaration's X
+  van <declaratie> samen uit de benaming '<b>' van <deel>`, with one such
+  `de benaming '<b>' van <deel>` per part that carries a designation in the
+  vocabulary, joined by `, ` and ` en ` (for the opgave family the one part
+  `het attribuut '<X>' van '<T>'`), and where it is reported at a generated
+  declaration it stands on the line of that declaration's first part the
+  source declares, as for WF-119 above
 
 <declaratie> is `het objecttype '<T>'`, `het attribuut '<a>' van '<T>'`,
 `het kenmerk '<k>' van '<T>'`, `het feittype '<F>'`, `de rol '<r>' van
@@ -2287,10 +2301,13 @@ on the corpus).
   subtype's blocks and the member of a fold with steps after the set. Those
   have no place for an annotation. Since 2026-10-15 the members and forms of
   the opgave marker carry the designations the frontend composes from the
-  marked attribute's (section "Gegenereerde elementen"), so the marker stands
-  in a document with a default vocabulary wherever the attribute carries a
-  designation there. The others carry none, so a document with a default
-  vocabulary cannot use those constructs; the refusal says so. A vocabulary
+  marked attribute's, and the group of a subtype's blocks and the member and
+  rule of a fold with steps after the set those it composes part by part
+  (section "Gegenereerde elementen"), so those constructs stand in a document
+  with a default vocabulary wherever their parts carry a designation there.
+  The rows of a decision table and a start point's anchor carry none, so a
+  document with a default vocabulary cannot use those two constructs; the
+  refusal says so. A vocabulary
   without `(standaard)` has no such limit.
 - Not built, and deliberately: a service or an explanation per vocabulary, a
   status per designation (preferred, deprecated), a vocabulary per language
@@ -3396,29 +3413,69 @@ declarations of the IR document, which IR-SPEC ch. 2.12 lets carry
 designations, and because no reader of the wire could compose it: the origin
 is this table, which the wire does not carry. A model the IR loader reads
 therefore has the same effective names as the frontend's. The wire, the
-schema and WF-116 to WF-120 are unchanged, and no golden combines the marker
+schema and WF-116 to WF-120 are unchanged, and no golden combines the
+marker, a subtype's group (below) or a fold with steps after the set (below)
 with a vocabulary, so every IR document of the corpus stays byte-identical
 (gates 10, 11 and 16).
+
+**Part by part** (card `gegenereerde-namen-per-deel`, maintainer decision
+2026-10-15: fall back per part). Two names of the table are made of more than
+one declared name: the group `B voor S` of the base rule B and the subtype S,
+and the member and the rule `<lid> via <rol 1>, … en <rol n>` of the member
+the steps reach and the role of each step. In a vocabulary, each part that
+carries a designation there is replaced by that designation, taken over
+literally; each other part keeps its canonical name, spelled as it stands in
+the name; the fixed words ` voor `, ` via `, `, ` and ` en ` stay. Where no
+part carries a designation in a vocabulary, the element carries none there,
+and its effective name there is its canonical name. In a vocabulary that is
+not the default, a composed designation that spells the element's canonical
+name byte for byte is not written, as for the opgave family. With `Regel
+meldtermijn (handboek: termijn van melding)` and `Objecttype de Strandjutter
+is een Jutter (mv: Strandjutters) (handboek: strandloper)` the group
+`meldtermijn voor Strandjutter` carries `termijn van melding voor strandloper`
+in `handboek`; without the designation of the subtype it carries `termijn van
+melding voor Strandjutter`. With `het gewicht (handboek: massa)` on Weging and
+the role `de vondst (handboek: vangst)` of the first step, the member and the
+rule `gewicht via vondst en weging` carry `massa via vangst en weging` where
+the role `weging` of the second step carries none. The opgave family is the
+case of one part: its name is fixed words and X.
+
+Which parts can carry a designation. Each kind of part is a kind IR-SPEC
+ch. 2.12 lets carry `designations`: B is a named form, on the wire the
+defaults group that carries the base rule's name and, with it, the
+designation written on the base rule; S is an object type; the member is an
+attribute, as declared (on a supertype of the type reached where that
+declares it); each role is the role the wire binds for its step, in the fact
+type of that step. A part can itself be an element the frontend made, and
+then it carries what that element carries: the rule of a decision table's
+row as B and a start point's anchor as the member carry no designation, ever
+(below), so such a part is always canonical; `opgegeven X` or `berekende X`
+as the member carries the designation composed from X's, which is composed
+first. The fixed words are no declaration and always stay as they are.
+
+A default vocabulary names every part that can carry a designation, or
+refuses that part itself under WF-119; a part that never carries one is an
+element the frontend wrote, and WF-119 refuses that too. A composed
+designation that mixes designations and canonical names therefore never
+stands in an admitted document with a default vocabulary. Where no part
+carries a designation there, the group or the member and its rule are
+refused as well, with their parts named ("Vocabulaires en benamingen",
+"Fail-fast refusals").
 
 A collision. A composed designation takes part in WF-118 as a written one
 does. Two marked attributes on two object types with one designation in one
 vocabulary give their three forms one effective name each there, in the one
 namespace of the named forms, and are refused, as their canonical form names
 are where the two attributes share a name (§7, "Scope"). The WF-118 sentence
-then names the designation it was composed from and stands on the line of X
-("Vocabulaires en benamingen", "Fail-fast refusals"); the wire of such a
-collision is the negatief case `wf118-effectieve-naam-vormen`.
+then names the designations it was composed from and stands on the line of
+the first part the source declares (X for the opgave family; B for the
+group, or S where B is a row; the member for a fold, or the first role where
+the member is generated; "Vocabulaires en benamingen", "Fail-fast
+refusals"); the wire of such a collision is the negatief case
+`wf118-effectieve-naam-vormen`.
 
 The other forms of the table carry no designation, each for a reason:
 
-- `uitzondering-voor-subtype`: the name `B voor S` is made of two names, the
-  base rule B's (the source in the table) and the subtype S's, and each can
-  carry a designation of its own. Which designation the group carries where
-  only one of the two has one in a vocabulary is not decided, and
-  `<designation of B> voor S` would mix a designation and a canonical name in
-  one name, which WF-119 rules out for a default vocabulary.
-- `stappen-na-de-verzameling`: the same, with the member and each role as the
-  parts of the name `<lid> via <rol 1>, … en <rol n>`.
 - `beslistabelrij`: the source is the table, and a table carries no
   designation (refused by name, "Vocabulaires en benamingen"), so the rule for
   a source without a designation gives the rows none.
@@ -3433,8 +3490,9 @@ The other forms of the table carry no designation, each for a reason:
 nothing of the table itself, and a model the IR loader reads leaves it empty.
 What reaches the wire through it are the composed designations (above), which
 are the vocabulary side table's and carry no semantics either; a document
-without vocabularies or without the marker emits exactly what it emitted
-before (gates 10, 11 and 16). A version of a form with several versions is no
+without vocabularies, or without the marker, a subtype's group and a fold
+with steps after the set, emits exactly what it emitted before (gates 10, 11
+and 16). A version of a form with several versions is no
 element (the element is the form; the model entry is `<form> #<k>`), and an
 effective defaults stack is no element either: both are names of the Drools
 backend's coverage manifest, and its TMS transpiler gives their source the
@@ -3448,4 +3506,4 @@ the fixpoint that are no form (the key of a defaults conflict, `<type>.<member>`
 with `/<i>` per level below the root, and the relation named by a second
 filling). Witnesses: `GegenereerdUitTest` (frontend) and
 `GegenereerdeNamenWitnessTest` (backend); for the designations
-`GegenereerdeBenamingenTest` (frontend).
+`GegenereerdeBenamingenTest` and `GegenereerdeNamenPerDeelTest` (frontend).
