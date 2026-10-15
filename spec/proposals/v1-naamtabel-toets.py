@@ -82,7 +82,11 @@ Wat de toets eist, en waarom:
    `VALUES` van spec/proposals/v1-migratie/m5.py draagt dezelfde families,
    plaatsen en paren, en zijn `FREE` en `NULL_KEPT` zijn de families met
    `vrij` en de plaatsen van `null_blijft`: de migratie en de sectie kunnen
-   niet uiteenlopen.
+   niet uiteenlopen. Een enum die na v0 ontstond, heeft geen v0-paren en dus
+   geen familie: haar plaats staat in `waarden_zonder_v0`, met de sectie die
+   haar waarden noemt. Zo'n plaats draagt in het schema een enum buiten elke
+   voorwaarde, is geen familieplaats, en elke waarde staat in backticks in
+   die sectie (net als `spec_zonder_v0` voor de knopen).
 
 Bekende grenzen — wat de toets NIET waarmaakt, zodat de hernoeming (M8) er
 niet meer vertrouwen in legt dan dit:
@@ -399,9 +403,23 @@ def toets_waarden(tabel, schema, spec, sectie_van, spec_n, spec_regel, wortel):
             if {spelling(w) for w in enum if w is not None} != toe:
                 fout("waarden `%s`: de enum op %s is %s, de familie verwacht %s"
                      % (naam, pl, sorted(spelling(w) for w in enum if w is not None), sorted(toe)))
+    zonder_v0 = tabel.get("waarden_zonder_v0", {})
+    vaste_enums = {pl: w for pl, w, cond in enums if not cond}
+    for pl, z in zonder_v0.items():
+        if pl in per_plaats:
+            fout("`waarden_zonder_v0` %s: is ook een plaats van familie `%s`" % (pl, per_plaats[pl]))
+        if pl not in vaste_enums:
+            fout("`waarden_zonder_v0` %s: het schema draagt daar geen enum (verouderd)" % pl)
+            continue
+        tekst = "\n".join(l for i, l in enumerate(regels) if sectie_van[i] == z.get("sectie"))
+        tokens = backtick_tokens(tekst)
+        for w in vaste_enums[pl]:
+            if w is not None and spelling(w) not in tokens:
+                fout("`waarden_zonder_v0` %s: de waarde `%s` staat niet in backticks in IR-SPEC %s"
+                     % (pl, spelling(w), z.get("sectie")))
     for pl, waarden_, cond in enums:
         if pl not in per_plaats:
-            if not cond:
+            if not cond and pl not in zonder_v0:
                 fout("waarden: de enum op %s hoort bij geen familie" % pl)
             continue
         f = next(x for x in families if x.get("familie") == per_plaats[pl])
