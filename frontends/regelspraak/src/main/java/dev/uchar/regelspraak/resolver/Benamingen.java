@@ -22,9 +22,10 @@ import java.util.Map;
  * where the verifier refuses the document it would give (WF-116 to WF-120) and where the source is no designation at
  * all. Two passes: {@link #lees} after the declarations, when every declaration an annotation stands on has its model
  * name; {@link #keur} after the rule check, when the model holds every form the emitter writes. Between them
- * {@link #stelSamen} composes the designations of the elements a lowered opgave marker generates, which have no place
- * for an annotation. No rule reads the side table: a designation never resolves, so a rule that writes one where it
- * means a declaration is refused as any undeclared name is.
+ * {@link #stelSamen} composes the designations of the elements the frontend names after declared names — the members
+ * and forms of a lowered opgave marker, the group of a subtype's blocks, the member and rule of a fold with steps after
+ * the set — which have no place for an annotation. No rule reads the side table: a designation never resolves, so a
+ * rule that writes one where it means a declaration is refused as any undeclared name is.
  */
 final class Benamingen {
 
@@ -35,9 +36,14 @@ final class Benamingen {
     private final Map<Benoembaar, Integer> regels = new LinkedHashMap<>();
     /** The line of each vocabulary declaration, by its name as declared. */
     private final Map<String, Integer> vocabulaireRegels = new LinkedHashMap<>();
-    /** Every element whose designations {@link #stelSamen} composes, with the marked attribute it composes them from:
-     *  a refusal of such an element names that attribute and stands on its line, where the author can change it. */
-    private final Map<Benoembaar, Benoembaar> samengesteldUit = new LinkedHashMap<>();
+    /** Every element whose designations {@link #stelSamen} composes, with the parts of its name it composes them from:
+     *  a refusal of such an element names those parts and stands on the line of the first one the source declares,
+     *  where the author can change it. */
+    private final Map<Benoembaar, List<Naamdeel>> samengesteldUit = new LinkedHashMap<>();
+
+    /** A piece of a generated name: words of the name as they stand in it, and the declared element they name, null
+     *  for the fixed words the frontend writes between the names. */
+    record Naamdeel(String tekst, Benoembaar element) {}
 
     /** The members an extension declares again ({@link DefinitionResolver}): the type carries the declaration they
      *  repeat, so their designations are that declaration's, read there once; a refused repeat is refused by its own
@@ -238,16 +244,20 @@ final class Benamingen {
 
     // --- between the passes: the designations the frontend composes -------------------------------
 
-    /** The designations of the members and forms of a lowered opgave marker (grammar/DIVERGENCES.md, "Gegenereerde
-     *  elementen", "Designations"). Each is named '&lt;woorden&gt; X' after the marked attribute X; in every vocabulary
-     *  in which X carries a designation it carries '&lt;woorden&gt; &lt;that designation&gt;', the designation taken
-     *  over literally, and where X carries none, neither does the element (maintainer decision 2026-10-15). In a
+    /** The designations of the elements the frontend names after declared names (grammar/DIVERGENCES.md, "Gegenereerde
+     *  elementen", "Designations" and "Part by part"). A member or form of a lowered opgave marker is named
+     *  '&lt;woorden&gt; X' after the marked attribute X; the group of a subtype's blocks and the member and rule of a
+     *  fold with steps after the set are named after several declarations, whose pieces the rule check hands over in
+     *  {@code naamdelen}. In every vocabulary in which a part carries a designation, the element carries its own name
+     *  with each such part replaced by that designation, taken over literally, the other parts and the fixed words as
+     *  they stand; where no part carries one, neither does the element (maintainer decisions 2026-10-15). In a
      *  vocabulary that is not the default a composed designation that spells the element's own name is left out: it
-     *  changes no effective name, and the wire would need a warning for it (WF-120), which X's own designation draws
-     *  already. Runs after the rule check, which fills {@link RegelSpraakModel#gegenereerd}, and before {@link #keur},
-     *  which judges these designations as it judges the written ones. The other forms of that table get none: their
-     *  names have more than one source, or a source no vocabulary names. */
-    void stelSamen() {
+     *  changes no effective name, and the wire would need a warning for it (WF-120), which the part's own designation
+     *  draws already. Runs after the rule check, which fills {@link RegelSpraakModel#gegenereerd}, and before
+     *  {@link #keur}, which judges these designations as it judges the written ones. The opgave family goes first: its
+     *  members can be a part of another name, and a part is read from the side table. The other forms of the origin
+     *  table get none: their names come from a source no vocabulary names. */
+    void stelSamen(Map<Benoembaar, List<Naamdeel>> naamdelen) {
         if (model.vocabulaires.isEmpty()) return;
         for (var e : model.gegenereerd.entrySet()) {
             if (e.getValue().vorm() != Herkomstvorm.OPGAVE_BOVEN_BEREKENING) continue;
@@ -258,39 +268,75 @@ final class Benamingen {
                     || !naam.regionMatches(true, knip, bron.naam(), 0, bron.naam().length()))
                 throw new IllegalStateException("het gegenereerde element " + element + " heet niet naar zijn bron "
                         + bron + ", en de frontend kan er geen benaming voor samenstellen");
-            samengesteldUit.put(element, bron);
-            for (Vocabulaire v : model.vocabulaires) {
-                String benaming = model.benaming(v.naam(), bron).orElse(null);
-                if (benaming == null) continue;
-                String tekst = naam.substring(0, knip) + benaming;
-                if (!v.standaard() && tekst.equals(naam)) continue;
-                if (model.benaming(v.naam(), element).isPresent()) {
-                    // only a declaration the author wrote under the generated name can carry one, and the marker
-                    // refuses such a name with an ERROR of its own
-                    if (model.isOk())
-                        throw new IllegalStateException("het gegenereerde element " + element + " draagt al een "
-                                + "benaming in het vocabulaire '" + v.naam() + "'");
-                    continue;
-                }
-                model.benamingen.computeIfAbsent(element, k -> new ArrayList<>()).add(new Benaming(v.naam(), tekst));
+            stelSamen(element, List.of(new Naamdeel(naam.substring(0, knip), null),
+                    new Naamdeel(naam.substring(knip), bron)));
+        }
+        for (var e : naamdelen.entrySet()) {
+            Benoembaar element = e.getKey();
+            String naam = String.join("", e.getValue().stream().map(Naamdeel::tekst).toList());
+            if (!naam.equals(element.naam())) {
+                // a generated name another declaration also carries is refused with an ERROR of its own (WF-020)
+                if (model.isOk())
+                    throw new IllegalStateException("het gegenereerde element " + element + " heet niet naar zijn "
+                            + "delen " + e.getValue() + ", en de frontend kan er geen benaming voor samenstellen");
+                continue;
             }
+            stelSamen(element, e.getValue());
+        }
+    }
+
+    /** Composes and writes the designations of {@code element}, whose name is the pieces {@code delen}. */
+    private void stelSamen(Benoembaar element, List<Naamdeel> delen) {
+        samengesteldUit.put(element, delen);
+        for (Vocabulaire v : model.vocabulaires) {
+            StringBuilder tekst = new StringBuilder();
+            boolean benoemd = false;
+            for (Naamdeel d : delen) {
+                String benaming = d.element() == null ? null : model.benaming(v.naam(), d.element()).orElse(null);
+                tekst.append(benaming == null ? d.tekst() : benaming);
+                benoemd |= benaming != null;
+            }
+            if (!benoemd || !v.standaard() && tekst.toString().equals(element.naam())) continue;
+            if (model.benaming(v.naam(), element).isPresent()) {
+                // only a declaration the author wrote under the generated name can carry one, and the form that
+                // generates the name refuses such a name with an ERROR of its own
+                if (model.isOk())
+                    throw new IllegalStateException("het gegenereerde element " + element + " draagt al een "
+                            + "benaming in het vocabulaire '" + v.naam() + "'");
+                continue;
+            }
+            model.benamingen.computeIfAbsent(element, k -> new ArrayList<>())
+                    .add(new Benaming(v.naam(), tekst.toString()));
         }
     }
 
     /** The clause that names where the designation of {@code element} in {@code v} comes from, where the frontend
-     *  composed it; empty for a written one, and where the element carries none there. */
+     *  composed it: each part that carries a designation there, with that designation; empty for a written one, and
+     *  where the element carries none there. */
     private String samengesteld(Vocabulaire v, Benoembaar element) {
-        Benoembaar bron = samengesteldUit.get(element);
-        if (bron == null || model.benaming(v.naam(), element).isEmpty()) return "";
-        return "; de frontend stelde de benaming van " + beschrijving(element) + " samen uit de benaming '"
-                + model.benaming(v.naam(), bron).orElseThrow() + "' van " + beschrijving(bron);
+        List<Naamdeel> delen = samengesteldUit.get(element);
+        if (delen == null || model.benaming(v.naam(), element).isEmpty()) return "";
+        List<String> uit = new ArrayList<>();
+        for (Naamdeel d : delen)
+            if (d.element() != null)
+                model.benaming(v.naam(), d.element()).ifPresent(b ->
+                        uit.add("de benaming '" + b + "' van " + beschrijving(d.element())));
+        return "; de frontend stelde de benaming van " + beschrijving(element) + " samen uit " + opsomming(uit);
+    }
+
+    /** The declared parts of a composed element's name, in the order of the name. */
+    private static List<Benoembaar> delen(List<Naamdeel> delen) {
+        return delen.stream().map(Naamdeel::element).filter(java.util.Objects::nonNull).toList();
     }
 
     /** The line a refusal of {@code element} stands on: its own declaration's, or for an element whose designations
-     *  the frontend composes, the marked attribute's, where the author can change what it is named; null where the
-     *  frontend wrote the element without a source line. */
+     *  the frontend composes, that of the first part of its name the source declares, where the author can change
+     *  what it is named; null where the frontend wrote the element, and every part of it, without a source line. */
     private Integer regel(Benoembaar element) {
-        return regels.get(samengesteldUit.getOrDefault(element, element));
+        List<Naamdeel> delen = samengesteldUit.get(element);
+        if (delen == null) return regels.get(element);
+        for (Benoembaar d : delen(delen)) if (regels.containsKey(d)) return regels.get(d);
+        return null;
     }
 
     // --- pass 2: the finished model ----------------------------------------------------------------
@@ -316,11 +362,12 @@ final class Benamingen {
     private void volledig(Vocabulaire v, List<Benoembaar> alle) {
         for (Benoembaar b : alle) {
             if (model.benaming(v.naam(), b).isPresent()) continue;
-            Benoembaar bron = samengesteldUit.get(b);
+            List<Benoembaar> bronnen = samengesteldUit.containsKey(b) ? delen(samengesteldUit.get(b)) : null;
             Integer regel = regel(b);
-            // the source of a composed designation is an attribute, so 'dat'
-            String staart = bron != null ? "; de frontend stelt de benaming van deze declaratie samen uit die van "
-                    + beschrijving(bron) + ", en dat draagt er geen"
+            // a name of one part is the opgave family's, whose part is an attribute: 'dat'
+            String staart = bronnen != null ? "; de frontend stelt de benaming van deze declaratie samen uit die van "
+                    + opsomming(bronnen.stream().map(Benamingen::beschrijving).toList())
+                    + (bronnen.size() == 1 ? ", en dat draagt er geen" : ", en geen daarvan draagt er een")
                     : regel != null ? "" : "; de frontend schreef deze declaratie zelf, zonder plaats voor een annotatie";
             fout(hoofd(beschrijving(b)) + " draagt geen benaming in het standaardvocabulaire '" + v.naam() + "', dat "
                     + "elke declaratie noemt (WF-119)" + staart, regel == null ? 0 : regel);
@@ -402,6 +449,12 @@ final class Benamingen {
     }
 
     private static String hoofd(String s) { return Character.toUpperCase(s.charAt(0)) + s.substring(1); }
+
+    /** 'a', 'a en b', 'a, b en c'. */
+    private static String opsomming(List<String> delen) {
+        if (delen.size() < 2) return String.join("", delen);
+        return String.join(", ", delen.subList(0, delen.size() - 1)) + " en " + delen.get(delen.size() - 1);
+    }
 
     private void fout(String bericht, Integer regel) {
         model.diagnostics.add(new Diagnostic(Severity.ERROR, bericht, regel == null ? 0 : regel));

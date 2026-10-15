@@ -74,8 +74,13 @@ final class RuleChecker {
      *  about the group can stand at the block that made it. */
     private final Map<PrioritizedDefaults, Herkomst> pdHerkomst = new java.util.IdentityHashMap<>();
     private record Herkomst(int line, String kop) {}
-    /** The groups {@link #subtypeGroep} made, each with the base rule it was made under: the name and the base. */
+    /** The groups {@link #subtypeGroep} made, each with the base rule it was made under and its subtype: the name, the
+     *  base and the subtype's name. */
     private final List<String[]> subtypeGroepen = new ArrayList<>();
+    /** Per element {@link #gegenereerdeElementen} names after more than one declaration — the group of a subtype's
+     *  blocks, the member and rule of a fold with steps after the set — the pieces of its name, keyed and spelled as
+     *  {@link RegelSpraakModel#gegenereerd} is: {@link Benamingen#stelSamen} composes its designations part by part. */
+    private final Map<Benoembaar, List<Benamingen.Naamdeel>> naamdelen = new LinkedHashMap<>();
     /** The anchor members {@link #startpuntAnkers} declared, by {@link #ankersleutel}: an anchor of a name the author
      *  declared himself is not in here. */
     private final java.util.Set<String> gegenereerdeAnkers = new java.util.HashSet<>();
@@ -101,6 +106,9 @@ final class RuleChecker {
         this.bouwer = new ExpressieBouwer(model);
         this.bouwer.setSamengesteldeFilter(this::samengesteldeElementFilter);   // §13.4.13.4 compound subselectie
     }
+
+    /** The pieces of the names {@link #check} generated after more than one declaration, by element. */
+    Map<Benoembaar, List<Benamingen.Naamdeel>> naamdelen() { return naamdelen; }
 
     void check(RegelSpraakDocumentContext doc) {
         domeinReferenties(doc);
@@ -146,10 +154,12 @@ final class RuleChecker {
      * a start point's anchor. Each element is keyed, and each source spelled, as {@link RegelSpraakModel#benoembaar}
      * spells it; a decision table, the one source that is no element, keeps its written name. A candidate whose element
      * a later pass removed again — the members of a withdrawn marker, a row lifted into a defaults tree — is no element
-     * of the model and gets no entry.
+     * of the model and gets no entry. The group and the fold's member and rule also get the pieces of their name
+     * ({@link #naamdelen}).
      */
     private void gegenereerdeElementen() {
         Map<String, GegenereerdUit> kandidaten = new LinkedHashMap<>();
+        Map<String, List<Benamingen.Naamdeel>> delen = new LinkedHashMap<>();
         for (Opgave o : opgaven) {
             GegenereerdUit uit = new GegenereerdUit(Benoembaar.attribuut(o.type().naam, o.attribuut()),
                     Herkomstvorm.OPGAVE_BOVEN_BEREKENING);
@@ -160,19 +170,28 @@ final class RuleChecker {
                 for (String vorm : List.of(o.regel(), o.controle(), o.groep()))
                     kandidaat(kandidaten, Benoembaar.vorm(vorm), uit);
         }
-        for (String[] g : subtypeGroepen)
-            kandidaat(kandidaten, Benoembaar.vorm(g[0]),
-                    new GegenereerdUit(Benoembaar.vorm(g[1]), Herkomstvorm.UITZONDERING_VOOR_SUBTYPE));
+        for (String[] g : subtypeGroepen) {
+            Benoembaar groep = Benoembaar.vorm(g[0]);
+            kandidaat(kandidaten, groep, new GegenereerdUit(Benoembaar.vorm(g[1]), Herkomstvorm.UITZONDERING_VOOR_SUBTYPE));
+            delen.put(elementsleutel(groep), List.of(new Benamingen.Naamdeel(g[1], Benoembaar.vorm(g[1])),
+                    new Benamingen.Naamdeel(" voor ", null), new Benamingen.Naamdeel(g[2], Benoembaar.objecttype(g[2]))));
+        }
         for (var t : rijRegels.entrySet()) {
             GegenereerdUit uit = new GegenereerdUit(Benoembaar.vorm(DefinitionResolver.src(t.getKey().beslistabelNaam())),
                     Herkomstvorm.BESLISTABELRIJ);
             for (String rij : t.getValue()) kandidaat(kandidaten, Benoembaar.vorm(rij), uit);
         }
         for (ExpressieBouwer.Hulplid h : bouwer.hulpleden()) {
-            GegenereerdUit uit = new GegenereerdUit(Benoembaar.attribuut(attribuutDeclarant(h.doel(), h.lid()).naam,
-                    h.lid()), Herkomstvorm.STAPPEN_NA_DE_VERZAMELING);
-            kandidaat(kandidaten, Benoembaar.attribuut(h.element().naam, h.naam()), uit);
-            kandidaat(kandidaten, Benoembaar.vorm(h.naam()), uit);
+            Benoembaar lid = Benoembaar.attribuut(attribuutDeclarant(h.doel(), h.lid()).naam, h.lid());
+            GegenereerdUit uit = new GegenereerdUit(lid, Herkomstvorm.STAPPEN_NA_DE_VERZAMELING);
+            Benoembaar attribuut = Benoembaar.attribuut(h.element().naam, h.naam()), regel = Benoembaar.vorm(h.naam());
+            kandidaat(kandidaten, attribuut, uit);
+            kandidaat(kandidaten, regel, uit);
+            List<Benamingen.Naamdeel> d = hulpnaamdelen(h, lid);
+            if (d != null) {
+                delen.put(elementsleutel(attribuut), d);
+                delen.put(elementsleutel(regel), d);
+            }
         }
         for (String[] a : ankerRegels.values())
             kandidaat(kandidaten, Benoembaar.attribuut(a[0], a[1]),
@@ -186,13 +205,64 @@ final class RuleChecker {
                 model.gegenereerd.put(b, uit);
                 continue;
             }
-            Benoembaar bron = alle.stream().filter(x -> elementsleutel(x).equals(elementsleutel(uit.bron())))
-                    .findFirst().orElse(null);
+            Benoembaar bron = opNaam(alle, uit.bron());
             if (bron == null && model.isOk())
                 throw new IllegalStateException("het gegenereerde element " + b + " komt uit " + uit.bron()
                         + ", en dat is geen element van het model");
             model.gegenereerd.put(b, bron == null ? uit : new GegenereerdUit(bron, uit.vorm()));
+            List<Benamingen.Naamdeel> d = delen.get(elementsleutel(b));
+            if (d != null) d = inHetModel(alle, b, d);
+            if (d != null) naamdelen.put(b, d);
         }
+    }
+
+    /** The element of {@code alle} that {@code b} names under the name identity, or null. */
+    private static Benoembaar opNaam(List<Benoembaar> alle, Benoembaar b) {
+        return alle.stream().filter(x -> elementsleutel(x).equals(elementsleutel(b))).findFirst().orElse(null);
+    }
+
+    /** The pieces {@code delen} of the name of {@code element}, each declared part spelled as {@code alle} spells it;
+     *  null where a part is no element of the model, which an ERROR of the model explains (in a model without one, a
+     *  fault of the frontend). */
+    private List<Benamingen.Naamdeel> inHetModel(List<Benoembaar> alle, Benoembaar element,
+                                                 List<Benamingen.Naamdeel> delen) {
+        List<Benamingen.Naamdeel> uit = new ArrayList<>();
+        for (Benamingen.Naamdeel d : delen) {
+            Benoembaar deel = d.element() == null ? null : opNaam(alle, d.element());
+            if (d.element() != null && deel == null) {
+                if (model.isOk())
+                    throw new IllegalStateException("het gegenereerde element " + element + " heet naar "
+                            + d.element() + ", en dat is geen element van het model");
+                return null;
+            }
+            uit.add(deel == null ? d : new Benamingen.Naamdeel(d.tekst(), deel));
+        }
+        return uit;
+    }
+
+    /** The pieces of the name '&lt;lid&gt; via &lt;rol 1&gt;, … en &lt;rol n&gt;' of {@code h}: the member the steps
+     *  reach, as declared ({@code lid}), and each role as the wire binds its step, read from the type the member stands
+     *  on ({@link dev.uchar.regelspraak.emit.IrEmitter#navigatieBindingen}, the derivation the emitter writes the
+     *  generated rule's read with); null where a step binds no role, which the read's ERROR explains
+     *  ({@link #keurNavigatiebindingen}; in a model without one, a fault of the frontend). */
+    private List<Benamingen.Naamdeel> hulpnaamdelen(ExpressieBouwer.Hulplid h, Benoembaar lid) {
+        List<RolBindingRef> stappen =
+                dev.uchar.regelspraak.emit.IrEmitter.navigatieBindingen(model, h.element(), hulpwaarde(h));
+        int n = h.rollen().size();
+        if (stappen.size() != n) {
+            if (model.isOk())
+                throw new IllegalStateException("de stappen " + h.rollen() + " van het gegenereerde lid '" + h.naam()
+                        + "' van " + h.element().naam + " binden niet elk één rol");
+            return null;
+        }
+        List<Benamingen.Naamdeel> uit = new ArrayList<>();
+        uit.add(new Benamingen.Naamdeel(h.lid(), lid));
+        for (int i = 0; i < n; i++) {
+            uit.add(new Benamingen.Naamdeel(i == 0 ? " via " : i == n - 1 ? " en " : ", ", null));
+            uit.add(new Benamingen.Naamdeel(h.rollen().get(i),
+                    Benoembaar.rol(stappen.get(i).feittype(), stappen.get(i).rol())));
+        }
+        return uit;
     }
 
     /** Records {@code uit} as the origin of {@code element}. Two different origins for one element are two forms that
@@ -398,11 +468,16 @@ final class RuleChecker {
             }
             Expr.AttribuutRef doel = new Expr.AttribuutRef(h.naam(), h.element(), "een " + h.element().naam, null,
                     h.type(), h.doelBron());
-            Expr.AttribuutRef waarde = new Expr.AttribuutRef(h.lid(), h.doel(), "de " + h.element().naam,
-                    h.element().naam, h.type(), h.waardeBron(), false, h.rollen(), List.of(), null, 0);
-            model.resolvedRegels.add(new ResolvedRegel(h.naam(), ResolvedRegel.Soort.GELIJKSTELLING, doel, waarde,
+            model.resolvedRegels.add(new ResolvedRegel(h.naam(), ResolvedRegel.Soort.GELIJKSTELLING, doel, hulpwaarde(h),
                     null, Geldigheid.ALTIJD, List.of()));
         }
+    }
+
+    /** The read the generated rule of {@code h} sets its member from: the reached member through the steps, from the
+     *  type the member stands on. */
+    private static Expr.AttribuutRef hulpwaarde(ExpressieBouwer.Hulplid h) {
+        return new Expr.AttribuutRef(h.lid(), h.doel(), "de " + h.element().naam, h.element().naam, h.type(),
+                h.waardeBron(), false, h.rollen(), List.of(), null, 0);
     }
 
     /** §9.10 build the {@link dev.uchar.regelspraak.ir.ResolvedRegelGroep} carriers (member RULE NAMES + the
@@ -1684,7 +1759,7 @@ final class RuleChecker {
             for (var s : perSubtype.entrySet()) {
                 PrioritizedDefaults eigen = subtypeGroep(wortel, basisRegel, doel, s.getKey(), s.getValue());
                 model.prioritizedDefaults.add(eigen);
-                subtypeGroepen.add(new String[]{eigen.naam(), wortel});
+                subtypeGroepen.add(new String[]{eigen.naam(), wortel, s.getKey().naam});
                 pdHerkomst.put(eigen, new Herkomst(s.getValue().get(0).line, s.getValue().get(0).kop));
             }
             gelift.add(basisRegel);

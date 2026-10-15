@@ -62,8 +62,9 @@ public final class Resolver {
         // and judged with the composed designations once it has written every form
         Benamingen benamingen = new Benamingen(model, definities.herhalingen().keySet());
         benamingen.lees(doc);
-        new RuleChecker(model, tokens, definities.herhalingen()).check(doc);
-        benamingen.stelSamen();
+        RuleChecker checker = new RuleChecker(model, tokens, definities.herhalingen());
+        checker.check(doc);
+        benamingen.stelSamen(checker.naamdelen());
         benamingen.keur();
         meldOnopgelost(model);
         return model;
