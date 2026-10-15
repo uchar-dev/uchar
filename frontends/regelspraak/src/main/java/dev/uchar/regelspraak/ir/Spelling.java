@@ -1,7 +1,10 @@
 package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
+import dev.uchar.regelspraak.model.RegelSpraakModel.GegenereerdUit;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Herkomstvorm;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype.KenmerkSoort;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 
@@ -21,9 +24,11 @@ import java.util.Set;
  * records, asks it for the value a wire spelling names at a place. No other code turns an enum into wire text
  * or wire text into an enum: a second copy of the table would drift from this one and nothing would notice.
  *
- * <p>The families, their places and their rows mirror the section {@code waarden} of
+ * <p>The families of {@link #FAMILIES}, their places and their rows mirror the section {@code waarden} of
  * {@code spec/proposals/v1-naamtabel.json}, which the migration script's own table is held to as well; a JUnit
- * test reads that section and holds this table equal to it.
+ * test reads that section and holds this table equal to it. The two families of the origin field (IR-SPEC
+ * ch. 2.13), {@link #ORIGIN_FORM} and {@link #ORIGIN_KIND}, came after the L5 landing and have no v0 value, so that
+ * section, which records the renaming from v0, does not list them and they stand outside {@link #FAMILIES}.
  */
 public final class Spelling {
 
@@ -323,6 +328,56 @@ public final class Spelling {
     public static final Familie<Datatype> DATE_PRECISION = new Familie<Datatype>("Date.precision", "Date.precision")
             .rij(new Datatype.DatumInDagen(), "day")
             .rij(new Datatype.DatumTijd(), "millisecond");
+
+    /** The form of an origin (IR-SPEC ch. 2.13): the five forms by which the frontend makes a declaration of its own
+     *  ({@code RegelSpraakModel.gegenereerd}). The Drools backend's two keys name entries of its coverage manifest,
+     *  which are no declarations of the document and so never carry an origin. */
+    public static final Familie<Herkomstvorm> ORIGIN_FORM = new Familie<Herkomstvorm>("Origin.form", "Origin.form")
+            .rij(Herkomstvorm.OPGAVE_BOVEN_BEREKENING, "inputAboveComputation")
+            .rij(Herkomstvorm.UITZONDERING_VOOR_SUBTYPE, "exceptionForSubtype")
+            .rij(Herkomstvorm.BESLISTABELRIJ, "decisionTableRow")
+            .rij(Herkomstvorm.STAPPEN_NA_DE_VERZAMELING, "stepsAfterSet")
+            .rij(Herkomstvorm.STARTPUNT, "startPoint")
+            .ongeschreven(Herkomstvorm.DEFAULTSSTAPEL, "a name of the Drools backend's coverage manifest, no declaration")
+            .ongeschreven(Herkomstvorm.VERSIE, "a name of the Drools backend's coverage manifest, no declaration");
+
+    /** The kind of the declaration an origin comes from (IR-SPEC ch. 2.13). The wire has a tenth kind,
+     *  {@link #ORIGIN_DECISION_TABLE}, which is no kind of declaration: see {@link #originKind}. */
+    public static final Familie<Benoembaar.Soort> ORIGIN_KIND = new Familie<Benoembaar.Soort>("OriginSource.kind",
+            "OriginSource.kind")
+            .rij(Benoembaar.Soort.OBJECTTYPE, "objectType")
+            .rij(Benoembaar.Soort.ATTRIBUUT, "attribute")
+            .rij(Benoembaar.Soort.KENMERK, "characteristic")
+            .rij(Benoembaar.Soort.FEITTYPE, "factType")
+            .rij(Benoembaar.Soort.ROL, "role")
+            .rij(Benoembaar.Soort.ENUMERATIEWAARDE, "enumerationValue")
+            .rij(Benoembaar.Soort.PARAMETER, "parameter")
+            .rij(Benoembaar.Soort.VORM, "namedForm")
+            .rij(Benoembaar.Soort.REGELGROEP, "ruleGroup");
+
+    /** The wire kind of a decision table, the source of each of its rows. */
+    public static final String ORIGIN_DECISION_TABLE = "decisionTable";
+
+    /** The wire kind of the source of {@code uit}. The model records a decision table as a form, because it is no
+     *  element of the model (its rows are) and the table has no kind of its own there; on the wire it is
+     *  {@link #ORIGIN_DECISION_TABLE}, so that a row's {@code from} never names a form, which would be a form that does
+     *  not exist or another one under the table's name. Every other source is its kind's spelling. */
+    public static String originKind(GegenereerdUit uit) {
+        if (uit.vorm() == Herkomstvorm.BESLISTABELRIJ) {
+            if (uit.bron().soort() != Benoembaar.Soort.VORM)
+                throw new IllegalArgumentException("Spelling: a decision table row comes from a table, recorded as a "
+                        + "form, and this one comes from " + uit.bron());
+            return ORIGIN_DECISION_TABLE;
+        }
+        return ORIGIN_KIND.spelling(uit.bron().soort());
+    }
+
+    /** The in-memory kind a wire kind names at {@code OriginSource.kind}: a decision table is a form, as the model
+     *  records it ({@link #originKind}); null for a spelling that is no kind, which the caller refuses. */
+    public static Benoembaar.Soort originSoort(String kind) {
+        if (ORIGIN_DECISION_TABLE.equals(kind)) return Benoembaar.Soort.VORM;
+        return ORIGIN_KIND.waarde("OriginSource.kind", kind);
+    }
 
     /** Every family, in the order of the section {@code waarden}. */
     public static final List<Familie<?>> FAMILIES = List.of(NUMBER_SIGN, CHARACTERISTIC_KIND, GRANULARITY,

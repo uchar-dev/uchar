@@ -312,7 +312,7 @@ public final class IrEmitter {
         if (p.ongeordend()) w.key("unordered").value(true);         // only on a declared-unordered group member
         bronrecord(p.bron());
         w.key("validity"); geldigheid(p.geldigheid());
-        designations(RegelSpraakModel.Benoembaar.vorm(p.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(p.naam()));
         w.endObject();
         huidigSubject = vorigSubject;
     }
@@ -379,7 +379,7 @@ public final class IrEmitter {
             if (ot.attribuutGranulariteit.containsKey(a))
                 timelineFacet(ot.attribuutGranulariteit.get(a), ot.attribuutTijdlijnAantal.get(a),
                         ot.attribuutVastStartpunt.get(a), ot.attribuutTijdlijnNaam.get(a));
-            designations(RegelSpraakModel.Benoembaar.attribuut(ot.naam, a));
+            herkomstEnBenamingen(RegelSpraakModel.Benoembaar.attribuut(ot.naam, a));
             w.endObject();
         }
         w.endArray();
@@ -395,11 +395,11 @@ public final class IrEmitter {
             if (ot.kenmerkGranulariteit.containsKey(k))
                 timelineFacet(ot.kenmerkGranulariteit.get(k), ot.kenmerkTijdlijnAantal.get(k),
                         ot.kenmerkVastStartpunt.get(k), null);
-            designations(RegelSpraakModel.Benoembaar.kenmerk(ot.naam, k));
+            herkomstEnBenamingen(RegelSpraakModel.Benoembaar.kenmerk(ot.naam, k));
             w.endObject();
         }
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.objecttype(ot.naam));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.objecttype(ot.naam));
         w.endObject();
     }
 
@@ -475,7 +475,7 @@ public final class IrEmitter {
         w.key("name").value(p.naam());
         w.key("datatype"); datatype(p.datatype(), true);
         if (p.granulariteit() != null) timelineFacet(p.granulariteit(), null, p.vastStartpunt(), null);
-        designations(RegelSpraakModel.Benoembaar.parameter(p.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.parameter(p.naam()));
         w.endObject();
     }
 
@@ -639,7 +639,7 @@ public final class IrEmitter {
         w.key("roles").beginArray();
         for (Rol r : ft.rollen) rol(ft, r);
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.feittype(ft.naam));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.feittype(ft.naam));
         w.endObject();
     }
 
@@ -650,7 +650,7 @@ public final class IrEmitter {
         w.key("objectType").value(r.objecttypeNaam());
         if (r.meervoud() != null) w.key("plural").value(r.meervoud());
         w.key("many").value(r.meervoudig());
-        designations(RegelSpraakModel.Benoembaar.rol(ft.naam, r.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.rol(ft.naam, r.naam()));
         w.endObject();
     }
 
@@ -1368,7 +1368,7 @@ public final class IrEmitter {
         w.endArray();
         List<String> bronnen = annotaties(vorm.versies().get(0));
         if (!bronnen.isEmpty()) { w.key("statuteAnnotations"); stringList(bronnen); }
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1443,7 +1443,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedObjectCreatie oc : vorm.versies()) objectCreationVersion(oc);
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1477,7 +1477,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedVerdeling v : vorm.versies()) allocationVersion(v);
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1523,7 +1523,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedConsistentie c : vorm.versies()) consistencyVersion(c);
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1564,7 +1564,7 @@ public final class IrEmitter {
             w.endObject();
         }
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1588,7 +1588,7 @@ public final class IrEmitter {
             w.endObject();
         }
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1987,7 +1987,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedFeitCreatie fc : vorm.versies()) factCreationVersion(fc);
         w.endArray();
-        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -2042,11 +2042,35 @@ public final class IrEmitter {
         w.key("recursive").value(g.recursief());
         w.key("members"); stringList(g.leden());
         bronrecord(g.bron().snippet(), g.line());
-        designations(RegelSpraakModel.Benoembaar.regelgroep(g.naam()));
+        herkomstEnBenamingen(RegelSpraakModel.Benoembaar.regelgroep(g.naam()));
         w.endObject();
     }
 
-    // --- the vocabulary side table (IR-SPEC ch. 2.12) --------------------------------------------------
+    // --- the side table: origins (IR-SPEC ch. 2.13) and vocabularies (ch. 2.12) -------------------------
+
+    /** The origin and the designations of {@code element}: the last two fields of its node, each written whole or not
+     *  at all. */
+    private void herkomstEnBenamingen(RegelSpraakModel.Benoembaar element) {
+        origin(element);
+        designations(element);
+    }
+
+    /** The origin of {@code element} where the frontend made it ({@link RegelSpraakModel#gegenereerd}): the form that
+     *  made it and the declaration it comes from, by kind, owner and name as the model records them. A declaration
+     *  whose name the source declares has no entry and gets no field. */
+    private void origin(RegelSpraakModel.Benoembaar element) {
+        java.util.Optional<RegelSpraakModel.GegenereerdUit> uit = m.gegenereerdUit(element);
+        if (uit.isEmpty()) return;
+        RegelSpraakModel.Benoembaar bron = uit.get().bron();
+        w.key("origin").beginObject();
+        w.key("form").value(Spelling.ORIGIN_FORM.spelling(uit.get().vorm()));
+        w.key("from").beginObject();
+        w.key("kind").value(Spelling.originKind(uit.get()));
+        if (bron.eigenaar() != null) w.key("owner").value(bron.eigenaar());
+        w.key("name").value(bron.naam());
+        w.endObject();
+        w.endObject();
+    }
 
     /** The designations of {@code element}, sorted by the declaration order of their vocabularies: the last field of
      *  its node, written whole or not at all. */
