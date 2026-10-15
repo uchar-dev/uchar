@@ -67,7 +67,10 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   document with `designations` on the designatable declarations and
   `valueDesignations` on an enumeration's declaration (ch. 2.12, WF-116 to
   WF-120 — the vocabulary side table, which the RegelSpraak frontend
-  produces from the dialect's annotations); until L4 the wire spelled
+  produces from the dialect's annotations); `origin` on the same
+  declarations (ch. 2.13, WF-121 — the origin of a declaration a producer
+  made itself, which the RegelSpraak frontend writes on the declarations it
+  generates); until L4 the wire spelled
   them `verbindendeRol`, `bronRol`, `bronPad`, `scopeRol` and
   `bronAnnotaties`, and until L5 the navigation hops `navigatieBindingen`
   and `navigatieBinding` and the quantifier fold's range `bronRol` and
@@ -169,10 +172,10 @@ roles), parameters, domains, datatypes, units, dimensions, timelines, and
 day kinds. It contains no rules and no expressions; the rule and expression
 layers reference model-layer declarations by name.
 
-Layer marks: every node in this chapter is `layer: core`, with exactly two
-inline exceptions — the `Characteristic.kind` presentation tag (ch. 2.2)
-and the `Dimension.preposition` read-form tag (ch. 2.7), both
-`layer: dialect(regelspraak)`.
+Layer marks: every node in this chapter is `layer: core`, with exactly three
+inline exceptions — the `Characteristic.kind` presentation tag (ch. 2.2),
+the `Dimension.preposition` read-form tag (ch. 2.7) and the values of
+`Origin.form` (ch. 2.13), all three `layer: dialect(regelspraak)`.
 
 A **document** is the root container (decision V3 (b); landed at M1,
 2026-09-23). Its structure:
@@ -412,6 +415,7 @@ An entity type: named, with attributes and characteristics.
 | `plural` | string? | declared plural, if any |
 | `attributes` | list of Attribute | declaration order |
 | `characteristics` | list of Characteristic | declaration order |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the type's names in the vocabularies (ch. 2.12) |
 
 **The supertype relation.** Wire key `supertype`, an **extension field**
@@ -595,6 +599,7 @@ default. The clause left the wire with the side-maps (ch. 4.6 (p), WF index).
 | `plural` | string? | declared plural; absent = none declared |
 | `dimensions` | list of dimension names | absent = scalar; when present non-empty (WF-004); order as declared |
 | `timeline` | TimelineFacet? | absent = not time-dependent |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the attribute's names in the vocabularies (ch. 2.12) |
 
 **Characteristic** — a boolean trait; it has no datatype.
@@ -604,6 +609,7 @@ default. The clause left the wire with the side-maps (ch. 4.6 (p), WF index).
 | `name` | string | declared name |
 | `kind` | `adjectival` \| `possessive` \| `nominal` | presentation tag (below) |
 | `timeline` | TimelineFacet? | absent = not time-dependent |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the characteristic's names in the vocabularies (ch. 2.12) |
 
 v0 values: `BIJVOEGLIJK` → `adjectival`, `BEZITTELIJK` → `possessive`,
@@ -1512,6 +1518,7 @@ relation-typed core of the model.
 | `name` | string | declared name |
 | `reciprocal` | boolean | v0 `wederkerig`: one role relating a type to itself |
 | `roles` | list of Role | declaration order |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the fact type's names in the vocabularies (ch. 2.12) |
 
 A **Role**:
@@ -1522,6 +1529,7 @@ A **Role**:
 | `objectType` | string | filler object-type name (resolves per WF-003) |
 | `plural` | string? | declared plural; absent = none |
 | `many` | boolean | cardinality: to-many (`meerdere`) vs to-one (`één`) |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the role's names in the vocabularies (ch. 2.12) |
 
 v0 names: `Feittype`, `Rol`. The v0 model layer is already symbolic — no
@@ -2013,6 +2021,7 @@ A top-level named value.
 | `name` | string | declared name |
 | `datatype` | Datatype | inline or via domain reference |
 | `timeline` | TimelineFacet? | present = time-dependent (value is a per-period timeline); the facet has no `timelineName` |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the parameter's names in the vocabularies (ch. 2.12) |
 
 v0 name: `Parameter`. The *values* of parameters (validity-versioned
@@ -2217,6 +2226,150 @@ none. Not specified here, and deliberately: a service or an explanation per
 vocabulary, a status per designation (preferred, deprecated), a vocabulary
 per language, and an output that strips the annotations from a source.
 
+A declaration that a producer made itself carries its **origin** in the
+field `origin`, just before `designations` (ch. 2.13): the same side-table
+discipline, on the same declarations. The designations of such a
+declaration are judged by the rules above as a written one's are.
+
+### 2.13 Origin
+
+A producer that lowers a dialect form can make declarations of its own,
+under names no source declares, from a declaration the source does declare.
+The RegelSpraak frontend does so for five forms of its dialect
+(`frontends/regelspraak/grammar/DIVERGENCES.md`, "Gegenereerde elementen").
+Such a declaration is a declaration like every other: references resolve to
+it, it carries designations, and every rule of this document applies to it.
+What it has in addition is an **origin**: the form that made it and the
+declaration it comes from. A consumer that shows a document — a list of the
+attributes a rule set declares, a check on the names of a vocabulary —
+needs the origin to tell such a declaration from a written one and to point
+to its source, and cannot read it off the name: an author can write the
+same words in a name of his own (the golden `jutterswet-wachtgeld` declares
+a rule `wachtgeld voor kustwachters`, written, beside defaults groups the
+frontend names `<base rule> voor <subtype>`).
+
+The origin is a **side table without semantics**, `layer: core` apart from
+the values of `form`, and the field is an **extension field** under the
+§ Method's discipline: optional, never null, written whole or not at all. A
+declaration carries it in `origin`, on the nodes that carry `designations`
+(ch. 2.12) — an ObjectType, an Attribute, a Characteristic, a FactType, a
+Role, a Parameter, a named form (the six forms of ch. 3 and a defaults group
+of ch. 6.1) and a RuleGroup — written just before `designations`, which
+stays the last field of its node. A producer writes it on a declaration it
+made itself and on no other. An **Origin** is a record without a node
+discriminant:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `form` | string | the form that made the declaration, from the closed set below (WF-121 (a)); `layer: dialect(regelspraak)` |
+| `from` | OriginSource | the declaration it comes from, by name (WF-121 (b) to (d)) |
+
+An **OriginSource** is a reference by name, as every reference of this
+format is (ch. 2.1), and likewise a record without a node discriminant:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | string | the kind of declaration, from the closed set below (WF-121 (a)) |
+| `owner` | string? | the declaration that scopes it: the object type that declares an attribute or a characteristic (not one that inherits it), the fact type of a role, the domain of an enumeration value; absent for every other kind (WF-121 (b)) |
+| `name` | string | its canonical name (ch. 2.1) |
+
+The kinds are the designatable kinds of ch. 2.12 and one more:
+`objectType`, `attribute`, `characteristic`, `factType`, `role`,
+`enumerationValue`, `parameter`, `namedForm` (a form in the one namespace
+of WF-020), `ruleGroup`, and `decisionTable`. A decision table of the
+RegelSpraak dialect is no declaration on the wire: its rows are, each a
+Rule. A `from` of kind `decisionTable` therefore names the table as the
+source names it, and no declaration of the document answers it; with the
+kind `namedForm` it would name a form that does not exist, or another form
+that happens to carry the table's name.
+
+The forms, each `layer: dialect(regelspraak)`:
+
+| `form` | The declarations it makes | `from` |
+|---|---|---|
+| `inputAboveComputation` | for an attribute X marked as one whose value may be given as input: the attributes `opgegeven X` and `berekende X`, the characteristic `afwijkende opgave X`, the rule `afwijking opgave X`, the consistency `controle opgave X` and the defaults group `opgave boven berekening X` | the attribute X (`attribute`) |
+| `exceptionForSubtype` | the defaults group `B voor S` of the blocks written for a subtype S under the base rule B | the form B (`namedForm`) |
+| `decisionTableRow` | each rule the rows of a decision table become | the table (`decisionTable`) |
+| `stepsAfterSet` | the attribute and the rule `<member> via <role 1>, … en <role n>` of a fold over a set with to-one steps after it | the attribute the steps reach, on the object type that declares it (`attribute`) |
+| `startPoint` | the anchor attribute `startpunt <timeline>` of a start-point determination (ch. 3.8) | the rule that writes the anchor (`namedForm`) |
+
+v0 has no origin, so neither the record nor its values have a v0 name; the
+RegelSpraak frontend kept the origin in its own model under its own keys
+(`opgave-boven-berekening`, `uitzondering-voor-subtype`, `beslistabelrij`,
+`stappen-na-de-verzameling`, `startpunt`), into which the Drools backend's IR
+loader reads the wire back.
+
+**No semantics.** An origin never resolves anything and decides nothing:
+no executor reads it for evaluation, and a document whose `origin` fields
+are removed gives every executor the same answer (gate 13 holds ref, clingo
+and both Drools branches to that). Every reader reads it structurally; an
+executor refuses a `form` or a `kind` outside its closed set at load, in
+WF-121 (a)'s sentence without its number, as it refuses a context value
+outside WF-098's set, because a reader that keeps the origin cannot hold a
+value the set does not name. What a `from` names — whether it resolves,
+whether it fits its form — is the verifier's alone (WF-121 (b) to (d)).
+
+**One source.** A `from` names one declaration. Two of the names above are
+made of more than one: `B voor S` of the form B and the object type S, and
+`<member> via <role 1>, … en <role n>` of the attribute and a role per
+step. The origin names the first part (B; the attribute), the declaration
+the made one stands in for; the other parts are not on the wire. A list of
+the parts beside `from` would be an additive extension of this record; it
+is not specified here, and no producer writes one.
+
+A `from` may itself name a declaration that carries an origin: the
+attribute `opgegeven X` as the member of a fold with steps, a decision
+table's row as the base rule B of a subtype's group. Following `from` from
+declaration to declaration ends at a written declaration or at a decision
+table; WF-121 (c) refuses a chain that comes back.
+
+Worked example: in the golden `jutterswet-opgave-vormen` the attribute
+`waarde` of `Vondst` is marked, and the decision table `stukprijs van een
+aanspoelsel` has two rows. The attribute `berekende waarde` of `Vondst`
+carries
+
+```json
+"origin": {"form": "inputAboveComputation",
+           "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}
+```
+
+and the rule `stukprijs van een aanspoelsel 1` carries
+
+```json
+"origin": {"form": "decisionTableRow",
+           "from": {"kind": "decisionTable", "name": "stukprijs van een aanspoelsel"}}
+```
+
+The defaults group `waardering`, which the frontend also made but which
+carries the name of the base rule the author wrote, carries no origin, and
+neither does the group `wachtgeld voor kustwachters`, a member of an
+unordered block under the name its author wrote.
+
+- **WF-121** Every origin: (a) its `form` MUST be one of
+  `inputAboveComputation`, `exceptionForSubtype`, `decisionTableRow`,
+  `stepsAfterSet` and `startPoint`, and its `from.kind` one of the ten kinds
+  above, both byte for byte; (b) its `from` MUST carry `owner` exactly when
+  the kind is `attribute`, `characteristic`, `role` or `enumerationValue`,
+  and, unless the kind is `decisionTable`, MUST name a declaration of that
+  kind in the document, under the name identity of ch. 2.1: an object type,
+  a fact type, a parameter or a rule group of that name; an attribute or a
+  characteristic that the object type `owner` declares itself; a role of the
+  fact type `owner`; a value of the enumeration domain `owner`; a named form
+  of that name (WF-020); (c) its `from` MUST NOT name its own declaration,
+  and following `from` through the declarations that carry an origin MUST
+  NOT come back to a declaration already passed; (d) the kind of its `from`
+  MUST be the one its form names in the table above: `attribute` under
+  `inputAboveComputation` and `stepsAfterSet`, `namedForm` under
+  `exceptionForSubtype` and `startPoint`, `decisionTable` under
+  `decisionTableRow`. Which declarations a form makes, and on which node, is
+  the dialect's and is not checked: a document can carry an origin on a
+  declaration whose name or node another form would make.
+
+**Delta (v1 addition, `CONSTRUCTS.md`):** the origin enters as an extension
+field (card `herkomst-op-de-draad`, 2026-10-15); the RegelSpraak frontend
+writes it on every declaration it made itself, and every other producer
+writes none.
+
 ---
 
 ## 3. The rule layer
@@ -2252,7 +2405,8 @@ ObjectCreation, FactCreation, Consistency, and Uniqueness all share one
 shape: `{node, name, versions}` with `versions` ≥ 1 in declaration order.
 The `name` sits on the form (and a rule's `statuteAnnotations`, ch. 3.1,
 and the form's `designations`, ch. 2.12, its names in the vocabularies,
-written last and on the form, one list for all its versions);
+written last and on the form, one list for all its versions, with its
+`origin`, ch. 2.13, just before them);
 everything else — including `validity` and `condition` — sits on each
 version, so a version is the form's full body. A version record carries no
 `node` of its own: it is part of its form. The field tables in ch. 3.2–3.6
@@ -2278,6 +2432,7 @@ One node covers computing an attribute and attributing a characteristic
 | `name` | string | rule identity |
 | `versions` | list of RuleVersion, ≥ 1 | in declaration order |
 | `statuteAnnotations` | list of string? | **extension field** (v0 wire `bronAnnotaties`): the `// Bron:` statute annotations written directly above the rule header, the text after `Bron:` trimmed, in source order — the PLAN §4 traceability thread from a rule back to its wetsartikel. Provenance only, never evaluation-relevant: executors ignore it. When present the list is non-empty with non-empty trimmed entries; a rule without annotations omits the field — written whole or not at all (WF-082). It sits on the form, one list for all its versions (landed at L4, delta B19). *History:* v0 flattened versions into separate `ResolvedRegel` entries, so the v0 wire carried the field per flattened entry, stamped from the one comment block above the shared rule header |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the rule's names in the vocabularies (ch. 2.12), on the form |
 
 **RuleVersion**:
@@ -3005,6 +3160,7 @@ L5, in the list `ruleGroups` under `rules` (ch. 2).
 | `recursive` | boolean | the §9.10 marker |
 | `members` | list of rule names | written order |
 | `source` | source reference? | the group's source text and, where the producer reports one, its source line — `snippet` and `line` of the structured source reference (ch. 4). Since L5; the v0 fields `bron` and `line` went into it (`line` only beside a `bron` string, and dropped where `bron` was null) |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the group's names in the vocabularies (ch. 2.12) |
 
 Members are ordinary rules; a non-recursive group adds no execution
@@ -8967,6 +9123,7 @@ then the wire kept the v0 names each row gives.
 | `defaults` | non-empty list of Default | **descending** priority: highest first |
 | `unordered` | boolean? | v0 `ongeordend`: declared-unordered (ch. 7.2 there) — multiple defaults groups on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds). An absent `unordered` is `false`: the group is not declared unordered |
 | `source`, `validity` | — | v0 `bron` and `geldigheid`; `source` is the source reference of ch. 4 |
+| `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the group's names in the vocabularies (ch. 2.12) — a defaults group is a named form, as the rule it is lifted from |
 
 **Default**: `decision` (v0 `besluit`, boolean? — characteristic
@@ -9291,6 +9448,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-118 | the effective names of one scope are unique per vocabulary (ci) — the designation where there is one, else the canonical name — so that the way back from a name in a vocabulary to the declaration is a function (ch. 2.12). The scopes are the canonical ones: **(a)** the object types, the fact types, the parameters, the named forms (WF-020) and the rule groups, each on its own; **(b)** the attributes of an object type with the ones it inherits, and likewise its characteristics; **(c)** the roles of a fact type; **(d)** the values of an enumeration domain. A collision of two canonical names is WF-001's, WF-002's, WF-020's or WF-105's | gate 3 | `jutterswet-vocabulaires` | `wf118-effectieve-naam-objecttypen` (a) + `wf118-effectieve-naam-attributen` (b) + `wf118-effectieve-naam-rollen` (c) + `wf118-effectieve-naam-waarden` (d) |
 | WF-119 | the default vocabulary is complete (ch. 2.12): every object type, attribute, characteristic, fact type, role, parameter, named form and rule group, and every value of every enumeration domain, carries a designation in it | gate 3 | `jutterswet-vocabulaires` (every declaration named in `cgm`) | `wf119-standaardvocabulaire-onvolledig` |
 | WF-120 | a redundant designation — in a vocabulary that is not the default, spelling its declaration's canonical name byte for byte — is admitted with a warning: some diagnostic's `message` contains it verbatim (ch. 2.12), the accounting of WF-113 (b) and its weakness | gate 3 | `jutterswet-vocabulaires` (the `handboek` designation `naam` of the attribute `naam`, and the frontend's warning that quotes it) | `wf120-overbodige-benaming-zonder-melding` |
+| WF-121 | every origin (ch. 2.13): **(a)** its `form` is one of the five forms and its `from.kind` one of the ten kinds, byte for byte (an executor refuses either outside its set at load, in this sentence without its number); **(b)** its `from` carries `owner` exactly for an attribute, a characteristic, a role or an enumeration value, and, unless its kind is `decisionTable`, names a declaration of that kind in the document (ci): an attribute or a characteristic declared by the object type `owner` itself, a role of the fact type `owner`, a value of the enumeration domain `owner`, a named form in WF-020's namespace, an object type, fact type, parameter or rule group of that name; **(c)** its `from` does not name its own declaration, and following `from` through the declarations that carry an origin never comes back; **(d)** the kind of its `from` is the one its form names: `attribute` under `inputAboveComputation` and `stepsAfterSet`, `namedForm` under `exceptionForSubtype` and `startPoint`, `decisionTable` under `decisionTableRow`. Which declarations a form makes is the dialect's and is not checked | gate 3 | `jutterswet-opgave-vormen` (`inputAboveComputation` on three attributes, and two rows of a decision table, `decisionTableRow` from a `decisionTable`), `jutterswet-meldtermijn-strandjutter` (`exceptionForSubtype` from a `namedForm`), `jutterswet-zwaarste-weging` (`stepsAfterSet`, three members and their rules); `inputAboveComputation` also in `jutterswet-opgave-bedrag`, `-opgave-boven-berekening`, `-opgave-datum`, `-opgave-subtype` and `jutterswet-sluitdag-gemeld`, `decisionTableRow` in `jutterswet-rubriektabel-rgs`. No golden carries `startPoint`: no golden source writes a start-point determination; the frontend suite carries it (`HerkomstOpDeDraadTest`) | `wf121-herkomst-vorm-onbekend` (a) + `wf121-herkomst-bron-onbekend` (b) + `wf121-herkomst-zichzelf` (c, its own declaration) + `wf121-herkomst-kring` (c, a cycle of two) + `wf121-herkomst-soort-past-niet` (d) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
