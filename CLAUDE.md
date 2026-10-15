@@ -385,7 +385,13 @@ reviewer's duty on a machine that has catala. Current gates:
     survivor list); floors `EXPECTED_MIN_VOCABULAIRE_GOLDENS=1`,
     `EXPECTED_MIN_VOCABULAIRE_GESTRIPT=46` and
     `EXPECTED_MIN_VOCABULAIRE_GEROTEERD=36` (measured 2026-09-27); a golden
-    without vocabularies is not probed. CI
+    without vocabularies is not probed. Since 2026-10-15 (card
+    `herkomst-op-de-draad`) an ORIGIN leg beside it: every golden with an
+    `origin` (IR-SPEC ch. 2.13) and case files is replayed with the field
+    STRIPPED, and ref, clingo and both Drools branches must reproduce the
+    untouched outcome (no survivor list); floors
+    `EXPECTED_MIN_HERKOMST_GOLDENS=9` and `EXPECTED_MIN_HERKOMST_GESTRIPT=71`
+    (measured 2026-10-15). CI
     leg unconditional and blocking.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,

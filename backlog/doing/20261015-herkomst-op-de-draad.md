@@ -76,7 +76,8 @@ gegenereerde elementen buiten `corpus/golden/anchor/`,
 `frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/RegelSpraakModel.java`,
 `frontends/regelspraak/grammar/DIVERGENCES.md`,
 `backends/drools/src/main/java/dev/uchar/regelspraak/loader/IrLoader.java`, de drie nieuwe testklassen,
-`toka/casus/ir.json`, `toka/cases/*/ir.json`, `toka/README.md`, `scripts/check-reftype-derivation.sh`, deze kaart.
+`toka/casus/ir.json`, `toka/cases/*/ir.json`, `toka/README.md`, `scripts/check-reftype-derivation.sh`, de
+beschrijving van gate 13 in `CLAUDE.md`, deze kaart.
 
 Out of scope: de delen van een samengestelde naam (`B voor S`, `<lid> via <rollen>`) op de draad: één `from` drukt
 ze niet uit, een latere lijst `parts` is additief en wordt in de spec als niet gebouwd genoemd; `spec/CONSTRUCTS.md`

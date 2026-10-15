@@ -223,6 +223,21 @@
 # nothing to read (and gates 5 and 6 are red on the untouched golden under that mutant). Unlike the unit twist,
 # a divergence here has no survivor list: no reading of the side table is a legitimate one, so every
 # divergence fails. A golden without vocabularies is not probed; no golden with them is a failure.
+#
+# --- the origin leg (IR-SPEC ch. 2.13) -------------------------------------------------------
+# The same question for the origin side table: `origin` on a declaration a producer made itself
+# carries no semantics either. Every golden that carries an origin and has case files is replayed
+# once more, STRIPPED: every `origin` taken out, the document an executor that reads nothing of the
+# field sees anyway, with the executors and the comparison of the vocabulary leg (ref and clingo
+# exit 0 against the pinned expectations; the two Drools branches print their own untouched status
+# line). A reader of the field in ref or clingo makes gates 5 and 6 red on the untouched golden and
+# leaves the stripped copy green, as it must, since it has nothing to read; a reader in the Drools
+# loader or transpilers is caught here, by the line comparison. Measured 2026-10-15 (card
+# herkomst-op-de-draad) by mutation: the Drools loader made to skip a rule that carries an origin of
+# the form decisionTableRow, an executor that reads the field, turns the leg red on the goldens with
+# such rows on both branches; without it the leg is green. No survivor list: no reading of the
+# field is a legitimate one. A golden without an origin is not probed; no golden with one is a
+# failure.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -295,12 +310,13 @@ JAR=$(ensure_drools_jar) || { echo 'check-reftype-derivation: FAIL (no fresh Dro
 
 TWISTER=$(mktemp) || exit 2
 VTWISTER=$(mktemp) || exit 2
+HSTRIPPER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 ONGEDEKT=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$VTWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
+trap 'rm -rf "$TWISTER" "$VTWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -707,6 +723,62 @@ schrijf(rot, os.path.join(doel, "geroteerd.json"))
 print("1 %d %d %d" % (gestript, verwisseld, geroteerd))
 PY
 
+cat > "$HSTRIPPER" <<'PY'
+import json, os, sys
+
+# The one copy of the origin leg (see the script header): every `origin` taken out of the nodes that
+# may carry one, the nodes that may carry `designations` (IR-SPEC ch. 2.13). Numbers keep their
+# lexemes, so the copy differs from the golden in the field and in nothing else.
+
+
+class RuweNum:
+    __slots__ = ("raw",)
+
+    def __init__(self, s):
+        self.raw = s
+
+
+def schrijf(o, pad):
+    def stuk(o):
+        if isinstance(o, RuweNum):
+            return o.raw
+        if isinstance(o, dict):
+            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + stuk(v) for k, v in o.items()) + "}"
+        if isinstance(o, list):
+            return "[" + ",".join(stuk(v) for v in o) + "]"
+        return json.dumps(o, ensure_ascii=False)
+    with open(pad, "w", encoding="utf-8") as fh:
+        fh.write(stuk(o))
+
+
+def dragers(doc):
+    m, r = doc["model"], doc["rules"]
+    for ot in m.get("objectTypes", []):
+        yield ot
+        yield from ot.get("attributes", [])
+        yield from ot.get("characteristics", [])
+    for ft in m.get("factTypes", []):
+        yield ft
+        yield from ft.get("roles", [])
+    yield from m.get("parameters", [])
+    for lijst in ("rules", "objectCreations", "allocations", "consistencies", "uniquenesses",
+                  "factCreations", "prioritizedDefaults", "ruleGroups"):
+        yield from r.get(lijst, [])
+
+
+bron, doel = sys.argv[1], sys.argv[2]
+with open(bron, encoding="utf-8") as fh:
+    doc = json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
+gestript = 0
+for n in dragers(doc):
+    if n.pop("origin", None) is not None:
+        gestript += 1
+if gestript:
+    os.makedirs(os.path.dirname(doel), exist_ok=True)
+    schrijf(doc, doel)
+print(gestript)
+PY
+
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
 # reason carries spaces, so splitting $SURVIVORS on whitespace would shred every entry the
 # moment the list stops being empty.
@@ -746,6 +818,12 @@ EXPECTED_MIN_TWISTS=38      # 2026-09-24: measured 38 annotations twisted over 2
 EXPECTED_MIN_VOCABULAIRE_GOLDENS=1     # 2026-09-27: measured 1 golden with vocabularies and case files
 EXPECTED_MIN_VOCABULAIRE_GESTRIPT=46   # 2026-09-27: measured 46 designations stripped (23 declarations x 2 vocabularies)
 EXPECTED_MIN_VOCABULAIRE_GEROTEERD=36  # 2026-09-27: measured 36 designations rotated to another declaration
+
+# The origin leg's floors (see the script header), measured 2026-10-15 at the card herkomst-op-de-draad: a
+# golden count, so a leg that stops finding the goldens it probes fails above zero, and the origins the
+# stripped copies lose, so a stripper that quietly takes out less fails too.
+EXPECTED_MIN_HERKOMST_GOLDENS=9        # 2026-10-15: measured 9 goldens with an origin and case files
+EXPECTED_MIN_HERKOMST_GESTRIPT=71      # 2026-10-15: measured 71 origins stripped over those 9
 
 status=0
 n_goldens=0
@@ -913,6 +991,62 @@ if [ "$n_vgeroteerd" -lt "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" ]; then
     exit 1
 fi
 
+# --- the origin leg (see the script header) --------------------------------------------------------
+n_hgoldens=0
+n_hgestript=0
+n_hreplays=0
+while IFS= read -r ir; do
+    dir=$(dirname "$ir")
+    naam=${dir#corpus/golden/}
+    hir="$WORK/herkomst/$naam/gestript.json"
+    gestript=$(python3 "$HSTRIPPER" "$ir" "$hir") || { echo "FAIL: the origin stripper could not read $ir" >&2; exit 2; }
+    [ "$gestript" -gt 0 ] || continue          # no origin: nothing to probe here
+    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+    [ -s "$CASES" ] || continue                # no case file: not replayable
+    n_hgoldens=$((n_hgoldens + 1))
+    n_hgestript=$((n_hgestript + gestript))
+    while IFS= read -r case; do
+        n_hreplays=$((n_hreplays + 2))
+        if ! rapport=$("$RUNNER_REF" "$hir" "$case" 2>&1); then
+            printf 'FAIL: %s — ref answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$rapport" >&2
+            status=1
+        fi
+        if ! rapport=$("$RUNNER_CLINGO" "$hir" "$case" 2>&1); then
+            printf 'FAIL: %s — clingo answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$rapport" >&2
+            status=1
+        fi
+    done < "$CASES"
+    set --
+    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+    n_hreplays=$((n_hreplays + 2))
+    basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+    h=$(java -jar "$JAR" "$hir" "$@" 2>/dev/null | tail -1)
+    if [ "$h" != "$basis" ]; then
+        printf 'FAIL: %s — Drools answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
+            "$naam" "$basis" "$h" >&2
+        status=1
+    fi
+    dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    dh=$(java -jar "$JAR" --drl "$hir" "$@" 2>/dev/null | tail -1)
+    if [ "$dh" != "$dbasis" ]; then
+        printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
+            "$naam" "$dbasis" "$dh" >&2
+        status=1
+    fi
+done < "$LIST"
+if [ "$n_hgoldens" -eq 0 ]; then
+    echo 'FAIL: no golden carries an origin — the origin leg probed nothing (an empty set is never green)' >&2
+    exit 1
+fi
+if [ "$n_hgoldens" -lt "$EXPECTED_MIN_HERKOMST_GOLDENS" ]; then
+    echo "FAIL: the origin leg probed $n_hgoldens golden(s), but EXPECTED_MIN_HERKOMST_GOLDENS pins at least $EXPECTED_MIN_HERKOMST_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+if [ "$n_hgestript" -lt "$EXPECTED_MIN_HERKOMST_GESTRIPT" ]; then
+    echo "FAIL: the origin leg stripped $n_hgestript origin(s), but EXPECTED_MIN_HERKOMST_GESTRIPT pins at least $EXPECTED_MIN_HERKOMST_GESTRIPT — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
 # which is exactly how a list stops describing the system it pins.
@@ -996,6 +1130,8 @@ if [ "$status" -eq 0 ]; then
     printf '  vocabulary leg: %s golden(s) with vocabularies, floor %s; %s designations stripped (floor %s), %s exchanged, %s rotated (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_vgoldens" "$EXPECTED_MIN_VOCABULAIRE_GOLDENS" "$n_vgestript" "$EXPECTED_MIN_VOCABULAIRE_GESTRIPT" \
         "$n_vverwisseld" "$n_vgeroteerd" "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" "$n_vreplays"
+    printf '  origin leg: %s golden(s) with origins, floor %s; %s origins stripped (floor %s); %s executor replays reproduce the untouched outcome\n' \
+        "$n_hgoldens" "$EXPECTED_MIN_HERKOMST_GOLDENS" "$n_hgestript" "$EXPECTED_MIN_HERKOMST_GESTRIPT" "$n_hreplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
         "$n_vrijgesteld" "$n_zonderzusje" "$n_vierde" "$n_onbekend"
