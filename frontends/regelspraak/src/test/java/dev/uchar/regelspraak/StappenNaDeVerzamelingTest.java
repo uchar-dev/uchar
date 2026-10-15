@@ -149,8 +149,9 @@ class StappenNaDeVerzamelingTest {
         assertEquals(zonderBron(IrEmitter.emit(schoon(hand))), zonderBron(gelowerd));
     }
 
-    /** The emitted document without its source anchors and with the rules in name order: what the lowering and the
-     *  hand-written document must agree on is the model and every rule, not where the text stood. */
+    /** The emitted document without its source anchors and its origins, and with the rules in name order: what the
+     *  lowering and the hand-written document must agree on is the model and every rule, not where the text stood or
+     *  that the frontend made the member (IR-SPEC ch. 2.13). */
     private static String zonderBron(String json) {
         Object d = Verslag.json(json);
         return String.valueOf(normaliseer(d));
@@ -161,7 +162,8 @@ class StappenNaDeVerzamelingTest {
         if (x instanceof java.util.Map<?, ?> map) {
             java.util.Map<String, Object> uit = new java.util.TreeMap<>();
             for (var e : ((java.util.Map<String, Object>) map).entrySet())
-                if (!e.getKey().equals("source") && !e.getKey().equals("statuteAnnotations"))
+                if (!e.getKey().equals("source") && !e.getKey().equals("statuteAnnotations")
+                        && !e.getKey().equals("origin"))
                     uit.put(e.getKey(), normaliseer(e.getValue()));
             return uit;
         }

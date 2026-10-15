@@ -88,9 +88,21 @@ class GegenereerdeNamenWitnessTest {
         manifestIsGedekt(t);
     }
 
-    @Test void een_model_uit_de_wire_heeft_geen_gegenereerde_elementen() throws Exception {
-        // the frontend's table is no wire datum: the loader leaves it empty, also where the frontend wrote the document
+    @Test void een_model_uit_de_wire_heeft_de_gegenereerde_elementen_van_de_frontend() throws Exception {
+        // the frontend writes its table on the wire as 'origin' (IR-SPEC ch. 2.13) and the loader reads it back; that
+        // it equals the frontend's on every rgs golden is the route suite's (HerkomstBronrouteTest)
         RegelSpraakModel m = analyse("jutterswet-opgave-subtype").model();
-        assertEquals(Map.of(), m.gegenereerd);
+        List<String> uit = new ArrayList<>();
+        for (Map.Entry<Benoembaar, GegenereerdUit> e : m.gegenereerd.entrySet())
+            uit.add(element(e.getKey()) + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel()
+                    + ")");
+        String bron = " <- ATTRIBUUT Vondst.meldingsdatum (opgave-boven-berekening)";
+        assertEquals(List.of(
+                "ATTRIBUUT Vondst.opgegeven meldingsdatum" + bron,
+                "ATTRIBUUT Vondst.berekende meldingsdatum" + bron,
+                "KENMERK Vondst.afwijkende opgave meldingsdatum" + bron,
+                "VORM afwijking opgave meldingsdatum" + bron,
+                "VORM controle opgave meldingsdatum" + bron,
+                "VORM opgave boven berekening meldingsdatum" + bron), uit);
     }
 }

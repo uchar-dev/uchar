@@ -212,7 +212,8 @@ class OpgaveMarkeringTest {
                 "consequence": {"node": "AttributeReference", "attribute": "berekende waarde", "subjectType": "Vondst",
                                 "source": {"snippet": "zijn berekende waarde"}},
                 "source": {"snippet": "berekende waarde"}}],
-             "validity": {"node": "Validity"}}""");
+             "validity": {"node": "Validity"},
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}""");
         assertTrue(c.contains(groep), () -> "de groep staat niet zo op de wire:\n" + ir);
         String regel = compact("""
             {"node": "Rule", "name": "afwijking opgave waarde", "versions": [
@@ -237,7 +238,8 @@ class OpgaveMarkeringTest {
                               "source": {"snippet": "zijn berekende waarde"}},
                     "source": {"snippet": "zijn opgegeven waarde is ongelijk aan zijn berekende waarde"}}],
                  "source": {"snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde."}},
-               "initialisation": false}]}""");
+               "initialisation": false}],
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}""");
         assertTrue(c.contains(regel), () -> "de afwijkingsregel staat niet zo op de wire:\n" + ir);
         String consistentie = compact("""
             {"node": "Consistency", "name": "controle opgave waarde", "versions": [
@@ -245,14 +247,18 @@ class OpgaveMarkeringTest {
                "assertion": {"node": "CharacteristicCheck", "characteristic": "afwijkende opgave waarde",
                              "negated": true, "source": {"snippet": "hij heeft geen afwijkende opgave waarde"}},
                "validity": {"node": "Validity"},
-               "source": {"snippet": "de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden)", "line": 3}}]}""");
+               "source": {"snippet": "de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden)", "line": 3}}],
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}""");
         assertTrue(c.contains(consistentie), () -> "de consistentie staat niet zo op de wire:\n" + ir);
         String leden = compact("""
             {"node": "Attribute", "name": "opgegeven waarde",
-             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"}},
+             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"},
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}},
             {"node": "Attribute", "name": "berekende waarde",
-             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"}}],
-            "characteristics": [{"node": "Characteristic", "name": "afwijkende opgave waarde", "kind": "possessive"}]""");
+             "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"},
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}],
+            "characteristics": [{"node": "Characteristic", "name": "afwijkende opgave waarde", "kind": "possessive",
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}]""");
         assertTrue(c.contains(leden), () -> "de gegenereerde leden staan niet zo op de wire:\n" + ir);
         assertTrue(c.contains(compact("""
             "target": {"node": "AttributeReference", "attribute": "berekende waarde", "subjectType": "Vondst",
@@ -339,9 +345,11 @@ class OpgaveMarkeringTest {
         String c = compact(ir);
         assertTrue(c.contains(compact("""
             {"node": "Attribute", "name": "opgegeven meldingsdatum",
-             "datatype": {"node": "Date", "precision": "day"}},
+             "datatype": {"node": "Date", "precision": "day"},
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "meldingsdatum"}}},
             {"node": "Attribute", "name": "berekende meldingsdatum",
-             "datatype": {"node": "Date", "precision": "day"}}""")),
+             "datatype": {"node": "Date", "precision": "day"},
+             "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "meldingsdatum"}}}""")),
                 () -> "de gegenereerde attributen dragen het datumtype niet:\n" + ir);
         assertTrue(c.contains(compact("""
             {"node": "Default",
