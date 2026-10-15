@@ -3311,3 +3311,56 @@ with a source of a fraction are refused with one ERROR per form; the 56 with a
 whole form write the same IR byte for byte and play unchanged. Every rgs golden,
 the sources of the parity zone and the scenario goldens re-emit byte-identically
 (gates 10, 11 and 16); no source in the corpus writes a fractional duration.
+
+---
+
+## Gegenereerde elementen — what the frontend names itself, and from what
+
+Not a grammar divergence: a side table of the model that records which
+elements the frontend made under a name no declaration in the source carries,
+and from which declared element (card `gegenereerde-elementen-dragen-herkomst`,
+2026-10-15). A consumer that shows the model — a workbench that lists
+`berekende maxdatum` beside the attributes the author declared — must be able
+to tell such an element apart and point to its source, and may not do so by the
+name: an author writes "berekende" or " voor " in a name of his own (the golden
+`jutterswet-wachtgeld` has the rule `wachtgeld voor kustwachters`, an unordered
+member, beside groups the frontend names `<base> voor <subtype>` elsewhere).
+
+**The table.** `RegelSpraakModel.gegenereerd` maps an element of
+`benoembaar()` (kind, owner, name, spelled as that list spells it) to
+`GegenereerdUit(bron, vorm)`: the declared element it comes from and a
+`Herkomstvorm`, each with a fixed key. Read it through
+`RegelSpraakModel.gegenereerdUit`, under the name identity of IR-SPEC ch. 2.1.
+
+| Key | Elements | Source |
+|---|---|---|
+| `opgave-boven-berekening` | the attributes `opgegeven X` and `berekende X`, the characteristic `afwijkende opgave X`, the forms `afwijking opgave X`, `controle opgave X` and `opgave boven berekening X` (§7) | the marked attribute X of T |
+| `uitzondering-voor-subtype` | the group `B voor S` of the blocks written for a subtype S under base rule B (§4, the inheritance line) | the form B |
+| `beslistabelrij` | each rule a decision table's rows become, `<table> <row>` and `<table> <row> (<k>)` | the table, named as a form: the table is no element of the model, its rows are |
+| `stappen-na-de-verzameling` | the member and the rule `<lid> via <rol 1>, … en <rol n>` of a fold over a set with to-one steps after it | the member the steps reach, as declared (on a supertype of the type reached where that declares it) |
+| `startpunt` | the anchor `startpunt <tijdlijn>` of a start point determination | the rule that writes it (the first, where two do) |
+
+An element whose name the author wrote has no entry, also where the frontend
+made the element: a defaults group carries the name of its base rule, and each
+member of an `Uitzonderingen ongeordend:` block without a carrier becomes a
+group under the member's own name; an anchor the author declared himself is his.
+The table is filled once, at the end of the rule checker, for the elements still
+in the model: a withdrawn marker's members and a refused form get no entry.
+
+**What it is not.** No semantics: no transpiler reads it, the emitter writes
+nothing of it, and a model the IR loader reads leaves it empty, so every IR
+document and every case file is byte-identical with and without it (gates 10,
+11 and 16). A version of a form with several versions is no element (the
+element is the form; the model entry is `<form> #<k>`), and an effective
+defaults stack is no element either: both are names of the Drools backend's
+coverage manifest, and its TMS transpiler gives their source the same way
+(`TmsTranspiler.gegenereerd()`: a stack `defaults A:<type>.<member>` or
+`defaults K:<type>.<member>` from the member as declared, key `defaultsstapel`;
+a version from its form, key `versie`).
+
+Not covered: the names the Drools backend gives the rules inside a form
+(`<form>: …`), which the manifest and the trace do not show, and the names of
+the fixpoint that are no form (the key of a defaults conflict, `<type>.<member>`
+with `/<i>` per level below the root, and the relation named by a second
+filling). Witnesses: `GegenereerdUitTest` (frontend) and
+`GegenereerdeNamenWitnessTest` (backend).

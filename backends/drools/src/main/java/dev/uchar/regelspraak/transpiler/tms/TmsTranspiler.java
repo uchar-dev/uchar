@@ -277,6 +277,8 @@ public final class TmsTranspiler {
     /** The rules of the model that belong to no form of the document ({@link #vormVan}). */
     private final Set<String> regelsZonderVorm = new LinkedHashSet<>();
     private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
+    /** The manifest names that name no declaration, with the element each comes from ({@link #gegenereerd}). */
+    private final Map<String, RegelSpraakModel.GegenereerdUit> gegenereerd = new LinkedHashMap<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
@@ -360,6 +362,17 @@ public final class TmsTranspiler {
 
     /** The coverage manifest: one verdict per form, the rules in document order, then every other family. */
     public List<Dekking> dekking() { return dekking; }
+
+    /**
+     * The names of the manifest ({@link #dekking}) that name no declaration of the document, each with the declared
+     * element it comes from, in the order of the manifest: an effective defaults stack ({@code defaults A:<type>.<member>},
+     * {@code defaults K:<type>.<member>}) from the member it decides, as declared on its owner's chain; a version of a
+     * form with several ({@code <form> #<k>}) from that form. Every other name of the manifest is the name of a form of
+     * the model. A side table: the lowering reads none of it.
+     */
+    public Map<String, RegelSpraakModel.GegenereerdUit> gegenereerd() {
+        return java.util.Collections.unmodifiableMap(gegenereerd);
+    }
 
     /**
      * The form of the document that rule {@code regelnaam} of the model belongs to, by the name the manifest gives it
@@ -785,7 +798,11 @@ public final class TmsTranspiler {
         for (ResolvedUniciteitUnie u : model.uniciteitUnies)
             regels.addAll(meet("uniciteit-unie", naamOf(u.naam()), () -> uniciteitUnieRegels(u)));
         if (samenstelling != null) weiger("defaults", "effectieve stapels", samenstelling);
-        for (Stapels.Stapel st : effectief) regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
+        for (Stapels.Stapel st : effectief) {
+            gegenereerd.put(stapelnaam(st), new RegelSpraakModel.GegenereerdUit(stapeldoel(st),
+                    RegelSpraakModel.Herkomstvorm.DEFAULTSSTAPEL));
+            regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
+        }
         regels.addAll(verschilregels());
         // a StartPointDetermination is a declaration that fires nothing: it says which member anchors a grid with a
         // variable start (RUNTIME-SEMANTICS ch. 3.2), and the reference interpreter faults only where a bucket of such
@@ -834,6 +851,10 @@ public final class TmsTranspiler {
     /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
     private List<Regelplan> meet(String soort, String naam, Supplier<List<Regelplan>> bouw) {
         vorm = naam;
+        String eigen = RegelSpraakModel.vormnaam(naam);
+        if (!eigen.equals(naam))
+            gegenereerd.put(naam, new RegelSpraakModel.GegenereerdUit(RegelSpraakModel.Benoembaar.vorm(eigen),
+                    RegelSpraakModel.Herkomstvorm.VERSIE));
         try {
             List<Regelplan> regels = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
@@ -2382,6 +2403,23 @@ public final class TmsTranspiler {
     private static String stapelnaam(Stapels.Stapel st) {
         PrioritizedDefaults l0 = st.leden().get(0);
         return "defaults " + (l0.isKenmerk() ? "K:" : "A:") + st.eigenaar().naam + "." + l0.doel();
+    }
+
+    /** The member a stack decides, as declared: on the type of its owner's chain that declares it, in that type's
+     *  spelling, the way the model names it ({@link RegelSpraakModel#benoembaar}). */
+    private static RegelSpraakModel.Benoembaar stapeldoel(Stapels.Stapel st) {
+        PrioritizedDefaults l0 = st.leden().get(0);
+        for (Objecttype t : st.eigenaar().keten()) {
+            if (l0.isKenmerk()) {
+                for (String k : t.kenmerken)
+                    if (Namen.norm(k).equals(Namen.norm(l0.doel()))) return RegelSpraakModel.Benoembaar.kenmerk(t.naam, k);
+            } else {
+                for (String a : t.attributen.keySet())
+                    if (Namen.norm(a).equals(Namen.norm(l0.doel()))) return RegelSpraakModel.Benoembaar.attribuut(t.naam, a);
+            }
+        }
+        throw new IllegalStateException("de stapel " + stapelnaam(st) + " beslist een lid dat de keten van "
+                + st.eigenaar().naam + " niet declareert");
     }
 
     /**

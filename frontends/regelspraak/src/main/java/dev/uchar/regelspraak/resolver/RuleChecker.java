@@ -74,6 +74,14 @@ final class RuleChecker {
      *  about the group can stand at the block that made it. */
     private final Map<PrioritizedDefaults, Herkomst> pdHerkomst = new java.util.IdentityHashMap<>();
     private record Herkomst(int line, String kop) {}
+    /** The groups {@link #subtypeGroep} made, each with the base rule it was made under: the name and the base. */
+    private final List<String[]> subtypeGroepen = new ArrayList<>();
+    /** The anchor members {@link #startpuntAnkers} declared, by {@link #ankersleutel}: an anchor of a name the author
+     *  declared himself is not in here. */
+    private final java.util.Set<String> gegenereerdeAnkers = new java.util.HashSet<>();
+    /** Per generated anchor, by {@link #ankersleutel}, its type, its name and the form name of the first rule that
+     *  writes it ({@link #startpunt}). */
+    private final Map<String, String[]> ankerRegels = new LinkedHashMap<>();
 
     /** The main parse's token stream, kept so the §Bron statuutannotaties on the HIDDEN channel
      *  (the {@code // Bron: …} comments) can be gathered directly above each rule. Null when the
@@ -128,6 +136,87 @@ final class RuleChecker {
         keurConstanten();           // a constant the wire has no node for ("hij" as a value)
         keurVormnamen(doc);         // WF-020, over the named forms as the emitter writes them
         keurAfhankelijkheidskringen(doc);   // WF-045 and WF-051, over the document the emitter writes
+        gegenereerdeElementen();    // last: only the elements that are still in the model get an origin
+    }
+
+    /**
+     * The origin of every element the passes above made under a name of their own ({@link RegelSpraakModel#gegenereerd},
+     * grammar/DIVERGENCES.md, "Gegenereerde elementen"): the members and forms of a lowered opgave marker, the group of
+     * a subtype's own blocks, the rows of a decision table, the member and rule of a fold with steps after the set, and
+     * a start point's anchor. Each element is keyed, and each source spelled, as {@link RegelSpraakModel#benoembaar}
+     * spells it; a decision table, the one source that is no element, keeps its written name. A candidate whose element
+     * a later pass removed again — the members of a withdrawn marker, a row lifted into a defaults tree — is no element
+     * of the model and gets no entry.
+     */
+    private void gegenereerdeElementen() {
+        Map<String, GegenereerdUit> kandidaten = new LinkedHashMap<>();
+        for (Opgave o : opgaven) {
+            GegenereerdUit uit = new GegenereerdUit(Benoembaar.attribuut(o.type().naam, o.attribuut()),
+                    Herkomstvorm.OPGAVE_BOVEN_BEREKENING);
+            kandidaat(kandidaten, Benoembaar.attribuut(o.type().naam, o.opgegeven()), uit);
+            kandidaat(kandidaten, Benoembaar.attribuut(o.type().naam, o.berekende()), uit);
+            kandidaat(kandidaten, Benoembaar.kenmerk(o.type().naam, o.afwijkend()), uit);
+            if (gelowerd.contains(o))
+                for (String vorm : List.of(o.regel(), o.controle(), o.groep()))
+                    kandidaat(kandidaten, Benoembaar.vorm(vorm), uit);
+        }
+        for (String[] g : subtypeGroepen)
+            kandidaat(kandidaten, Benoembaar.vorm(g[0]),
+                    new GegenereerdUit(Benoembaar.vorm(g[1]), Herkomstvorm.UITZONDERING_VOOR_SUBTYPE));
+        for (var t : rijRegels.entrySet()) {
+            GegenereerdUit uit = new GegenereerdUit(Benoembaar.vorm(DefinitionResolver.src(t.getKey().beslistabelNaam())),
+                    Herkomstvorm.BESLISTABELRIJ);
+            for (String rij : t.getValue()) kandidaat(kandidaten, Benoembaar.vorm(rij), uit);
+        }
+        for (ExpressieBouwer.Hulplid h : bouwer.hulpleden()) {
+            GegenereerdUit uit = new GegenereerdUit(Benoembaar.attribuut(attribuutDeclarant(h.doel(), h.lid()).naam,
+                    h.lid()), Herkomstvorm.STAPPEN_NA_DE_VERZAMELING);
+            kandidaat(kandidaten, Benoembaar.attribuut(h.element().naam, h.naam()), uit);
+            kandidaat(kandidaten, Benoembaar.vorm(h.naam()), uit);
+        }
+        for (String[] a : ankerRegels.values())
+            kandidaat(kandidaten, Benoembaar.attribuut(a[0], a[1]),
+                    new GegenereerdUit(Benoembaar.vorm(a[2]), Herkomstvorm.STARTPUNT));
+        List<Benoembaar> alle = model.benoembaar();
+        for (Benoembaar b : alle) {
+            GegenereerdUit uit = kandidaten.get(elementsleutel(b));
+            if (uit == null) continue;
+            if (uit.vorm() == Herkomstvorm.BESLISTABELRIJ) {
+                // a table names no element, and a form of the table's name would be another declaration
+                model.gegenereerd.put(b, uit);
+                continue;
+            }
+            Benoembaar bron = alle.stream().filter(x -> elementsleutel(x).equals(elementsleutel(uit.bron())))
+                    .findFirst().orElse(null);
+            if (bron == null && model.isOk())
+                throw new IllegalStateException("het gegenereerde element " + b + " komt uit " + uit.bron()
+                        + ", en dat is geen element van het model");
+            model.gegenereerd.put(b, bron == null ? uit : new GegenereerdUit(bron, uit.vorm()));
+        }
+    }
+
+    /** Records {@code uit} as the origin of {@code element}. Two different origins for one element are two forms that
+     *  generate one name, which a refusal (WF-020, a member name taken) reports in a model with an error; in a model
+     *  without one they are a fault of the frontend. */
+    private void kandidaat(Map<String, GegenereerdUit> kandidaten, Benoembaar element, GegenereerdUit uit) {
+        GegenereerdUit eerder = kandidaten.putIfAbsent(elementsleutel(element), uit);
+        if (eerder != null && !eerder.equals(uit) && model.isOk())
+            throw new IllegalStateException("het element " + element + " is gegenereerd uit " + eerder + " en uit "
+                    + uit);
+    }
+
+    /** The name identity of an element (IR-SPEC ch. 2.1): its kind, owner and name under the frontend's norm. */
+    private static String elementsleutel(Benoembaar b) {
+        return b.soort() + "\u0000" + (b.eigenaar() == null ? "" : dev.uchar.regelspraak.emit.IrEmitter.norm(b.eigenaar()))
+                + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(b.naam());
+    }
+
+    /** The type on {@code t}'s chain that declares attribute {@code naam}. */
+    private static Objecttype attribuutDeclarant(Objecttype t, String naam) {
+        for (Objecttype k : t.keten())
+            for (String a : k.attributen.keySet())
+                if (a.equalsIgnoreCase(naam)) return k;
+        throw new IllegalStateException("het attribuut '" + naam + "' staat niet in de keten van " + t.naam);
     }
 
     /** What a form of the dependency graph is called in a refusal, by the list it comes from. */
@@ -1595,6 +1684,7 @@ final class RuleChecker {
             for (var s : perSubtype.entrySet()) {
                 PrioritizedDefaults eigen = subtypeGroep(wortel, basisRegel, doel, s.getKey(), s.getValue());
                 model.prioritizedDefaults.add(eigen);
+                subtypeGroepen.add(new String[]{eigen.naam(), wortel});
                 pdHerkomst.put(eigen, new Herkomst(s.getValue().get(0).line, s.getValue().get(0).kop));
             }
             gelift.add(basisRegel);
@@ -4414,8 +4504,13 @@ final class RuleChecker {
             String tijdlijnNaam = RegelSpraakModel.normaliseerTijdlijnNaam(src(sb.tijdlijnNaam()));
             Objecttype subject = model.resolveObjecttype(src(sb.universeelOnderwerp().kaleNaam()));
             if (model.tijdlijnOpNaam(tijdlijnNaam) == null || subject == null) continue;
-            subject.attributen.putIfAbsent("startpunt " + tijdlijnNaam, new Datatype.DatumInDagen());
+            if (subject.attributen.putIfAbsent("startpunt " + tijdlijnNaam, new Datatype.DatumInDagen()) == null)
+                gegenereerdeAnkers.add(ankersleutel(subject, "startpunt " + tijdlijnNaam));
         }
+    }
+
+    private static String ankersleutel(Objecttype subject, String lid) {
+        return subject.naam + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(lid);
     }
 
     /** The type an objectcreatie creates: the noun before its 'met', resolved as a type or as a role it fills. */
@@ -4632,6 +4727,9 @@ final class RuleChecker {
             return;
         }
         subject.attributen.putIfAbsent(lid, new Datatype.DatumInDagen());
+        if (gegenereerdeAnkers.contains(ankersleutel(subject, lid)))
+            ankerRegels.putIfAbsent(ankersleutel(subject, lid),
+                    new String[]{subject.naam, lid, RegelSpraakModel.vormnaam(naam)});
         if (model.startpuntLid(subject, tijdlijnNaam) == null)
             model.resolvedStartpunten.add(new dev.uchar.regelspraak.ir.ResolvedStartpunt(tijdlijnNaam, subject.naam, lid));
         Expr doel = new Expr.AttribuutRef(lid, subject, src(sb.universeelOnderwerp()),

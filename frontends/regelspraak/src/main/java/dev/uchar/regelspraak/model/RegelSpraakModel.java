@@ -67,6 +67,13 @@ public final class RegelSpraakModel {
     public final List<Vocabulaire> vocabulaires = new ArrayList<>();
     /** IR-SPEC ch. 2.12 the designations of every declaration that carries one, each list in written order. */
     public final Map<Benoembaar, List<Benaming>> benamingen = new LinkedHashMap<>();
+    /** Every element of {@link #benoembaar()} the frontend made itself, under a name no declaration in the source
+     *  carries, with the declared element it comes from and the form that made it (grammar/DIVERGENCES.md,
+     *  "Gegenereerde elementen"). A side table without semantics, like {@link #benamingen}: no transpiler reads it and
+     *  the emitter writes nothing of it, so a model the IR loader reads leaves it empty. An element whose name the
+     *  author wrote has no entry, also where the frontend made the element (a defaults group named after its base
+     *  rule). Keyed as {@link #benoembaar()} spells the element; read it through {@link #gegenereerdUit}. */
+    public final Map<Benoembaar, GegenereerdUit> gegenereerd = new LinkedHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
 
     /** A copy of this model that holds every element of every collection (the elements are shared). The scoped IR
@@ -1308,6 +1315,55 @@ public final class RegelSpraakModel {
         public static Benoembaar parameter(String naam) { return new Benoembaar(Soort.PARAMETER, null, naam); }
         public static Benoembaar vorm(String naam) { return new Benoembaar(Soort.VORM, null, naam); }
         public static Benoembaar regelgroep(String naam) { return new Benoembaar(Soort.REGELGROEP, null, naam); }
+    }
+
+    /** The form that makes an element under a name of its own, with a fixed key for consumers. The frontend makes the
+     *  first five ({@link #gegenereerd}); the last two name entries of the Drools backend's coverage manifest. */
+    public enum Herkomstvorm {
+        /** The opgave marker on attribute X (dialect §7): {@code opgegeven X}, {@code berekende X},
+         *  {@code afwijkende opgave X}, {@code afwijking opgave X}, {@code controle opgave X} and
+         *  {@code opgave boven berekening X}, from X. */
+        OPGAVE_BOVEN_BEREKENING("opgave-boven-berekening"),
+        /** The group {@code B voor S} of the blocks written for a subtype S under base rule B (dialect §4, the
+         *  inheritance line), from the form B. */
+        UITZONDERING_VOOR_SUBTYPE("uitzondering-voor-subtype"),
+        /** A row of decision table B, from B, named as a form: the table is no element of the model, its rows are. */
+        BESLISTABELRIJ("beslistabelrij"),
+        /** The member and the rule {@code <lid> via <rol 1>, … en <rol n>} of a fold over a set and to-one steps
+         *  after it, from the member the steps reach, as declared. */
+        STAPPEN_NA_DE_VERZAMELING("stappen-na-de-verzameling"),
+        /** The anchor member {@code startpunt <tijdlijn>} of a start point determination, from the rule that writes
+         *  it. */
+        STARTPUNT("startpunt"),
+        /** An effective defaults stack of the Drools backend, from the member it decides, as declared. */
+        DEFAULTSSTAPEL("defaultsstapel"),
+        /** A version {@code R #k} of a form R with several versions, from R. */
+        VERSIE("versie");
+
+        private final String sleutel;
+
+        Herkomstvorm(String sleutel) { this.sleutel = sleutel; }
+
+        /** The fixed key of this form. */
+        public String sleutel() { return sleutel; }
+    }
+
+    /** Where a generated element comes from: the declared element ({@code bron}) and the form that made it. */
+    public record GegenereerdUit(Benoembaar bron, Herkomstvorm vorm) {
+        public GegenereerdUit {
+            java.util.Objects.requireNonNull(bron, "bron");
+            java.util.Objects.requireNonNull(vorm, "vorm");
+        }
+    }
+
+    /** The origin of {@code element} when the frontend made it ({@link #gegenereerd}), matched on its kind and
+     *  case-insensitively on its owner and name, the name identity of IR-SPEC ch. 2.1; empty for an element whose
+     *  name the author wrote, and for one the model does not have. */
+    public java.util.Optional<GegenereerdUit> gegenereerdUit(Benoembaar element) {
+        if (element == null) return java.util.Optional.empty();
+        for (var e : gegenereerd.entrySet())
+            if (zelfde(e.getKey(), element)) return java.util.Optional.of(e.getValue());
+        return java.util.Optional.empty();
     }
 
     /** The version suffix a model entry of a form with several versions carries ({@code "<naam> #<i>"}). */
