@@ -16,13 +16,9 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
-import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.kie.api.KieBase;
-import org.kie.api.event.rule.AfterMatchFiredEvent;
-import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
 
@@ -82,9 +78,6 @@ public final class CaseRunner {
     /** §9.8 the dagsoort predicates the DRL-text branch declares as globals (name -> predicate). The exec-model
      *  branch wires those predicates straight into its lambdas and needs none, so it passes an empty map. */
     private final Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen;
-    /** The coverage manifest of the analysis, every construct lowered (a build refuses any other): what the scenario
-     *  report's coverage ranges over ({@link #rapport}). */
-    private List<Dekking> dekking = List.of();
     /** The build this runner fires: a branch puts its derivations on the beans only after a fire
      *  ({@link DroolsBackend#zetAfgeleideWaarden}), and that needs the analysis that made them. */
     private DroolsBackend.Build bouw;
@@ -194,7 +187,7 @@ public final class CaseRunner {
         }
         for (int i = 0; i < paden.size(); i++) {
             String naam = paden.get(i).getFileName().toString();
-            Waarneming w = new Waarneming();
+            Waarneming w = new Waarneming(new DroolsBackend.Waarnemer(runner::labelVanBean));
             String fout;
             try {
                 fout = runner.runCase(naam, cases.get(i), w);
@@ -207,15 +200,9 @@ public final class CaseRunner {
                 uit.add(onspeelbaar(paden.get(i), e));
                 continue;
             }
-            List<ScenarioResultaat.Vuring> vuringen = new ArrayList<>();
-            for (Map.Entry<String, Integer> e : w.telling.entrySet())
-                vuringen.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(w.labels.get(e.getKey())), e.getValue()));
-            List<ScenarioResultaat.DekkingRegel> dekking = new ArrayList<>();
-            for (Dekking d : runner.dekking)
-                dekking.add(new ScenarioResultaat.DekkingRegel(d.naam(), gevuurd(d.naam(), w.vormen)
-                        ? ScenarioResultaat.DekkingSoort.GEVUURD : ScenarioResultaat.DekkingSoort.NIET_GERAAKT));
             uit.add(new ScenarioResultaat(naam, fout == null ? ScenarioResultaat.Status.PASS : ScenarioResultaat.Status.FAIL,
-                    List.copyOf(w.verwachtingen), new ScenarioResultaat.Trace(vuringen), dekking, fout == null ? "" : fout));
+                    List.copyOf(w.verwachtingen), new ScenarioResultaat.Trace(w.vuren.vuringen()),
+                    DroolsBackend.dekking(runner.bouw, w.vuren.vormen()), fout == null ? "" : fout));
         }
         return uit;
     }
@@ -235,22 +222,15 @@ public final class CaseRunner {
                 naam + ": ERROR " + e.getClass().getSimpleName() + ": " + melding);
     }
 
-    /** Whether construct {@code construct} fired: whether a rule of that form fired, by the exact name the manifest
-     *  gives it ({@link #luisteraar}). Exact, so each version of a rule has a verdict of its own, where the trace gives
-     *  the versions of one rule one row; on golden anchor/jutterswet-jutheffing the second version of "jutheffing naar
-     *  jaartarief" is not reached in 2025, and a comparison on the row's name called it fired. */
-    private static boolean gevuurd(String construct, java.util.Set<String> gevuurdeVormen) {
-        return gevuurdeVormen.contains(construct);
-    }
-
-    /** What one case's replay reports beside its verdict: the firings per rule with the labels of the input beans they
-     *  bound, and per expectation its verdict. */
+    /** What one case's replay reports beside its verdict: what the session fired, through the backend's entry as a
+     *  consumer records it, with the case labels of this runner, and per expectation its verdict. */
     private static final class Waarneming {
-        final Map<String, Integer> telling = new LinkedHashMap<>();
-        final Map<String, List<String>> labels = new LinkedHashMap<>();
-        /** The forms a rule of which fired, by the exact name the manifest gives them, version suffix included. */
-        final java.util.Set<String> vormen = new java.util.HashSet<>();
+        final DroolsBackend.Waarnemer vuren;
         final List<ScenarioResultaat.VerwachtingResultaat> verwachtingen = new ArrayList<>();
+
+        Waarneming(DroolsBackend.Waarnemer vuren) {
+            this.vuren = vuren;
+        }
     }
 
     /** The witness seam of {@code backends/drools/src/test}: the beans one case's INPUT produces, before any
@@ -398,7 +378,6 @@ public final class CaseRunner {
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
         runner.bouw = b;
         if (Sessiedump.NAADMAP != null) runner.documenthash = Sessiedump.hash(irPath);
-        runner.dekking = b.dekking();
         return runner;
     }
 
@@ -546,9 +525,8 @@ public final class CaseRunner {
             for (JsonNode i : instances) zetRollen(i);
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
-            if (w != null) sessie.addEventListener(luisteraar(w));
             voegInvoerIn(sessie);
-            String geenFixpunt = vuurTotFixpunt(sessie);
+            String geenFixpunt = vuurTotFixpunt(sessie, w == null ? null : w.vuren);
             if (geenFixpunt != null) return naam + ": " + geenFixpunt;
             List<String> mis = new ArrayList<>();
             int positie = 0;
@@ -576,10 +554,16 @@ public final class CaseRunner {
      *  {@value Sessiedump#EIGENSCHAP} a seam writes the dump of the session ({@link Sessiedump}) right after the fire,
      *  before the write-back, also where the fire throws, on either branch. */
     private String vuurTotFixpunt(KieSession sessie) {
+        return vuurTotFixpunt(sessie, null);
+    }
+
+    /** As above, with {@code waarnemer} recording what the session fires ({@link DroolsBackend.Waarnemer}); null
+     *  records nothing. */
+    private String vuurTotFixpunt(KieSession sessie, DroolsBackend.Waarnemer waarnemer) {
         Sessiedump spoor = documenthash == null ? null : Sessiedump.op(sessie, labelNaarBean);
         DroolsBackend.Vuring vuring;
         try {
-            vuring = DroolsBackend.vuur(bouw, sessie);
+            vuring = waarnemer == null ? DroolsBackend.vuur(bouw, sessie) : DroolsBackend.vuur(bouw, sessie, waarnemer);
         } catch (RuntimeException e) {
             if (spoor != null) spoor.naad(documenthash, bouw, e, labelNaarBean);
             if (e instanceof ConsequenceException c) throw DroolsBackend.benoem(c);
@@ -1355,35 +1339,6 @@ public final class CaseRunner {
     }
 
     // ---------------- the report's renderings ----------------
-
-    /** Every firing, with the labels of the input beans the match bound, under the form of the document its rule
-     *  belongs to ({@link TmsTranspiler#vormVan}), its name whole but for a version suffix
-     *  ({@link RegelSpraakModel#vormnaam}): one row per form, the versions of one rule in one row, as before card
-     *  tms-omschakeling, when every rule of the destructive lowering carried the name of its form. The coverage
-     *  ({@link #gevuurd}) takes the exact name, version included. The rules of the exec-model branch are named "&lt;form&gt;: &lt;part&gt;", so the part alone, which the
-     *  report gave until the repair, put rules of different forms in one row: on golden jutterswet-premiestaffel the
-     *  defaults of three object types under "default 0". A rule of no form, a standing or another rule the lowering
-     *  keeps for every form alike ("kenmerkstand Jutter.uitgesloten: waar uit een afleiding"), is not reported: it is
-     *  no rule of the document, the report before the switch-over had none, and a consumer that names a row after a
-     *  form of the document has none to name it after. */
-    private DefaultAgendaEventListener luisteraar(Waarneming w) {
-        TmsTranspiler tms = bouw.execModelTranspiler();
-        return new DefaultAgendaEventListener() {
-            @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                String naam = e.getMatch().getRule().getName();
-                String vorm = tms.vormVan(naam);
-                if (vorm == null) return;
-                w.vormen.add(vorm);
-                String regel = RegelSpraakModel.vormnaam(vorm);
-                w.telling.merge(regel, 1, Integer::sum);
-                List<String> ls = w.labels.computeIfAbsent(regel, k -> new ArrayList<>());
-                for (Object o : e.getMatch().getObjects()) {
-                    String l = labelVanBean(o);
-                    if (l != null && !ls.contains(l)) ls.add(l);
-                }
-            }
-        };
-    }
 
     /** The expectation itself: its kind and what it is about. */
     private static String bron(JsonNode v) {

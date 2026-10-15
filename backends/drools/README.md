@@ -89,6 +89,14 @@ consumer does.
    goldens and the scale model (`DroolsBackend.FACTOR`, with the measurement). The cap is a safeguard against a fault
    of the lowering, not a norm: the build refuses a cycle (`Kringen`), and a chain of creations ends at the creation
    budget. Nothing can be read of a run without a fixpoint: `lees` and `zetAfgeleideWaarden` refuse it.
+   `DroolsBackend.vuur(build, session, waarnemer)` fires the same run and records what it fired in a
+   `DroolsBackend.Waarnemer`, made with a function that gives the label of an input bean and null for any other
+   object: `vuringen()`, per form of the document without its version suffix, how often its rules fired and the labels
+   their matches bound, and `vormen()`, the exact names of the forms that fired, from which
+   `DroolsBackend.dekking(build, vormen)` gives per manifest entry `GEVUURD` or `NIET_GERAAKT`. The scenario report
+   (`CaseRunner.rapport`) is made from these two. A waarnemer belongs to one session and is refused at a `vuur` of
+   another, and its listener is on the session only during that `vuur`, so parallel sessions of one build each record
+   their own firings (witness `WaarnemerWitnessTest`).
 4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.zetAfgeleideWaarden(build, session)`; or
    `lees(build, session, label)` and `zetAfgeleideWaarden(build, session, label)` with a function that gives the
    label of an input bean, and null for a made object, by which a fault then names its object as the reference

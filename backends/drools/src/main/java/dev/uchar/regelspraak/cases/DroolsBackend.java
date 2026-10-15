@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
+import dev.uchar.regelspraak.engine.ScenarioResultaat;
 import dev.uchar.regelspraak.graaf.ProducentConsument;
 import dev.uchar.regelspraak.ir.ResolvedStartpunt;
 import dev.uchar.regelspraak.loader.IrLoader;
@@ -49,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,7 +90,8 @@ import java.util.function.Predicate;
  * context class loader, the parameters and the evaluation date ({@code rekendatum}) as globals and on the DRL-text
  * branch also {@link Build#dagsoortGlobalen()}; then {@link #voegIn}, which puts in the fact beans and what the
  * branch reads beside them; then {@link #vuur}, which fires to the fixpoint under a cap and, for a model with a
- * creation, in generations; then {@link #lees} or {@link #zetAfgeleideWaarden}. The beans hold the input alone until
+ * creation, in generations, and with a {@link Waarnemer} records what the session fired, from which {@link #dekking}
+ * gives the coverage; then {@link #lees} or {@link #zetAfgeleideWaarden}. The beans hold the input alone until
  * the write-back, which comes once, at the end of the session, and closes it: a consumer that fires one session more
  * than once, changing input in between with {@code update}, reads every answer but the last with {@link #lees}, each
  * after a {@link #vuur}: the two readings refuse a session in which something happened outside {@code vuur} after the
@@ -727,6 +730,129 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         return vuur(build, sessie, FACTOR, VLOER);
+    }
+
+    /**
+     * As {@link #vuur(Build, KieSession)}, with {@code waarnemer} recording what the session fires in this run. Its
+     * listener goes on the session when this starts and comes off when it ends, also where this refuses the session or
+     * the fire throws, so it hears this run and nothing before or after it. The run itself is the same: the same cap,
+     * the same refusals, the same {@link Vuring}.
+     *
+     * @throws IllegalArgumentException a waarnemer that observed another session ({@link Waarnemer})
+     */
+    public static Vuring vuur(Build build, KieSession sessie, Waarnemer waarnemer) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        Objects.requireNonNull(waarnemer, "waarnemer");
+        waarnemer.bind(sessie);
+        AgendaEventListener luisteraar = waarnemer.luisteraar(build.execModelTranspiler());
+        sessie.addEventListener(luisteraar);
+        try {
+            return vuur(build, sessie, FACTOR, VLOER);
+        } finally {
+            sessie.removeEventListener(luisteraar);
+        }
+    }
+
+    /**
+     * What one session fired, as {@link #vuur(Build, KieSession, Waarnemer)} records it: per firing of a rule that
+     * belongs to a form of the document ({@link TmsTranspiler#vormVan}) the exact name of that form, version suffix
+     * included, and per form without its version suffix ({@link RegelSpraakModel#vormnaam}) how often its rules fired
+     * and the labels of the input beans their matches bound. The rows are per form, not per rule: the rules of the
+     * analysis are named "&lt;form&gt;: &lt;part&gt;", and the part alone puts rules of different forms in one row, as
+     * on golden jutterswet-premiestaffel the defaults of three object types under "default 0"; a form's name may itself
+     * hold ": ", so only {@code vormVan} gives it whole. The versions of one rule share a row, and {@link #vormen()}
+     * keeps them apart for the coverage ({@link DroolsBackend#dekking}). A rule of no form, a standing or another rule
+     * the lowering keeps for every form alike ("kenmerkstand Jutter.uitgesloten: waar uit een afleiding"), is not
+     * recorded: it is no rule of the document, and a consumer that names a row after a form of the document has none to
+     * name it after.
+     *
+     * <p>The label of a bean depends on the case, so the caller gives the function: {@code label} returns the label of
+     * an input bean and null for any other object, the facts of the branch and the objects a creation made among them,
+     * which a row then does not name.
+     *
+     * <p>A waarnemer belongs to one session: the first {@code vuur} it is given binds it to that session, and a
+     * {@code vuur} of another session refuses it, so sessions that fire at once, as those of a decision service do,
+     * never write into one waarnemer. Given to more than one {@code vuur} of its session, it gathers what all of them
+     * fired. It is read after the fire, by the thread that fired.
+     */
+    public static final class Waarnemer {
+        private final Function<Object, String> label;
+        private final Map<String, Integer> telling = new LinkedHashMap<>();
+        private final Map<String, List<String>> labels = new LinkedHashMap<>();
+        private final Set<String> vormen = new LinkedHashSet<>();
+        private KieSession sessie;
+
+        public Waarnemer(Function<Object, String> label) {
+            this.label = Objects.requireNonNull(label, "label");
+        }
+
+        /** The firings per form without its version suffix, in the order a rule of the form first fired, each with
+         *  the labels its matches bound, in the order they were first bound, and how often its rules fired. */
+        public List<ScenarioResultaat.Vuring> vuringen() {
+            List<ScenarioResultaat.Vuring> uit = new ArrayList<>();
+            for (Map.Entry<String, Integer> e : telling.entrySet())
+                uit.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(labels.get(e.getKey())), e.getValue()));
+            return List.copyOf(uit);
+        }
+
+        /** The forms a rule of which fired, by the exact name the manifest gives them ({@link Build#dekking}), version
+         *  suffix included, in the order they first fired. */
+        public Set<String> vormen() {
+            return java.util.Collections.unmodifiableSet(new LinkedHashSet<>(vormen));
+        }
+
+        /** Synchronized, so that two threads that hand one fresh waarnemer to two sessions at once cannot both bind
+         *  it: one of them is refused. */
+        private synchronized void bind(KieSession s) {
+            if (sessie == null) sessie = s;
+            else if (sessie != s)
+                throw new IllegalArgumentException("deze waarnemer nam al een andere sessie waar: een waarnemer hoort"
+                        + " bij één sessie, dus geef elke sessie een eigen waarnemer");
+        }
+
+        private AgendaEventListener luisteraar(TmsTranspiler tms) {
+            return new DefaultAgendaEventListener() {
+                @Override public void afterMatchFired(AfterMatchFiredEvent e) {
+                    String vorm = tms.vormVan(e.getMatch().getRule().getName());
+                    if (vorm == null) return;
+                    vormen.add(vorm);
+                    String regel = RegelSpraakModel.vormnaam(vorm);
+                    telling.merge(regel, 1, Integer::sum);
+                    List<String> ls = labels.computeIfAbsent(regel, k -> new ArrayList<>());
+                    for (Object o : e.getMatch().getObjects()) {
+                        String l = label.apply(o);
+                        if (l != null && !ls.contains(l)) ls.add(l);
+                    }
+                }
+            };
+        }
+    }
+
+    /**
+     * The coverage of {@code build} in a session that fired the forms {@code gevuurdeVormen}, by their exact names
+     * ({@link Waarnemer#vormen}): one row per entry of the manifest ({@link Build#dekking}), in its order, GEVUURD where
+     * the entry's name is among them and NIET_GERAAKT where it is not. The name is compared exactly, so each version of
+     * a rule has a verdict of its own: on golden anchor/jutterswet-jutheffing the second version of "jutheffing naar
+     * jaartarief" is not reached in 2025, and a comparison on the name without the version suffix called it fired.
+     *
+     * @throws IllegalArgumentException a fired form that is no entry of the manifest, which no session of this build
+     *                                  fires: the forms come from another build
+     */
+    public static List<ScenarioResultaat.DekkingRegel> dekking(Build build, Set<String> gevuurdeVormen) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(gevuurdeVormen, "gevuurdeVormen");
+        Set<String> posten = new HashSet<>();
+        for (Dekking d : build.dekking()) posten.add(d.naam());
+        for (String vorm : gevuurdeVormen)
+            if (!posten.contains(vorm))
+                throw new IllegalArgumentException("de vorm '" + vorm + "' is geen post van het manifest van deze build,"
+                        + " dus geen sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?");
+        List<ScenarioResultaat.DekkingRegel> uit = new ArrayList<>();
+        for (Dekking d : build.dekking())
+            uit.add(new ScenarioResultaat.DekkingRegel(d.naam(), gevuurdeVormen.contains(d.naam())
+                    ? ScenarioResultaat.DekkingSoort.GEVUURD : ScenarioResultaat.DekkingSoort.NIET_GERAAKT));
+        return List.copyOf(uit);
     }
 
     /** As {@link #vuur(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded
