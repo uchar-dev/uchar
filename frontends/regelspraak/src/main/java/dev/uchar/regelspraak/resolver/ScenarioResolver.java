@@ -723,15 +723,17 @@ public final class ScenarioResolver {
                      List<RolToewijzing> rollen) {
         if (ot == null) return;
         String geschreven = zonderLidwoord(geschrevenMetLidwoord);
-        List<Rol[]> treffers = new ArrayList<>();
+        // the fact type travels with the role: the consumers of the situation cannot recover it from the name
+        record Treffer(Feittype feittype, Rol rol) {}
+        List<Treffer> treffers = new ArrayList<>();
         for (Feittype ft : model.feittypen.values()) {
             if (ft.rollen.size() == 2) {
                 Rol a = ft.rollen.get(0), b = ft.rollen.get(1);
-                if (vult(ot, a) && noemt(b, geschreven)) treffers.add(new Rol[]{b});
-                if (vult(ot, b) && noemt(a, geschreven)) treffers.add(new Rol[]{a});
+                if (vult(ot, a) && noemt(b, geschreven)) treffers.add(new Treffer(ft, b));
+                if (vult(ot, b) && noemt(a, geschreven)) treffers.add(new Treffer(ft, a));
             } else if (ft.rollen.size() == 1 && ft.wederkerig) {
                 Rol r = ft.rollen.get(0);
-                if (vult(ot, r) && noemt(r, geschreven)) treffers.add(new Rol[]{r});
+                if (vult(ot, r) && noemt(r, geschreven)) treffers.add(new Treffer(ft, r));
             }
         }
         if (treffers.isEmpty()) {
@@ -743,7 +745,8 @@ public final class ScenarioResolver {
                     + "één feittype kent haar");
             return;
         }
-        Rol ver = treffers.get(0)[0];
+        Treffer treffer = treffers.get(0);
+        Rol ver = treffer.rol();
         if (ver.meervoudig() && !zijnVorm) {
             fout(line, "de rol '" + geschreven + "' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm ('de "
                     + geschreven + " zijn …')");
@@ -755,8 +758,8 @@ public final class ScenarioResolver {
             return;
         }
         String sleutel = ver.meervoud() != null && norm(ver.meervoud()).equals(norm(geschreven)) ? ver.meervoud() : ver.naam();
-        rollen.add(new RolToewijzing(ver.naam(), new RolWaarde(sleutel, model.objecttypeOpNaam(ver.objecttypeNaam()),
-                List.copyOf(labels), ver.meervoudig(), line)));
+        rollen.add(new RolToewijzing(ver.naam(), new RolWaarde(sleutel, treffer.feittype(),
+                model.objecttypeOpNaam(ver.objecttypeNaam()), List.copyOf(labels), ver.meervoudig(), line)));
     }
 
     private boolean vult(Objecttype ot, Rol r) {

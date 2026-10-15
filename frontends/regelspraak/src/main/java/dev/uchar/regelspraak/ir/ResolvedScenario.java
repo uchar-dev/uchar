@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.ir;
 
+import dev.uchar.regelspraak.model.RegelSpraakModel.Feittype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import java.time.LocalDate;
@@ -62,9 +63,11 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
     public record AttribuutWaarde(String attribuut, Waarde waarde, List<Segment> tijdlijn, int line) {}
 
     /** A role assignment: the key as the case file writes it (the declared role name, or its declared plural where
-     *  the source wrote the plural), the declared type of the role it names, the labels it links, and whether the
-     *  role is to-many. */
-    public record RolWaarde(String sleutel, Objecttype doeltype, List<String> doelLabels, boolean meervoudig, int line) {}
+     *  the source wrote the plural), the fact type the role was resolved in — one role name can stand in several
+     *  fact types, and the type of the instance decides which one the assignment means —, the declared type of the
+     *  role it names, the labels it links, and whether the role is to-many. */
+    public record RolWaarde(String sleutel, Feittype feittype, Objecttype doeltype, List<String> doelLabels,
+                            boolean meervoudig, int line) {}
 
     /** A characteristic asserted on an instance under its declared name. {@code perioden} is null for a static
      *  characteristic and holds the periods in which a time-dependent one holds, in written order. */
