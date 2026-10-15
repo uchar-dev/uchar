@@ -246,7 +246,7 @@ class HerkomstOpDeDraadTest {
                 Path bron = map.resolve("bron.rgs");
                 if (!Files.exists(bron)) continue;
                 RegelSpraakModel m = Resolver.resolve(Files.readString(bron));
-                if (!m.isOk()) continue;
+                assertTrue(m.isOk(), () -> map + " resolvet niet: " + m.diagnostics);
                 String ir = IrEmitter.emit(m);
                 if (m.gegenereerd.isEmpty()) {
                     assertFalse(ir.contains("\"origin\""), map::toString);
