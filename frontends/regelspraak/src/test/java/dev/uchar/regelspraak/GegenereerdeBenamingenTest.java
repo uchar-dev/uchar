@@ -241,8 +241,10 @@ class GegenereerdeBenamingenTest {
         assertEquals("opgegeven Meldingsdatum", hoofd.benaming("handboek", FAMILIE.get(0)).orElseThrow());
     }
 
-    @Test void de_andere_gegenereerde_vormen_krijgen_geen_benaming() {
-        // the group of a subtype: two names, the base rule's and the subtype's, each with a designation of its own
+    @Test void de_groep_van_een_subtype_en_het_lid_van_een_vouw_krijgen_een_benaming_per_deel() {
+        // the group of a subtype: two names, the base rule's and the subtype's, each with a designation of its own;
+        // since the card gegenereerde-namen-per-deel each part is replaced by its designation
+        // (GegenereerdeNamenPerDeelTest)
         RegelSpraakModel groep = schoon("""
             Vocabulaire handboek
 
@@ -268,7 +270,8 @@ class GegenereerdeBenamingenTest {
                     indien zijn vergunningseinde gevuld is.
             """);
         assertTrue(groep.gegenereerdUit(Benoembaar.vorm("meldtermijn voor Strandjutter")).isPresent());
-        assertEquals("-", groep.benaming("handboek", Benoembaar.vorm("meldtermijn voor Strandjutter")).orElse("-"));
+        assertEquals("termijn van melding voor strandloper",
+                groep.benaming("handboek", Benoembaar.vorm("meldtermijn voor Strandjutter")).orElse("-"));
         // the group of the tree carries its base rule's name, and so its designation
         assertEquals("termijn van melding", groep.benaming("handboek", Benoembaar.vorm("meldtermijn")).orElseThrow());
 
@@ -301,7 +304,7 @@ class GegenereerdeBenamingenTest {
             """);
         Benoembaar lid = Benoembaar.attribuut("Jutter", "gewicht via vondst");
         assertTrue(vouw.gegenereerdUit(lid).isPresent(), () -> vouw.gegenereerd.toString());
-        assertEquals("-", vouw.benaming("handboek", lid).orElse("-"));
-        assertEquals("-", vouw.benaming("handboek", Benoembaar.vorm("gewicht via vondst")).orElse("-"));
+        assertEquals("massa via vangst", vouw.benaming("handboek", lid).orElse("-"));
+        assertEquals("massa via vangst", vouw.benaming("handboek", Benoembaar.vorm("gewicht via vondst")).orElse("-"));
     }
 }
