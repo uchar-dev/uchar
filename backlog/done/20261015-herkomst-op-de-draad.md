@@ -255,3 +255,14 @@ Zonder de patch: gate 10 rood op precies de drie frontendtests, gate 12 rood op 
   met een startpuntbepaling wordt al geweigerd; de andere vormen komen uit een attribuut of een tabel.
 - WF-121 toetst niet welke knoop een vorm maakt (een `decisionTableRow` op een attribuut is schoon); de spec zegt dat.
 - `main` staat op `fe8901fb`; de branch moet bij het landen gerebased worden (merge-tree zonder conflict).
+
+## Landing (2026-10-15)
+
+De eigenaar droeg de keuring van dit voorstel over aan de hoofdsessie: landen als het het
+ontwerpadvies volgt. Gekeurd tegen dat advies; de twee afwijkingen (de soort `decisionTable`,
+en executors die een onbekende vorm of soort bij het laden weigeren zoals elk onbekend veld)
+aanvaard. De testpatch op de vier bestaande tests landt in `95f4bde7` (akkoord eigenaar). De
+bevindingen van de naamtabeltoets zijn opgelost met optie b, keuze van de eigenaar
+(`9665f7d0`: sectie `waarden_zonder_v0` naar het voorbeeld van `spec_zonder_v0`). Rij 42 staat in
+`spec/CONSTRUCTS.md`. Gerebased op `fe8901fb` (kaart `waarnemer-vuur`) en daar met alle gates
+opnieuw gedraaid vóór de merge.
