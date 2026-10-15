@@ -4,6 +4,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Benaming;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Herkomstvorm;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Vocabulaire;
@@ -20,9 +21,10 @@ import java.util.Map;
  * 'Vocabulaire' blocks and the designation annotations of a document, read into the model's side table and refused
  * where the verifier refuses the document it would give (WF-116 to WF-120) and where the source is no designation at
  * all. Two passes: {@link #lees} after the declarations, when every declaration an annotation stands on has its model
- * name; {@link #keur} after the rule check, when the model holds every form the emitter writes. No rule reads the side
- * table: a designation never resolves, so a rule that writes one where it means a declaration is refused as any
- * undeclared name is.
+ * name; {@link #keur} after the rule check, when the model holds every form the emitter writes. Between them
+ * {@link #stelSamen} composes the designations of the elements a lowered opgave marker generates, which have no place
+ * for an annotation. No rule reads the side table: a designation never resolves, so a rule that writes one where it
+ * means a declaration is refused as any undeclared name is.
  */
 final class Benamingen {
 
@@ -33,6 +35,9 @@ final class Benamingen {
     private final Map<Benoembaar, Integer> regels = new LinkedHashMap<>();
     /** The line of each vocabulary declaration, by its name as declared. */
     private final Map<String, Integer> vocabulaireRegels = new LinkedHashMap<>();
+    /** Every element whose designations {@link #stelSamen} composes, with the marked attribute it composes them from:
+     *  a refusal of such an element names that attribute and stands on its line, where the author can change it. */
+    private final Map<Benoembaar, Benoembaar> samengesteldUit = new LinkedHashMap<>();
 
     /** The members an extension declares again ({@link DefinitionResolver}): the type carries the declaration they
      *  repeat, so their designations are that declaration's, read there once; a refused repeat is refused by its own
@@ -231,6 +236,63 @@ final class Benamingen {
         return b.BENAMING_TEKST() == null ? "" : b.BENAMING_TEKST().getText().trim();
     }
 
+    // --- between the passes: the designations the frontend composes -------------------------------
+
+    /** The designations of the members and forms of a lowered opgave marker (grammar/DIVERGENCES.md, "Gegenereerde
+     *  elementen", "Designations"). Each is named '&lt;woorden&gt; X' after the marked attribute X; in every vocabulary
+     *  in which X carries a designation it carries '&lt;woorden&gt; &lt;that designation&gt;', the designation taken
+     *  over literally, and where X carries none, neither does the element (maintainer decision 2026-10-15). In a
+     *  vocabulary that is not the default a composed designation that spells the element's own name is left out: it
+     *  changes no effective name, and the wire would need a warning for it (WF-120), which X's own designation draws
+     *  already. Runs after the rule check, which fills {@link RegelSpraakModel#gegenereerd}, and before {@link #keur},
+     *  which judges these designations as it judges the written ones. The other forms of that table get none: their
+     *  names have more than one source, or a source no vocabulary names. */
+    void stelSamen() {
+        if (model.vocabulaires.isEmpty()) return;
+        for (var e : model.gegenereerd.entrySet()) {
+            if (e.getValue().vorm() != Herkomstvorm.OPGAVE_BOVEN_BEREKENING) continue;
+            Benoembaar element = e.getKey(), bron = e.getValue().bron();
+            String naam = element.naam();
+            int knip = naam.length() - bron.naam().length();
+            if (bron.soort() != Benoembaar.Soort.ATTRIBUUT || knip < 1 || naam.charAt(knip - 1) != ' '
+                    || !naam.regionMatches(true, knip, bron.naam(), 0, bron.naam().length()))
+                throw new IllegalStateException("het gegenereerde element " + element + " heet niet naar zijn bron "
+                        + bron + ", en de frontend kan er geen benaming voor samenstellen");
+            samengesteldUit.put(element, bron);
+            for (Vocabulaire v : model.vocabulaires) {
+                String benaming = model.benaming(v.naam(), bron).orElse(null);
+                if (benaming == null) continue;
+                String tekst = naam.substring(0, knip) + benaming;
+                if (!v.standaard() && tekst.equals(naam)) continue;
+                if (model.benaming(v.naam(), element).isPresent()) {
+                    // only a declaration the author wrote under the generated name can carry one, and the marker
+                    // refuses such a name with an ERROR of its own
+                    if (model.isOk())
+                        throw new IllegalStateException("het gegenereerde element " + element + " draagt al een "
+                                + "benaming in het vocabulaire '" + v.naam() + "'");
+                    continue;
+                }
+                model.benamingen.computeIfAbsent(element, k -> new ArrayList<>()).add(new Benaming(v.naam(), tekst));
+            }
+        }
+    }
+
+    /** The clause that names where the designation of {@code element} in {@code v} comes from, where the frontend
+     *  composed it; empty for a written one, and where the element carries none there. */
+    private String samengesteld(Vocabulaire v, Benoembaar element) {
+        Benoembaar bron = samengesteldUit.get(element);
+        if (bron == null || model.benaming(v.naam(), element).isEmpty()) return "";
+        return "; de frontend stelde de benaming van " + beschrijving(element) + " samen uit de benaming '"
+                + model.benaming(v.naam(), bron).orElseThrow() + "' van " + beschrijving(bron);
+    }
+
+    /** The line a refusal of {@code element} stands on: its own declaration's, or for an element whose designations
+     *  the frontend composes, the marked attribute's, where the author can change what it is named; null where the
+     *  frontend wrote the element without a source line. */
+    private Integer regel(Benoembaar element) {
+        return regels.get(samengesteldUit.getOrDefault(element, element));
+    }
+
     // --- pass 2: the finished model ----------------------------------------------------------------
 
     void keur() {
@@ -254,11 +316,14 @@ final class Benamingen {
     private void volledig(Vocabulaire v, List<Benoembaar> alle) {
         for (Benoembaar b : alle) {
             if (model.benaming(v.naam(), b).isPresent()) continue;
-            Integer regel = regels.get(b);
+            Benoembaar bron = samengesteldUit.get(b);
+            Integer regel = regel(b);
+            // the source of a composed designation is an attribute, so 'dat'
+            String staart = bron != null ? "; de frontend stelt de benaming van deze declaratie samen uit die van "
+                    + beschrijving(bron) + ", en dat draagt er geen"
+                    : regel != null ? "" : "; de frontend schreef deze declaratie zelf, zonder plaats voor een annotatie";
             fout(hoofd(beschrijving(b)) + " draagt geen benaming in het standaardvocabulaire '" + v.naam() + "', dat "
-                    + "elke declaratie noemt (WF-119)" + (regel != null ? ""
-                    : "; de frontend schreef deze declaratie zelf, zonder plaats voor een annotatie"),
-                    regel == null ? 0 : regel);
+                    + "elke declaratie noemt (WF-119)" + staart, regel == null ? 0 : regel);
         }
     }
 
@@ -315,8 +380,8 @@ final class Benamingen {
                 Benoembaar plaats = eigen.isEmpty() || eigen.contains(b) ? b : a;
                 fout(hoofd(beschrijving(a)) + " en " + beschrijving(b) + " hebben in het vocabulaire '" + v.naam()
                         + "' dezelfde effectieve naam '" + nb + "'; binnen hun reikwijdte is die uniek, "
-                        + "hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord heeft (WF-118)",
-                        regels.getOrDefault(plaats, 0));
+                        + "hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord heeft (WF-118)"
+                        + samengesteld(v, a) + samengesteld(v, b), regel(plaats));
             }
     }
 

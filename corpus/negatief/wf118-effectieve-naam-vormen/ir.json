@@ -1,0 +1,704 @@
+{
+  "format": "uchar-ir-v1",
+  "vocabularies": [
+    {
+      "node": "Vocabulary",
+      "name": "handboek",
+      "default": false,
+      "language": "nl"
+    }
+  ],
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "dag van de melding"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "opgegeven dag van de melding"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "berekende dag van de melding"
+              }
+            ]
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave meldingsdatum",
+            "kind": "possessive",
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "afwijkende opgave dag van de melding"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "stranddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aangiftedatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "dag van de melding"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven aangiftedatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "opgegeven dag van de melding"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende aangiftedatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "berekende dag van de melding"
+              }
+            ]
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave aangiftedatum",
+            "kind": "possessive",
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "afwijkende opgave dag van de melding"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "melding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De meldingsdatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de vinddag van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "3"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "3 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de vinddag van de Vondst plus 3 dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aangifte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende aangiftedatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "De aangiftedatum van een Schuit"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "stranddag",
+                "subjectType": "Schuit",
+                "source": {
+                  "snippet": "de stranddag van de Schuit"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "5 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de stranddag van de Schuit plus 5 dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave meldingsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave meldingsdatum"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven meldingsdatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven meldingsdatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende meldingsdatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende meldingsdatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven meldingsdatum"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende meldingsdatum"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum."
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "afwijking opgave dag van de melding"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave aangiftedatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave aangiftedatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Een Schuit heeft afwijkende opgave aangiftedatum"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven aangiftedatum",
+                    "subjectType": "Schuit",
+                    "source": {
+                      "snippet": "zijn opgegeven aangiftedatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven aangiftedatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende aangiftedatum",
+                    "subjectType": "Schuit",
+                    "source": {
+                      "snippet": "zijn berekende aangiftedatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende aangiftedatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven aangiftedatum",
+                    "subjectType": "Schuit",
+                    "source": {
+                      "snippet": "zijn opgegeven aangiftedatum"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende aangiftedatum",
+                    "subjectType": "Schuit",
+                    "source": {
+                      "snippet": "zijn berekende aangiftedatum"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven aangiftedatum is ongelijk aan zijn berekende aangiftedatum"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven aangiftedatum is gevuld - zijn berekende aangiftedatum is gevuld - zijn opgegeven aangiftedatum is ongelijk aan zijn berekende aangiftedatum."
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "afwijking opgave dag van de melding"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave meldingsdatum",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave meldingsdatum",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave meldingsdatum"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de meldingsdatum (handboek: dag van de melding) Datum in dagen (mag opgegeven worden)",
+              "line": 5
+            }
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "controle opgave dag van de melding"
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "controle opgave aangiftedatum",
+        "versions": [
+          {
+            "subject": "Schuit",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave aangiftedatum",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave aangiftedatum"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de aangiftedatum (handboek: dag van de melding) Datum in dagen (mag opgegeven worden)",
+              "line": 9
+            }
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "controle opgave dag van de melding"
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening meldingsdatum",
+        "subject": "Vondst",
+        "attribute": "meldingsdatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven meldingsdatum"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven meldingsdatum"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende meldingsdatum"
+              }
+            },
+            "source": {
+              "snippet": "berekende meldingsdatum"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "opgave boven berekening dag van de melding"
+          }
+        ]
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening aangiftedatum",
+        "subject": "Schuit",
+        "attribute": "aangiftedatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven aangiftedatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "zijn opgegeven aangiftedatum"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven aangiftedatum"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende aangiftedatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "zijn berekende aangiftedatum"
+              }
+            },
+            "source": {
+              "snippet": "berekende aangiftedatum"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        },
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "opgave boven berekening dag van de melding"
+          }
+        ]
+      }
+    ]
+  },
+  "diagnostics": []
+}

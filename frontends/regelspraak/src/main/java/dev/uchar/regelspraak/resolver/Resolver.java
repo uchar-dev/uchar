@@ -58,10 +58,12 @@ public final class Resolver {
         if (!syntax.isEmpty()) kopvormHints(tokens, model);
 
         // the vocabulary side table (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): read after the
-        // declarations, judged once the rule check has written every form
+        // declarations; composed for the generated elements once the rule check has recorded where they come from,
+        // and judged with the composed designations once it has written every form
         Benamingen benamingen = new Benamingen(model, definities.herhalingen().keySet());
         benamingen.lees(doc);
         new RuleChecker(model, tokens, definities.herhalingen()).check(doc);
+        benamingen.stelSamen();
         benamingen.keur();
         meldOnopgelost(model);
         return model;

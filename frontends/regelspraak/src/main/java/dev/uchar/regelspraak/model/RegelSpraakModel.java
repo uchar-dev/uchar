@@ -61,7 +61,9 @@ public final class RegelSpraakModel {
     public final List<dev.uchar.regelspraak.ir.PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
     /** IR-SPEC ch. 2.12 the named vocabularies, in declaration order: with {@link #benamingen} a side table without
      *  semantics, which no transpiler reads. The frontend fills both from the dialect's 'Vocabulaire' blocks and
-     *  annotations (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"), the Drools IR loader from the wire; a
+     *  annotations (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"), and composes the designations of the
+     *  elements a lowered opgave marker generates from the marked attribute's ("Gegenereerde elementen"); the Drools
+     *  IR loader fills both from the wire; a
      *  document without vocabularies leaves both empty, and the emitter then writes neither. Read them through
      *  {@link #benaming}, {@link #effectieveNaam} and {@link #benoemd}. */
     public final List<Vocabulaire> vocabulaires = new ArrayList<>();
