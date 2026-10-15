@@ -20,6 +20,7 @@ import dev.uchar.regelspraak.transpiler.tms.Creatiebudget;
 import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
 import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
 import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
+import dev.uchar.regelspraak.transpiler.tms.Fout;
 import dev.uchar.regelspraak.transpiler.tms.Gevuurd;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
 import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
@@ -91,7 +92,8 @@ import java.util.function.Predicate;
  * branch also {@link Build#dagsoortGlobalen()}; then {@link #voegIn}, which puts in the fact beans and what the
  * branch reads beside them; then {@link #vuur}, which fires to the fixpoint under a cap and, for a model with a
  * creation, in generations, and with a {@link Waarnemer} records what the session fired, from which {@link #dekking}
- * gives the coverage; then {@link #lees} or {@link #zetAfgeleideWaarden}. The beans hold the input alone until
+ * gives the coverage; then {@link #lees} or {@link #zetAfgeleideWaarden}, after which {@link #vergelijk} compares the
+ * expectations of a case with the session. The beans hold the input alone until
  * the write-back, which comes once, at the end of the session, and closes it: a consumer that fires one session more
  * than once, changing input in between with {@code update}, reads every answer but the last with {@link #lees}, each
  * after a {@link #vuur}: the two readings refuse a session in which something happened outside {@code vuur} after the
@@ -853,6 +855,89 @@ public final class DroolsBackend {
             uit.add(new ScenarioResultaat.DekkingRegel(d.naam(), gevuurdeVormen.contains(d.naam())
                     ? ScenarioResultaat.DekkingSoort.GEVUURD : ScenarioResultaat.DekkingSoort.NIET_GERAAKT));
         return List.copyOf(uit);
+    }
+
+    /**
+     * The verdict of the expectations of a case on a session ({@link #vergelijk}): per expectation, in the order of the
+     * case, its {@link ScenarioResultaat.VerwachtingResultaat}, and the diagnose of the scenario report, the line of
+     * every expectation that did not hold, joined by "; ", empty where every one held. The scenario report
+     * ({@code CaseRunner.rapport}) puts the name of the case file and ": " before a diagnose that is not empty.
+     */
+    public record Vergelijking(List<ScenarioResultaat.VerwachtingResultaat> verwachtingen, String diagnose) {
+        public Vergelijking {
+            verwachtingen = List.copyOf(verwachtingen);
+            Objects.requireNonNull(diagnose, "diagnose");
+        }
+
+        /** Whether every expectation held. */
+        public boolean pass() {
+            return verwachtingen.stream().allMatch(ScenarioResultaat.VerwachtingResultaat::ok);
+        }
+    }
+
+    /**
+     * Compares {@code verwachtingen}, the {@code expected} of a {@code uchar-case-v0} case, with {@code sessie} of
+     * {@code build}: per expectation the verdict the scenario report gives ({@code CaseRunner.rapport}), which compares
+     * through this, as the replay of every case does. It reads the beans of a session that {@link #zetAfgeleideWaarden}
+     * wrote back: they then carry its fixpoint, the input and over it what {@link #lees} gives, and they are the answer a
+     * consumer hands out. Since the write-back closes the session, a session is compared once, after its last fire. A
+     * label of an expectation names the bean of the session to which {@code label} gives it, the function that gives the
+     * label of an input bean and null for any other object, as for {@link #lees} and {@link Waarnemer}: the labels are
+     * the caller's, the ids of a request among them, and need not be those of a case file. An expectation compares as
+     * the replay compares: a number by value whatever its scale, an enumeration label up to the name equality of the
+     * reference interpreter, a timeline segment for segment, and a §9.5 deposit by its rule and, where the expectation
+     * names one, the label of its subject. An empty list passes, as in the replay, though {@code uchar-case-v0} asks
+     * for at least one expectation.
+     *
+     * @throws IllegalStateException    what {@link #lees} refuses: a session not fired through {@link #vuur}, whose last
+     *                                  {@code vuur} reached no fixpoint, or in which something happened outside
+     *                                  {@code vuur} since; a session whose fixpoint carries evaluation faults, which
+     *                                  {@link #zetAfgeleideWaarden} throws instead of writing back; and a session that
+     *                                  was not written back
+     * @throws IllegalArgumentException {@code verwachtingen} that are no array; a {@code label} that gives one label to
+     *                                  two beans of the session; and a defect of the case that the replay refuses as
+     *                                  well, an expectation on a member with a label no bean of the session carries
+     *                                  among them
+     * @throws CaseRunner.Excluded      an expectation of a form this backend does not compare, in the sentence of the
+     *                                  replay, which the scenario report gives as a MARKER: among them a dimensioned
+     *                                  attribute, a scalar read of an attribute on a timeline, a member without a bean
+     *                                  field of its own, a rational number, a timeline on a grid the case timelines
+     *                                  cannot lie on, and a kind {@code uchar-case-v0} does not have
+     */
+    public static Vergelijking vergelijk(Build build, KieSession sessie, Function<Object, String> label,
+                                         JsonNode verwachtingen) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        Objects.requireNonNull(label, "label");
+        Objects.requireNonNull(verwachtingen, "verwachtingen");
+        if (!verwachtingen.isArray())
+            throw new IllegalArgumentException("vergelijk: de verwachtingen zijn de array 'expected' van een case, en dit"
+                    + " is een " + verwachtingen.getNodeType());
+        List<Fout> fouten = lees(build, sessie, label).fouten();
+        if (!fouten.isEmpty())
+            throw new IllegalStateException("vergelijk: aan het fixpunt van deze sessie staan " + fouten.size()
+                    + " evaluatiefout(en), de eerste van '" + fouten.get(0).regel() + "': " + fouten.get(0).melding()
+                    + "; de regels geven op deze invoer geen antwoord, en zetAfgeleideWaarden werpt de fouten en zet niets"
+                    + " terug, dus er is niets om met de verwachtingen te vergelijken");
+        if (sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
+            throw new IllegalStateException("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
+                    + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug");
+        Map<String, Object> perLabel = new HashMap<>();
+        Map<String, Objecttype> typen = new HashMap<>();
+        for (Map.Entry<Class<?>, Objecttype> k : bonenklassen(build).entrySet())
+            for (Object boon : sessie.getObjects(new ClassObjectFilter(k.getKey()))) {
+                // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
+                if (boon.getClass() != k.getKey()) continue;
+                String l = label.apply(boon);
+                if (l == null) continue;
+                Object ander = perLabel.putIfAbsent(l, boon);
+                if (ander != null)
+                    throw new IllegalArgumentException("vergelijk: de labelfunctie geeft het label '" + l + "' aan "
+                            + naam(ander) + " en aan " + naam(boon) + ", dus een verwachting op '" + l + "' wijst geen"
+                            + " bean aan");
+                typen.put(l, k.getValue());
+            }
+        return CaseRunner.vergelijking(build, sessie, perLabel, typen, verwachtingen);
     }
 
     /** As {@link #vuur(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded

@@ -103,7 +103,15 @@ consumer does.
    interpreter does ("V, een Vondst"), where without labels it names the type and the identity. Both read only a
    session whose last `vuur` reached its fixpoint and in which nothing happened outside `vuur` since (below), so what
    `lees` gives is always a fixpoint, that of the input as the session knows it: an attribute or a characteristic set
-   without `session.update` is not seen (below).
+   without `session.update` is not seen (below). After the write-back, `DroolsBackend.vergelijk(build, session, label,
+   expected)` compares the `expected` of a `uchar-case-v0` case with the session and returns a
+   `DroolsBackend.Vergelijking`: per expectation a `ScenarioResultaat.VerwachtingResultaat`, the diagnose of the
+   scenario report, and `pass()`. `label` is a function as above, and an expectation names the bean to which it gives
+   the expectation's label, so the labels may be the ids of a request rather than those of a case file. It reads the
+   beans, which carry the fixpoint only after `zetAfgeleideWaarden`, and refuses a session that was not written back,
+   one whose fixpoint carries evaluation faults, what `lees` refuses, a label given to two beans, an expectation on a
+   member of a label no bean carries, and, as `CaseRunner.Excluded` in the replay's sentence, a form it does not
+   compare. The replay and the scenario report compare through it (witness `VergelijkingWitnessTest`).
 
 **One write-back per session.** The beans hold the input alone until the write-back.
 `lees` reads what stands at the fixpoint without writing anything, as a `Fixpunt` (`transpiler/tms`): per object the

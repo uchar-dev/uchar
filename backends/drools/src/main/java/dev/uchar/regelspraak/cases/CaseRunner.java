@@ -506,8 +506,10 @@ public final class CaseRunner {
         return runCase(naam, c, null);
     }
 
-    /** One case: its verdict line, null on a match. With a {@link Waarneming} the replay also reports the firings and
-     *  every expectation's verdict ({@link #rapport}); the verdict itself does not depend on it. */
+    /** One case: its verdict line, null on a match. The expectations are compared through the backend's entry
+     *  ({@link DroolsBackend#vergelijk}), with the case labels of this runner, as a consumer compares them. With a
+     *  {@link Waarneming} the replay also reports the firings and every expectation's verdict ({@link #rapport}); the
+     *  verdict itself does not depend on it. */
     private String runCase(String naam, JsonNode c, Waarneming w) {
         labelNaarBean.clear();
         labelType.clear();
@@ -528,16 +530,10 @@ public final class CaseRunner {
             voegInvoerIn(sessie);
             String geenFixpunt = vuurTotFixpunt(sessie, w == null ? null : w.vuren);
             if (geenFixpunt != null) return naam + ": " + geenFixpunt;
-            List<String> mis = new ArrayList<>();
-            int positie = 0;
-            for (JsonNode v : c.get("expected")) {
-                String m = vergelijk(v, sessie);
-                if (m != null) mis.add(m);
-                positie++;
-                if (w != null) w.verwachtingen.add(new ScenarioResultaat.VerwachtingResultaat(
-                        bron(v), verwacht(v), werkelijk(v, sessie), m == null, positie));
-            }
-            return mis.isEmpty() ? null : naam + ": " + String.join("; ", mis);
+            DroolsBackend.Vergelijking vergelijking =
+                    DroolsBackend.vergelijk(bouw, sessie, this::labelVanBean, c.get("expected"));
+            if (w != null) w.verwachtingen.addAll(vergelijking.verwachtingen());
+            return vergelijking.pass() ? null : naam + ": " + vergelijking.diagnose();
         } finally {
             sessie.dispose();
             Thread.currentThread().setContextClassLoader(vorige);
@@ -1164,6 +1160,41 @@ public final class CaseRunner {
 
     // ---------------- comparison ----------------
 
+    /** The comparison behind {@link DroolsBackend#vergelijk}, on a runner of {@code build} that knows the beans of
+     *  {@code sessie} by the labels of the caller: {@code perLabel} gives the bean of each label, {@code typen} its object
+     *  type. The runner reads no case input, so a session the caller filled itself compares as one of the replay. */
+    static DroolsBackend.Vergelijking vergelijking(DroolsBackend.Build build, KieSession sessie,
+                                                   Map<String, Object> perLabel, Map<String, Objecttype> typen,
+                                                   JsonNode verwachtingen) {
+        CaseRunner r = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dagsoortGlobalen());
+        r.labelNaarBean.putAll(perLabel);
+        r.labelType.putAll(typen);
+        List<ScenarioResultaat.VerwachtingResultaat> uit = new ArrayList<>();
+        List<String> mis = new ArrayList<>();
+        int positie = 0;
+        for (JsonNode v : verwachtingen) {
+            String m = r.vergelijk(v, sessie);
+            if (m != null) mis.add(m);
+            positie++;
+            uit.add(new ScenarioResultaat.VerwachtingResultaat(bron(v), r.verwacht(v), r.werkelijk(v, sessie), m == null,
+                    positie));
+        }
+        return new DroolsBackend.Vergelijking(uit, String.join("; ", mis));
+    }
+
+    /** The object type of the bean that carries {@code label}, for expectation {@code v} on one of its members. A label
+     *  no bean carries is refused: there is nothing to read, and the "leeg" or "afwezig" the replay read there until
+     *  {@link DroolsBackend#vergelijk} let attributeEmpty and characteristicAbsent hold on a label that names nothing, as
+     *  when a caller gives the case labels to a session it labelled with the ids of its request. ref refuses such a case
+     *  at load ("expectation references unknown label"). */
+    private Objecttype typeVanLabel(JsonNode v, String label) {
+        Objecttype ot = labelType.get(label);
+        if (ot == null)
+            throw new IllegalArgumentException(v.get("kind").asText() + "-verwachting op onbekend label '" + label
+                    + "': geen bean van de sessie draagt het, dus er is niets te lezen");
+        return ot;
+    }
+
     private String vergelijk(JsonNode v, KieSession sessie) {
         String kind = v.get("kind").asText();
         return switch (kind) {
@@ -1181,18 +1212,17 @@ public final class CaseRunner {
     private String attribuut(JsonNode v, boolean leegVerwacht) {
         String attr = v.get("attribute").asText();
         String label = v.get("label").asText();
-        Objecttype ot = labelType.get(label);
+        Objecttype ot = typeVanLabel(v, label);
         eigenVeld(ot, attr, false, "leest");
-        if (ot != null && gedimensioneerd(ot, attr))
+        if (gedimensioneerd(ot, attr))
             throw new Excluded("dimensioned attribute read-back '" + attr + "' (§3.6, a Map bean member) "
                     + "is not carried by the v0 backend");
         // a temporal attribute's bean member is the List<Segment> timeline itself: the scalar comparison below
         // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
-        if (ot != null && temporeel(ot, attr))
+        if (temporeel(ot, attr))
             throw new Excluded("scalar read-back of temporal attribute '" + attr + "' is not carried by the v0 "
                     + "backend — the bean holds a List<Segment>; use an attributeTimeline expectation");
-        Object bean = labelNaarBean.get(label);
-        Object werkelijk = bean == null ? null : lees(bean, Namen.getter(attribuutnaam(ot, attr)));
+        Object werkelijk = lees(labelNaarBean.get(label), Namen.getter(attribuutnaam(ot, attr)));
         if (leegVerwacht)
             return werkelijk == null ? null : "verwacht leeg, werkelijk " + werkelijk;
         Object verwacht = waardeNaarArg(v.get("value"), attr);
@@ -1251,11 +1281,10 @@ public final class CaseRunner {
     }
 
     private String kenmerk(JsonNode v, boolean aanwezigVerwacht) {
-        Objecttype ot = labelType.get(v.get("label").asText());
+        Objecttype ot = typeVanLabel(v, v.get("label").asText());
         eigenVeld(ot, v.get("characteristic").asText(), true, "leest");
-        Object bean = labelNaarBean.get(v.get("label").asText());
-        Object gelezen = bean == null ? null
-                : lees(bean, Namen.getter(kenmerknaam(ot, v.get("characteristic").asText())));
+        Object gelezen = lees(labelNaarBean.get(v.get("label").asText()),
+                Namen.getter(kenmerknaam(ot, v.get("characteristic").asText())));
         boolean aanwezig = Boolean.TRUE.equals(gelezen);
         return aanwezig == aanwezigVerwacht ? null
                 : "kenmerk " + v.get("characteristic").asText() + ": verwacht "
