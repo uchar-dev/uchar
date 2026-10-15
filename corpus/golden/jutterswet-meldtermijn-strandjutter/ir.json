@@ -267,6 +267,13 @@
         },
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "exceptionForSubtype",
+          "from": {
+            "kind": "namedForm",
+            "name": "meldtermijn"
+          }
         }
       }
     ]

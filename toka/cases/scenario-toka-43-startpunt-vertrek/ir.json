@@ -422,6 +422,13 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "startPoint",
+              "from": {
+                "kind": "namedForm",
+                "name": "Startpunt variabele periode op datum van vertrek"
+              }
             }
           }
         ],

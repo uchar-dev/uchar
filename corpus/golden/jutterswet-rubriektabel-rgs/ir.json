@@ -245,7 +245,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "rubriek van een aanspoelsel"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -342,7 +349,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "rubriek van een aanspoelsel"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],

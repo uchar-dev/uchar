@@ -36,6 +36,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
             }
           },
           {
@@ -46,6 +54,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
             }
           },
           {
@@ -68,7 +84,15 @@
           {
             "node": "Characteristic",
             "name": "afwijkende opgave waarde",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
+            }
           }
         ]
       },
@@ -96,6 +120,14 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Jutter",
+                "name": "wachtgeld"
+              }
             }
           },
           {
@@ -106,6 +138,14 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Jutter",
+                "name": "wachtgeld"
+              }
             }
           }
         ],
@@ -123,7 +163,15 @@
           {
             "node": "Characteristic",
             "name": "afwijkende opgave wachtgeld",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Jutter",
+                "name": "wachtgeld"
+              }
+            }
           }
         ]
       },
@@ -158,6 +206,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Aanspoelsel",
+                "name": "stukprijs"
+              }
             }
           },
           {
@@ -168,6 +224,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Aanspoelsel",
+                "name": "stukprijs"
+              }
             }
           }
         ],
@@ -175,7 +239,15 @@
           {
             "node": "Characteristic",
             "name": "afwijkende opgave stukprijs",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Aanspoelsel",
+                "name": "stukprijs"
+              }
+            }
           }
         ]
       }
@@ -314,7 +386,14 @@
         ],
         "statuteAnnotations": [
           "art. 3e lid 6"
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "stukprijs van een aanspoelsel"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -380,7 +459,14 @@
         ],
         "statuteAnnotations": [
           "art. 3e lid 6"
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "stukprijs van een aanspoelsel"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -479,7 +565,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -578,7 +672,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Jutter",
+            "name": "wachtgeld"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -677,7 +779,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Aanspoelsel",
+            "name": "stukprijs"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],
@@ -706,7 +816,15 @@
               "line": 3
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
       },
       {
         "node": "Consistency",
@@ -730,7 +848,15 @@
               "line": 10
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Jutter",
+            "name": "wachtgeld"
+          }
+        }
       },
       {
         "node": "Consistency",
@@ -754,7 +880,15 @@
               "line": 14
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Aanspoelsel",
+            "name": "stukprijs"
+          }
+        }
       }
     ],
     "uniquenesses": [],
@@ -1103,6 +1237,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
         }
       },
       {
@@ -1160,6 +1302,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Jutter",
+            "name": "wachtgeld"
+          }
         }
       },
       {
@@ -1217,6 +1367,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Aanspoelsel",
+            "name": "stukprijs"
+          }
         }
       }
     ]

@@ -93,7 +93,9 @@ purpose.
   determination only, WF-032 takes WF-016's place (measured). Those 27 now
   carry the casus's one determination and its member declaration, copied
   mechanically from `casus/ir.json`; the two start-point slices carried both
-  already and did not move, and all 29 now carry one identical model. The
+  already and did not move, and all 29 now carry one identical model (up to
+  the `origin` of that member, which since 2026-10-15 stands only in the two
+  slices that carry the rule it names; see the divergences below). The
   anchor's write rule stays with its own scenario: a slice needs its model
   anchored, not the anchor computed. That holds only while no member carries
   a timeline facet on the timeline with a variable start (measured: none in
@@ -299,6 +301,30 @@ stays honest about where it no longer proves toolchain agreement.
   pointer and sentence; see Well-formedness). The original toolchain writes
   neither, so for these two nodes the comparison proves "frontend == the
   recorded state".
+- **2026-10-15 — a declaration the frontend made carries its origin.**
+  Executed by the card `20261015-herkomst-op-de-draad.md` in `backlog/`. The
+  emitter writes the field `origin` (IR-SPEC ch. 2.13) on every declaration
+  the frontend made itself. In `casus/ir.json` that is four nodes, 31 added
+  lines and nothing else: the anchor `startpunt variabele periode van 3
+  maanden` of `Vlucht`, from the rule `Startpunt variabele periode op datum
+  van vertrek` (the first of the two determinations that write it), and the
+  three rows of the decision table `Woonregio factor`, each from that table
+  (the kind `decisionTable`). The slices moved by hand, written with gate 2's
+  serialiser, wherever they carry the source of an origin: each
+  `cases/scenario-toka-46-woonregio-factor-*` slice the three rows (24 added
+  lines), `cases/scenario-toka-43-startpunt-vertrek` the anchor from its own
+  determination, as in the casus, and
+  `cases/scenario-toka-44-startpunt-min-reserveringstermijn` the anchor from
+  the determination it carries, `Startpunt variabele periode op datum van
+  vertrek min reserveringstermijn`, which is what the frontend writes for a
+  document whose only determination is that one (7 added lines each). The
+  other 24 slices carry the anchor without a rule that writes it (the slice
+  rule, Well-formedness), so a `from` there would name a form the slice does
+  not declare (WF-121 (b)); they carry no origin. Every slice stays
+  verifier-clean, the dump's verifier report is unchanged, and no executor
+  reads the field (gate 13), so the replays print what they printed before.
+  The original toolchain writes no origin, so for these nodes the comparison
+  proves "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by

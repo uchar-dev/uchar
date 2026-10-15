@@ -1296,7 +1296,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "Woonregio factor"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -1450,7 +1457,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "Woonregio factor"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -1577,7 +1591,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "Woonregio factor"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],

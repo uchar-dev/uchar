@@ -36,6 +36,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
             }
           },
           {
@@ -46,6 +54,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
             }
           },
           {
@@ -76,6 +92,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
             }
           },
           {
@@ -86,6 +110,14 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
             }
           }
         ],
@@ -98,12 +130,28 @@
           {
             "node": "Characteristic",
             "name": "afwijkende opgave waarde",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "waarde"
+              }
+            }
           },
           {
             "node": "Characteristic",
             "name": "afwijkende opgave bergloon",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "bergloon"
+              }
+            }
           }
         ]
       }
@@ -395,7 +443,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -494,7 +550,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],
@@ -523,7 +587,15 @@
               "line": 3
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
+        }
       },
       {
         "node": "Consistency",
@@ -547,7 +619,15 @@
               "line": 5
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
+        }
       }
     ],
     "uniquenesses": [],
@@ -610,6 +690,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "waarde"
+          }
         }
       },
       {
@@ -689,6 +777,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "bergloon"
+          }
         }
       }
     ]

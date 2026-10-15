@@ -381,6 +381,13 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "startPoint",
+              "from": {
+                "kind": "namedForm",
+                "name": "Startpunt variabele periode op datum van vertrek"
+              }
             }
           }
         ],
@@ -2526,7 +2533,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "Woonregio factor"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -2680,7 +2694,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "Woonregio factor"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -2807,7 +2828,14 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "Woonregio factor"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [

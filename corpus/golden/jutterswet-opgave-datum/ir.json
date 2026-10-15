@@ -30,6 +30,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "meldingsdatum"
+              }
             }
           },
           {
@@ -38,6 +46,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "meldingsdatum"
+              }
             }
           },
           {
@@ -58,7 +74,15 @@
           {
             "node": "Characteristic",
             "name": "afwijkende opgave meldingsdatum",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "meldingsdatum"
+              }
+            }
           }
         ]
       }
@@ -347,7 +371,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "meldingsdatum"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],
@@ -376,7 +408,15 @@
               "line": 3
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "meldingsdatum"
+          }
+        }
       }
     ],
     "uniquenesses": [],
@@ -459,6 +499,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "meldingsdatum"
+          }
         }
       }
     ]

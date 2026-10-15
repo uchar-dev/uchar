@@ -63,6 +63,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Berging",
+                "name": "uiterste meldingsdag"
+              }
             }
           },
           {
@@ -71,6 +79,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Berging",
+                "name": "uiterste meldingsdag"
+              }
             }
           },
           {
@@ -87,6 +103,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Berging",
+                "name": "afrekendag"
+              }
             }
           },
           {
@@ -95,6 +119,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Berging",
+                "name": "afrekendag"
+              }
             }
           },
           {
@@ -122,12 +154,28 @@
           {
             "node": "Characteristic",
             "name": "afwijkende opgave uiterste meldingsdag",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Berging",
+                "name": "uiterste meldingsdag"
+              }
+            }
           },
           {
             "node": "Characteristic",
             "name": "afwijkende opgave afrekendag",
-            "kind": "possessive"
+            "kind": "possessive",
+            "origin": {
+              "form": "inputAboveComputation",
+              "from": {
+                "kind": "attribute",
+                "owner": "Berging",
+                "name": "afrekendag"
+              }
+            }
           }
         ]
       },
@@ -361,7 +409,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Berging",
+            "name": "uiterste meldingsdag"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -460,7 +516,15 @@
             },
             "initialisation": false
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Berging",
+            "name": "afrekendag"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],
@@ -489,7 +553,15 @@
               "line": 8
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Berging",
+            "name": "uiterste meldingsdag"
+          }
+        }
       },
       {
         "node": "Consistency",
@@ -513,7 +585,15 @@
               "line": 9
             }
           }
-        ]
+        ],
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Berging",
+            "name": "afrekendag"
+          }
+        }
       }
     ],
     "uniquenesses": [],
@@ -966,6 +1046,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Berging",
+            "name": "uiterste meldingsdag"
+          }
         }
       },
       {
@@ -1094,6 +1182,14 @@
         ],
         "validity": {
           "node": "Validity"
+        },
+        "origin": {
+          "form": "inputAboveComputation",
+          "from": {
+            "kind": "attribute",
+            "owner": "Berging",
+            "name": "afrekendag"
+          }
         }
       }
     ]

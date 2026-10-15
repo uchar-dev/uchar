@@ -71,6 +71,14 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "stepsAfterSet",
+              "from": {
+                "kind": "attribute",
+                "owner": "Weging",
+                "name": "gewicht"
+              }
             }
           },
           {
@@ -79,6 +87,14 @@
             "datatype": {
               "node": "Date",
               "precision": "day"
+            },
+            "origin": {
+              "form": "stepsAfterSet",
+              "from": {
+                "kind": "attribute",
+                "owner": "Vondst",
+                "name": "vinddag"
+              }
             }
           },
           {
@@ -89,6 +105,14 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified"
+            },
+            "origin": {
+              "form": "stepsAfterSet",
+              "from": {
+                "kind": "attribute",
+                "owner": "Boot",
+                "name": "laadvermogen"
+              }
             }
           }
         ],
@@ -572,7 +596,15 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "stepsAfterSet",
+          "from": {
+            "kind": "attribute",
+            "owner": "Weging",
+            "name": "gewicht"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -608,7 +640,15 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "stepsAfterSet",
+          "from": {
+            "kind": "attribute",
+            "owner": "Vondst",
+            "name": "vinddag"
+          }
+        }
       },
       {
         "node": "Rule",
@@ -644,7 +684,15 @@
             "initialisation": false,
             "presentation": "equation"
           }
-        ]
+        ],
+        "origin": {
+          "form": "stepsAfterSet",
+          "from": {
+            "kind": "attribute",
+            "owner": "Boot",
+            "name": "laadvermogen"
+          }
+        }
       }
     ],
     "dayKindDefinitions": [],
