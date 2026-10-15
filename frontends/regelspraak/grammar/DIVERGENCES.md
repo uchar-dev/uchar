@@ -3386,6 +3386,30 @@ group under the member's own name; an anchor the author declared himself is his.
 The table is filled once, at the end of the rule checker, for the elements still
 in the model: a withdrawn marker's members and a refused form get no entry.
 
+**On the wire** (card `herkomst-op-de-draad`, 2026-10-15; a proposal for
+IR-SPEC ch. 2.13 and WF-121). The emitter writes each entry as the field
+`origin` of the element's node, just before `designations`: the form in its
+wire spelling and the source by kind, owner and name, as the table records
+them. The keys map to the forms `inputAboveComputation`,
+`exceptionForSubtype`, `decisionTableRow`, `stepsAfterSet` and `startPoint`;
+a source that is a decision table, which the table records as a form because
+the table is no element, is the kind `decisionTable` on the wire, so that a
+row's source never names a form (`Spelling.originKind`). The Drools IR
+loader reads the field back into the table, so a model read from the wire has
+the table the frontend's has (`HerkomstBronrouteTest`, over every rgs golden).
+The attribute `berekende waarde` of `Vondst` in the golden
+`jutterswet-opgave-vormen` carries
+
+    "origin": {"form": "inputAboveComputation",
+               "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}
+
+The wire carries one source per element. The group `B voor S` names B, and the
+member and the rule `<lid> via <rol 1>, … en <rol n>` name the member the
+steps reach; the other parts of those names (S, the roles), which the rule
+checker hands to the composition of designations (below), are not on the
+wire, and a reader of the wire cannot compose a designation from them. A list
+of parts beside the source would be an additive extension; it is not built.
+
 **Designations** (card `gegenereerde-namen-in-elk-vocabulaire`, 2026-10-15).
 An element the opgave marker generates carries a designation in every
 vocabulary in which its source, the marked attribute X, carries one: its own
@@ -3410,9 +3434,11 @@ side table of "Vocabulaires en benamingen", the emitter writes it as a
 consistency or defaults group, and the checks of WF-117 to WF-120 judge it as
 they judge a written one. It belongs on the wire because the elements are
 declarations of the IR document, which IR-SPEC ch. 2.12 lets carry
-designations, and because no reader of the wire could compose it: the origin
-is this table, which the wire does not carry. A model the IR loader reads
-therefore has the same effective names as the frontend's. The wire, the
+designations, and because no reader of the wire could compose it: the
+composition needs the source's designations and, for a name of more than one
+part, the parts, and the wire carries the source (`origin`, above) but not the
+parts. A model the IR loader reads therefore has the same effective names as
+the frontend's. The wire, the
 schema and WF-116 to WF-120 are unchanged, and no golden combines the
 marker, a subtype's group (below) or a fold with steps after the set (below)
 with a vocabulary, so every IR document of the corpus stays byte-identical
@@ -3486,13 +3512,13 @@ The other forms of the table carry no designation, each for a reason:
   are entries of a coverage manifest, no declarations, and no vocabulary
   names them.
 
-**What it is not.** No semantics: no transpiler reads it, the emitter writes
-nothing of the table itself, and a model the IR loader reads leaves it empty.
-What reaches the wire through it are the composed designations (above), which
-are the vocabulary side table's and carry no semantics either; a document
-without vocabularies, or without the marker, a subtype's group and a fold
-with steps after the set, emits exactly what it emitted before (gates 10, 11
-and 16). A version of a form with several versions is no
+**What it is not.** No semantics: no transpiler reads it, neither the table
+nor its field on the wire, and a document whose `origin` fields are removed
+gives every executor the same answer (gate 13, the origin leg). What reaches
+the wire through it are the `origin` fields and the composed designations
+(above), both side tables without semantics; a document without an element
+the frontend made emits exactly what it emitted before (gates 10, 11 and 16,
+and `HerkomstOpDeDraadTest`). A version of a form with several versions is no
 element (the element is the form; the model entry is `<form> #<k>`), and an
 effective defaults stack is no element either: both are names of the Drools
 backend's coverage manifest, and its TMS transpiler gives their source the
@@ -3506,4 +3532,6 @@ the fixpoint that are no form (the key of a defaults conflict, `<type>.<member>`
 with `/<i>` per level below the root, and the relation named by a second
 filling). Witnesses: `GegenereerdUitTest` (frontend) and
 `GegenereerdeNamenWitnessTest` (backend); for the designations
-`GegenereerdeBenamingenTest` and `GegenereerdeNamenPerDeelTest` (frontend).
+`GegenereerdeBenamingenTest` and `GegenereerdeNamenPerDeelTest` (frontend);
+for the wire `HerkomstOpDeDraadTest` (frontend), `HerkomstWitnessTest`
+(backend) and `HerkomstBronrouteTest` (the route suite of gate 15).

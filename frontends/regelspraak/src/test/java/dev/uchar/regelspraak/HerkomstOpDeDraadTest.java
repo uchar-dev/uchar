@@ -139,6 +139,33 @@ class HerkomstOpDeDraadTest {
                 emissie(m));
     }
 
+    /** A rule may carry the name of a decision table, which is no form: with the kind namedForm the rows would name
+     *  that rule as their source. */
+    @Test void een_regel_met_de_naam_van_de_tabel_is_niet_de_bron_van_haar_rijen() {
+        RegelSpraakModel m = schoon("""
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de bonus Numeriek (geheel getal);
+                de premie Numeriek (geheel getal);
+                het aantal geborgen wrakken Numeriek (niet-negatief geheel getal);
+
+            Regel Bonustabel
+                geldig altijd
+                    De premie van een Jutter moet berekend worden als zijn aantal geborgen wrakken maal 2.
+
+            Beslistabel Bonustabel
+                geldig altijd
+            | | de bonus van een Jutter moet gesteld worden op | indien zijn aantal geborgen wrakken groter is dan |
+            |---|---|---|
+            | 1 | 10 | 5 |
+            | 2 | 20 | 10 |
+            """);
+        assertTrue(m.benoembaar().contains(Benoembaar.vorm("Bonustabel")));
+        assertEquals(List.of(
+                "Rule Bonustabel 1: decisionTableRow <- decisionTable Bonustabel",
+                "Rule Bonustabel 2: decisionTableRow <- decisionTable Bonustabel"),
+                emissie(m));
+    }
+
     @Test void het_lid_van_een_vouw_met_stappen_komt_uit_het_attribuut_op_het_type_dat_het_declareert() {
         RegelSpraakModel m = schoon("""
             Objecttype de Ploeg (mv: Ploegen)
