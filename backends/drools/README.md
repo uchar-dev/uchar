@@ -80,6 +80,17 @@ consumer does.
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it. `voegIn` states the facts the branch reads from these
    (`Emmerinvoer`, `Lijstplaats`), so a consumer states no fact class of the branch itself.
+   `CaseInvoer.van(build, case)` makes that `Invoer` from a `uchar-case-v0` case, as the replay makes it for every
+   case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
+   links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
+   far field as well; a to-many role in the far end's field; the reverse leg of a reciprocal role in a separate
+   pass), and gives `beans()` by label, `typen()` and `invoer()`, every to-many list in the order the reference
+   interpreter folds over. A consumer with a request of its own, such as a decision service, writes the request as
+   the `instances` of a case with its ids as labels. A role link the bean model cannot hold is a
+   `CaseInvoer.Rolweigering` (a `CaseRunner.Excluded`), a second, different target on a to-one field (WF-013) a
+   `CaseInvoer.Rolbotsing` (an `IllegalArgumentException`); both name the link the case wrote, its instance, role key
+   and target (`CaseInvoer.Rolfout`), and both come from `van`, before anything goes into a session (witness
+   `CaseInvoerWitnessTest`). The parameters and the evaluation date stay the caller's, as globals (step 1).
 3. `DroolsBackend.vuur(build, session)`, which fires to the fixpoint under a cap, a model with a creation in
    generations per stratum (below), and returns a `Vuring`: the firings, the cap, and `geenFixpunt`, the sentence of a
    run without a fixpoint, at the cap or at the creation budget, or null. The cap is `max(10 000, FACTOR × R × N0)`,

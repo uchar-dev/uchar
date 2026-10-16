@@ -23,19 +23,15 @@ import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * The uchar case runner for the Drools backend: it loads an {@code ir.json} off the wire (via
@@ -59,8 +55,10 @@ public final class CaseRunner {
 
     /** A golden is not carried by the v0 backend — a reason-carrying exclusion, never a silent skip. Public because
      *  {@link DroolsBackend} refuses with it as well and a consumer outside this package catches it by type; the
-     *  constructor stays package-private, since only this backend says what it does not carry. */
-    public static final class Excluded extends RuntimeException {
+     *  constructor stays package-private, since only this backend says what it does not carry. Not final, so that
+     *  {@link CaseInvoer.Rolweigering} is one and names the role link it refuses; with the constructor package-private,
+     *  no class outside this package extends it. */
+    public static class Excluded extends RuntimeException {
         Excluded(String reason) { super(reason); }
     }
 
@@ -96,9 +94,17 @@ public final class CaseRunner {
         this.verdringingen = FactModelGenerator.verdringingen(model);
     }
 
+    /** A runner of {@code build} that replays no case, whose readers of case values, dates, timelines and declared
+     *  member names {@link CaseInvoer} shares with the comparison. */
+    static CaseRunner lezer(DroolsBackend.Build build) {
+        CaseRunner runner = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dagsoortGlobalen());
+        runner.bouw = build;
+        return runner;
+    }
+
     /** Refuses a case that sets or reads ({@code handeling}) the attribute or, with {@code kenmerk}, the
      *  characteristic {@code naam} of an instance of {@code ot} when that member has no bean field of its own. */
-    private void eigenVeld(Objecttype ot, String naam, boolean kenmerk, String handeling) {
+    void eigenVeld(Objecttype ot, String naam, boolean kenmerk, String handeling) {
         String reden = ot == null ? null : FactModelGenerator.verdrongenLid(verdringingen, ot, naam, kenmerk);
         if (reden != null) throw new Excluded(reden + "; de case " + handeling + " het");
     }
@@ -239,22 +245,10 @@ public final class CaseRunner {
      *  a {@code List<Segment>} member, or WHICH LEG of a §13.3.9.2 reciprocal pair a role filled — each could be
      *  wrong and still fold to the right total, passing unseen. Roles are therefore set here too, in the replay's
      *  own order (attributes, then roles), so the mirrored self-pair fill is assertable bean-by-bean. Globals
-     *  stay out: they live on a {@link KieSession}, which is fire's concern, not this layer's. */
+     *  stay out: they live on a {@link KieSession}, which is fire's concern, not this layer's. The beans are those of
+     *  the backend's entry ({@link CaseInvoer}), which every replay reads its case through. */
     static Map<String, Object> invoerBeans(Path irPath, JsonNode c) throws java.io.IOException {
-        CaseRunner runner = build(irPath);
-        runner.rekendatum = asOfDatum(c);
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(runner.cl);
-        try {
-            JsonNode instances = c.get("input").get("instances");
-            for (JsonNode i : instances) runner.beanVoor(i);
-            for (JsonNode i : instances) runner.zetAttributenEnKenmerken(i);
-            for (JsonNode i : instances) runner.zetRollen(i);
-            runner.spiegelWederkerigeRollen();
-            return runner.labelNaarBean;
-        } finally {
-            Thread.currentThread().setContextClassLoader(vorige);
-        }
+        return new LinkedHashMap<>(CaseInvoer.van(build(irPath).bouw, c).beans());
     }
 
     /** One case's input beans plus every fact the session holds AFTER fire — the §13.4.6 witness seam of
@@ -275,13 +269,9 @@ public final class CaseRunner {
         Thread.currentThread().setContextClassLoader(runner.cl);
         KieSession sessie = runner.kieBase.newKieSession();
         try {
-            JsonNode instances = c.get("input").get("instances");
-            for (JsonNode i : instances) runner.beanVoor(i);
-            for (JsonNode i : instances) runner.zetAttributenEnKenmerken(i);
-            for (JsonNode i : instances) runner.zetRollen(i);
-            runner.spiegelWederkerigeRollen();
+            CaseInvoer invoer = runner.leesInvoer(c);
             runner.zetGlobals(sessie, c);
-            runner.voegInvoerIn(sessie);
+            DroolsBackend.voegIn(runner.bouw, sessie, invoer.invoer());
             String geenFixpunt = runner.vuurTotFixpunt(sessie);
             // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
             // a run that never reached a fixpoint must not hand back a half-fired fact base as if it had settled.
@@ -341,20 +331,14 @@ public final class CaseRunner {
     <T> T metSessie(JsonNode c, Sessiemeting<T> meting) {
         labelNaarBean.clear();
         labelType.clear();
-        lijsten.clear();
-        emmers.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
         try {
-            JsonNode instances = c.get("input").get("instances");
-            for (JsonNode i : instances) beanVoor(i);
-            for (JsonNode i : instances) zetAttributenEnKenmerken(i);
-            for (JsonNode i : instances) zetRollen(i);
-            spiegelWederkerigeRollen();
+            CaseInvoer invoer = leesInvoer(c);
             zetGlobals(sessie, c);
-            voegInvoerIn(sessie);
+            DroolsBackend.voegIn(bouw, sessie, invoer.invoer());
             return meting.meet(bouw, sessie, java.util.Collections.unmodifiableMap(labelNaarBean));
         } finally {
             sessie.dispose();
@@ -449,21 +433,14 @@ public final class CaseRunner {
     private String fireRood(JsonNode c) {
         labelNaarBean.clear();
         labelType.clear();
-        lijsten.clear();
-        emmers.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
         try {
-            JsonNode input = c.get("input");
-            JsonNode instances = input.get("instances");
-            for (JsonNode i : instances) beanVoor(i);
-            for (JsonNode i : instances) zetAttributenEnKenmerken(i);
-            for (JsonNode i : instances) zetRollen(i);
-            spiegelWederkerigeRollen();
+            CaseInvoer invoer = leesInvoer(c);
             zetGlobals(sessie, c);
-            voegInvoerIn(sessie);
+            DroolsBackend.voegIn(bouw, sessie, invoer.invoer());
             return vuurTotFixpunt(sessie);
         } finally {
             sessie.dispose();
@@ -489,17 +466,11 @@ public final class CaseRunner {
 
     // ---------------- one case ----------------
 
+    /** The input beans of the case by label, and their object types, as {@link CaseInvoer} read them: the labels of the
+     *  report, the seam and the write-back. */
     private final Map<String, Object> labelNaarBean = new LinkedHashMap<>();
     private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
-    /** The to-many lists of the case input per holder bean and per reference field of their members, as
-     *  {@link #zetRollen} writes them: the order {@link #voegInvoerIn} gives each list ({@link Invoer#lijst}). */
-    private final Map<Object, Map<String, Lijst>> lijsten = new IdentityHashMap<>();
-    /** Every scalar input on a temporal attribute of the case, the asOfDate-bucket convention that
-     *  {@link #temporeleInvoer} lays on the bean as one segment: what {@link #voegInvoerIn} names as bucket scalars
-     *  ({@link Invoer#emmerscalair}). */
-    private final List<Invoer.Emmer> emmers = new ArrayList<>();
-    /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
-     *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
+    /** The case's evaluation date, which {@link #zetGlobals} sets as the global {@code rekendatum}. */
     private LocalDate rekendatum;
 
     private String runCase(String naam, JsonNode c) {
@@ -513,21 +484,14 @@ public final class CaseRunner {
     private String runCase(String naam, JsonNode c, Waarneming w) {
         labelNaarBean.clear();
         labelType.clear();
-        lijsten.clear();
-        emmers.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
         try {
-            JsonNode input = c.get("input");
-            JsonNode instances = input.get("instances");
-            for (JsonNode i : instances) beanVoor(i);
-            for (JsonNode i : instances) zetAttributenEnKenmerken(i);
-            for (JsonNode i : instances) zetRollen(i);
-            spiegelWederkerigeRollen();
+            CaseInvoer invoer = leesInvoer(c);
             zetGlobals(sessie, c);
-            voegInvoerIn(sessie);
+            DroolsBackend.voegIn(bouw, sessie, invoer.invoer());
             String geenFixpunt = vuurTotFixpunt(sessie, w == null ? null : w.vuren);
             if (geenFixpunt != null) return naam + ": " + geenFixpunt;
             DroolsBackend.Vergelijking vergelijking =
@@ -573,34 +537,25 @@ public final class CaseRunner {
         return vuring.geenFixpunt();
     }
 
-    private Object beanVoor(JsonNode i) {
-        String label = i.get("label").asText();
-        Object bean = labelNaarBean.get(label);
-        if (bean != null) return bean;
-        String otNaam = i.get("objectType").asText();
-        Objecttype ot = model.objecttypeOpNaam(otNaam);
-        if (ot == null) throw new Excluded("case names an unknown objectType: " + otNaam);
-        try {
-            bean = Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), true, cl)
-                    .getConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("kon bean voor label '" + label + "' niet maken", e);
-        }
-        labelNaarBean.put(label, bean);
-        labelType.put(label, ot);
-        return bean;
+    /** Reads case {@code c} through the backend's entry ({@link CaseInvoer}), as a consumer reads it, and keeps its
+     *  labels for this runner's report, seam and write-back. */
+    private CaseInvoer leesInvoer(JsonNode c) {
+        CaseInvoer invoer = CaseInvoer.van(bouw, c);
+        labelNaarBean.putAll(invoer.beans());
+        labelType.putAll(invoer.typen());
+        return invoer;
     }
 
     /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal bean member — a {@code List<Segment>} field,
      *  the shape {@link FactModelGenerator} derives from a declared attribuutGranulariteit. */
-    private boolean temporeel(Objecttype ot, String attr) {
+    boolean temporeel(Objecttype ot, String attr) {
         return Namen.bevatNaam(ot.granulariteitLeden(), attr);
     }
 
     /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map<String, BigDecimal>}
      *  field. Checked BEFORE {@link #temporeel}: the generator gives a dimensioned declaration the Map shape
      *  even when a granularity is declared beside it. */
-    private boolean gedimensioneerd(Objecttype ot, String attr) {
+    boolean gedimensioneerd(Objecttype ot, String attr) {
         return !ot.dimensiesVan(attr).isEmpty();
     }
 
@@ -609,342 +564,16 @@ public final class CaseRunner {
      *  or declares none. The generator derives a member's getter and setter from its declared name, and a case may
      *  write the name in another capitalisation, "vondstNummer" for a declared "vondstnummer", which the reference
      *  interpreter reads as the same member: a method derived from the written name would be one the bean lacks. */
-    private static String attribuutnaam(Objecttype ot, String naam) {
+    static String attribuutnaam(Objecttype ot, String naam) {
         return ot == null ? naam : Namen.gedeclareerdeNaam(ot.attribuutLeden().keySet(), naam);
     }
 
     /** {@link #attribuutnaam} for a characteristic. */
-    private static String kenmerknaam(Objecttype ot, String naam) {
+    static String kenmerknaam(Objecttype ot, String naam) {
         if (ot == null) return naam;
         List<String> gedeclareerd = new ArrayList<>();
         for (Objecttype t : ot.keten()) gedeclareerd.addAll(t.kenmerken);
         return Namen.gedeclareerdeNaam(gedeclareerd, naam);
-    }
-
-    private void zetAttributenEnKenmerken(JsonNode i) {
-        Object bean = labelNaarBean.get(i.get("label").asText());
-        Objecttype ot = model.objecttypeOpNaam(i.get("objectType").asText());
-        JsonNode attrs = i.get("attributes");
-        if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
-            Datatype dt = ot.attribuut(e.getKey());
-            if (dt == null) throw new Excluded("case sets undeclared attribute '" + e.getKey() + "' on " + ot.naam);
-            eigenVeld(ot, e.getKey(), false, "zet");
-            if (gedimensioneerd(ot, e.getKey()))
-                throw new Excluded("dimensioned attribute input '" + e.getKey() + "' (§3.6, a Map bean member) "
-                        + "is not carried by the v0 backend");
-            if (temporeel(ot, e.getKey())) {
-                // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
-                // brought back to it or it names a setter the bean does not have (ref reads it as the same name)
-                roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.granulariteitLeden().keySet(), e.getKey())), List.class,
-                        temporeleInvoer(e.getValue(), e.getKey(), i.get("label").asText() + "." + e.getKey(),
-                                rooster(ot, e.getKey())));
-                if (!e.getValue().isNull() && !e.getValue().has("timeline"))
-                    emmers.add(new Invoer.Emmer(bean, e.getKey()));
-                continue;
-            }
-            roep(bean, Namen.setter(attribuutnaam(ot, e.getKey())), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
-        }
-        JsonNode kenmerken = i.get("characteristics");
-        if (kenmerken != null) for (JsonNode k : kenmerken) {
-            // A CASE defect, not an uncarried form (maintainer decision 2026-09-09) — the sister arm below has
-            // said so about the mirror-image mistake since it was written, and this arm is the same seam from
-            // the other side. A TEMPORAL kenmerk's bean member is a List<Segment>, so a scalar-true assertion
-            // reaches no reader here; in the interpreter and the ASP backend it reached none either, and BOTH
-            // answered 0 where the golden pins 30 rather than saying anything (measured 2026-09-09 on
-            // jutterswet-tegenwacht and anchor/jutterswet-dubbelwacht). All three readers refuse it at load
-            // since that decision. It stayed an Excluded until then, which filed a broken case under "a form
-            // the v0 backend does not carry" — a counted, reasoned refusal in the gate report for a case that
-            // is simply wrong, and the one classification that could keep it out of sight.
-            if (Namen.bevatNaam(ot.kenmerkGranulariteitLeden(), k.asText()))
-                throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
-                        + "time-dependent kenmerk of " + ot.naam + ": deliver it as a characteristicTimelines "
-                        + "entry — the static characteristics list asserts a scalar truth no temporal reader "
-                        + "consults");
-            eigenVeld(ot, k.asText(), true, "zet");
-            roep(bean, Namen.setter(kenmerknaam(ot, k.asText())), boolean.class, Boolean.TRUE);
-        }
-        JsonNode ctls = i.get("characteristicTimelines");
-        if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
-            // a CASE defect, not an uncarried form — ref refuses this shape at load (case.ml: "a
-            // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
-            // Excluded would file a broken corpus case under "not carried", silently green.
-            if (!Namen.bevatNaam(ot.kenmerkGranulariteitLeden(), e.getKey()))
-                throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
-            eigenVeld(ot, e.getKey(), true, "zet");
-            roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.kenmerkGranulariteitLeden().keySet(), e.getKey())), List.class,
-                    kenmerkTijdreeks(e.getValue(), e.getKey()));
-        }
-    }
-
-    private void zetRollen(JsonNode i) {
-        Object bean = labelNaarBean.get(i.get("label").asText());
-        Objecttype tI = model.objecttypeOpNaam(i.get("objectType").asText());
-        JsonNode rollen = i.get("roles");
-        if (rollen == null) return;
-        for (Map.Entry<String, JsonNode> e : rollen.properties()) {
-            for (JsonNode labelNode : e.getValue()) {
-                Object doel = labelNaarBean.get(labelNode.asText());
-                if (doel == null) throw new Excluded("role '" + e.getKey() + "' names unknown label " + labelNode.asText());
-                Objecttype tL = objecttypeVanBean(doel);
-                // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
-                // one role it is the ONLY route: the by-pair search below counts every candidate and derives
-                // null by construction (RegelSpraakModel.verbindendeRol; ref BLOCKS the same derivation in
-                // connecting_pair). That is the SELF-TYPED pair's two sibling roles and, since the repeated-pair
-                // card, the ordinary cross-type pair related by several feittypen. Resolved through the very
-                // authority FactModelGenerator.leden derives the fields from and ACCEPTED ONLY when it names one
-                // of them (geldigRolveld), so a hit can only write a field the bean carries — that membership
-                // test is what keeps this from being a general by-name override. Where the by-pair search already
-                // succeeds the outcome is unchanged: a by-name hit is always one of the by-pair candidates, so a
-                // unique pair resolves to the same role either way.
-                String viaNaam = model.verbindendeRolViaNaam(tI, tL, e.getKey());
-                boolean geschrevenVeld = viaNaam != null && geldigRolveld(tI, viaNaam, tL);
-                // the field on THIS bean (to-one from here): the written role, else the type pair
-                String rolIL = geschrevenVeld ? viaNaam : model.verbindendeRol(tI, tL);
-                // The SISTER role — the one THIS instance fills — whose reference field lives on the TARGET
-                // bean, and which is where a TO-MANY written role stores its links. Resolved BY NAME first,
-                // exactly as rolIL is: the written role name names one feittype and its OTHER role is the
-                // back-reference (verbindendeRolViaElementnaam). That is the only route wherever the by-pair
-                // search counts more than one candidate — the self-typed pair's two siblings (the shape that
-                // made W1{opvolgers:[…]} a per-form refusal although Wachter.voorligger exists) and the
-                // repeated cross-type pair, where H1{liggers:[…]} must land on Schuit.thuishaven and not on
-                // one of the three other Haven fields that bean now carries. RUNTIME-SEMANTICS ch. 5.7a makes
-                // this write obligatory, not optional: the case names ONE leg of a relation that has two, and
-                // the reader arriving from the other end must reach the same relation instance.
-                //
-                // Accepted only when the name lands on a field FactModelGenerator really derived
-                // (geldigRolveld, the same membership test rolIL uses), so a written name that resolves to a
-                // role WITHOUT a field keeps the honest refusal below instead of reaching a setter no bean
-                // carries. Where the by-pair search already succeeds, a by-name hit is one of its candidates,
-                // so a unique pair resolves to the same role either way.
-                String zuster = model.verbindendeRolViaElementnaam(tI, e.getKey());
-                boolean zusterVeld = zuster != null && geldigRolveld(tL, zuster, tI);
-                String rolLI = zusterVeld ? zuster : model.verbindendeRol(tL, tI);
-                if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
-                    naamdelingsPoort(tI, rolIL, tL, e.getKey());
-                    zetToOne(bean, rolIL, doel);
-                    lijst(doel, rolIL).gespiegeld.putIfAbsent(i.get("label").asText(), bean);
-                    // RUNTIME-SEMANTICS ch. 5.7a, the 1:1 arm: a supplied link ESTABLISHES the relation and
-                    // BOTH roles read it. With the sister role ALSO to-one the relation owns TWO bean fields —
-                    // one per direction — so the forward write above leaves the far side reading a spuriously
-                    // empty relation unless the second field is written too. That second write is the whole of
-                    // the difference between a 1:1 and a 1:N shape here: at 1:N there is exactly ONE field and
-                    // it already serves both directions (the else-branch below writes it), so nothing is left
-                    // to mirror. ref's Case.materialise_relations makes the same write on the same role.
-                    //
-                    // rolLI == rolIL is the WEDERKERIG shape (§13.3.9.2: one role that is its own opposite),
-                    // whose mirror is spiegelWederkerigeRollen's separate pass — untouched here, so its
-                    // order-independence argument and its own conflict message keep holding.
-                    if (rolLI != null && !rolLI.equalsIgnoreCase(rolIL) && !model.naarVeelRol(tL, tI, rolLI)) {
-                        // The far field must really exist: a declared member of the same name displaces it
-                        // (leden()'s dedup), and then this backend cannot hold the far direction at all. Under
-                        // ch. 5.7a that is a per-form refusal with its reason, never a silently one-directional
-                        // relation — the same standard the forward write is held to one line up.
-                        naamdelingsPoort(tL, rolLI, tI, e.getKey());
-                        zetToOne(doel, rolLI, bean);
-                    }
-                } else {
-                    // the field lives on the target (this is the one side)
-                    if (rolLI == null || model.naarVeelRol(tL, tI, rolLI))
-                        // NOT UNIQUE and UNIQUE BUT TO-MANY are different failures and are reported apart (lens 2,
-                        // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
-                        // is its CARDINALITY — a to-many role's storage is the far end's field — where the old
-                        // single sentence blamed a non-unique derivation that had in fact succeeded.
-                        throw new Excluded("role '" + e.getKey() + "' (" + tI.naam + " -> " + tL.naam + ") reaches no "
-                                + "to-one reference field: " + (viaNaam == null
-                                    ? "the written role name resolves to no unique role"
-                                    : model.naarVeelRol(tI, tL, viaNaam)
-                                    ? "the written role name resolves to '" + viaNaam + "', which is TO-MANY — its "
-                                      + "storage is the far end's field, not a scalar reference here"
-                                    : "the written role name resolves to the to-one role '" + viaNaam + "', which is "
-                                      + "not one of the §13.3.9 reference fields the bean model derives")
-                                + ", and " + (rolIL != null
-                                    ? "this direction resolves the to-many role '" + rolIL + "'"
-                                    : rolLI != null
-                                    ? "the far direction resolves the to-many role '" + rolLI + "'"
-                                    : "neither direction of the type pair derives a to-one role"));
-                    naamdelingsPoort(tL, rolLI, tI, e.getKey());
-                    zetToOne(doel, rolLI, bean);
-                    Lijst l = lijst(bean, rolLI);
-                    if (l.geschreven.stream().noneMatch(x -> x == doel)) l.geschreven.add(doel);
-                }
-            }
-        }
-    }
-
-    /** One to-many list of the case input under the reference field of the holder's role {@code rol}: the members the
-     *  case wrote under the holder, in the order it wrote them, and the members whose own link to the holder the reverse
-     *  leg mirrors into it (RUNTIME-SEMANTICS ch. 5.7a), by label in ref's order, plain byte order. */
-    private static final class Lijst {
-        final String rol;
-        final List<Object> geschreven = new ArrayList<>();
-        final TreeMap<String, Object> gespiegeld = new TreeMap<>(
-                Comparator.comparing((String l) -> l.getBytes(StandardCharsets.UTF_8), Arrays::compareUnsigned));
-
-        Lijst(String rol) {
-            this.rol = rol;
-        }
-    }
-
-    private Lijst lijst(Object houder, String rol) {
-        return lijsten.computeIfAbsent(houder, k -> new LinkedHashMap<>())
-                .computeIfAbsent(Namen.ident(rol, false), k -> new Lijst(rol));
-    }
-
-    /**
-     * Puts the case input into {@code sessie} through the backend's entry ({@link DroolsBackend#voegIn}), as a consumer
-     * does: the beans, in the order of the case, every scalar input on a temporal attribute as a bucket scalar, and the
-     * order of every to-many list. The bean shows such a scalar as the one segment of its bucket, which a full timeline
-     * of one segment would be as well, while the analysis reads the two conventions of
-     * RUNTIME-SEMANTICS ch. 8.4 apart: the bucket scalar serves the subject's own total, the full timeline every other
-     * read, and a form that needs the one and finds the other faults. The bean model keeps a to-many role as a reference
-     * field on each member and no order, while the analysis names the first member in fold order whose filter faults
-     * (RUNTIME-SEMANTICS ch. 5.11). The order is that of the list the reference interpreter folds over: the written
-     * members first, in the order the case wrote them, then the members whose own link the loader mirrors into the
-     * list, in ascending label order (ch. 5.7a, "member ORDER"), a member in both counting once, where it was written.
-     */
-    private void voegInvoerIn(KieSession sessie) {
-        Invoer invoer = new Invoer().beans(labelNaarBean.values());
-        for (Invoer.Emmer e : emmers) invoer.emmerscalair(e.bean(), e.attribuut());
-        for (Map.Entry<Object, Map<String, Lijst>> perHouder : lijsten.entrySet())
-            for (Lijst l : perHouder.getValue().values()) {
-                List<Object> leden = new ArrayList<>(l.geschreven);
-                for (Object lid : l.gespiegeld.values())
-                    if (leden.stream().noneMatch(x -> x == lid)) leden.add(lid);
-                invoer.lijst(perHouder.getKey(), l.rol, leden);
-            }
-        DroolsBackend.voegIn(bouw, sessie, invoer);
-    }
-
-    /** Whether {@code rol} is one of the reference fields {@link FactModelGenerator#leden} DERIVES on
-     *  {@code drager} toward {@code doel} — the membership test that lets the WRITTEN role name override the
-     *  by-pair search without ever reaching a setter no bean has. It asks the generator's own two derivations:
-     *  {@code zelfpaarRollen} for a self-typed pair (§13.3.9.2 and the ordinary two-role self-pair) and
-     *  {@code verbindendeRollen} for a cross-type one. Deliberately a NAME test, not
-     *  {@link FactModelGenerator#heeftReferentieVeld}: a role whose name a declared member displaced is a
-     *  DIFFERENT failure with its own sentence ({@link #naamdelingsPoort}), and collapsing the two here would
-     *  send the name-sharing shape back through the by-pair route to be blamed for an ambiguity it does not
-     *  have. */
-    private boolean geldigRolveld(Objecttype drager, String rol, Objecttype doel) {
-        return drager.naam.equalsIgnoreCase(doel.naam)
-                ? FactModelGenerator.zelfpaarRollen(model, drager).contains(rol)
-                : model.verbindendeRollen(drager, doel).contains(rol);
-    }
-
-    /** The §13.3.9 NAME-SHARING gate on a resolved to-one role write: {@code drager}'s bean must carry the
-     *  reference field for {@code rol} TYPED (a field of {@code doel}'s class), not merely a property of that
-     *  name. Both roles here come from the very authorities {@link FactModelGenerator#leden} derives the fields
-     *  from ({@code zelfpaarRollen} / {@code verbindendeRollen} / {@code verbindendeRol}), so the ONE thing that
-     *  can still be missing is the
-     *  reference itself, displaced by a declared member of the same name (leden()'s dedup: attribute >
-     *  characteristic > reference). Without this gate the write below reaches {@code set<X>(BigDecimal)} with a
-     *  fact — "kon setter setOpvolger(Wachter) niet aanroepen", an unclassified ERROR the gate refuses to excuse
-     *  — where the honest outcome is a loud, reason-carrying exclusion (lens 2, 2026-08-30). The §13.3.9.2
-     *  wederkerig twin of this limit is refused in {@link DroolsBackend} for the whole model. */
-    private void naamdelingsPoort(Objecttype drager, String rol, Objecttype doel, String geschreven) {
-        if (FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel)) return;
-        // The cause is read off what holds the property, never assumed. Until 2026-09-28 every cause other than a
-        // declared member was reported as a second role, and the commonest one was no second role at all: a target
-        // of a SUBTYPE of the role's filler, which the field of the filler's class takes (IR-SPEC ch. 2.6) and which
-        // the type gate then refused by equality. Two same-named roles toward different types
-        // (corpus/rood/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
-        FactModelGenerator.Herkomst houder = FactModelGenerator.veldHerkomst(model, drager, rol);
-        String veld = Namen.ident(drager.naam, true) + "." + Namen.ident(rol, false);
-        String oorzaak;
-        if (drager.heeftLid(rol)) oorzaak = "which shares its name with a declared member";
-        else if (houder == null) oorzaak = "for which the bean model derives no field";
-        else if (houder.soort() != FactModelGenerator.Herkomst.Soort.ROL)
-            oorzaak = "whose bean property " + veld + " belongs to " + beschreven(houder);
-        else if (!houder.equals(FactModelGenerator.rolHerkomst(model, drager, doel, rol)))
-            oorzaak = "whose field " + veld + " another role already holds, " + beschreven(houder);
-        else oorzaak = "whose field " + veld + " cannot hold a " + doel.naam;
-        throw new Excluded("role '" + geschreven + "' resolves to the to-one role '" + rol + "' on " + drager.naam
-                + ", " + oorzaak + " — the bean cannot carry the reference field "
-                + "(name-sharing bean limit: attribute > characteristic > reference)");
-    }
-
-    /** A declaration in the words of this reader's refusals. */
-    private static String beschreven(FactModelGenerator.Herkomst h) {
-        return switch (h.soort()) {
-            case ATTRIBUUT -> "the attribute '" + h.naam() + "' of " + h.bron();
-            case KENMERK -> "the characteristic '" + h.naam() + "' of " + h.bron();
-            case ROL -> "the role '" + h.naam() + "'" + (h.bron() == null ? "" : " of fact type '" + h.bron() + "'");
-        };
-    }
-
-    /** One to-one role write, WF-013-guarded: a second, DIFFERENT filler on the same to-one field is a case
-     *  shape ref refuses at load, so last-wins here would play a broken case green — the mirror pass's own
-     *  argument, applied to the forward leg (lens 2, 2026-08-30). The same filler twice stays idempotent. */
-    private void zetToOne(Object drager, String rol, Object doel) {
-        Object huidig = lees(drager, Namen.getter(rol));
-        if (huidig != null && huidig != doel)
-            throw new IllegalArgumentException("to-one rol '" + rol + "' krijgt een tweede, ander doel — "
-                    + "ref weigert die case bij het laden (WF-013)");
-        roep(drager, Namen.setter(rol), veldklasse(drager, rol), doel);
-    }
-
-    /** The class of the reference field {@code rol} on {@code drager}'s bean, read off its getter: the class of the
-     *  role's declared filler. The setter is looked up by that class and not by the target's own, because a target
-     *  of a subtype of the filler (IR-SPEC ch. 2.6) has a class of its own that no setter names. */
-    private static Class<?> veldklasse(Object drager, String rol) {
-        try {
-            return drager.getClass().getMethod(Namen.getter(rol)).getReturnType();
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("geen getter " + Namen.getter(rol) + " op "
-                    + drager.getClass().getSimpleName(), e);
-        }
-    }
-
-    /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
-     *  gets its reverse materialised — exactly what {@code Case.materialise_relations} does in ref, and what
-     *  RUNTIME-SEMANTICS ch. 4.1 requires ("the pinned runtime writes both to-one legs so navigation never reads
-     *  a spuriously empty side"). Both goldens pin it: a partner that declares no roles of its own still reads its
-     *  side, and the reverse read {@code Jutter( maat == $subject )} an aggregation lowers to needs the leg
-     *  present. Run as a SEPARATE PASS over the finished links, like ref's, so the outcome cannot depend on the
-     *  order instances appear in: a conflict must be seen wherever the colliding leg was written. Idempotent
-     *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
-     *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
-     *
-     *  <p>Scoped to the WEDERKERIG shape, and since 2026-09-10 that scope is a DIVISION OF LABOUR rather than
-     *  the law it used to state. RUNTIME-SEMANTICS ch. 5.7a (maintainer decision) makes EVERY supplied link
-     *  establish its relation in both directions, and ref's {@code Case.materialise_relations} mirrors on the
-     *  SISTER role accordingly. Three shapes, three answers, all landed:
-     *  <ul>
-     *    <li><b>1:N</b> — the relation has exactly ONE reference field and it necessarily serves both
-     *        directions, so there is no second write to make. {@link #zetRollen} lands the case's write on that
-     *        field through the sister role's NAME, and the three spellings of one relation give one fact base
-     *        ({@code ZusterrolInvoerWitnessTest}, over the {@code jutterswet-ketenband} golden).</li>
-     *    <li><b>1:1</b> — each direction owns its own field, so ch. 5.7a needs a SECOND write on the target
-     *        bean. {@link #zetRollen} makes it, right after the forward write, on the sister role and under the
-     *        same name-sharing gate. That closed the last ref ≢ Drools flank of the decision: a case writing
-     *        {@code W1{opvolger:[W2]}} over a to-one/to-one self-pair now reads W1 as W2's voorganger here, as
-     *        it does in ref ({@code OpslagrichtingWitnessTest}, converted at that decision).</li>
-     *    <li><b>wederkerig</b> (§13.3.9.2, one role that is its own opposite) — THIS pass, and deliberately
-     *        still a separate one: its order-independence argument above is the reason, and the 1:1 arm skips
-     *        the shape (it fires only when the sister role is a DIFFERENT role) so the two never collide.</li>
-     *  </ul> */
-    private void spiegelWederkerigeRollen() {
-        for (Object bean : labelNaarBean.values()) {
-            // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
-            // asked of the bean's own type alone, such a leg went unmirrored and the partner read an empty relation
-            String rol = null;
-            for (Objecttype t : objecttypeVanBean(bean).keten())
-                if ((rol = FactModelGenerator.zelfpaarRol(model, t)) != null) break;
-            if (rol == null) continue;
-            Object partner = lees(bean, Namen.getter(rol));
-            if (partner == null) continue;
-            Object terug = lees(partner, Namen.getter(rol));
-            if (terug == bean) continue;
-            if (terug != null)
-                throw new IllegalArgumentException("wederkerige rol '" + rol + "': het doel is al verbonden met "
-                        + "een ander — de omgekeerde poot botst (WF-013 to-one)");
-            roep(partner, Namen.setter(rol), veldklasse(partner, rol), bean);
-        }
-    }
-
-    private Objecttype objecttypeVanBean(Object bean) {
-        for (Objecttype ot : model.objecttypen.values())
-            if (Namen.ident(ot.naam, true).equals(bean.getClass().getSimpleName())) return ot;
-        throw new IllegalStateException("geen objecttype voor bean " + bean.getClass());
     }
 
     private void zetGlobals(KieSession sessie, JsonNode c) {
@@ -962,7 +591,7 @@ public final class CaseRunner {
     }
 
     /** The case's {@code asOfDate}, or null when it carries none. */
-    private static LocalDate asOfDatum(JsonNode c) {
+    static LocalDate asOfDatum(JsonNode c) {
         JsonNode asOf = c.get("asOfDate");
         return asOf == null || asOf.isNull() ? null : datumVanCaseWire(asOf.asText(), "asOfDate");
     }
@@ -974,36 +603,6 @@ public final class CaseRunner {
 
     // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------
 
-    /** The {@code List<Segment>} a case value denotes for a temporal attribute at {@code gran} — the two input
-     *  forms {@code ref} carries (ref/lib/case.ml), mirrored so both executors read the SAME timeline:
-     *  <ul>
-     *    <li>a {@code {"timeline":[…]}} value: the written segments, validated exactly as ref validates them;</li>
-     *    <li>a SCALAR value: the asOfDate-bucket convention recorded in {@code corpus/golden/README.md} — the
-     *        scalar IS the value of the bucket the evaluation date falls in. ref keeps that scalar aside and
-     *        folds precisely this one-bucket timeline inside the ch. 3.6 collapse ({@code Eval}'s temporal
-     *        total: value × whole units of its own grid); the bean model has no scalar slot beside the
-     *        {@code List<Segment>} field, so the bucket is materialised here and
-     *        {@link RegelSpraakRuntime#rsTijdTotaal} folds the identical segment to the identical scalar.</li>
-     *  </ul>
-     *  Deliberate consequence of that materialisation: the bean now carries a shape ref REFUSES to serve —
-     *  ref has no point-in-time read at all (ch. 3.3: a temporal attribute in a scalar slot is refused, the
-     *  collapses are the only bridges), and its no-filter ch. 3.6 total even faults on a case-supplied FULL
-     *  timeline ("the asOfDate-bucket convention carries the total", eval.ml). The divergence surface is thus
-     *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
-     *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
-     *  looks, by construction. The caller records each scalar as a bucket scalar, which
-     *  {@link #voegInvoerIn} names to {@link DroolsBackend#voegIn}, and the analysis reads the two conventions apart and
-     *  faults where a form needs the one and finds the other (RUNTIME-SEMANTICS ch. 8.4). */
-    private List<Object> temporeleInvoer(JsonNode w, String attr, String plek, Rooster gran) {
-        if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
-        if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, plek, gran, false);
-        if (rekendatum == null)
-            throw new Excluded("scalar input on temporal attribute '" + attr + "' without an asOfDate: the "
-                    + "bucket convention (corpus/golden/README.md) has no evaluation date to place it in");
-        LocalDate[] emmer = emmer(gran, rekendatum);
-        return List.of(segment(emmer[0], emmer[1], segmentWaarde(w, attr)));
-    }
-
     /** The segments of a timeline value, with ref's load-time validation mirrored: at least one segment (an
      *  EXPECTATION may be empty — {@code leegToegestaan}), {@code from} before {@code to}, both boundaries on the
      *  declared granularity grid, and the list ordered and non-overlapping as written. A malformed timeline is a
@@ -1012,7 +611,7 @@ public final class CaseRunner {
      *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code plek}
      *  ({@code J1.m2} for an input, {@code expected J1.m2} for an expectation): a grid of several units and a
      *  variable start before any segment is read, the calendar's day, week and quarter grid at the first segment. */
-    private List<Object> tijdreeks(JsonNode segs, String veld, String plek, Rooster gran, boolean leegToegestaan) {
+    List<Object> tijdreeks(JsonNode segs, String veld, String plek, Rooster gran, boolean leegToegestaan) {
         if (segs == null || !segs.isArray())
             throw new IllegalArgumentException("misvormde tijdlijnwaarde op '" + veld + "'");
         if (segs.isEmpty() && !leegToegestaan)
@@ -1044,38 +643,11 @@ public final class CaseRunner {
         return uit;
     }
 
-    /** The TRUE-period {@code List<Segment>} a {@code characteristicTimelines} entry denotes. True periods are
-     *  DAY-precise regardless of the declared granularity (ref: the granularity governs the kenmerk's bucketing,
-     *  never its period grid — the ch. 3.7 pro-rata's whole point), so no grid check applies; ref sorts the
-     *  periods and rejects overlap, and this does the same. The segments carry a null waarde: the runtime builds
-     *  its own true-period timelines that way (rsTijdOfUnie) and every consumer reads van/tot only (rsTijdKnip). */
-    private List<Object> kenmerkTijdreeks(JsonNode periodes, String kenmerk) {
-        if (periodes == null || !periodes.isArray())
-            throw new IllegalArgumentException("misvormde kenmerktijdlijn op '" + kenmerk + "'");
-        List<LocalDate[]> gesorteerd = new ArrayList<>();
-        for (JsonNode pj : periodes) {
-            LocalDate van = grensDatum(pj, "from", kenmerk), tot = grensDatum(pj, "to", kenmerk);
-            if (!van.isBefore(tot))
-                throw new IllegalArgumentException("periode 'to' op '" + kenmerk + "' ligt niet na 'from'");
-            gesorteerd.add(new LocalDate[]{ van, tot });
-        }
-        gesorteerd.sort((a, b) -> a[0].equals(b[0]) ? a[1].compareTo(b[1]) : a[0].compareTo(b[0]));
-        List<Object> uit = new ArrayList<>();
-        LocalDate vorigeTot = null;
-        for (LocalDate[] p : gesorteerd) {
-            if (vorigeTot != null && p[0].isBefore(vorigeTot))
-                throw new IllegalArgumentException("perioden op '" + kenmerk + "' overlappen");
-            vorigeTot = p[1];
-            uit.add(segment(p[0], p[1], null));
-        }
-        return uit;
-    }
-
     /** The grid a temporal member's case values sit on: its facet's granularity and count, its fixed start point,
      *  and whether it rides a timeline with a variable start (RUNTIME-SEMANTICS ch. 3.2). */
-    private record Rooster(Granulariteit gran, int aantal, String vast, boolean variabel) {}
+    record Rooster(Granulariteit gran, int aantal, String vast, boolean variabel) {}
 
-    private Rooster rooster(Objecttype ot, String attr) {
+    Rooster rooster(Objecttype ot, String attr) {
         Integer aantal = Namen.opNaam(ot.tijdlijnAantalLeden(), attr);
         return new Rooster(Namen.opNaam(ot.granulariteitLeden(), attr), aantal == null ? 1 : aantal,
                 ot.vastStartpuntVan(attr), model.heeftVariabelStartpunt(ot, attr));
@@ -1088,7 +660,7 @@ public final class CaseRunner {
      *  well: a grid of several units carries no operation, a variable start is laid per object from an anchor the
      *  case does not give, and the calendar lays no day, week or quarter bucket. For a case timeline
      *  {@link #tijdreeks} refuses the same grids first, in the sentence of ref's case loader. */
-    private static LocalDate[] emmer(Rooster r, LocalDate d) {
+    static LocalDate[] emmer(Rooster r, LocalDate d) {
         if (r.aantal() != 1)
             throw new Excluded("a multi-period grid (" + r.aantal() + " " + spelling(r.gran()) + " periods) carries"
                     + " no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12)");
@@ -1131,14 +703,14 @@ public final class CaseRunner {
 
     /** The numeric value of one segment. The generated {@code Segment} holds a {@code BigDecimal} waarde, so a
      *  non-numeric timeline value has no bean representation — a reason-carrying not-carried, never a coercion. */
-    private BigDecimal segmentWaarde(JsonNode w, String veld) {
+    BigDecimal segmentWaarde(JsonNode w, String veld) {
         Object v = waardeNaarArg(w, veld);
         if (v == null || v instanceof BigDecimal) return (BigDecimal) v;
         throw new Excluded("non-numeric timeline value on '" + veld + "' is not carried by the v0 backend — "
                 + "the generated Segment holds a BigDecimal waarde");
     }
 
-    private static LocalDate grensDatum(JsonNode seg, String veld, String waar) {
+    static LocalDate grensDatum(JsonNode seg, String veld, String waar) {
         JsonNode d = seg == null ? null : seg.get(veld);
         if (d == null || !d.isTextual())
             throw new IllegalArgumentException("segment op '" + waar + "' mist een '" + veld + "'-datum");
@@ -1149,7 +721,7 @@ public final class CaseRunner {
 
     /** One {@code Segment} fact of the generated bean model, built through the runtime's own reflective
      *  constructor — the Segment class is a runtime objecttype, unknown at compile time. */
-    private Object segment(LocalDate van, LocalDate tot, BigDecimal waarde) {
+    Object segment(LocalDate van, LocalDate tot, BigDecimal waarde) {
         try {
             return RegelSpraakRuntime.newSegment(
                     Class.forName(FactModelGenerator.PAKKET + ".Segment", true, cl), van, tot, waarde);
@@ -1452,7 +1024,7 @@ public final class CaseRunner {
     /** The Java value a uchar case value node denotes — the already-normalised scalar the bean setter /
      *  global takes. An input form the v0 backend does not carry (a list/struct/constructor value, a
      *  rational lexeme, a timeline) is a reason-carrying {@link Excluded}. */
-    private Object waardeNaarArg(JsonNode w, String veld) {
+    Object waardeNaarArg(JsonNode w, String veld) {
         if (w == null || w.isNull()) return null;
         if (w.has("number")) {
             String s = w.get("number").asText();
@@ -1529,7 +1101,7 @@ public final class CaseRunner {
         }
     }
 
-    private static Class<?> argType(Datatype dt) {
+    static Class<?> argType(Datatype dt) {
         if (dt == null) return Object.class;
         if (dt.isNumeriek() || dt.isPercentage()) return BigDecimal.class;
         if (dt.isTekst() || dt instanceof Datatype.Enumeratie) return String.class;
@@ -1539,7 +1111,7 @@ public final class CaseRunner {
         return Object.class;
     }
 
-    private static void roep(Object bean, String methode, Class<?> type, Object waarde) {
+    static void roep(Object bean, String methode, Class<?> type, Object waarde) {
         try { bean.getClass().getMethod(methode, type).invoke(bean, waarde); }
         catch (ReflectiveOperationException e) {
             throw new RuntimeException("kon setter " + methode + "(" + type.getSimpleName() + ") niet aanroepen op "
@@ -1547,7 +1119,7 @@ public final class CaseRunner {
         }
     }
 
-    private static Object lees(Object bean, String getter) {
+    static Object lees(Object bean, String getter) {
         for (String mth : new String[]{ getter, "is" + getter.substring(3) }) {
             try { return bean.getClass().getMethod(mth).invoke(bean); }
             catch (NoSuchMethodException ignore) { /* try next form */ }

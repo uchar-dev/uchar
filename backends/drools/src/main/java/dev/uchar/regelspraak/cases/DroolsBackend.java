@@ -90,7 +90,7 @@ import java.util.function.Predicate;
  * {@link org.kie.api.runtime.KieSession} of {@link Build#kieBase()}, with {@link Build#beanLoader()} as the thread's
  * context class loader, the parameters and the evaluation date ({@code rekendatum}) as globals and on the DRL-text
  * branch also {@link Build#dagsoortGlobalen()}; then {@link #voegIn}, which puts in the fact beans and what the
- * branch reads beside them; then {@link #vuur}, which fires to the fixpoint under a cap and, for a model with a
+ * branch reads beside them, and for a case {@link CaseInvoer} makes them; then {@link #vuur}, which fires to the fixpoint under a cap and, for a model with a
  * creation, in generations, and with a {@link Waarnemer} records what the session fired, from which {@link #dekking}
  * gives the coverage; then {@link #lees} or {@link #zetAfgeleideWaarden}, after which {@link #vergelijk} compares the
  * expectations of a case with the session. The beans hold the input alone until
