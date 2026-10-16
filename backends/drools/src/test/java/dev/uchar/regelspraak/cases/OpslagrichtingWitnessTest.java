@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the field derivation and the case-input write agree with ref's keying. Until 2026-09-10 they did NOT agree,
  * and this file pinned ref's DIRECTED reading as the arbiter; RUNTIME-SEMANTICS ch. 5.7a then decided the
  * other way — a supplied role link ESTABLISHES the relation and BOTH roles read it — so ref's loader mirrors
- * on the sister role and {@code CaseRunner.zetRollen} writes the second field on a 1:1 shape. The three tests
+ * on the sister role and {@code CaseInvoer.zetRollen} writes the second field on a 1:1 shape. The three tests
  * that carried the old reading were converted at that decision and say so at their own site.
  *
  * <p>Gate 12 cannot see any of this: every corpus golden supplies its relations from the end where all
@@ -78,7 +78,7 @@ class OpslagrichtingWitnessTest {
         // `de_gewone_zelfpaarkoppeling_spiegelt_niet` and asserted the opposite — that W2's `voorganger` stays
         // null after W1 -> W2 over `opvolging` — on the then-true ground that ref's mirror was gated on
         // ft.wederkerig. That gate is gone: ref's Case.materialise_relations mirrors EVERY two-role relation on
-        // the SISTER role, and the 1:1 arm of CaseRunner.zetRollen writes the second bean field to match.
+        // the SISTER role, and the 1:1 arm of CaseInvoer.zetRollen writes the second bean field to match.
         // RED FIRST — this assertion measured on this model and case with that write removed again:
         //     expected: <dev.uchar.regelspraak.facts.Wachter@…> but was: <null>
         //

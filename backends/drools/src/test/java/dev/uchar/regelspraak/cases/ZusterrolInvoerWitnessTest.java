@@ -25,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>What moved (maintainer decision 2026-09-10). A written to-many role's storage is the far end's
  * field, and on a SELF-TYPED pair the by-pair search that used to name that field counts both same-typed
- * siblings and derives null by construction. {@link CaseRunner#zetRollen} therefore refused the whole
+ * siblings and derives null by construction. {@code CaseRunner.zetRollen} (since card case-invoer-publiek
+ * {@code CaseInvoer.zetRollen}) therefore refused the whole
  * form — "reaches no to-one reference field … neither direction of the type pair derives a to-one role" —
  * although the field exists (FactModelGenerator's self-pair derivation makes it) and the very next line
  * could have written it. The written role name is the route: it names one feittype, and that feittype's
