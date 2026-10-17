@@ -37,7 +37,7 @@ type otdecl = {
   o_name : string;
   mutable o_super : (string * int) option;
   mutable o_attrs : (string * A.datatype * int) list; (* source order *)
-  mutable o_kenmerken : (string * A.kenmerk_soort * int) list;
+  mutable o_characteristics : (string * A.kenmerk_soort * int) list;
   mutable o_bases : (string * expr * string * int) list;
       (* the barred class-level defaults: attribute, value, declared id, line *)
 }
@@ -60,7 +60,7 @@ let find_ft m n = List.find_opt (fun f -> f.f_name = n) m.ftypes
 
 let reserved_marker = "feittype"
 
-let teken_of ~line = function
+let sign_of ~line = function
   | "onbepaald" -> A.Onbepaald
   | "niet_negatief" -> A.Niet_negatief
   | "negatief" -> A.Negatief
@@ -69,7 +69,7 @@ let teken_of ~line = function
       refuse ~line "the sign %s: numeriek(...) takes onbepaald, niet_negatief, negatief or positief"
         other
 
-let kenmerk_soort_of ~line = function
+let characteristic_kind_of ~line = function
   | "bijvoeglijk" -> A.Bijvoeglijk
   | "bezittelijk" -> A.Bezittelijk
   | "zelfstandig" -> A.Zelfstandig
@@ -83,7 +83,7 @@ type slot = Attribute of A.datatype | Characteristic of A.kenmerk_soort | Filler
 let slot_of_ty ~line (t : ty) : slot =
   match t with
   | Ty_term ("numeriek", [ sign; scale ]) ->
-      let teken = teken_of ~line sign in
+      let teken = sign_of ~line sign in
       if scale = "geheel" then Attribute (num ~teken ~geheel:true ~decimalen:0 ())
       else (
         match int_of_string_opt scale with
@@ -91,7 +91,7 @@ let slot_of_ty ~line (t : ty) : slot =
         | _ ->
             refuse ~line
               "the scale %s: numeriek(...) takes 'geheel' or a decimal count" scale)
-  | Ty_term ("kenmerk", [ soort ]) -> Characteristic (kenmerk_soort_of ~line soort)
+  | Ty_term ("kenmerk", [ soort ]) -> Characteristic (characteristic_kind_of ~line soort)
   | Ty_term (f, args) ->
       refuse ~line "the type term %s/%d" f (List.length args)
   | Ty_prim "\\integer" -> Attribute (num ~geheel:true ~decimalen:0 ())
@@ -118,7 +118,7 @@ let declare_once (o : otdecl) name line =
     List.find_map (fun (n, _, l) -> if n = name then Some l else None) o.o_attrs
     |> function
     | Some l -> Some l
-    | None -> List.find_map (fun (n, _, l) -> if n = name then Some l else None) o.o_kenmerken
+    | None -> List.find_map (fun (n, _, l) -> if n = name then Some l else None) o.o_characteristics
   in
   match hit with
   | Some first ->
@@ -141,7 +141,7 @@ let collect (stmts : stmt list) : model =
     match find_ot m n with
     | Some o -> o
     | None ->
-        let o = { o_name = n; o_super = None; o_attrs = []; o_kenmerken = []; o_bases = [] } in
+        let o = { o_name = n; o_super = None; o_attrs = []; o_characteristics = []; o_bases = [] } in
         m.otypes <- m.otypes @ [ o ];
         o
   in
@@ -187,7 +187,7 @@ let collect (stmts : stmt list) : model =
                   | Si_decl (n, card, t, line) -> (
                       match slot_of_ty ~line t with
                       | Filler filler ->
-                          let meervoudig =
+                          let many =
                             match card with
                             | None -> false
                             | Some { c_max = None; _ } -> true
@@ -197,7 +197,7 @@ let collect (stmts : stmt list) : model =
                             f.f_roles
                             @ [ ( n,
                                   { A.rol_naam = Some n; rol_objecttype_naam = Some filler;
-                                    rol_meervoud = None; rol_meervoudig = meervoudig },
+                                    rol_meervoud = None; rol_meervoudig = many },
                                   line ) ]
                       | _ ->
                           refuse ~line
@@ -218,7 +218,7 @@ let collect (stmts : stmt list) : model =
                           o.o_attrs <- o.o_attrs @ [ (n, dt, line) ]
                       | Characteristic soort ->
                           declare_once o n line;
-                          o.o_kenmerken <- o.o_kenmerken @ [ (n, soort, line) ]
+                          o.o_characteristics <- o.o_characteristics @ [ (n, soort, line) ]
                       | Filler f ->
                           refuse ~line
                             "the signature %s.%s names the object type %s: a reference between \
@@ -263,8 +263,8 @@ let find_attr m cls name =
       | None -> None)
     (chain m cls)
 
-let find_kenmerk m cls name =
-  List.exists (fun o -> List.exists (fun (n, _, _) -> n = name) o.o_kenmerken) (chain m cls)
+let find_characteristic m cls name =
+  List.exists (fun o -> List.exists (fun (n, _, _) -> n = name) o.o_characteristics) (chain m cls)
 
 let attr_type m ~line cls name =
   match find_attr m cls name with
@@ -376,7 +376,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
   (* A comprehension reaches this point as a VALUE. A conditioned one is a
      quantification and belongs in a rule body, compared with its threshold
      — the F-logic counterpart of the set reading that has no fold source to
-     live in; see [low_kwantorvouw]. *)
+     live in; see [low_quantifier_fold]. *)
   (match (kind, goals) with
   | _, [] -> ()
   | "count", _ ->
@@ -501,14 +501,14 @@ let as_quantification ~line = function
 let rec low_cond m ctx (g : goal) : A.conditie =
   match g with
   | G_member (_, k, line) ->
-      if not (find_kenmerk m ctx.c_subject k) then
+      if not (find_characteristic m ctx.c_subject k) then
         refuse ~line "%s is neither a declared object type nor a characteristic of %s" k
           ctx.c_subject;
       A.Kenmerk_check
         { kenmerk = Some k; negatie = false; eigenaar = None;
           periode = None; bron = Some (show_goal g); navigatie_binding = None }
   | G_cmp (op, l, r, line) when as_quantification ~line l <> None ->
-      low_kwantorvouw m ctx ~line ~op ~rhs:r
+      low_quantifier_fold m ctx ~line ~op ~rhs:r
         ~q:(Option.get (as_quantification ~line l))
         ~bron:(show_goal g)
   | G_cmp (_, _, r, line) when is_counting_comprehension r ->
@@ -536,7 +536,7 @@ let rec low_cond m ctx (g : goal) : A.conditie =
    negation form is needed and the slice's \naf / \neg refusal does not
    move: none is count = 0 and all is count = |contributors|, written as
    the same comprehension without its matrix. *)
-and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
+and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
   (* The hop starts at the rule's subject, exactly as it must in a VALUE
      position ([low_agg], same message). Without this the range would be
      read off a variable the rule never bound, and the wire would carry a
@@ -573,7 +573,7 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
              ~bron:(String.concat ", " (List.map (fun g -> show_goal (rename_goal q.q_var g)) gs))
              (List.map low gs))
   in
-  let toets = low q.q_matrix in
+  let test = low q.q_matrix in
   let threshold lex =
     match int_of_string_opt lex with
     | Some n when n >= 0 -> n
@@ -654,7 +654,7 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
   in
   A.Kwantorvouw
     { kv_kwantor = kwantor; kv_drempel = drempel; kv_element_objecttype = Some el;
-      kv_filter = filter; kv_toets = Some toets; kv_bron = Some bron;
+      kv_filter = filter; kv_toets = Some test; kv_bron = Some bron;
       kv_bron_rol = Some { rb_feittype = f.f_name; rb_rol = q.q_role }; kv_bron_pad = None }
 
 (* --- rules ----------------------------------------------------------------- *)
@@ -663,8 +663,8 @@ type definition = {
   d_name : string option;
   d_target : string * string; (* subject class, attribute or characteristic *)
   d_var : string; (* the head variable, for the [bron] renderings *)
-  d_kenmerk : bool; (* from the isa head ?S : k *)
-  d_doel_bron : string; (* the head in its own spelling *)
+  d_characteristic : bool; (* from the isa head ?S : k *)
+  d_target_source : string; (* the head in its own spelling *)
   d_barred : bool; (* from c[|attr -> v|], which is a base by decision *)
   d_cond : A.conditie option; (* None = unconditional: the base *)
   d_value : A.expr;
@@ -710,8 +710,8 @@ let low_rule m (r : rule) : definition =
   in
   let target, value, kenmerk =
     match r.r_head with
-    | H_kenmerk k ->
-        if not (find_kenmerk m subject k) then
+    | H_characteristic k ->
+        if not (find_characteristic m subject k) then
           refuse ~line:r.r_line
             "the head ?%s : %s assigns a characteristic, but %s declares no characteristic %s \
              (on it or on a supertype)"
@@ -723,7 +723,7 @@ let low_rule m (r : rule) : definition =
           A.Literal { variant = A.Lv_boolean true; typ = Some A.Booleaan; bron = None },
           true )
     | H_attr (attr, e) ->
-        if find_kenmerk m subject attr then
+        if find_characteristic m subject attr then
           refuse ~line:r.r_line
             "the rule head writes the characteristic %s as an attribute value: a characteristic \
              is assigned with the isa head, ?%s : %s"
@@ -737,14 +737,14 @@ let low_rule m (r : rule) : definition =
       | G_bind _ -> None
       | g -> Some (show_goal g)) r.r_body)
   in
-  { d_name = r.r_id; d_target = (subject, target); d_var = r.r_subj; d_kenmerk = kenmerk;
-    d_doel_bron = show_head ~var:r.r_subj r.r_head; d_barred = false;
+  { d_name = r.r_id; d_target = (subject, target); d_var = r.r_subj; d_characteristic = kenmerk;
+    d_target_source = show_head ~var:r.r_subj r.r_head; d_barred = false;
     d_cond = (if conds = [] then None else Some (conjoin ~bron conds));
     d_value = value; d_line = r.r_line }
 
 (* --- the document ----------------------------------------------------------- *)
 
-let no_geldigheid = Some { A.geld_vanaf = None; geld_tot = None }
+let no_validity = Some { A.geld_vanaf = None; geld_tot = None }
 
 let doel m ~subject ~attr ~kenmerk ~bron ~line =
   (* the target writes no type of its own (B13); an attribute target still
@@ -817,8 +817,8 @@ let document (stmts : stmt list) : A.document =
                   o.o_name attr (show_expr e) attr o.o_name);
             let ctx = { c_subject = o.o_name; c_var = "self"; c_binds = [] } in
             let (_ : A.datatype) = attr_type m ~line o.o_name attr in
-            { d_name = Some id; d_target = (o.o_name, attr); d_var = "self"; d_kenmerk = false;
-              d_doel_bron = show_head ~var:"self" (H_attr (attr, e)); d_barred = true;
+            { d_name = Some id; d_target = (o.o_name, attr); d_var = "self"; d_characteristic = false;
+              d_target_source = show_head ~var:"self" (H_attr (attr, e)); d_barred = true;
               d_cond = None; d_value = low_expr m ctx ~line e; d_line = line })
           o.o_bases)
       m.otypes
@@ -841,7 +841,7 @@ let document (stmts : stmt list) : A.document =
          definition refuses for the same reason a second unconditional
          attribute definition does: nothing in the slice orders them. *)
       match here with
-      | ({ d_kenmerk = true; _ } as d) :: rest ->
+      | ({ d_characteristic = true; _ } as d) :: rest ->
           (match rest with
           | d2 :: _ ->
               refuse ~line:d2.d_line
@@ -854,9 +854,9 @@ let document (stmts : stmt list) : A.document =
             @ [ { A.rr_naam = d.d_name; rr_soort = Some A.Kenmerktoekenning;
                   doel =
                     Some
-                      (doel m ~subject ~attr ~kenmerk:true ~bron:d.d_doel_bron ~line:d.d_line);
+                      (doel m ~subject ~attr ~kenmerk:true ~bron:d.d_target_source ~line:d.d_line);
                   waarde = Some d.d_value; rr_voorwaarde = d.d_cond;
-                  rr_geldigheid = no_geldigheid; rr_bron_annotaties = None;
+                  rr_geldigheid = no_validity; rr_bron_annotaties = None;
                   (* the wire pointer is the loader's to set on a record it
                      reads; this one is only ever serialised *)
                   rr_pointer = "" } ]
@@ -880,9 +880,9 @@ let document (stmts : stmt list) : A.document =
             @ [ { A.rr_naam = b.d_name; rr_soort = Some A.Berekening;
                   doel =
                     Some
-                      (doel m ~subject ~attr ~kenmerk:false ~bron:b.d_doel_bron ~line:b.d_line);
+                      (doel m ~subject ~attr ~kenmerk:false ~bron:b.d_target_source ~line:b.d_line);
                   waarde = Some b.d_value; rr_voorwaarde = None;
-                  rr_geldigheid = no_geldigheid; rr_bron_annotaties = None;
+                  rr_geldigheid = no_validity; rr_bron_annotaties = None;
                   rr_pointer = "" } ]
       | [], None -> ()
       | _ ->
@@ -902,7 +902,7 @@ let document (stmts : stmt list) : A.document =
             !groups
             @ [ { A.pd_naam = naam; pd_onderwerp = subject; pd_kenmerk = None;
                   pd_attribuut = Some attr; defaults = members; pd_ongeordend = false;
-                  pd_bron = None; pd_geldigheid = no_geldigheid } ]))
+                  pd_bron = None; pd_geldigheid = no_validity } ]))
     !targets;
   let objecttypen =
     List.map
@@ -913,8 +913,8 @@ let document (stmts : stmt list) : A.document =
             attributen = List.map (fun (n, dt, _) -> (n, Some dt)) o.o_attrs;
             attribuut_meervoud = []; attribuut_dimensies = []; attribuut_granulariteit = [];
             attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = [];
-            kenmerken = List.map (fun (n, _, _) -> Some n) o.o_kenmerken;
-            kenmerk_soorten = List.map (fun (n, s, _) -> (n, Some s)) o.o_kenmerken;
+            kenmerken = List.map (fun (n, _, _) -> Some n) o.o_characteristics;
+            kenmerk_soorten = List.map (fun (n, s, _) -> (n, Some s)) o.o_characteristics;
             kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = [];
             (* F-logic declares no grammatical number and no animacy: the
                two RegelSpraak surface affordances stay unset rather than

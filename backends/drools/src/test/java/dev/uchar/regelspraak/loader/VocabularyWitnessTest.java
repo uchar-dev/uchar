@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * effective name to the declaration; the transpilers never read it. Measured before this loader read the fields:
  * the golden was refused as an unknown field 'vocabularies' at the root.
  */
-class VocabulaireWitnessTest {
+class VocabularyWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path CORPUS = Path.of("..", "..", "corpus");
@@ -38,25 +38,25 @@ class VocabulaireWitnessTest {
         return JSON.readTree(Files.readString(ir));
     }
 
-    @Test void de_vocabulaires_en_hun_benamingen_komen_in_het_model() throws Exception {
+    @Test void the_vocabularies_and_their_designations_come_in_the_model() throws Exception {
         RegelSpraakModel m = IrLoader.load(golden());
         assertEquals(List.of(new RegelSpraakModel.Vocabulaire("handboek", false, "nl"),
                 new RegelSpraakModel.Vocabulaire("cgm", true, "nl")), m.vocabulaires);
-        Benoembaar bedrag = Benoembaar.attribuut("Jutter", "vondstbedrag");
-        assertEquals(Optional.of("totale premie"), m.benaming("handboek", bedrag));
-        assertEquals(Optional.of("VONDST_BEDRAG"), m.benaming("CGM", bedrag));   // a vocabulary by name, ci
+        Benoembaar amount = Benoembaar.attribuut("Jutter", "vondstbedrag");
+        assertEquals(Optional.of("totale premie"), m.benaming("handboek", amount));
+        assertEquals(Optional.of("VONDST_BEDRAG"), m.benaming("CGM", amount));   // a vocabulary by name, ci
         assertEquals(Optional.of("amber"), m.benaming("handboek", Benoembaar.enumeratiewaarde("Vondstsoort", "barnsteen")));
         assertEquals(Optional.of("R_PREMIE_VONDST"), m.benaming("cgm", Benoembaar.vorm("premie van een vondst")));
         assertEquals(Optional.of("PREMIEBEREKENING"), m.benaming("cgm", Benoembaar.regelgroep("premieberekening")));
         assertEquals(Optional.of("GEMELDE_VONDST"), m.benaming("cgm", Benoembaar.rol("vondstaanmelding", "vondst")));
-        assertEquals(Optional.empty(), m.benaming("wet", bedrag));
+        assertEquals(Optional.empty(), m.benaming("wet", amount));
         // every designatable declaration of the golden, each named in the default vocabulary (WF-119)
-        List<Benoembaar> alle = m.benoembaar();
-        assertEquals(23, alle.size());
-        for (Benoembaar b : alle) assertTrue(m.benaming("cgm", b).isPresent(), () -> "geen cgm-benaming op " + b);
+        List<Benoembaar> all = m.benoembaar();
+        assertEquals(23, all.size());
+        for (Benoembaar b : all) assertTrue(m.benaming("cgm", b).isPresent(), () -> "geen cgm-benaming op " + b);
     }
 
-    @Test void de_weg_terug_loopt_over_de_effectieve_naam() throws Exception {
+    @Test void the_effective_name_goes_back_to_its_declaration() throws Exception {
         RegelSpraakModel m = IrLoader.load(golden());
         assertEquals(Optional.of(Benoembaar.attribuut("Jutter", "vondstbedrag")),
                 m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Jutter", "vondst_bedrag"));
@@ -70,11 +70,11 @@ class VocabulaireWitnessTest {
         assertEquals(Optional.empty(), m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Vondst", "VONDST_BEDRAG"));
     }
 
-    @Test void zonder_benaming_is_de_effectieve_naam_de_canonieke() throws Exception {
+    @Test void without_designation_the_effective_name_is_the_canonical() throws Exception {
         JsonNode ir = golden();
-        ObjectNode gewicht = IrPad.attribute(IrPad.objectType(ir, "Vondst"), "gewicht");
-        ArrayNode lijst = (ArrayNode) gewicht.get("designations");
-        lijst.remove(0);                                    // the handboek designation goes, the cgm one stays
+        ObjectNode weight = IrPad.attribute(IrPad.objectType(ir, "Vondst"), "gewicht");
+        ArrayNode list = (ArrayNode) weight.get("designations");
+        list.remove(0);                                    // the handboek designation goes, the cgm one stays
         RegelSpraakModel m = IrLoader.load(ir);
         Benoembaar b = Benoembaar.attribuut("Vondst", "gewicht");
         assertEquals("gewicht", m.effectieveNaam("handboek", b));
@@ -82,7 +82,7 @@ class VocabulaireWitnessTest {
         assertEquals("GEWICHT", m.effectieveNaam("cgm", b));
     }
 
-    @Test void een_geerfd_lid_wordt_vanaf_het_subtype_gevonden() throws Exception {
+    @Test void an_inherited_member_is_found_from_the_subtype() throws Exception {
         JsonNode ir = golden();
         ObjectNode sub = JSON.createObjectNode();
         sub.put("node", "ObjectType").put("name", "Zware vondst").put("supertype", "Vondst").put("animate", false);
@@ -94,25 +94,25 @@ class VocabulaireWitnessTest {
                 m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Zware vondst", "GEWICHT"));
     }
 
-    @Test void de_zijtafel_wordt_structureel_gelezen() throws Exception {
+    @Test void the_side_table_is_read_structurally() throws Exception {
         JsonNode ir = golden();
         ((ObjectNode) IrPad.objectType(ir, "Jutter")).putArray("designations");
-        IrLoader.Documentfout leeg = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
-        assertTrue(leeg.getMessage().contains("a declaration's designations are at least one, or the field is absent"),
-                leeg.getMessage());
+        IrLoader.Documentfout empty = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
+        assertTrue(empty.getMessage().contains("a declaration's designations are at least one, or the field is absent"),
+                empty.getMessage());
 
         JsonNode ir2 = golden();
         ((ObjectNode) ((ArrayNode) IrPad.objectType(ir2, "Jutter").get("designations")).get(0)).put("status", "x");
-        IrLoader.Documentfout vreemd = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
-        assertEquals("/model/objectTypes/0/designations/0/status", vreemd.plek());
+        IrLoader.Documentfout foreign = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
+        assertEquals("/model/objectTypes/0/designations/0/status", foreign.plek());
 
         JsonNode ir3 = golden();
         ((ObjectNode) ((ArrayNode) ir3.get("vocabularies")).get(1)).put("kind", "code");
-        IrLoader.Documentfout soort = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir3));
-        assertEquals("/vocabularies/1/kind", soort.plek());
+        IrLoader.Documentfout kind = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir3));
+        assertEquals("/vocabularies/1/kind", kind.plek());
     }
 
-    @Test void wat_een_benaming_zegt_weigert_de_lader_niet() throws Exception {
+    @Test void the_loader_does_not_refuse_what_a_designation_says() throws Exception {
         // an undeclared vocabulary and a value that names no declared value are the verifier's (WF-117), never a load
         // refusal: no executor refuses a document for what its designations say
         JsonNode ir = golden();

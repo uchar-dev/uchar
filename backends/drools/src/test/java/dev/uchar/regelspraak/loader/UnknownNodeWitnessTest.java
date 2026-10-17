@@ -30,10 +30,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>The unions are read from the schema, so a member the schema gains that this loader neither carries nor lists
  * among the forms it refuses fails here instead of being called unknown. The v0 node names are the renaming witness's
- * ({@code HernoemingWeigeringWitnessTest}); the rows here are names no version of the wire had, a member's name in
+ * ({@code RenamingRefusalWitnessTest}); the rows here are names no version of the wire had, a member's name in
  * another case, and members of one union at a position of another.
  */
-class OnbekendeKnoopWitnessTest {
+class UnknownNodeWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     // cwd under surefire is the module dir (backends/drools); the corpus and the schema are two levels up
@@ -48,49 +48,49 @@ class OnbekendeKnoopWitnessTest {
 
     /** A position of one union: where a node of it stands, the schema's name for the union, the refusal's form prefix
      *  and sentence, and the members this backend refuses as forms it does not carry. */
-    private record Unie(String def, String pad, String vorm, String zin, Set<String> nietGedragen) {}
+    private record Union(String def, String path, String formPrefix, String sentence, Set<String> notCarried) {}
 
-    private static final Unie EXPRESSIE = new Unie("expr", W, "Expr:", "unknown expr node",
+    private static final Union EXPRESSION = new Union("expr", W, "Expr:", "unknown expr node",
             Set.of("TemporalRead", "Construct", "Match", "StructLiteral", "FieldAccess", "ListLiteral", "Lambda",
                     "Invoke", "Fold", "MapList", "FilterList", "ListLength"));
-    private static final Unie CONDITIE = new Unie("condition", V, "Conditie:", "unknown condition node", Set.of());
-    private static final Unie DATATYPE = new Unie("datatype", D, "Datatype:", "unknown datatype node",
+    private static final Union CONDITION = new Union("condition", V, "Conditie:", "unknown condition node", Set.of());
+    private static final Union DATATYPE = new Union("datatype", D, "Datatype:", "unknown datatype node",
             Set.of("SumType", "ListType", "StructType"));
-    private static final Unie DEEL = new Unie("TextCompositionPart", W + "/parts/0", "TekstReeks.Deel:",
+    private static final Union PART = new Union("TextCompositionPart", W + "/parts/0", "TekstReeks.Deel:",
             "unknown TextCompositionPart node", Set.of());
 
     // ================= a name outside the union =================
 
-    @Test void een_expressieknoop_buiten_de_unie_is_een_documentfout() throws Exception {
+    @Test void an_expression_node_outside_the_union_is_a_document_error() throws Exception {
         // a name no wire had, a member in another case, and members of the condition, datatype and part unions
-        for (String naam : List.of("Quotient", "literal", "Regelversie", "Number", "ListType", "LiteralChunk"))
-            onbekend(EXPRESSIE, naam, met(EXPRESSIE, naam));
+        for (String name : List.of("Quotient", "literal", "Regelversie", "Number", "ListType", "LiteralChunk"))
+            unknown(EXPRESSION, name, with(EXPRESSION, name));
     }
 
-    @Test void een_conditieknoop_buiten_de_unie_is_een_documentfout() throws Exception {
+    @Test void a_condition_node_outside_the_union_is_a_document_error() throws Exception {
         // the name the lens measured, a member in another case, two expression members — one this backend carries,
         // one it refuses as a form; at a condition position both are no condition at all — and the two role checks
         // of the L1 shape, whose refusal carried, until the L5 landing's fix round, a hint the shared loader's
         // sentence does not have
-        for (String naam : List.of("RuleStatusCheck", "comparison", "Literal", "ListLength", "Rollidmaatschap",
+        for (String name : List.of("RuleStatusCheck", "comparison", "Literal", "ListLength", "Rollidmaatschap",
                 "VerreRollidmaatschap"))
-            onbekend(CONDITIE, naam, met(CONDITIE, naam));
+            unknown(CONDITION, name, with(CONDITION, name));
     }
 
-    @Test void een_datatypeknoop_buiten_de_unie_is_een_documentfout() throws Exception {
-        for (String naam : List.of("Decimal", "number", "ListLiteral", "Unit"))
-            onbekend(DATATYPE, naam, met(DATATYPE, naam));
+    @Test void a_datatype_node_outside_the_union_is_a_document_error() throws Exception {
+        for (String name : List.of("Decimal", "number", "ListLiteral", "Unit"))
+            unknown(DATATYPE, name, with(DATATYPE, name));
         // a type annotation reads the same union: the literal's type at the value position
         ObjectNode doc = golden();
-        knoop(doc, W + "/type").put("node", "Decimal");
-        IrLoader.Documentfout e = weigert(doc, "Decimal as a type annotation");
+        node(doc, W + "/type").put("node", "Decimal");
+        IrLoader.Documentfout e = refuses(doc, "Decimal as a type annotation");
         assertEquals(W + "/type/node", e.plek(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown datatype node \"Decimal\""), e.getMessage());
     }
 
-    @Test void een_tekstdeel_buiten_de_unie_is_een_documentfout() throws Exception {
-        for (String naam : List.of("Chunk", "literalChunk", "Literal"))
-            onbekend(DEEL, naam, met(DEEL, naam));
+    @Test void a_text_part_outside_the_union_is_a_document_error() throws Exception {
+        for (String name : List.of("Chunk", "literalChunk", "Literal"))
+            unknown(PART, name, with(PART, name));
     }
 
     // ================= every member of the union =================
@@ -99,31 +99,31 @@ class OnbekendeKnoopWitnessTest {
      *  on anything but its name (a bare node lacks its required fields), and a member without one is the per-form
      *  refusal, the temporal read written whole because its keys are checked first. No member of the schema is called
      *  unknown. */
-    @Test void elke_knoop_van_het_schema_is_gedragen_of_een_weigering_van_de_vorm() throws Exception {
+    @Test void each_node_of_the_schema_is_carried_or_a_refusal_of_the_form() throws Exception {
         JsonNode defs = JSON.readTree(Files.readString(SCHEMA)).get("$defs");
-        int leden = 0;
-        for (Unie u : List.of(EXPRESSIE, CONDITIE, DATATYPE, DEEL)) {
-            List<String> namen = leden(defs, u.def());
-            assertTrue(namen.containsAll(u.nietGedragen()),
-                    u.def() + ": every form refused by name is a member of the union — " + u.nietGedragen() + " / " + namen);
-            for (String naam : namen) {
-                ObjectNode doc = naam.equals("TemporalRead") ? golden(W, TEMPORAL_READ) : met(u, naam);
-                RuntimeException t = uitkomst(doc);
-                String wat = u.def() + " " + naam + ": " + (t == null ? "loads" : t.getMessage());
-                if (u.nietGedragen().contains(naam)) {
-                    if (!(t instanceof IrLoader.Refusal r)) throw new AssertionError("expected the form refusal, " + wat);
-                    assertEquals(u.vorm() + naam, r.form(), wat);
+        int members = 0;
+        for (Union u : List.of(EXPRESSION, CONDITION, DATATYPE, PART)) {
+            List<String> names = members(defs, u.def());
+            assertTrue(names.containsAll(u.notCarried()),
+                    u.def() + ": every form refused by name is a member of the union — " + u.notCarried() + " / " + names);
+            for (String name : names) {
+                ObjectNode doc = name.equals("TemporalRead") ? golden(W, TEMPORAL_READ) : with(u, name);
+                RuntimeException t = outcome(doc);
+                String what = u.def() + " " + name + ": " + (t == null ? "loads" : t.getMessage());
+                if (u.notCarried().contains(name)) {
+                    if (!(t instanceof IrLoader.Refusal r)) throw new AssertionError("expected the form refusal, " + what);
+                    assertEquals(u.formPrefix() + name, r.form(), what);
                 } else {
-                    assertTrue(t == null || t instanceof IrLoader.Documentfout || t instanceof IrLoader.Refusal, wat);
-                    assertTrue(!(t instanceof IrLoader.Refusal r) || !r.form().equals(u.vorm() + naam), wat);
-                    assertTrue(!(t instanceof IrLoader.Documentfout) || !t.getMessage().endsWith(zin(u, naam)), wat);
+                    assertTrue(t == null || t instanceof IrLoader.Documentfout || t instanceof IrLoader.Refusal, what);
+                    assertTrue(!(t instanceof IrLoader.Refusal r) || !r.form().equals(u.formPrefix() + name), what);
+                    assertTrue(!(t instanceof IrLoader.Documentfout) || !t.getMessage().endsWith(sentence(u, name)), what);
                 }
-                leden++;
+                members++;
             }
         }
         // measured 2026-09-25 on the schema of the L5 landing: 30 expression, 9 condition and 8 datatype members, and
         // the two parts. A floor, not a pin: a member the schema gains is swept as it comes.
-        assertTrue(leden >= 49, "the four unions of the schema: " + leden + " members");
+        assertTrue(members >= 49, "the four unions of the schema: " + members + " members");
     }
 
     // ================= helpers =================
@@ -135,35 +135,35 @@ class OnbekendeKnoopWitnessTest {
             + "\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"x op 1 januari 2024\"}}";
 
     /** The golden with a bare node of the given name at the union's position. */
-    private static ObjectNode met(Unie u, String naam) throws Exception {
-        if (u == DEEL)
-            return golden(W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"" + naam + "\"}],"
+    private static ObjectNode with(Union u, String name) throws Exception {
+        if (u == PART)
+            return golden(W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"" + name + "\"}],"
                     + "\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"x\"}}");
-        return golden(u.pad(), "{\"node\":\"" + naam + "\"}");
+        return golden(u.path(), "{\"node\":\"" + name + "\"}");
     }
 
-    private static void onbekend(Unie u, String naam, ObjectNode doc) {
-        IrLoader.Documentfout e = weigert(doc, u.def() + " " + naam);
-        assertEquals(u.pad() + "/node", e.plek(), naam + ": " + e.getMessage());
-        assertTrue(e.getMessage().endsWith(zin(u, naam)), naam + ": " + e.getMessage());
+    private static void unknown(Union u, String name, ObjectNode doc) {
+        IrLoader.Documentfout e = refuses(doc, u.def() + " " + name);
+        assertEquals(u.path() + "/node", e.plek(), name + ": " + e.getMessage());
+        assertTrue(e.getMessage().endsWith(sentence(u, name)), name + ": " + e.getMessage());
     }
 
-    private static String zin(Unie u, String naam) {
-        return ": " + u.zin() + " \"" + naam + "\"";
+    private static String sentence(Union u, String name) {
+        return ": " + u.sentence() + " \"" + name + "\"";
     }
 
     /** The node names of a union of the schema: the {@code node} constant of each member. */
-    private static List<String> leden(JsonNode defs, String unie) {
-        List<String> uit = new ArrayList<>();
-        for (JsonNode ref : defs.get(unie).get("oneOf")) {
+    private static List<String> members(JsonNode defs, String union) {
+        List<String> out = new ArrayList<>();
+        for (JsonNode ref : defs.get(union).get("oneOf")) {
             String def = ref.get("$ref").asText().substring("#/$defs/".length());
-            uit.add(defs.get(def).get("properties").get("node").get("const").asText());
+            out.add(defs.get(def).get("properties").get("node").get("const").asText());
         }
-        if (uit.isEmpty()) fail("the schema's union " + unie + " has no member");
-        return uit;
+        if (out.isEmpty()) fail("the schema's union " + union + " has no member");
+        return out;
     }
 
-    private static RuntimeException uitkomst(JsonNode doc) {
+    private static RuntimeException outcome(JsonNode doc) {
         try {
             IrLoader.loadAll(doc);
             return null;
@@ -172,28 +172,28 @@ class OnbekendeKnoopWitnessTest {
         }
     }
 
-    private static IrLoader.Documentfout weigert(JsonNode doc, String wat) {
+    private static IrLoader.Documentfout refuses(JsonNode doc, String what) {
         try {
             IrLoader.loadAll(doc);
         } catch (IrLoader.Documentfout f) {
             return f;
         } catch (IrLoader.Refusal r) {
-            fail(wat + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());
+            fail(what + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());
         }
-        return fail(wat + ": het document laadde");
+        return fail(what + ": het document laadde");
     }
 
-    private static ObjectNode knoop(JsonNode doc, String pad) {
-        JsonNode n = doc.at(pad);
-        if (!(n instanceof ObjectNode o)) throw new AssertionError("no object at " + pad);
+    private static ObjectNode node(JsonNode doc, String path) {
+        JsonNode n = doc.at(path);
+        if (!(n instanceof ObjectNode o)) throw new AssertionError("no object at " + path);
         return o;
     }
 
-    /** The golden with the node at {@code pad} replaced by {@code json}. */
-    private static ObjectNode golden(String pad, String json) throws Exception {
+    /** The golden with the node at {@code path} replaced by {@code json}. */
+    private static ObjectNode golden(String path, String json) throws Exception {
         ObjectNode doc = golden();
-        int slash = pad.lastIndexOf('/');
-        knoop(doc, pad.substring(0, slash)).set(pad.substring(slash + 1), JSON.readTree(json));
+        int slash = path.lastIndexOf('/');
+        node(doc, path.substring(0, slash)).set(path.substring(slash + 1), JSON.readTree(json));
         return doc;
     }
 

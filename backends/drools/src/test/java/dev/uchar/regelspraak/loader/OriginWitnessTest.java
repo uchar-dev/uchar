@@ -32,13 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the frontend's on every rgs golden is the route suite's (gate 15, {@code HerkomstBronrouteTest}). Measured before
  * this loader read the field: every golden that carries it was refused as an unknown field 'origin'.
  */
-class HerkomstWitnessTest {
+class OriginWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
-    private static JsonNode golden(String naam) throws Exception {
-        return JSON.readTree(Files.readString(GOLDEN.resolve(naam).resolve("ir.json")));
+    private static JsonNode golden(String name) throws Exception {
+        return JSON.readTree(Files.readString(GOLDEN.resolve(name).resolve("ir.json")));
     }
 
     private static String element(Benoembaar b) {
@@ -46,15 +46,15 @@ class HerkomstWitnessTest {
     }
 
     /** The table as lines "<element> <- <source element> (<key>)", in the order of the map. */
-    private static List<String> tabel(RegelSpraakModel m) {
-        List<String> uit = new ArrayList<>();
+    private static List<String> table(RegelSpraakModel m) {
+        List<String> out = new ArrayList<>();
         for (Map.Entry<Benoembaar, GegenereerdUit> e : m.gegenereerd.entrySet())
-            uit.add(element(e.getKey()) + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel()
+            out.add(element(e.getKey()) + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel()
                     + ")");
-        return uit;
+        return out;
     }
 
-    @Test void de_herkomst_komt_in_het_model_ook_die_van_een_beslistabelrij() throws Exception {
+    @Test void the_origin_of_a_decision_table_row_also_comes_into_the_model() throws Exception {
         RegelSpraakModel m = IrLoader.load(golden("jutterswet-opgave-vormen"));
         assertEquals(20, m.gegenereerd.size());
         assertEquals(Optional.of(new GegenereerdUit(Benoembaar.attribuut("Vondst", "waarde"),
@@ -72,20 +72,20 @@ class HerkomstWitnessTest {
         assertEquals(Optional.empty(), m.gegenereerdUit(Benoembaar.vorm("wachtgeld voor kustwachters")));
     }
 
-    @Test void de_groep_van_een_subtype_en_het_lid_van_een_vouw() throws Exception {
+    @Test void the_group_of_a_subtype_and_the_member_of_a_fold() throws Exception {
         assertEquals(List.of("VORM meldtermijn voor Strandjutter <- VORM meldtermijn (uitzondering-voor-subtype)"),
-                tabel(IrLoader.load(golden("jutterswet-meldtermijn-strandjutter"))));
-        List<String> vouw = tabel(IrLoader.load(golden("jutterswet-zwaarste-weging")));
-        assertTrue(vouw.contains(
+                table(IrLoader.load(golden("jutterswet-meldtermijn-strandjutter"))));
+        List<String> fold = table(IrLoader.load(golden("jutterswet-zwaarste-weging")));
+        assertTrue(fold.contains(
                 "ATTRIBUUT Jutter.gewicht via vondst en weging <- ATTRIBUUT Weging.gewicht (stappen-na-de-verzameling)"),
-                vouw::toString);
-        assertTrue(vouw.contains(
+                fold::toString);
+        assertTrue(fold.contains(
                 "VORM gewicht via vondst en weging <- ATTRIBUUT Weging.gewicht (stappen-na-de-verzameling)"),
-                vouw::toString);
-        assertEquals(6, vouw.size());
+                fold::toString);
+        assertEquals(6, fold.size());
     }
 
-    @Test void een_startpunt_leest_terug() throws Exception {
+    @Test void a_start_point_reads_back() throws Exception {
         // no golden writes a start-point determination: the anchor's origin is put on a member of a golden
         JsonNode ir = golden("jutterswet-opgave-bedrag");
         ObjectNode o = ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Vondst"), "waarde")).putObject("origin");
@@ -96,28 +96,28 @@ class HerkomstWitnessTest {
                 m.gegenereerdUit(Benoembaar.attribuut("Vondst", "waarde")));
     }
 
-    @Test void een_vorm_of_soort_buiten_haar_verzameling_weigert_de_lader_in_de_zin_van_de_gedeelde_lader()
+    @Test void a_form_or_kind_outside_its_set_is_refused_by_the_loader_in_the_sentence_of_the_shared_loader()
             throws Exception {
         JsonNode ir = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Vondst"), "berekende waarde").get("origin"))
                 .put("form", "opgaveBovenBerekening");
-        IrLoader.Documentfout vorm = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
-        assertEquals("/model/objectTypes/0/attributes/4/origin/form", vorm.plek());
-        assertTrue(vorm.getMessage().endsWith("the origin form 'opgaveBovenBerekening' is none of the forms of IR-SPEC "
+        IrLoader.Documentfout form = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
+        assertEquals("/model/objectTypes/0/attributes/4/origin/form", form.plek());
+        assertTrue(form.getMessage().endsWith("the origin form 'opgaveBovenBerekening' is none of the forms of IR-SPEC "
                 + "ch. 2.13 ('inputAboveComputation', 'exceptionForSubtype', 'decisionTableRow', 'stepsAfterSet', "
-                + "'startPoint')"), vorm.getMessage());
+                + "'startPoint')"), form.getMessage());
 
         JsonNode ir2 = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir2, "Vondst"), "berekende waarde").get("origin").get("from"))
                 .put("kind", "form");
-        IrLoader.Documentfout soort = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
-        assertEquals("/model/objectTypes/0/attributes/4/origin/from/kind", soort.plek());
-        assertTrue(soort.getMessage().endsWith("the origin's source kind 'form' is none of the kinds of IR-SPEC "
+        IrLoader.Documentfout kind = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
+        assertEquals("/model/objectTypes/0/attributes/4/origin/from/kind", kind.plek());
+        assertTrue(kind.getMessage().endsWith("the origin's source kind 'form' is none of the kinds of IR-SPEC "
                 + "ch. 2.13 ('objectType', 'attribute', 'characteristic', 'factType', 'role', 'enumerationValue', "
-                + "'parameter', 'namedForm', 'ruleGroup', 'decisionTable')"), soort.getMessage());
+                + "'parameter', 'namedForm', 'ruleGroup', 'decisionTable')"), kind.getMessage());
     }
 
-    @Test void wat_een_herkomst_noemt_weigert_de_lader_niet() throws Exception {
+    @Test void the_loader_does_not_refuse_what_an_origin_names() throws Exception {
         // a source no declaration answers, and a kind another form names, are the verifier's (WF-121 (b), (d))
         JsonNode ir = golden("jutterswet-opgave-bedrag");
         ObjectNode van = (ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Vondst"), "berekende waarde")
@@ -129,22 +129,22 @@ class HerkomstWitnessTest {
                 m.gegenereerdUit(Benoembaar.attribuut("Vondst", "berekende waarde")));
     }
 
-    @Test void de_herkomst_wordt_structureel_gelezen() throws Exception {
+    @Test void the_origin_is_read_structurally() throws Exception {
         JsonNode ir = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Vondst"), "berekende waarde")).putNull("origin");
-        IrLoader.Documentfout leeg = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
-        assertTrue(leeg.getMessage().contains("written whole or not at all"), leeg.getMessage());
+        IrLoader.Documentfout empty = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
+        assertTrue(empty.getMessage().contains("written whole or not at all"), empty.getMessage());
 
         JsonNode ir2 = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir2, "Vondst"), "berekende waarde").get("origin").get("from"))
                 .put("line", 3);
-        IrLoader.Documentfout vreemd = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
-        assertEquals("/model/objectTypes/0/attributes/4/origin/from/line", vreemd.plek());
+        IrLoader.Documentfout foreign = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
+        assertEquals("/model/objectTypes/0/attributes/4/origin/from/line", foreign.plek());
 
         JsonNode ir3 = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir3, "Vondst"), "berekende waarde").get("origin").get("from"))
                 .remove("name");
-        IrLoader.Documentfout zonder = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir3));
-        assertEquals("/model/objectTypes/0/attributes/4/origin/from", zonder.plek());
+        IrLoader.Documentfout withoutSource = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir3));
+        assertEquals("/model/objectTypes/0/attributes/4/origin/from", withoutSource.plek());
     }
 }

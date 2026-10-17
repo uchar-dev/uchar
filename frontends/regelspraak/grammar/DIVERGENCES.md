@@ -2318,7 +2318,7 @@ on the corpus).
   kind; ref, clingo and both Drools branches replay its two cases, and gate
   13's vocabulary leg replays them stripped, exchanged and rotated), the
   frontend's `VocabulaireDialectTest` and the Drools backend's
-  `VocabulaireWitnessTest` (the model's reading entry: `benaming`,
+  `VocabularyWitnessTest` (the model's reading entry: `benaming`,
   `effectieveNaam`, `benoemd`).
 
 ---
@@ -3533,5 +3533,5 @@ with `/<i>` per level below the root, and the relation named by a second
 filling). Witnesses: `GegenereerdUitTest` (frontend) and
 `GegenereerdeNamenWitnessTest` (backend); for the designations
 `GegenereerdeBenamingenTest` and `GegenereerdeNamenPerDeelTest` (frontend);
-for the wire `HerkomstOpDeDraadTest` (frontend), `HerkomstWitnessTest`
+for the wire `HerkomstOpDeDraadTest` (frontend), `OriginWitnessTest`
 (backend) and `HerkomstBronrouteTest` (the route suite of gate 15).

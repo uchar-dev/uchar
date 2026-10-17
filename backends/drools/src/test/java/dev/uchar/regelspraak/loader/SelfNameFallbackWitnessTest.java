@@ -27,49 +27,49 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The five tables are pinned one by one, as the fall-back was: a test that covered only some of them would let a
  * later edit take the refusal away from the others.
  */
-class ZelfnaamTerugvalWitnessTest {
+class SelfNameFallbackWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    @Test void objecttype_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("anchor/jutterswet-maatschap", "objectTypes", "name", "Jutter");
+    @Test void object_type_without_a_name_is_refused() throws Exception {
+        refusesWithoutName("anchor/jutterswet-maatschap", "objectTypes", "name", "Jutter");
     }
 
-    @Test void parameter_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-penningdrempel", "parameters", "name", "vondstdrempel");
+    @Test void parameter_without_a_name_is_refused() throws Exception {
+        refusesWithoutName("jutterswet-penningdrempel", "parameters", "name", "vondstdrempel");
     }
 
-    @Test void eenheidstelsel_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-berging", "unitSystems", "name", "Munt");
+    @Test void unit_system_without_a_name_is_refused() throws Exception {
+        refusesWithoutName("jutterswet-berging", "unitSystems", "name", "Munt");
     }
 
-    @Test void feittype_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-vondsttelling", "factTypes", "name", "vondstaanmelding");
+    @Test void fact_type_without_a_name_is_refused() throws Exception {
+        refusesWithoutName("jutterswet-vondsttelling", "factTypes", "name", "vondstaanmelding");
     }
 
     /** The dimension arm has no PLAYABLE witness — the goldens carrying a {@code dimensions} list have no case
      *  file — so the loader level is the only place its refusal can be pinned at all. */
-    @Test void dimensie_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-seizoenvondst", "dimensions", "name", "seizoen");
+    @Test void dimension_without_a_name_is_refused() throws Exception {
+        refusesWithoutName("jutterswet-seizoenvondst", "dimensions", "name", "seizoen");
     }
 
     /** Loads a golden with ONE declaration's name replaced by null and demands the refusal at that field. */
-    private void weigertZonderNaam(String golden, String lijst, String naamVeld, String naam) throws Exception {
+    private void refusesWithoutName(String golden, String list, String nameField, String name) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         JsonNode root = JSON.readTree(Files.readString(ir));
-        ArrayNode declaraties = IrPad.modelLijst(root, lijst);
-        ObjectNode declaratie = IrPad.lid(declaraties, naamVeld, naam);
+        ArrayNode declarations = IrPad.modelLijst(root, list);
+        ObjectNode declaration = IrPad.lid(declarations, nameField, name);
         int index = 0;
-        while (declaraties.get(index) != declaratie) index++;
-        declaratie.putNull(naamVeld);
+        while (declarations.get(index) != declaration) index++;
+        declaration.putNull(nameField);
 
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 golden + ": a nameless declaration must be refused, not keyed on null");
-        assertEquals("/model/" + lijst + "/" + index + "/" + naamVeld, e.plek(), e.getMessage());
+        assertEquals("/model/" + list + "/" + index + "/" + nameField, e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("a declaration without a name"), e.getMessage());
     }
 }

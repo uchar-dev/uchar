@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * silently — a determination on an ancestor (base PLAYED 4, the one non-degenerate hole) and the
  * degenerate {@code granularity: null} tijdlijn on which WF-005 demands no granularity facet at all
  * (base PLAYED 4). M1 made that degenerate shape unwritable — a TimelineFacet requires its granularity — so
- * its witness left this class on 2026-09-23 and stands in {@code loader.LaderWeigeringWitnessTest} as what it
+ * its witness left this class on 2026-09-23 and stands in {@code loader.LoaderRefusalWitnessTest} as what it
  * pins now, a loader refusal of a grid-less facet. The unknown supertype and the cycle stay a last line
  * behind WF-103/WF-104: the
  * verifier rejects both at the document, and a loader that walked a cycle would hang instead of
@@ -269,7 +269,7 @@ class OverervingWeigeringWitnessTest {
         // WITHDRAWN broad refusal — WF-005 forces the granularity facet to match the declaration, so a
         // named tijdlijn on verifier-clean input carries a granularity and the old test saw it. This
         // shape is therefore RESIDUE, not a newly-closed hole; the hole was the degenerate twin, which M1
-        // made unwritable (its witness is now a loader refusal in loader.LaderWeigeringWitnessTest).
+        // made unwritable (its witness is now a loader refusal in loader.LoaderRefusalWitnessTest).
         ObjectNode ir = goldenIr(KETEN);
         benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/"year");
         startpuntOp(ir, "Kustgemeente");

@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of that line: a well-formed document of a form this backend does not carry (another format, a functionDefs
  * list, a period count beyond a Java int) stays a Refusal.
  */
-class LaderWeigeringWitnessTest {
+class LoaderRefusalWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -56,7 +56,7 @@ class LaderWeigeringWitnessTest {
     /** The Enumeration domain Vondstklasse. Three cases, both branches PLAYED. */
     private static final String VONDSTKLASSE = "jutterswet-vondstklasse";
     /** The kernel anchor of inheritance: Strandrecht -&gt; Wrakrecht plus an aggregating Kustgemeente. */
-    private static final String KETEN = "anchor/jutterswet-strandrechtketen";
+    private static final String CHAIN = "anchor/jutterswet-strandrechtketen";
     /** One parameter, vondstdrempel. One case, both branches PLAYED. */
     private static final String PENNINGDREMPEL = "jutterswet-penningdrempel";
     /** Carries the model's functionDefs extension: EXCLUDE in both branches, by a loader Refusal. */
@@ -64,151 +64,151 @@ class LaderWeigeringWitnessTest {
 
     // ---------------- the node and its fields ----------------
 
-    @Test void een_knoop_met_de_v0_spelling_van_zijn_soort_weigert() throws Exception {
+    @Test void a_node_with_the_v0_spelling_of_its_kind_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
-        String ot = objectTypePad(ir, "Bakenmeester");
+        String ot = objectTypePath(ir, "Bakenmeester");
         IrPad.objectType(ir, "Bakenmeester").put("node", "Objecttype");
-        IrLoader.Documentfout e = weigert(ir, ot + "/node");
+        IrLoader.Documentfout e = refuses(ir, ot + "/node");
         assertTrue(e.getMessage().contains("\"Objecttype\""), e.getMessage());
     }
 
-    @Test void een_ledenknoop_zonder_node_weigert() throws Exception {
+    @Test void a_member_node_without_a_node_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
-        String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+        String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
         IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").remove("node");
-        ontbreekt(ir, attr, "node");
+        missing(ir, attr, "node");
     }
 
-    @Test void een_v0_zijkaart_naast_de_ledenknopen_weigert() throws Exception {
+    @Test void a_v0_side_map_beside_the_member_nodes_is_refused() throws Exception {
         // The side map was ignored whole: its entry gave no member a timeline, and the member node it
         // duplicates decided alone. A side map that DISAGREED with the member nodes went unread just as quietly.
         ObjectNode ir = golden(BAKENMEESTER);
-        String ot = objectTypePad(ir, "Bakenmeester");
+        String ot = objectTypePath(ir, "Bakenmeester");
         IrPad.objectType(ir, "Bakenmeester").putObject("attribuutGranulariteit").put("onderhoudstarief", "DAG");
-        IrLoader.Documentfout e = weigert(ir, ot + "/attribuutGranulariteit");
+        IrLoader.Documentfout e = refuses(ir, ot + "/attribuutGranulariteit");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
-    @Test void een_onbekend_veld_op_een_m1_knoop_weigert() throws Exception {
+    @Test void an_unknown_field_on_a_m1_node_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
-        String ot = objectTypePad(ir, "Bakenmeester");
+        String ot = objectTypePath(ir, "Bakenmeester");
         IrPad.objectType(ir, "Bakenmeester").put("naam", "Bakenmeester");
-        weigert(ir, ot + "/naam");
+        refuses(ir, ot + "/naam");
 
         ir = golden(BAKENMEESTER);
-        String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+        String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
         IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").put("granulariteit", "JAAR");
-        weigert(ir, attr + "/granulariteit");
+        refuses(ir, attr + "/granulariteit");
 
         ir = golden(BAKENMEESTER);
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                 .put("aantal", 1);
-        weigert(ir, attr + "/timeline/aantal");
+        refuses(ir, attr + "/timeline/aantal");
 
         ir = golden(BAKENMEESTER);
-        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
         IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("soort", "BIJVOEGLIJK");
-        weigert(ir, kenmerk + "/soort");
+        refuses(ir, characteristic + "/soort");
     }
 
-    @Test void een_optioneel_veld_als_null_weigert() throws Exception {
+    @Test void an_optional_field_as_null_is_refused() throws Exception {
         // IR-SPEC § Method: an optional field is written whole or not at all. Read leniently, each null below
         // was the same as the absent field, so a producer that wrote one never heard of it.
         ObjectNode ir = golden(BAKENMEESTER);
-        String ot = objectTypePad(ir, "Bakenmeester");
-        String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+        String ot = objectTypePath(ir, "Bakenmeester");
+        String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
         IrPad.objectType(ir, "Bakenmeester").putNull("plural");
-        weigert(ir, ot + "/plural");
+        refuses(ir, ot + "/plural");
 
         ir = golden(BAKENMEESTER);
         IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").putNull("plural");
-        weigert(ir, attr + "/plural");
+        refuses(ir, attr + "/plural");
 
         ir = golden(BAKENMEESTER);
         IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").putNull("dimensions");
-        weigert(ir, attr + "/dimensions");
+        refuses(ir, attr + "/dimensions");
 
         ir = golden(BAKENMEESTER);
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                 .putNull("timelineName");
-        weigert(ir, attr + "/timeline/timelineName");
+        refuses(ir, attr + "/timeline/timelineName");
 
         // a null supertype made Klipjutter a root type without a word
         ir = golden(ERFWACHT);
-        String klip = objectTypePad(ir, "Klipjutter");
+        String clip = objectTypePath(ir, "Klipjutter");
         IrPad.objectType(ir, "Klipjutter").putNull("supertype");
-        weigert(ir, klip + "/supertype");
+        refuses(ir, clip + "/supertype");
     }
 
-    @Test void een_ontbrekend_verplicht_veld_weigert() throws Exception {
+    @Test void a_missing_required_field_is_refused() throws Exception {
         // named as the OCaml loader names it: at the object that lacks the field, the root being ""
         ObjectNode ir = golden(BAKENMEESTER);
         ir.remove("diagnostics");
-        IrLoader.Documentfout e = ontbreekt(ir, "", "diagnostics");
+        IrLoader.Documentfout e = missing(ir, "", "diagnostics");
         assertTrue(e.getMessage().contains(" at <root>: "), e.getMessage());
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).remove("dayKinds");
-        ontbreekt(ir, "/model", "dayKinds");
+        missing(ir, "/model", "dayKinds");
 
         ir = golden(BAKENMEESTER);
-        String ot = objectTypePad(ir, "Bakenmeester");
+        String ot = objectTypePath(ir, "Bakenmeester");
         IrPad.objectType(ir, "Bakenmeester").remove("characteristics");
-        ontbreekt(ir, ot, "characteristics");
+        missing(ir, ot, "characteristics");
     }
 
-    @Test void een_document_dat_geen_object_is_weigert_op_de_root() throws Exception {
-        IrLoader.Documentfout e = weigert(JSON.createArrayNode(), "");
+    @Test void a_document_that_is_no_object_is_refused_on_the_root() throws Exception {
+        IrLoader.Documentfout e = refuses(JSON.createArrayNode(), "");
         assertTrue(e.getMessage().contains(" at <root>: expected an object"), e.getMessage());
     }
 
-    @Test void een_veld_van_het_verkeerde_json_type_weigert() throws Exception {
+    @Test void a_field_of_the_wrong_json_type_is_refused() throws Exception {
         // animate "true" read as true, and objectTypes {} as a document with no object types at all
         ObjectNode ir = golden(BAKENMEESTER);
-        String ot = objectTypePad(ir, "Bakenmeester");
+        String ot = objectTypePath(ir, "Bakenmeester");
         IrPad.objectType(ir, "Bakenmeester").put("animate", "true");
-        weigert(ir, ot + "/animate");
+        refuses(ir, ot + "/animate");
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).putObject("objectTypes");
-        weigert(ir, "/model/objectTypes");
+        refuses(ir, "/model/objectTypes");
 
         ir = golden(BAKENMEESTER);
-        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
         IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("name", 5);
-        weigert(ir, kenmerk + "/name");
+        refuses(ir, characteristic + "/name");
     }
 
-    @Test void een_periodetelling_die_geen_geheel_getal_is_weigert() throws Exception {
+    @Test void a_period_count_that_is_no_whole_number_is_refused() throws Exception {
         // "2" and 2.0 both read as 2: a raster the document did not write as a count
-        for (JsonNode telling : List.of(JSON.getNodeFactory().textNode("2"), JSON.getNodeFactory().numberNode(2.0))) {
+        for (JsonNode count : List.of(JSON.getNodeFactory().textNode("2"), JSON.getNodeFactory().numberNode(2.0))) {
             ObjectNode ir = golden(BAKENMEESTER);
-            String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+            String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
             ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
-                    .set("count", telling);
-            IrLoader.Documentfout e = weigert(ir, attr + "/timeline/count");
+                    .set("count", count);
+            IrLoader.Documentfout e = refuses(ir, attr + "/timeline/count");
             assertTrue(e.getMessage().contains("integer"), e.getMessage());
         }
     }
 
-    @Test void een_periodetelling_buiten_het_int_bereik_is_een_vorm_en_geen_documentfout() throws Exception {
+    @Test void a_period_count_outside_the_int_range_is_a_form_and_no_document_error() throws Exception {
         // The boundary of the test above. 2147483648 and 3000000000 are integers: the schema admits them and the
         // verifier, which reads into OCaml's native int, passes them. This backend holds a count in a Java int,
         // so the document is a form it does not carry, and a Refusal says so. Until 2026-09-23 it was a document
         // defect reading "expected an integer, got 3000000000", about a value that is one.
-        for (long telling : new long[] { 2_147_483_648L, 3_000_000_000L }) {
+        for (long count : new long[] { 2_147_483_648L, 3_000_000_000L }) {
             ObjectNode ir = golden(BAKENMEESTER);
-            String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+            String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
             ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
-                    .put("count", telling);
-            IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir), "count " + telling);
+                    .put("count", count);
+            IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir), "count " + count);
             assertEquals("TimelineFacet.count", r.form(), r.getMessage());
             assertTrue(r.getMessage().contains("outside this backend's integer range"), r.getMessage());
-            assertTrue(r.getMessage().contains(telling + " at '" + attr + "/timeline/count'"), r.getMessage());
+            assertTrue(r.getMessage().contains(count + " at '" + attr + "/timeline/count'"), r.getMessage());
         }
     }
 
-    @Test void een_tijdlijnfacet_zonder_granulariteit_weigert_bij_het_laden() throws Exception {
+    @Test void a_timeline_facet_without_granularity_is_refused_on_loading() throws Exception {
         // Until 2026-09-23 this was OverervingWeigeringWitnessTest's "de gedegenereerde variabele tijdlijn is het
         // gat dat werkelijk stil was": under v0 a tijdlijn declaration could carry `granulariteit: null`
         // (schema-legal), WF-005 then compared None with None, and an attribute riding that named tijdlijn needed
@@ -218,67 +218,67 @@ class LaderWeigeringWitnessTest {
         // loader's refusal of the grid-less facet, instead of letting the member in as temporal with a null grid.
         // The old fixture's startpuntbepaling is gone: the facet is refused while the object types are read,
         // before any rule is.
-        ObjectNode ir = golden(KETEN);
+        ObjectNode ir = golden(CHAIN);
         IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Timeline").put("name", "boekjaar")
                 .put("variableStart", true).putNull("granularity").put("count", 1));
-        ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde",
+        ObjectNode timelineAttribute = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde",
                 JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
                         .put("sign", "nonNegative"));
-        peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
-        ontbreekt(ir, lidPad(ir, "Strandrecht", "attributes", "peilwaarde") + "/timeline", "granularity");
+        timelineAttribute.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
+        missing(ir, memberPath(ir, "Strandrecht", "attributes", "peilwaarde") + "/timeline", "granularity");
     }
 
-    @Test void een_tijdlijnfacet_zonder_telling_weigert() throws Exception {
+    @Test void a_timeline_facet_without_count_is_refused() throws Exception {
         // the characteristic's facet, the second of the two places a facet is read
         ObjectNode ir = golden(BAKENMEESTER);
-        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
         ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
                 .remove("count");
-        ontbreekt(ir, kenmerk + "/timeline", "count");
+        missing(ir, characteristic + "/timeline", "count");
     }
 
-    @Test void een_tijdlijnnaam_op_een_kenmerkfacet_weigert() throws Exception {
+    @Test void a_timeline_name_on_a_characteristic_facet_is_refused() throws Exception {
         // The schema gives a characteristic's facet no timelineName (its own CharacteristicTimelineFacet
         // definition): riding a named tijdlijn is an attribute's form (§13.3.6.9). Read leniently the field was
         // dropped without a word; the OCaml loader refuses it as an unknown field, and so does this one.
         ObjectNode ir = golden(BAKENMEESTER);
-        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
         ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
                 .put("timelineName", "boekjaar");
-        IrLoader.Documentfout e = weigert(ir, kenmerk + "/timeline/timelineName");
+        IrLoader.Documentfout e = refuses(ir, characteristic + "/timeline/timelineName");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
-    @Test void een_kenmerk_zonder_soort_of_met_een_onbekende_soort_weigert() throws Exception {
+    @Test void a_characteristic_without_a_kind_or_with_an_unknown_kind_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
-        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
         IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").remove("kind");
-        ontbreekt(ir, kenmerk, "kind");
+        missing(ir, characteristic, "kind");
 
         // the v0 spelling of the value is no member since L5, and neither is a word outside the family: both are
         // refused in the shared loader's sentence
-        for (String soort : List.of("BIJVOEGLIJK", "bijvoeglijk", "Adjectival")) {
+        for (String kind : List.of("BIJVOEGLIJK", "bijvoeglijk", "Adjectival")) {
             ir = golden(BAKENMEESTER);
-            IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", soort);
-            IrLoader.Documentfout e = weigert(ir, kenmerk + "/kind");
-            assertTrue(e.getMessage().endsWith(": unknown kind value \"" + soort + "\""), e.getMessage());
+            IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", kind);
+            IrLoader.Documentfout e = refuses(ir, characteristic + "/kind");
+            assertTrue(e.getMessage().endsWith(": unknown kind value \"" + kind + "\""), e.getMessage());
         }
     }
 
-    @Test void een_onbekende_sectie_weigert_en_functionDefs_blijft_een_vorm() throws Exception {
+    @Test void an_unknown_section_is_refused_and_functionDefs_stays_a_form() throws Exception {
         // the v0 rule stubs (delta B3), a v0 model table name, a misspelt rules list: each was an "unknown
         // section" Refusal, the auto-excluded channel; each is a defect of the document
         ObjectNode ir = golden(BAKENMEESTER);
         ir.putArray("regels");
-        weigert(ir, "/regels");
+        refuses(ir, "/regels");
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).putObject("objecttypen");
-        weigert(ir, "/model/objecttypen");
+        refuses(ir, "/model/objecttypen");
 
         ir = golden(BAKENMEESTER);
         IrPad.rules(ir).putArray("prioritizedDefault");
-        weigert(ir, "/rules/prioritizedDefault");
+        refuses(ir, "/rules/prioritizedDefault");
 
         // The boundary: functionDefs is an extension the schema admits and this backend does not carry — a
         // form, so it stays a Refusal and its goldens stay in the reasoned EXCLUDE channel.
@@ -291,39 +291,39 @@ class LaderWeigeringWitnessTest {
     // Measured 2026-09-23 by the second lens round: each twist below PLAYED, landed in the auto-excluded channel
     // with a reason that named no defect, or died in a NullPointerException naming no place.
 
-    @Test void een_datatype_zonder_node_weigert_met_een_plek() throws Exception {
+    @Test void a_datatype_without_a_node_is_refused_with_a_site() throws Exception {
         // at an M1 position (the attribute, the domain) and, since L2's advisory round, at a rule-side position
         // too, each with its JSON pointer (the rule side named only the kind until then)
         ObjectNode ir = golden(BAKENMEESTER);
-        String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+        String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("datatype"))
                 .remove("node");
-        ontbreekt(ir, attr + "/datatype", "node");
+        missing(ir, attr + "/datatype", "node");
 
         ir = golden(VONDSTKLASSE);
-        String domein = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
+        String domain = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
         ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).remove("node");
-        ontbreekt(ir, domein + "/datatype", "node");
+        missing(ir, domain + "/datatype", "node");
 
         ir = golden(BAKENMEESTER);
         ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value").get("type")).remove("node");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/type");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/type");
         assertTrue(e.getMessage().contains("missing field 'node'"), e.getMessage());
     }
 
-    @Test void een_domeindatatype_draagt_precies_de_velden_van_zijn_soort() throws Exception {
+    @Test void a_domain_datatype_carries_exactly_the_fields_of_its_kind() throws Exception {
         // the key check the Enumeration, SumType and StructType arms already had, for the kinds without an arm;
         // no golden declares a number domain, so one is added: clean it loads, with a stray field it is refused
         ObjectNode ir = golden(BAKENMEESTER);
-        ArrayNode domeinen = IrPad.modelLijst(ir, "domains");
-        ObjectNode getal = domeinen.addObject().put("node", "Domain").put("name", "Bedrag").putObject("datatype")
+        ArrayNode domains = IrPad.modelLijst(ir, "domains");
+        ObjectNode number = domains.addObject().put("node", "Domain").put("name", "Bedrag").putObject("datatype")
                 .put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "unspecified");
         IrLoader.loadAll(ir);
-        getal.put("naam", "Bedrag");
-        weigert(ir, "/model/domains/" + (domeinen.size() - 1) + "/datatype/naam");
+        number.put("naam", "Bedrag");
+        refuses(ir, "/model/domains/" + (domains.size() - 1) + "/datatype/naam");
     }
 
-    @Test void een_diagnose_is_een_knoop_met_de_vorm_van_het_schema() throws Exception {
+    @Test void a_diagnostic_is_a_node_with_the_form_of_the_schema() throws Exception {
         // WF-113 itself is the verifier's; this is the node's form: the discriminator, the exact keys, a severity
         // and a message that are strings, an integer line
         ObjectNode ir = golden(BAKENMEESTER);
@@ -332,44 +332,44 @@ class LaderWeigeringWitnessTest {
                 .put("line", 1);
         IrLoader.loadAll(ir);
         String d = "/diagnostics/" + (diagnoses.size() - 1);
-        ObjectNode diagnose = (ObjectNode) diagnoses.get(diagnoses.size() - 1);
+        ObjectNode diagnostic = (ObjectNode) diagnoses.get(diagnoses.size() - 1);
 
-        for (String veld : List.of("node", "severity", "message", "line")) {
+        for (String field : List.of("node", "severity", "message", "line")) {
             ObjectNode twist = ir.deepCopy();
-            ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).remove(veld);
-            ontbreekt(twist, d, veld);
+            ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).remove(field);
+            missing(twist, d, field);
         }
-        for (String veld : List.of("severity", "message", "line")) {
+        for (String field : List.of("severity", "message", "line")) {
             ObjectNode twist = ir.deepCopy();
-            ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).putNull(veld);
-            weigert(twist, d + "/" + veld);
+            ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).putNull(field);
+            refuses(twist, d + "/" + field);
         }
-        diagnose.set("source", IrPad.bronrecord("een melding"));
-        IrLoader.Documentfout e = weigert(ir, d + "/source");
+        diagnostic.set("source", IrPad.bronrecord("een melding"));
+        IrLoader.Documentfout e = refuses(ir, d + "/source");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
-    @Test void een_dagsoort_is_een_knoop_met_naam_en_meervoud() throws Exception {
+    @Test void a_day_kind_is_a_node_with_a_name_and_a_plural() throws Exception {
         // IR-SPEC ch. 2.9: an entry is a DayKind node; a bare name is its L2 form, and the registry beside the list
         // is gone with it. A name is a string and required, a plural written whole or not at all.
         ObjectNode ir = golden(BAKENMEESTER);
         IrPad.model(ir).putArray("dayKinds").add("springtijdag");
-        IrLoader.Documentfout e = weigert(ir, "/model/dayKinds/0");
+        IrLoader.Documentfout e = refuses(ir, "/model/dayKinds/0");
         assertTrue(e.getMessage().contains("(DayKind)"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).putObject("dagsoortPerEenheid");
-        e = weigert(ir, "/model/dagsoortPerEenheid");
+        e = refuses(ir, "/model/dagsoortPerEenheid");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", 5);
-        weigert(ir, "/model/dayKinds/0/name");
+        refuses(ir, "/model/dayKinds/0/name");
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "springtijdag")
                 .putNull("plural");
-        e = weigert(ir, "/model/dayKinds/0/plural");
+        e = refuses(ir, "/model/dayKinds/0/plural");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
 
         // read, the name and the plural are the day kind's spellings as a duration unit
@@ -382,58 +382,58 @@ class LaderWeigeringWitnessTest {
                 m.dagsoortPerEenheid);
     }
 
-    @Test void format_en_functionDefs_worden_eerst_op_vorm_gelezen() throws Exception {
+    @Test void format_and_functionDefs_are_first_read_by_form() throws Exception {
         // an absent or non-string format, and a functionDefs that is no list, are defects of the document; only a
         // well-formed one reaches the refusal of a form this backend does not carry
         ObjectNode ir = golden(BAKENMEESTER);
         ir.remove("format");
-        ontbreekt(ir, "", "format");
+        missing(ir, "", "format");
 
         ir = golden(BAKENMEESTER);
         ir.put("format", 1);
-        weigert(ir, "/format");
+        refuses(ir, "/format");
 
-        ObjectNode ander = golden(BAKENMEESTER).put("format", "uchar-ir-v0");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ander));
+        ObjectNode other = golden(BAKENMEESTER).put("format", "uchar-ir-v0");
+        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(other));
         assertEquals("format", r.form(), r.getMessage());
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).putObject("functionDefs");
-        IrLoader.Documentfout e = weigert(ir, "/model/functionDefs");
+        IrLoader.Documentfout e = refuses(ir, "/model/functionDefs");
         assertTrue(e.getMessage().contains("expected an array"), e.getMessage());
     }
 
     // ---------------- names ----------------
 
-    @Test void een_exact_dubbel_kenmerk_weigert() throws Exception {
+    @Test void an_exact_duplicate_characteristic_is_refused() throws Exception {
         // WF-002. Read leniently, the second declaration's kind won and the first one's timeline stayed.
         ObjectNode ir = golden(BAKENMEESTER);
         ObjectNode ot = IrPad.objectType(ir, "Bakenmeester");
-        ArrayNode kenmerken = (ArrayNode) ot.get("characteristics");
-        kenmerken.addObject().put("node", "Characteristic").put("name", "dienstdoend").put("kind", "possessive");
-        IrLoader.Documentfout e = weigert(ir, objectTypePad(ir, "Bakenmeester") + "/characteristics/"
-                + (kenmerken.size() - 1) + "/name");
+        ArrayNode characteristics = (ArrayNode) ot.get("characteristics");
+        characteristics.addObject().put("node", "Characteristic").put("name", "dienstdoend").put("kind", "possessive");
+        IrLoader.Documentfout e = refuses(ir, objectTypePath(ir, "Bakenmeester") + "/characteristics/"
+                + (characteristics.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'dienstdoend'"), e.getMessage());
     }
 
-    @Test void twee_objecttypen_die_alleen_in_hoofdletters_verschillen_weigeren() throws Exception {
+    @Test void two_object_types_that_differ_only_in_capitals_are_refused() throws Exception {
         // WF-001 compares case-insensitively; the model's tables are keyed on the exact string and its
         // lookup falls back to a case-insensitive search, which would pick one of the two.
         ObjectNode ir = golden(BAKENMEESTER);
-        ArrayNode lijst = IrPad.modelLijst(ir, "objectTypes");
-        ObjectNode kopie = IrPad.objectType(ir, "Bakenmeester").deepCopy().put("name", "bakenmeester");
-        lijst.add(kopie);
-        IrLoader.Documentfout e = weigert(ir, "/model/objectTypes/" + (lijst.size() - 1) + "/name");
+        ArrayNode list = IrPad.modelLijst(ir, "objectTypes");
+        ObjectNode copy = IrPad.objectType(ir, "Bakenmeester").deepCopy().put("name", "bakenmeester");
+        list.add(copy);
+        IrLoader.Documentfout e = refuses(ir, "/model/objectTypes/" + (list.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'Bakenmeester'"), "de melding noemt de eerste spelling: " + e.getMessage());
     }
 
-    @Test void namen_botsen_onder_de_naamidentiteit_van_de_verifier() throws Exception {
+    @Test void names_collide_under_the_name_identity_of_the_verifier() throws Exception {
         // WF-001 on the parameter list: a difference in case makes no second name (checks.ml
         // norm), and the exact-key table would have kept both
         ObjectNode ir = golden(PENNINGDREMPEL);
         ArrayNode parameters = IrPad.modelLijst(ir, "parameters");
         parameters.add(IrPad.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
-        IrLoader.Documentfout e = weigert(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
+        IrLoader.Documentfout e = refuses(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
         assertTrue(e.getMessage().endsWith(": the name 'Vondstdrempel' collides with the earlier 'vondstdrempel'"
                 + " (names are compared case-insensitively)"), e.getMessage());
 
@@ -441,48 +441,48 @@ class LaderWeigeringWitnessTest {
         // a second name
         ir = golden(ERFWACHT);
         ObjectNode ot = IrPad.objectType(ir, "Jutter");
-        ArrayNode attributen = (ArrayNode) ot.get("attributes");
-        attributen.add(IrPad.attribute(ot, "wachtvergoeding per maand").deepCopy()
+        ArrayNode attributes = (ArrayNode) ot.get("attributes");
+        attributes.add(IrPad.attribute(ot, "wachtvergoeding per maand").deepCopy()
                 .put("name", "Wachtvergoeding  per maand"));
-        e = weigert(ir, objectTypePad(ir, "Jutter") + "/attributes/" + (attributen.size() - 1) + "/name");
+        e = refuses(ir, objectTypePath(ir, "Jutter") + "/attributes/" + (attributes.size() - 1) + "/name");
         assertTrue(e.getMessage().endsWith(": the name 'Wachtvergoeding  per maand' collides with the earlier"
                 + " 'wachtvergoeding per maand' (names are compared case-insensitively)"), e.getMessage());
     }
 
     // ---------------- the domain ----------------
 
-    @Test void een_enumeratiedomein_met_achtergebleven_zelfnaam_weigert() throws Exception {
+    @Test void an_enumeration_domain_with_a_leftover_self_name_is_refused() throws Exception {
         // IR-SPEC ch. 2.3 / delta B2: the Domain wrapper holds the name, and a self-name beside it is a second
         // spelling of one name — under the key an Enumeration carries it at a reference position, and under its v0
         // key, which is no key of the node since L5.
-        for (String sleutel : List.of("domain", "domein")) {
+        for (String key : List.of("domain", "domein")) {
             ObjectNode ir = golden(VONDSTKLASSE);
-            String domein = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
-            ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).put(sleutel, "Vondstklasse");
-            weigert(ir, domein + "/datatype/" + sleutel);
+            String domain = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
+            ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).put(key, "Vondstklasse");
+            refuses(ir, domain + "/datatype/" + key);
         }
     }
 
     // ---------------- what a refusal says ----------------
 
-    @Test void een_onbekende_waarde_noemt_veld_en_waarde_en_geen_java_klasse() throws Exception {
+    @Test void an_unknown_value_names_a_field_and_a_value_and_no_java_class() throws Exception {
         // Before: "No enum constant dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit.jaar",
         // the JDK's sentence, naming a Java class and no position in the document. Since L5 the value is read
         // through the translation table and refused in the shared loader's sentence, which names the field and the
         // value, the v0 spelling included.
-        for (String waarde : List.of("jaar", "JAAR")) {
+        for (String value : List.of("jaar", "JAAR")) {
             ObjectNode ir = golden(BAKENMEESTER);
-            String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+            String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
             ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
-                    .put("granularity", waarde);
-            IrLoader.Documentfout e = weigert(ir, attr + "/timeline/granularity");
-            assertTrue(e.getMessage().endsWith(": unknown granularity value \"" + waarde + "\""), e.getMessage());
+                    .put("granularity", value);
+            IrLoader.Documentfout e = refuses(ir, attr + "/timeline/granularity");
+            assertTrue(e.getMessage().endsWith(": unknown granularity value \"" + value + "\""), e.getMessage());
             assertFalse(e.getMessage().contains("No enum constant"), e.getMessage());
             assertFalse(e.getMessage().contains("io.github"), e.getMessage());
         }
     }
 
-    @Test void een_documentfout_bereikt_het_uitsluitkanaal_niet() throws Exception {
+    @Test void a_document_error_does_not_reach_the_exclude_channel() throws Exception {
         // The channel, end to end: the replay turns a Refusal into EXCLUDE and lets every other exception
         // through, which the CLI prints as ERROR. Both replay branches and the red path build through this
         // loader first; the DRL branch and the red path are the ones reachable from this package.
@@ -491,57 +491,57 @@ class LaderWeigeringWitnessTest {
         Path tmp = Files.createTempFile("documentfout", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
-        List<Path> gevallen = gevallen(BAKENMEESTER);
-        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.viaDrlTekst(tmp, gevallen));
-        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.runRood(tmp, gevallen.get(0)));
+        List<Path> cases = cases(BAKENMEESTER);
+        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.viaDrlTekst(tmp, cases));
+        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.runRood(tmp, cases.get(0)));
     }
 
     // ---------------- helpers ----------------
 
-    /** Loads the twisted document and demands a document defect at exactly {@code plek}. */
-    private static IrLoader.Documentfout weigert(JsonNode ir, String plek) {
+    /** Loads the twisted document and demands a document defect at exactly {@code site}. */
+    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
-                "verwacht een documentfout op " + plek);
-        assertEquals(plek, e.plek(), e.getMessage());
+                "verwacht een documentfout op " + site);
+        assertEquals(site, e.plek(), e.getMessage());
         return e;
     }
 
-    /** {@link #weigert} for an absent field: the defect sits at the object {@code ouder}, and the detail names the
+    /** {@link #refuses} for an absent field: the defect sits at the object {@code parent}, and the detail names the
      *  field. */
-    private static IrLoader.Documentfout ontbreekt(JsonNode ir, String ouder, String veld) {
-        IrLoader.Documentfout e = weigert(ir, ouder);
-        assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
+    private static IrLoader.Documentfout missing(JsonNode ir, String parent, String field) {
+        IrLoader.Documentfout e = refuses(ir, parent);
+        assertTrue(e.getMessage().contains("missing field '" + field + "'"), e.getMessage());
         return e;
     }
 
-    private static ObjectNode golden(String naam) throws Exception {
-        Path ir = CORPUS.resolve(naam).resolve("ir.json");
+    private static ObjectNode golden(String name) throws Exception {
+        Path ir = CORPUS.resolve(name).resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
         IrLoader.loadAll(doc);   // the untwisted golden loads, so the refusal below is the twist's alone
         return doc;
     }
 
-    private static List<Path> gevallen(String golden) throws Exception {
+    private static List<Path> cases(String golden) throws Exception {
         try (var s = Files.list(CORPUS.resolve(golden))) {
-            List<Path> uit = s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
-            assertFalse(uit.isEmpty(), "golden carries case files: " + golden);
-            return uit;
+            List<Path> out = s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
+            assertFalse(out.isEmpty(), "golden carries case files: " + golden);
+            return out;
         }
     }
 
-    private static String objectTypePad(JsonNode ir, String objecttype) {
-        return "/model/objectTypes/" + index(IrPad.modelLijst(ir, "objectTypes"), "name", objecttype);
+    private static String objectTypePath(JsonNode ir, String objectType) {
+        return "/model/objectTypes/" + index(IrPad.modelLijst(ir, "objectTypes"), "name", objectType);
     }
 
-    private static String lidPad(JsonNode ir, String objecttype, String leden, String lid) {
-        return objectTypePad(ir, objecttype) + "/" + leden + "/"
-                + index((ArrayNode) IrPad.objectType(ir, objecttype).get(leden), "name", lid);
+    private static String memberPath(JsonNode ir, String objectType, String members, String member) {
+        return objectTypePath(ir, objectType) + "/" + members + "/"
+                + index((ArrayNode) IrPad.objectType(ir, objectType).get(members), "name", member);
     }
 
-    private static int index(ArrayNode lijst, String naamVeld, String naam) {
-        for (int i = 0; i < lijst.size(); i++)
-            if (naam.equals(lijst.get(i).path(naamVeld).asText(null))) return i;
-        throw new AssertionError("no entry with " + naamVeld + " '" + naam + "' in " + lijst);
+    private static int index(ArrayNode list, String nameField, String name) {
+        for (int i = 0; i < list.size(); i++)
+            if (name.equals(list.get(i).path(nameField).asText(null))) return i;
+        throw new AssertionError("no entry with " + nameField + " '" + name + "' in " + list);
     }
 }

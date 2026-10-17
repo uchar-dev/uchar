@@ -1,0 +1,5 @@
+# Commits that only rename identifiers with scripts/lib/naming/rename.py; git blame skips them (GitHub reads this file, locally: git config blame.ignoreRevsFile .git-blame-ignore-revs).
+# flogic: inhoud hernoemd met rename.py
+0d1a6251dd145ef31440a209efb4d1128373ec62
+# lader-tests: inhoud hernoemd met rename.py
+de5c27632a33dfaa84b0efe1c36b7dd2583806f2

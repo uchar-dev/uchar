@@ -398,7 +398,7 @@ let parse_stmt st : stmt =
            reads as a characteristic CHECK in a body *)
         | P ":" ->
             advance st;
-            H_kenmerk (atom_of st)
+            H_characteristic (atom_of st)
         | _ ->
             expect st "[";
             let attr =

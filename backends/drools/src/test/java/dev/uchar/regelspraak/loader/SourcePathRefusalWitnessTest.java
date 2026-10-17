@@ -43,29 +43,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * by-pair fallback binding a coincidental direct relation — and it is gone in the same change that made
  * both transpilers walk the path. What it protected is now protected by the walk itself.
  */
-class BronPadWeigeringWitnessTest {
+class SourcePathRefusalWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    /** The path is kept as WRITTEN: both steps, in wire order, feittype and role each. Nothing here is
+    /** The path is kept as WRITTEN: both steps, in wire order, factType and role each. Nothing here is
      *  derived from the presentation strings, and nothing from the endpoint type pair — which is the whole
      *  difference between this field and every other extension the loader carries. */
-    @Test void het_hele_geordende_pad_wordt_bewaard() throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(anker());
+    @Test void the_whole_ordered_path_is_kept() throws Exception {
+        IrLoader.Loaded l = IrLoader.loadAll(anchor());
         assertEquals(1, l.bronPaden().size(), "één vouw in dit document draagt een pad");
-        List<RolBindingRef> pad = l.bronPaden().values().iterator().next();
+        List<RolBindingRef> path = l.bronPaden().values().iterator().next();
         assertEquals(List.of(new RolBindingRef("bemanning", "gevoerde boot"),
-                             new RolBindingRef("berging", "geborgen vondst")), pad,
+                             new RolBindingRef("berging", "geborgen vondst")), path,
                 "onderwerp-uitwaarts, stap voor stap, precies zoals de wire hem schrijft");
     }
 
     /** (a) one meaning, one spelling: both at once is no document (IR-SPEC ch. 4.3), refused at the path. */
-    @Test void een_bronpad_naast_een_bronrol_wordt_geweigerd() throws Exception {
-        ObjectNode root = (ObjectNode) anker();
-        ((ObjectNode) vouw(root)).putObject("sourceRole")
+    @Test void a_source_path_beside_a_source_role_is_refused() throws Exception {
+        ObjectNode root = (ObjectNode) anchor();
+        ((ObjectNode) fold(root)).putObject("sourceRole")
                 .put("node", "RoleBinding").put("factType", "berging").put("role", "geborgen vondst");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
         assertTrue(e.plek().endsWith("/sourcePath") && e.getMessage().contains(IrLoader.BEREIK_TWEEMAAL),
@@ -73,27 +73,27 @@ class BronPadWeigeringWitnessTest {
     }
 
     /** (b) the arity: an EMPTY path reaches nothing, and a one-step path is the other spelling's territory. */
-    @Test void een_te_kort_bronpad_wordt_geweigerd() throws Exception {
-        ObjectNode leeg = (ObjectNode) anker();
-        ((ObjectNode) vouw(leeg)).putArray("sourcePath");
-        assertTrue(weigering(leeg).contains("a sourcePath carries at least TWO steps, found 0 — the one-step range is"
+    @Test void a_too_short_source_path_is_refused() throws Exception {
+        ObjectNode empty = (ObjectNode) anchor();
+        ((ObjectNode) fold(empty)).putArray("sourcePath");
+        assertTrue(refusal(empty).contains("a sourcePath carries at least TWO steps, found 0 — the one-step range is"
                 + " spelled sourceRole"), "een gesteld bereik dat niets bereikt");
 
-        ObjectNode een = (ObjectNode) anker();
-        ArrayNode pad = (ArrayNode) vouw(een).get("sourcePath");
-        pad.remove(1);
-        assertTrue(weigering(een).contains("a sourcePath carries at least TWO steps, found 1 — the one-step range is"
+        ObjectNode one = (ObjectNode) anchor();
+        ArrayNode path = (ArrayNode) fold(one).get("sourcePath");
+        path.remove(1);
+        assertTrue(refusal(one).contains("a sourcePath carries at least TWO steps, found 1 — the one-step range is"
                 + " spelled sourceRole"), "één stap is de sourceRole-spelling");
     }
 
     /** (c) the position: the single source of an instance fold, exactly where sourceRole stands. A source that
      *  navigates on its own hands the fold something else, so a range does not apply to it, and a document that
      *  writes one there is refused rather than half-read. */
-    @Test void een_bronpad_op_een_niet_ledenbron_wordt_geweigerd() throws Exception {
+    @Test void a_source_path_on_a_non_member_source_is_refused() throws Exception {
         // Since L2's fix round a malformed document, not a form this backend declines: WF-102 (c) makes the
         // position part of the shape, in the verifier's one sentence for both halves of it.
-        ObjectNode root = (ObjectNode) anker();
-        ((ObjectNode) vouw(root).get("arguments").get(0)).putArray("path").addObject()
+        ObjectNode root = (ObjectNode) anchor();
+        ((ObjectNode) fold(root).get("arguments").get(0)).putArray("path").addObject()
                 .put("node", "RoleBinding").put("factType", "bemanning").put("role", "gevoerde boot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
@@ -104,15 +104,15 @@ class BronPadWeigeringWitnessTest {
 
     /** Without the field the fold has no range at all, and a MINIMUM over one source with an element type is no
      *  document without one (IR-SPEC ch. 4.3): no reader derives it from the type pair. */
-    @Test void zonder_het_veld_laadt_de_vouw_niet() throws Exception {
-        ObjectNode root = (ObjectNode) anker();
-        for (JsonNode regel : IrPad.rulesLijst(root, "rules"))
-            ((ObjectNode) regel.get("versions").get(0).get("value")).remove("sourcePath");
+    @Test void without_the_field_the_fold_is_not_loaded() throws Exception {
+        ObjectNode root = (ObjectNode) anchor();
+        for (JsonNode rule : IrPad.rulesLijst(root, "rules"))
+            ((ObjectNode) rule.get("versions").get(0).get("value")).remove("sourcePath");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(root));
         assertTrue(e.getMessage().contains(IrLoader.BEREIK_ONTBREEKT), e.getMessage());
     }
 
-    private static String weigering(JsonNode root) {
+    private static String refusal(JsonNode root) {
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.load(root),
                 "een vormschending hoort een benoemde per-vorm-weigering te zijn");
         assertEquals("Aggregation.sourcePath", r.form(),
@@ -121,15 +121,15 @@ class BronPadWeigeringWitnessTest {
     }
 
     /** The one fold of the emitted witness that carries the field. */
-    private static JsonNode vouw(JsonNode root) {
+    private static JsonNode fold(JsonNode root) {
         return IrPad.versie(root, "rules", 0, 0).get("value");
     }
 
-    private static JsonNode anker() throws Exception {
+    private static JsonNode anchor() throws Exception {
         Path ir = CORPUS.resolve("jutterswet-vondstketen").resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         JsonNode root = JSON.readTree(Files.readString(ir));
-        assertTrue(vouw(root).hasNonNull("sourcePath"),
+        assertTrue(fold(root).hasNonNull("sourcePath"),
                 "deze golden draagt het veld waar deze getuige over gaat");
         return root;
     }

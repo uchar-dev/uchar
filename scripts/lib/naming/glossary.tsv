@@ -5,6 +5,7 @@ aantal	count	wire
 aantal dagen in	dayCount	wire		`BuiltinCall.kind`
 aantalgevulde	filledCount	wire		
 achter	behind	plain	function word: preposition and verb particle (laat achter, leaves behind)	
+achtergebleven	leftover	plain	left behind by an earlier spelling: een achtergebleven zelfnaam, a leftover self-name	added by card hernoemgereedschap: 1 name in the loader tests (een_enumeratiedomein_met_achtergebleven_zelfnaam_weigert)
 af	off	plain	function word: verb particle (kapt af, leidt af, daalt af)	
 afgeleid	derived	plain		
 afgeleide	derived	plain		
@@ -15,10 +16,13 @@ afleiding	derivation	spec		RUNTIME-SEMANTICS §2.10
 afleidt	derives	plain		
 afnemend	descending	wire		
 afnemer	consumer	spec		RUNTIME-SEMANTICS §2.10
+afrond	round	plain	the verb stem: afrond X, round X	added by card hernoemgereedschap: 1 name the loader tests read from outside the zone (AfrondModus)
+afrond	rounding	wire	the stem in a compound: AfrondModus, rounding mode	`Rounding`; added by card hernoemgereedschap: 1 name the loader tests read from outside the zone (AfrondModus)
 afronding	rounding	wire		
 afwezig	absent	spec		RUNTIME-SEMANTICS §5.8
 afwijkende	deviating	plain		
 afwijking	deviation	plain		
+aggregaat	aggregate	plain	an aggregate of Flora-2 (sum, count, avg)	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_aggregaat)
 aggregatie	aggregation	wire		
 aggregeren	aggregate	plain		
 al	already	plain	function word	false friend
@@ -33,6 +37,7 @@ als	as	plain	function word: X als Y, X as Y	false friend
 als	if	plain	function word: als ... dan, if ... then	false friend
 altijd	always	plain	function word	
 ambigu	ambiguous	plain		
+ander	another	plain	function word: een ander X, another X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (een_totaal_zonder_bereik_over_een_ander_type_weigert)
 ander	other	plain	function word	false friend
 andere	other	plain	function word	
 anders	else	wire	the else of an IfThenElse	false friend; `IfThenElse.else`
@@ -41,6 +46,7 @@ anker	anchor	wire		false friend
 annotatie	annotation	wire		`statuteAnnotations`
 annotaties	annotations	wire		
 antwoord	answer	plain		
+argumentatietheorie	argumentationTheory	field	Flora-2's argumentation theory for defeasible rules, the @{...} rule descriptor	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_argumentatietheorie)
 argumenten	arguments	wire		
 assertie	assertion	wire		
 attributen	attributes	wire		
@@ -61,6 +67,7 @@ beide	both	plain	function word
 benaming	designation	wire		false friend
 benamingen	designations	wire		
 beneden	below	plain	naar beneden is the rounding mode floor	
+benoembaar	designatable	spec	every declaration a vocabulary can designate	IR-SPEC §2.12; added by card hernoemgereedschap: in 4 identifiers (346 occurrences)
 benoemd	named	wire		`namedForm`
 benoemde	named	wire		`namedForm`
 bereik	range	spec	what a fold, a quantifier fold or an allocation ranges over	IR-SPEC §4.3
@@ -73,9 +80,11 @@ berekening	computation	wire	in invoer boven berekening	`inputAboveComputation`
 beslist	decides	plain		
 beslistabel	decisionTable	wire		
 besluit	decision	wire		
+bestaande	existing	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_niet_bestaande_dag_wordt_geweigerd_op_de_kalender)
 bestaat	exists	plain		
 betreden	taken	plain	an arm that evaluation enters	
 bevat	contains	plain		
+bewaard	kept	plain	kept as written	added by card hernoemgereedschap: 1 name in the loader tests (het_hele_geordende_pad_wordt_bewaard)
 bewaking	watch	plain	the watch the entry keeps on a Drools session	
 bezield	animate	wire		
 bezittelijk	possessive	wire		
@@ -89,6 +98,7 @@ bindingen	bindings	wire
 bindt	binds	wire		`RoleBinding`, `binder`
 binnen	within	plain	function word	
 binnenste	innermost	plain		
+blad	leaf	plain	a leaf of an expression tree	false friend; added by card hernoemgereedschap: 1 name in the loader tests (de_loader_bouwt_een_unieknoop_en_geen_onopgelost_blad)
 blijft	stays	plain		
 blijven	stay	plain		
 blijvende	persistent	plain		
@@ -96,6 +106,8 @@ blok	block	plain
 blokken	blocks	plain		
 booleaan	boolean	wire		
 boom	tree	plain		false friend
+botsen	collide	spec	two names that collide	IR-SPEC §2.6; added by card hernoemgereedschap: 1 name in the loader tests (namen_botsen_onder_de_naamidentiteit_van_de_verifier)
+botsend	colliding	plain		added by card hernoemgereedschap: botsen, added for the loader tests, split botsend as botsen|d (ZusterrolInvoerWitnessTest.java)
 botsende	colliding	spec		IR-SPEC §2.1
 botsing	collision	spec		IR-SPEC §2.1
 botsingen	collisions	spec		IR-SPEC §2.1
@@ -138,6 +150,7 @@ creatiefase	creationPhase	plain
 creatieguard	creationGuard	plain		
 creaties	creations	wire		
 criterium	criterion	plain		false friend
+daalt	descends	spec	daalt af in X: descends into X (a walk)	IR-SPEC §4.6; added by card hernoemgereedschap: 2 names in the loader tests (de_generieke_wandeling_daalt_af_in_de_selecties)
 daar	there	plain	function word	
 daarbij	also	plain	function word: daarbij, in addition	the token DAARBIJ_GELDT stays (RegelSpraak keyword)
 dag	day	wire		false friend
@@ -164,6 +177,7 @@ datumtijd	dateTime	wire	a date with a time of day	`dateTimeWith`
 datumvouw	dateFold	spec		IR-SPEC §4.3
 de	the	plain	function word: the article	false friend
 decimaal	decimal	wire		`decimals`
+decimale	decimal	wire		`decimals`; added by card hernoemgereedschap: 1 name in the loader tests (een_breuk_wordt_de_decimale_factor_van_het_record_en_blijft_in_het_stelsel)
 decimalen	decimals	wire		
 declaratie	declaration	spec		IR-SPEC §2
 declaraties	declarations	spec		IR-SPEC §2
@@ -206,6 +220,7 @@ domeinen	domains	wire
 door	by	plain	function word: door X, by X	false friend
 door	through	plain	function word: door ... heen, through	false friend
 doordat	because	plain	function word	
+doorgelaten	admitted	plain	let through: what the loader admitted where it should refuse	added by card hernoemgereedschap: 1 name in the loader tests (doorgelaten)
 doorheen	through	plain	function word	
 doorval	fallThrough	spec		RUNTIME-SEMANTICS §7.1
 draagt	carries	plain		
@@ -242,7 +257,9 @@ eigenschap	property	field	a bean property (getter and setter)
 eind	end	plain		
 einde	end	plain		
 eindigt	ends	plain		
+elders	elsewhere	plain		false friend; added by card hernoemgereedschap: 1 name in the loader tests (de_snippet_is_het_anker_van_het_record_en_een_regel_elders_valt_weg)
 element objecttype	elementType	wire	the v0 field elementObjecttype	
+elementaire	elementary	plain	an elementary condition of RegelSpraak	added by card hernoemgereedschap: in 4 identifiers (36 occurrences)
 elementen	elements	wire		
 elementnaam	elementName	plain		
 elementtype	elementType	wire		
@@ -251,7 +268,9 @@ elk	each	plain	function word	false friend
 elkaar	eachOther	plain	function word	
 elkaars	eachOther	plain	function word: elkaars, each other's	
 elke	each	plain	function word	
+elke	every	plain	function word: elke X, every X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (elke_v0_knoopnaam_wordt_bij_naam_geweigerd)
 emmer	bucket	spec		false friend; RUNTIME-SEMANTICS §3.2
+emmerende	bucketing	spec	a bucketing builtin: one that lays its result per calendar period	RUNTIME-SEMANTICS §3.2; added by card hernoemgereedschap: 1 name in the loader tests (een_granulariteit_staat_alleen_op_een_emmerende_builtin)
 emmerscalair	bucketScalar	spec		RUNTIME-SEMANTICS §3.6, the asOfDate-bucket scalar
 en	and	plain	function word	false friend; not the language tag `en` (`bron.catala_en`)
 ene	one	plain	function word: de ene ... de andere, the one ... the other	
@@ -269,6 +288,7 @@ erflijn	inheritanceLine	plain	the chain of supertypes a type inherits along
 ermee	with	plain	function word: ermee, with it	
 erna	after	plain	function word: erna, after it	
 ernaast	beside	plain	function word: ernaast, beside it	
+ernst	severity	wire	the severity of a diagnostic	`Diagnostic.severity`; added by card hernoemgereedschap: 1 name in the loader tests (ernst); also a word of declared names of the corpus, which stay as written
 erover	over	plain	function word: erover, over it	
 ervoor	for	plain	function word: ervoor, for it; before it	
 even	equally	plain	even groot: equally large; an even cycle stays even	false friend
@@ -279,11 +299,13 @@ extensie	extension	spec	an extension node of the IR	IR-SPEC, Method
 extensie	extension	field	the extension of an object type: its instances	
 faalt	fails	plain		
 factor naar canoniek	factorToCanonical	wire		
+factoren	factors	plain		added by card hernoemgereedschap: 1 name the loader tests read from outside the zone (exacteFactoren)
 factorvraag	factorQuestion	plain	the query for a unit's conversion factor	
 falen	fail	plain		
 familie	family	spec		IR-SPEC §2.4
 fase	phase	plain		
 fasen	phases	plain		
+februari	february	plain	the month	added by card hernoemgereedschap: 1 name in the loader tests (negenentwintig_februari_buiten_een_schrikkeljaar_wordt_geweigerd_op_de_kalender)
 feit	fact	wire		
 feitcreatie	factCreation	wire		
 feiten	facts	wire		
@@ -293,6 +315,7 @@ filterdeponering	filterDeposit	plain
 filterfout	filterError	plain		
 filtervouw	filterFold	plain		
 fixpunt	fixpoint	spec		RUNTIME-SEMANTICS §5.3
+floraeen	flora1	plain	Flora-1, the first Flora system of the F-logic papers	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_floraeen)
 formaat	format	wire		
 fout	error	spec	an error on the error channel; a failure in general	RUNTIME-SEMANTICS §5.6
 fout	fault	spec	an executor's observable failure at load or evaluation, as a red case pins it	RUNTIME-SEMANTICS §5.11; the case field `expectedFault`
@@ -311,6 +334,7 @@ gedeclareerd	declared	wire
 gedeclareerde	declared	wire		
 gedeeld	divided	wire		`dividedBy`
 gedeelde	shared	plain		
+gedekt	covered	plain		added by card hernoemgereedschap: 1 name in the loader tests (gedekt)
 gedimensioneerd	dimensioned	plain		
 gedragen	carried	plain		
 gedurende	during	plain		keyword, decided at review
@@ -320,15 +344,18 @@ geen	none	wire	the quantifier
 geerfd	inherited	spec		RUNTIME-SEMANTICS §7.10
 geerfde	inherited	spec		RUNTIME-SEMANTICS §7.10
 gefilterd	filtered	plain		
+gefilterde	filtered	plain		added by card hernoemgereedschap: 2 names in frontends/flogic (refuse_gefilterde_som)
 gegenereerd	generated	plain		
 gegenereerde	generated	plain		
 geheel	whole	wire		
 gehele	whole	wire		
+geladen	loaded	plain		added by card hernoemgereedschap: 1 name in the loader tests (geladen)
 geld	money	plain	the Catala fixture geld	false friend
 geld	valid	wire	geld vanaf, geld tot: valid from, valid to	false friend; `validity`
 geldig	valid	wire		`validity`
 geldige	valid	wire		`validity`
 geldigheid	validity	wire		
+geldigheidsdrager	validityCarrier	plain	a node that carries a validity window; the s joins geldigheid and drager	added by card hernoemgereedschap: 1 name in the loader tests (elke_geldigheidsdrager_wordt_langs_dezelfde_klem_gelezen)
 geldt	applies	plain		
 gelezen	read	plain		
 gelijk	equal	wire		
@@ -345,30 +372,46 @@ gemeld	reported	plain
 gemengd	mixed	plain		
 gemengde	mixed	plain		
 gemunte	minted	spec		RUNTIME-SEMANTICS §5.5
+genavigeerd	navigated	spec		IR-SPEC §4.1a; added by card hernoemgereedschap: in 4 identifiers (37 occurrences)
 genavigeerde	navigated	spec		IR-SPEC §4.1a
 generatie	generation	spec		RUNTIME-SEMANTICS §5.5
+genereer	generate	plain	the verb stem: genereer X, generate X	added by card hernoemgereedschap: 1 name the loader tests read from outside the zone (genereer)
+generieke	generic	spec	the generic walk	IR-SPEC §4.6; added by card hernoemgereedschap: 2 names in the loader tests (de_generieke_wandeling_daalt_af_in_de_selecties)
 genest	nested	plain		
 geneste	nested	plain		
+genesteld	nested	plain		added by card hernoemgereedschap: 1 name in the loader tests (genesteldModel)
 genoemde	named	plain		
 genomen	taken	plain		
 geordende	ordered	wire		
 geschreven	written	plain		
+gescoopte	scoped	spec	a scoped union	IR-SPEC §3.6; added by card hernoemgereedschap: 1 name in the loader tests (lege_lijsten_en_een_gescoopte_unie_weigeren)
+gesloten	closed	spec	a closed set	IR-SPEC §2.4; added by card hernoemgereedschap: 1 name in the loader tests (methode_tag_soort_en_granulariteit_zijn_gesloten_verzamelingen)
 getal	number	wire		
 getallen	numbers	wire		
 getalvouwen	numberFolds	plain		
+getekend	signed	plain	with a sign: een getekend jaar, a signed year	added by card hernoemgereedschap: 1 name in the loader tests (een_getekend_uitgebreid_jaar_wordt_geweigerd)
+getuige	witness	spec	a witness: a document or case that shows a rule or a refusal	IR-SPEC, WF index; added by card hernoemgereedschap: 1 name in the loader tests (getuige)
+getuigen	witnesses	spec	witnesses: documents or cases that show a rule or a refusal	IR-SPEC, WF index; added by card hernoemgereedschap: 1 name in the loader tests (de_drie_getuigen_worden_in_de_zin_van_de_verifier_geweigerd)
+getwiste	twisted	spec	changed on purpose by a probe or by gate 13	IR-SPEC §4.1; added by card hernoemgereedschap: 1 name in the loader tests (laadMetGetwisteDrager)
 getypeerd	typed	plain		
 geval	case	spec	a case: a test situation	RUNTIME-SEMANTICS §5.7a
+gevallen	cases	spec	cases: test situations	RUNTIME-SEMANTICS §5.7a; added by card hernoemgereedschap: 1 name in the loader tests (gevallen)
 gevolg	consequence	wire		
+gevonden	found	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_geerfd_lid_wordt_vanaf_het_subtype_gevonden); also a word of declared names of the corpus, which stay as written
 gevuld	filled	wire		
 gevulde	filled	wire		`filledCount`
 gevuurd	fired	field	a Drools rule firing	
 geweigerd	refused	spec		RUNTIME-SEMANTICS §3.12
 geweigerde	refused	spec		RUNTIME-SEMANTICS §3.12
 gewicht	weight	spec	the weight of a recipient in a proportional allocation; the ASP predicate vdI_gewicht	RUNTIME-SEMANTICS §4.2
+gewond	wounded	plain	the characteristic of the inheritance test program of frontends/flogic	added by card hernoemgereedschap: 1 name in frontends/flogic (overerving_gewond)
 gewone	ordinary	plain		
 gewoon	simply	plain	function word	
+gezet	set	plain	the participle: a value that is set	added by card hernoemgereedschap: in 4 identifiers (59 occurrences)
 gezien	seen	plain		
+globalen	globals	field	the globals of a Drools session	added by card hernoemgereedschap: in 4 identifiers (25 occurrences)
 graaf	graph	field	the rule graph	
+grammatica	grammar	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_getal_volgt_de_getalgrammatica_van_het_casusformaat)
 granulariteit	granularity	wire		
 grens	bound	spec	a limit a value is compared against; the from or to of a period	RUNTIME-SEMANTICS §3.10
 grens	boundary	spec	where a segment or period ends	IR-SPEC §4.3
@@ -378,12 +421,16 @@ groepeer	group	plain	the verb stem
 groepeer attribuut	orderingAttribute	wire	the v0 field groepeerAttribuut of an allocation	
 groepen	groups	wire		
 grondslag	base	plain	the base of a percentage (`percentageOf`)	
+groot	large	plain		added by card hernoemgereedschap: 1 name in the loader tests (groot); also a word of declared names of the corpus, which stay as written
+grootste	largest	plain		added by card hernoemgereedschap: groot, added for the loader tests, split grootste as groot|ste (ClosureWeergave.java)
+grootte	size	plain		added by card hernoemgereedschap: groot, added for the loader tests, split grootte as groot|te (PatternDslWeergave.java)
 groter	greater	wire		false friend
 groter of gelijk	greaterOrEqual	wire		
 haakjes	parentheses	plain		
 haalt	gets	plain	haalt X: gets X; haalt de drempel: reaches the threshold	
 haar	its	plain	function word: the possessive (her, its)	
 heeft	has	plain		
+heel	unhurt	plain	not hurt: the opposite of gewond	added by card hernoemgereedschap: the case file name overerving_heel of frontends/flogic
 heel	whole	wire		false friend
 heelperiode	wholePeriod	wire		
 heen	across	plain	function word: verb particle (over ... heen, door ... heen)	
@@ -393,6 +440,8 @@ hem	it	plain	function word: the object pronoun	false friend
 herhaald	repeated	plain		
 herhaling	repetition	plain		
 herkomst	origin	wire		
+hernoemd	renamed	spec		IR-SPEC ch. 2 (M8, the renaming); added by card hernoemgereedschap: 1 name in the loader tests (hernoemd)
+hernoeming	renaming	spec	the renaming of the wire names (M8, landed at L5)	IR-SPEC ch. 2 (M8, the renaming); added by card hernoemgereedschap: 1 name in the loader tests (HernoemingWeigeringWitnessTest)
 herschaal	rescale	plain	the verb stem	
 het	it	plain	function word: the pronoun	false friend
 het	the	plain	function word: the article	false friend
@@ -401,11 +450,14 @@ hier	here	plain	function word	false friend
 hij	it	plain	function word: the pronoun (he, it)	
 hoe	how	plain	function word	false friend
 hoger	higher	plain		false friend
+hoofdletters	capitals	plain	capital letters: alleen in hoofdletters verschillen, differ only in capitals	added by card hernoemgereedschap: 1 name in the loader tests (twee_objecttypen_die_alleen_in_hoofdletters_verschillen_weigeren)
+hoog	high	plain		added by card hernoemgereedschap: in 8 identifiers and file names (22 occurrences)
 hoogste	highest	plain		
 hoogste	most	wire	in ten hoogste	`atMost`
 hoogstens	atMost	plain	function word	
 hoort	belongs	plain	hoort bij: belongs to	
 hoort	hears	plain	the verb horen	
+houd	keep	plain	the verb stem: houd X, keep X	added by card hernoemgereedschap: in 4 identifiers (48 occurrences)
 houdt	holds	plain	a condition that holds	
 houdt	keeps	plain		
 hun	their	plain	function word	false friend
@@ -448,6 +500,7 @@ kenmerken	characteristics	wire
 kenmerktoekenning	characteristicAttribution	spec		IR-SPEC §3.1
 kenmerkvorm	characteristicForm	plain		
 kenmerkwaarde	characteristicValue	plain		
+kent	knows	plain	kent geen X: knows no X	false friend; added by card hernoemgereedschap: 1 name in the loader tests (elke_knoopsoort_met_een_bronrecord_leest_het_en_kent_geen_bron)
 keten	chain	spec		false friend; IR-SPEC §6.1
 keur	check	plain	the verb stem: keur X, check X	
 keuze	choice	plain		
@@ -464,12 +517,14 @@ klipvouw	clipFold	plain
 knip	clip	spec		RUNTIME-SEMANTICS §3.10
 knoop	node	wire		
 knopen	nodes	wire		
+komen	come	plain		added by card hernoemgereedschap: 1 name in the loader tests (de_vocabulaires_en_hun_benamingen_komen_in_het_model)
 komma	comma	plain		
 komt	comes	plain		
 kop	head	plain	the head of a block, a chain or a document	false friend
 kopie	copy	plain		
 koppeling	link	spec	a link between objects in a fact type	RUNTIME-SEMANTICS §5.7a
 koppelt	links	spec		RUNTIME-SEMANTICS §5.7a
+kort	short	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_te_kort_bronpad_wordt_geweigerd)
 krijgen	get	plain		
 krijgt	gets	plain		
 kring	cycle	spec		IR-SPEC §5.3
@@ -480,7 +535,10 @@ kwantor	quantifier	wire
 kwantoren	quantifiers	wire		
 kwantorvouw	quantifierFold	wire		
 kwartaal	quarter	wire		
+laad	load	plain	the verb stem: laad X, load X	added by card hernoemgereedschap: 2 names in the loader tests (laad)
 laadt	loads	plain		
+laag	layer	spec	a layer of the IR: the model layer, the rule layer, the expression and condition layer	IR-SPEC ch. 2–4; added by card hernoemgereedschap: 4 names in the loader tests (ReferentielaagWeigeringWitnessTest)
+laag	low	plain	the adjective, beside hoog	added by card hernoemgereedschap: the other meaning of laag, beside layer; not in the two zones
 laat	leaves	plain	laat ... achter, laat ... weg: leaves	
 laat	lets	plain	laat X Y: lets X do Y	
 laatste	last	wire		
@@ -516,6 +574,7 @@ lidmaatschap	membership	wire
 lidwoord	article	plain		
 ligt	lies	plain		
 lijst	list	wire		
+lijsten	lists	plain		added by card hernoemgereedschap: 3 names in the loader tests (de_v0_lijsten_onder_rules_zijn_onbekende_velden)
 lijstliteraal	listLiteral	wire		
 links	left	wire		false friend
 literaal	literal	wire		
@@ -526,6 +585,7 @@ lowert	lowers	plain	a Dutch inflection of the English verb lower
 luid	loudly	plain		
 maak	make	plain		
 maakt	makes	plain		
+maakte	made	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_null_op_een_veld_dat_l5_optioneel_maakte_weigert)
 maal	times	wire		
 maand	month	wire		
 maanden	months	wire		
@@ -550,11 +610,13 @@ minste	least	wire	in ten minste	`atLeast`
 minstens	atLeast	plain	function word	
 minuut	minute	wire		
 modus	mode	wire		
+monotoon	monotonic	field	Flora-2's monotonic inheritance mode (setsemantics)	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_monotoon)
 munt	mints	spec	an object creation makes a new object	false friend; RUNTIME-SEMANTICS §5.5
 na	after	plain	function word	false friend
 naam	name	wire		false friend
 naam meervoud	plural	wire	the v0 field naamMeervoud of a dimension	
 naamdelende	nameSharing	plain		CLAUDE.md, gate 12
+naamloos	unnamed	plain		added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_naamloos)
 naamloze	unnamed	plain		
 naamtabel	nameTable	plain		`spec/proposals/v1-naamtabel.json`
 naar	to	plain	function word	
@@ -575,15 +637,19 @@ negatie	negation	spec		RUNTIME-SEMANTICS §5.3
 negatief	negative	wire		
 negatieve	negative	wire		
 negen	nine	plain		
+negenentwintig	twentyNine	plain	the numeral	added by card hernoemgereedschap: 1 name in the loader tests (negenentwintig_februari_buiten_een_schrikkeljaar_wordt_geweigerd_op_de_kalender)
+nemen	take	plain		added by card hernoemgereedschap: 1 name in the loader tests (wortel_en_absolute_waarde_nemen_een_getal)
 nergens	nowhere	plain	function word	
 net	just	plain	function word: net zo, just as	false friend
 niemand	nobody	plain	function word	
 niet	negated	wire	the v0 field niet	
+niet	non	plain	before an adjective or a noun: niet bestaand, non-existing	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (een_niet_bestaande_dag_wordt_geweigerd_op_de_kalender)
 niet	not	plain	function word	
 niet negatief	nonNegative	wire		`Number.sign`
 niets	nothing	plain	function word	
 nieuw	new	plain		
 nieuw type	createdType	wire	the v0 field nieuwType of an object creation	
+noemen	name	plain	the verb: noemen X, name X	added by card hernoemgereedschap: 1 name in the loader tests (beide_grenzen_noemen_hun_eigen_veld_en_hun_eigen_drager)
 noemer	denominator	wire		
 noemt	names	plain		
 nog	still	plain	function word	false friend
@@ -602,7 +668,10 @@ objecttype	objectType	wire
 objecttype	subjectType	wire	the v0 field objecttype of a start-point determination or an attribute reference	
 objecttypen	objectTypes	wire		
 om	to	plain	function word: om te, in order to; om X heen, around X	false friend
+omgekeerd	reversed	plain	in the opposite order	added by card hernoemgereedschap: 1 name in the loader tests (omgekeerd)
+omheind	fenced	plain	fenced off: refused at a fence	added by card hernoemgereedschap: 1 name in the loader tests (pro_rata_over_een_vast_startpunt_is_omheind); also a word of declared names of the corpus, which stay as written
 omrekening	conversion	spec		IR-SPEC §2.5
+omringende	surrounding	plain		added by card hernoemgereedschap: 1 name in the loader tests (omringende_tekst_wordt_geweigerd)
 onbekend	unknown	plain		naamtabel: no v1 name (B16)
 onbekende	unknown	plain		
 onbepaald	indefinite	plain	the indefinite article (onbepaald lidwoord)	
@@ -613,17 +682,22 @@ onderdelen	parts	wire
 onderweg	intermediate	plain	on the way, before the fixpoint	
 onderwerp	subject	wire		
 ongeacht	regardless	plain	function word	
+ongebalkt	unbarred	plain	an F-logic frame without bars, c[attr -> v]	the code's S_unbarred; added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_ongebalkt)
 ongebonden	unbound	plain		
 ongedeclareerd	undeclared	plain		
+ongedekt	uncovered	plain		added by card hernoemgereedschap: gedekt, added for the loader tests, split ongedekt as on|gedekt (check-reftype-derivation.sh)
 ongelezen	unread	plain		
 ongelijk	notEqual	wire		
 ongeordend	unordered	wire		
 ongeordende	unordered	wire		
+ongetwiste	untwisted	spec	as written, before a probe or gate 13 twists it	IR-SPEC §4.1; added by card hernoemgereedschap: 1 name in the loader tests (het_ongetwiste_venster_wordt_gelezen_zoals_het_op_de_wire_staat)
+ongewijzigd	unchanged	plain		added by card hernoemgereedschap: 1 name in the loader tests (dezelfde_golden_laadt_ongewijzigd)
 ongezet	unset	plain		
 onleesbaar	unreadable	plain		
 onopgelost	unresolved	wire		
 onopgeloste	unresolved	wire		
 ontbreekt	missing	plain		
+ontbrekend	missing	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_ontbrekend_verplicht_veld_weigert)
 ontbrekende	missing	plain		
 ontkend	negated	wire		
 ontkende	negated	wire		
@@ -642,6 +716,7 @@ opgave	input	wire	a supplied value that a computation can also produce (opgave b
 opgesomd	enumerated	plain		
 opgesomde	enumerated	plain		
 opnieuw	again	plain	function word	
+optioneel	optional	plain	an optional field	added by card hernoemgereedschap: 3 names in the loader tests (een_null_op_een_veld_dat_l5_optioneel_maakte_weigert)
 ouder	parent	plain		
 over	about	plain	function word: about	false friend
 over	over	plain	function word: een vouw over X, a fold over X	false friend
@@ -652,6 +727,7 @@ overzijde	otherSide	plain
 paar	pair	plain		false friend
 paasdag	easterSunday	wire	in eerste paasdag, the builtin	`BuiltinCall.kind`
 pad	path	wire		false friend
+paden	paths	wire		`path`; added by card hernoemgereedschap: in 4 identifiers (76 occurrences)
 parametergrens	parameterBound	plain		
 pas	only	plain	function word: pas na X, only after X	false friend
 pas	step	plain	the noun	false friend
@@ -671,6 +747,7 @@ plaats	place	plain
 plafond	cap	spec	an upper limit, such as the cap of a creation budget	RUNTIME-SEMANTICS §4.6
 plafond	ceiling	wire	rounding up	`Rounding.mode`
 plek	site	plain	a place in an expression where a read or a deposit happens	
+plekken	sites	plain	places in an expression where a read or a deposit happens	added by card hernoemgereedschap: 1 name in the loader tests (plekken)
 poort	gate	spec		RUNTIME-SEMANTICS §2.4
 populatie	population	spec		IR-SPEC §4.3
 positie	position	spec		IR-SPEC §4.1
@@ -731,6 +808,7 @@ rijen	rows	wire		`decisionTableRow`
 rode	red	plain	the red corpus (`corpus/rood`)	false friend; CLAUDE.md, gate 8
 rol	role	wire		
 rolcheck	roleCheck	spec		RUNTIME-SEMANTICS §5.8a
+rolchecks	roleChecks	spec		RUNTIME-SEMANTICS §5.8a; added by card hernoemgereedschap: 1 name in the loader tests (de_rolchecks_van_de_l1_vorm_zijn_onbekende_knopen)
 rolcontrole	roleCheck	spec		RUNTIME-SEMANTICS §5.8a
 rollen	roles	wire		
 rollidmaatschap	roleMembership	wire		
@@ -748,19 +826,24 @@ scalaire	scalar	spec		RUNTIME-SEMANTICS §3.6
 schaal	scale	spec		RUNTIME-SEMANTICS §2.9
 schaduwt	shadows	field	a name shadows another	
 schending	violation	plain		
+schendingen	violations	plain		added by card hernoemgereedschap: 1 name in the loader tests (schendingen)
 schoon	clean	plain		false friend
 schrijf	write	plain		
 schrijft	writes	plain		
 schrijver	writer	spec		RUNTIME-SEMANTICS §5.5
 schrijvers	writers	spec		RUNTIME-SEMANTICS §5.5
+schrikkel	leap	spec	in schrikkeljaar, schrikkeldag: leap year, leap day	IR-SPEC §4.1; added by card hernoemgereedschap: 2 names in the loader tests (een_schrikkeldag_wordt_gelezen)
 scope rol	scope	wire	the v0 field scopeRol of a uniqueness	
 seconde	second	wire	the time unit	false friend
+sectie	section	plain	a section of the IR document	added by card hernoemgereedschap: 1 name in the loader tests (een_onbekende_sectie_weigert_en_functionDefs_blijft_een_vorm)
 selectie	selection	wire		
+selecties	selections	wire		added by card hernoemgereedschap: 1 name in the loader tests (de_generieke_wandeling_daalt_af_in_de_selecties)
 sessie	session	spec		RUNTIME-SEMANTICS §5.7
 sessiedump	sessionDump	plain		
 setbron	setSource	spec		IR-SPEC §4.3
 setlezing	setRead	plain	a read of an attribute over a set of instances	
 setvouw	setFold	spec		IR-SPEC §4.3
+signatuur	signature	field	an F-logic signature, C[|a => T|]	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_rolsignatuur)
 sinds	since	plain	function word	false friend
 situatie	situation	plain	the given situation of a scenario	
 slechts	only	plain	function word	
@@ -769,6 +852,7 @@ sleutels	keys	wire
 sluit	closes	plain		false friend
 sluit	excludes	plain	sluit uit: excludes	false friend
 sluit	includes	plain	sluit in: includes	false friend
+smal	narrow	plain	narrower than its fixed width: een smal maandveld, a one-digit month field	added by card hernoemgereedschap: 1 name in the loader tests (een_smal_maand_of_dagveld_wordt_geweigerd)
 som	sum	wire		
 sonde	probe	plain		a figure of speech; card hernoemgereedschap asks a literal name
 soort	kind	wire		
@@ -780,10 +864,13 @@ speelt	plays	plain	a golden replays with its pinned outcome	gate 12 status `PLAY
 spelen	play	plain		
 spellingen	spellings	wire		
 spelt	spells	plain		false friend
+splitst	splits	plain		added by card hernoemgereedschap: 1 name in the loader tests (de_ene_lijst_uniciteiten_splitst_op_het_aantal_bronnen)
+staan	are	plain	function word: staan op X, are on X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (spellingen_staan_alleen_op_de_declaratie); stand is Dutch to the inventory (false friend)
 staan	stand	plain		
 staand	standing	spec		RUNTIME-SEMANTICS §7.8
 staande	standing	spec		RUNTIME-SEMANTICS §7.8
 staart	tail	plain		
+staat	is	plain	function word: staat naast X, is beside X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (een_tag_staat_niet_naast_een_initialisatie); stand is Dutch to the inventory (false friend)
 staat	stands	plain	the verb staan	
 staat	state	plain	the noun	
 stand	state	plain	the state of a path, a channel or a characteristic during evaluation	false friend
@@ -804,8 +891,13 @@ stil	silent	plain
 stille	silent	plain		
 strikt	strict	plain		
 structdomein	structDomain	wire		`StructType`, `domain`
+structureel	structural	plain	the adjective	added by card hernoemgereedschap: the adjective beside the adverb; not in the two zones
+structureel	structurally	spec	the adverb: wordt structureel gelezen, is read structurally	IR-SPEC §2.12; added by card hernoemgereedschap: 2 names in the loader tests (de_herkomst_wordt_structureel_gelezen)
+structuur	structure	plain		added by card hernoemgereedschap: 1 name in the loader tests (de_soort_van_een_versie_is_haar_structuur)
 subdag	subDay	plain		
 subselectie	subselection	spec		RUNTIME-SEMANTICS §3.4a
+synthetisch	synthetic	spec		IR-SPEC §2.2; added by card hernoemgereedschap: 1 name in the loader tests (synthetisch)
+systeem	system	plain	a type system; a unit system is a stelsel	added by card hernoemgereedschap: 1 name in the loader tests (TypesysteemWeigeringWitnessTest)
 tabel	table	wire		`decisionTable`
 tak	arm	field	the then or the else of an IfThenElse	Match `arms`; RUNTIME-SEMANTICS §10.6 says branch
 tak	branch	spec	a rendering of the Drools transpiler: exec model or DRL text	RUNTIME-SEMANTICS §3.12
@@ -816,6 +908,7 @@ takken	branches	wire	the selections of an InstanceSetUnion	`InstanceSetUnion.bra
 takken	branches	spec	the two renderings of the Drools transpiler: exec model and DRL text	RUNTIME-SEMANTICS §3.12
 tarief	rate	spec	a value whose unit is a ratio, such as EUR/kg	IR-SPEC §2.5
 te	to	plain	function word: om te, to; te veel, too many	false friend
+te	too	plain	function word: te kort, too short	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (een_te_kort_bronpad_wordt_geweigerd)
 tegen	against	plain	function word	
 tegenover	opposite	plain	function word	
 tegenpartij	counterpart	wire		`counterpartType`
@@ -858,6 +951,7 @@ toekenning	assignment	spec	an assignment by a rule	IR-SPEC §3.1
 toekenning	memberInit	wire	the v0 node Toekenning: an initialisation in an object creation	
 toekenningen	assignments	spec	assignments by rules	IR-SPEC §3.1
 toekenningen	initialisations	wire	the v0 field toekenningen of an object creation	
+toelaat	admits	plain	toelaat: lets in, admits (the pattern admits)	added by card hernoemgereedschap: 1 name in the loader tests (de_jaarranden_die_het_patroon_toelaat_worden_gelezen)
 toets	test	wire		
 toetst	tests	wire		
 toewijzing	assignment	spec		IR-SPEC §3.1
@@ -865,6 +959,7 @@ toone	toOne	field	a role with one filler
 tot	to	wire		false friend
 tot de macht	power	wire		`Binary.op`
 totaal	total	wire		
+treffer	hit	plain	something found, with where it was found	added by card hernoemgereedschap: 1 name in the loader tests (Treffer)
 tussen	between	plain	function word	
 tussenstand	intermediateState	plain	a state before the fixpoint	
 tussenstap	pathStep	wire		
@@ -882,7 +977,9 @@ typepaar	typePair	spec		IR-SPEC §2.6
 typering	typing	plain		false friend
 uit	of	wire	in the builtins jaar uit, maand uit, dag uit and the other time parts	`yearOf`, `monthOf`, `dayOf`
 uit	out	plain	function word: preposition and verb particle (komt uit, sluit uit)	
+uitgebreid	extended	plain	an extended year: more than four digits, with a sign	added by card hernoemgereedschap: 1 name in the loader tests (een_getekend_uitgebreid_jaar_wordt_geweigerd)
 uitkomst	outcome	spec		RUNTIME-SEMANTICS §5.10
+uitsluit	exclude	plain	the verb stem: sluit uit, exclude; the replay status EXCLUDE	added by card hernoemgereedschap: 1 name in the loader tests (een_documentfout_bereikt_het_uitsluitkanaal_niet)
 uitsluiting	exclusion	plain		
 uitweg	exit	plain		
 uitzondering	exception	wire		
@@ -904,6 +1001,7 @@ variabel	variable	wire
 variabel startpunt	variableStart	wire	the v0 field variabelStartpunt of a timeline	
 variabele	variable	wire		
 variabelen	variables	wire		
+varianten	variants	spec	the variants of a sum type or of a literal value	IR-SPEC §2.4; added by card hernoemgereedschap: 1 name in the loader tests (varianten)
 vast	fixed	wire		false friend; `fixedStart`
 vaste	fixed	wire		`fixedStart`
 veel	many	wire	naar veel: to-many	`many`
@@ -927,8 +1025,11 @@ vergelijker	comparator	plain
 vergelijking	comparison	wire		
 verhouding	ratio	wire		
 verhuist	moves	plain		
+verkeerde	wrong	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_veld_van_het_verkeerde_json_type_weigert); also a word of declared names of the corpus, which stay as written
+verlaagd	lowered	plain	lowered: translated to an executor's form by a backend	added by card hernoemgereedschap: 1 name in the loader tests (een_marker_als_telbron_wordt_geweigerd_en_niet_verlaagd)
 verminderd	reduced	wire		`reducedBy`
 verminderd met	reducedBy	wire		`Binary.op`
+verplicht	required	plain	a required field	added by card hernoemgereedschap: 2 names in the loader tests (een_ontbrekend_verplicht_veld_weigert)
 verre	remote	plain	a role membership along a navigation	false friend
 verre rollidmaatschap	roleMembership	wire	the v0 node VerreRollidmaatschap	
 vers	fresh	plain		false friend
@@ -946,12 +1047,14 @@ verwijzing	reference	wire
 verworpen	rejected	plain		
 verzamel	collect	plain	the verb stem	
 verzameling	set	wire		`stepsAfterSet`
+verzamelingen	sets	wire		added by card hernoemgereedschap: 1 name in the loader tests (methode_tag_soort_en_granulariteit_zijn_gesloten_verzamelingen)
 vier	four	plain		false friend
 vijf	five	plain		
 vind	find	plain	the verb stem	
 vindt	finds	plain		
 vlak	flat	plain		
 vlakke	flat	plain		
+vloer	floor	plain	a lower bound, beside a cap (plafond)	added by card hernoemgereedschap: in 4 identifiers (24 occurrences)
 vocabulaire	vocabulary	wire		
 vocabulaires	vocabularies	wire		
 voeg	add	plain	the verb stem: voeg toe, add; voeg in, insert; voeg samen, merge	
@@ -979,6 +1082,7 @@ vouwbron	foldSource	spec		RUNTIME-SEMANTICS §3.4b
 vouwen	folds	wire		
 vouwfilter	foldFilter	wire	the `filter` of a fold	
 vouwt	folds	wire		
+vraagt	requires	plain	vraagt een X: requires an X	added by card hernoemgereedschap: 1 name in the loader tests (een_eenheid_onder_de_dag_vraagt_een_datum_tijd)
 vreemd	foreign	plain		
 vreemde	foreign	plain		
 vrij	free	plain		
@@ -998,6 +1102,7 @@ waarden	values	wire
 waardevouw	valueFold	spec		IR-SPEC §4.3
 waarin	where	plain	function word: waarin, in which	
 waarnemer	observer	plain		
+waarom	why	plain		added by card hernoemgereedschap: 1 name in the loader tests (waarom)
 waarop	which	plain	function word: waarop, on which	
 waarschuwing	warning	wire		`Diagnostic.severity`
 waarschuwt	warns	plain		
@@ -1030,12 +1135,14 @@ wint	wins	plain		false friend
 woord	word	plain		
 woorden	words	plain		
 worden	be	plain	function word: the passive auxiliary, worden geweigerd: are refused	false friend
+worden	become	plain	function word: worden X, become X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (beide_functieknopen_worden_het_ene_functierecord)
 wordt	becomes	plain	function word: wordt X, becomes X	
 wordt	is	plain	function word: the passive auxiliary, wordt geweigerd: is refused	
 wortel	root	plain	the root of a tree or a graph	
 wortel	squareRoot	wire	the builtin	`BuiltinCall.kind`
 zaak	case	spec	a case document in a test	RUNTIME-SEMANTICS §5.7a
 ze	they	plain	function word: the pronoun (she, they)	
+zegt	says	plain		added by card hernoemgereedschap: 1 name in the loader tests (wat_een_benaming_zegt_weigert_de_lader_niet)
 zelf	self	plain	function word: X zelf, X itself	
 zelfde	same	plain		
 zelfgetypeerde	selfTyped	plain		
@@ -1045,18 +1152,23 @@ zelfstandig	nominal	wire	a characteristic kind	`Characteristic.kind`
 zes	six	plain		false friend
 zet	set	plain	the verb stem: zet X, set X	
 zich	itself	plain	function word: the reflexive pronoun	
+zichtbaar	visible	plain		added by card hernoemgereedschap: 1 name in frontends/flogic (zichtbaar)
 zichzelf	itself	plain	function word	
 ziet	sees	plain		
 zij	it	plain	function word: the pronoun (she, it, they)	
 zijde	side	plain		
 zijden	sides	plain		
+zijkaart	sideMap	plain	a v0 side map beside the member nodes	added by card hernoemgereedschap: 1 name in the loader tests (een_v0_zijkaart_naast_de_ledenknopen_weigert)
 zijn	are	plain	function word: the verb	
 zijn	its	plain	function word: the possessive	
 zijtafel	sideTable	spec		IR-SPEC §2.12
 zin	sentence	spec	a sentence of a message or of a source text	IR-SPEC §4.6
+zinloze	meaningless	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_lege_of_zinloze_tekst_wordt_geweigerd)
+zinnen	sentences	spec	sentences of a message or of a source text	IR-SPEC §4.6; added by card hernoemgereedschap: in 4 identifiers (64 occurrences)
 zo	so	plain	function word	false friend
 zoals	like	plain	function word	
 zodra	once	plain	function word: zodra, as soon as	
 zoek	find	plain	the verb stem: zoek X, find X	
 zonder	without	plain	function word	
+zonesuffix	zoneSuffix	spec	a time-zone suffix on a date lexeme (2026-01-01Z)	IR-SPEC §4.1; added by card hernoemgereedschap: 1 name in the loader tests (een_zonesuffix_wordt_geweigerd)
 zusterrol	sisterRole	spec		RUNTIME-SEMANTICS §5.7a

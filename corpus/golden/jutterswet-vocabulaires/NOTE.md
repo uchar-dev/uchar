@@ -12,7 +12,7 @@ and gives every declaration a designation in both, at the end of its name
 group: the two object types, their six attributes and two characteristics,
 the fact type and its two roles, the parameter, the three values of the
 enumeration `Vondstsoort`, the five rules and the rule group — 23
-declarations, the count the Drools backend's `VocabulaireWitnessTest` pins.
+declarations, the count the Drools backend's `VocabularyWitnessTest` pins.
 `cgm` is the default vocabulary, so it names every one of them (WF-119);
 its designations are written in capitals with underscores, which is content
 and no rule: a designation is text in every vocabulary (maintainer decision

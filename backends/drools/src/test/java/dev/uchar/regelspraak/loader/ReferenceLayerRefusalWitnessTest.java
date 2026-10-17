@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * attribute read, a creation, a uniqueness and a characteristic check are pinned where their bindings are
  * ({@code NavigatiebindingWitnessTest}, {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection
  * without their range where those are ({@code TemporeleSetvouwBereikWitnessTest},
- * {@code KwantorvouwBereikWitnessTest}, {@code InstantieUnieWitnessTest}).
+ * {@code KwantorvouwBereikWitnessTest}, {@code InstanceUnionWitnessTest}).
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
  * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: these are not
  * forms this backend declines but documents that are not {@code uchar-ir-v1}, and a malformed document filed in the
  * gate's auto-excluded channel would leave it green over a document nobody read.
  */
-class ReferentielaagWeigeringWitnessTest {
+class ReferenceLayerRefusalWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -61,128 +61,128 @@ class ReferentielaagWeigeringWitnessTest {
 
     private static final String NUMERIEK =
             "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
-    private static final String ONBEKEND = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
+    private static final String UNKNOWN = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
 
     // ---------------- the reference nodes carry no type ----------------
 
-    @Test void een_type_op_een_verwijzing_wordt_bij_naam_geweigerd() throws Exception {
+    @Test void a_type_on_a_reference_is_refused_by_name() throws Exception {
         // the attribute read has its own row with its four other fields (NavigatiebindingWitnessTest)
         ObjectNode ir = golden(PENNINGDREMPEL);
-        Treffer p = vind(ir, "ParameterReference");
-        p.knoop().set("type", JSON.readTree(NUMERIEK));
-        onbekendVeld(ir, p.pad() + "/type", "ParameterReference");
+        Hit p = find(ir, "ParameterReference");
+        p.node().set("type", JSON.readTree(NUMERIEK));
+        unknownField(ir, p.path() + "/type", "ParameterReference");
 
         ir = golden(BERGINGSTOESLAG);
-        Treffer b = vind(ir, "BinderRef");
-        b.knoop().set("type", JSON.readTree(NUMERIEK));
-        onbekendVeld(ir, b.pad() + "/type", "BinderRef");
+        Hit b = find(ir, "BinderRef");
+        b.node().set("type", JSON.readTree(NUMERIEK));
+        unknownField(ir, b.path() + "/type", "BinderRef");
 
         // no replaying golden reads a dimension cell or a variable, so each stands in for rule 0's value
         ir = golden(PENNINGDREMPEL);
-        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
-        String waarde = "/rules/rules/0/versions/0/value";
-        regel.set("value", JSON.readTree("{\"node\":\"DimensionCellRead\",\"attribute\":" + regel.get("target")
+        ObjectNode rule = IrPad.versie(ir, "rules", 0, 0);
+        String value = "/rules/rules/0/versions/0/value";
+        rule.set("value", JSON.readTree("{\"node\":\"DimensionCellRead\",\"attribute\":" + rule.get("target")
                 + ",\"labels\":[\"noord\"],\"source\":{\"snippet\":\"de cel noord\"},\"type\":" + NUMERIEK + "}"));
-        onbekendVeld(ir, waarde + "/type", "DimensionCellRead");
-        regel.set("value", JSON.readTree("{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"},\"type\":"
+        unknownField(ir, value + "/type", "DimensionCellRead");
+        rule.set("value", JSON.readTree("{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"},\"type\":"
                 + NUMERIEK + "}"));
-        onbekendVeld(ir, waarde + "/type", "VariableReference");
+        unknownField(ir, value + "/type", "VariableReference");
     }
 
     // ---------------- the role check is one node ----------------
 
-    @Test void de_rolchecks_van_de_l1_vorm_zijn_onbekende_knopen() throws Exception {
+    @Test void the_role_checks_of_the_l1_form_are_unknown_nodes() throws Exception {
         String vw = "/rules/rules/0/versions/0/condition";
         ObjectNode ir = golden(POSTBEZETTING);
-        voorwaarde(ir, 0, "{\"node\":\"Rollidmaatschap\",\"rol\":\"wachtjutter\",\"anderTeFiller\":\"Jutter\","
+        condition(ir, 0, "{\"node\":\"Rollidmaatschap\",\"rol\":\"wachtjutter\",\"anderTeFiller\":\"Jutter\","
                 + "\"negatie\":false,\"source\":{\"snippet\":\"hij een wachtjutter heeft\"}}");
-        IrLoader.Documentfout e = weigert(ir, vw + "/node");
+        IrLoader.Documentfout e = refuses(ir, vw + "/node");
         assertTrue(e.getMessage().contains("unknown condition node \"Rollidmaatschap\""), e.getMessage());
 
-        voorwaarde(ir, 0, "{\"node\":\"VerreRollidmaatschap\",\"filler\":\"Jutter\",\"backref\":"
+        condition(ir, 0, "{\"node\":\"VerreRollidmaatschap\",\"filler\":\"Jutter\",\"backref\":"
                 + "\"toegewezen wachtpost\",\"negatie\":false,\"source\":{\"snippet\":\"hij een wachtjutter heeft\"}}");
-        e = weigert(ir, vw + "/node");
+        e = refuses(ir, vw + "/node");
         assertTrue(e.getMessage().contains("unknown condition node \"VerreRollidmaatschap\""), e.getMessage());
     }
 
-    @Test void een_rollidmaatschap_draagt_feittype_rol_en_negatie() throws Exception {
+    @Test void a_role_membership_carries_fact_type_role_and_negated() throws Exception {
         String vw = "/rules/rules/0/versions/0/condition";
-        for (String veld : new String[] { "factType", "role", "negated" }) {
+        for (String field : new String[] { "factType", "role", "negated" }) {
             ObjectNode ir = golden(POSTBEZETTING);
-            ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition")).remove(veld);
-            IrLoader.Documentfout e = weigert(ir, vw);
-            assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
+            ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition")).remove(field);
+            IrLoader.Documentfout e = refuses(ir, vw);
+            assertTrue(e.getMessage().contains("missing field '" + field + "'"), e.getMessage());
         }
     }
 
-    @Test void een_veld_van_de_l1_rolcheck_is_op_een_rollidmaatschap_onbekend() throws Exception {
+    @Test void a_field_of_the_l1_role_check_is_unknown_on_a_role_membership() throws Exception {
         String vw = "/rules/rules/0/versions/0/condition";
-        for (String veld : new String[] { "rol", "anderTeFiller", "filler", "backref", "negatie" }) {
+        for (String field : new String[] { "rol", "anderTeFiller", "filler", "backref", "negatie" }) {
             ObjectNode ir = golden(POSTBEZETTING);
             ObjectNode rm = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
-            if (veld.equals("negatie")) rm.put(veld, false); else rm.put(veld, "Jutter");
-            onbekendVeld(ir, vw + "/" + veld, "RoleMembership");
+            if (field.equals("negatie")) rm.put(field, false); else rm.put(field, "Jutter");
+            unknownField(ir, vw + "/" + field, "RoleMembership");
         }
     }
 
-    @Test void een_tegenpartij_is_heel_of_afwezig() throws Exception {
+    @Test void a_counterpart_is_whole_or_absent() throws Exception {
         // IR-SPEC ch. 4.5: absent means the other role's declared filler; written, it names a declared object type
         String vw = "/rules/rules/2/versions/0/condition";
         ObjectNode ir = golden(POSTBEZETTING);
         ObjectNode rm = (ObjectNode) IrPad.versie(ir, "rules", 2, 0).get("condition");
         assertEquals("Strandjutter", rm.get("counterpartType").asText(), "de golden vernauwt regel 2");
         rm.putNull("counterpartType");
-        IrLoader.Documentfout e = weigert(ir, vw + "/counterpartType");
+        IrLoader.Documentfout e = refuses(ir, vw + "/counterpartType");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
 
         rm.put("counterpartType", "Kustwacht");
-        e = weigert(ir, vw + "/counterpartType");
+        e = refuses(ir, vw + "/counterpartType");
         assertTrue(e.getMessage().contains("the counterpart type \"Kustwacht\" is no declared object type"),
                 e.getMessage());
 
         rm.put("counterpartType", 2);
-        e = weigert(ir, vw + "/counterpartType");
+        e = refuses(ir, vw + "/counterpartType");
         assertTrue(e.getMessage().contains("expected a string"), e.getMessage());
     }
 
     // ---------------- Onbekend is no datatype ----------------
 
-    @Test void onbekend_is_op_geen_enkele_positie_een_datatype() throws Exception {
+    @Test void unknown_is_a_datatype_on_no_single_position() throws Exception {
         // a declaration (an M1 position; the refusal stands at the discriminator of the datatype the field holds)
         ObjectNode ir = golden(BAKENMEESTER);
         String attr = "/model/objectTypes/" + index(IrPad.modelLijst(ir, "objectTypes"), "name", "Bakenmeester")
                 + "/attributes/" + index((ArrayNode) IrPad.objectType(ir, "Bakenmeester").get("attributes"), "name",
                 "onderhoudstarief");
         IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").set("datatype",
-                JSON.readTree(ONBEKEND));
-        onbekendDatatype(ir, attr + "/datatype");
+                JSON.readTree(UNKNOWN));
+        unknownDatatype(ir, attr + "/datatype");
 
         // a derived position: the fold's own annotation
         ir = golden(BAKENMEESTER);
-        ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value")).set("type", JSON.readTree(ONBEKEND));
-        onbekendDatatype(ir, "/rules/rules/0/versions/0/value/type");
+        ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value")).set("type", JSON.readTree(UNKNOWN));
+        unknownDatatype(ir, "/rules/rules/0/versions/0/value/type");
 
         // a marker's type: absent is the unknown one (IR-SPEC ch. 4.4), so no spelling of it is admitted
         ir = golden(BAKENMEESTER);
         IrPad.versie(ir, "rules", 0, 0).set("value",
-                JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + ONBEKEND + ",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
-        onbekendDatatype(ir, "/rules/rules/0/versions/0/value/type");
+                JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + UNKNOWN + ",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
+        unknownDatatype(ir, "/rules/rules/0/versions/0/value/type");
     }
 
-    @Test void een_marker_zonder_type_is_onbekend_en_null_is_geen_spelling() throws Exception {
+    @Test void a_marker_without_type_is_unknown_and_null_is_no_spelling() throws Exception {
         // rule 0 computes a value, so a marker may stand there (a characteristic assignment admits only waar)
         ObjectNode ir = golden(BAKENMEESTER);
-        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
-        regel.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
+        ObjectNode rule = IrPad.versie(ir, "rules", 0, 0);
+        rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde();
         assertTrue(w instanceof Expr.Onopgelost, String.valueOf(w));
         assertNull(w.type(), "een marker zonder type draagt geen type — nooit een gok");
 
-        regel.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"x\"}}"));
+        rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"x\"}}"));
         assertNotNull(IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde().type(), "een echt datatype blijft");
 
-        regel.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/type");
+        rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/type");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
     }
 
@@ -191,39 +191,39 @@ class ReferentielaagWeigeringWitnessTest {
     // that names no link the subject can be in holds for no instance. The sentences are the ones ref and the ASP
     // backend fault with, or the verifier's where those have none.
 
-    @Test void een_rolcheck_over_een_onbekend_feittype_of_een_onbekende_rol_weigert() throws Exception {
+    @Test void a_role_check_over_an_unknown_fact_type_or_an_unknown_role_is_refused() throws Exception {
         String vw = "/rules/rules/0/versions/0/condition";
         ObjectNode ir = golden(POSTBEZETTING);
-        rolcheck(ir, 0).put("factType", "wachtrooster");
-        IrLoader.Documentfout e = weigert(ir, vw + "/factType");
+        roleCheck(ir, 0).put("factType", "wachtrooster");
+        IrLoader.Documentfout e = refuses(ir, vw + "/factType");
         assertTrue(e.getMessage().contains("role check names fact type 'wachtrooster', which is not declared"),
                 e.getMessage());
 
         ir = golden(POSTBEZETTING);
-        rolcheck(ir, 0).put("role", "wachtjutters");   // the declared PLURAL names no role here
-        e = weigert(ir, vw + "/role");
+        roleCheck(ir, 0).put("role", "wachtjutters");   // the declared PLURAL names no role here
+        e = refuses(ir, vw + "/role");
         assertTrue(e.getMessage().contains("'wachtjutters' is not a declared role of fact type 'wachtindeling'"),
                 e.getMessage());
     }
 
-    @Test void een_rolcheck_die_het_subject_niet_vult_weigert() throws Exception {
+    @Test void a_role_check_that_does_not_fill_the_subject_is_refused() throws Exception {
         // "hij een wachtjutter heeft" read with the role the OTHER end plays: a Wachtpost never fills wachtjutter
         ObjectNode ir = golden(POSTBEZETTING);
-        rolcheck(ir, 0).put("role", "wachtjutter");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/condition/role");
+        roleCheck(ir, 0).put("role", "wachtjutter");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/condition/role");
         assertTrue(e.getMessage().contains("role check: the subject \"Wachtpost\" does not fill the role"
                 + " \"wachtjutter\" of \"wachtindeling\", so no link of it can hold the subject there"),
                 e.getMessage());
     }
 
-    @Test void een_tegenpartij_buiten_de_vuller_van_de_andere_rol_weigert() throws Exception {
+    @Test void a_counterpart_outside_the_filler_of_the_other_role_is_refused() throws Exception {
         ObjectNode ir = golden(POSTBEZETTING);
-        rolcheck(ir, 2).put("counterpartType", "Wachtpost");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/2/versions/0/condition/counterpartType");
+        roleCheck(ir, 2).put("counterpartType", "Wachtpost");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/2/versions/0/condition/counterpartType");
         assertTrue(e.getMessage().contains("role check: the counterpart type \"Wachtpost\" is no subtype of"
                 + " \"Jutter\", the filler the role \"wachtjutter\" declares"), e.getMessage());
         // ⊑ admits the declared filler itself: the check then narrows nothing, and it loads
-        rolcheck(ir, 2).put("counterpartType", "Jutter");
+        roleCheck(ir, 2).put("counterpartType", "Jutter");
         IrLoader.loadAll(ir);
     }
 
@@ -233,44 +233,44 @@ class ReferentielaagWeigeringWitnessTest {
     // fold over the role name failed with a runtime error at first fire in the exec branch and did not compile in the
     // DRL-text one.
 
-    @Test void een_telling_over_een_attribuut_van_het_elementtype_weigert() throws Exception {
+    @Test void a_count_over_an_attribute_of_the_element_type_is_refused() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
-        bron(ir, 0).put("attribute", "gewicht").put("subjectType", "Munt");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/arguments/0");
+        source(ir, 0).put("attribute", "gewicht").put("subjectType", "Munt");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/arguments/0");
         assertTrue(e.getMessage().endsWith(": the source of this count aggregation reads 'gewicht', a member of the"
                 + " element type 'Munt': a count folds INSTANCES, so its source is a count source naming the relation's"
                 + " role, never a value read per contributor"), e.getMessage());
     }
 
-    @Test void een_waardevouw_over_een_rolnaam_weigert() throws Exception {
+    @Test void a_value_fold_over_a_role_name_is_refused() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
-        bron(ir, 1).put("attribute", "vondsten").put("subjectType", "Jutter");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        source(ir, 1).put("attribute", "vondsten").put("subjectType", "Jutter");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("value aggregation over \"vondsten\", which is no attribute of \"Munt\":"
                 + " a value fold reads an attribute per contributor, and a role name is a count source only a count"
                 + " folds"), e.getMessage());
 
         // a name that is neither an attribute nor a role declares nothing (WF-034)
         ir = golden(MUNTTELLING);
-        bron(ir, 1).put("attribute", "glans");
-        e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        source(ir, 1).put("attribute", "glans");
+        e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'glans' is not a declared attribute of 'Munt'"), e.getMessage());
     }
 
-    @Test void een_rolnaam_die_het_subject_niet_bereikt_is_geen_telbron() throws Exception {
+    @Test void a_role_name_that_does_not_reach_the_subject_is_no_count_source() throws Exception {
         // `aanmelder` IS a declared role, but the one the Jutter itself fills: from the fold subject it reaches no
         // relation, so under the value fold the name is no count source but an undeclared member (WF-034), as the
         // verifier's source reading judges it. Until the fix round's second pass any declared role name counted.
         ObjectNode ir = golden(MUNTTELLING);
-        bron(ir, 1).put("attribute", "aanmelder").put("subjectType", "Jutter");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        source(ir, 1).put("attribute", "aanmelder").put("subjectType", "Jutter");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'aanmelder' is not a declared attribute of 'Munt': a value fold's source"
                 + " reads an attribute of each contributor"), e.getMessage());
     }
 
     // ---------------- the element type of the subject's own read (WF-083 (c)) ----------------
 
-    @Test void een_totaal_zonder_bereik_over_een_ander_type_weigert() throws Exception {
+    @Test void a_total_without_range_over_another_type_is_refused() throws Exception {
         // jutterswet-tempototaal's third rule totals the Jutter's own timeline, without a range; the twist names
         // Vondst as its element type. No executor reads that field there, so before this check the twisted
         // document PLAYED in both branches here, as it passed in ref and clingo.
@@ -278,44 +278,44 @@ class ReferentielaagWeigeringWitnessTest {
         ObjectNode w = (ObjectNode) IrPad.versie(ir, "rules", 2, 0).get("value");
         assertEquals("Jutter", w.get("elementType").asText(), "de golden totaliseert de eigen tijdlijn");
         w.put("elementType", "Vondst");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/2/versions/0/value/elementType");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/2/versions/0/value/elementType");
         assertTrue(e.getMessage().contains("the elementType 'Vondst' of a total without a range is not the fold"
                 + " subject 'Jutter': without a range the fold is the subject's own read, so its elementType must"
                 + " name the subject type"), e.getMessage());
     }
 
-    @Test void een_kenmerk_als_bron_van_een_waardevouw_weigert() throws Exception {
+    @Test void a_characteristic_as_source_of_a_value_fold_is_refused() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
         IrPad.objectType(ir, "Munt").withArray("characteristics").addObject().put("node", "Characteristic")
                 .put("name", "gangbaar").put("kind", "adjectival");
-        bron(ir, 1).put("attribute", "gangbaar");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        source(ir, 1).put("attribute", "gangbaar");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'gangbaar' is a characteristic of 'Munt', not an attribute — a"
                 + " characteristic endpoint is ill-formed in an aggregation source position"), e.getMessage());
     }
 
-    @Test void een_telling_over_een_pad_weigert() throws Exception {
+    @Test void a_count_over_a_path_is_refused() throws Exception {
         // anchor/jutterswet-bootberging's rule 0 folds over the two-step path Jutter -> Boot -> Vondst; as a count over
         // the reached role it names a range of two steps where a count's range is one
         ObjectNode ir = golden(BOOTBERGING);
         ObjectNode w = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value");
         w.put("kind", "count");
-        bron(ir, 0).put("attribute", "geborgen vondsten").put("subjectType", "Jutter");
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/sourcePath");
+        source(ir, 0).put("attribute", "geborgen vondsten").put("subjectType", "Jutter");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/sourcePath");
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
                 + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
 
         // ...whatever the source reads: with a null name the source check has nothing to judge, and until the
         // advisory round the count then passed and was counted along the path (the lens measured "verwacht 2,
         // werkelijk 3" on the exec branch)
-        bron(ir, 0).putNull("attribute");
-        e = weigert(ir, "/rules/rules/0/versions/0/value/sourcePath");
+        source(ir, 0).putNull("attribute");
+        e = refuses(ir, "/rules/rules/0/versions/0/value/sourcePath");
         assertTrue(e.getMessage().contains("a count's range is one step, spelled sourceRole"), e.getMessage());
     }
 
     // ---------------- a characteristic at a value position (WF-080) ----------------
 
-    @Test void een_kenmerk_op_een_waardepositie_weigert() throws Exception {
+    @Test void a_characteristic_at_a_value_position_is_refused() throws Exception {
         // "hij bemand gelijk is aan onwaar": the characteristic read as an operand. Measured on the L2 union before
         // the fix round: PLAYED in both branches, where the verifier refuses it.
         ObjectNode ir = golden(POSTBEZETTING);
@@ -324,79 +324,79 @@ class ReferentielaagWeigeringWitnessTest {
                 + "\"bemand\",\"subjectType\":\"Wachtpost\",\"source\":{\"snippet\":\"bemand\"}},\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"boolean\":false},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"onwaar\"}},"
                 + "\"source\":{\"snippet\":\"hij bemand gelijk is aan onwaar\"}}"));
-        IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/condition/left");
+        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/condition/left");
         assertTrue(e.getMessage().contains("'bemand' is a characteristic of 'Wachtpost', not an attribute — a"
                 + " characteristic endpoint is ill-formed in a value position"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------
 
-    private static ObjectNode rolcheck(ObjectNode ir, int regel) {
-        return (ObjectNode) IrPad.versie(ir, "rules", regel, 0).get("condition");
+    private static ObjectNode roleCheck(ObjectNode ir, int rule) {
+        return (ObjectNode) IrPad.versie(ir, "rules", rule, 0).get("condition");
     }
 
-    /** The single argument of rule {@code regel}'s fold: its set source. */
-    private static ObjectNode bron(ObjectNode ir, int regel) {
-        return (ObjectNode) IrPad.versie(ir, "rules", regel, 0).get("value").get("arguments").get(0);
+    /** The single argument of rule {@code rule}'s fold: its set source. */
+    private static ObjectNode source(ObjectNode ir, int rule) {
+        return (ObjectNode) IrPad.versie(ir, "rules", rule, 0).get("value").get("arguments").get(0);
     }
 
     /** A node of the given kind and its JSON pointer. */
-    private record Treffer(ObjectNode knoop, String pad) {}
+    private record Hit(ObjectNode node, String path) {}
 
-    /** The FIRST node of kind {@code soort} under the rules, in document order; the golden must carry one. */
-    private static Treffer vind(JsonNode ir, String soort) {
-        Treffer t = vind(ir.get("rules"), "/rules", soort);
-        assertNotNull(t, "de golden draagt geen " + soort);
+    /** The FIRST node of kind {@code kind} under the rules, in document order; the golden must carry one. */
+    private static Hit find(JsonNode ir, String kind) {
+        Hit t = find(ir.get("rules"), "/rules", kind);
+        assertNotNull(t, "de golden draagt geen " + kind);
         return t;
     }
 
-    private static Treffer vind(JsonNode n, String pad, String soort) {
+    private static Hit find(JsonNode n, String path, String kind) {
         if (n instanceof ObjectNode o) {
-            if (soort.equals(o.path("node").asText(null))) return new Treffer(o, pad);
+            if (kind.equals(o.path("node").asText(null))) return new Hit(o, path);
             for (var it = o.properties().iterator(); it.hasNext(); ) {
                 var e = it.next();
-                Treffer t = vind(e.getValue(), pad + "/" + e.getKey().replace("~", "~0").replace("/", "~1"), soort);
+                Hit t = find(e.getValue(), path + "/" + e.getKey().replace("~", "~0").replace("/", "~1"), kind);
                 if (t != null) return t;
             }
         } else if (n instanceof ArrayNode a) {
             for (int i = 0; i < a.size(); i++) {
-                Treffer t = vind(a.get(i), pad + "/" + i, soort);
+                Hit t = find(a.get(i), path + "/" + i, kind);
                 if (t != null) return t;
             }
         }
         return null;
     }
 
-    private static void voorwaarde(ObjectNode ir, int regel, String json) throws Exception {
-        IrPad.versie(ir, "rules", regel, 0).set("condition", JSON.readTree(json));
+    private static void condition(ObjectNode ir, int rule, String json) throws Exception {
+        IrPad.versie(ir, "rules", rule, 0).set("condition", JSON.readTree(json));
     }
 
-    private static int index(ArrayNode lijst, String naamVeld, String naam) {
-        for (int i = 0; i < lijst.size(); i++) if (naam.equals(lijst.get(i).path(naamVeld).asText(null))) return i;
-        throw new AssertionError("geen " + naam + " in de lijst");
+    private static int index(ArrayNode list, String nameField, String name) {
+        for (int i = 0; i < list.size(); i++) if (name.equals(list.get(i).path(nameField).asText(null))) return i;
+        throw new AssertionError("geen " + name + " in de lijst");
     }
 
-    private static IrLoader.Documentfout weigert(JsonNode ir, String plek) {
+    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
-                "verwacht een documentfout op " + plek);
-        assertEquals(plek, e.plek(), e.getMessage());
+                "verwacht een documentfout op " + site);
+        assertEquals(site, e.plek(), e.getMessage());
         return e;
     }
 
-    private static void onbekendVeld(JsonNode ir, String plek, String knoop) {
-        IrLoader.Documentfout e = weigert(ir, plek);
-        assertTrue(e.getMessage().contains("unknown field on " + knoop), e.getMessage());
+    private static void unknownField(JsonNode ir, String site, String node) {
+        IrLoader.Documentfout e = refuses(ir, site);
+        assertTrue(e.getMessage().contains("unknown field on " + node), e.getMessage());
     }
 
-    /** The shared loader's refusal of the node at the datatype position {@code plek}: at its discriminator, in its
+    /** The shared loader's refusal of the node at the datatype position {@code site}: at its discriminator, in its
      *  sentence. */
-    private static void onbekendDatatype(JsonNode ir, String plek) {
-        IrLoader.Documentfout e = weigert(ir, plek + "/node");
+    private static void unknownDatatype(JsonNode ir, String site) {
+        IrLoader.Documentfout e = refuses(ir, site + "/node");
         assertTrue(e.getMessage().endsWith(": unknown datatype node \"Onbekend\""), e.getMessage());
     }
 
-    private static ObjectNode golden(String naam) throws Exception {
-        Path ir = CORPUS.resolve(naam).resolve("ir.json");
+    private static ObjectNode golden(String name) throws Exception {
+        Path ir = CORPUS.resolve(name).resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
         IrLoader.loadAll(doc);   // the untwisted golden loads, so the refusal below is the twist's alone

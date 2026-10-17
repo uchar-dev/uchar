@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * the kinds no loadable golden carries. Every refusal is an {@link IrLoader.Documentfout}: a document in a v0 spelling
  * is no document of this format, never a form this backend does not carry.
  */
-class HernoemingWeigeringWitnessTest {
+class RenamingRefusalWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
@@ -72,9 +72,9 @@ class HernoemingWeigeringWitnessTest {
 
     /** The renaming table: every v0 node name that left the wire, and the node that replaced it. {@code Onopgelost}
      *  stands for both markers. */
-    private static final Map<String, String> KNOPEN = new LinkedHashMap<>();
+    private static final Map<String, String> NODES = new LinkedHashMap<>();
     static {
-        String[][] rijen = { { "Tekst", "Text" }, { "Booleaan", "Boolean" }, { "Enumeratie", "Enumeration" },
+        String[][] rows = { { "Tekst", "Text" }, { "Booleaan", "Boolean" }, { "Enumeratie", "Enumeration" },
                 { "Feittype", "FactType" }, { "Rol", "Role" }, { "Dimensie", "Dimension" }, { "Tijdlijn", "Timeline" },
                 { "RolBinding", "RoleBinding" }, { "Geldigheid", "Validity" }, { "Toekenning", "MemberInit" },
                 { "ResolvedDagsoort", "DayKindDefinition" }, { "ResolvedStartpunt", "StartPointDetermination" },
@@ -87,47 +87,47 @@ class HernoemingWeigeringWitnessTest {
                 { "Predicaat", "Predicate" }, { "Kenmerk", "CharacteristicCheck" }, { "Periode", "TimeWindow" },
                 { "Samengesteld", "Compound" }, { "Kwantorvouw", "QuantifierFold" },
                 { "GeheelPeriode", "WholePeriod" } };
-        for (String[] r : rijen) KNOPEN.put(r[0], r[1]);
+        for (String[] r : rows) NODES.put(r[0], r[1]);
     }
 
     /** The sweep's name for the exceptions record of a default, which carries no node of its own. */
     private static final String UITZONDERINGEN = "Default exceptions record";
 
     /** Per node (and per record without a node: the exceptions of a default), the v0 keys the renaming replaced. */
-    private static final Map<String, List<String>> V0_SLEUTELS = new LinkedHashMap<>();
+    private static final Map<String, List<String>> V0_KEYS = new LinkedHashMap<>();
     static {
-        V0_SLEUTELS.put("Enumeration", List.of("domein", "waarden"));
-        V0_SLEUTELS.put("FactType", List.of("naam", "wederkerig", "rollen"));
-        V0_SLEUTELS.put("Role", List.of("naam", "objecttypeNaam", "meervoud", "meervoudig"));
-        V0_SLEUTELS.put("Dimension", List.of("naam", "naamMeervoud", "voorzetsel", "waarden"));
-        V0_SLEUTELS.put("Timeline", List.of("naam", "variabelStartpunt", "granulariteit", "aantal"));
-        V0_SLEUTELS.put("RoleBinding", List.of("feittype", "rol"));
-        V0_SLEUTELS.put("Validity", List.of("vanaf", "tot"));
-        V0_SLEUTELS.put("MemberInit", List.of("attribuut", "waarde", "kenmerk"));
-        V0_SLEUTELS.put("DayKindDefinition", List.of("naam", "voorwaarde", "geldigheid"));
-        V0_SLEUTELS.put("StartPointDetermination", List.of("tijdlijn", "objecttype", "lid"));
-        V0_SLEUTELS.put("RuleGroup", List.of("naam", "recursief", "leden"));
-        V0_SLEUTELS.put("PrioritizedDefaults", List.of("naam", "onderwerp", "kenmerk", "attribuut", "ongeordend",
+        V0_KEYS.put("Enumeration", List.of("domein", "waarden"));
+        V0_KEYS.put("FactType", List.of("naam", "wederkerig", "rollen"));
+        V0_KEYS.put("Role", List.of("naam", "objecttypeNaam", "meervoud", "meervoudig"));
+        V0_KEYS.put("Dimension", List.of("naam", "naamMeervoud", "voorzetsel", "waarden"));
+        V0_KEYS.put("Timeline", List.of("naam", "variabelStartpunt", "granulariteit", "aantal"));
+        V0_KEYS.put("RoleBinding", List.of("feittype", "rol"));
+        V0_KEYS.put("Validity", List.of("vanaf", "tot"));
+        V0_KEYS.put("MemberInit", List.of("attribuut", "waarde", "kenmerk"));
+        V0_KEYS.put("DayKindDefinition", List.of("naam", "voorwaarde", "geldigheid"));
+        V0_KEYS.put("StartPointDetermination", List.of("tijdlijn", "objecttype", "lid"));
+        V0_KEYS.put("RuleGroup", List.of("naam", "recursief", "leden"));
+        V0_KEYS.put("PrioritizedDefaults", List.of("naam", "onderwerp", "kenmerk", "attribuut", "ongeordend",
                 "geldigheid"));
-        V0_SLEUTELS.put("Default", List.of("besluit", "voorwaarde", "consequentie", "initialisatie", "excepties"));
-        V0_SLEUTELS.put(UITZONDERINGEN, List.of("ongeordend", "leden"));
-        V0_SLEUTELS.put("Binary", List.of("links", "rechts"));
-        V0_SLEUTELS.put("Rounding", List.of("basis", "modus", "decimalen"));
-        V0_SLEUTELS.put("Clamp", List.of("basis"));
-        V0_SLEUTELS.put("TextComposition", List.of("delen"));
-        V0_SLEUTELS.put("LiteralChunk", List.of("tekst"));
-        V0_SLEUTELS.put("AttributeReference", List.of("attribuut", "objecttype", "navigatieBindingen"));
-        V0_SLEUTELS.put("DimensionCellRead", List.of("attribuut"));
-        V0_SLEUTELS.put("VariableReference", List.of("naam"));
-        V0_SLEUTELS.put("TemporalRead", List.of("basis", "datum"));
-        V0_SLEUTELS.put("DimensionSelection", List.of("dimensie"));
-        V0_SLEUTELS.put("Comparison", List.of("links", "rechts", "periode"));
-        V0_SLEUTELS.put("Predicate", List.of("soort", "dagsoort", "negatie", "cijfers", "periode"));
-        V0_SLEUTELS.put("CharacteristicCheck", List.of("kenmerk", "negatie", "eigenaar", "periode", "navigatieBinding"));
-        V0_SLEUTELS.put("TimeWindow", List.of("vanaf", "tot", "totInclusief"));
-        V0_SLEUTELS.put("Compound", List.of("kwantor", "drempel", "onderdelen"));
-        V0_SLEUTELS.put("QuantifierFold", List.of("kwantor", "drempel", "elementObjecttype", "toets", "bronRol", "bronPad"));
-        V0_SLEUTELS.put("WholePeriod", List.of("jaar", "niet"));
+        V0_KEYS.put("Default", List.of("besluit", "voorwaarde", "consequentie", "initialisatie", "excepties"));
+        V0_KEYS.put(UITZONDERINGEN, List.of("ongeordend", "leden"));
+        V0_KEYS.put("Binary", List.of("links", "rechts"));
+        V0_KEYS.put("Rounding", List.of("basis", "modus", "decimalen"));
+        V0_KEYS.put("Clamp", List.of("basis"));
+        V0_KEYS.put("TextComposition", List.of("delen"));
+        V0_KEYS.put("LiteralChunk", List.of("tekst"));
+        V0_KEYS.put("AttributeReference", List.of("attribuut", "objecttype", "navigatieBindingen"));
+        V0_KEYS.put("DimensionCellRead", List.of("attribuut"));
+        V0_KEYS.put("VariableReference", List.of("naam"));
+        V0_KEYS.put("TemporalRead", List.of("basis", "datum"));
+        V0_KEYS.put("DimensionSelection", List.of("dimensie"));
+        V0_KEYS.put("Comparison", List.of("links", "rechts", "periode"));
+        V0_KEYS.put("Predicate", List.of("soort", "dagsoort", "negatie", "cijfers", "periode"));
+        V0_KEYS.put("CharacteristicCheck", List.of("kenmerk", "negatie", "eigenaar", "periode", "navigatieBinding"));
+        V0_KEYS.put("TimeWindow", List.of("vanaf", "tot", "totInclusief"));
+        V0_KEYS.put("Compound", List.of("kwantor", "drempel", "onderdelen"));
+        V0_KEYS.put("QuantifierFold", List.of("kwantor", "drempel", "elementObjecttype", "toets", "bronRol", "bronPad"));
+        V0_KEYS.put("WholePeriod", List.of("jaar", "niet"));
     }
 
     /** The fields the renaming made optional: a v0 null there is absent on the L5 wire, and a null is refused. */
@@ -137,80 +137,80 @@ class HernoemingWeigeringWitnessTest {
             "Default.justification", "TimeWindow.to", "Clamp.maximum", "Clamp.minimum", "Dimension.plural",
             "Dimension.preposition", "TimeWindow.from");
 
-    private static final String NULL_ZIN = "an optional field is written whole or not at all, and null is neither";
+    private static final String NULL_SENTENCE = "an optional field is written whole or not at all, and null is neither";
 
     // ================= the families of what the v0 wire wrote =================
 
     /** Every v0 node name at a position of its L5 node: at a dispatch the shared loader's "unknown … node", at a
      *  fixed position its "expected …, got …" — both naming the v0 name. */
-    @Test void elke_v0_knoopnaam_wordt_bij_naam_geweigerd() throws Exception {
+    @Test void every_v0_node_name_is_refused_by_name() throws Exception {
         Set<String> expr = Set.of("Binair", "Afgerond", "Begrensd", "TekstReeks", "AttribuutRef", "DimensieCel",
                 "ParameterRef", "VariabeleRef");
-        Set<String> conditie = Set.of("Vergelijking", "Predicaat", "Kenmerk", "Periode", "Samengesteld", "Kwantorvouw");
+        Set<String> conditionNodes = Set.of("Vergelijking", "Predicaat", "Kenmerk", "Periode", "Samengesteld", "Kwantorvouw");
         Set<String> datatype = Set.of("Tekst", "Booleaan", "Enumeratie");
-        Set<String> deel = Set.of("Letterlijk", "Ingevoegd");
-        int rijen = 0;
-        for (Map.Entry<String, String> k : KNOPEN.entrySet()) {
+        Set<String> part = Set.of("Letterlijk", "Ingevoegd");
+        int rows = 0;
+        for (Map.Entry<String, String> k : NODES.entrySet()) {
             String v0 = k.getKey(), l5 = k.getValue();
-            List<Plek> plekken = v0.equals("Onopgelost")
-                    ? List.of(synthetisch("Unresolved (expression)"), synthetisch("Unresolved (condition)"))
-                    : List.of(plek(l5));
-            for (Plek p : plekken) {
+            List<Site> sites = v0.equals("Onopgelost")
+                    ? List.of(synthetic("Unresolved (expression)"), synthetic("Unresolved (condition)"))
+                    : List.of(site(l5));
+            for (Site p : sites) {
                 ObjectNode doc = p.document();
-                knoop(doc, p.pad()).put("node", v0);
-                String zin = expr.contains(v0) || v0.equals("Onopgelost") && p.pad().equals(W)
+                node(doc, p.path()).put("node", v0);
+                String sentence = expr.contains(v0) || v0.equals("Onopgelost") && p.path().equals(W)
                         ? "unknown expr node \"" + v0 + "\""
-                        : conditie.contains(v0) || v0.equals("Onopgelost") ? "unknown condition node \"" + v0 + "\""
+                        : conditionNodes.contains(v0) || v0.equals("Onopgelost") ? "unknown condition node \"" + v0 + "\""
                         : datatype.contains(v0) ? "unknown datatype node \"" + v0 + "\""
-                        : deel.contains(v0) ? "unknown TextCompositionPart node \"" + v0 + "\""
+                        : part.contains(v0) ? "unknown TextCompositionPart node \"" + v0 + "\""
                         : "expected \"" + l5 + "\", got \"" + v0 + "\"";
-                IrLoader.Documentfout e = weigert(doc, v0);
-                assertEquals(p.pad() + "/node", e.plek(), v0 + ": " + e.getMessage());
-                assertTrue(e.getMessage().endsWith(": " + zin), v0 + ": " + e.getMessage());
-                rijen++;
+                IrLoader.Documentfout e = refuses(doc, v0);
+                assertEquals(p.path() + "/node", e.plek(), v0 + ": " + e.getMessage());
+                assertTrue(e.getMessage().endsWith(": " + sentence), v0 + ": " + e.getMessage());
+                rows++;
             }
         }
-        assertEquals(33, rijen, "32 v0 node names, the marker at both of its positions");
+        assertEquals(33, rows, "32 v0 node names, the marker at both of its positions");
     }
 
     /** Every v0 key on the node that replaced it is an unknown field, named at its pointer — a reader never takes a
      *  v0 name beside the L5 one for a second spelling of the field. */
-    @Test void elke_v0_sleutel_op_zijn_l5_knoop_is_een_onbekend_veld() throws Exception {
-        int rijen = 0;
-        for (Map.Entry<String, List<String>> k : V0_SLEUTELS.entrySet()) {
-            String soort = k.getKey();
-            for (String sleutel : k.getValue()) {
-                Plek p = soort.equals("TemporalRead") ? synthetisch("TemporalRead") : plek(soort);
+    @Test void every_v0_key_on_its_l5_node_is_an_unknown_field() throws Exception {
+        int rows = 0;
+        for (Map.Entry<String, List<String>> k : V0_KEYS.entrySet()) {
+            String kind = k.getKey();
+            for (String key : k.getValue()) {
+                Site p = kind.equals("TemporalRead") ? synthetic("TemporalRead") : site(kind);
                 ObjectNode doc = p.document();
-                knoop(doc, p.pad()).put(sleutel, 1);
-                IrLoader.Documentfout e = weigert(doc, soort + "." + sleutel);
-                assertEquals(p.pad() + "/" + sleutel, e.plek(), soort + "." + sleutel + ": " + e.getMessage());
-                String zin = soort.equals(UITZONDERINGEN) ? ": unknown field" : ": unknown field on " + soort;
-                assertTrue(e.getMessage().endsWith(zin), soort + "." + sleutel + ": " + e.getMessage());
-                rijen++;
+                node(doc, p.path()).put(key, 1);
+                IrLoader.Documentfout e = refuses(doc, kind + "." + key);
+                assertEquals(p.path() + "/" + key, e.plek(), kind + "." + key + ": " + e.getMessage());
+                String sentence = kind.equals(UITZONDERINGEN) ? ": unknown field" : ": unknown field on " + kind;
+                assertTrue(e.getMessage().endsWith(sentence), kind + "." + key + ": " + e.getMessage());
+                rows++;
             }
         }
         // the sum of the table above: 31 records, 89 renamed keys (the temporal read's two included)
-        assertEquals(89, rijen, "the renamed keys of every node the loader reads");
+        assertEquals(89, rows, "the renamed keys of every node the loader reads");
         // the temporal read is a form this backend does not carry: written in its L5 shape it is refused as that
-        ObjectNode doc = synthetisch("TemporalRead").document();
+        ObjectNode doc = synthetic("TemporalRead").document();
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(doc));
         assertEquals("Expr:TemporalRead", r.form(), r.getMessage());
     }
 
-    @Test void de_v0_lijsten_onder_rules_zijn_onbekende_velden() throws Exception {
-        String[][] lijsten = { { "rules", "resolvedRegels" }, { "dayKindDefinitions", "resolvedDagsoorten" },
+    @Test void the_v0_lists_under_rules_are_unknown_fields() throws Exception {
+        String[][] lists = { { "rules", "resolvedRegels" }, { "dayKindDefinitions", "resolvedDagsoorten" },
                 { "objectCreations", "objectCreaties" }, { "allocations", "verdelingen" },
                 { "consistencies", "consistenties" }, { "uniquenesses", "uniciteiten" },
                 { "factCreations", "feitCreaties" }, { "startPointDeterminations", "resolvedStartpunten" },
                 { "ruleGroups", "regelGroepen" } };
-        for (String[] l : lijsten) {
+        for (String[] l : lists) {
             ObjectNode doc = golden(PENNINGDREMPEL);
             ObjectNode rules = (ObjectNode) doc.get("rules");
-            ObjectNode hernoemd = JSON.createObjectNode();
-            rules.properties().forEach(e -> hernoemd.set(e.getKey().equals(l[0]) ? l[1] : e.getKey(), e.getValue()));
-            doc.set("rules", hernoemd);
-            IrLoader.Documentfout e = weigert(doc, l[1]);
+            ObjectNode renamed = JSON.createObjectNode();
+            rules.properties().forEach(e -> renamed.set(e.getKey().equals(l[0]) ? l[1] : e.getKey(), e.getValue()));
+            doc.set("rules", renamed);
+            IrLoader.Documentfout e = refuses(doc, l[1]);
             assertEquals("/rules/" + l[1], e.plek(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": unknown field"), e.getMessage());
         }
@@ -221,53 +221,53 @@ class HernoemingWeigeringWitnessTest {
      *  its record constant's name, which the v0 emitter wrote; the one exception is the whole-period granularity, a
      *  boolean on the v0 wire, and the context-value name, a free string WF-098 closes. The date precision spelled
      *  the same before L5 and has no v0 value to refuse. */
-    @Test void elke_v0_enumwaarde_wordt_bij_naam_geweigerd() throws Exception {
-        int rijen = 0;
-        Set<String> gedekt = new java.util.TreeSet<>();
+    @Test void every_v0_enum_value_is_refused_by_name() throws Exception {
+        int rows = 0;
+        Set<String> covered = new java.util.TreeSet<>();
         for (Spelling.Familie<?> f : Spelling.FAMILIES) {
             if (f == Spelling.DATE_PRECISION) continue;
             List<Object> v0 = new ArrayList<>();
             for (Object k : f.rijen().keySet()) v0.add(k);
             for (Object k : f.geweigerd().keySet()) v0.add(k);
-            for (String plaats : f.plaatsen()) {
-                Plek p = plaats.equals("ContextValue.name") ? synthetisch("ContextValue")
-                        : plaats.equals("QuantifierFold.quantifier") ? plek("QuantifierFold")
-                        : plekMetVeld(plaats);
-                String veld = plaats.substring(plaats.indexOf('.') + 1);
+            for (String place : f.plaatsen()) {
+                Site p = place.equals("ContextValue.name") ? synthetic("ContextValue")
+                        : place.equals("QuantifierFold.quantifier") ? site("QuantifierFold")
+                        : siteWithField(place);
+                String field = place.substring(place.indexOf('.') + 1);
                 for (Object k : v0) {
                     ObjectNode doc = p.document();
-                    JsonNode waarde = k instanceof Boolean b ? BooleanNode.valueOf(b)
+                    JsonNode value = k instanceof Boolean b ? BooleanNode.valueOf(b)
                             : TextNode.valueOf(k instanceof Enum<?> e ? e.name() : k.toString());
-                    knoop(doc, p.pad()).set(veld, waarde);
-                    IrLoader.Documentfout e = weigert(doc, plaats + " " + waarde);
-                    assertEquals(p.pad() + "/" + veld, e.plek(), plaats + " " + waarde + ": " + e.getMessage());
-                    String zin = plaats.equals("ContextValue.name")
+                    node(doc, p.path()).set(field, value);
+                    IrLoader.Documentfout e = refuses(doc, place + " " + value);
+                    assertEquals(p.path() + "/" + field, e.plek(), place + " " + value + ": " + e.getMessage());
+                    String sentence = place.equals("ContextValue.name")
                             ? "context value '" + k + "' is not one of the two admissible names evaluationDate,"
                                     + " evaluationYear: the context-value name is a closed set, spelled byte for byte"
-                            : plaats.equals("WholePeriod.granularity") ? "expected a string, got " + waarde
-                            : "unknown " + veld + " value " + waarde;
-                    assertTrue(e.getMessage().endsWith(": " + zin), plaats + " " + waarde + ": " + e.getMessage());
-                    rijen++;
+                            : place.equals("WholePeriod.granularity") ? "expected a string, got " + value
+                            : "unknown " + field + " value " + value;
+                    assertTrue(e.getMessage().endsWith(": " + sentence), place + " " + value + ": " + e.getMessage());
+                    rows++;
                 }
-                gedekt.add(plaats);
+                covered.add(place);
             }
         }
-        assertEquals(18, gedekt.size(), "every place of the fifteen families the renaming respelled: " + gedekt);
+        assertEquals(18, covered.size(), "every place of the fifteen families the renaming respelled: " + covered);
         // sign 4, kind 3, granularity 5 x 3 places, presentation 2, method 3, comparison 10, binary 8, rounding 5,
         // aggregation 8, builtin 17, predicate 5, quantifier 6 x 2 places, context value 2, whole period 2, severity 3
-        assertEquals(99, rijen, "every v0 value at every place of its family");
+        assertEquals(99, rows, "every v0 value at every place of its family");
     }
 
     /** A null on a field the renaming made optional: absent is what the v0 null was, so a null is neither. */
-    @Test void een_null_op_een_veld_dat_l5_optioneel_maakte_weigert() throws Exception {
-        for (String plaats : D5A) {
-            String soort = plaats.substring(0, plaats.indexOf('.')), veld = plaats.substring(plaats.indexOf('.') + 1);
-            Plek p = plek(soort);
+    @Test void a_null_on_a_field_that_l5_made_optional_is_refused() throws Exception {
+        for (String place : D5A) {
+            String kind = place.substring(0, place.indexOf('.')), field = place.substring(place.indexOf('.') + 1);
+            Site p = site(kind);
             ObjectNode doc = p.document();
-            knoop(doc, p.pad()).putNull(veld);
-            IrLoader.Documentfout e = weigert(doc, plaats);
-            assertEquals(p.pad() + "/" + veld, e.plek(), plaats + ": " + e.getMessage());
-            assertTrue(e.getMessage().endsWith(": " + NULL_ZIN), plaats + ": " + e.getMessage());
+            node(doc, p.path()).putNull(field);
+            IrLoader.Documentfout e = refuses(doc, place);
+            assertEquals(p.path() + "/" + field, e.plek(), place + ": " + e.getMessage());
+            assertTrue(e.getMessage().endsWith(": " + NULL_SENTENCE), place + ": " + e.getMessage());
         }
     }
 
@@ -276,66 +276,66 @@ class HernoemingWeigeringWitnessTest {
     /** WF-108 (a) and WF-113 (a): the schema admits none of the three, the verifier loads them so that its rule names
      *  them, and every executor refuses them at load in the rule's sentence — this one too. {@code the} is an ordinary
      *  value of a Compound's quantifier, the bare definite of the dialect. */
-    @Test void de_waarden_die_een_verifierregel_noemt_weigeren_bij_het_laden() throws Exception {
-        Plek vouw = plek("QuantifierFold");
-        ObjectNode doc = vouw.document();
-        knoop(doc, vouw.pad()).put("quantifier", "the");
-        IrLoader.Documentfout e = weigert(doc, "the");
-        assertEquals(vouw.pad() + "/quantifier", e.plek(), e.getMessage());
+    @Test void the_values_that_a_verifier_rule_names_are_refused_on_loading() throws Exception {
+        Site fold = site("QuantifierFold");
+        ObjectNode doc = fold.document();
+        node(doc, fold.path()).put("quantifier", "the");
+        IrLoader.Documentfout e = refuses(doc, "the");
+        assertEquals(fold.path() + "/quantifier", e.plek(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": quantifier fold with quantifier the: the bare definite is a description of"
                 + " ONE member, not a quantification over the set — a fold over it has no reading"), e.getMessage());
 
-        Plek diagnose = plek("Diagnostic");
-        String[][] ernst = {
+        Site diagnostic = site("Diagnostic");
+        String[][] severity = {
                 { "error", "severity error is not a wire severity: an error means the producer refused to write the"
                         + " document, so a document that was written carries none" },
                 { "info", "severity info is not a wire severity: the list is the account of what stayed unresolved,"
                         + " and info is tooling talk" },
                 { null, "diagnostic without a severity: the one wire severity is warning" } };
-        for (String[] r : ernst) {
-            doc = diagnose.document();
-            if (r[0] == null) knoop(doc, diagnose.pad()).putNull("severity");
-            else knoop(doc, diagnose.pad()).put("severity", r[0]);
-            e = weigert(doc, String.valueOf(r[0]));
-            assertEquals(diagnose.pad() + "/severity", e.plek(), e.getMessage());
+        for (String[] r : severity) {
+            doc = diagnostic.document();
+            if (r[0] == null) node(doc, diagnostic.path()).putNull("severity");
+            else node(doc, diagnostic.path()).put("severity", r[0]);
+            e = refuses(doc, String.valueOf(r[0]));
+            assertEquals(diagnostic.path() + "/severity", e.plek(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": " + r[1]), e.getMessage());
         }
 
-        Plek samen = plek("Compound");
-        doc = samen.document();
-        knoop(doc, samen.pad()).put("quantifier", "the");
+        Site compound = site("Compound");
+        doc = compound.document();
+        node(doc, compound.path()).put("quantifier", "the");
         IrLoader.loadAll(doc);
     }
 
     /** The one node that keeps its v0 shape until the parity golden of its v1 form lands: its fields load and are
      *  read, its source is the record of every node, and a key of the v1 form is no key of it yet. */
-    @Test void regelversie_houdt_zijn_v0_vorm() throws Exception {
+    @Test void rule_status_check_keeps_its_v0_form() throws Exception {
         ObjectNode doc = golden(PENNINGDREMPEL);
-        zet(doc, V, "{\"node\":\"Regelversie\",\"regel\":\"penningdrempel\",\"inconsistent\":true,"
+        set(doc, V, "{\"node\":\"Regelversie\",\"regel\":\"penningdrempel\",\"inconsistent\":true,"
                 + "\"source\":{\"snippet\":\"regelversie penningdrempel is inconsistent\"}}");
         Conditie.Regelversie rv = assertInstanceOf(Conditie.Regelversie.class,
                 IrLoader.load(doc).resolvedRegels.get(0).voorwaarde());
         assertEquals("penningdrempel", rv.regel());
         assertTrue(rv.inconsistent());
         assertEquals("regelversie penningdrempel is inconsistent", rv.bron().snippet());
-        knoop(doc, V).put("rule", "penningdrempel");
-        IrLoader.Documentfout e = weigert(doc, "Regelversie.rule");
+        node(doc, V).put("rule", "penningdrempel");
+        IrLoader.Documentfout e = refuses(doc, "Regelversie.rule");
         assertEquals(V + "/rule", e.plek(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown field on Regelversie"), e.getMessage());
     }
 
     /** The whole-period qualifier's granularity is a family of two: year and month read onto the record's flag, and
      *  any other granularity is no value of it, a week included. */
-    @Test void de_heelperiodegranulariteit_is_jaar_of_maand() throws Exception {
-        Plek p = plek("WholePeriod");
+    @Test void the_whole_period_granularity_is_year_or_month() throws Exception {
+        Site p = site("WholePeriod");
         for (String[] r : new String[][] { { "year", "true" }, { "month", "false" } }) {
             ObjectNode doc = p.document();
-            knoop(doc, p.pad()).put("granularity", r[0]);
+            node(doc, p.path()).put("granularity", r[0]);
             IrLoader.loadAll(doc);
         }
         ObjectNode doc = p.document();
-        knoop(doc, p.pad()).put("granularity", "week");
-        IrLoader.Documentfout e = weigert(doc, "week");
+        node(doc, p.path()).put("granularity", "week");
+        IrLoader.Documentfout e = refuses(doc, "week");
         assertTrue(e.getMessage().endsWith(": unknown granularity value \"week\""), e.getMessage());
     }
 
@@ -343,9 +343,9 @@ class HernoemingWeigeringWitnessTest {
 
     /** The fields of a characteristic check: its host (absent: the subject), its whole-period qualifier with its
      *  granularity and its negation, its navigation and its negation. */
-    @Test void een_kenmerkcheck_leest_elk_l5_veld() throws Exception {
+    @Test void a_characteristic_check_reads_each_l5_field() throws Exception {
         ObjectNode doc = golden(PENNINGDREMPEL);
-        zet(doc, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":true,"
+        set(doc, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":true,"
                 + "\"host\":\"Jutter\",\"wholePeriod\":{\"node\":\"WholePeriod\",\"granularity\":\"month\",\"negated\":true},"
                 + "\"source\":{\"snippet\":\"hij niet gedurende de gehele maand penninggerechtigd is\"},"
                 + "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"f\",\"role\":\"r\"}}");
@@ -358,27 +358,27 @@ class HernoemingWeigeringWitnessTest {
         assertTrue(k.periode().niet());
         assertEquals(List.of(new RolBindingRef("f", "r")), l.navigatieBindingen().get(k));
         // absent host and qualifier: the subject, no qualifier — the v0 null of the record
-        ObjectNode kaal = golden(PENNINGDREMPEL);
-        zet(kaal, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"
+        ObjectNode bare = golden(PENNINGDREMPEL);
+        set(bare, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"
                 + "\"source\":{\"snippet\":\"hij penninggerechtigd is\"}}");
-        Conditie.Kenmerk k2 = (Conditie.Kenmerk) IrLoader.load(kaal).resolvedRegels.get(0).voorwaarde();
+        Conditie.Kenmerk k2 = (Conditie.Kenmerk) IrLoader.load(bare).resolvedRegels.get(0).voorwaarde();
         assertNull(k2.eigenaar());
         assertNull(k2.periode());
     }
 
     /** The expression nodes of the renaming, each with every field written: the values land in the record's
      *  components, the enumeration values through the table. */
-    @Test void de_expressieknopen_lezen_elk_l5_veld() throws Exception {
-        String getal = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
-        String een = "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + getal
+    @Test void the_expression_nodes_read_each_l5_field() throws Exception {
+        String number = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
+        String one = "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + number
                 + ",\"source\":{\"snippet\":\"1\"}}";
-        String twee = "{\"node\":\"Literal\",\"value\":{\"number\":\"2\"},\"type\":" + getal
+        String two = "{\"node\":\"Literal\",\"value\":{\"number\":\"2\"},\"type\":" + number
                 + ",\"source\":{\"snippet\":\"2\"}}";
         ObjectNode doc = golden(PREMIEVENSTER);
-        zet(doc, W, "{\"node\":\"Rounding\",\"base\":{\"node\":\"Clamp\",\"base\":{\"node\":\"Binary\",\"op\":\"times\","
-                + "\"left\":" + een + ",\"right\":" + twee + ",\"type\":" + getal + ",\"source\":{\"snippet\":\"1 maal 2\"}},"
-                + "\"minimum\":" + een + ",\"type\":" + getal + ",\"source\":{\"snippet\":\"minimaal 1\"}},"
-                + "\"mode\":\"towardZero\",\"decimals\":1,\"type\":" + getal + ",\"source\":{\"snippet\":\"afgerond\"}}");
+        set(doc, W, "{\"node\":\"Rounding\",\"base\":{\"node\":\"Clamp\",\"base\":{\"node\":\"Binary\",\"op\":\"times\","
+                + "\"left\":" + one + ",\"right\":" + two + ",\"type\":" + number + ",\"source\":{\"snippet\":\"1 maal 2\"}},"
+                + "\"minimum\":" + one + ",\"type\":" + number + ",\"source\":{\"snippet\":\"minimaal 1\"}},"
+                + "\"mode\":\"towardZero\",\"decimals\":1,\"type\":" + number + ",\"source\":{\"snippet\":\"afgerond\"}}");
         Expr.Afgerond a = assertInstanceOf(Expr.Afgerond.class, IrLoader.load(doc).resolvedRegels.get(0).waarde());
         assertEquals(Expr.AfrondModus.RICHTING_NUL, a.modus());
         assertEquals(1, a.decimalen());
@@ -391,8 +391,8 @@ class HernoemingWeigeringWitnessTest {
         assertEquals("2", ((Expr.Literal) bin.rechts()).waarde());
 
         doc = golden(PREMIEVENSTER);
-        zet(doc, W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"vondst \"},"
-                + "{\"node\":\"EmbeddedExpression\",\"expr\":" + een + "}],\"type\":{\"node\":\"Text\"},"
+        set(doc, W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"vondst \"},"
+                + "{\"node\":\"EmbeddedExpression\",\"expr\":" + one + "}],\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"vondst 1\"}}");
         Expr.TekstReeks t = assertInstanceOf(Expr.TekstReeks.class, IrLoader.load(doc).resolvedRegels.get(0).waarde());
         assertEquals("vondst ", ((Expr.TekstReeks.Letterlijk) t.delen().get(0)).tekst());
@@ -400,7 +400,7 @@ class HernoemingWeigeringWitnessTest {
 
         // the name is read, and names the node the loader refuses (WF-034)
         doc = golden(PREMIEVENSTER);
-        zet(doc, W, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
+        set(doc, W, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
         ObjectNode varDoc = doc;
         IrLoader.Documentfout vr = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(varDoc));
         assertEquals(W, vr.plek(), vr.getMessage());
@@ -408,18 +408,18 @@ class HernoemingWeigeringWitnessTest {
     }
 
     /** The condition nodes of the renaming, each with every field written. */
-    @Test void de_conditieknopen_lezen_elk_l5_veld() throws Exception {
-        String getal = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
-        String een = "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + getal
+    @Test void the_condition_nodes_read_each_l5_field() throws Exception {
+        String number = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
+        String one = "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + number
                 + ",\"source\":{\"snippet\":\"1\"}}";
-        String jaar = "{\"node\":\"WholePeriod\",\"granularity\":\"year\",\"negated\":false}";
+        String wholeYear = "{\"node\":\"WholePeriod\",\"granularity\":\"year\",\"negated\":false}";
         ObjectNode doc = golden(PENNINGDREMPEL);
-        zet(doc, V, "{\"node\":\"Compound\",\"quantifier\":\"atLeast\",\"threshold\":1,\"parts\":["
-                + "{\"node\":\"Comparison\",\"op\":\"lessOrEqual\",\"left\":" + een + ",\"right\":" + een + ",\"wholePeriod\":"
-                + jaar + ",\"source\":{\"snippet\":\"a\"}},"
-                + "{\"node\":\"Predicate\",\"kind\":\"dayKind\",\"operand\":" + een + ",\"dayKind\":\"feestdag\","
+        set(doc, V, "{\"node\":\"Compound\",\"quantifier\":\"atLeast\",\"threshold\":1,\"parts\":["
+                + "{\"node\":\"Comparison\",\"op\":\"lessOrEqual\",\"left\":" + one + ",\"right\":" + one + ",\"wholePeriod\":"
+                + wholeYear + ",\"source\":{\"snippet\":\"a\"}},"
+                + "{\"node\":\"Predicate\",\"kind\":\"dayKind\",\"operand\":" + one + ",\"dayKind\":\"feestdag\","
                 + "\"negated\":true,\"digits\":3,\"source\":{\"snippet\":\"b\"}},"
-                + "{\"node\":\"TimeWindow\",\"to\":" + een + ",\"toInclusive\":true,\"source\":{\"snippet\":\"c\"}}],"
+                + "{\"node\":\"TimeWindow\",\"to\":" + one + ",\"toInclusive\":true,\"source\":{\"snippet\":\"c\"}}],"
                 + "\"source\":{\"snippet\":\"ten minste een\"}}");
         Conditie.Samengesteld s = assertInstanceOf(Conditie.Samengesteld.class,
                 IrLoader.load(doc).resolvedRegels.get(0).voorwaarde());
@@ -443,84 +443,84 @@ class HernoemingWeigeringWitnessTest {
 
     /** The rule-layer nodes of the renaming, over every loadable golden that carries them: each wire field equals the
      *  record component it lands in, an absent one the record's null. */
-    @Test void de_regellaag_leest_elk_l5_veld() throws Exception {
-        int dagsoorten = 0, startpunten = 0, groepen = 0, toekenningen = 0, defaults = 0;
-        for (Path pad : goldens()) {
-            ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(pad));
+    @Test void the_rule_layer_reads_each_l5_field() throws Exception {
+        int dayKinds = 0, startPoints = 0, groups = 0, initialisations = 0, defaults = 0;
+        for (Path path : goldens()) {
+            ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(path));
             IrLoader.Loaded l;
             try { l = IrLoader.loadAll(doc); } catch (IrLoader.Refusal r) { continue; }
             RegelSpraakModel m = l.model();
             JsonNode rules = doc.get("rules");
-            for (int i = 0; i < rules.get("dayKindDefinitions").size(); i++, dagsoorten++) {
+            for (int i = 0; i < rules.get("dayKindDefinitions").size(); i++, dayKinds++) {
                 JsonNode w = rules.get("dayKindDefinitions").get(i);
                 ResolvedDagsoort d = m.resolvedDagsoorten.get(i);
-                assertEquals(w.get("dayKind").asText(null), d.naam(), pad.toString());
-                assertEquals(w.get("condition").isNull(), d.voorwaarde() == null, pad.toString());
+                assertEquals(w.get("dayKind").asText(null), d.naam(), path.toString());
+                assertEquals(w.get("condition").isNull(), d.voorwaarde() == null, path.toString());
             }
-            for (int i = 0; i < rules.get("startPointDeterminations").size(); i++, startpunten++) {
+            for (int i = 0; i < rules.get("startPointDeterminations").size(); i++, startPoints++) {
                 JsonNode w = rules.get("startPointDeterminations").get(i);
                 ResolvedStartpunt sp = m.resolvedStartpunten.get(i);
-                assertEquals(w.get("timeline").asText(null), sp.tijdlijn(), pad.toString());
-                assertEquals(w.get("objectType").asText(null), sp.objecttype(), pad.toString());
-                assertEquals(w.get("member").asText(null), sp.lid(), pad.toString());
+                assertEquals(w.get("timeline").asText(null), sp.tijdlijn(), path.toString());
+                assertEquals(w.get("objectType").asText(null), sp.objecttype(), path.toString());
+                assertEquals(w.get("member").asText(null), sp.lid(), path.toString());
             }
-            for (int i = 0; i < rules.get("ruleGroups").size(); i++, groepen++) {
+            for (int i = 0; i < rules.get("ruleGroups").size(); i++, groups++) {
                 JsonNode w = rules.get("ruleGroups").get(i);
                 ResolvedRegelGroep g = m.regelGroepen.get(i);
-                assertEquals(w.get("name").asText(null), g.naam(), pad.toString());
-                assertEquals(w.get("recursive").asBoolean(), g.recursief(), pad.toString());
-                assertEquals(w.get("members").size(), g.leden().size(), pad.toString());
+                assertEquals(w.get("name").asText(null), g.naam(), path.toString());
+                assertEquals(w.get("recursive").asBoolean(), g.recursief(), path.toString());
+                assertEquals(w.get("members").size(), g.leden().size(), path.toString());
             }
             int oc = 0;
-            for (JsonNode vorm : rules.get("objectCreations"))
-                for (JsonNode versie : vorm.get("versions")) {
+            for (JsonNode form : rules.get("objectCreations"))
+                for (JsonNode version : form.get("versions")) {
                     ResolvedObjectCreatie c = m.objectCreaties.get(oc++);
-                    for (int j = 0; j < versie.get("initialisations").size(); j++, toekenningen++) {
-                        JsonNode w = versie.get("initialisations").get(j);
+                    for (int j = 0; j < version.get("initialisations").size(); j++, initialisations++) {
+                        JsonNode w = version.get("initialisations").get(j);
                         ResolvedObjectCreatie.Toekenning t = c.toekenningen().get(j);
-                        assertEquals(w.get("member").asText(null), t.attribuut(), pad.toString());
-                        assertEquals(w.get("characteristic").asBoolean(), t.kenmerk(), pad.toString());
-                        assertEquals(w.get("value").isNull(), t.waarde() == null, pad.toString());
+                        assertEquals(w.get("member").asText(null), t.attribuut(), path.toString());
+                        assertEquals(w.get("characteristic").asBoolean(), t.kenmerk(), path.toString());
+                        assertEquals(w.get("value").isNull(), t.waarde() == null, path.toString());
                     }
                 }
             JsonNode pds = rules.get("prioritizedDefaults");
             for (int i = 0; pds != null && i < pds.size(); i++) {
                 JsonNode w = pds.get(i);
                 PrioritizedDefaults pd = l.prioritizedDefaults().get(i);
-                assertEquals(w.get("name").asText(null), pd.naam(), pad.toString());
-                assertEquals(w.get("subject").asText(), pd.onderwerp(), pad.toString());
+                assertEquals(w.get("name").asText(null), pd.naam(), path.toString());
+                assertEquals(w.get("subject").asText(), pd.onderwerp(), path.toString());
                 assertEquals(w.has("characteristic") ? w.get("characteristic").asText() : null, pd.kenmerk(),
-                        pad.toString());
-                assertEquals(w.has("attribute") ? w.get("attribute").asText() : null, pd.attribuut(), pad.toString());
-                assertEquals(w.path("unordered").asBoolean(false), pd.ongeordend(), pad.toString());
-                defaults += vergelijk(w.get("defaults"), pd.defaults(), pad.toString());
+                        path.toString());
+                assertEquals(w.has("attribute") ? w.get("attribute").asText() : null, pd.attribuut(), path.toString());
+                assertEquals(w.path("unordered").asBoolean(false), pd.ongeordend(), path.toString());
+                defaults += compare(w.get("defaults"), pd.defaults(), path.toString());
             }
         }
         // measured 2026-09-25 on L5: 7 day-kind definitions, 1 start-point determination, 4 rule groups, 16 member
         // initialisations, 83 defaults
-        assertTrue(dagsoorten >= 7 && startpunten >= 1 && groepen >= 4 && toekenningen >= 16 && defaults >= 83,
-                "the corpus carries each rule-layer node: " + dagsoorten + " " + startpunten + " " + groepen + " "
-                        + toekenningen + " " + defaults);
+        assertTrue(dayKinds >= 7 && startPoints >= 1 && groups >= 4 && initialisations >= 16 && defaults >= 83,
+                "the corpus carries each rule-layer node: " + dayKinds + " " + startPoints + " " + groups + " "
+                        + initialisations + " " + defaults);
     }
 
     /** A list of defaults against its records, the exception groups included; the number of defaults compared. */
-    private static int vergelijk(JsonNode wire, List<Default> records, String waar) {
-        assertEquals(wire.size(), records.size(), waar);
+    private static int compare(JsonNode wire, List<Default> records, String where) {
+        assertEquals(wire.size(), records.size(), where);
         int n = 0;
         for (int i = 0; i < wire.size(); i++, n++) {
             JsonNode w = wire.get(i);
             Default d = records.get(i);
-            assertEquals(w.has("decision") ? w.get("decision").asBoolean() : null, d.besluit(), waar);
-            assertEquals(w.has("justification"), d.voorwaarde() != null, waar);
-            assertEquals(w.has("consequence"), d.consequentie() != null, waar);
-            assertEquals(w.path("initialisation").asBoolean(false), d.initialisatie(), waar);
-            assertEquals(w.has("exceptions"), d.excepties() != null, waar);
+            assertEquals(w.has("decision") ? w.get("decision").asBoolean() : null, d.besluit(), where);
+            assertEquals(w.has("justification"), d.voorwaarde() != null, where);
+            assertEquals(w.has("consequence"), d.consequentie() != null, where);
+            assertEquals(w.path("initialisation").asBoolean(false), d.initialisatie(), where);
+            assertEquals(w.has("exceptions"), d.excepties() != null, where);
             if (w.has("exceptions")) {
-                assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.excepties().ongeordend(), waar);
-                JsonNode leden = w.get("exceptions").get("members");
-                assertEquals(leden.size(), d.excepties().leden().size(), waar);
-                for (int j = 0; j < leden.size(); j++)
-                    n += vergelijk(leden.get(j).get("defaults"), d.excepties().leden().get(j).defaults(), waar);
+                assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.excepties().ongeordend(), where);
+                JsonNode members = w.get("exceptions").get("members");
+                assertEquals(members.size(), d.excepties().leden().size(), where);
+                for (int j = 0; j < members.size(); j++)
+                    n += compare(members.get(j).get("defaults"), d.excepties().leden().get(j).defaults(), where);
             }
         }
         return n;
@@ -530,136 +530,136 @@ class HernoemingWeigeringWitnessTest {
 
     /** A position in a document: the golden it is read from (or a row built on {@link #PENNINGDREMPEL}) and the
      *  pointer of the node. */
-    private record Plek(Path ir, String pad, String zet, String json) {
+    private record Site(Path ir, String path, String set, String json) {
         ObjectNode document() throws Exception {
             ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
-            if (zet != null) HernoemingWeigeringWitnessTest.zet(doc, zet, json);
+            if (set != null) RenamingRefusalWitnessTest.set(doc, set, json);
             return doc;
         }
     }
 
     /** The first position of each node kind (a version record under its form's kind, the exceptions of a default as
      *  "Default.exceptions") and of each field of a node ("Kind.field"), over the goldens this backend loads. */
-    private static final Map<String, Plek> EERSTE = new TreeMap<>();
+    private static final Map<String, Site> FIRST = new TreeMap<>();
 
-    private static synchronized Map<String, Plek> eerste() throws Exception {
-        if (!EERSTE.isEmpty()) return EERSTE;
+    private static synchronized Map<String, Site> first() throws Exception {
+        if (!FIRST.isEmpty()) return FIRST;
         for (Path ir : goldens()) {
             JsonNode doc = JSON.readTree(Files.readString(ir));
             try { IrLoader.loadAll(doc); } catch (IrLoader.Refusal r) { continue; }
-            verzamel(doc, "", ir);
+            collect(doc, "", ir);
         }
-        return EERSTE;
+        return FIRST;
     }
 
-    private static void verzamel(JsonNode n, String pad, Path ir) {
+    private static void collect(JsonNode n, String path, Path ir) {
         if (n instanceof ObjectNode o) {
-            JsonNode soort = o.get("node");
+            JsonNode kind = o.get("node");
             // a rule target is always an attribute reference, refused there as the target it is, not by kind
-            if (soort != null && soort.isTextual() && !pad.endsWith("/target")) {
-                EERSTE.putIfAbsent(soort.asText(), new Plek(ir, pad, null, null));
-                o.fieldNames().forEachRemaining(v -> EERSTE.putIfAbsent(soort.asText() + "." + v,
-                        new Plek(ir, pad, null, null)));
-                if (o.has("exceptions")) EERSTE.putIfAbsent(UITZONDERINGEN, new Plek(ir, pad + "/exceptions", null, null));
+            if (kind != null && kind.isTextual() && !path.endsWith("/target")) {
+                FIRST.putIfAbsent(kind.asText(), new Site(ir, path, null, null));
+                o.fieldNames().forEachRemaining(v -> FIRST.putIfAbsent(kind.asText() + "." + v,
+                        new Site(ir, path, null, null)));
+                if (o.has("exceptions")) FIRST.putIfAbsent(UITZONDERINGEN, new Site(ir, path + "/exceptions", null, null));
             }
-            if (soort != null && o.path("versions").isArray())
+            if (kind != null && o.path("versions").isArray())
                 for (int i = 0; i < o.get("versions").size(); i++) {
-                    String vs = soort.asText() + "Version";
-                    Plek p = new Plek(ir, pad + "/versions/" + i, null, null);
-                    EERSTE.putIfAbsent(vs, p);
-                    o.get("versions").get(i).fieldNames().forEachRemaining(v -> EERSTE.putIfAbsent(vs + "." + v, p));
+                    String vs = kind.asText() + "Version";
+                    Site p = new Site(ir, path + "/versions/" + i, null, null);
+                    FIRST.putIfAbsent(vs, p);
+                    o.get("versions").get(i).fieldNames().forEachRemaining(v -> FIRST.putIfAbsent(vs + "." + v, p));
                 }
-            o.properties().forEach(e -> verzamel(e.getValue(),
-                    pad + "/" + e.getKey().replace("~", "~0").replace("/", "~1"), ir));
+            o.properties().forEach(e -> collect(e.getValue(),
+                    path + "/" + e.getKey().replace("~", "~0").replace("/", "~1"), ir));
         } else if (n instanceof ArrayNode a) {
-            for (int i = 0; i < a.size(); i++) verzamel(a.get(i), pad + "/" + i, ir);
+            for (int i = 0; i < a.size(); i++) collect(a.get(i), path + "/" + i, ir);
         }
     }
 
     /** The first position of a node kind: a loadable golden's, or the row of a kind no loadable golden carries. */
-    private static Plek plek(String soort) throws Exception {
-        Plek p = eerste().get(soort);
+    private static Site site(String kind) throws Exception {
+        Site p = first().get(kind);
         if (p != null) return p;
-        return synthetisch(soort);
+        return synthetic(kind);
     }
 
-    /** The first position of a node that carries {@code plaats}'s field ("Kind.field"). */
-    private static Plek plekMetVeld(String plaats) throws Exception {
-        Plek p = eerste().get(plaats);
-        if (p == null) fail("geen laadbare golden draagt " + plaats);
+    /** The first position of a node that carries {@code place}'s field ("Kind.field"). */
+    private static Site siteWithField(String place) throws Exception {
+        Site p = first().get(place);
+        if (p == null) fail("geen laadbare golden draagt " + place);
         return p;
     }
 
     /** The rows at rule 0 of {@link #PENNINGDREMPEL} for the kinds no loadable golden carries. */
-    private static Plek synthetisch(String soort) throws Exception {
+    private static Site synthetic(String kind) throws Exception {
         Path ir = CORPUS.resolve(PENNINGDREMPEL).resolve("ir.json");
         String literal = "{\"node\":\"Literal\",\"value\":{\"text\":\"x\"},\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"x\"}}";
-        String datum = "{\"node\":\"Literal\",\"value\":{\"date\":\"2024-01-01\"},\"type\":{\"node\":\"Date\","
+        String date = "{\"node\":\"Literal\",\"value\":{\"date\":\"2024-01-01\"},\"type\":{\"node\":\"Date\","
                 + "\"precision\":\"day\"},\"source\":{\"snippet\":\"1 januari 2024\"}}";
-        String getal = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
-        String tekst = "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"x\"},"
+        String number = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
+        String text = "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"x\"},"
                 + "{\"node\":\"EmbeddedExpression\",\"expr\":" + literal + "}],\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"x\"}}";
-        return switch (soort) {
-            case "TextComposition" -> new Plek(ir, W, W, tekst);
-            case "LiteralChunk" -> new Plek(ir, W + "/parts/0", W, tekst);
-            case "EmbeddedExpression" -> new Plek(ir, W + "/parts/1", W, tekst);
-            case "VariableReference" -> new Plek(ir, W, W,
+        return switch (kind) {
+            case "TextComposition" -> new Site(ir, W, W, text);
+            case "LiteralChunk" -> new Site(ir, W + "/parts/0", W, text);
+            case "EmbeddedExpression" -> new Site(ir, W + "/parts/1", W, text);
+            case "VariableReference" -> new Site(ir, W, W,
                     "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
-            case "Unresolved (expression)" -> new Plek(ir, W, W, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"}}");
-            case "Unresolved (condition)" -> new Plek(ir, V, V, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"}}");
-            case "DimensionSelection" -> new Plek(ir, W + "/dimensionSelection", W, "{\"node\":\"Aggregation\","
+            case "Unresolved (expression)" -> new Site(ir, W, W, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"}}");
+            case "Unresolved (condition)" -> new Site(ir, V, V, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"}}");
+            case "DimensionSelection" -> new Site(ir, W + "/dimensionSelection", W, "{\"node\":\"Aggregation\","
                     + "\"kind\":\"sum\",\"arguments\":[],\"dimensionSelection\":{\"node\":\"DimensionSelection\","
                     + "\"dimension\":\"d\",\"labels\":[],\"source\":{\"snippet\":\"x\"}},\"type\":null,"
                     + "\"source\":{\"snippet\":\"x\"}}");
-            case "TemporalRead" -> new Plek(ir, W, W, "{\"node\":\"TemporalRead\",\"base\":" + literal + ",\"date\":"
-                    + datum + ",\"type\":" + getal + ",\"source\":{\"snippet\":\"x op 1 januari 2024\"}}");
-            case "ContextValue" -> new Plek(ir, W, W, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
+            case "TemporalRead" -> new Site(ir, W, W, "{\"node\":\"TemporalRead\",\"base\":" + literal + ",\"date\":"
+                    + date + ",\"type\":" + number + ",\"source\":{\"snippet\":\"x op 1 januari 2024\"}}");
+            case "ContextValue" -> new Site(ir, W, W, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                     + "{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"de rekendatum\"}}");
-            default -> throw new AssertionError("no position for " + soort);
+            default -> throw new AssertionError("no position for " + kind);
         };
     }
 
     // ================= helpers =================
 
-    private static ObjectNode knoop(JsonNode doc, String pad) {
-        JsonNode n = doc.at(pad);
-        if (!(n instanceof ObjectNode o)) throw new AssertionError("no object at " + pad);
+    private static ObjectNode node(JsonNode doc, String path) {
+        JsonNode n = doc.at(path);
+        if (!(n instanceof ObjectNode o)) throw new AssertionError("no object at " + path);
         return o;
     }
 
-    private static void zet(ObjectNode doc, String pad, String json) {
-        int slash = pad.lastIndexOf('/');
+    private static void set(ObjectNode doc, String path, String json) {
+        int slash = path.lastIndexOf('/');
         try {
-            knoop(doc, pad.substring(0, slash)).set(pad.substring(slash + 1), JSON.readTree(json));
+            node(doc, path.substring(0, slash)).set(path.substring(slash + 1), JSON.readTree(json));
         } catch (Exception e) {
             throw new AssertionError(json, e);
         }
     }
 
-    private static IrLoader.Documentfout weigert(JsonNode doc, String wat) {
+    private static IrLoader.Documentfout refuses(JsonNode doc, String what) {
         try {
             IrLoader.loadAll(doc);
         } catch (IrLoader.Documentfout f) {
             return f;
         } catch (IrLoader.Refusal r) {
-            fail(wat + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());
+            fail(what + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());
         }
-        return fail(wat + ": het document laadde");
+        return fail(what + ": het document laadde");
     }
 
-    private static ObjectNode golden(String naam) throws Exception {
-        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
+    private static ObjectNode golden(String name) throws Exception {
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(name).resolve("ir.json")));
         IrLoader.loadAll(doc);   // the untwisted golden loads, so a refusal is the twist's alone
         return doc;
     }
 
     private static List<Path> goldens() throws Exception {
         try (Stream<Path> s = Files.walk(CORPUS)) {
-            List<Path> uit = s.filter(p -> p.getFileName().toString().equals("ir.json")).sorted().toList();
-            if (uit.isEmpty()) fail("geen enkele golden gevonden onder " + CORPUS.toAbsolutePath());
-            return uit;
+            List<Path> out = s.filter(p -> p.getFileName().toString().equals("ir.json")).sorted().toList();
+            if (out.isEmpty()) fail("geen enkele golden gevonden onder " + CORPUS.toAbsolutePath());
+            return out;
         }
     }
 }

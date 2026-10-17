@@ -134,7 +134,7 @@ let rec conditie (c : conditie) : json =
         [ ("quantifier", enum Spelling.quantifier kwantor); ("threshold", i drempel);
           ("parts", `List (List.map (fun c ->
              match c with
-             | Vergelijking _ | Kenmerk_check _ -> conditie_leaf c
+             | Vergelijking _ | Kenmerk_check _ -> condition_leaf c
              (* a fold beside an ordinary condition of the subject: the two
                 conjoin, and the fold keeps its own shape inside *)
              | Kwantorvouw _ -> conditie c
@@ -162,9 +162,9 @@ let rec conditie (c : conditie) : json =
         @ [ ("elementType", so kv_element_objecttype) ]
         @ optional "filter" conditie kv_filter
         @ [ ("test", opt conditie kv_toets); source kv_bron; ("sourceRole", rol_binding rb) ])
-  | c -> conditie_leaf c
+  | c -> condition_leaf c
 
-and conditie_leaf (c : conditie) : json =
+and condition_leaf (c : conditie) : json =
   match c with
   | Kenmerk_check { kenmerk; negatie; eigenaar; periode; bron = br; navigatie_binding } ->
       if periode <> None || navigatie_binding <> None then
@@ -208,7 +208,7 @@ let objecttype (key, (o : objecttype)) : json =
   unfilled "attribuut_tijdlijn_naam" o.attribuut_tijdlijn_naam;
   unfilled "kenmerk_granulariteit" o.kenmerk_granulariteit;
   unfilled "kenmerk_tijdlijn_aantal" o.kenmerk_tijdlijn_aantal;
-  let kenmerken =
+  let characteristics =
     List.map
       (function
         | Some k -> k
@@ -217,7 +217,7 @@ let objecttype (key, (o : objecttype)) : json =
   in
   List.iter
     (fun (k, _) ->
-      if not (List.mem k kenmerken) then
+      if not (List.mem k characteristics) then
         failwith (Printf.sprintf "Emit: object type %S tags %S, which it does not declare" key k))
     o.kenmerk_soorten;
   let supertype = match o.ot_supertype with None -> [] | Some p -> [ ("supertype", s p) ] in
@@ -241,7 +241,7 @@ let objecttype (key, (o : objecttype)) : json =
                 in
                 node "Characteristic"
                   [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
-              kenmerken)) ])
+              characteristics)) ])
 
 let rol (r : rol) : json =
   node "Role"

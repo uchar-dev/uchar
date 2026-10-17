@@ -29,12 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 12 replays them through both branches against the numbers ref and clingo pin). This file carries the shapes
  * no answer can reach. Models are authored here; no corpus file is read, moved or touched.
  */
-class InstantieUnieWitnessTest {
+class InstanceUnionWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    @Test void de_loader_leest_elke_selectie_letterlijk() throws Exception {
-        Expr.Functie f = tellingVan(doc(unie(TAK_AANGEMELD, TAK_GEBORGEN)));
+    @Test void the_loader_reads_each_selection_literally() throws Exception {
+        Expr.Functie f = countOf(doc(union(BRANCH_AANGEMELD, BRANCH_GEBORGEN)));
         assertEquals(Expr.FunctieKind.AANTAL, f.kind());
         assertEquals(1, f.argumenten().size(), "de unie is ÉÉN argument");
         assertNull(f.elementObjecttype(), "de telling boven een unie noemt geen eigen bron (WF-110 (c))");
@@ -51,8 +51,8 @@ class InstantieUnieWitnessTest {
         assertNotNull(u.bron(), "bron");
     }
 
-    @Test void een_selectiefilter_landt_op_de_selectie_en_niet_op_de_telling() throws Exception {
-        Expr.Functie f = tellingVan(doc(unie(TAK_GEMERKT, TAK_GEBORGEN)));
+    @Test void a_selection_filter_lands_on_the_selection_and_not_on_the_count() throws Exception {
+        Expr.Functie f = countOf(doc(union(BRANCH_GEMERKT, BRANCH_GEBORGEN)));
         assertNull(f.filter(), "de telling draagt geen eigen filter (WF-110 (c))");
         Expr.InstanceSetUnion u = (Expr.InstanceSetUnion) f.argumenten().get(0);
         Conditie.Kenmerk k = assertInstanceOf(Conditie.Kenmerk.class, u.takken().get(0).filter());
@@ -60,42 +60,42 @@ class InstantieUnieWitnessTest {
         assertNull(u.takken().get(1).filter(), "een selectie zonder deelselectie draagt er geen");
     }
 
-    @Test void de_generieke_wandeling_daalt_af_in_de_selecties() throws Exception {
+    @Test void the_generic_walk_descends_into_the_selections() throws Exception {
         // Expr.verzamelOnopgelost walks the sealed union with no default arm; a union that read as an
         // opaque LEAF would report no surviving marker under it, and every caller takes that silence for
         // a licence to omit work. The marker sits in a SELECTION's filter, which is the only place a
         // union carries an expression at all.
-        Expr.Functie f = tellingVan(doc(unie(TAK_ONOPGELOST, TAK_GEBORGEN)));
-        java.util.List<String> gezien = new java.util.ArrayList<>();
-        Expr.verzamelOnopgelost(f, (bron, reden) -> gezien.add(String.valueOf(bron)));
-        assertEquals(1, gezien.size(), "de wandeling bereikt de deelselectie van een selectie niet: " + gezien);
+        Expr.Functie f = countOf(doc(union(BRANCH_UNRESOLVED, BRANCH_GEBORGEN)));
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        Expr.verzamelOnopgelost(f, (source, reason) -> seen.add(String.valueOf(source)));
+        assertEquals(1, seen.size(), "de wandeling bereikt de deelselectie van een selectie niet: " + seen);
     }
 
-    @Test void een_selectie_zonder_populatie_wordt_benoemd_geweigerd() {
+    @Test void a_selection_without_population_is_refused_as_a_named_form() {
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> tellingVan(doc(unie(TAK_AANGEMELD, tak("null", "vondstberging", "geborgen vondst", "null")))));
+                () -> countOf(doc(union(BRANCH_AANGEMELD, branch("null", "vondstberging", "geborgen vondst", "null")))));
         assertEquals("InstanceSetBranch", r.form());
         assertTrue(r.getMessage().contains("elementType"), r.getMessage());
     }
 
-    @Test void een_selectie_zonder_relatie_is_een_documentfout() {
+    @Test void a_selection_without_relation_is_a_document_error() {
         // Since L2 of the v1 wire migration a selection's relation is required and non-null (IR-SPEC ch. 4.3):
         // a selection without one is not a form this backend declines but a document that is not uchar-ir-v1,
         // so it is a defect at its pointer, never the gate's auto-excluded channel.
         IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class,
-                () -> tellingVan(doc(unie(TAK_AANGEMELD,
+                () -> countOf(doc(union(BRANCH_AANGEMELD,
                         "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":null,"
                                 + "\"filter\":null,\"source\":{\"snippet\":\"geborgen vondsten van de Jutter\"}}"))));
         assertTrue(f.plek().endsWith("/branches/1/sourceRole"), f.plek());
         assertTrue(f.getMessage().contains("expected a RoleBinding"), f.getMessage());
     }
 
-    @Test void een_unie_met_een_enkele_selectie_wordt_benoemd_geweigerd() {
+    @Test void a_union_with_a_single_selection_is_refused_as_a_named_form() {
         // WF-110 (b): one selection IS the ordinary instance count and has a spelling of its own, so
         // admitting it here would give one meaning two spellings — and this backend would then have two
         // lowerings for one shape
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> tellingVan(doc(unie(TAK_AANGEMELD))));
+                () -> countOf(doc(union(BRANCH_AANGEMELD))));
         assertEquals("InstanceSetUnion.branches", r.form());
         assertTrue(r.getMessage().contains("at least TWO selections"), r.getMessage());
         assertTrue(r.getMessage().contains("WF-110 (b)"), r.getMessage());
@@ -103,50 +103,50 @@ class InstantieUnieWitnessTest {
 
     // --- the documents ------------------------------------------------------------------------------
 
-    private static Expr.Functie tellingVan(String ir) throws Exception {
+    private static Expr.Functie countOf(String ir) throws Exception {
         var model = IrLoader.loadAll(JSON.readTree(ir)).model();
         assertEquals(1, model.resolvedRegels.size(), "één regel in dit document");
         return assertInstanceOf(Expr.Functie.class, model.resolvedRegels.get(0).waarde());
     }
 
-    private static String tak(String elementType, String feittype, String rol, String filter) {
-        String bronrol = feittype == null ? "null"
-                : "{\"node\":\"RoleBinding\",\"factType\":\"%s\",\"role\":\"%s\"}".formatted(feittype, rol);
+    private static String branch(String elementType, String factType, String role, String filter) {
+        String sourceRole = factType == null ? "null"
+                : "{\"node\":\"RoleBinding\",\"factType\":\"%s\",\"role\":\"%s\"}".formatted(factType, role);
         return ("{\"node\":\"InstanceSetBranch\",\"elementType\":%s,\"sourceRole\":%s,\"filter\":%s,"
-                + "\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, bronrol, filter);
+                + "\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, sourceRole, filter);
     }
 
-    private static final String TAK_AANGEMELD = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst", "null");
-    private static final String TAK_GEBORGEN = tak("\"Vondst\"", "vondstberging", "geborgen vondst", "null");
-    private static final String TAK_ONOPGELOST = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
+    private static final String BRANCH_AANGEMELD = branch("\"Vondst\"", "vondstaanmelding", "aangemelde vondst", "null");
+    private static final String BRANCH_GEBORGEN = branch("\"Vondst\"", "vondstberging", "geborgen vondst", "null");
+    private static final String BRANCH_UNRESOLVED = branch("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
             "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"die onleesbaar zijn\"}}");
-    private static final String TAK_GEMERKT = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
+    private static final String BRANCH_GEMERKT = branch("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
             "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemerkt\",\"negated\":false,"
                     + "\"source\":{\"snippet\":\"gemerkt zijn\"}}");
 
-    private static String unie(String... takken) {
+    private static String union(String... branches) {
         return "{\"node\":\"InstanceSetUnion\",\"branches\":[%s],\"source\":{\"snippet\":\"de unie\"}}"
-                .formatted(String.join(",", takken));
+                .formatted(String.join(",", branches));
     }
 
-    private static String doc(String unie) {
-        String heel = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
-        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"het aantal …\"}}"
-                .formatted(unie, heel);
-        String doel = "{\"node\":\"AttributeReference\",\"attribute\":\"aantal strandvondsten\","
+    private static String doc(String union) {
+        String whole = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
+        String value = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"het aantal …\"}}"
+                .formatted(union, whole);
+        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"aantal strandvondsten\","
                 + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"Het aantal strandvondsten van een Jutter\"}}";
         String jutter = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":%s}],"
-                + "\"characteristics\":[]}").formatted(heel);
+                + "\"characteristics\":[]}").formatted(whole);
         String vondst = "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\","
                 + "\"attributes\":[],"
                 + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"adjectival\"}]}";
-        String ftAan = "{\"node\":\"FactType\",\"name\":\"vondstaanmelding\","
+        String ftVondstaanmelding = "{\"node\":\"FactType\",\"name\":\"vondstaanmelding\","
                 + "\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\"aanmelder\","
                 + "\"objectType\":\"Jutter\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"aangemelde vondst\",\"objectType\":\"Vondst\","
                 + "\"plural\":\"aangemelde vondsten\",\"many\":true}]}";
-        String ftBerg = "{\"node\":\"FactType\",\"name\":\"vondstberging\","
+        String ftVondstberging = "{\"node\":\"FactType\",\"name\":\"vondstberging\","
                 + "\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\"berger\","
                 + "\"objectType\":\"Jutter\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"geborgen vondst\",\"objectType\":\"Vondst\","
@@ -158,8 +158,8 @@ class InstantieUnieWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
-                .formatted(jutter, vondst, ftAan, ftBerg,
-                        dev.uchar.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", doel,
-                                waarde, "null"));
+                .formatted(jutter, vondst, ftVondstaanmelding, ftVondstberging,
+                        dev.uchar.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", target,
+                                value, "null"));
     }
 }

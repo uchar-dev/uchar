@@ -1,0 +1,10 @@
+term	reason
+callee	technical English, not in the dictionary; a false hit (alle) of the sub-word search, card engelse-namen-afspraak
+iterator	technical English, not in the dictionary; a false hit (rato) of the sub-word search, card engelse-namen-afspraak
+overprecision	technical English, not in the dictionary; a false hit (over) of the sub-word search, card engelse-namen-afspraak
+standalone	technical English, not in the dictionary; a false hit (stand) of the sub-word search, card engelse-namen-afspraak
+json	JSON, the data format
+drl	the Drools Rule Language
+tms	truth maintenance system
+asp	answer set programming
+mvel	the expression language of Drools rules

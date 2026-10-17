@@ -68,10 +68,10 @@ type sigitem =
 let sigitem_line = function Si_decl (_, _, _, l) | Si_val (_, _, l) -> l
 
 (* What a rule defines. [H_attr] is the frame head [?S[a -> Expr]];
-   [H_kenmerk] the isa head [?S : k], which Flora-2 writes with the same
+   [H_characteristic] the isa head [?S : k], which Flora-2 writes with the same
    colon the slice already reads as a characteristic CHECK in a body. A
    characteristic has one value it can be given, so the head carries none. *)
-type head = H_attr of string * expr | H_kenmerk of string
+type head = H_attr of string * expr | H_characteristic of string
 
 type rule = {
   r_id : string option;
@@ -157,4 +157,4 @@ let show_agg_source kind var operand goals =
 
 let show_head ~var = function
   | H_attr (attr, _) -> Printf.sprintf "?%s.%s" var (atom attr)
-  | H_kenmerk k -> Printf.sprintf "?%s : %s" var (atom k)
+  | H_characteristic k -> Printf.sprintf "?%s : %s" var (atom k)

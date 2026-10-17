@@ -60,16 +60,16 @@ let () =
         exit 2
   in
   let passing =
-    [ ("overerving.flogic",
-       [ "cases/overerving_heel.json"; "cases/overerving_gewond.json" ]);
-      ("aggregatie.flogic",
-       [ "cases/aggregatie_twee.json"; "cases/aggregatie_leeg.json" ]);
+    [ ("inheritance.flogic",
+       [ "cases/inheritance_unhurt.json"; "cases/inheritance_wounded.json" ]);
+      ("aggregation.flogic",
+       [ "cases/aggregation_two.json"; "cases/aggregation_empty.json" ]);
       (* the five quantifiers of the fold, as counts: the empty case is the
          vacuum cell (ALLE and GEEN both hold), the mixed one separates GEEN
          from not-ALLE, and two cells are decided by the filter alone *)
-      ("kwantorvouw.flogic",
-       [ "cases/kwantorvouw_twee.json"; "cases/kwantorvouw_gemengd.json";
-         "cases/kwantorvouw_leeg.json"; "cases/kwantorvouw_filterbeslist.json" ]) ]
+      ("quantifier_fold.flogic",
+       [ "cases/quantifier_fold_two.json"; "cases/quantifier_fold_mixed.json";
+         "cases/quantifier_fold_empty.json"; "cases/quantifier_fold_filter_decides.json" ]) ]
   in
   List.iter
     (fun (src, cases) ->
@@ -96,53 +96,53 @@ let () =
   let refusals =
     [ (* the sharp witness of WF-106: two :: facts, which no wire document
          and no other frontend source form can even write *)
-      ("refuse_tweede_ouder.flogic", "WF-106");
-      ("refuse_tweede_ouder.flogic", "RechtOpUitkeringWazo and RechtUitkeringZw,");
+      ("refuse_second_parent.flogic", "WF-106");
+      ("refuse_second_parent.flogic", "RechtOpUitkeringWazo and RechtUitkeringZw,");
       (* the needle carries the pair AND its parents: a bare
          "RechtUitkeringZw" is a prefix of "RechtUitkeringZwWazo" and would
          pass on the parent name alone *)
-      ("refuse_tweede_ouder.flogic", "RechtOpUitkering and RechtUitkeringZwWazo");
-      ("refuse_ongebalkt.flogic", "unbarred class-level frame");
+      ("refuse_second_parent.flogic", "RechtOpUitkering and RechtUitkeringZwWazo");
+      ("refuse_unbarred.flogic", "unbarred class-level frame");
       ("refuse_hilog.flogic", "HiLog and meta-programming");
       ("refuse_defeasible.flogic", "\\overrides");
       ("refuse_naf.flogic", "\\naf");
       ("refuse_neg.flogic", "\\neg");
-      ("refuse_monotoon.flogic", "setsemantics");
-      ("refuse_instantie.flogic", "uchar-case-v0");
-      ("refuse_predicaat.flogic", "no predicate channel");
-      ("refuse_floraeen.flogic", "*->");
+      ("refuse_monotonic.flogic", "setsemantics");
+      ("refuse_instance.flogic", "uchar-case-v0");
+      ("refuse_predicate.flogic", "no predicate channel");
+      ("refuse_flora1.flogic", "*->");
       ("refuse_decimal.flogic", "\\decimal");
-      ("refuse_tweede_basis.flogic", "two unconditional definitions");
-      ("refuse_aggregaat.flogic", "sum and count only");
-      ("refuse_rolsignatuur.flogic", "declare a fact type");
+      ("refuse_second_base.flogic", "two unconditional definitions");
+      ("refuse_aggregate.flogic", "sum and count only");
+      ("refuse_role_signature.flogic", "declare a fact type");
       (* a rule reaches the wire by name: WF-020 filters nulls out and never
          looks at a defaults group's name, so both of these have to refuse
          at the frontend or not at all *)
-      ("refuse_naamloos.flogic", "a rule with no id");
-      ("refuse_naamloze_basis.flogic", "has no id");
-      ("refuse_id_zonder_definitie.flogic", "which is a subclass fact");
-      ("refuse_dubbele_naam.flogic", "is already used at line");
-      ("refuse_argumentatietheorie.flogic", "argumentation-theory");
-      ("refuse_dubbel_lid.flogic", "declares the member hoogte twice");
-      ("refuse_onbekende_filler.flogic", "not a declared object type");
+      ("refuse_unnamed.flogic", "a rule with no id");
+      ("refuse_unnamed_base.flogic", "has no id");
+      ("refuse_id_without_definition.flogic", "which is a subclass fact");
+      ("refuse_duplicate_name.flogic", "is already used at line");
+      ("refuse_argumentation_theory.flogic", "argumentation-theory");
+      ("refuse_duplicate_member.flogic", "declares the member hoogte twice");
+      ("refuse_unknown_filler.flogic", "not a declared object type");
       (* the quantifier fold's own edges: the threshold the source wrote is
          the threshold on the wire, the count stands on the left, and a
          conditioned comprehension is a quantification and not a value *)
-      ("refuse_teldrempel_strikt.flogic", "'>= 2'");
-      ("refuse_teldrempel_nul.flogic", "WF-041");
-      ("refuse_telling_ongelijk.flogic", "no direct spelling to rewrite this into");
+      ("refuse_count_threshold_strict.flogic", "'>= 2'");
+      ("refuse_count_threshold_zero.flogic", "WF-041");
+      ("refuse_count_not_equal.flogic", "no direct spelling to rewrite this into");
       (* the hop is the rule's subject here exactly as it is in a value
          position — same rule, same message *)
-      ("refuse_telling_vreemde_hop.flogic", "does not start at the rule's subject ?S");
-      ("refuse_telling_rechts.flogic", "on the LEFT");
-      ("refuse_teldrempel_geen_getal.flogic", "a whole, non-negative number");
-      ("refuse_alle_tweeling.flogic", "the spelling of the quantifier all repeats the comprehension");
-      ("refuse_gefilterde_telling_in_waarde.flogic", "is a QUANTIFICATION");
-      ("refuse_gefilterde_som.flogic", "sum{...} carries no subselection");
-      ("refuse_telling_tweede_hop.flogic", "ONE role hop");
-      ("refuse_telling_vreemde_variabele.flogic", "speaks of ?S");
-      ("refuse_kenmerkkop_onbekend.flogic", "declares no characteristic zeewaardig");
-      ("refuse_kenmerk_tweede_definitie.flogic", "?X : sterk is defined twice") ]
+      ("refuse_count_foreign_hop.flogic", "does not start at the rule's subject ?S");
+      ("refuse_count_right.flogic", "on the LEFT");
+      ("refuse_count_threshold_no_number.flogic", "a whole, non-negative number");
+      ("refuse_all_twin.flogic", "the spelling of the quantifier all repeats the comprehension");
+      ("refuse_filtered_count_in_value.flogic", "is a QUANTIFICATION");
+      ("refuse_filtered_sum.flogic", "sum{...} carries no subselection");
+      ("refuse_count_second_hop.flogic", "ONE role hop");
+      ("refuse_count_foreign_variable.flogic", "speaks of ?S");
+      ("refuse_characteristic_head_unknown.flogic", "declares no characteristic zeewaardig");
+      ("refuse_characteristic_second_definition.flogic", "?X : sterk is defined twice") ]
   in
   List.iter
     (fun (src, needle) ->
@@ -170,7 +170,7 @@ let () =
      drives them instead. A marker written without its WARNING fails WF-113
      (b) at the verifier, and a filled list written as [] drops what it held
      without a word, so each has to refuse at the serialiser. *)
-  let m1_doc ?(parameters = "") ?(domains = "") ?(regels = "") ?(diagnostics = "") () =
+  let m1_doc ?(parameters = "") ?(domains = "") ?(rules = "") ?(diagnostics = "") () =
     Printf.sprintf
       {|{ "format": "uchar-ir-v1",
   "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [%s],
@@ -179,7 +179,7 @@ let () =
     "allocations": [], "consistencies": [], "uniquenesses": [],
     "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": [%s] }|}
-      parameters domains regels diagnostics
+      parameters domains rules diagnostics
   in
   (* one rule version with an attribute target, whose value and condition
      each test fills: the wire carries no rule without a kind, a target or a
@@ -193,22 +193,22 @@ let () =
       waarde
       (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
   in
-  let getal =
+  let number =
     {|{ "node": "Literal", "value": { "number": "1" },
   "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "1" } }|}
   in
   let emit_refusals =
     [ ("an expression Unresolved",
        m1_doc
-         ~regels:
+         ~rules:
            (regel ~voorwaarde:None
               ~waarde:{|{ "node": "Unresolved", "source": { "snippet": "de onbekende waarde" } }|})
          (),
        "expression node not produced by the F-logic slice");
       ("a condition Unresolved",
        m1_doc
-         ~regels:
-           (regel ~waarde:getal
+         ~rules:
+           (regel ~waarde:number
               ~voorwaarde:(Some {|{ "node": "Unresolved", "source": { "snippet": "de onbekende voorwaarde" } }|}))
          (),
        "condition shape not produced by the F-logic slice");
@@ -267,7 +267,7 @@ let () =
   let aref a : A.expr =
     Attribuut_ref { attribuut = Some a; objecttype = Some "Sein"; bron = Some a; navigatie_bindingen = None }
   in
-  let getal n : A.expr = Literal { variant = Lv_number n; typ = Some num0; bron = Some n } in
+  let number n : A.expr = Literal { variant = Lv_number n; typ = Some num0; bron = Some n } in
   (* the subject's own type as the host: the reading an absent host has *)
   let gehesen : A.conditie =
     Kenmerk_check
@@ -291,7 +291,7 @@ let () =
             default_voorwaarde =
               Some
                 (Vergelijking
-                   { op = Groter; links = Some (aref "hoogte"); rechts = Some (getal "10");
+                   { op = Groter; links = Some (aref "hoogte"); rechts = Some (number "10");
                      periode = None; bron = Some "?S.hoogte > 10" });
             default_consequentie = None; default_initialisatie = false; default_excepties = None;
             default_bron = None } ];
@@ -301,19 +301,19 @@ let () =
     { rr_naam = Some naam; rr_soort = Some soort; doel = Some (aref doel); waarde = Some waarde;
       rr_voorwaarde = cond; rr_geldigheid = geldigheid; rr_bron_annotaties = None; rr_pointer = "" }
   in
-  let proef : A.document =
+  let trial : A.document =
     { objecttypen = [ ("Sein", sein) ]; domeinen = []; parameters = []; eenheidstelsels = [];
       feittypen = [ ("seinpaar", seinpaar) ]; dimensies = []; tijdlijnen = []; dagsoorten = [];
       resolved_regels =
-        [ regel "hoogte van een sein" Gelijkstelling "hoogte" (getal "12") None None;
-          regel "breedte van een sein" Berekening "breedte" (getal "3") (Some gehesen) (Some seizoen) ];
+        [ regel "hoogte van een sein" Gelijkstelling "hoogte" (number "12") None None;
+          regel "breedte van een sein" Berekening "breedte" (number "3") (Some gehesen) (Some seizoen) ];
       resolved_dagsoorten = []; object_creaties = []; verdelingen = []; consistenties = [];
       uniciteiten = []; uniciteit_unies = []; feit_creaties = []; resolved_startpunten = [];
       regel_groepen = []; diagnostics = []; prioritized_defaults = [ zichtbaar ]; function_defs = [];
       presentatie_annotaties = [] }
   in
   Printf.printf "[emit-proef] de vormen die geen F-logic-bron bereikt\n%!";
-  let text = Flogic_frontend_lib.Emit.to_string proef in
+  let text = Flogic_frontend_lib.Emit.to_string trial in
   let out = Filename.temp_file "flogic-proef" ".ir.json" in
   let oc = open_out out in
   output_string oc text;

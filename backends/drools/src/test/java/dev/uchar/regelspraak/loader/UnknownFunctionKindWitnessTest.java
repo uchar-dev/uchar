@@ -28,16 +28,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * named here is a DECIDED absence rather than a typo, and the day that decision is revisited this witness needs a
  * new stand-in — which is the right moment to be reminded of it.
  */
-class OnbekendeFunctieKindWitnessTest {
+class UnknownFunctionKindWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    @Test void een_onbekende_vouwsoort_is_een_benoemde_documentfout() throws Exception {
+    @Test void an_unknown_fold_kind_is_a_named_document_error() throws Exception {
         ObjectNode root = (ObjectNode) golden();
-        ((ObjectNode) vouw(root)).put("kind", "GEMIDDELDE");
+        ((ObjectNode) fold(root)).put("kind", "GEMIDDELDE");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "een vouwsoort buiten de gesloten verzameling hoort een benoemde documentfout te zijn,"
                         + " geen onbeheerde IllegalArgumentException");
@@ -46,9 +46,9 @@ class OnbekendeFunctieKindWitnessTest {
     }
 
     /** A kind of the other function node is as unknown as a kind of none: the node decides the set. */
-    @Test void een_soort_van_de_andere_knoop_is_onbekend() throws Exception {
+    @Test void a_kind_of_the_other_node_is_unknown() throws Exception {
         ObjectNode root = (ObjectNode) golden();
-        ((ObjectNode) vouw(root)).put("kind", "squareRoot");
+        ((ObjectNode) fold(root)).put("kind", "squareRoot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
         assertEquals(KIND, e.plek(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown kind value \"squareRoot\""), e.getMessage());
@@ -56,7 +56,7 @@ class OnbekendeFunctieKindWitnessTest {
 
     /** The control: untouched, the same document loads. The refusal above is about the kind and
      *  nothing else. */
-    @Test void dezelfde_golden_laadt_ongewijzigd() throws Exception {
+    @Test void the_same_golden_loads_unchanged() throws Exception {
         assertNotNull(IrLoader.load(golden()), "de onaangeraakte golden laadt gewoon");
     }
 
@@ -64,7 +64,7 @@ class OnbekendeFunctieKindWitnessTest {
     private static final String KIND = "/rules/rules/0/versions/0/value/kind";
 
     /** The count of {@code jutterswet-vondsttelling}, the fold this witness re-spells. */
-    private static JsonNode vouw(JsonNode root) {
+    private static JsonNode fold(JsonNode root) {
         return IrPad.versie(root, "rules", 0, 0).get("value");
     }
 
@@ -72,7 +72,7 @@ class OnbekendeFunctieKindWitnessTest {
         Path ir = CORPUS.resolve("jutterswet-vondsttelling").resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         JsonNode root = JSON.readTree(Files.readString(ir));
-        assertEquals("count", vouw(root).get("kind").asText(),
+        assertEquals("count", fold(root).get("kind").asText(),
                 "deze getuige verspelt de soort van deze vouw, dus zij moet hem eerst vinden");
         return root;
     }

@@ -25,7 +25,7 @@ on this document with the same cases:
     Let, read by a BinderRef
 
 for `ref` and for clingo alike. The Drools loader refuses the node in the
-same sentence (`IrLoader`, witnessed by `RegelEnExpressielaagWeigeringWitnessTest`),
+same sentence (`IrLoader`, witnessed by `RuleAndExpressionLayerRefusalWitnessTest`),
 but on this document it stops one section earlier, at the function
 definitions it does not carry: `EXCLUDE loader: form not carried by the v0
 Drools backend: functionDefs (unknown model section)` (measured 2026-09-25).
