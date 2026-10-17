@@ -495,8 +495,26 @@ A gate that gets no floor carries one sentence in its script saying why.
 
 ## Conventions
 
-- Infrastructure, spec metamodel, and node names: English. Domain content
-  (Jutterswet articles, declared names in corpus sources): Dutch, as
-  authored.
+- Every identifier is English: classes, interfaces, records, enums and
+  their constants, methods, fields, variables, OCaml modules, types,
+  constructors and functions, grammar rules, ASP predicates, shell
+  variables, CLI flags and test names; so is every file and directory
+  name.
+- Where the wire has a name for a concept, the code uses it
+  (`emptyFallback`, not `leegwaarde`). `scripts/lib/naming/glossary.tsv`
+  gives the English word for the Dutch words in the code, with its source
+  per row (wire, spec, field or plain).
+- Dutch, as authored: domain content (the Jutterswet, declared names,
+  RegelSpraak sources, case labels, the `jutterswet-*` names) and the
+  RegelSpraak keywords (the lexer's literals and the token names that
+  spell them).
+- Not renamed, each for its reason: the production runtime under
+  `backends/drools/src/main/java/dev/uchar/regelspraak/runtime/` (gate 1
+  recognises a copy by its names), the `toka/` zone, v0 names where they
+  stand as v0 names (IR-SPEC "v0 name:", CONSTRUCTS, `spec/proposals/`),
+  git history and `backlog/done/`.
+- Working prose — cards, Results, commit messages, `spec/proposals/` — is
+  Dutch or English; every identifier it names or introduces is English,
+  also when a card prescribes a new class.
 - Smallest change that satisfies the task; prefer editing existing files;
   fail fast — no silent fallbacks or swallowed errors.

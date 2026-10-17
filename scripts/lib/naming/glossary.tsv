@@ -1,0 +1,1062 @@
+dutch	english	source	context	note
+aan	to	plain	function word: aan X, to X; aan beide kanten, on both sides; verb particle (voldoet aan)	
+aanroep	call	wire		`BuiltinCall`
+aantal	count	wire		
+aantal dagen in	dayCount	wire		`BuiltinCall.kind`
+aantalgevulde	filledCount	wire		
+achter	behind	plain	function word: preposition and verb particle (laat achter, leaves behind)	
+af	off	plain	function word: verb particle (kapt af, leidt af, daalt af)	
+afgeleid	derived	plain		
+afgeleide	derived	plain		
+afgerond	rounded	plain	the adjective	
+afgerond	rounding	wire	the v0 node Afgerond	`Rounding`
+afkorting	abbreviation	wire		
+afleiding	derivation	spec		RUNTIME-SEMANTICS §2.10
+afleidt	derives	plain		
+afnemend	descending	wire		
+afnemer	consumer	spec		RUNTIME-SEMANTICS §2.10
+afronding	rounding	wire		
+afwezig	absent	spec		RUNTIME-SEMANTICS §5.8
+afwijkende	deviating	plain		
+afwijking	deviation	plain		
+aggregatie	aggregation	wire		
+aggregeren	aggregate	plain		
+al	already	plain	function word	false friend
+alfa	alpha	field	the alpha network of Rete, an alpha constraint	false friend
+algemene	general	plain		
+aliassen	spellings	wire	the v0 field aliassen of a unit	
+alle	all	wire	the quantifier	false friend
+allebei	both	plain	function word	
+alleen	only	plain	function word	
+alles	everything	plain	function word	false friend
+als	as	plain	function word: X als Y, X as Y	false friend
+als	if	plain	function word: als ... dan, if ... then	false friend
+altijd	always	plain	function word	
+ambigu	ambiguous	plain		
+ander	other	plain	function word	false friend
+andere	other	plain	function word	
+anders	else	wire	the else of an IfThenElse	false friend; `IfThenElse.else`
+anders	otherwise	plain	function word	false friend
+anker	anchor	wire		false friend
+annotatie	annotation	wire		`statuteAnnotations`
+annotaties	annotations	wire		
+antwoord	answer	plain		
+argumenten	arguments	wire		
+assertie	assertion	wire		
+attributen	attributes	wire		
+attribuut	attribute	wire		
+attribuut	member	wire	the member an object creation initialises	`MemberInit`, IR-SPEC §3.3
+attribuutref	attributeReference	wire		
+barriere	barrier	spec		RUNTIME-SEMANTICS §10.6
+basis	base	spec	the base of a defaults chain or level	false friend; RUNTIME-SEMANTICS §7.10
+basisregel	baseRule	spec		IR-SPEC §2.13
+bedrag	amount	plain	an amount of money	RUNTIME-SEMANTICS §2.9 says money
+begrensd	clamp	wire	the v0 node Begrensd	`Clamp`
+begrensd	clamped	plain	the adjective	
+begrensde	clamped	plain		
+begrenzing	clamp	wire		`Clamp`
+behalve	except	plain	function word	
+behoefte	need	spec	the need of a Let binder	RUNTIME-SEMANTICS §10.6
+beide	both	plain	function word	
+benaming	designation	wire		false friend
+benamingen	designations	wire		
+beneden	below	plain	naar beneden is the rounding mode floor	
+benoemd	named	wire		`namedForm`
+benoemde	named	wire		`namedForm`
+bereik	range	spec	what a fold, a quantifier fold or an allocation ranges over	IR-SPEC §4.3
+bereikt	reaches	plain		
+bereikte	reached	plain		
+berekend	computed	plain		
+berekende	computed	plain		
+berekening	calculation	wire	a rule version's presentation	`RuleVersion.presentation`
+berekening	computation	wire	in invoer boven berekening	`inputAboveComputation`
+beslist	decides	plain		
+beslistabel	decisionTable	wire		
+besluit	decision	wire		
+bestaat	exists	plain		
+betreden	taken	plain	an arm that evaluation enters	
+bevat	contains	plain		
+bewaking	watch	plain	the watch the entry keeps on a Drools session	
+bezield	animate	wire		
+bezittelijk	possessive	wire		
+bij	at	plain	function word: bij naam, by name; bij het laden, on loading	
+bijna	almost	plain	function word	
+bijvoeglijk	adjectival	wire		
+binair	binary	wire		
+binden	bind	wire		`binder`, `RoleBinding`
+bindercel	binderCell	plain		
+bindingen	bindings	wire		
+bindt	binds	wire		`RoleBinding`, `binder`
+binnen	within	plain	function word	
+binnenste	innermost	plain		
+blijft	stays	plain		
+blijven	stay	plain		
+blijvende	persistent	plain		
+blok	block	plain		
+blokken	blocks	plain		
+booleaan	boolean	wire		
+boom	tree	plain		false friend
+botsende	colliding	spec		IR-SPEC §2.1
+botsing	collision	spec		IR-SPEC §2.1
+botsingen	collisions	spec		IR-SPEC §2.1
+botst	collides	spec		IR-SPEC §2.1
+bouw	build	plain		false friend
+bouwt	builds	plain		
+boven	above	wire		`inputAboveComputation`
+breuk	rational	spec	an exact rational value	RUNTIME-SEMANTICS §2.1; `Breuk` in the production runtime is not renamed
+bron	source	wire		
+bron annotaties	statuteAnnotations	wire	the v0 field bronAnnotaties of a rule	
+bronnen	sources	wire		
+bronpad	sourcePath	wire		
+bronrecord	sourceReference	wire	the source record: snippet and line	IR-SPEC §4 calls it the source record
+bronrol	sourceRole	wire		
+bronroute	sourceRoute	plain	the route from the RegelSpraak source, beside the wire route	CLAUDE.md, gate 15
+bronsnippet	sourceSnippet	wire		`sourceReference.snippet`
+buiten	outside	plain	function word	
+canoniek	canonical	wire		
+canonieke	canonical	wire		
+cardinaliteit	cardinality	field		
+casus	case	spec	a case: a test situation	RUNTIME-SEMANTICS §5.7a
+cel	cell	wire		false friend
+cellen	cells	wire		
+cijfers	digits	wire		
+compileert	compiles	plain		
+concatenatie	concatenation	wire		
+conditie	condition	wire		
+consequentie	consequence	wire		
+consistentie	consistency	wire		
+consistenties	consistencies	wire		
+constante	boundDay	wire	the v0 node Constante for a bound day	
+constante	constant	plain	a constant in general	
+constante	contextValue	wire	the v0 node Constante for Rekendatum or Rekenjaar	
+consument	consumer	spec		RUNTIME-SEMANTICS §2.10
+contextwaarde	contextValue	wire		
+controle	check	wire		`CharacteristicCheck`, `RuleStatusCheck`
+creatie	creation	wire		
+creatiebudget	creationBudget	spec		RUNTIME-SEMANTICS §5.5
+creatiefase	creationPhase	plain		
+creatieguard	creationGuard	plain		
+creaties	creations	wire		
+criterium	criterion	plain		false friend
+daar	there	plain	function word	
+daarbij	also	plain	function word: daarbij, in addition	the token DAARBIJ_GELDT stays (RegelSpraak keyword)
+dag	day	wire		false friend
+dagdatum	dayDate	plain	a date with precision day	`Date` with precision `day`
+dagen	days	wire		
+dagentelling	dayCount	wire		
+dagsoort	dayKind	wire		
+dagsoort	dayKindDefinition	wire	the v0 node ResolvedDagsoort (rule layer)	
+dagsoort per eenheid	plural	wire	the v0 field dagsoortPerEenheid of a day kind	
+dagsoortdefinitie	dayKindDefinition	wire		
+dagsoorten	dayKindDefinitions	wire	the v0 list resolvedDagsoorten	
+dagsoorten	dayKinds	wire		
+dagsoortstap	dayKindStep	plain		
+dan	than	plain	function word: groter dan, greater than	false friend
+dan	then	plain	function word: als ... dan, if ... then	false friend
+dat	that	plain	function word	
+datum	date	wire		false friend
+datum in dagen	date	wire	the v0 node DatumInDagen	`Date` with precision `day`
+datum tijd	date	wire	the v0 node DatumTijd	`Date` with precision `millisecond`
+datumrekensom	dateArithmetic	plain		
+datums	dates	wire		false friend
+datumstap	dateStep	plain	a step of date arithmetic	
+datumtijd	dateTime	wire	a date with a time of day	`dateTimeWith`
+datumvouw	dateFold	spec		IR-SPEC §4.3
+de	the	plain	function word: the article	false friend
+decimaal	decimal	wire		`decimals`
+decimalen	decimals	wire		
+declaratie	declaration	spec		IR-SPEC §2
+declaraties	declarations	spec		IR-SPEC §2
+deel	part	wire		`parts`, `timeProportionalPart`
+deelselectie	subselection	spec		RUNTIME-SEMANTICS §3.4a
+deelt	divides	plain	deelt door: divides by	
+deelt	shares	plain	deelt X: shares X	
+defaultsgroep	defaultsGroup	spec		IR-SPEC §6.1
+definitie	definition	wire		
+degelijk	indeed	plain	function word: wel degelijk, indeed	
+dekking	coverage	spec		RUNTIME-SEMANTICS §8.4
+delen	divide	plain	the verb	
+delen	parts	wire	the parts of a text composition	
+deler	divisor	plain		false friend
+deling	division	spec		false friend; RUNTIME-SEMANTICS §5.6
+deponeert	deposits	spec		RUNTIME-SEMANTICS §5.11
+deponering	deposit	spec		RUNTIME-SEMANTICS §5.11
+derde	third	plain		
+deze	this	plain	function word: deze, dit: this, these	
+dezelfde	same	plain	function word: dezelfde X, the same X	
+diagnose	diagnostic	wire		false friend
+diep	deep	plain		
+diezelfde	same	plain	function word: diezelfde X, that same X	
+dimensie	dimension	wire		
+dimensie cel	dimensionCellRead	wire	the v0 node DimensieCel	
+dimensiecel	dimensionCell	wire		
+dimensies	dimensions	wire		
+dimensieselectie	dimensionSelection	wire		
+directe	direct	plain		
+dit	this	plain	function word	false friend
+documenten	documents	plain		
+documentfout	documentError	plain	a malformed IR document	
+documentvolgorde	documentOrder	plain		
+doel	target	wire		
+doelen	targets	wire		
+doelgastheer	targetHost	plain		
+doelpoging	targetAttempt	plain		
+domein	domain	wire		
+domeinen	domains	wire		
+door	by	plain	function word: door X, by X	false friend
+door	through	plain	function word: door ... heen, through	false friend
+doordat	because	plain	function word	
+doorheen	through	plain	function word	
+doorval	fallThrough	spec		RUNTIME-SEMANTICS §7.1
+draagt	carries	plain		
+dragen	carry	plain		
+drager	carrier	plain		false friend
+drempel	threshold	wire		
+drie	three	plain		
+dubbel	duplicate	plain		
+dubbele	duplicate	plain		
+dus	so	plain	function word: dus, so, thus	false friend
+duur	duration	wire		
+echte	real	plain		
+een	a	plain	function word: the indefinite article	
+een	one	plain	the numeral: een op een, one to one	
+eenheden	units	wire		
+eenheid	unit	wire		
+eenheidloze	unitless	spec		IR-SPEC §4.6
+eenheidstelsel	unitSystem	wire		
+eenheidstelsels	unitSystems	wire		
+eenheidsysteem	unitSystem	wire		
+eenmaal	once	plain	function word	
+eens	once	plain	function word	
+eenstaps	oneStep	spec		IR-SPEC §4.3
+eerder	earlier	wire		
+eerder of gelijk	earlierOrEqual	wire		
+eerst	first	plain	the adverb	
+eerste	first	wire		
+eerste paasdag	easterSunday	wire		`BuiltinCall.kind`
+effectieve	effective	plain		
+eigen	own	plain		
+eigenaar	host	wire	the v0 field eigenaar of a characteristic check	WF-100
+eigenaar	owner	wire	the declaration that scopes a member	`OriginSource.owner`
+eigenschap	property	field	a bean property (getter and setter)	
+eind	end	plain		
+einde	end	plain		
+eindigt	ends	plain		
+element objecttype	elementType	wire	the v0 field elementObjecttype	
+elementen	elements	wire		
+elementnaam	elementName	plain		
+elementtype	elementType	wire		
+elfproef	elevenTest	wire		
+elk	each	plain	function word	false friend
+elkaar	eachOther	plain	function word	
+elkaars	eachOther	plain	function word: elkaars, each other's	
+elke	each	plain	function word	
+emmer	bucket	spec		false friend; RUNTIME-SEMANTICS §3.2
+emmerscalair	bucketScalar	spec		RUNTIME-SEMANTICS §3.6, the asOfDate-bucket scalar
+en	and	plain	function word	false friend; not the language tag `en` (`bron.catala_en`)
+ene	one	plain	function word: de ene ... de andere, the one ... the other	
+enige	any	plain	function word: zonder enige X, without any X	
+enige	only	plain	function word: de enige X, the only X	
+enkel	single	plain	geen enkel: not a single	
+enkele	single	plain		
+enkelvoudige	single	plain		
+enumeratie	enumeration	wire		
+er	there	plain	function word	false friend
+erbij	with	plain	function word: erbij, with it; included	
+erboven	above	plain	function word: erboven, above it	
+erbuiten	outside	plain	function word: erbuiten, outside it	
+erflijn	inheritanceLine	plain	the chain of supertypes a type inherits along	
+ermee	with	plain	function word: ermee, with it	
+erna	after	plain	function word: erna, after it	
+ernaast	beside	plain	function word: ernaast, beside it	
+erover	over	plain	function word: erover, over it	
+ervoor	for	plain	function word: ervoor, for it; before it	
+even	equally	plain	even groot: equally large; an even cycle stays even	false friend
+exacte	exact	plain		
+excepties	exceptions	wire		
+expressie	expression	wire		
+extensie	extension	spec	an extension node of the IR	IR-SPEC, Method
+extensie	extension	field	the extension of an object type: its instances	
+faalt	fails	plain		
+factor naar canoniek	factorToCanonical	wire		
+factorvraag	factorQuestion	plain	the query for a unit's conversion factor	
+falen	fail	plain		
+familie	family	spec		IR-SPEC §2.4
+fase	phase	plain		
+fasen	phases	plain		
+feit	fact	wire		
+feitcreatie	factCreation	wire		
+feiten	facts	wire		
+feittype	factType	wire		
+feittypen	factTypes	wire		
+filterdeponering	filterDeposit	plain		
+filterfout	filterError	plain		
+filtervouw	filterFold	plain		
+fixpunt	fixpoint	spec		RUNTIME-SEMANTICS §5.3
+formaat	format	wire		
+fout	error	spec	an error on the error channel; a failure in general	RUNTIME-SEMANTICS §5.6
+fout	fault	spec	an executor's observable failure at load or evaluation, as a red case pins it	RUNTIME-SEMANTICS §5.11; the case field `expectedFault`
+fouten	errors	spec	errors on the error channel; failures in general	RUNTIME-SEMANTICS §5.6
+fouten	faults	spec	an executor's observable failures	RUNTIME-SEMANTICS §5.11
+functie	aggregation	wire	the v0 node Functie as an aggregation	
+functie	builtinCall	wire	the v0 node Functie as a builtin call	
+functie	function	wire	a function in general; a FunctionDef	
+gaat	goes	plain		
+gaat	precedes	plain	gaat voor: takes precedence	
+gastheer	host	wire		
+gat	gap	plain		false friend
+gebonden	bound	wire		`BoundDay`, `binder`
+gedateerd	dated	plain		
+gedeclareerd	declared	wire		
+gedeclareerde	declared	wire		
+gedeeld	divided	wire		`dividedBy`
+gedeelde	shared	plain		
+gedimensioneerd	dimensioned	plain		
+gedragen	carried	plain		
+gedurende	during	plain		keyword, decided at review
+geeft	gives	plain		
+geen	no	plain	function word: geen X, no X	
+geen	none	wire	the quantifier	
+geerfd	inherited	spec		RUNTIME-SEMANTICS §7.10
+geerfde	inherited	spec		RUNTIME-SEMANTICS §7.10
+gefilterd	filtered	plain		
+gegenereerd	generated	plain		
+gegenereerde	generated	plain		
+geheel	whole	wire		
+gehele	whole	wire		
+geld	money	plain	the Catala fixture geld	false friend
+geld	valid	wire	geld vanaf, geld tot: valid from, valid to	false friend; `validity`
+geldig	valid	wire		`validity`
+geldige	valid	wire		`validity`
+geldigheid	validity	wire		
+geldt	applies	plain		
+gelezen	read	plain		
+gelijk	equal	wire		
+gelijke	equal	wire		
+gelijke delen	equalShares	wire		`AllocationVersion.method`
+gelijkheid	equality	plain		
+gelijkspel	tie	plain		
+gelijkstelling	equation	wire		
+gelijste	listed	plain		
+gemaakt	made	plain		
+gemaakte	made	plain		
+gemarkeerd	marked	plain		
+gemeld	reported	plain		
+gemengd	mixed	plain		
+gemengde	mixed	plain		
+gemunte	minted	spec		RUNTIME-SEMANTICS §5.5
+genavigeerde	navigated	spec		IR-SPEC §4.1a
+generatie	generation	spec		RUNTIME-SEMANTICS §5.5
+genest	nested	plain		
+geneste	nested	plain		
+genoemde	named	plain		
+genomen	taken	plain		
+geordende	ordered	wire		
+geschreven	written	plain		
+getal	number	wire		
+getallen	numbers	wire		
+getalvouwen	numberFolds	plain		
+getypeerd	typed	plain		
+geval	case	spec	a case: a test situation	RUNTIME-SEMANTICS §5.7a
+gevolg	consequence	wire		
+gevuld	filled	wire		
+gevulde	filled	wire		`filledCount`
+gevuurd	fired	field	a Drools rule firing	
+geweigerd	refused	spec		RUNTIME-SEMANTICS §3.12
+geweigerde	refused	spec		RUNTIME-SEMANTICS §3.12
+gewicht	weight	spec	the weight of a recipient in a proportional allocation; the ASP predicate vdI_gewicht	RUNTIME-SEMANTICS §4.2
+gewone	ordinary	plain		
+gewoon	simply	plain	function word	
+gezien	seen	plain		
+graaf	graph	field	the rule graph	
+granulariteit	granularity	wire		
+grens	bound	spec	a limit a value is compared against; the from or to of a period	RUNTIME-SEMANTICS §3.10
+grens	boundary	spec	where a segment or period ends	IR-SPEC §4.3
+grenzen	bounds	spec		RUNTIME-SEMANTICS §3.10
+groep	group	wire		
+groepeer	group	plain	the verb stem	
+groepeer attribuut	orderingAttribute	wire	the v0 field groepeerAttribuut of an allocation	
+groepen	groups	wire		
+grondslag	base	plain	the base of a percentage (`percentageOf`)	
+groter	greater	wire		false friend
+groter of gelijk	greaterOrEqual	wire		
+haakjes	parentheses	plain		
+haalt	gets	plain	haalt X: gets X; haalt de drempel: reaches the threshold	
+haar	its	plain	function word: the possessive (her, its)	
+heeft	has	plain		
+heel	whole	wire		false friend
+heelperiode	wholePeriod	wire		
+heen	across	plain	function word: verb particle (over ... heen, door ... heen)	
+hele	whole	wire		false friend
+helemaal	entirely	plain	function word	
+hem	it	plain	function word: the object pronoun	false friend
+herhaald	repeated	plain		
+herhaling	repetition	plain		
+herkomst	origin	wire		
+herschaal	rescale	plain	the verb stem	
+het	it	plain	function word: the pronoun	false friend
+het	the	plain	function word: the article	false friend
+hetzelfde	same	plain	function word: hetzelfde X, the same X	
+hier	here	plain	function word	false friend
+hij	it	plain	function word: the pronoun (he, it)	
+hoe	how	plain	function word	false friend
+hoger	higher	plain		false friend
+hoogste	highest	plain		
+hoogste	most	wire	in ten hoogste	`atMost`
+hoogstens	atMost	plain	function word	
+hoort	belongs	plain	hoort bij: belongs to	
+hoort	hears	plain	the verb horen	
+houdt	holds	plain	a condition that holds	
+houdt	keeps	plain		
+hun	their	plain	function word	false friend
+identiteit	identity	spec		IR-SPEC §2.1
+iets	something	plain	function word	
+inclusief	inclusive	wire		`toInclusive`
+inconsistentie	inconsistency	spec		RUNTIME-SEMANTICS §1.2
+indien	if	plain	function word	
+ingang	entry	plain		
+ingevoegd	embedded	wire	the adjective	
+ingevoegd	embeddedExpression	wire	the v0 node Ingevoegd	
+ingevoegd	inserted	plain	a fact inserted into a Drools session	
+initialisatie	initialisation	wire		
+initialisaties	initialisations	wire		
+instantie	instance	wire		`InstanceSetUnion`
+instanties	instances	wire		
+invoer	input	wire		`inputAboveComputation`
+invoerwaarde	inputValue	plain		
+jaar	granularity	wire	the v0 field jaar of a whole-period check (true: year, false: month)	
+jaar	year	wire		
+jaargang	vintage	spec		RUNTIME-SEMANTICS §8.3
+jaren	years	wire		
+join rol	path	wire	the v0 field joinRol of a fact creation	
+juist	precisely	plain	function word	
+kaal	bare	plain		
+kaart	card	plain	a backlog card	
+kale	bare	plain		false friend
+kalender	calendar	spec		RUNTIME-SEMANTICS §3.8
+kan	can	plain	function word: the modal verb	false friend
+kanaal	channel	spec		RUNTIME-SEMANTICS §5.6
+kandidaten	candidates	plain		
+kant	side	plain		
+kanten	sides	plain		false friend
+keer	time	plain	an occurrence: een keer, twee keer	false friend
+kenmerk	characteristic	wire		
+kenmerk	characteristicCheck	wire	the v0 node Kenmerk: a characteristic check in a condition	
+kenmerkcheck	characteristicCheck	wire		
+kenmerkdoel	characteristicTarget	plain		
+kenmerken	characteristics	wire		
+kenmerktoekenning	characteristicAttribution	spec		IR-SPEC §3.1
+kenmerkvorm	characteristicForm	plain		
+kenmerkwaarde	characteristicValue	plain		
+keten	chain	spec		false friend; IR-SPEC §6.1
+keur	check	plain	the verb stem: keur X, check X	
+keuze	choice	plain		
+keuzetype	choiceType	plain	a sum type or an enumeration	`SumType`, `Enumeration`
+kiest	chooses	plain		
+kinderen	children	plain		
+klasse	class	plain		
+kleiner	less	wire		
+kleiner of gelijk	lessOrEqual	wire		
+kleinkind	grandchild	plain		
+klem	clamp	wire		
+klip	clip	spec		false friend; RUNTIME-SEMANTICS §3.10
+klipvouw	clipFold	plain		
+knip	clip	spec		RUNTIME-SEMANTICS §3.10
+knoop	node	wire		
+knopen	nodes	wire		
+komma	comma	plain		
+komt	comes	plain		
+kop	head	plain	the head of a block, a chain or a document	false friend
+kopie	copy	plain		
+koppeling	link	spec	a link between objects in a fact type	RUNTIME-SEMANTICS §5.7a
+koppelt	links	spec		RUNTIME-SEMANTICS §5.7a
+krijgen	get	plain		
+krijgt	gets	plain		
+kring	cycle	spec		IR-SPEC §5.3
+kringen	cycles	spec		IR-SPEC §5.3
+kruis	cross	plain		
+kwantificatie	quantification	plain		
+kwantor	quantifier	wire		
+kwantoren	quantifiers	wire		
+kwantorvouw	quantifierFold	wire		
+kwartaal	quarter	wire		
+laadt	loads	plain		
+laat	leaves	plain	laat ... achter, laat ... weg: leaves	
+laat	lets	plain	laat X Y: lets X do Y	
+laatste	last	wire		
+laden	load	plain		false friend
+lader	loader	spec		false friend; IR-SPEC §4.1
+landt	lands	plain		
+lang	long	plain		
+langs	along	plain	function word	
+later of gelijk	laterOrEqual	wire		
+latere	later	plain		
+leden	members	wire		false friend
+leeg	empty	wire		keyword, decided at review; `Predicate.kind` `empty`, `emptyFallback`
+leegtoets	emptyTest	wire	the predicate is leeg	`Predicate.kind` `empty`
+leegwaarde	emptyFallback	wire		
+lees	read	plain		false friend
+leest	reads	plain		
+lege	empty	wire		
+legt	lays	plain		
+lengte	length	wire		`ListLength`
+letterlijk	literal	wire	literal, verbatim	
+letterlijk	literalChunk	wire	the v0 node Letterlijk: a literal part of a text composition	
+levert	yields	plain		
+lexeem	lexeme	spec		IR-SPEC §4.1
+lezen	read	plain		
+lezer	reader	plain		
+lezing	read	wire	a read of a value or a cell	`TemporalRead`, `DimensionCellRead`; IR-SPEC §4.1a
+lezing	reading	plain	an interpretation of a source phrase	
+lezingen	readings	plain	interpretations of a source phrase	
+lezingen	reads	wire	reads of a value or a cell	`TemporalRead`, `DimensionCellRead`
+lid	member	wire		false friend
+lidfout	memberError	plain		
+lidmaatschap	membership	wire		
+lidwoord	article	plain		
+ligt	lies	plain		
+lijst	list	wire		
+lijstliteraal	listLiteral	wire		
+links	left	wire		false friend
+literaal	literal	wire		
+literalen	literals	wire		
+loopt	runs	plain		
+losse	separate	plain		
+lowert	lowers	plain	a Dutch inflection of the English verb lower	
+luid	loudly	plain		
+maak	make	plain		
+maakt	makes	plain		
+maal	times	wire		
+maand	month	wire		
+maanden	months	wire		
+macht	power	wire		
+markering	marking	plain		false friend
+matcht	matches	plain		
+mee	along	plain	function word: verb particle (telt mee, rekent mee, neemt mee)	
+meer	more	plain	function word	false friend
+meerdere	multiple	plain		
+meervoud	plural	wire		
+meervoudig	many	wire	the multiplicity of a role	
+meervoudige	many	wire	the multiplicity of a role	`many`
+meervoudige	multiple	plain	more than one, as in meervoudige periode	
+meervoudsvorm	pluralForm	plain		
+meld	report	plain	the verb stem	false friend
+melding	message	wire		false friend; `Diagnostic.message`; card meldingscodes
+meldt	reports	plain		
+met	with	plain	function word	false friend
+methode	method	wire		
+milliseconde	millisecond	wire		
+minste	least	wire	in ten minste	`atLeast`
+minstens	atLeast	plain	function word	
+minuut	minute	wire		
+modus	mode	wire		
+munt	mints	spec	an object creation makes a new object	false friend; RUNTIME-SEMANTICS §5.5
+na	after	plain	function word	false friend
+naam	name	wire		false friend
+naam meervoud	plural	wire	the v0 field naamMeervoud of a dimension	
+naamdelende	nameSharing	plain		CLAUDE.md, gate 12
+naamloze	unnamed	plain		
+naamtabel	nameTable	plain		`spec/proposals/v1-naamtabel.json`
+naar	to	plain	function word	
+naar beneden	floor	wire	the rounding mode	`Rounding.mode`
+naar boven	ceiling	wire	the rounding mode	`Rounding.mode`
+naar rato	proportional	wire		`AllocationVersion.method`
+naast	beside	plain	function word	
+nabij	near	plain	the opposite of verre: a local role membership	
+namen	names	wire		
+navigatie	navigation	wire		
+navigatie binding	navigation	wire	the v0 field navigatieBinding of a characteristic check	
+navigatie bindingen	path	wire	the v0 field navigatieBindingen of an attribute reference	
+navigatiebinding	navigation	wire	the v0 field navigatieBinding of a characteristic check	
+navigatiebindingen	path	wire	the v0 field navigatieBindingen of an attribute reference	
+neemt	takes	plain		
+negatie	negated	wire	the v0 field negatie	
+negatie	negation	spec		RUNTIME-SEMANTICS §5.3
+negatief	negative	wire		
+negatieve	negative	wire		
+negen	nine	plain		
+nergens	nowhere	plain	function word	
+net	just	plain	function word: net zo, just as	false friend
+niemand	nobody	plain	function word	
+niet	negated	wire	the v0 field niet	
+niet	not	plain	function word	
+niet negatief	nonNegative	wire		`Number.sign`
+niets	nothing	plain	function word	
+nieuw	new	plain		
+nieuw type	createdType	wire	the v0 field nieuwType of an object creation	
+noemer	denominator	wire		
+noemt	names	plain		
+nog	still	plain	function word	false friend
+nooit	never	plain	function word	
+nu	now	plain	function word	false friend
+nul	zero	wire		false friend
+nuldeler	zeroDivisor	plain		
+numeriek	number	wire	the datatype	`Number`
+numeriek	numeric	plain	the adjective	
+numeriek met exact	exactDigits	wire		`Predicate.kind`
+numerieke	numeric	plain		
+nummer	number	plain	an identifying number, not the datatype	
+objectcreatie	objectCreation	wire		
+objecten	objects	wire		
+objecttype	objectType	wire		
+objecttype	subjectType	wire	the v0 field objecttype of a start-point determination or an attribute reference	
+objecttypen	objectTypes	wire		
+om	to	plain	function word: om te, in order to; om X heen, around X	false friend
+omrekening	conversion	spec		IR-SPEC §2.5
+onbekend	unknown	plain		naamtabel: no v1 name (B16)
+onbekende	unknown	plain		
+onbepaald	indefinite	plain	the indefinite article (onbepaald lidwoord)	
+onbepaald	unspecified	wire		`Number.sign`
+onder	under	plain	function word	
+onderdeel	part	wire		`parts`
+onderdelen	parts	wire		
+onderweg	intermediate	plain	on the way, before the fixpoint	
+onderwerp	subject	wire		
+ongeacht	regardless	plain	function word	
+ongebonden	unbound	plain		
+ongedeclareerd	undeclared	plain		
+ongelezen	unread	plain		
+ongelijk	notEqual	wire		
+ongeordend	unordered	wire		
+ongeordende	unordered	wire		
+ongezet	unset	plain		
+onleesbaar	unreadable	plain		
+onopgelost	unresolved	wire		
+onopgeloste	unresolved	wire		
+ontbreekt	missing	plain		
+ontbrekende	missing	plain		
+ontkend	negated	wire		
+ontkende	negated	wire		
+ontkenning	negation	spec		RUNTIME-SEMANTICS §5.3
+ontvanger	recipient	spec	a recipient of an allocation	RUNTIME-SEMANTICS §4.1
+ontvangers	recipients	spec		RUNTIME-SEMANTICS §4.1
+onverbonden	unconnected	plain		
+onwaar	false	wire		keyword, decided at review; the boolean literal `false` on the wire
+ooit	ever	spec		RUNTIME-SEMANTICS §5.9
+ook	also	plain	function word	
+oordeel	verdict	spec		IR-SPEC §4.6
+op volgorde	ordered	wire		`AllocationVersion.method`
+opaak	opaque	plain		
+operanden	operands	wire		
+opgave	input	wire	a supplied value that a computation can also produce (opgave boven berekening)	`inputAboveComputation`
+opgesomd	enumerated	plain		
+opgesomde	enumerated	plain		
+opnieuw	again	plain	function word	
+ouder	parent	plain		
+over	about	plain	function word: about	false friend
+over	over	plain	function word: een vouw over X, a fold over X	false friend
+overerving	inheritance	spec		RUNTIME-SEMANTICS §7.10
+overlappende	overlapping	plain		
+overname	adoption	plain	a member taking over a declaration, such as a timeline	false friend
+overzijde	otherSide	plain		
+paar	pair	plain		false friend
+paasdag	easterSunday	wire	in eerste paasdag, the builtin	`BuiltinCall.kind`
+pad	path	wire		false friend
+parametergrens	parameterBound	plain		
+pas	only	plain	function word: pas na X, only after X	false friend
+pas	step	plain	the noun	false friend
+past	fits	plain		false friend
+patroon	pattern	plain		false friend
+peildatum	asOfDate	spec	the evaluation date a case carries	RUNTIME-SEMANTICS §8.1; the case field `asOfDate`
+percentage van	percentageOf	wire		`Binary.op`
+perelement	perElement	plain		
+periode	period	wire		`wholePeriod`
+periode	timeWindow	wire	the v0 node Periode	
+periode	wholePeriod	wire	the v0 field periode of a characteristic check	
+periodegrens	periodBoundary	plain		
+perioden	periods	wire		
+periodevenster	timeWindow	wire		
+periodevergelijking	periodComparison	plain		
+plaats	place	plain		
+plafond	cap	spec	an upper limit, such as the cap of a creation budget	RUNTIME-SEMANTICS §4.6
+plafond	ceiling	wire	rounding up	`Rounding.mode`
+plek	site	plain	a place in an expression where a read or a deposit happens	
+poort	gate	spec		RUNTIME-SEMANTICS §2.4
+populatie	population	spec		IR-SPEC §4.3
+positie	position	spec		IR-SPEC §4.1
+positief	positive	wire		
+precies	exactly	wire		
+precisie	precision	wire		
+predicaat	predicate	wire		
+presentatie	presentation	wire		
+primaire	primary	plain		
+procent	percent	plain		
+producent	producer	spec		false friend; IR-SPEC §4.3
+proef	trial	plain	a test fixture	
+raakt	touches	plain		
+rand	edge	spec	an edge of the dependency graph	false friend; IR-SPEC §5.2
+randen	edges	spec	edges of the dependency graph	IR-SPEC §5.2
+rang	rank	plain		false friend
+rangtelwoord	ordinal	plain		
+rapport	report	plain		false friend
+raster	grid	spec		false friend; RUNTIME-SEMANTICS §3.2
+rationaal	rational	spec		RUNTIME-SEMANTICS §2.1
+rato	ratio	wire		`ratioAttribute`
+rechts	right	wire		
+rechtvaardiging	justification	wire		
+recursief	recursive	wire		
+recursieve	recursive	wire		
+reden	reason	plain		naamtabel: no v1 name
+reeks	sequence	plain		false friend
+referentie	reference	wire		
+referentieveld	referenceField	plain		
+regel	line	wire	a line of a source text or a file	`line` of the source record
+regel	rule	wire		
+regel groepen	ruleGroups	wire		
+regeldoel	ruleTarget	wire		
+regeleinde	lineEnd	plain		
+regelgroep	ruleGroup	wire		
+regelnaam	ruleName	wire		
+regelplan	rulePlan	plain	the plan the truth-maintenance analysis yields per rule	CLAUDE.md, gate 12
+regels	rules	wire		
+regelversie	ruleStatusCheck	wire	the v0 node Regelversie: regelversie X is inconsistent	the wire keeps v0 `Regelversie` until its v1 form lands (B25)
+regelversie	ruleVersion	wire	a version of a rule	`RuleVersion`
+regelwaarde	ruleValue	plain		
+reikwijdte	scope	wire		
+reken	compute	plain	the verb stem	
+rekendatum	evaluationDate	wire		`ContextValue.name`
+rekenen	compute	plain		
+rekenjaar	evaluationYear	wire		`ContextValue.name`
+rekenkundig	halfAwayFromZero	wire	the rounding mode	`Rounding.mode`
+rekenregel	computingRule	spec	a rule with a computing version	IR-SPEC §3.1
+rekent	computes	plain		
+relatie	relation	spec		IR-SPEC §2.6
+relaties	relations	spec		IR-SPEC §2.6
+restant	remainder	wire		false friend; `remainderAttribute`
+resultaat	result	wire		
+richting	direction	plain		false friend
+richting nul	towardZero	wire		`Rounding.mode`
+rij	row	wire		`decisionTableRow`
+rijen	rows	wire		`decisionTableRow`
+rode	red	plain	the red corpus (`corpus/rood`)	false friend; CLAUDE.md, gate 8
+rol	role	wire		
+rolcheck	roleCheck	spec		RUNTIME-SEMANTICS §5.8a
+rolcontrole	roleCheck	spec		RUNTIME-SEMANTICS §5.8a
+rollen	roles	wire		
+rollidmaatschap	roleMembership	wire		
+rolnaam	roleName	wire		
+rolvuller	roleFiller	spec		IR-SPEC §4.6
+rood	red	plain	the red corpus (`corpus/rood`)	false friend; CLAUDE.md, gate 8
+rooster	grid	spec		false friend; RUNTIME-SEMANTICS §3.2
+saldo	balance	plain		
+samen	together	plain	function word: verb particle (voeg samen: merge; stel samen: compose)	false friend
+samengesteld	compound	wire		
+samengestelde	compound	wire		
+samenstelling	compound	wire	a composite condition	`Compound`
+scalair	scalar	spec		RUNTIME-SEMANTICS §3.6
+scalaire	scalar	spec		RUNTIME-SEMANTICS §3.6
+schaal	scale	spec		RUNTIME-SEMANTICS §2.9
+schaduwt	shadows	field	a name shadows another	
+schending	violation	plain		
+schoon	clean	plain		false friend
+schrijf	write	plain		
+schrijft	writes	plain		
+schrijver	writer	spec		RUNTIME-SEMANTICS §5.5
+schrijvers	writers	spec		RUNTIME-SEMANTICS §5.5
+scope rol	scope	wire	the v0 field scopeRol of a uniqueness	
+seconde	second	wire	the time unit	false friend
+selectie	selection	wire		
+sessie	session	spec		RUNTIME-SEMANTICS §5.7
+sessiedump	sessionDump	plain		
+setbron	setSource	spec		IR-SPEC §4.3
+setlezing	setRead	plain	a read of an attribute over a set of instances	
+setvouw	setFold	spec		IR-SPEC §4.3
+sinds	since	plain	function word	false friend
+situatie	situation	plain	the given situation of a scenario	
+slechts	only	plain	function word	
+sleutel	key	wire		`keys`
+sleutels	keys	wire		
+sluit	closes	plain		false friend
+sluit	excludes	plain	sluit uit: excludes	false friend
+sluit	includes	plain	sluit in: includes	false friend
+som	sum	wire		
+sonde	probe	plain		a figure of speech; card hernoemgereedschap asks a literal name
+soort	kind	wire		
+soort	presentation	wire	the v0 field soort of a rule version (gelijkstelling, berekening)	`initialisation` for the v0 soort INITIALISATIE
+soorten	kinds	wire		
+specificatie	specification	plain		
+speel	play	plain	the verb stem: speel X, play X	false friend
+speelt	plays	plain	a golden replays with its pinned outcome	gate 12 status `PLAYED`
+spelen	play	plain		
+spellingen	spellings	wire		
+spelt	spells	plain		false friend
+staan	stand	plain		
+staand	standing	spec		RUNTIME-SEMANTICS §7.8
+staande	standing	spec		RUNTIME-SEMANTICS §7.8
+staart	tail	plain		
+staat	stands	plain	the verb staan	
+staat	state	plain	the noun	
+stand	state	plain	the state of a path, a channel or a characteristic during evaluation	false friend
+standaard	default	wire		`Default`
+stap	step	wire		false friend; `PathStep`
+stapel	stack	spec	the effective stack of defaults per type	RUNTIME-SEMANTICS §7.10
+stappen	steps	wire		
+startend	starting	plain		
+startpunt	startPoint	wire		`StartPointDetermination`
+startpunt	startPointDetermination	wire	the v0 node ResolvedStartpunt	
+startpuntbepaling	startPointDetermination	wire		
+startpunten	startPointDeterminations	wire	the v0 list resolvedStartpunten	
+startpunten	startPoints	wire		
+steeds	still	plain	function word: nog steeds, still	false friend
+steekproef	sample	plain		
+stelsel	system	wire		
+stil	silent	plain		
+stille	silent	plain		
+strikt	strict	plain		
+structdomein	structDomain	wire		`StructType`, `domain`
+subdag	subDay	plain		
+subselectie	subselection	spec		RUNTIME-SEMANTICS §3.4a
+tabel	table	wire		`decisionTable`
+tak	arm	field	the then or the else of an IfThenElse	Match `arms`; RUNTIME-SEMANTICS §10.6 says branch
+tak	branch	spec	a rendering of the Drools transpiler: exec model or DRL text	RUNTIME-SEMANTICS §3.12
+tak	branch	wire	a selection of an InstanceSetUnion	`InstanceSetBranch`
+takdumps	branchDumps	plain	the dumps of the two Drools branches, compared case by case	CLAUDE.md, gate 12
+takken	arms	field	the then and the else of an IfThenElse	Match `arms`; RUNTIME-SEMANTICS §10.6 says branch
+takken	branches	wire	the selections of an InstanceSetUnion	`InstanceSetUnion.branches`
+takken	branches	spec	the two renderings of the Drools transpiler: exec model and DRL text	RUNTIME-SEMANTICS §3.12
+tarief	rate	spec	a value whose unit is a ratio, such as EUR/kg	IR-SPEC §2.5
+te	to	plain	function word: om te, to; te veel, too many	false friend
+tegen	against	plain	function word	
+tegenover	opposite	plain	function word	
+tegenpartij	counterpart	wire		`counterpartType`
+teken	sign	wire		
+tekst	text	wire		
+tekst reeks	textComposition	wire	the v0 node TekstReeks	
+tekstreeks	textComposition	wire		
+teksttak	textBranch	spec	the DRL-text branch of the Drools transpiler	RUNTIME-SEMANTICS §3.12
+tel	count	wire	the verb stem: tel X, count X	
+telbron	countSource	spec		IR-SPEC §4.3
+tellende	counting	plain		
+teller	counter	plain	a running count	false friend
+teller	numerator	spec	the upper part of a fraction or a unit	false friend; IR-SPEC §2.5
+telling	count	wire		false friend
+telt	counts	plain		false friend
+telwoord	numeral	plain		
+temporeel	temporal	wire		
+temporele	temporal	wire		
+ten	at	plain	function word: in ten minste, ten hoogste	false friend
+ten hoogste	atMost	wire		
+ten minste	atLeast	wire		
+terug	back	plain	function word: verb particle (leest terug, geeft terug)	
+teruggezet	reset	plain		
+terugval	fallback	wire		`emptyFallback`
+terugzetten	reset	plain		
+terwijl	while	plain	function word	
+tien	ten	plain		false friend
+tijd	time	wire		
+tijdlijn	timeline	wire		
+tijdlijnen	timelines	wire		
+tijdlijntotaal	timelineTotal	plain		
+tijdsduur	duration	wire		
+tijdseenheid	timeUnit	plain		
+tijdsevenredig	timeProportional	wire		`timeProportionalPart`
+tijdsevenredig deel	timeProportionalPart	wire		`BuiltinCall.kind`
+tijdvak	period	wire	a period of a timeline	
+toch	nevertheless	plain	function word	
+toe	to	plain	function word: verb particle (voeg toe: add; laat toe: allow)	false friend
+toekenning	assignment	spec	an assignment by a rule	IR-SPEC §3.1
+toekenning	memberInit	wire	the v0 node Toekenning: an initialisation in an object creation	
+toekenningen	assignments	spec	assignments by rules	IR-SPEC §3.1
+toekenningen	initialisations	wire	the v0 field toekenningen of an object creation	
+toets	test	wire		
+toetst	tests	wire		
+toewijzing	assignment	spec		IR-SPEC §3.1
+toone	toOne	field	a role with one filler	
+tot	to	wire		false friend
+tot de macht	power	wire		`Binary.op`
+totaal	total	wire		
+tussen	between	plain	function word	
+tussenstand	intermediateState	plain	a state before the fixpoint	
+tussenstap	pathStep	wire		
+tussenstappen	path	wire	the v0 field tussenstappen of a fact creation	
+tussenstappen	pathSteps	wire		
+twee	two	plain		false friend
+tweede	second	plain	the ordinal	
+tweeling	twin	plain		false friend
+tweemaal	twice	plain	function word	
+typemeervoud	typePlural	plain		
+typen	types	wire		
+typenaam	typeName	plain		
+typenpaar	typePair	spec		IR-SPEC §2.6
+typepaar	typePair	spec		IR-SPEC §2.6
+typering	typing	plain		false friend
+uit	of	wire	in the builtins jaar uit, maand uit, dag uit and the other time parts	`yearOf`, `monthOf`, `dayOf`
+uit	out	plain	function word: preposition and verb particle (komt uit, sluit uit)	
+uitkomst	outcome	spec		RUNTIME-SEMANTICS §5.10
+uitsluiting	exclusion	plain		
+uitweg	exit	plain		
+uitzondering	exception	wire		
+uitzonderingen	exceptions	wire		
+uniciteit	uniqueness	wire		
+uniciteit unie	uniqueness	wire	the v0 node ResolvedUniciteitUnie	one `Uniqueness` with several sources (B27)
+uniciteiten	uniquenesses	wire		
+unie	union	wire		false friend
+uniek	unique	plain		
+unies	unions	wire		false friend
+uniesleutel	unionKey	plain		
+uren	hours	wire		
+uur	hour	wire		
+valideer	validate	plain	the verb stem	
+valt	falls	plain		
+vanaf	from	wire		
+vang	catch	plain	the verb stem: vang X, catch X	false friend
+variabel	variable	wire		
+variabel startpunt	variableStart	wire	the v0 field variabelStartpunt of a timeline	
+variabele	variable	wire		
+variabelen	variables	wire		
+vast	fixed	wire		false friend; `fixedStart`
+vaste	fixed	wire		`fixedStart`
+veel	many	wire	naar veel: to-many	`many`
+veld	field	wire		
+velden	fields	wire		
+venster	window	wire		`TimeWindow`
+venstergrens	windowBound	plain		
+ver	far	plain		false friend
+verandert	changes	plain		
+verbindende	connecting	wire		`connectingRole`
+verdeling	allocation	wire		
+verdelingen	allocations	wire		
+verder	further	plain	function word	false friend
+verdringing	displacement	plain		
+verdringt	displaces	plain		
+verdrongen	displaced	plain		
+vereist	required	plain		
+vergeleken	compared	plain		
+vergelijk	compare	plain	the verb stem	
+vergelijker	comparator	plain		
+vergelijking	comparison	wire		
+verhouding	ratio	wire		
+verhuist	moves	plain		
+verminderd	reduced	wire		`reducedBy`
+verminderd met	reducedBy	wire		`Binary.op`
+verre	remote	plain	a role membership along a navigation	false friend
+verre rollidmaatschap	roleMembership	wire	the v0 node VerreRollidmaatschap	
+vers	fresh	plain		false friend
+verschil	difference	plain		
+verschillen	differ	plain		
+verschillende	different	plain		
+versie	version	wire		
+versies	versions	wire		
+verslag	report	plain		
+vervalt	lapses	plain		
+verwacht	expected	plain		the case field `expected`
+verwachting	expectation	plain	an expected outcome of a case	the case field `expected`
+verwachtingen	expectations	plain		the case field `expected`
+verwijzing	reference	wire		
+verworpen	rejected	plain		
+verzamel	collect	plain	the verb stem	
+verzameling	set	wire		`stepsAfterSet`
+vier	four	plain		false friend
+vijf	five	plain		
+vind	find	plain	the verb stem	
+vindt	finds	plain		
+vlak	flat	plain		
+vlakke	flat	plain		
+vocabulaire	vocabulary	wire		
+vocabulaires	vocabularies	wire		
+voeg	add	plain	the verb stem: voeg toe, add; voeg in, insert; voeg samen, merge	
+volgende	next	plain		
+volgens	per	plain	function word: volgens X, according to X	
+volgorde	order	spec		RUNTIME-SEMANTICS §5.11
+volgordes	orders	spec		RUNTIME-SEMANTICS §5.11
+volgt	follows	plain		
+volledige	full	plain		
+voor	before	plain	function word: voor de lezing, before the read	
+voor	for	plain	function word	
+vooraan	first	plain	function word: vooraan, at the front	
+voorbeeld	example	plain		
+voorheen	formerly	plain	function word	
+voorwaarde	condition	wire		
+voorwaarde	justification	wire	a Default of a prioritized-defaults group	IR-SPEC §6.1
+voorwaardelijke	conditional	plain		
+voorzetsel	preposition	wire		
+vorige	previous	plain		
+vorm	form	wire		`Origin.form`, `namedForm`
+vormen	forms	wire		
+vormnaam	formName	wire		
+vouw	fold	wire		
+vouwbron	foldSource	spec		RUNTIME-SEMANTICS §3.4b
+vouwen	folds	wire		
+vouwfilter	foldFilter	wire	the `filter` of a fold	
+vouwt	folds	wire		
+vreemd	foreign	plain		
+vreemde	foreign	plain		
+vrij	free	plain		
+vuller	filler	spec		RUNTIME-SEMANTICS §5.8a
+vulling	filling	plain		
+vult	fills	plain		
+vuren	fire	field	a Drools rule firing	
+vuringen	firings	field	Drools rule firings	
+vuur	fire	field	a Drools rule firing	
+vuurt	fires	field	a Drools rule firing	
+waar	true	wire		keyword, decided at review; false friend; the boolean literal `true` on the wire
+waar	where	plain	function word	false friend
+waarbij	where	plain	function word: waarbij, in which	
+waarde	value	wire		
+waarden	labels	wire	the v0 field waarden of an enumeration	
+waarden	values	wire		
+waardevouw	valueFold	spec		IR-SPEC §4.3
+waarin	where	plain	function word: waarin, in which	
+waarnemer	observer	plain		
+waarop	which	plain	function word: waarop, on which	
+waarschuwing	warning	wire		`Diagnostic.severity`
+waarschuwt	warns	plain		
+waarvan	whose	plain	function word	
+wacht	guard	spec	the noun	RUNTIME-SEMANTICS §5.5
+wacht	waits	plain	the verb wachten	
+wandeling	walk	spec		IR-SPEC §4.3
+want	because	plain	function word	false friend
+wat	what	plain	function word	false friend
+wederkerig	reciprocal	wire		
+wederkerige	reciprocal	wire		
+weergave	rendering	plain	a rendering of the truth-maintenance analysis: DRL text or PatternDSL	CLAUDE.md, gate 12
+weg	away	plain	function word: verb particle (laat weg)	
+weg van nul	awayFromZero	wire		`Rounding.mode`
+weiger	refuse	spec		RUNTIME-SEMANTICS §3.12
+weigeren	refuse	spec		RUNTIME-SEMANTICS §3.12
+weigering	refusal	spec		RUNTIME-SEMANTICS §3.12
+weigert	refuses	spec		RUNTIME-SEMANTICS §3.12
+wel	indeed	plain	function word: an emphasis particle, wel X: does X after all	
+welk	which	plain	function word	false friend
+welke	which	plain	function word	
+wereld	world	plain		
+werkwoord	verb	plain		
+wie	who	plain	function word	
+wier	whose	plain	function word	false friend
+wijkt	deviates	plain	wijkt af: deviates	
+wijst	points	plain	wijst naar: points to	
+wikkel	wrapper	plain		
+wint	wins	plain		false friend
+woord	word	plain		
+woorden	words	plain		
+worden	be	plain	function word: the passive auxiliary, worden geweigerd: are refused	false friend
+wordt	becomes	plain	function word: wordt X, becomes X	
+wordt	is	plain	function word: the passive auxiliary, wordt geweigerd: is refused	
+wortel	root	plain	the root of a tree or a graph	
+wortel	squareRoot	wire	the builtin	`BuiltinCall.kind`
+zaak	case	spec	a case document in a test	RUNTIME-SEMANTICS §5.7a
+ze	they	plain	function word: the pronoun (she, they)	
+zelf	self	plain	function word: X zelf, X itself	
+zelfde	same	plain		
+zelfgetypeerde	selfTyped	plain		
+zelflezing	selfRead	plain		
+zelfstandig	independent	plain	the adjective in general	
+zelfstandig	nominal	wire	a characteristic kind	`Characteristic.kind`
+zes	six	plain		false friend
+zet	set	plain	the verb stem: zet X, set X	
+zich	itself	plain	function word: the reflexive pronoun	
+zichzelf	itself	plain	function word	
+ziet	sees	plain		
+zij	it	plain	function word: the pronoun (she, it, they)	
+zijde	side	plain		
+zijden	sides	plain		
+zijn	are	plain	function word: the verb	
+zijn	its	plain	function word: the possessive	
+zijtafel	sideTable	spec		IR-SPEC §2.12
+zin	sentence	spec	a sentence of a message or of a source text	IR-SPEC §4.6
+zo	so	plain	function word	false friend
+zoals	like	plain	function word	
+zodra	once	plain	function word: zodra, as soon as	
+zoek	find	plain	the verb stem: zoek X, find X	
+zonder	without	plain	function word	
+zusterrol	sisterRole	spec		RUNTIME-SEMANTICS §5.7a
