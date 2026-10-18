@@ -497,9 +497,8 @@ A gate that gets no floor carries one sentence in its script saying why.
 
 - Every identifier is English: classes, interfaces, records, enums and
   their constants, methods, fields, variables, OCaml modules, types,
-  constructors and functions, grammar rules, ASP predicates, shell
-  variables, CLI flags and test names; so is every file and directory
-  name.
+  constructors and functions, ASP predicates, shell variables, CLI flags
+  and test names; so is every file and directory name.
 - Where the wire has a name for a concept, the code uses it
   (`emptyFallback`, not `leegwaarde`). `scripts/lib/naming/glossary.tsv`
   gives the English word for the Dutch words in the code, with its source
@@ -507,7 +506,10 @@ A gate that gets no floor carries one sentence in its script saying why.
 - Dutch, as authored: domain content (the Jutterswet, declared names,
   RegelSpraak sources, case labels, the `jutterswet-*` names) and the
   RegelSpraak keywords (the lexer's literals and the token names that
-  spell them).
+  spell them); and the parser rules and labels of the RegelSpraak grammar,
+  which follow the Dutch RegelSpraak specification, with the names ANTLR
+  generates from them (`FeitTypeNaamContext`, `ctx.feitTypeNaam()`,
+  `visitFeitTypeNaam`) (maintainer decision 2026-10-18).
 - Not renamed, each for its reason: the production runtime under
   `backends/drools/src/main/java/dev/uchar/regelspraak/runtime/` (gate 1
   recognises a copy by its names), the `toka/` zone, v0 names where they
