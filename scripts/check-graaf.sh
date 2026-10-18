@@ -20,7 +20,7 @@
 #    that is what is compared. An edge over a population, a relation or a channel runs over a node the graph
 #    does not draw: it is counted per class (producer list, node, consumer list) and reported, not compared.
 #    Every golden the loader reads must give EQUAL sets. A difference fails, unless it is listed below in
-#    VERSCHIL_BEWUST, one projected line per entry with its reason; a listed line that no longer differs, or
+#    DELIBERATE_DIFFERENCE, one projected line per entry with its reason; a listed line that no longer differs, or
 #    whose golden is gone or refused, is a stale entry and fails as well (the check-noop pattern).
 #    A golden the loader refuses (a form this backend does not carry, IrLoader.Refusal) cannot be compared;
 #    each is reported with the refused form and the number of verifier dependencies nobody compared there.
@@ -45,7 +45,7 @@ fail() { echo "check-graaf: FAIL — $*" >&2; exit 1; }
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
 # Lower bounds, never equalities: they catch SHRINK while growth needs no bump, so an ordinary corpus card
 # touches no protected script. Raised deliberately, at an occasion. Accepted weakness, recorded rather than
-# hidden: a count that stays equal while its content shifted passes; VERSCHIL_BEWUST and the per-golden
+# hidden: a count that stays equal while its content shifted passes; DELIBERATE_DIFFERENCE and the per-golden
 # comparison are what cover that direction. A deliberate removal lowers the floor in the same commit.
 # Raised the same day (fix round on the union of the wave), at the arrival of jutterswet-erfketen: the first
 # golden with a rule -> rule dependency over a subtype chain, in both directions (an attribute written on the
@@ -56,8 +56,8 @@ fail() { echo "check-graaf: FAIL — $*" >&2; exit 1; }
 # fails on the golden's three chain dependencies. The union of the wave and that fix round brought 5 goldens
 # the loader reads, 4 dependencies and 4 goldens with a bron.rgs.
 EXPECTED_MIN_GOLDENS=234   # 2026-09-26 at the landing of the wave before the move: measured 234 (goldens the loader reads, compared with the verifier)
-EXPECTED_MIN_AFHANKELIJK=116   # 2026-09-26 at the landing of the wave before the move: measured 116 (dependencies compared, every form of the rule layer)
-EXPECTED_MIN_BRONROUTE=98   # 2026-09-26 at the landing of the wave before the move: measured 98 (goldens with a bron.rgs, bron route against wire route)
+EXPECTED_MIN_DEPENDENT=116   # 2026-09-26 at the landing of the wave before the move: measured 116 (dependencies compared, every form of the rule layer)
+EXPECTED_MIN_SOURCE_ROUTE=98   # 2026-09-26 at the landing of the wave before the move: measured 98 (goldens with a bron.rgs, bron route against wire route)
 EXPECTED_MIN_TESTS=23   # 2026-09-26 at the landing of the wave before the move: measured 23 (the graph's unit tests under backends/drools/src/source-route)
 
 # --- the deliberate differences (reason-carrying; fails when stale) ------------------------------
@@ -70,7 +70,7 @@ EXPECTED_MIN_TESTS=23   # 2026-09-26 at the landing of the wave before the move:
 # 2026-09-26); and an object creation assigning an inherited member that a form reads on a strict subtype of
 # the created type, which the creation never mints, since creation is not polymorphic and ch. 5.1 closes its
 # write upward only (the entries below).
-VERSCHIL_BEWUST=(
+DELIBERATE_DIFFERENCE=(
     'jutterswet-wrakboeking|graaf|objectCreations|boek een strandrecht bij elk wrakrecht|attr|grondslag|rules|bereken de bergingsvergoeding van een wrakrecht|the creation mints a Strandrecht and sets its grondslag; the rule reads grondslag on the subtype Wrakrecht, which the creation never mints'
     'jutterswet-wrakboeking-rgs|graaf|objectCreations|boek een strandrecht bij elk wrakrecht|attr|grondslag|rules|bereken de bergingsvergoeding van een wrakrecht|the source of jutterswet-wrakboeking, the same creation and the same read'
     'jutterswet-wrakboekwaarde|graaf|objectCreations|boek een strandrecht bij elk wrakrecht|attr|grondslag|rules|bereken de bergingsvergoeding van een wrakrecht|the creation and the read of jutterswet-wrakboeking, with a value computed on the created Strandrecht beside them'
@@ -115,7 +115,7 @@ while IFS= read -r ir; do
     printf 'document\t%s\n' "$ir" >>"$TMP/randklassen"
     "$VERIFIER" --dependency-edges "$ir" >"$TMP/edges" 2>"$TMP/edges.err" \
         || { cat "$TMP/edges.err" >&2; fail "$ir: the verifier does not print its dependency edges"; }
-    LC_ALL=C awk -F'\t' -v OFS='\t' -v doc="$ir" -v klassen="$TMP/randklassen" '
+    LC_ALL=C awk -F'\t' -v OFS='\t' -v doc="$ir" -v classes="$TMP/randklassen" '
         function nrm(s) { sub(/ #[0-9]+$/, "", s); gsub(/[ \t]+/, " ", s); sub(/^ /, "", s); sub(/ $/, "", s); return tolower(s) }
         function lijst(p,   d) { if (p !~ /^\/rules\/[A-Za-z]+\/[0-9]/) return ""; split(p, d, "/"); return d[3] }
         NF != 6 { print "ONLEESBAAR", doc, $0; next }
@@ -152,7 +152,7 @@ awk -F'\t' -v dir="$TMP/v" '
     }
     { print $2 > (f "." $1) }' "$TMP/randklassen"
 
-n_compared=0; n_deps=0; n_refused=0; n_refused_deps=0; n_refused_buiten=0
+n_compared=0; n_deps=0; n_refused=0; n_refused_deps=0; n_refused_outside=0
 : >"$TMP/verschil"; : >"$TMP/geweigerd"; : >"$TMP/vergeleken"; : >"$TMP/binnen"; : >"$TMP/buiten"
 for i in $(seq 1 "$n_goldens"); do
     ir=$(cat "$TMP/v/$i.doc")
@@ -161,10 +161,10 @@ for i in $(seq 1 "$n_goldens"); do
     vdeps=$(grep -c . "$TMP/v/$i.rand")
     if [ -f "$TMP/g/$i.weigering" ]; then
         n_refused=$((n_refused + 1)); n_refused_deps=$((n_refused_deps + vdeps))
-        n_refused_buiten=$((n_refused_buiten + $(grep -c . "$TMP/v/$i.buiten")))
-        vorm=$(sed 's/^form not carried by the v0 Drools backend: \([^ ]*\).*/\1/' "$TMP/g/$i.weigering") \
+        n_refused_outside=$((n_refused_outside + $(grep -c . "$TMP/v/$i.buiten")))
+        form_kind=$(sed 's/^form not carried by the v0 Drools backend: \([^ ]*\).*/\1/' "$TMP/g/$i.weigering") \
             || fail "sed over the refusal of $golden"
-        printf '%s\t%s\t%s\n' "$vorm" "$golden" "$vdeps" >>"$TMP/geweigerd"
+        printf '%s\t%s\t%s\n' "$form_kind" "$golden" "$vdeps" >>"$TMP/geweigerd"
         continue
     fi
     n_compared=$((n_compared + 1)); n_deps=$((n_deps + vdeps))
@@ -175,15 +175,15 @@ for i in $(seq 1 "$n_goldens"); do
     LC_ALL=C sort -u -o "$TMP/g/$i.rand" "$TMP/g/$i.rand" || fail "sort over $golden"
     LC_ALL=C comm -13 "$TMP/v/$i.rand" "$TMP/g/$i.rand" >"$TMP/alleen-graaf" || fail "comm over $golden"
     LC_ALL=C comm -23 "$TMP/v/$i.rand" "$TMP/g/$i.rand" >"$TMP/alleen-verifier" || fail "comm over $golden"
-    for kant in graaf verifier; do
-        awk -F'\t' -v OFS='\t' -v golden="$golden" -v kant="$kant" \
-            '{ $1 = golden OFS kant; print }' "$TMP/alleen-$kant" >>"$TMP/verschil" || fail "awk over $golden"
+    for side in graaf verifier; do
+        awk -F'\t' -v OFS='\t' -v golden="$golden" -v side="$side" \
+            '{ $1 = golden OFS kant; print }' "$TMP/alleen-$side" >>"$TMP/verschil" || fail "awk over $golden"
     done
 done
 
 # the listed differences, in the same tab form; an entry must carry all nine fields, the last its reason
 : >"$TMP/bewust"
-for e in ${VERSCHIL_BEWUST[@]+"${VERSCHIL_BEWUST[@]}"}; do
+for e in ${DELIBERATE_DIFFERENCE[@]+"${DELIBERATE_DIFFERENCE[@]}"}; do
     [ "$(printf '%s' "$e" | awk -F'|' '{ print NF }')" -eq 9 ] && [ -n "${e##*|}" ] \
         || fail "VERSCHIL_BEWUST entry is not '<golden>|<graaf|verifier>|<producer list>|<producer>|<attr|char>|<member>|<consumer list>|<consumer>|<reason>': $e"
     printf '%s\n' "${e%|*}" | tr '|' '\t' >>"$TMP/bewust"
@@ -205,24 +205,24 @@ fi
 [ "$n_compared" -gt 0 ] || fail "no golden was compared (an empty comparison is a failure, never silently green)"
 [ "$n_compared" -ge "$EXPECTED_MIN_GOLDENS" ] \
     || fail "$n_compared goldens compared, but EXPECTED_MIN_GOLDENS pins at least $EXPECTED_MIN_GOLDENS — the comparison shrank (a deliberate removal lowers the floor in the same commit)"
-[ "$n_deps" -ge "$EXPECTED_MIN_AFHANKELIJK" ] \
-    || fail "$n_deps dependencies compared, but EXPECTED_MIN_AFHANKELIJK pins at least $EXPECTED_MIN_AFHANKELIJK — the comparison shrank (a deliberate removal lowers the floor in the same commit)"
+[ "$n_deps" -ge "$EXPECTED_MIN_DEPENDENT" ] \
+    || fail "$n_deps dependencies compared, but EXPECTED_MIN_AFHANKELIJK pins at least $EXPECTED_MIN_DEPENDENT — the comparison shrank (a deliberate removal lowers the floor in the same commit)"
 
-echo "check-graaf: spec leg — $n_compared of $n_goldens goldens compared, $n_deps dependencies equal to the verifier's ch. 5 edges (floors $EXPECTED_MIN_GOLDENS / $EXPECTED_MIN_AFHANKELIJK), $(grep -c . "$TMP/bewust") listed difference(s)"
+echo "check-graaf: spec leg — $n_compared of $n_goldens goldens compared, $n_deps dependencies equal to the verifier's ch. 5 edges (floors $EXPECTED_MIN_GOLDENS / $EXPECTED_MIN_DEPENDENT), $(grep -c . "$TMP/bewust") listed difference(s)"
 # per class (producer list -> node -> consumer list): the dependencies compared and the verifier edges they
 # come from, one dependency standing for every edge that differs from it only in its kind or its type
-n_binnen=$(grep -c . "$TMP/binnen"); n_buiten=$(grep -c . "$TMP/buiten")
-echo "check-graaf: compared per class — $n_deps dependencies from $n_binnen verifier edges over an attribute or characteristic:"
+n_within=$(grep -c . "$TMP/binnen"); n_outside=$(grep -c . "$TMP/buiten")
+echo "check-graaf: compared per class — $n_deps dependencies from $n_within verifier edges over an attribute or characteristic:"
 awk -F'\t' '
     FILENAME == ARGV[1] { dep[$2 " -> " $4 " -> " $6]++; next }
     { randen[$1]++ }
     END { for (k in randen) printf "%d\t%s\t%d\n", dep[k], k, randen[k] }' "$TMP/vergeleken" "$TMP/binnen" \
     | LC_ALL=C sort -t "$(printf '\t')" -k1,1nr -k2,2 \
     | awk -F'\t' '{ printf "    %d %s (from %d edge%s)\n", $1, $2, $3, ($3 == 1 ? "" : "s") }'
-echo "check-graaf: outside the comparison — $n_buiten of the $((n_binnen + n_buiten)) verifier edges on the compared goldens run over a population, relation or channel, a node the graph does not draw$([ "$n_buiten" -gt 0 ] && echo '; per class:')"
+echo "check-graaf: outside the comparison — $n_outside of the $((n_within + n_outside)) verifier edges on the compared goldens run over a population, relation or channel, a node the graph does not draw$([ "$n_outside" -gt 0 ] && echo '; per class:')"
 LC_ALL=C sort "$TMP/buiten" | uniq -c | LC_ALL=C sort -k1,1nr -k2 | sed 's/^ */    /'
 if [ "$n_refused" -gt 0 ]; then
-    echo "check-graaf: not comparable — $n_refused golden(s) the loader refuses, carrying $n_refused_deps verifier dependencies and $n_refused_buiten edge(s) outside the projection nobody compared:"
+    echo "check-graaf: not comparable — $n_refused golden(s) the loader refuses, carrying $n_refused_deps verifier dependencies and $n_refused_outside edge(s) outside the projection nobody compared:"
     cut -f1 "$TMP/geweigerd" | LC_ALL=C sort | uniq -c | sort -rn | sed 's/^ */    /'
     awk -F'\t' '$3 > 0 { printf "    %s: %s dependencies (%s)\n", $2, $3, $1 }' "$TMP/geweigerd"
 fi
@@ -247,9 +247,9 @@ javac -cp "$CP:$JUNIT" -d "$TMP/klassen" $SRC 2>"$TMP/javac.err" || { cat "$TMP/
 # tail of the output does not: a route failure's message carries two whole renders, which push the test names
 # out of any tail (measured: 129 lines for two red goldens, their names on lines 3 and 59). Output that names no
 # failing test (a class that does not load, a discovery error) is shown as its tail instead.
-junit_rood() {
-    fouten=$(printf '%s\n' "$1" | grep -E '^(Failures \([0-9]+\):|  JUnit Jupiter:|    => )')
-    if [ -n "$fouten" ]; then printf '%s\n' "$fouten" >&2; else printf '%s\n' "$1" | tail -40 >&2; fi
+junit_red() {
+    mismatches=$(printf '%s\n' "$1" | grep -E '^(Failures \([0-9]+\):|  JUnit Jupiter:|    => )')
+    if [ -n "$mismatches" ]; then printf '%s\n' "$mismatches" >&2; else printf '%s\n' "$1" | tail -40 >&2; fi
     printf '%s\n' "$1" | grep -E '^\[ *[0-9]+ tests (found|skipped|successful|failed|aborted) *\]$' >&2
 }
 
@@ -257,17 +257,17 @@ junit_rood() {
 junit() {
     out=$(java -jar "$JUNIT" execute --class-path "$CP:$TMP/klassen" "$@" --details=summary --disable-banner 2>&1)
     status=$?
-    if [ $status -ne 0 ]; then junit_rood "$out"; return 1; fi
+    if [ $status -ne 0 ]; then junit_red "$out"; return 1; fi
     ok=$(printf '%s\n' "$out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests successful *\]$/\1/p' | tail -1)
     skipped=$(printf '%s\n' "$out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests skipped *\]$/\1/p' | tail -1)
-    [ -n "$ok" ] && [ "${skipped:-1}" -eq 0 ] || { junit_rood "$out"; return 1; }
+    [ -n "$ok" ] && [ "${skipped:-1}" -eq 0 ] || { junit_red "$out"; return 1; }
     echo "$ok"
 }
 
-n_rgs=$(find corpus/golden -name bron.rgs | grep -c .)
+n_rgs=$(find corpus/golden -name source_name.rgs | grep -c .)
 [ "$n_rgs" -gt 0 ] || fail "no corpus/golden/**/bron.rgs found (an empty route comparison is a failure)"
-[ "$n_rgs" -ge "$EXPECTED_MIN_BRONROUTE" ] \
-    || fail "$n_rgs goldens carry a bron.rgs, but EXPECTED_MIN_BRONROUTE pins at least $EXPECTED_MIN_BRONROUTE — the route comparison shrank (a deliberate removal lowers the floor in the same commit)"
+[ "$n_rgs" -ge "$EXPECTED_MIN_SOURCE_ROUTE" ] \
+    || fail "$n_rgs goldens carry a bron.rgs, but EXPECTED_MIN_BRONROUTE pins at least $EXPECTED_MIN_SOURCE_ROUTE — the route comparison shrank (a deliberate removal lowers the floor in the same commit)"
 routes=$(junit --select-class dev.uchar.regelspraak.graaf.GraphSourceRouteTest) \
     || fail "the route comparison is red: the graph of a golden's ir.json differs from the graph of its bron.rgs (above)"
 [ "$routes" -eq "$n_rgs" ] \
@@ -277,5 +277,5 @@ tests=$(junit --scan-class-path "$TMP/klassen" --exclude-classname '.*GraphSourc
 [ "$tests" -gt 0 ] || fail "the graph's unit tests ran nothing (an empty suite is a failure)"
 [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
     || fail "the graph's unit tests ran $tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
-echo "check-graaf: route leg — the graph of the wire equals the graph of the source on all $routes goldens with a bron.rgs (floor $EXPECTED_MIN_BRONROUTE); $tests unit tests green (floor $EXPECTED_MIN_TESTS)"
+echo "check-graaf: route leg — the graph of the wire equals the graph of the source on all $routes goldens with a bron.rgs (floor $EXPECTED_MIN_SOURCE_ROUTE); $tests unit tests green (floor $EXPECTED_MIN_TESTS)"
 echo "check-graaf: PASS"

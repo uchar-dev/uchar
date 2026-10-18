@@ -40,7 +40,7 @@ let run_clingo text =
    undone ([Model.unescape_str]), so a reason that quotes a declared name
    reads as ref prints it; a reason without escapes — every one before the
    shared parameter fail-fast — comes out byte for byte as before. *)
-let diagnose program =
+let diagnostic program =
   let relaxed =
     String.concat "\n"
       (List.filter

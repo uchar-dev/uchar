@@ -89,7 +89,7 @@ while IFS= read -r src; do
     diffcount=$((diffcount + 1))
   fi
   rm -f "$raw" "$out"
-done < <(find corpus/golden -name bron.catala_en | sort)
+done < <(find corpus/golden -name source_name.catala_en | sort)
 
 [ $((pass + diffcount + genfail)) -gt 0 ] \
   || fail "no catala goldens found under corpus/golden (an empty set is a failure)"

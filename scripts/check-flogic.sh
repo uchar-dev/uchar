@@ -93,7 +93,7 @@ while IFS= read -r src; do
     diffcount=$((diffcount + 1))
   fi
   rm -f "$raw" "$out"
-done < <(find corpus/golden -name bron.flogic | sort)
+done < <(find corpus/golden -name source_name.flogic | sort)
 
 [ $((pass + diffcount + emitfail)) -gt 0 ] \
   || fail "no flogic goldens found under corpus/golden (an empty set is a failure)"

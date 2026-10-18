@@ -37,12 +37,12 @@ type otdecl = {
   o_name : string;
   mutable o_super : (string * int) option;
   mutable o_attrs : (string * A.datatype * int) list; (* source order *)
-  mutable o_characteristics : (string * A.kenmerk_soort * int) list;
+  mutable o_characteristics : (string * A.characteristic_kind_type * int) list;
   mutable o_bases : (string * expr * string * int) list;
       (* the barred class-level defaults: attribute, value, declared id, line *)
 }
 
-type ftdecl = { f_name : string; mutable f_roles : (string * A.rol * int) list }
+type ftdecl = { f_name : string; mutable f_roles : (string * A.role_ref * int) list }
 
 type model = {
   mutable otypes : otdecl list; (* source order *)
@@ -61,43 +61,43 @@ let find_ft m n = List.find_opt (fun f -> f.f_name = n) m.ftypes
 let reserved_marker = "feittype"
 
 let sign_of ~line = function
-  | "onbepaald" -> A.Onbepaald
-  | "niet_negatief" -> A.Niet_negatief
-  | "negatief" -> A.Negatief
-  | "positief" -> A.Positief
+  | "onbepaald" -> A.Unspecified
+  | "niet_negatief" -> A.Non_negative
+  | "negatief" -> A.Negative
+  | "positief" -> A.Positive
   | other ->
       refuse ~line "the sign %s: numeriek(...) takes onbepaald, niet_negatief, negatief or positief"
         other
 
 let characteristic_kind_of ~line = function
-  | "bijvoeglijk" -> A.Bijvoeglijk
-  | "bezittelijk" -> A.Bezittelijk
-  | "zelfstandig" -> A.Zelfstandig
+  | "bijvoeglijk" -> A.Adjectival
+  | "bezittelijk" -> A.Possessive
+  | "zelfstandig" -> A.Nominal
   | other -> refuse ~line "the characteristic kind %s: kenmerk(...) takes bijvoeglijk, bezittelijk or zelfstandig" other
 
-let num ?(teken = A.Onbepaald) ~geheel ~decimalen () =
-  A.Numeriek { geheel; decimalen; teken = Some teken; eenheid = None }
+let num ?(sign_char = A.Unspecified) ~whole_part ~decimal_places () =
+  A.Number { whole_part; decimal_places; sign_char = Some sign_char; measure_unit = None }
 
-type slot = Attribute of A.datatype | Characteristic of A.kenmerk_soort | Filler of string
+type slot = Attribute of A.datatype | Characteristic of A.characteristic_kind_type | Filler of string
 
 let slot_of_ty ~line (t : ty) : slot =
   match t with
   | Ty_term ("numeriek", [ sign; scale ]) ->
-      let teken = sign_of ~line sign in
-      if scale = "geheel" then Attribute (num ~teken ~geheel:true ~decimalen:0 ())
+      let sign_char = sign_of ~line sign in
+      if scale = "geheel" then Attribute (num ~sign_char ~whole_part:true ~decimal_places:0 ())
       else (
         match int_of_string_opt scale with
-        | Some d when d >= 0 -> Attribute (num ~teken ~geheel:false ~decimalen:d ())
+        | Some d when d >= 0 -> Attribute (num ~sign_char ~whole_part:false ~decimal_places:d ())
         | _ ->
             refuse ~line
               "the scale %s: numeriek(...) takes 'geheel' or a decimal count" scale)
-  | Ty_term ("kenmerk", [ soort ]) -> Characteristic (characteristic_kind_of ~line soort)
+  | Ty_term ("kenmerk", [ variety ]) -> Characteristic (characteristic_kind_of ~line variety)
   | Ty_term (f, args) ->
       refuse ~line "the type term %s/%d" f (List.length args)
-  | Ty_prim "\\integer" -> Attribute (num ~geheel:true ~decimalen:0 ())
-  | Ty_prim "\\boolean" -> Attribute A.Booleaan
-  | Ty_prim "\\string" -> Attribute A.Tekst
-  | Ty_prim "\\date" -> Attribute A.Datum_in_dagen
+  | Ty_prim "\\integer" -> Attribute (num ~whole_part:true ~decimal_places:0 ())
+  | Ty_prim "\\boolean" -> Attribute A.Boolean
+  | Ty_prim "\\string" -> Attribute A.Text_type
+  | Ty_prim "\\date" -> Attribute A.Date_in_days
   | Ty_prim "\\decimal" ->
       refuse ~line
         "the primitive type \\decimal: uchar's Number carries a DECLARED decimal scale and \
@@ -196,8 +196,8 @@ let collect (stmts : stmt list) : model =
                           f.f_roles <-
                             f.f_roles
                             @ [ ( n,
-                                  { A.rol_naam = Some n; rol_objecttype_naam = Some filler;
-                                    rol_meervoud = None; rol_meervoudig = many },
+                                  { A.role_identifier = Some n; role_object_type_name = Some filler;
+                                    role_plural = None; role_many = many },
                                   line ) ]
                       | _ ->
                           refuse ~line
@@ -216,9 +216,9 @@ let collect (stmts : stmt list) : model =
                       | Attribute dt ->
                           declare_once o n line;
                           o.o_attrs <- o.o_attrs @ [ (n, dt, line) ]
-                      | Characteristic soort ->
+                      | Characteristic variety ->
                           declare_once o n line;
-                          o.o_characteristics <- o.o_characteristics @ [ (n, soort, line) ]
+                          o.o_characteristics <- o.o_characteristics @ [ (n, variety, line) ]
                       | Filler f ->
                           refuse ~line
                             "the signature %s.%s names the object type %s: a reference between \
@@ -279,13 +279,13 @@ let attr_type m ~line cls name =
 
 let literal_type (lex : string) =
   match String.index_opt lex '.' with
-  | None -> num ~geheel:true ~decimalen:0 ()
-  | Some i -> num ~geheel:false ~decimalen:(String.length lex - i - 1) ()
+  | None -> num ~whole_part:true ~decimal_places:0 ()
+  | Some i -> num ~whole_part:false ~decimal_places:(String.length lex - i - 1) ()
 
 let join_num ~line a b =
   match (a, b) with
-  | A.Numeriek { geheel = g1; decimalen = d1; _ }, A.Numeriek { geheel = g2; decimalen = d2; _ } ->
-      num ~geheel:(g1 && g2) ~decimalen:(max d1 d2) ()
+  | A.Number { whole_part = g1; decimal_places = d1; _ }, A.Number { whole_part = g2; decimal_places = d2; _ } ->
+      num ~whole_part:(g1 && g2) ~decimal_places:(max d1 d2) ()
   | _ -> refuse ~line "arithmetic over a non-numeric operand"
 
 (* --- role resolution ------------------------------------------------------ *)
@@ -302,9 +302,9 @@ let find_hop m ~line ~subject role =
         | Some (_, r, rline) ->
             let anchored =
               List.exists
-                (fun (n, (other : A.rol), _) ->
+                (fun (n, (other : A.role_ref), _) ->
                   n <> role
-                  && (match other.rol_objecttype_naam with
+                  && (match other.role_object_type_name with
                      | Some t -> List.mem t up
                      | None -> false))
                 f.f_roles
@@ -314,7 +314,7 @@ let find_hop m ~line ~subject role =
   in
   match candidates with
   | [ (f, r, rline) ] -> (
-      match r.A.rol_objecttype_naam with
+      match r.A.role_object_type_name with
       | Some filler -> (f, filler)
       | None -> refuse ~line:rline "the role %s declares no filler object type" role)
   | [] ->
@@ -329,7 +329,7 @@ type ctx = { c_subject : string; c_var : string; c_binds : (string * expr) list 
 let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
   match e with
   | E_num lex ->
-      A.Literal { variant = A.Lv_number lex; typ = Some (literal_type lex); bron = Some lex }
+      A.Literal { variant = A.Lv_number lex; typ = Some (literal_type lex); source_name = Some lex }
   | E_var v -> (
       match List.assoc_opt v ctx.c_binds with
       | Some e' -> low_expr m ctx ~line e'
@@ -337,9 +337,9 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
   | E_path (v, [ attr ]) when v = ctx.c_var ->
       (* the read writes no type (B13); it must still resolve on the subject *)
       ignore (attr_type m ~line ctx.c_subject attr);
-      A.Attribuut_ref
-        { attribuut = Some attr; objecttype = Some ctx.c_subject; bron = Some (show_expr e);
-          navigatie_bindingen = None }
+      A.Attribute_reference
+        { attribute_ref = Some attr; object_type = Some ctx.c_subject; source_name = Some (show_expr e);
+          navigation_bindings = None }
   | E_path (v, _) when v <> ctx.c_var ->
       refuse ~line "the path %s does not start at the rule's subject ?%s" (show_expr e) ctx.c_var
   | E_path (_, steps) ->
@@ -348,20 +348,20 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
       let ll = low_expr m ctx ~line l and rr = low_expr m ctx ~line r in
       let op' =
         match op with
-        | "+" -> A.Plus | "-" -> A.Min | "*" -> A.Maal | "/" -> A.Gedeeld_door
+        | "+" -> A.Plus | "-" -> A.Min | "*" -> A.Times | "/" -> A.Divided_by
         | _ -> refuse ~line "the operator %s" op
       in
       let typ = join_num ~line (type_of m ~line ll) (type_of m ~line rr) in
-      A.Binair { op = op'; links = Some ll; rechts = Some rr; typ = Some typ;
-                 bron = Some (show_expr e) }
+      A.Binary { op = op'; left_side = Some ll; right_side = Some rr; typ = Some typ;
+                 source_name = Some (show_expr e) }
   | E_agg (kind, _, operand, goals) -> low_agg m ctx ~line ~kind ~operand ~goals ~whole:e
 
 (* an attribute read takes its declaration's type — the wire writes none on
    a reference (B13) — and every other operand carries its own *)
 and type_of m ~line (e : A.expr) =
   match e with
-  | A.Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> attr_type m ~line ot a
-  | A.Literal { typ = Some t; _ } | A.Binair { typ = Some t; _ } | A.Functie { typ = Some t; _ } -> t
+  | A.Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> attr_type m ~line ot a
+  | A.Literal { typ = Some t; _ } | A.Binary { typ = Some t; _ } | A.Function_call { typ = Some t; _ } -> t
   | _ -> refuse ~line "an operand without a derivable type"
 
 and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
@@ -392,17 +392,17 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
   match (kind, steps) with
   | "count", [ role ] ->
       let f, el = find_hop m ~line ~subject:ctx.c_subject role in
-      A.Functie
-        { kind = A.Aantal;
-          argumenten =
-            [ A.Attribuut_ref
-                { attribuut = Some role; objecttype = Some ctx.c_subject;
-                  bron = Some (show_expr operand); navigatie_bindingen = None } ];
-          element_objecttype = Some el; leegwaarde = None; filter = None;
-          dimensie_selectie = None;
-          typ = Some (num ~teken:A.Niet_negatief ~geheel:true ~decimalen:0 ());
-          bron = Some (show_expr whole); granulariteit = None;
-          bron_rol = Some { rb_feittype = f.f_name; rb_rol = role }; bron_pad = None }
+      A.Function_call
+        { kind = A.Count;
+          call_arguments =
+            [ A.Attribute_reference
+                { attribute_ref = Some role; object_type = Some ctx.c_subject;
+                  source_name = Some (show_expr operand); navigation_bindings = None } ];
+          element_object_type = Some el; empty_fallback = None; filter = None;
+          dimension_selection = None;
+          typ = Some (num ~sign_char:A.Non_negative ~whole_part:true ~decimal_places:0 ());
+          source_name = Some (show_expr whole); grain = None;
+          source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None }
   | "sum", [ role; attr ] ->
       let f, el = find_hop m ~line ~subject:ctx.c_subject role in
       let dt = attr_type m ~line el attr in
@@ -411,24 +411,24 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
          written at the summed attribute's declared scale. *)
       let zero =
         match dt with
-        | A.Numeriek { decimalen = 0; _ } -> "0"
-        | A.Numeriek { decimalen = d; _ } -> "0." ^ String.make d '0'
+        | A.Number { decimal_places = 0; _ } -> "0"
+        | A.Number { decimal_places = d; _ } -> "0." ^ String.make d '0'
         | _ -> refuse ~line "sum over the non-numeric attribute %s" attr
       in
-      A.Functie
-        { kind = A.Som;
-          argumenten =
-            [ A.Attribuut_ref
-                { attribuut = Some attr; objecttype = Some el; bron = Some (show_expr operand);
-                  navigatie_bindingen = None } ];
-          element_objecttype = Some el;
-          leegwaarde =
+      A.Function_call
+        { kind = A.Sum_function;
+          call_arguments =
+            [ A.Attribute_reference
+                { attribute_ref = Some attr; object_type = Some el; source_name = Some (show_expr operand);
+                  navigation_bindings = None } ];
+          element_object_type = Some el;
+          empty_fallback =
             Some
               (A.Literal
-                 { variant = A.Lv_number zero; typ = Some (literal_type zero); bron = Some zero });
-          filter = None; dimensie_selectie = None; typ = Some dt;
-          bron = Some (show_expr whole); granulariteit = None;
-          bron_rol = Some { rb_feittype = f.f_name; rb_rol = role }; bron_pad = None }
+                 { variant = A.Lv_number zero; typ = Some (literal_type zero); source_name = Some zero });
+          filter = None; dimension_selection = None; typ = Some dt;
+          source_name = Some (show_expr whole); grain = None;
+          source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None }
   | "count", _ ->
       refuse ~line "count{...} counts the members of ONE role hop, ?%s.role" v
   | "sum", _ ->
@@ -440,12 +440,12 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
 (* the vacuously true justification WF-050 asks of a base: the quantifier
    all over no parts. F-logic writes no justification for an unconditional rule, so
    the [bron] stays null rather than borrowing a phrase. *)
-let always = A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = []; bron = None }
+let always = A.Compound { quantifier_kind = A.All; cutoff = 0; components = []; source_name = None }
 
-let conjoin ~bron = function
+let conjoin ~source_name = function
   | [] -> always
   | [ c ] -> c
-  | cs -> A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = cs; bron = Some bron }
+  | cs -> A.Compound { quantifier_kind = A.All; cutoff = 0; components = cs; source_name = Some source_name }
 
 (* A [count] comprehension that states a condition of its members is a
    QUANTIFICATION over them, and the node for that is the fold. The hop is
@@ -498,19 +498,19 @@ let as_quantification ~line = function
       Some { q_var = av; q_subj = subj; q_role = role; q_hop = hop; q_filter; q_matrix }
   | _ -> None
 
-let rec low_cond m ctx (g : goal) : A.conditie =
+let rec low_cond m ctx (g : goal) : A.condition_expr =
   match g with
   | G_member (_, k, line) ->
       if not (find_characteristic m ctx.c_subject k) then
         refuse ~line "%s is neither a declared object type nor a characteristic of %s" k
           ctx.c_subject;
-      A.Kenmerk_check
-        { kenmerk = Some k; negatie = false; eigenaar = None;
-          periode = None; bron = Some (show_goal g); navigatie_binding = None }
+      A.Characteristic_check
+        { characteristic = Some k; negation = false; holder = None;
+          time_period = None; source_name = Some (show_goal g); navigation_binding = None }
   | G_cmp (op, l, r, line) when as_quantification ~line l <> None ->
       low_quantifier_fold m ctx ~line ~op ~rhs:r
         ~q:(Option.get (as_quantification ~line l))
-        ~bron:(show_goal g)
+        ~source_name:(show_goal g)
   | G_cmp (_, _, r, line) when is_counting_comprehension r ->
       refuse ~line
         "the counting comprehension %s stands on the RIGHT of the comparison: the slice reads \
@@ -520,15 +520,15 @@ let rec low_cond m ctx (g : goal) : A.conditie =
   | G_cmp (op, l, r, line) ->
       let op' =
         match op with
-        | ">" -> A.Groter | ">=" -> A.Groter_of_gelijk
-        | "<" -> A.Kleiner | "<=" -> A.Kleiner_of_gelijk
-        | "=" -> A.Gelijk | "!=" | "\\=" -> A.Ongelijk
+        | ">" -> A.Greater | ">=" -> A.Greater_or_equal
+        | "<" -> A.Less | "<=" -> A.Less_or_equal
+        | "=" -> A.Equal | "!=" | "\\=" -> A.Not_equal
         | _ -> refuse ~line "the comparison %s" op
       in
-      A.Vergelijking
-        { op = op'; links = Some (low_expr m ctx ~line l);
-          rechts = Some (low_expr m ctx ~line r); periode = None;
-          bron = Some (show_goal g) }
+      A.Comparison
+        { op = op'; left_side = Some (low_expr m ctx ~line l);
+          right_side = Some (low_expr m ctx ~line r); time_period = None;
+          source_name = Some (show_goal g) }
   | G_bind (v, _, line) -> refuse ~line "the binding of ?%s is not a condition" v
 
 (* The fold (IR-SPEC ch. 4.5, RUNTIME-SEMANTICS ch. 3.9a). All five
@@ -536,7 +536,7 @@ let rec low_cond m ctx (g : goal) : A.conditie =
    negation form is needed and the slice's \naf / \neg refusal does not
    move: none is count = 0 and all is count = |contributors|, written as
    the same comprehension without its matrix. *)
-and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
+and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~source_name : A.condition_expr =
   (* The hop starts at the rule's subject, exactly as it must in a VALUE
      position ([low_agg], same message). Without this the range would be
      read off a variable the rule never bound, and the wire would carry a
@@ -570,7 +570,7 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
     | gs ->
         Some
           (conjoin
-             ~bron:(String.concat ", " (List.map (fun g -> show_goal (rename_goal q.q_var g)) gs))
+             ~source_name:(String.concat ", " (List.map (fun g -> show_goal (rename_goal q.q_var g)) gs))
              (List.map low gs))
   in
   let test = low q.q_matrix in
@@ -583,7 +583,7 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
            wire carries an integer threshold (WF-108 (e), WF-041)"
           lex
   in
-  let kwantor, drempel =
+  let quantifier_kind, cutoff =
     match (op, rhs) with
     | "=", E_agg ("count", av2, hop2, goals2) ->
         let twin = E_agg ("count", q.q_var, q.q_hop, q.q_filter) in
@@ -597,10 +597,10 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
              leaves"
             (show_agg_source "count" q.q_var q.q_hop q.q_filter)
             (show_agg_source "count" av2 hop2 goals2);
-        (A.Alle, None)
+        (A.All, None)
     | (">=" | "<=" | "="), E_num lex -> (
         match (op, threshold lex) with
-        | "=", 0 -> (A.Geen, None)
+        | "=", 0 -> (A.None_of, None)
         | ">=", 0 ->
             (* not a threshold question at all: a count is never negative *)
             refuse ~line
@@ -612,9 +612,9 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
               "a counting quantifier with threshold 0 under '<=': WF-041 pins the bound at 1, and \
                \"no member satisfies the matrix\" has its own spelling — count{...} = 0, which is \
                the quantifier none"
-        | ">=", n -> (A.Ten_minste, Some n)
-        | "<=", n -> (A.Ten_hoogste, Some n)
-        | _, n -> (A.Precies, Some n))
+        | ">=", n -> (A.At_least, Some n)
+        | "<=", n -> (A.At_most, Some n)
+        | _, n -> (A.Exactly, Some n))
     | ((">" | "<") as o), E_num lex when int_of_string_opt lex <> None ->
         (* every advice below is a form the slice ACCEPTS: '<= 0' and
            '<= -1' would refuse in turn, so a reader following the message
@@ -652,10 +652,10 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
            last goal (the spelling of the quantifier all)"
           (show_expr rhs)
   in
-  A.Kwantorvouw
-    { kv_kwantor = kwantor; kv_drempel = drempel; kv_element_objecttype = Some el;
-      kv_filter = filter; kv_toets = Some test; kv_bron = Some bron;
-      kv_bron_rol = Some { rb_feittype = f.f_name; rb_rol = q.q_role }; kv_bron_pad = None }
+  A.Quantifier_fold
+    { kv_quantifier = quantifier_kind; kv_threshold = cutoff; kv_element_object_type = Some el;
+      kv_filter = filter; kv_test = Some test; kv_source = Some source_name;
+      kv_source_role = Some { rb_fact_type = f.f_name; rb_role = q.q_role }; kv_source_path = None }
 
 (* --- rules ----------------------------------------------------------------- *)
 
@@ -666,7 +666,7 @@ type definition = {
   d_characteristic : bool; (* from the isa head ?S : k *)
   d_target_source : string; (* the head in its own spelling *)
   d_barred : bool; (* from c[|attr -> v|], which is a base by decision *)
-  d_cond : A.conditie option; (* None = unconditional: the base *)
+  d_cond : A.condition_expr option; (* None = unconditional: the base *)
   d_value : A.expr;
   d_line : int;
 }
@@ -708,7 +708,7 @@ let low_rule m (r : rule) : definition =
         | g -> Some (low_cond m ctx g))
       r.r_body
   in
-  let target, value, kenmerk =
+  let target, value, characteristic =
     match r.r_head with
     | H_characteristic k ->
         if not (find_characteristic m subject k) then
@@ -720,7 +720,7 @@ let low_rule m (r : rule) : definition =
            not write it — the slice does not invent a lexeme for it either,
            so the literal's [bron] stays null *)
         ( k,
-          A.Literal { variant = A.Lv_boolean true; typ = Some A.Booleaan; bron = None },
+          A.Literal { variant = A.Lv_boolean true; typ = Some A.Boolean; source_name = None },
           true )
     | H_attr (attr, e) ->
         if find_characteristic m subject attr then
@@ -731,28 +731,28 @@ let low_rule m (r : rule) : definition =
         let (_ : A.datatype) = attr_type m ~line:r.r_line subject attr in
         (attr, low_expr m ctx ~line:r.r_line e, false)
   in
-  let bron =
+  let source_name =
     String.concat ", " (List.filter_map (function
       | G_member (v, c, _) when v = r.r_subj && c = subject -> None
       | G_bind _ -> None
       | g -> Some (show_goal g)) r.r_body)
   in
-  { d_name = r.r_id; d_target = (subject, target); d_var = r.r_subj; d_characteristic = kenmerk;
+  { d_name = r.r_id; d_target = (subject, target); d_var = r.r_subj; d_characteristic = characteristic;
     d_target_source = show_head ~var:r.r_subj r.r_head; d_barred = false;
-    d_cond = (if conds = [] then None else Some (conjoin ~bron conds));
+    d_cond = (if conds = [] then None else Some (conjoin ~source_name conds));
     d_value = value; d_line = r.r_line }
 
 (* --- the document ----------------------------------------------------------- *)
 
-let no_validity = Some { A.geld_vanaf = None; geld_tot = None }
+let no_validity = Some { A.valid_from = None; valid_to = None }
 
-let doel m ~subject ~attr ~kenmerk ~bron ~line =
+let objective m ~subject ~attr ~characteristic ~source_name ~line =
   (* the target writes no type of its own (B13); an attribute target still
      resolves on its declaration, which refuses an undeclared one here *)
-  if not kenmerk then ignore (attr_type m ~line subject attr);
-  A.Attribuut_ref
-    { attribuut = Some attr; objecttype = Some subject; bron = Some bron;
-      navigatie_bindingen = None }
+  if not characteristic then ignore (attr_type m ~line subject attr);
+  A.Attribute_reference
+    { attribute_ref = Some attr; object_type = Some subject; source_name = Some source_name;
+      navigation_bindings = None }
 
 let document (stmts : stmt list) : A.document =
   let m = collect stmts in
@@ -765,11 +765,11 @@ let document (stmts : stmt list) : A.document =
   List.iter
     (fun f ->
       List.iter
-        (fun (_, (r : A.rol), line) ->
-          match r.rol_objecttype_naam with
+        (fun (_, (r : A.role_ref), line) ->
+          match r.role_object_type_name with
           | Some filler when find_ot m filler = None ->
               refuse ~line "the role %s of %s is filled by %s, which is not a declared object type"
-                (Option.value r.rol_naam ~default:"?") f.f_name filler
+                (Option.value r.role_identifier ~default:"?") f.f_name filler
           | _ -> ())
         f.f_roles)
     m.ftypes;
@@ -851,12 +851,12 @@ let document (stmts : stmt list) : A.document =
           | [] -> ());
           resolved :=
             !resolved
-            @ [ { A.rr_naam = d.d_name; rr_soort = Some A.Kenmerktoekenning;
-                  doel =
+            @ [ { A.rr_name = d.d_name; rr_presentation = Some A.Characteristic_attribution;
+                  objective =
                     Some
-                      (doel m ~subject ~attr ~kenmerk:true ~bron:d.d_target_source ~line:d.d_line);
-                  waarde = Some d.d_value; rr_voorwaarde = d.d_cond;
-                  rr_geldigheid = no_validity; rr_bron_annotaties = None;
+                      (objective m ~subject ~attr ~characteristic:true ~source_name:d.d_target_source ~line:d.d_line);
+                  value_node = Some d.d_value; rr_condition = d.d_cond;
+                  rr_validity = no_validity; rr_source_annotations = None;
                   (* the wire pointer is the loader's to set on a record it
                      reads; this one is only ever serialised *)
                   rr_pointer = "" } ]
@@ -877,67 +877,67 @@ let document (stmts : stmt list) : A.document =
           (* the bare rule: the standing norm of ch. 7.8, not a default *)
           resolved :=
             !resolved
-            @ [ { A.rr_naam = b.d_name; rr_soort = Some A.Berekening;
-                  doel =
+            @ [ { A.rr_name = b.d_name; rr_presentation = Some A.Calculation;
+                  objective =
                     Some
-                      (doel m ~subject ~attr ~kenmerk:false ~bron:b.d_target_source ~line:b.d_line);
-                  waarde = Some b.d_value; rr_voorwaarde = None;
-                  rr_geldigheid = no_validity; rr_bron_annotaties = None;
+                      (objective m ~subject ~attr ~characteristic:false ~source_name:b.d_target_source ~line:b.d_line);
+                  value_node = Some b.d_value; rr_condition = None;
+                  rr_validity = no_validity; rr_source_annotations = None;
                   rr_pointer = "" } ]
       | [], None -> ()
       | _ ->
           let default_of d =
-            { A.default_besluit = None;
-              default_voorwaarde = Some (Option.value d.d_cond ~default:always);
-              default_consequentie = Some d.d_value; default_initialisatie = false;
-              default_excepties = None; default_bron = None }
+            { A.default_decision = None;
+              default_justification = Some (Option.value d.d_cond ~default:always);
+              default_consequence = Some d.d_value; default_initialisation = false;
+              default_exceptions = None; default_source = None }
           in
           let members = List.map default_of excs @ (match base with None -> [] | Some b -> [ default_of b ]) in
-          let naam =
+          let ident =
             match base with
             | Some b when b.d_name <> None -> b.d_name
             | _ -> (match excs with e :: _ -> e.d_name | [] -> None)
           in
           groups :=
             !groups
-            @ [ { A.pd_naam = naam; pd_onderwerp = subject; pd_kenmerk = None;
-                  pd_attribuut = Some attr; defaults = members; pd_ongeordend = false;
-                  pd_bron = None; pd_geldigheid = no_validity } ]))
+            @ [ { A.pd_name = ident; pd_subject = subject; pd_characteristic = None;
+                  pd_attribute = Some attr; defaults = members; pd_unordered = false;
+                  pd_source = None; pd_validity = no_validity } ]))
     !targets;
-  let objecttypen =
+  let object_types =
     List.map
       (fun o ->
         ( o.o_name,
-          { A.ot_naam = Some o.o_name;
+          { A.ot_ident = Some o.o_name;
             ot_supertype = (match o.o_super with Some (p, _) -> Some p | None -> None);
-            attributen = List.map (fun (n, dt, _) -> (n, Some dt)) o.o_attrs;
-            attribuut_meervoud = []; attribuut_dimensies = []; attribuut_granulariteit = [];
-            attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = [];
-            kenmerken = List.map (fun (n, _, _) -> Some n) o.o_characteristics;
-            kenmerk_soorten = List.map (fun (n, s, _) -> (n, Some s)) o.o_characteristics;
-            kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = [];
+            attributes = List.map (fun (n, dt, _) -> (n, Some dt)) o.o_attrs;
+            attribute_plural = []; attribute_dimensions = []; attribute_granularity = [];
+            attribute_timeline_count = []; attribute_timeline_names = [];
+            characteristics = List.map (fun (n, _, _) -> Some n) o.o_characteristics;
+            characteristic_kinds = List.map (fun (n, s, _) -> (n, Some s)) o.o_characteristics;
+            characteristic_granularity = []; characteristic_timeline_count = [];
             (* F-logic declares no grammatical number and no animacy: the
                two RegelSpraak surface affordances stay unset rather than
                invented *)
-            bezield = false; meervoud = None } ))
+            animate = false; plural = None } ))
       m.otypes
   in
-  let feittypen =
+  let fact_types =
     List.map
       (fun f ->
         if List.length f.f_roles < 2 then
           refuse "the fact type %s declares %d role(s); a fact type connects at least two"
             f.f_name (List.length f.f_roles);
-        (f.f_name, { A.ft_naam = Some f.f_name; wederkerig = false;
-                     rollen = List.map (fun (_, r, _) -> r) f.f_roles }))
+        (f.f_name, { A.ft_name = Some f.f_name; reciprocal = false;
+                     role_names = List.map (fun (_, r, _) -> r) f.f_roles }))
       m.ftypes
   in
-  { A.objecttypen; domeinen = []; parameters = []; eenheidstelsels = []; feittypen;
-    dimensies = []; tijdlijnen = []; dagsoorten = [];
-    resolved_regels = !resolved; resolved_dagsoorten = []; object_creaties = [];
-    verdelingen = []; consistenties = []; uniciteiten = []; uniciteit_unies = [];
-    feit_creaties = []; resolved_startpunten = []; regel_groepen = []; diagnostics = [];
-    prioritized_defaults = !groups; function_defs = []; presentatie_annotaties = [] }
+  { A.object_types; domain_specs = []; parameters = []; unit_systems = []; fact_types;
+    dimensions = []; timelines = []; day_kinds = [];
+    resolved_rules = !resolved; resolved_day_kind_definitions = []; object_creations = [];
+    allocations = []; consistencies = []; uniquenesses = []; uniqueness_unions = [];
+    fact_creations = []; resolved_start_point_determinations = []; rule_groups = []; diagnostics = [];
+    prioritized_defaults = !groups; function_defs = []; presentation_annotations = [] }
 
 let of_string (src : string) : A.document = document (Parse.parse src)
 

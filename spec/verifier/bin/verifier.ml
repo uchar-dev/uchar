@@ -6,8 +6,8 @@ let () =
            vocabulary side table beside the document, which does not keep it *)
         let j = Yojson.Safe.from_file file in
         let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j in
-        let tafel = Ir_v0.Loader.vocabulaires j in
-        match Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabulaires doc tafel with
+        let grid = Ir_v0.Loader.vocabularies j in
+        match Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabularies doc grid with
         | [] ->
             print_endline "verifier: PASS"
         | violations ->

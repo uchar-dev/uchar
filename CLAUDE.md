@@ -382,15 +382,15 @@ reviewer's duty on a machine that has catala. Current gates:
     scope of WF-118, and ref, clingo and both Drools branches must
     reproduce the untouched outcome (IR-SPEC ch. 2.12: the table carries
     no semantics, so no reading of it is legitimate and there is no
-    survivor list); floors `EXPECTED_MIN_VOCABULAIRE_GOLDENS=1`,
-    `EXPECTED_MIN_VOCABULAIRE_GESTRIPT=46` and
-    `EXPECTED_MIN_VOCABULAIRE_GEROTEERD=36` (measured 2026-09-27); a golden
+    survivor list); floors `EXPECTED_MIN_VOCABULARY_GOLDENS=1`,
+    `EXPECTED_MIN_VOCABULARY_STRIPPED=46` and
+    `EXPECTED_MIN_VOCABULARY_ROTATED=36` (measured 2026-09-27); a golden
     without vocabularies is not probed. Since 2026-10-15 (card
     `herkomst-op-de-draad`) an ORIGIN leg beside it: every golden with an
     `origin` (IR-SPEC ch. 2.13) and case files is replayed with the field
     STRIPPED, and ref, clingo and both Drools branches must reproduce the
     untouched outcome (no survivor list); floors
-    `EXPECTED_MIN_HERKOMST_GOLDENS=9` and `EXPECTED_MIN_HERKOMST_GESTRIPT=71`
+    `EXPECTED_MIN_ORIGIN_GOLDENS=9` and `EXPECTED_MIN_ORIGIN_STRIPPED=71`
     (measured 2026-10-15). CI
     leg unconditional and blocking.
 
@@ -424,7 +424,7 @@ reviewer's duty on a machine that has catala. Current gates:
     without the type in the node (the graph keys a member on its declaring
     type); edges over a population, a relation or a channel are counted per
     class and reported, never compared; a difference fails unless it is
-    listed in `VERSCHIL_BEWUST`, one projected line per entry with both
+    listed in `DELIBERATE_DIFFERENCE`, one projected line per entry with both
     forms' lists and its reason, stale-failing in both directions; a golden
     the loader refuses cannot be compared and is reported with its form.
     ROUTE LEG: on every golden with a `bron.rgs` the graph from the source
@@ -432,8 +432,8 @@ reviewer's duty on a machine that has catala. Current gates:
     graph's own unit tests (under `backends/drools/src/source-route`, compiled
     by the gate against the frontend and the backend jar) pass with a
     non-zero count. Floors in the script (measured 2026-09-26 at the wave's
-    landing): `EXPECTED_MIN_GOLDENS=234`, `EXPECTED_MIN_AFHANKELIJK=116`,
-    `EXPECTED_MIN_BRONROUTE=98`, `EXPECTED_MIN_TESTS=23`. An empty
+    landing): `EXPECTED_MIN_GOLDENS=234`, `EXPECTED_MIN_DEPENDENT=116`,
+    `EXPECTED_MIN_SOURCE_ROUTE=98`, `EXPECTED_MIN_TESTS=23`. An empty
     comparison is a failure, never silently green. CI leg unconditional and
     blocking.
 

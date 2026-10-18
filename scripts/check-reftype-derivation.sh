@@ -137,8 +137,8 @@
 #   - PRECISION: the ASP translator sizes its integer encoding off the annotation's decimals
 #     (value_scale in backends/clingo/lib/translate.ml), so a precision lie makes clingo
 #     overflow or refuse rather than answer — measured: 21 of 402 cases. And it would probe
-#     nothing here: the Drools back-ends never read Datatype.decimalen or Datatype.geheel at
-#     all, only Afgerond.decimalen, which is a NODE field and not a type annotation.
+#     nothing here: the Drools back-ends never read Datatype.decimal_places or Datatype.whole_part at
+#     all, only Rounding.decimal_places, which is a NODE field and not a type annotation.
 # So the unit is both the facet all three consumers can be indifferent to and the only one this
 # backend reads. The lie: every twistable annotation carrying a unit with a canonical and a
 # factor gets a SISTER unit — same canonical, abbreviation suffixed, factorToCanonical
@@ -309,12 +309,12 @@ fi
 JAR=$(ensure_drools_jar) || { echo 'check-reftype-derivation: FAIL (no fresh Drools backend jar — the drools-jar line above says why)' >&2; exit 1; }
 
 TWISTER=$(mktemp) || exit 2
-VTWISTER=$(mktemp) || exit 2
+VOCABULARY_TWISTER=$(mktemp) || exit 2
 HSTRIPPER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
-ONGEDEKT=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
+UNCOVERED=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
 trap 'rm -rf "$TWISTER" "$VTWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
 
@@ -589,7 +589,7 @@ for klasse in telling["ongedekt"]:
     print("onbekend %s %s" % (naam, klasse))
 PY
 
-cat > "$VTWISTER" <<'PY'
+cat > "$VOCABULARY_TWISTER" <<'PY'
 import json, os, sys
 
 # The three copies of the vocabulary leg (see the script header). Numbers keep their lexemes: the
@@ -782,14 +782,14 @@ PY
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
 # reason carries spaces, so splitting $SURVIVORS on whitespace would shred every entry the
 # moment the list stops being empty.
-vermeld() {
-    treffer=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
+mention() {
+    matched=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
         [ -n "$s" ] || continue
         [ "${s%%|*}" = "$1" ] || continue
         rest=${s#*|}
         [ "${rest%%|*}" = "$2" ] && echo hit
     done)
-    [ -n "$treffer" ]
+    [ -n "$matched" ]
 }
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
@@ -815,15 +815,15 @@ EXPECTED_MIN_TWISTS=38      # 2026-09-24: measured 38 annotations twisted over 2
 # the goldens it probes fails above zero, and the designations the stripped and the rotated copies
 # move, so a twister that quietly moves nothing fails too (an exchange moves every designation, so its
 # count is the stripped one and needs no floor of its own).
-EXPECTED_MIN_VOCABULAIRE_GOLDENS=1     # 2026-09-27: measured 1 golden with vocabularies and case files
-EXPECTED_MIN_VOCABULAIRE_GESTRIPT=46   # 2026-09-27: measured 46 designations stripped (23 declarations x 2 vocabularies)
-EXPECTED_MIN_VOCABULAIRE_GEROTEERD=36  # 2026-09-27: measured 36 designations rotated to another declaration
+EXPECTED_MIN_VOCABULARY_GOLDENS=1     # 2026-09-27: measured 1 golden with vocabularies and case files
+EXPECTED_MIN_VOCABULARY_STRIPPED=46   # 2026-09-27: measured 46 designations stripped (23 declarations x 2 vocabularies)
+EXPECTED_MIN_VOCABULARY_ROTATED=36  # 2026-09-27: measured 36 designations rotated to another declaration
 
 # The origin leg's floors (see the script header), measured 2026-10-15 at the card herkomst-op-de-draad: a
 # golden count, so a leg that stops finding the goldens it probes fails above zero, and the origins the
 # stripped copies lose, so a stripper that quietly takes out less fails too.
-EXPECTED_MIN_HERKOMST_GOLDENS=9        # 2026-10-15: measured 9 goldens with an origin and case files
-EXPECTED_MIN_HERKOMST_GESTRIPT=71      # 2026-10-15: measured 71 origins stripped over those 9
+EXPECTED_MIN_ORIGIN_GOLDENS=9        # 2026-10-15: measured 9 goldens with an origin and case files
+EXPECTED_MIN_ORIGIN_STRIPPED=71      # 2026-10-15: measured 71 origins stripped over those 9
 
 status=0
 n_goldens=0
@@ -831,49 +831,49 @@ n_twists=0
 n_gecontroleerd=0
 n_survivors=0
 n_drl=0
-n_exec_gespeeld=0
-n_eenheid=0
-n_vrijgesteld=0
-n_zonderzusje=0
+n_exec_played=0
+n_unit=0
+n_exempt=0
+n_without_sister=0
 find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
 while IFS= read -r ir; do
     dir=$(dirname "$ir")
-    naam=${dir#corpus/golden/}
+    ident=${dir#corpus/golden/}
     tw="$WORK/$dir/ir.json"
-    uit=$(python3 "$TWISTER" "$ir" "$tw" "$naam") || { echo "FAIL: the twister could not read $ir" >&2; exit 2; }
-    kop=$(printf '%s\n' "$uit" | head -1)
+    out=$(python3 "$TWISTER" "$ir" "$tw" "$ident") || { echo "FAIL: the twister could not read $ir" >&2; exit 2; }
+    first_line=$(printf '%s\n' "$out" | head -1)
     # the clamp's accounting runs over EVERY golden, replayable or not: an unprobed node kind is a
     # gap wherever it sits.
-    staart=$(printf '%s\n' "$uit" | tail -n +2)
-    [ -z "$staart" ] || printf '%s\n' "$staart" >> "$ONGEDEKT"
-    set -- $kop
-    treffers=$1
-    n_eenheid=$((n_eenheid + $2))
-    n_vrijgesteld=$((n_vrijgesteld + $3))
-    n_zonderzusje=$((n_zonderzusje + $4))
-    [ "$treffers" -gt 0 ] || continue          # no twistable annotation: nothing to probe here
+    rest_lines=$(printf '%s\n' "$out" | tail -n +2)
+    [ -z "$rest_lines" ] || printf '%s\n' "$rest_lines" >> "$UNCOVERED"
+    set -- $first_line
+    hits_list=$1
+    n_unit=$((n_unit + $2))
+    n_exempt=$((n_exempt + $3))
+    n_without_sister=$((n_without_sister + $4))
+    [ "$hits_list" -gt 0 ] || continue          # no twistable annotation: nothing to probe here
     find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
     [ -s "$CASES" ] || continue                # no case file: not replayable (gate 5 lists those)
     n_goldens=$((n_goldens + 1))
-    n_twists=$((n_twists + treffers))
+    n_twists=$((n_twists + hits_list))
 
     # ref and clingo: exit 0 on the untouched ir.json is what gates 5 and 6 pin, so the twisted
     # run must exit 0 too. Any other outcome is the executor reading the repetition.
     while IFS= read -r case; do
         n_gecontroleerd=$((n_gecontroleerd + 2))
-        if ! rapport=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
-            if vermeld "$naam" ref; then
-                n_survivors=$((n_survivors + 1)); echo "$naam|ref" >> "$RAKERS"
+        if ! report_line=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
+            if mention "$ident" ref; then
+                n_survivors=$((n_survivors + 1)); echo "$ident|ref" >> "$RAKERS"
             else
-                printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$rapport" >&2
+                printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
         fi
-        if ! rapport=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
-            if vermeld "$naam" clingo; then
-                n_survivors=$((n_survivors + 1)); echo "$naam|clingo" >> "$RAKERS"
+        if ! report_line=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
+            if mention "$ident" clingo; then
+                n_survivors=$((n_survivors + 1)); echo "$ident|clingo" >> "$RAKERS"
             else
-                printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$rapport" >&2
+                printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
         fi
@@ -886,15 +886,15 @@ while IFS= read -r ir; do
     set --
     while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
     n_gecontroleerd=$((n_gecontroleerd + 1))
-    basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-    verdraaid=$(java -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
-    [ "${basis%% *}" = PLAYED ] && n_exec_gespeeld=$((n_exec_gespeeld + 1))
-    if [ "$basis" != "$verdraaid" ]; then
-        if vermeld "$naam" drools; then
-            n_survivors=$((n_survivors + 1)); echo "$naam|drools" >> "$RAKERS"
+    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+    twisted=$(java -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
+    [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
+    if [ "$base_expr" != "$twisted" ]; then
+        if mention "$ident" drools; then
+            n_survivors=$((n_survivors + 1)); echo "$ident|drools" >> "$RAKERS"
         else
             printf 'FAIL: %s — Drools answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
-                "$naam" "$basis" "$verdraaid" >&2
+                "$ident" "$base_expr" "$twisted" >&2
             status=1
         fi
     fi
@@ -904,20 +904,20 @@ while IFS= read -r ir; do
     # untouched line must be the exec-model branch's untouched line (the two render one analysis; gate 12
     # holds this over the whole corpus), and its twisted line its own untouched one.
     n_gecontroleerd=$((n_gecontroleerd + 1))
-    dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-    dverdraaid=$(java -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
-    if [ "$dbasis" != "$basis" ]; then
+    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    d_twisted=$(java -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
+    if [ "$drl_baseline" != "$base_expr" ]; then
         printf 'FAIL: %s — the DRL-text branch, the second rendering of the analysis, gives another status line than the exec-model branch on the UNTOUCHED golden:\n  exec-model: %s\n  drl-text:   %s\n' \
-            "$naam" "$basis" "$dbasis" >&2
+            "$ident" "$base_expr" "$drl_baseline" >&2
         status=1
     fi
-    [ "${dbasis%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
-    if [ "$dbasis" != "$dverdraaid" ]; then
-        if vermeld "$naam" drl; then
-            n_survivors=$((n_survivors + 1)); echo "$naam|drl" >> "$RAKERS"
+    [ "${drl_baseline%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
+    if [ "$drl_baseline" != "$d_twisted" ]; then
+        if mention "$ident" drl; then
+            n_survivors=$((n_survivors + 1)); echo "$ident|drl" >> "$RAKERS"
         else
             printf 'FAIL: %s — the DRL-text branch answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
-                "$naam" "$dbasis" "$dverdraaid" >&2
+                "$ident" "$drl_baseline" "$d_twisted" >&2
             status=1
         fi
     fi
@@ -925,51 +925,51 @@ done < "$LIST"
 
 # --- the vocabulary leg (see the script header) ---------------------------------------------------
 n_vgoldens=0
-n_vgestript=0
-n_vverwisseld=0
-n_vgeroteerd=0
+n_v_stripped=0
+n_v_swapped=0
+n_v_rotated=0
 n_vreplays=0
 while IFS= read -r ir; do
     dir=$(dirname "$ir")
-    naam=${dir#corpus/golden/}
-    vdir="$WORK/vocabulaire/$naam"
-    kop=$(python3 "$VTWISTER" "$ir" "$vdir") || { echo "FAIL: the vocabulary twister could not read $ir" >&2; exit 2; }
-    set -- $kop
+    ident=${dir#corpus/golden/}
+    vdir="$WORK/vocabulaire/$ident"
+    first_line=$(python3 "$VOCABULARY_TWISTER" "$ir" "$vdir") || { echo "FAIL: the vocabulary twister could not read $ir" >&2; exit 2; }
+    set -- $first_line
     [ "$1" -eq 1 ] || continue                 # no vocabulary: nothing to probe here
     find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
     [ -s "$CASES" ] || continue                # no case file: not replayable
     n_vgoldens=$((n_vgoldens + 1))
-    n_vgestript=$((n_vgestript + $2))
-    n_vverwisseld=$((n_vverwisseld + $3))
-    n_vgeroteerd=$((n_vgeroteerd + $4))
+    n_v_stripped=$((n_v_stripped + $2))
+    n_v_swapped=$((n_v_swapped + $3))
+    n_v_rotated=$((n_v_rotated + $4))
     set --
     while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-    basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-    dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-    for variant in gestript verwisseld geroteerd; do
+    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    for variant in stripped swapped rotated; do
         vir="$vdir/$variant.json"
         while IFS= read -r case; do
             n_vreplays=$((n_vreplays + 2))
-            if ! rapport=$("$RUNNER_REF" "$vir" "$case" 2>&1); then
-                printf 'FAIL: %s — ref answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$rapport" >&2
+            if ! report_line=$("$RUNNER_REF" "$vir" "$case" 2>&1); then
+                printf 'FAIL: %s — ref answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
                 status=1
             fi
-            if ! rapport=$("$RUNNER_CLINGO" "$vir" "$case" 2>&1); then
-                printf 'FAIL: %s — clingo answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$rapport" >&2
+            if ! report_line=$("$RUNNER_CLINGO" "$vir" "$case" 2>&1); then
+                printf 'FAIL: %s — clingo answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
                 status=1
             fi
         done < "$CASES"
         n_vreplays=$((n_vreplays + 2))
         v=$(java -jar "$JAR" "$vir" "$@" 2>/dev/null | tail -1)
-        if [ "$v" != "$basis" ]; then
+        if [ "$v" != "$base_expr" ]; then
             printf 'FAIL: %s — Drools answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
-                "$naam" "$variant" "$basis" "$variant" "$v" >&2
+                "$ident" "$variant" "$base_expr" "$variant" "$v" >&2
             status=1
         fi
         dv=$(java -jar "$JAR" --drl "$vir" "$@" 2>/dev/null | tail -1)
-        if [ "$dv" != "$dbasis" ]; then
+        if [ "$dv" != "$drl_baseline" ]; then
             printf 'FAIL: %s — the DRL-text branch answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
-                "$naam" "$variant" "$dbasis" "$variant" "$dv" >&2
+                "$ident" "$variant" "$drl_baseline" "$variant" "$dv" >&2
             status=1
         fi
     done
@@ -978,59 +978,59 @@ if [ "$n_vgoldens" -eq 0 ]; then
     echo 'FAIL: no golden declares a vocabulary — the vocabulary leg probed nothing (an empty set is never green)' >&2
     exit 1
 fi
-if [ "$n_vgoldens" -lt "$EXPECTED_MIN_VOCABULAIRE_GOLDENS" ]; then
-    echo "FAIL: the vocabulary leg probed $n_vgoldens golden(s), but EXPECTED_MIN_VOCABULAIRE_GOLDENS pins at least $EXPECTED_MIN_VOCABULAIRE_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_vgoldens" -lt "$EXPECTED_MIN_VOCABULARY_GOLDENS" ]; then
+    echo "FAIL: the vocabulary leg probed $n_vgoldens golden(s), but EXPECTED_MIN_VOCABULAIRE_GOLDENS pins at least $EXPECTED_MIN_VOCABULARY_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
-if [ "$n_vgestript" -lt "$EXPECTED_MIN_VOCABULAIRE_GESTRIPT" ]; then
-    echo "FAIL: the vocabulary leg stripped $n_vgestript designation(s), but EXPECTED_MIN_VOCABULAIRE_GESTRIPT pins at least $EXPECTED_MIN_VOCABULAIRE_GESTRIPT — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_v_stripped" -lt "$EXPECTED_MIN_VOCABULARY_STRIPPED" ]; then
+    echo "FAIL: the vocabulary leg stripped $n_v_stripped designation(s), but EXPECTED_MIN_VOCABULAIRE_GESTRIPT pins at least $EXPECTED_MIN_VOCABULARY_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
-if [ "$n_vgeroteerd" -lt "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" ]; then
-    echo "FAIL: the vocabulary leg rotated $n_vgeroteerd designation(s), but EXPECTED_MIN_VOCABULAIRE_GEROTEERD pins at least $EXPECTED_MIN_VOCABULAIRE_GEROTEERD — the rotation moves less than it did (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_v_rotated" -lt "$EXPECTED_MIN_VOCABULARY_ROTATED" ]; then
+    echo "FAIL: the vocabulary leg rotated $n_v_rotated designation(s), but EXPECTED_MIN_VOCABULAIRE_GEROTEERD pins at least $EXPECTED_MIN_VOCABULARY_ROTATED — the rotation moves less than it did (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
 # --- the origin leg (see the script header) --------------------------------------------------------
 n_hgoldens=0
-n_hgestript=0
+n_h_stripped=0
 n_hreplays=0
 while IFS= read -r ir; do
     dir=$(dirname "$ir")
-    naam=${dir#corpus/golden/}
-    hir="$WORK/herkomst/$naam/gestript.json"
-    gestript=$(python3 "$HSTRIPPER" "$ir" "$hir") || { echo "FAIL: the origin stripper could not read $ir" >&2; exit 2; }
-    [ "$gestript" -gt 0 ] || continue          # no origin: nothing to probe here
+    ident=${dir#corpus/golden/}
+    hir="$WORK/herkomst/$ident/gestript.json"
+    stripped=$(python3 "$HSTRIPPER" "$ir" "$hir") || { echo "FAIL: the origin stripper could not read $ir" >&2; exit 2; }
+    [ "$stripped" -gt 0 ] || continue          # no origin: nothing to probe here
     find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
     [ -s "$CASES" ] || continue                # no case file: not replayable
     n_hgoldens=$((n_hgoldens + 1))
-    n_hgestript=$((n_hgestript + gestript))
+    n_h_stripped=$((n_h_stripped + stripped))
     while IFS= read -r case; do
         n_hreplays=$((n_hreplays + 2))
-        if ! rapport=$("$RUNNER_REF" "$hir" "$case" 2>&1); then
-            printf 'FAIL: %s — ref answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$rapport" >&2
+        if ! report_line=$("$RUNNER_REF" "$hir" "$case" 2>&1); then
+            printf 'FAIL: %s — ref answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
             status=1
         fi
-        if ! rapport=$("$RUNNER_CLINGO" "$hir" "$case" 2>&1); then
-            printf 'FAIL: %s — clingo answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$rapport" >&2
+        if ! report_line=$("$RUNNER_CLINGO" "$hir" "$case" 2>&1); then
+            printf 'FAIL: %s — clingo answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
             status=1
         fi
     done < "$CASES"
     set --
     while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
     n_hreplays=$((n_hreplays + 2))
-    basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
     h=$(java -jar "$JAR" "$hir" "$@" 2>/dev/null | tail -1)
-    if [ "$h" != "$basis" ]; then
+    if [ "$h" != "$base_expr" ]; then
         printf 'FAIL: %s — Drools answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
-            "$naam" "$basis" "$h" >&2
+            "$ident" "$base_expr" "$h" >&2
         status=1
     fi
-    dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
     dh=$(java -jar "$JAR" --drl "$hir" "$@" 2>/dev/null | tail -1)
-    if [ "$dh" != "$dbasis" ]; then
+    if [ "$dh" != "$drl_baseline" ]; then
         printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
-            "$naam" "$dbasis" "$dh" >&2
+            "$ident" "$drl_baseline" "$dh" >&2
         status=1
     fi
 done < "$LIST"
@@ -1038,19 +1038,19 @@ if [ "$n_hgoldens" -eq 0 ]; then
     echo 'FAIL: no golden carries an origin — the origin leg probed nothing (an empty set is never green)' >&2
     exit 1
 fi
-if [ "$n_hgoldens" -lt "$EXPECTED_MIN_HERKOMST_GOLDENS" ]; then
-    echo "FAIL: the origin leg probed $n_hgoldens golden(s), but EXPECTED_MIN_HERKOMST_GOLDENS pins at least $EXPECTED_MIN_HERKOMST_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_hgoldens" -lt "$EXPECTED_MIN_ORIGIN_GOLDENS" ]; then
+    echo "FAIL: the origin leg probed $n_hgoldens golden(s), but EXPECTED_MIN_HERKOMST_GOLDENS pins at least $EXPECTED_MIN_ORIGIN_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
-if [ "$n_hgestript" -lt "$EXPECTED_MIN_HERKOMST_GESTRIPT" ]; then
-    echo "FAIL: the origin leg stripped $n_hgestript origin(s), but EXPECTED_MIN_HERKOMST_GESTRIPT pins at least $EXPECTED_MIN_HERKOMST_GESTRIPT — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_h_stripped" -lt "$EXPECTED_MIN_ORIGIN_STRIPPED" ]; then
+    echo "FAIL: the origin leg stripped $n_h_stripped origin(s), but EXPECTED_MIN_HERKOMST_GESTRIPT pins at least $EXPECTED_MIN_ORIGIN_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
 # which is exactly how a list stops describing the system it pins.
-weg=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
+dropped=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
     [ -n "$s" ] || continue
     g=${s%%|*}
     rest=${s#*|}
@@ -1064,8 +1064,8 @@ weg=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
         echo "  $g|$ex — no longer diverges under the twist; drop the entry"
     fi
 done)
-if [ -n "$weg" ]; then
-    printf 'FAIL: stale survivor entry:\n%s\n' "$weg" >&2
+if [ -n "$dropped" ]; then
+    printf 'FAIL: stale survivor entry:\n%s\n' "$dropped" >&2
     status=1
 fi
 
@@ -1089,15 +1089,15 @@ if [ "$n_drl" -eq 0 ]; then
     echo 'FAIL: the DRL-text branch PLAYED no golden — the leg measured nothing (an empty played set is never green)' >&2
     exit 1
 fi
-if [ "$n_drl" -ne "$n_exec_gespeeld" ]; then
-    echo "FAIL: the DRL-text branch PLAYED $n_drl twistable golden(s) where the exec-model branch PLAYED $n_exec_gespeeld — the two render one analysis, so the counts are equal or a line above already failed" >&2
+if [ "$n_drl" -ne "$n_exec_played" ]; then
+    echo "FAIL: the DRL-text branch PLAYED $n_drl twistable golden(s) where the exec-model branch PLAYED $n_exec_played — the two render one analysis, so the counts are equal or a line above already failed" >&2
     exit 1
 fi
 
-n_vierde=$(awk '$1 == "vierde" {n++} END {print n+0}' "$ONGEDEKT")
-n_onbekend=$(awk '$1 == "onbekend" {n++} END {print n+0}' "$ONGEDEKT")
-n_ongedekt=$((n_vierde + n_onbekend))
-if [ "$n_vierde" -gt 0 ]; then
+n_fourth=$(awk '$1 == "vierde" {n++} END {print n+0}' "$UNCOVERED")
+n_unknown=$(awk '$1 == "onbekend" {n++} END {print n+0}' "$UNCOVERED")
+n_uncovered=$((n_fourth + n_unknown))
+if [ "$n_fourth" -gt 0 ]; then
     echo 'FAIL: a unit-bearing annotation sits at a node kind whose result unit v0 does not derive —' >&2
     echo '      the §2.10 fourth-class witness has arrived. The node kind is one the twist table carries,' >&2
     echo '      but THIS operator/kind branch has no join rule (dividedBy, power, percentageOf, an' >&2
@@ -1106,15 +1106,15 @@ if [ "$n_vierde" -gt 0 ]; then
     echo '      witness must buy is a derivation rule (or a fence) — never a wider licence to read the' >&2
     echo '      wire. ref/clingo and the Drools backend answer such a position DIFFERENTLY today (ch.' >&2
     echo '      2.10), so the divergence is now observable and must be settled:' >&2
-    awk '$1 == "vierde" {print "  " $2 " " $3}' "$ONGEDEKT" | sort | uniq -c >&2
+    awk '$1 == "vierde" {print "  " $2 " " $3}' "$UNCOVERED" | sort | uniq -c >&2
     status=1
 fi
-if [ "$n_onbekend" -gt 0 ]; then
+if [ "$n_unknown" -gt 0 ]; then
     echo 'FAIL: a unit-bearing annotation sits at a node kind the twist table does not carry, and that' >&2
     echo '      the exception set does not exempt — this harness probes nothing there, so no consumer is' >&2
     echo '      held to the declaration at that position. Give the kind a twist class (with its own' >&2
     echo '      factor exponent) or an exception with the reason its annotation IS the source:' >&2
-    awk '$1 == "onbekend" {print "  " $2 " " $3}' "$ONGEDEKT" | sort | uniq -c >&2
+    awk '$1 == "onbekend" {print "  " $2 " " $3}' "$UNCOVERED" | sort | uniq -c >&2
     status=1
 fi
 
@@ -1128,12 +1128,12 @@ if [ "$status" -eq 0 ]; then
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens, floor %s; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch, equal to the exec-model branch; %s pinned survivors)\n' \
         "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_gecontroleerd" "$n_drl" "$n_survivors"
     printf '  vocabulary leg: %s golden(s) with vocabularies, floor %s; %s designations stripped (floor %s), %s exchanged, %s rotated (floor %s); %s executor replays reproduce the untouched outcome\n' \
-        "$n_vgoldens" "$EXPECTED_MIN_VOCABULAIRE_GOLDENS" "$n_vgestript" "$EXPECTED_MIN_VOCABULAIRE_GESTRIPT" \
-        "$n_vverwisseld" "$n_vgeroteerd" "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" "$n_vreplays"
+        "$n_vgoldens" "$EXPECTED_MIN_VOCABULARY_GOLDENS" "$n_v_stripped" "$EXPECTED_MIN_VOCABULARY_STRIPPED" \
+        "$n_v_swapped" "$n_v_rotated" "$EXPECTED_MIN_VOCABULARY_ROTATED" "$n_vreplays"
     printf '  origin leg: %s golden(s) with origins, floor %s; %s origins stripped (floor %s); %s executor replays reproduce the untouched outcome\n' \
-        "$n_hgoldens" "$EXPECTED_MIN_HERKOMST_GOLDENS" "$n_hgestript" "$EXPECTED_MIN_HERKOMST_GESTRIPT" "$n_hreplays"
+        "$n_hgoldens" "$EXPECTED_MIN_ORIGIN_GOLDENS" "$n_h_stripped" "$EXPECTED_MIN_ORIGIN_STRIPPED" "$n_hreplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
-        "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
-        "$n_vrijgesteld" "$n_zonderzusje" "$n_vierde" "$n_onbekend"
+        "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
+        "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"
 fi
 exit "$status"

@@ -121,19 +121,19 @@ let validity_day ~what s =
   | exception Value.Fault why ->
       Value.fault "validity gate: %s %S is not the ISO date lexeme yyyy-mm-dd (%s)" what s why
 
-let window_admits ~as_of (g : geldigheid option) =
+let window_admits ~as_of (g : validity_window option) =
   match g with
-  | None | Some { geld_vanaf = None; geld_tot = None } -> true
-  | Some { geld_vanaf; geld_tot } -> (
+  | None | Some { valid_from = None; valid_to = None } -> true
+  | Some { valid_from; valid_to } -> (
       match as_of with
       | None ->
           Value.fault "a validity-bounded form needs an evaluation date; this session is time-free"
       | Some d ->
           let day = validity_day ~what:"asOfDate" d in
-          let vanaf = Option.map (validity_day ~what:"validity.from") geld_vanaf in
-          let tot = Option.map (validity_day ~what:"validity.to") geld_tot in
-          (match vanaf with Some v -> v <= day | None -> true)
-          && match tot with Some t -> day <= t | None -> true)
+          let starting_at = Option.map (validity_day ~what:"validity.from") valid_from in
+          let up_to = Option.map (validity_day ~what:"validity.to") valid_to in
+          (match starting_at with Some v -> v <= day | None -> true)
+          && match up_to with Some t -> day <= t | None -> true)
 
 let applies env g = window_admits ~as_of:env.as_of g
 
@@ -145,7 +145,7 @@ let applies env g = window_admits ~as_of:env.as_of g
    inherited attribute or characteristic resolves exactly where an own one
    does — and a member declared on a strict SUBtype still does not resolve
    at the supertype, because the walk only goes up. *)
-let objecttype env name =
+let object_type env name =
   match Ir_v0.Checks.effective_ot env.doc name with
   | Some ot -> ot
   | None -> Value.fault "unknown object type %S" name
@@ -172,8 +172,8 @@ let own_read env (self : World.instance) otn =
 
 (* An instance of [inst_type] fills a role declaring filler type T iff
    inst_type ⊑ T — the declared filler type is an UPPER bound (ch. 2.6). *)
-let fills env inst_type (r : rol) =
-  isa env inst_type (Option.value r.rol_objecttype_naam ~default:"")
+let fills env inst_type (r : role_ref) =
+  isa env inst_type (Option.value r.role_object_type_name ~default:"")
 
 (* The effective defaults stacks per concrete type (RUNTIME-SEMANTICS
    ch. 7.10). A composition the block order does not define is a NAMED
@@ -184,20 +184,20 @@ let effective_defaults env =
   with Ir_v0.Desugar.Unlowered m -> Value.fault "%s" m
 
 let attr_decl env ~otype ~attr =
-  let ot = objecttype env otype in
-  match Ir_v0.Checks.find_ci ot.attributen attr with
+  let ot = object_type env otype in
+  match Ir_v0.Checks.find_ci ot.attributes attr with
   | Some dt -> dt
   | None -> Value.fault "unknown attribute %S on %S" attr otype
 
 (* a FunctionDef resolved by name (ch. 2.11); an unresolved invoke is a
    WF-068 miss made statically impossible, so it faults fail-fast *)
 let function_def env name : function_def =
-  match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm name) env.doc.function_defs with
+  match List.find_opt (fun (d : function_def) -> norm d.fd_name = norm name) env.doc.function_defs with
   | Some d -> d
   | None -> Value.fault "unknown function %S (the verifier should preclude this)" name
 
-let kenmerk_temporal (ot : objecttype) name =
-  List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
+let characteristic_temporal (ot : object_type) name =
+  List.exists (fun (k, _) -> norm k = norm name) ot.characteristic_granularity
 
 (* ch. 3.10's case distinction is on the rule's TARGET, and a condition cannot
    see one — so the clip case is decided here, where the target is known, and
@@ -205,7 +205,7 @@ let kenmerk_temporal (ot : objecttype) name =
    temporal target would silently get the SCALAR gate: all-or-nothing on the
    evaluation date where the chapter says the window speaks about the
    timeline. That is the wrong axis, not a near miss. *)
-(* HONESTY NOTE, the [guard_on_doel] precedent (card eigenaar-gastheer-object,
+(* HONESTY NOTE, the [guard_on_target] precedent (card eigenaar-gastheer-object,
    advice f). The ASP backend links this library and calls THIS function, so
    on the clip's case distinction `ref ≡ clingo` is one piece of code with two
    callers, not two implementations that agree — it is no differential, and
@@ -221,15 +221,15 @@ let kenmerk_temporal (ot : objecttype) name =
    tests unshared, on purpose, and gave the position a red witness
    (`corpus/rood/periodevenster-tijdlijnkenmerk`). Share the syntax walk,
    never the judgement it feeds. *)
-let rec bevat_periode (c : conditie) =
+let rec contains_time_window (c : condition_expr) =
   match c with
-  | Periode_conditie _ -> true
-  | Samengesteld { onderdelen; _ } -> List.exists bevat_periode onderdelen
-  | Kwantorvouw { kv_filter; kv_toets; _ } ->
-      let opt = function Some c -> bevat_periode c | None -> false in
-      opt kv_filter || opt kv_toets
-  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Role_membership _
-  | Regelversie _ | Conditie_onopgelost _ ->
+  | Time_window _ -> true
+  | Compound { components; _ } -> List.exists contains_time_window components
+  | Quantifier_fold { kv_filter; kv_test; _ } ->
+      let opt = function Some c -> contains_time_window c | None -> false in
+      opt kv_filter || opt kv_test
+  | Comparison _ | Predicate _ | Characteristic_check _ | Role_membership _
+  | Rule_status_check _ | Condition_unresolved _ ->
       false
 
 
@@ -264,11 +264,11 @@ let rec bevat_periode (c : conditie) =
    well: the Drools DRL-text branch then PLAYED a window under all five fold
    quantifiers, and under `none` in a time-free session it answered the
    complement — true — which is exactly the reading nothing norms. *)
-let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
-  match kwantor with
-  | Alle | De -> ()
-  | Geen | Ten_minste | Ten_hoogste | Precies ->
-      if List.exists bevat_periode parts then
+let period_under_count_quantifier (quantifier_kind : quantifier_kind) (parts : condition_expr list) =
+  match quantifier_kind with
+  | All | The -> ()
+  | None_of | At_least | At_most | Exactly ->
+      if List.exists contains_time_window parts then
         Value.fault
           "a period condition under none or a counting quantifier (atLeast / atMost / exactly) \
            is the position WF-112 refuses: the quantifier counts or complements the \
@@ -284,43 +284,43 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
    one voice, and a quantifier fold never meets the aggregation's sentences
    for sourceRole and sourcePath. Returns the matrix and the threshold (0
    under `all` and `none`, which read none). *)
-let quantifier_fold_shape ~(kwantor : kwantor) ~(drempel : int option) ~(toets : conditie option)
-    ~(bron_rol : rol_binding option) ~(bron_pad : rol_binding list option) =
-  let toets =
-    match toets with
+let quantifier_fold_shape ~(quantifier_kind : quantifier_kind) ~(cutoff : int option) ~(test : condition_expr option)
+    ~(source_role : role_binding option) ~(source_path : role_binding list option) =
+  let test =
+    match test with
     | Some t -> t
     | None ->
         Value.fault
           "quantifier fold without a test: the matrix is what every contributor must satisfy, \
            and a quantifier over no condition has no verdict"
   in
-  (match (bron_rol, bron_pad) with
+  (match (source_role, source_path) with
   | Some _, Some _ ->
       Value.fault "sourcePath beside sourceRole: a quantifier fold carries one range, never two"
   | None, None ->
       Value.fault
         "a quantifier fold carries its range (sourceRole or sourcePath): the range is written, \
          never derived"
-  | _, Some pad when List.length pad < 2 ->
+  | _, Some trail when List.length trail < 2 ->
       Value.fault
         "a quantifier fold's sourcePath carries at least TWO steps, found %d — the one-step range \
          is spelled sourceRole"
-        (List.length pad)
+        (List.length trail)
   | _ -> ());
-  (match kwantor with
-  | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
-  | De -> Value.fault "%s" Ir_v0.Checks.quantifier_fold_the_refusal);
-  let drempel =
-    match (kwantor, drempel) with
-    | (Ten_minste | Ten_hoogste | Precies), Some d -> d
-    | (Ten_minste | Ten_hoogste | Precies), None ->
+  (match quantifier_kind with
+  | All | None_of | At_least | At_most | Exactly -> ()
+  | The -> Value.fault "%s" Ir_v0.Checks.quantifier_fold_the_refusal);
+  let cutoff =
+    match (quantifier_kind, cutoff) with
+    | (At_least | At_most | Exactly), Some d -> d
+    | (At_least | At_most | Exactly), None ->
         Value.fault
           "counting quantifier fold without a threshold: the verdict compares the number of \
            contributors satisfying the matrix with a threshold, and there is none to compare it \
            with"
     | _, _ -> 0
   in
-  (toets, drempel)
+  (test, cutoff)
 
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
    characteristic check the `host` is AUTHORITATIVE for the declaration.
@@ -340,15 +340,15 @@ let quantifier_fold_shape ~(kwantor : kwantor) ~(drempel : int option) ~(toets :
    fault is fail-fast on a non-conforming input rather than the answer to a
    conforming one — which is why it may not be softened to a fallback.
 
-   The fact-creation guard is handled at [run_feit_creatie]: that position
+   The fact-creation guard is handled at [run_fact_creation]: that position
    binds two objects, the guard is evaluated on the one the host names, and
    this helper then sees a subject the host is satisfied by.
 
    Where the field is ABSENT, or names the subject's own type, nothing changes:
    the declaration consulted and the object read coincide. *)
-let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
-    (eigenaar : string option) =
-  match eigenaar with
+let owner_hosts (doc : document) ~(otype : string) ~(characteristic : string option)
+    (holder : string option) =
+  match holder with
   (* the owner is satisfied EXTENSIONALLY: a subject of a subtype IS an
      object of the owner type, so an inherited characteristic check reads
      the object it is hosted on (ch. 2.2) *)
@@ -356,7 +356,7 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
       Value.fault
         "characteristic check %S is hosted on %S while the subject is %S: the host names the \
          object the check is about, and this reader has no other object to read"
-        (Option.value kenmerk ~default:"?") e otype
+        (Option.value characteristic ~default:"?") e otype
   | _ -> ()
 
 (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: is this fact creation's guard
@@ -392,11 +392,11 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
    ZERO satisfying bindings is deliberately NOT a fault here: it falls to the
    anchor, where [owner_hosts] faults with its own named sentence one step
    later. One refusal per defect. *)
-let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
-  match (fc.anker, fc.fc_doel, fc.fc_voorwaarde) with
+let guard_on_target (doc : document) (fc : resolved_fact_creation) =
+  match (fc.anchor_point, fc.fc_target, fc.fc_condition) with
   | ( Some a,
       Some d,
-      Some (Kenmerk_check { navigatie_binding = None; periode = None; eigenaar = Some e; _ }) ) -> (
+      Some (Characteristic_check { navigation_binding = None; time_period = None; holder = Some e; _ }) ) -> (
       let bound = [ ("anchor", a); ("target", d) ] in
       let hits = List.filter (fun (_, t) -> Ir_v0.Checks.subtype_of doc ~sub:t ~super:e) bound in
       let near = List.filter (fun (_, t) -> Ir_v0.Checks.populations_overlap doc t e) bound in
@@ -440,22 +440,22 @@ let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
    reached type, which the verifier does not cross there — so this fault is
    the only thing standing between a non-temporal characteristic and a
    silently vacuous pass from an always-empty period set. *)
-let whole_period_kenmerk env ~(ot : string) ~(inst : World.instance option) ~kenmerk ~negatie
-    (gp : geheel_periode) =
-  if not (kenmerk_temporal (objecttype env ot) kenmerk) then
+let whole_period_characteristic env ~(ot : string) ~(inst : World.instance option) ~characteristic ~negation
+    (gp : entire_period) =
+  if not (characteristic_temporal (object_type env ot) characteristic) then
     Value.fault
       "whole-period qualifier on %S, which is not a time-dependent characteristic of %S"
-      kenmerk ot;
-  let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
+      characteristic ot;
+  let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
   let true_periods =
     match inst with
     | None -> []
-    | Some (i : World.instance) -> Option.value (SMap.find_opt (norm kenmerk) i.ctls) ~default:[]
+    | Some (i : World.instance) -> Option.value (SMap.find_opt (norm characteristic) i.ctls) ~default:[]
   in
-  let verdict = Timeline.geheel_periode_kenmerk g ~negatie true_periods in
+  let verdict = Timeline.entire_period_characteristic g ~negation true_periods in
   (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
      own "niet gedurende …", distinct from the inner test's negation *)
-  if gp.gp_niet then not verdict else verdict
+  if gp.gp_negated then not verdict else verdict
 
 (* WF-097: the two qualifications a gedurende clip member has no reading for.
    Both were matched away with `_` in every clip arm until 2026-09-09, so a
@@ -467,27 +467,27 @@ let whole_period_kenmerk env ~(ot : string) ~(inst : World.instance option) ~ken
    is not hypothetical: the rule first landed on the total alone and the other
    two kept answering silently for a day. The verifier and the ASP backend each
    hold the same fence in one shared place, for the same reason. *)
-let rec clip_member_qualifications (c : conditie) =
+let rec clip_member_qualifications (c : condition_expr) =
   match c with
-  | Kenmerk_check { kenmerk; eigenaar; periode; _ } ->
-      let naam = Option.value kenmerk ~default:"?" in
-      if eigenaar <> None then
+  | Characteristic_check { characteristic; holder; time_period; _ } ->
+      let ident = Option.value characteristic ~default:"?" in
+      if holder <> None then
         Value.fault
           "host on the gedurende clip member %S: the clip reads the subject's own \
-           characteristic timeline" naam;
-      if periode <> None then
+           characteristic timeline" ident;
+      if time_period <> None then
         Value.fault
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
-           over the whole timeline" naam
-  | Samengesteld { onderdelen; _ } -> List.iter clip_member_qualifications onderdelen
+           over the whole timeline" ident
+  | Compound { components; _ } -> List.iter clip_member_qualifications components
   | _ -> ()
 
 (* the grid a temporal attribute declares (ch. 3.6): both temporal-total
    routes — the subject's own timeline and the §7.1 per-element fold —
    need it, and a temporal attribute without one is a wire defect the
    collapse must never paper over *)
-let attr_granulariteit (ot : objecttype) name =
-  match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
+let attr_granularity (ot : object_type) name =
+  match Ir_v0.Checks.find_ci ot.attribute_granularity name with
   | Some (Some g) -> g
   | _ -> Value.fault "temporal attribute %S without a granularity" name
 
@@ -500,9 +500,9 @@ let attr_granulariteit (ot : objecttype) name =
 let connecting_pair env ~from_type ~to_type =
   let candidates =
     List.filter_map
-      (fun (ftn, (ft : feittype)) ->
+      (fun (ftn, (ft : fact_type_name)) ->
         let f t r = fills env t r in
-        match ft.rollen with
+        match ft.role_names with
         | [ a; b ] when norm from_type = norm to_type ->
             (* a self-typed two-role fact type is role-ambiguous: it
                BLOCKS the derivation (the pinned runtime counts both
@@ -514,11 +514,11 @@ let connecting_pair env ~from_type ~to_type =
             if f from_type a && f to_type b then Some (`Pair (ftn, b, a))
             else if f from_type b && f to_type a then Some (`Pair (ftn, a, b))
             else None
-        | [ r ] when ft.wederkerig ->
+        | [ r ] when ft.reciprocal ->
             if f from_type r && norm from_type = norm to_type then Some (`Pair (ftn, r, r))
             else None
         | _ -> None)
-      env.doc.feittypen
+      env.doc.fact_types
   in
   match candidates with
   | [] -> None
@@ -535,22 +535,22 @@ let connecting_pair env ~from_type ~to_type =
 (* the explicit role binding (v1 extension, IR-SPEC ch. 2.6): resolve the
    named role of the named fact type. The verifier (WF-047) guarantees
    resolution on verifier-clean input; a dangling binding still faults. *)
-let bound_role env (rb : rol_binding) =
+let bound_role env (rb : role_binding) =
   match
-    List.find_opt (fun (n, _) -> norm n = norm rb.rb_feittype) env.doc.feittypen
+    List.find_opt (fun (n, _) -> norm n = norm rb.rb_fact_type) env.doc.fact_types
   with
-  | None -> Value.fault "role binding names unknown fact type %S" rb.rb_feittype
-  | Some (_, (ft : feittype)) -> (
+  | None -> Value.fault "role binding names unknown fact type %S" rb.rb_fact_type
+  | Some (_, (ft : fact_type_name)) -> (
       match
         List.find_opt
-          (fun (r : rol) ->
-            match r.rol_naam with Some n -> norm n = norm rb.rb_rol | None -> false)
-          ft.rollen
+          (fun (r : role_ref) ->
+            match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false)
+          ft.role_names
       with
       | Some r -> r
       | None ->
-          Value.fault "role binding names unknown role %S of fact type %S" rb.rb_rol
-            rb.rb_feittype)
+          Value.fault "role binding names unknown role %S of fact type %S" rb.rb_role
+            rb.rb_fact_type)
 
 (* The two named roles of a fact creation (IR-SPEC ch. 3.4) resolve as
    WF-028 resolves them: the created fact type is declared and has exactly
@@ -559,13 +559,13 @@ let bound_role env (rb : rol_binding) =
    refused in WF-028's own sentences, which the Drools loader speaks for the
    target role too, rather than in the binding sentences above. *)
 let created_role env ~fact_type ~role =
-  match Ir_v0.Checks.find_ci env.doc.feittypen fact_type with
+  match Ir_v0.Checks.find_ci env.doc.fact_types fact_type with
   | None -> Value.fault "created fact type '%s' is not declared" fact_type
-  | Some (ft : feittype) -> (
-      match ft.rollen with
+  | Some (ft : fact_type_name) -> (
+      match ft.role_names with
       | [ a; b ] -> (
-          let named (r : rol) =
-            match r.rol_naam with Some n -> norm n = norm role | None -> false
+          let named (r : role_ref) =
+            match r.role_identifier with Some n -> norm n = norm role | None -> false
           in
           match (named a, named b) with
           | true, false -> a
@@ -576,23 +576,23 @@ let created_role env ~fact_type ~role =
 
 (* the storage keys a role's links may sit under, in read-preference
    order: the case may key them by the role's plural or its name *)
-let role_keys (r : rol) = List.filter_map (fun k -> k) [ r.rol_meervoud; r.rol_naam ]
+let role_keys (r : role_ref) = List.filter_map (fun k -> k) [ r.role_plural; r.role_identifier ]
 
 (* linked instances over [role] seen from [self]: the first non-empty
    key wins — the same preference the creation writer (World.add_link)
    uses, so created and case-supplied links are read identically *)
-let role_links world (self : World.instance) (role : rol) =
+let role_linked_instances world (self : World.instance) (role : role_ref) =
   let labels =
     List.fold_left
-      (fun acc k -> if acc = [] then World.links self k else acc)
+      (fun acc k -> if acc = [] then World.left_side self k else acc)
       [] (role_keys role)
   in
   List.map (World.get world) labels
 
 (* linked instances seen from [self] over the bound role: the relation a
    node reads is written on it, never derived (B12) *)
-let linked env world (self : World.instance) ~(binding : rol_binding) =
-  role_links world self (bound_role env binding)
+let linked env world (self : World.instance) ~(binding : role_binding) =
+  role_linked_instances world self (bound_role env binding)
 
 (* ch. 3.4b / WF-102: the multi-step fold source. The folded set is the
    FLAT UNION over the path — walk step 1 from the subject, step 2 from
@@ -602,12 +602,12 @@ let linked env world (self : World.instance) ~(binding : rol_binding) =
    [World.instance] identity is keyed on everywhere else; without it a
    diamond would double-count in a som and the ASP backend (whose
    aggregate collapses equal tuples by construction) would disagree.
-   A to-ONE step needs no separate arm: [role_links] yields its
+   A to-ONE step needs no separate arm: [role_linked_instances] yields its
    zero-or-one instance like any other. *)
 let linked_path env world (self : World.instance) ~path =
   let step acc rb =
     let role = bound_role env rb in
-    List.concat_map (fun i -> role_links world i role) acc
+    List.concat_map (fun i -> role_linked_instances world i role) acc
   in
   let reached = List.fold_left step [ self ] path in
   let seen = Hashtbl.create 16 in
@@ -634,7 +634,7 @@ let linked_path env world (self : World.instance) ~path =
 let fold_members ?binding ?path env world (self : World.instance) ~element =
   let reached =
     match (path, binding) with
-    | Some pad, _ -> linked_path env world self ~path:pad (* ch. 3.4b *)
+    | Some trail, _ -> linked_path env world self ~path:trail (* ch. 3.4b *)
     | None, Some rb -> linked env world self ~binding:rb
     | None, None ->
         Value.fault
@@ -649,13 +649,13 @@ let fold_members ?binding ?path env world (self : World.instance) ~element =
    link. An absent link at any hop short-circuits the whole read to
    None = leeg (ch. 1.2); a to-many hop in a scalar slot faults, never a
    silent first pick. *)
-let nav_target env world (self : World.instance) ~(bindings : rol_binding list) ~endpoint =
+let nav_target env world (self : World.instance) ~(bindings : role_binding list) ~endpoint =
   let roles = List.map (bound_role env) bindings in
   List.iter
-    (fun (r : rol) ->
-      if r.rol_meervoudig then
+    (fun (r : role_ref) ->
+      if r.role_many then
         Value.fault "navigation over the to-many role %S in a scalar slot is refused"
-          (Option.value r.rol_naam ~default:"?"))
+          (Option.value r.role_identifier ~default:"?"))
     roles;
   let rec walk (cur : World.instance) = function
     | [] ->
@@ -670,13 +670,13 @@ let nav_target env world (self : World.instance) ~(bindings : rol_binding list) 
           Value.fault "the navigation reached %S, not the declared endpoint %S" cur.otype
             endpoint;
         Some cur
-    | (r : rol) :: rest -> (
-        match role_links world cur r with
+    | (r : role_ref) :: rest -> (
+        match role_linked_instances world cur r with
         | [] -> None
         | [ next ] -> walk next rest
         | _ ->
             Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
-              (Option.value r.rol_naam ~default:"?")
+              (Option.value r.role_identifier ~default:"?")
               cur.label)
   in
   walk self roles
@@ -692,9 +692,9 @@ let nav_target env world (self : World.instance) ~(bindings : rol_binding list) 
    folds an empty timeline to a pass. *)
 let whole_period_operand env world (self : World.instance) (e : expr) : Timeline.t =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen; _ }
-    when Ir_v0.Checks.attr_temporal (objecttype env otn) a -> (
-      match navigatie_bindingen with
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings; _ }
+    when Ir_v0.Checks.attr_temporal (object_type env otn) a -> (
+      match navigation_bindings with
       | None ->
           if not (own_read env self otn) then
             Value.fault
@@ -716,7 +716,7 @@ let whole_period_operand env world (self : World.instance) (e : expr) : Timeline
 (* --- literals ----------------------------------------------------------- *)
 
 let unit_of_datatype = function
-  | Some (Numeriek { eenheid = Some e; _ }) | Some (Percentage { eenheid = Some e; _ }) ->
+  | Some (Number { measure_unit = Some e; _ }) | Some (Percentage { measure_unit = Some e; _ }) ->
       Value.Unit e
   | _ -> Value.Unitless
 
@@ -738,17 +738,17 @@ let literal_value (variant : literal_variant) (typ : datatype option) =
   | None -> ());
   match (typ, variant) with
   | None, v -> Value.Num (Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme v), Value.Unitless)
-  | Some (Numeriek _ | Percentage _), Lv_number s -> Value.Num (Value.q_of_lexeme s, unit_of_datatype typ)
-  | Some Booleaan, Lv_boolean b -> Value.Bool b
-  | Some Tekst, Lv_text s -> Value.Text s
-  | Some (Enumeratie _), Lv_enumeration s -> Value.Enum s
-  | Some Datum_in_dagen, Lv_date s -> Value.date_of_iso s
+  | Some (Number _ | Percentage _), Lv_number s -> Value.Num (Value.q_of_lexeme s, unit_of_datatype typ)
+  | Some Boolean, Lv_boolean b -> Value.Bool b
+  | Some Text_type, Lv_text s -> Value.Text s
+  | Some (Enumeration _), Lv_enumeration s -> Value.Enum s
+  | Some Date_in_days, Lv_date s -> Value.date_of_iso s
   (* WF-095 (ch. 4.1): a datum-tijd literal reads into the SAME millisecond
      layer the case wire reads its `dateTime` into, through the same single
      admitted spelling — the canonical ISO lexeme; the day-first source
      snippet is refused like any other form. An unreadable lexeme faults
      with the position, never silently becoming some other instant. *)
-  | Some Datum_tijd, Lv_date_time s -> Value.datetime_of_lexeme s
+  | Some Date_time_type, Lv_date_time s -> Value.datetime_of_lexeme s
   | Some _, v ->
       Value.fault "literal of this datatype not implemented: %S" (Ir_v0.Loader.literal_lexeme v)
 
@@ -766,27 +766,27 @@ let literal_value (variant : literal_variant) (typ : datatype option) =
    other node carries its own annotation. *)
 let rec static_type env (e : expr) : datatype option =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
       match Ir_v0.Checks.effective_ot env.doc ot with
       | None -> None
       | Some o -> (
-          match Ir_v0.Checks.find_ci o.attributen a with Some dt -> dt | None -> None))
+          match Ir_v0.Checks.find_ci o.attributes a with Some dt -> dt | None -> None))
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci env.doc.parameters p with
       | Some par -> par.par_datatype
       | None -> None)
-  | Dimensie_cel { attribuut = Some inner; _ } -> static_type env inner
-  | Binder_ref { naam; _ } -> Option.join (SMap.find_opt (norm naam) env.btypes)
-  | Attribuut_ref _ | Parameter_ref _ | Dimensie_cel _ | Variabele_ref _ -> None
+  | Dimension_cell_read { attribute_ref = Some inner; _ } -> static_type env inner
+  | Binder_ref { ident; _ } -> Option.join (SMap.find_opt (norm ident) env.btypes)
+  | Attribute_reference _ | Parameter_ref _ | Dimension_cell_read _ | Variable_reference _ -> None
   | Literal { typ; _ }
-  | Tekst_reeks { typ; _ }
-  | Binair { typ; _ }
-  | Functie { typ; _ }
-  | Afgerond { typ; _ }
-  | Begrensd { typ; _ }
-  | Constante { typ; _ }
+  | Text_composition { typ; _ }
+  | Binary { typ; _ }
+  | Function_call { typ; _ }
+  | Rounding { typ; _ }
+  | Clamp { typ; _ }
+  | Context_value { typ; _ }
   | Bound_day { typ; _ }
-  | Expr_onopgelost { typ; _ }
+  | Expr_unresolved { typ; _ }
   | Temporal_read { typ; _ }
   | Construct { typ; _ }
   | Match { typ; _ }
@@ -812,8 +812,8 @@ let rec static_type env (e : expr) : datatype option =
 let static_numeric env l r =
   let kind e =
     match static_type env e with
-    | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
-    | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _ | List_type _ | Struct_type _) -> Some false
+    | Some (Number _ | Percentage _ | Date_in_days | Date_time_type) -> Some true
+    | Some (Text_type | Boolean | Enumeration _ | Sum_type _ | List_type _ | Struct_type _) -> Some false
     | None -> None
   in
   match kind l with Some b -> Some b | None -> kind r
@@ -823,7 +823,7 @@ let static_numeric env l r =
    the date shape (Arith.compare_op ~static_date) *)
 let static_date env l r =
   let is_date e =
-    match static_type env e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
+    match static_type env e with Some (Date_in_days | Date_time_type) -> true | _ -> false
   in
   is_date l || is_date r
 
@@ -832,16 +832,16 @@ let static_date env l r =
    ordered filled values and part company on a leeg operand, which makes
    BOTH orderings false (ch. 1.2d). The equalities are symmetric and stay
    themselves. *)
-let omgekeerd : Ir_v0.Ast.vergelijk_op -> Ir_v0.Ast.vergelijk_op = function
-  | Kleiner -> Groter
-  | Kleiner_of_gelijk -> Groter_of_gelijk
-  | Groter -> Kleiner
-  | Groter_of_gelijk -> Kleiner_of_gelijk
-  | Eerder -> Later
-  | Eerder_of_gelijk -> Later_of_gelijk
-  | Later -> Eerder
-  | Later_of_gelijk -> Eerder_of_gelijk
-  | (Gelijk | Ongelijk) as op -> op
+let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
+  | Less -> Greater
+  | Less_or_equal -> Greater_or_equal
+  | Greater -> Less
+  | Greater_or_equal -> Less_or_equal
+  | Earlier -> Later
+  | Earlier_or_equal -> Later_or_equal
+  | Later -> Earlier
+  | Later_or_equal -> Earlier_or_equal
+  | (Equal | Not_equal) as op -> op
 
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
@@ -850,7 +850,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let name = req "ParameterReference.parameter" parameter in
       let decl =
         match Ir_v0.Checks.find_ci env.doc.parameters name with
-        | Some { par_granulariteit = Some _; _ } ->
+        | Some { par_granularity = Some _; _ } ->
             (* v0 refuses a granular parameter in a scalar slot (the §8.2
                marker family); how a rule reads a vintage is ch. 8 scope *)
             Value.fault "parameter %S is granular; reading a vintage in a rule is ch. 8 scope" name
@@ -872,15 +872,15 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           | _ ->
               Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
                 name))
-  | Attribuut_ref { attribuut; objecttype = ot; navigatie_bindingen; _ } -> (
-      let name = req "AttributeReference.attribute" attribuut in
+  | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
+      let name = req "AttributeReference.attribute" attribute_ref in
       let ot = req "AttributeReference.subjectType" ot in
       (* a value position reads a DECLARED attribute of the type the value
          lives on; any other name — a characteristic, or the role name a
          count source writes — has no value here, and reading it as an
          absent attribute would answer leeg for a form no reader writes *)
-      if Ir_v0.Checks.find_ci (objecttype env ot).attributen name = None then
-        if Ir_v0.Checks.has_kenmerk (objecttype env ot) name then
+      if Ir_v0.Checks.find_ci (object_type env ot).attributes name = None then
+        if Ir_v0.Checks.has_characteristic (object_type env ot) name then
           Value.fault
             "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
              ill-formed in a value position"
@@ -890,14 +890,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
          attribute in a scalar slot is refused; the only bridges are
          the dedicated collapses (the temporal total handles its own
-         argument in eval_functie). [ot] is the type the value lives on:
+         argument in eval_function_call). [ot] is the type the value lives on:
          the subject itself, or the navigation endpoint. *)
-      if Ir_v0.Checks.attr_temporal (objecttype env ot) name then
+      if Ir_v0.Checks.attr_temporal (object_type env ot) name then
         Value.fault
           "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
            read exists — the collapses are the only bridges)"
           name;
-      match navigatie_bindingen with
+      match navigation_bindings with
       | None ->
           (* D10: without bindings the read is the subject's own — which
              includes an INHERITED member, written at the declaring
@@ -914,13 +914,13 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match nav_target env world self ~bindings ~endpoint:ot with
           | None -> Value.Empty
           | Some target -> World.attr target name))
-  | Binair { op = (Plus | Min) as op; links; rechts; _ }
+  | Binary { op = (Plus | Min) as op; left_side; right_side; _ }
     when List.exists
            (fun e ->
              match Option.bind e (static_type env) with
-             | Some (Datum_in_dagen | Datum_tijd) -> true
+             | Some (Date_in_days | Date_time_type) -> true
              | _ -> false)
-           [ links; rechts ] -> (
+           [ left_side; right_side ] -> (
       (* date ± duration (ch. 3.8), routed on the static date type. The
          WF-035 discipline, enforced fail-fast behind the verifier: the
          date stands on the LEFT of plus and min (v0's typing opens its
@@ -928,9 +928,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          date is ill-formed; the duration's unit is its static type's unit
          spelling through the shared table — sub-day units demand
          datum-tijd. *)
-      let le = req "Binary.left" links and re = req "Binary.right" rechts in
+      let le = req "Binary.left" left_side and re = req "Binary.right" right_side in
       let date_typed e =
-        match static_type env e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
+        match static_type env e with Some (Date_in_days | Date_time_type) -> true | _ -> false
       in
       let minus = op = Min in
       let dur_e =
@@ -942,10 +942,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       in
       let unit_ =
         match static_type env dur_e with
-        | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
-            match Ir_v0.Checks.time_unit_of_eenheid u with
+        | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }) -> (
+            match Ir_v0.Checks.time_unit_of_unit u with
             | Some tu ->
-                if Ir_v0.Checks.time_unit_sub_day tu && static_type env le = Some Datum_in_dagen
+                if Ir_v0.Checks.time_unit_sub_day tu && static_type env le = Some Date_in_days
                 then
                   Value.fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
                 else `Calendar tu
@@ -957,7 +957,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 | None ->
                     Value.fault "%s"
                       (Ir_v0.Checks.date_duration_unknown_unit
-                         (Option.value u.afkorting ~default:"?"))))
+                         (Option.value u.abbr_text ~default:"?"))))
         | Some d when not (Ir_v0.Checks.is_number_like d) ->
             Value.fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
         | _ -> Value.fault "%s" Ir_v0.Checks.date_duration_without_time_unit
@@ -968,44 +968,44 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | `Calendar tu -> Arith.date_plus_duration ~minus ~unit_:tu d dur
       | `Day_kind k ->
           Arith.date_plus_day_kind ~minus ~matches:(day_kind_pred env world self ~err k) d dur)
-  | Binair { op; links; rechts; _ } -> (
-      let l = eval_expr env world self ~err (req "Binary.left" links) in
-      let r = eval_expr env world self ~err (req "Binary.right" rechts) in
+  | Binary { op; left_side; right_side; _ } -> (
+      let l = eval_expr env world self ~err (req "Binary.left" left_side) in
+      let r = eval_expr env world self ~err (req "Binary.right" right_side) in
       match op with
       | Plus -> Arith.add l r
       | Min -> Arith.sub_min l r
-      | Verminderd_met -> Arith.sub_verminderd l r
-      | Maal -> Arith.mul l r
-      | Gedeeld_door -> Arith.div_ ~err l r
-      | Gedeeld_door_abs -> Arith.div_abs ~err l r
-      | Tot_de_macht -> Arith.pow_ l r
-      | Percentage_van -> Arith.pct_of l r)
-  | Afgerond { basis; modus; decimalen; _ } -> (
-      match basis with
-      | Some (Functie { kind = Wortel; argumenten = [ arg ]; _ }) ->
+      | Reduced_by -> Arith.sub_reduced l r
+      | Times -> Arith.mul l r
+      | Divided_by -> Arith.div_ ~err l r
+      | Divided_by_abs -> Arith.div_abs ~err l r
+      | Power -> Arith.pow_ l r
+      | Percentage_of -> Arith.pct_of l r)
+  | Rounding { base_expr; mode_kind; decimal_places; _ } -> (
+      match base_expr with
+      | Some (Function_call { kind = Square_root; call_arguments = [ arg ]; _ }) ->
           (* the mandatory rounding after a root (§13.4.17.13) rounds the
              true irrational, exactly *)
-          numeric_builtin_operand env Wortel arg;
-          Arith.sqrt_rounded ~err modus decimalen (eval_expr env world self ~err arg)
+          numeric_builtin_operand env Square_root arg;
+          Arith.sqrt_rounded ~err mode_kind decimal_places (eval_expr env world self ~err arg)
       | _ ->
-          Arith.round_v modus decimalen (eval_expr env world self ~err (req "Rounding.base" basis)))
-  | Begrensd { basis; minimum; maximum; _ } ->
+          Arith.round_v mode_kind decimal_places (eval_expr env world self ~err (req "Rounding.base" base_expr)))
+  | Clamp { base_expr; minimum; maximum; _ } ->
       (* ch. 5.11, wire order: base, then minimum, then maximum. The [let]s
          carry the semantics, not the style — written as two labelled
          arguments this build evaluates the MAXIMUM first, which runs the
          node's operands against the direction ch. 2.7 applies its bounds in.
          An absent bound evaluates nothing. *)
-      let v = eval_expr env world self ~err (req "Clamp.base" basis) in
+      let v = eval_expr env world self ~err (req "Clamp.base" base_expr) in
       let bound = function None -> Value.Empty | Some b -> eval_expr env world self ~err b in
       let min_ = bound minimum in
       let max_ = bound maximum in
       Arith.clamp ~min_ ~max_ v
-  | Functie { kind = (Tijdsduur | Absolute_tijdsduur) as kind; argumenten; filter; typ; _ } -> (
+  | Function_call { kind = (Duration | Absolute_duration) as kind; call_arguments; filter; typ; _ } -> (
       (* tijdsduur van A tot B (ch. 3.8), routed on the node-type unit:
          the counted unit is the node's own declared unit, resolved by
          spelling through the shared table (WF-038). *)
       if filter <> None then Value.fault "a filter on a duration has no v0 form";
-      match argumenten with
+      match call_arguments with
       | [ a; b ] ->
           (* the rest of the WF-038 clause in the verifier's order and
              sentences, read off the static types before any value: two dates
@@ -1024,13 +1024,13 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           let unit_ =
             match typ with
             | None -> Value.fault "%s" (Ir_v0.Checks.duration_without_node_type kind)
-            | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
+            | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ })
               -> (
-                match Ir_v0.Checks.time_unit_of_eenheid u with
+                match Ir_v0.Checks.time_unit_of_unit u with
                 | Some tu ->
                     if
                       Ir_v0.Checks.time_unit_sub_day tu
-                      && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
+                      && (ta = Some Date_in_days || tb = Some Date_in_days)
                     then Value.fault "%s" (Ir_v0.Checks.duration_sub_day_on_day_dates kind)
                     else `Calendar tu
                 | None -> (
@@ -1042,36 +1042,36 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     | None ->
                         Value.fault "%s"
                           (Ir_v0.Checks.duration_unknown_unit kind
-                             (Option.value u.afkorting ~default:"?"))))
+                             (Option.value u.abbr_text ~default:"?"))))
             | Some _ -> Value.fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
           in
           (* ch. 5.11, wire order: "van" (argument 0) before "tot"
              (argument 1). Written as two positional arguments this build
              evaluates "tot" first — the reverse of the phrase. *)
           let van = eval_expr env world self ~err a in
-          let tot = eval_expr env world self ~err b in
-          let absolute = kind = Absolute_tijdsduur in
+          let up_to = eval_expr env world self ~err b in
+          let absolute = kind = Absolute_duration in
           let result_unit = unit_of_datatype typ in
           (match unit_ with
-          | `Calendar tu -> Arith.tijdsduur ~absolute ~unit_:tu ~result_unit van tot
+          | `Calendar tu -> Arith.duration ~absolute ~unit_:tu ~result_unit van up_to
           | `Day_kind k ->
-              Arith.tijdsduur_day_kind ~absolute
+              Arith.duration_day_kind ~absolute
                 ~matches:(day_kind_pred env world self ~err k)
-                ~result_unit van tot)
+                ~result_unit van up_to)
       | _ -> Value.fault "duration expects two arguments")
-  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; bron_pad; typ = _; bron = _ } ->
-      eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
-        ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad
-  | Tekst_reeks { delen; _ } ->
+  | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selection; grain; source_role; source_path; typ = _; source_name = _ } ->
+      eval_function_call env world self ~err ~kind ~call_arguments ~element_object_type ~empty_fallback ~filter
+        ~dimension_selection ~grain ~source_role ~source_path
+  | Text_composition { pieces; _ } ->
       Arith.concat
         (map_in_order
            (function
-             | Letterlijk { tekst } -> Value.Text (Option.value tekst ~default:"")
-             | Ingevoegd { expr = e } -> eval_expr env world self ~err (req "EmbeddedExpression.expr" e))
-           delen)
-  | Expr_onopgelost _ ->
+             | Literal_chunk { body_text } -> Value.Text (Option.value body_text ~default:"")
+             | Embedded_expression { expr = e } -> eval_expr env world self ~err (req "EmbeddedExpression.expr" e))
+           pieces)
+  | Expr_unresolved _ ->
       Value.fault "Unresolved reached in evaluation: this rule fails observably"
-  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
+  | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value — the only
          expression-level access to the evaluation date *)
       match env.as_of with
@@ -1080,12 +1080,12 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           Value.fault
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
              null")
-  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
+  | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
       (* ch. 8.2: the execution year is derived from the session's one date,
          never supplied beside it — yearOf(evaluationDate), a whole unitless
          number — so a session cannot carry a year its date contradicts *)
       match env.as_of with
-      | Some d -> Arith.jaar_uit (Value.date_of_iso d)
+      | Some d -> Arith.year_of (Value.date_of_iso d)
       | None ->
           Value.fault
             "the evaluationYear context value needs an evaluation date; the case carries asOfDate \
@@ -1095,7 +1095,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
      An executor's loader refuses such a node, so only one built by hand
      arrives here, and it is refused in the loader's own sentence, never
      read as the session value or the day it resembles *)
-  | Constante { naam = Some n; _ } when Ir_v0.Checks.context_value_refusal n <> None ->
+  | Context_value { ident = Some n; _ } when Ir_v0.Checks.context_value_refusal n <> None ->
       Value.fault "%s" (Option.get (Ir_v0.Checks.context_value_refusal n))
   | Bound_day _ -> (
       (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition (BoundDay) —
@@ -1110,22 +1110,22 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           Value.fault
             "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
              evaluation it denotes nothing")
-  | Dimensie_cel _ | Variabele_ref _ | Constante _ ->
+  | Dimension_cell_read _ | Variable_reference _ | Context_value _ ->
       Value.fault "expression kind not implemented in this card"
-  | Temporal_read { basis; datum; typ = _; bron = _ } -> (
+  | Temporal_read { base_expr; date_value; typ = _; source_name = _ } -> (
       (* ch. 3.3, the point-in-time read: read(tl, d). The base is never
          evaluated as a scalar (that is the refused shape); it names the
          timeline. An empty date index reads to leeg; a gap reads to leeg
          (ch. 3.1); a case that supplies only the asOfDate-bucket scalar
          cannot serve a read — fault, never a guess. *)
-      match eval_expr env world self ~err datum with
+      match eval_expr env world self ~err date_value with
       | Value.Empty -> Value.Empty
       | Value.Date d -> (
-          match basis with
-          | Attribuut_ref
-              { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+          match base_expr with
+          | Attribute_reference
+              { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
             when own_read env self otn ->
-              if not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) then
+              if not (Ir_v0.Checks.attr_temporal (object_type env otn) a) then
                 Value.fault "temporal read of %S, which is not a temporal attribute" a;
               (match World.timeline self a with
               | Some tl -> Timeline.read tl d
@@ -1136,7 +1136,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     a)
           | Parameter_ref { parameter = Some p; _ } -> (
               (match Ir_v0.Checks.find_ci env.doc.parameters p with
-              | Some { par_granulariteit = Some _; _ } -> ()
+              | Some { par_granularity = Some _; _ } -> ()
               | Some _ -> Value.fault "temporal read of parameter %S, which is not granular" p
               | None -> Value.fault "unknown parameter %S" p);
               match SMap.find_opt (norm p) env.param_tls with
@@ -1233,8 +1233,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 | Some b ->
                     let payload_t =
                       match static_type env scrutinee with
-                      | Some (Sum_type { constructoren; _ }) -> (
-                          match List.find_opt (fun (c, _) -> norm c = norm tag) constructoren with
+                      | Some (Sum_type { constructor_list; _ }) -> (
+                          match List.find_opt (fun (c, _) -> norm c = norm tag) constructor_list with
                           | Some (_, p) -> p
                           | None -> None)
                       | _ -> None
@@ -1243,15 +1243,15 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               in
               eval_expr { env with locals; btypes } world self ~err body)
       | v -> Value.fault "match scrutinee is %s, not a constructor value" (Value.to_string v))
-  | Binder_ref { naam; _ } -> (
+  | Binder_ref { ident; _ } -> (
       (* ch. 9.2: the nearest enclosing binder; WF-064 makes the miss
          statically impossible, so an unbound read is a fail-fast fault. A
          [Later] binding is a ch. 10.6 need: reading it forces the value (once)
          and raises the owning Let's barrier if that value is leeg. *)
-      match SMap.find_opt (norm naam) env.locals with
+      match SMap.find_opt (norm ident) env.locals with
       | Some (Now v) -> v
       | Some (Later read) -> read ()
-      | None -> Value.fault "unbound binder %S (the verifier should preclude this)" naam)
+      | None -> Value.fault "unbound binder %S (the verifier should preclude this)" ident)
   | Let { binder; value; body; _ } ->
       (* ch. 10.6, the three clauses. (1) LAZY, ONCE: [value] is evaluated in
          the ENCLOSING scope (WF-076 — the binder is invisible in its own
@@ -1272,20 +1272,20 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let locals = SMap.add (norm binder) (Later read) env.locals in
       let btypes = SMap.add (norm binder) (static_type env value) env.btypes in
       (try eval_expr { env with locals; btypes } world self ~err body with Barrier -> Value.Empty)
-  | Struct_literal { velden; _ } ->
+  | Struct_literal { field_list; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
          whole literal evaluates leeg (a record carries no hole). The field
          order is the wire's declaration order (WF-073). *)
-      let fs = map_in_order (fun (n, e) -> (n, eval_expr env world self ~err e)) velden in
+      let fs = map_in_order (fun (n, e) -> (n, eval_expr env world self ~err e)) field_list in
       if List.exists (fun (_, v) -> v = Value.Empty) fs then Value.Empty else Value.Record fs
-  | Field_access { base; veld; _ } -> (
+  | Field_access { base; field_name; _ } -> (
       (* ch. 11.1: read one declared field; a leeg base propagates leeg
          (reading a field of an absent record is leeg). The projection is by
          ci field name (WF-074), positional over the record's fields. *)
       match eval_expr env world self ~err base with
       | Value.Empty -> Value.Empty
       | Value.Record fs -> (
-          match List.find_opt (fun (n, _) -> norm n = norm veld) fs with
+          match List.find_opt (fun (n, _) -> norm n = norm field_name) fs with
           | Some (_, v) -> v
           | None ->
               (* Two rules have to hold together for this to be unreachable on
@@ -1331,13 +1331,13 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                  executors). Kept as an honest fault, never an assert. *)
               Value.fault
                 "field %S is not present on the record value (unreachable on a verifier-clean document)"
-                veld)
+                field_name)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->
       (* ch. 10.1: a list value; an element evaluating leeg propagates —
          the whole literal evaluates leeg (a list carries no hole) *)
       let vs = map_in_order (eval_expr env world self ~err) elements in
-      if List.exists (fun v -> v = Value.Empty) vs then Value.Empty else Value.Lijst vs
+      if List.exists (fun v -> v = Value.Empty) vs then Value.Empty else Value.List_value vs
   | Lambda _ ->
       (* WF-069: a Lambda is position-restricted — only the [function] operand
          of a Fold/MapList, evaluated there via [apply_fold_fn], never on its
@@ -1348,36 +1348,36 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          discipline, then exactly the chosen branch — strict, no coalesce *)
       if eval_cond env world self ~err condition then eval_expr env world self ~err then_
       else eval_expr env world self ~err else_
-  | Invoke { functie; arguments; _ } -> (
+  | Invoke { function_name; arguments; _ } -> (
       (* ch. 10.2: evaluate arguments strictly (a leeg argument propagates
          without entering the body); bind the parameters in a fresh locals —
          the body is closed (WF-067) — and evaluate it. No recursion (WF-067),
          so termination is structural *)
-      let fd = function_def env functie in
+      let fd = function_def env function_name in
       if List.length arguments <> List.length fd.fd_parameters then
-        Value.fault "function %S invoked with %d arguments, expected %d" functie
+        Value.fault "function %S invoked with %d arguments, expected %d" function_name
           (List.length arguments) (List.length fd.fd_parameters);
       let args = map_in_order (eval_expr env world self ~err) arguments in
       if List.exists (fun v -> v = Value.Empty) args then Value.Empty
       else eval_closed_body env world self ~err fd.fd_parameters fd.fd_body args)
-  | Fold { list; functie; init; _ } -> (
+  | Fold { list; function_name; init; _ } -> (
       (* ch. 10.2: a left fold, order normative. A leeg list operand and a
          leeg init both propagate; fold(f, init, []) = init *)
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
-      | Value.Lijst xs -> (
+      | Value.List_value xs -> (
           match eval_expr env world self ~err init with
           | Value.Empty -> Value.Empty
-          | acc0 -> List.fold_left (fun acc x -> apply_fold_fn env world self ~err functie [ acc; x ]) acc0 xs)
+          | acc0 -> List.fold_left (fun acc x -> apply_fold_fn env world self ~err function_name [ acc; x ]) acc0 xs)
       | v -> Value.fault "fold list operand is %s, not a list value" (Value.to_string v))
-  | Map_list { list; functie; _ } -> (
+  | Map_list { list; function_name; _ } -> (
       (* ch. 10.2: elementwise, order-preserving; a leeg source propagates,
          and a body yielding leeg propagates the whole map (no hole) *)
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
-      | Value.Lijst xs ->
-          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err functie [ x ]) xs in
-          if List.exists (fun v -> v = Value.Empty) ys then Value.Empty else Value.Lijst ys
+      | Value.List_value xs ->
+          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err function_name [ x ]) xs in
+          if List.exists (fun v -> v = Value.Empty) ys then Value.Empty else Value.List_value ys
       | v -> Value.fault "map-list operand is %s, not a list value" (Value.to_string v))
   | Filter_list { list; binder; condition; _ } -> (
       (* ch. 10.2: keep, in order, the elements the condition holds for with
@@ -1385,12 +1385,12 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          (a condition per contributor); a leeg source propagates *)
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
-      | Value.Lijst xs ->
+      | Value.List_value xs ->
           let element_t =
             match static_type env list with Some (List_type { element }) -> Some element | _ -> None
           in
           let btypes = SMap.add (norm binder) element_t env.btypes in
-          Value.Lijst
+          Value.List_value
             (filter_in_order
                (fun x ->
                  let locals = SMap.add (norm binder) (Now x) env.locals in
@@ -1401,7 +1401,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       (* ch. 10.2: the element count; [] counts 0; a leeg source propagates *)
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
-      | Value.Lijst xs -> Value.Num (Q.of_int (List.length xs), Value.Unitless)
+      | Value.List_value xs -> Value.Num (Q.of_int (List.length xs), Value.Unitless)
       | v -> Value.fault "list-length operand is %s, not a list value" (Value.to_string v))
   | Instance_set_union _ ->
       (* WF-110 admits this node at ONE position — the single argument of an
@@ -1449,22 +1449,22 @@ and numeric_builtin_operand env kind a =
   | Some sentence -> Value.fault "%s" sentence
   | None -> ()
 
-and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
-    ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad =
+and eval_function_call env world self ~err ~kind ~call_arguments ~element_object_type ~empty_fallback ~filter
+    ~dimension_selection ~grain ~source_role ~source_path =
   (* the die/dat subselection executes on the instance folds below; the
      SAME wire field also carries the §7.1 gedurende timeline clip (a
      filter on the temporal total, where elementType is the
      subject itself) — that form must never run as an instance
      subselection and faults in its own arm *)
-  if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
+  if dimension_selection <> None then Value.fault "dimension selection not implemented in this card";
   (* a granularity is a BuiltinCall facet since the L4 landing, read by the
      two bucketing builtins alone, and those run only as the whole value of a
      rule on a temporal target ([run_pro_rata]). On any other kind the facet
      is WF-037's refusal, in the verifier's sentence; a bucketing builtin met
      here is refused by name, never evaluated with its facet dropped *)
-  (match (granulariteit, kind) with
+  (match (grain, kind) with
   | None, _ -> ()
-  | Some _, (Tijdsevenredig_deel | Aantal_dagen_in) ->
+  | Some _, (Time_proportional_part | Day_count) ->
       Value.fault
         "a granularity-bucketed builtin call is executed only as the whole value of a rule on a \
          temporal target (ch. 3.7, 3.8)"
@@ -1486,56 +1486,56 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
      role, and a name that is a MEMBER of the element type — an attribute or a
      characteristic — reads a value per contributor, which a count does not
      fold, however its range is spelled *)
-  (match (kind, element_objecttype, argumenten) with
-  | Aantal, Some el, [ Attribuut_ref { attribuut = Some a; navigatie_bindingen = None; _ } ]
-    when (bron_rol <> None || bron_pad <> None)
-         && (Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None
-            || Ir_v0.Checks.has_kenmerk (objecttype env el) a) ->
+  (match (kind, element_object_type, call_arguments) with
+  | Count, Some el, [ Attribute_reference { attribute_ref = Some a; navigation_bindings = None; _ } ]
+    when (source_role <> None || source_path <> None)
+         && (Ir_v0.Checks.find_ci (object_type env el).attributes a <> None
+            || Ir_v0.Checks.has_characteristic (object_type env el) a) ->
       Value.fault
         "the source of this count aggregation reads '%s', a member of the element type '%s': a \
          count folds INSTANCES, so its source is a count source naming the relation's role, never \
          a value read per contributor"
         a el
   | _ -> ());
-  (match bron_pad with
+  (match source_path with
   | None -> ()
-  | Some pad ->
-      if bron_rol <> None then
+  | Some trail ->
+      if source_role <> None then
         Value.fault "sourcePath beside sourceRole: a fold carries one range, never two";
       (* WF-102 (c), the verifier's sentence: the set source is the single
          argument of an instance fold that carries a range, and a path is the
          range of a VALUE fold's set source only. A count's source names the
          one relation whose role it counts, so its range is one step. Judged
          before the arity, as clingo and the Drools loader judge it *)
-      (match (kind, element_objecttype, argumenten) with
-      | k, Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] when k <> Aantal -> ()
+      (match (kind, element_object_type, call_arguments) with
+      | k, Some _, [ Attribute_reference { navigation_bindings = None; _ } ] when k <> Count -> ()
       | _ ->
           Value.fault
             "a sourcePath is admissible only as the range of a single-argument VALUE fold's set \
              source — a count's range is one step, spelled sourceRole");
-      if List.length pad < 2 then
+      if List.length trail < 2 then
         Value.fault
           "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
            sourceRole"
-          (List.length pad));
+          (List.length trail));
   (* WF-083 (c), the verifier's sentence: a total without a range is the
      subject's own read, so the type it folds over is the subject type. The
      field is checked here because a foreign type in it otherwise moves no
      answer and nothing else refuses it *)
-  (match (kind, element_objecttype, argumenten, env.subj) with
-  | Totaal, Some el, [ _ ], Some st when bron_rol = None && bron_pad = None && norm el <> norm st ->
+  (match (kind, element_object_type, call_arguments, env.subj) with
+  | Total, Some el, [ _ ], Some st when source_role = None && source_path = None && norm el <> norm st ->
       Value.fault
         "the elementType '%s' of a total without a range is not the fold subject '%s': \
          without a range the fold is the subject's own read, so its elementType must name the \
          subject type"
         el st
   | _ -> ());
-  match (kind, argumenten) with
-  | ( Totaal,
-      [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ] )
-    when bron_rol = None && bron_pad = None
+  match (kind, call_arguments) with
+  | ( Total,
+      [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ] )
+    when source_role = None && source_path = None
          && own_read env self aot
-         && Ir_v0.Checks.attr_temporal (objecttype env aot) a -> (
+         && Ir_v0.Checks.attr_temporal (object_type env aot) a -> (
       (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
          timeline to a scalar. The case carries the asOfDate bucket's
          value (corpus/golden/README.md); the collapse folds that
@@ -1545,8 +1545,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          self-relation (element type = subject type) the two shapes are
          otherwise indistinguishable here — this arm would then total the
          SUBJECT's own timeline and answer for the wrong instance. *)
-      let ot_decl = objecttype env aot in
-      let gran = attr_granulariteit ot_decl a in
+      let ot_decl = object_type env aot in
+      let gran = attr_granularity ot_decl a in
       let grid = Timeline.grid_unit env.doc gran in
       (match filter with
       | Some c -> (
@@ -1569,21 +1569,21 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                      the asOfDate-bucket scalar"
                     a
           in
-          let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) tl in
-          let rec true_periods_of_cond (c : conditie) =
+          let span = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl in
+          let rec true_periods_of_cond (c : condition_expr) =
             match c with
-            | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie; _ } ->
-                if not (kenmerk_temporal ot_decl k) then
+            | Characteristic_check { characteristic = Some k; navigation_binding = None; negation; _ } ->
+                if not (characteristic_temporal ot_decl k) then
                   Value.fault
                     "gedurende over %S, which is not a temporal characteristic" k;
                 let periods =
                   Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
                 in
-                if negatie then Timeline.complement periods ~span else periods
-            | Vergelijking
-                { op; links = Some (Attribuut_ref
-                    { attribuut = Some b; objecttype = Some botn; navigatie_bindingen = None; _ });
-                  rechts = Some grens; periode = None; _ }
+                if negation then Timeline.complement periods ~span else periods
+            | Comparison
+                { op; left_side = Some (Attribute_reference
+                    { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ });
+                  right_side = Some boundary; time_period = None; _ }
               when own_read env self botn
                    && Ir_v0.Checks.attr_temporal ot_decl b ->
                 (* the compared timeline is evaluated PER SEGMENT against
@@ -1591,10 +1591,10 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 let tested =
                   match World.timeline self b with Some t -> t | None -> []
                 in
-                let bound = eval_expr env world self ~err grens in
+                let bound = eval_expr env world self ~err boundary in
                 Timeline.true_periods_of tested ~span (fun v ->
                     Arith.compare_op op v bound)
-            | Samengesteld { kwantor = Alle; onderdelen = (_ :: _ as onderdelen); _ } ->
+            | Compound { quantifier_kind = All; components = (_ :: _ as components); _ } ->
                 (* ch. 3.6, the FLAT composite `all` clip: the
                    intersection of the members' true periods — v0 nests
                    the per-member clips over exactly such flat
@@ -1609,7 +1609,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                    loud flanks). *)
                 let member_periods part =
                   match part with
-                  | Kenmerk_check _ -> true_periods_of_cond part
+                  | Characteristic_check _ -> true_periods_of_cond part
                   | _ ->
                       Value.fault
                         "a composite gedurende member is an own temporal characteristic \
@@ -1617,8 +1617,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 in
                 List.fold_left
                   (fun acc part -> Timeline.intersect_periods acc (member_periods part))
-                  (member_periods (List.hd onderdelen))
-                  (List.tl onderdelen)
+                  (member_periods (List.hd components))
+                  (List.tl components)
             | _ ->
                 Value.fault
                   "unsupported gedurende condition shape (an own temporal \
@@ -1627,7 +1627,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           in
           clip_member_qualifications c;
           let true_periods = true_periods_of_cond c in
-          Timeline.totaal ~grid_unit:grid gran (Timeline.clip tl true_periods))
+          Timeline.grand_total ~grid_unit:grid gran (Timeline.clip tl true_periods))
       | None -> (
       if World.timeline self a <> None then
         Value.fault
@@ -1647,12 +1647,12 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
               let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
               (* the period of the member's own grid that holds the evaluation
                  date: the calendar bucket, or the fixed start point's (ch. 3.2) *)
-              let van, tot = Timeline.grid_bucket (Timeline.attr_grid env.doc ot_decl a) day in
-              Timeline.totaal ~grid_unit:grid gran
-                [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))))
+              let van, up_to = Timeline.grid_bucket (Timeline.attr_grid env.doc ot_decl a) day in
+              Timeline.grand_total ~grid_unit:grid gran
+                [ { Timeline.s_from = van; s_to = up_to; s_value = v } ]))))
   | _ ->
   (* non-temporal aggregation *)
-  (* contributors: an instance fold over a role (element_objecttype set),
+  (* contributors: an instance fold over a role (element_object_type set),
      or listed operand expressions *)
   let contributors () =
     (* the die/dat subselection (§13.4.2): the filter condition evaluates
@@ -1662,24 +1662,24 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     let keep (i : World.instance) =
       match filter with
       | None -> true
-      | Some c -> eval_cond { env with subj = element_objecttype } world i ~err c
+      | Some c -> eval_cond { env with subj = element_object_type } world i ~err c
     in
     (* D8: the single argument of an instance fold that carries a range is
        its SET source. Under `count` it names the counted role and the count
        folds the reached INSTANCES; under every value fold and the filled
        count its attribute is read per contributor, on the element type. A
        set source never navigates: the range is its whole relation. *)
-    let ranged = bron_rol <> None || bron_pad <> None in
-    match (element_objecttype, argumenten) with
-    | Some el, [ Attribuut_ref { navigatie_bindingen = None; _ } ] when ranged && kind = Aantal ->
+    let ranged = source_role <> None || source_path <> None in
+    match (element_object_type, call_arguments) with
+    | Some el, [ Attribute_reference { navigation_bindings = None; _ } ] when ranged && kind = Count ->
         (* a source that names a member of the element type was refused at
            the head of this function (WF-093 (b)), so this one names a role *)
         `Instances
           (filter_in_order keep
-             (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el))
-    | Some el, [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ] when ranged ->
-        let name = req "fold attribute" attribuut in
-        let el_decl = objecttype env el in
+             (fold_members ?binding:source_role ?path:source_path env world self ~element:el))
+    | Some el, [ Attribute_reference { attribute_ref; navigation_bindings = None; _ } ] when ranged ->
+        let name = req "fold attribute" attribute_ref in
+        let el_decl = object_type env el in
         (* D8 (iii)/D9: the source's name is read per contributor, on the
            element type; a name that is no attribute there would read leeg on
            every member and answer a silent 0, so it is refused by name, as the
@@ -1688,8 +1688,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            which is a count source only a count folds (WF-093 (a)), and any
            other name, which declares nothing on the element type (WF-034). At
            a position without a subject any declared role name counts *)
-        if Ir_v0.Checks.find_ci el_decl.attributen name = None then
-          if Ir_v0.Checks.has_kenmerk el_decl name then
+        if Ir_v0.Checks.find_ci el_decl.attributes name = None then
+          if Ir_v0.Checks.has_characteristic el_decl name then
             Value.fault
               "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
                ill-formed in an aggregation source position"
@@ -1710,7 +1710,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
               name el;
         let members =
           filter_in_order keep
-            (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el)
+            (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
         in
         (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
            member's own timeline collapses over time first (ch. 3.6, at
@@ -1723,8 +1723,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           `Values (List.map (fun i -> World.attr i name) members)
         else begin
           (match kind with
-          | Som | Totaal -> ()
-          | Aantal_gevulde ->
+          | Sum_function | Total -> ()
+          | Filled_count ->
               (* ch. 3.4c states this exclusion for the FILLED COUNT normatively,
                  so the refusal that carries it has to be identifiable. The arm
                  below refuses on the same ground but is invariant over every kind
@@ -1749,7 +1749,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 "this aggregation over the temporal attribute %S of a set has no defined moment \
                  to fold (ch. 3.6: only sum and total carry the per-element timeline fold)"
                 name);
-          let gran = attr_granulariteit el_decl name in
+          let gran = attr_granularity el_decl name in
           let grid = Timeline.grid_unit env.doc gran in
           (* the convention of the per-element fold (ch. 3.6/§8.4): every
              member must bring its OWN horizon, because the integration
@@ -1768,7 +1768,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
             (map_in_order
                (fun (i : World.instance) ->
                  match World.timeline i name with
-                 | Some tl -> Timeline.totaal ~grid_unit:grid gran tl
+                 | Some tl -> Timeline.grand_total ~grid_unit:grid gran tl
                  | None ->
                      if World.attr i name = Value.Empty then Value.Empty
                      else
@@ -1780,7 +1780,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                members)
         end
     | _, (_ :: _ :: _ as args)
-      when (match kind with Eerste | Laatste | Minimum | Maximum -> true | _ -> false) ->
+      when (match kind with First | Last | Minimum | Maximum -> true | _ -> false) ->
         (* the articulated value fold (§5.8.3: ≥2 listed operands) is
            decided by argument SHAPE, not element absence — but ONLY for
            v0's listed family `minimum`/`maximum`/`first`/`last` (isGelisteFold:
@@ -1799,12 +1799,12 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
        the card aantal-bronarm-en-drools-lader this evaluator counted the union
        beside a range alone as if the range were not written *)
     | _, [ Instance_set_union _ ]
-      when kind = Aantal
-           && (element_objecttype <> None || bron_rol <> None || bron_pad <> None || filter <> None) ->
+      when kind = Count
+           && (element_object_type <> None || source_role <> None || source_path <> None || filter <> None) ->
         let named =
-          (if element_objecttype <> None then [ "elementType" ] else [])
-          @ (if bron_rol <> None then [ "sourceRole" ] else [])
-          @ (if bron_pad <> None then [ "sourcePath" ] else [])
+          (if element_object_type <> None then [ "elementType" ] else [])
+          @ (if source_role <> None then [ "sourceRole" ] else [])
+          @ (if source_path <> None then [ "sourcePath" ] else [])
           @ if filter <> None then [ "filter" ] else []
         in
         Value.fault
@@ -1869,7 +1869,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";
         `Values (map_in_order (eval_expr env world self ~err) args)
-    | Some el, [ _ ] when (not ranged) && kind <> Totaal ->
+    | Some el, [ _ ] when (not ranged) && kind <> Total ->
         Value.fault
           "an instance fold over %S carries no range: its relation is written as sourceRole or \
            sourcePath and never derived"
@@ -1885,7 +1885,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            ranges over a written source"
           (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
           el
-    | Some el, [ List_literal _ ] when kind = Aantal || kind = Aantal_gevulde ->
+    | Some el, [ List_literal _ ] when kind = Count || kind = Filled_count ->
         Value.fault
           "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a listed value \
            is no source of instances"
@@ -1898,8 +1898,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
        it on the wire), and a union under a count is WF-110 (c)'s, above *)
     | Some el, [ a ]
       when (match a with
-           | Attribuut_ref _ | List_literal _ -> false
-           | Instance_set_union _ -> kind <> Aantal
+           | Attribute_reference _ | List_literal _ -> false
+           | Instance_set_union _ -> kind <> Count
            | _ -> true) ->
         Value.fault
           "a %s aggregation carries elementType \"%s\" and %s operand: the source of an instance \
@@ -1914,10 +1914,10 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     | `Instances _ -> Value.fault "value aggregation over instances: only a count folds them"
   in
   match kind with
-  | Aantal -> (
+  | Count -> (
       (* a count, never empty (ch. 1.2e) *)
       match contributors () with
-      | `Instances is -> Arith.agg_aantal is
+      | `Instances is -> Arith.agg_count is
       | `Values vs ->
           (* The second line of defence, and a refusal since 2026-09-23. Every
              shape that hands a count VALUES is fenced on the wire: the listed
@@ -1937,7 +1937,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
              list or a count without an element type, both refused on the wire: counting them \
              would count the operands, or their filled ones, and never a population (ch. 3.4a)"
             (List.length vs))
-  | Aantal_gevulde ->
+  | Filled_count ->
       (* ch. 3.4c: the filled-value count. It reads a VALUE per contributor
          and counts the ones that are not leeg, so [values ()] is the whole
          of it — a set source hands them over, a source that names a role
@@ -1945,53 +1945,53 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          and every other source shape reaches that function's loud refusal.
          WF-037 puts the same fence on the wire; the refusal here stays as
          the second line of defence.
-         Never empty: [agg_aantal] over the empty list is 0, the identity
+         Never empty: [agg_count] over the empty list is 0, the identity
          element of a rule over sets (ch. 1.3), and no `emptyFallback` is
          consulted because WF-037 admits none. *)
-      Arith.agg_aantal (Arith.filled (values ()))
-  | Som ->
+      Arith.agg_count (Arith.filled (values ()))
+  | Sum_function ->
       (* ch. 5.11, wire order: `arguments` stands before `emptyFallback` in the
          node, so the contributors evaluate first and the stand-in after them.
          WF-037 confines an emptyFallback to the som, so this is the only arm
          that ever evaluates one. *)
       let vs = values () in
-      let fallback = Option.map (eval_expr env world self ~err) leegwaarde in
-      Arith.agg_som ~fallback vs
-  | Totaal -> Arith.agg_totaal (values ())
+      let fallback = Option.map (eval_expr env world self ~err) empty_fallback in
+      Arith.agg_sum ~fallback vs
+  | Total -> Arith.agg_total (values ())
   | Minimum -> Arith.agg_min (values ())
   | Maximum -> Arith.agg_max (values ())
-  | Eerste -> Arith.agg_eerste (values ())
-  | Laatste -> Arith.agg_laatste (values ())
-  | Wortel -> (
-      match argumenten with
+  | First -> Arith.agg_first (values ())
+  | Last -> Arith.agg_last (values ())
+  | Square_root -> (
+      match call_arguments with
       | [ a ] ->
-          numeric_builtin_operand env Wortel a;
+          numeric_builtin_operand env Square_root a;
           Arith.sqrt_ ~err (eval_expr env world self ~err a)
       | _ -> Value.fault "squareRoot expects one argument")
-  | Absolute_waarde -> (
-      match argumenten with
+  | Absolute_value -> (
+      match call_arguments with
       | [ a ] ->
-          numeric_builtin_operand env Absolute_waarde a;
+          numeric_builtin_operand env Absolute_value a;
           Arith.abs_ (eval_expr env world self ~err a)
       | _ -> Value.fault "absoluteValue expects one argument")
-  | Concatenatie -> Arith.concat (map_in_order (eval_expr env world self ~err) argumenten)
-  | Jaar_uit -> (
-      match argumenten with
-      | [ a ] -> Arith.jaar_uit (eval_expr env world self ~err a)
+  | Concatenation -> Arith.concat (map_in_order (eval_expr env world self ~err) call_arguments)
+  | Year_of -> (
+      match call_arguments with
+      | [ a ] -> Arith.year_of (eval_expr env world self ~err a)
       | _ -> Value.fault "yearOf expects one argument")
-  | Maand_uit -> (
-      match argumenten with
-      | [ a ] -> Arith.maand_uit (eval_expr env world self ~err a)
+  | Month_of -> (
+      match call_arguments with
+      | [ a ] -> Arith.month_of (eval_expr env world self ~err a)
       | _ -> Value.fault "monthOf expects one argument")
-  | Dag_uit -> (
-      match argumenten with
-      | [ a ] -> Arith.dag_uit (eval_expr env world self ~err a)
+  | Day_of -> (
+      match call_arguments with
+      | [ a ] -> Arith.day_from (eval_expr env world self ~err a)
       | _ -> Value.fault "dayOf expects one argument")
-  | Eerste_paasdag -> (
-      match argumenten with
-      | [ a ] -> Arith.eerste_paasdag (eval_expr env world self ~err a)
+  | Easter_sunday -> (
+      match call_arguments with
+      | [ a ] -> Arith.easter_sunday (eval_expr env world self ~err a)
       | _ -> Value.fault "easterSunday expects one argument")
-  | Tijdsduur | Absolute_tijdsduur ->
+  | Duration | Absolute_duration ->
       (* unreachable: eval_expr routes both variants on the node-type unit *)
       assert false
   | _ -> Value.fault "function kind not implemented in this card"
@@ -2012,13 +2012,13 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
    Both bounds are evaluated, from before to (ch. 5.11), and BEFORE any
    verdict: the order is normative and a fault in either bound belongs to
    it. *)
-and venster_grenzen env world (self : World.instance) ~err vanaf tot =
+and window_bounds env world (self : World.instance) ~err starting_at up_to =
   let bound side e =
     (match e with
      | Literal _ -> ()
-     | Attribuut_ref
-         { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
-       when own_read env self otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
+     | Attribute_reference
+         { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
+       when own_read env self otn && not (Ir_v0.Checks.attr_temporal (object_type env otn) a) ->
          ()
      | _ ->
          (* the phase tail is load-bearing, the WF-044 sisters' pattern:
@@ -2032,8 +2032,8 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
            side);
     eval_expr env world self ~err e
   in
-  let v = match vanaf with Some e -> Some (bound "from" e) | None -> None in
-  let t = match tot with Some e -> Some (bound "to" e) | None -> None in
+  let v = match starting_at with Some e -> Some (bound "from" e) | None -> None in
+  let t = match up_to with Some e -> Some (bound "to" e) | None -> None in
   if v = None && t = None then
     Value.fault "a period condition without any bound has no window to gate on";
   let day = function
@@ -2057,10 +2057,10 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
   let dt = day t in
   (dv, dt)
 
-and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
+and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool =
   match c with
-  | Vergelijking { op; links; rechts; periode = None; _ } ->
-      let le = req "Comparison.left" links and re = req "Comparison.right" rechts in
+  | Comparison { op; left_side; right_side; time_period = None; _ } ->
+      let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
       let l = eval_expr env world self ~err le in
       let r = eval_expr env world self ~err re in
       Arith.compare_op ?static_numeric:(static_numeric env le re) ~static_date:(static_date env le re) op l
@@ -2076,19 +2076,19 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
      "40 < de vergoeding" and "de vergoeding > 40" are one test, while the
      negation of either is a different one (leeg operands make both
      false). *)
-  | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
-      let le = req "Comparison.left" links and re = req "Comparison.right" rechts in
+  | Comparison { op; left_side; right_side; time_period = Some gp; _ } ->
+      let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
       let temporal_side = function
-        | Attribuut_ref
-            { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
-          when own_read env self otn && Ir_v0.Checks.attr_temporal (objecttype env otn) a ->
+        | Attribute_reference
+            { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
+          when own_read env self otn && Ir_v0.Checks.attr_temporal (object_type env otn) a ->
             Some a
         | _ -> None
       in
-      let attr, grens_e, op =
+      let attr, bound_e, op =
         match (temporal_side le, temporal_side re) with
         | Some a, None -> (a, re, op)
-        | None, Some a -> (a, le, omgekeerd op)
+        | None, Some a -> (a, le, reversed op)
         | Some _, Some _ ->
             Value.fault
               "whole-period comparison between TWO time-dependent operands has no ch. 3.9 \
@@ -2100,15 +2100,15 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
               self.otype
       in
       let tested = Option.value (World.timeline self attr) ~default:[] in
-      let grens = eval_expr env world self ~err grens_e in
-      let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
+      let boundary = eval_expr env world self ~err bound_e in
+      let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
       let verdict =
-        Timeline.geheel_periode_waarde g ~tl:tested (fun v ->
+        Timeline.whole_period_value g ~tl:tested (fun v ->
             Arith.compare_op ?static_numeric:(static_numeric env le re)
-              ~static_date:(static_date env le re) op v grens)
+              ~static_date:(static_date env le re) op v boundary)
       in
       (* ch. 3.9: "Negation complements the folded result" *)
-      if gp.gp_niet then not verdict else verdict
+      if gp.gp_negated then not verdict else verdict
   (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier. The
      two arms below match `periode` away with `_`, which is why this one
      stands before them: until 2026-09-11 the qualifier was dropped there and
@@ -2116,21 +2116,21 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
      refused the form by name. The inner negation is per day (ch. 1.2), so it
      picks the sister test before the fold; the qualifier's own negation
      complements the fold's verdict. *)
-  | Predicaat { soort = (Leeg | Gevuld) as soort; operand; negatie; periode = Some gp; _ } ->
+  | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; time_period = Some gp; _ } ->
       let tl = whole_period_operand env world self (req "Predicate.operand" operand) in
-      let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
-      let gevuld = (soort = Gevuld) <> negatie in
-      let verdict = Timeline.geheel_periode_leeg_gevuld g ~gevuld ~tl in
-      if gp.gp_niet then not verdict else verdict
-  | Predicaat { soort = Leeg; operand; negatie; _ } ->
+      let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
+      let populated = (variety = Filled) <> negation in
+      let verdict = Timeline.whole_period_empty_filled g ~populated ~tl in
+      if gp.gp_negated then not verdict else verdict
+  | Predicate { variety = Empty_predicate; operand; negation; _ } ->
       let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
       let is_empty = v = Value.Empty in
-      if negatie then not is_empty else is_empty
-  | Predicaat { soort = Gevuld; operand; negatie; _ } ->
+      if negation then not is_empty else is_empty
+  | Predicate { variety = Filled; operand; negation; _ } ->
       let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
       let is_filled = v <> Value.Empty in
-      if negatie then not is_filled else is_filled
-  | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; _ }
+      if negation then not is_filled else is_filled
+  | Predicate { variety = Day_kind_predicate; day_kind; operand; negation; _ }
     when SMap.mem day_kind_binder env.locals ->
       (* A NESTED day-kind reference, inside a day-kind condition (ch. 3.7,
          the WF-085 reference graph): the §9.8 composition, "a day is a
@@ -2162,38 +2162,38 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let hit =
         match d with
         | Value.Empty -> false
-        | Value.Date z -> day_kind_matches env world self ~err (req "Predicate.dayKind" dagsoort) z
+        | Value.Date z -> day_kind_matches env world self ~err (req "Predicate.dayKind" day_kind) z
         | Value.Date_time t ->
             day_kind_matches env world self ~err
-              (req "Predicate.dayKind" dagsoort)
+              (req "Predicate.dayKind" day_kind)
               (fst (Arith.split_ms t))
         | v -> Value.fault "a day-kind test needs a date operand, got %s" (Value.to_string v)
       in
-      if negatie then not hit else hit
-  | Predicaat { soort = Dagsoort; dagsoort; _ } ->
+      if negation then not hit else hit
+  | Predicate { variety = Day_kind_predicate; day_kind; _ } ->
       Value.fault
         "the day-kind predicate ('is een %s') is a recognised, unexecuted form outside a \
          day-kind definition (ch. 5.4): a day kind classifies a bare date at stratum 0, and no \
          executor reads one inside the rule fixpoint"
-        (Option.value dagsoort ~default:"?")
-  | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
-  | Kenmerk_check { kenmerk; navigatie_binding = None; negatie; eigenaar; periode; _ } ->
-      owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
-      let k = req "CharacteristicCheck.characteristic" kenmerk in
+        (Option.value day_kind ~default:"?")
+  | Predicate _ -> Value.fault "predicate kind not implemented in this card"
+  | Characteristic_check { characteristic; navigation_binding = None; negation; holder; time_period; _ } ->
+      owner_hosts env.doc ~otype:self.otype ~characteristic holder;
+      let k = req "CharacteristicCheck.characteristic" characteristic in
       (* [owner_hosts] above has already established that a `host`, where
          present, names the subject's own type — so the declaration this
          resolves against and the instance read are one object *)
-      (match periode with
+      (match time_period with
       | Some gp ->
           (* ch. 3.9, the specified collapse — NOT the scalar context
              ch. 3.3 refuses below *)
-          whole_period_kenmerk env ~ot:self.otype ~inst:(Some self) ~kenmerk:k ~negatie gp
+          whole_period_characteristic env ~ot:self.otype ~inst:(Some self) ~characteristic:k ~negation gp
       | None ->
-          if kenmerk_temporal (objecttype env self.otype) k then
+          if characteristic_temporal (object_type env self.otype) k then
             Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
           let has = World.has_char self k in
-          if negatie then not has else has)
-  | Kenmerk_check { kenmerk; negatie; navigatie_binding = Some rb; eigenaar; periode; _ } -> (
+          if negation then not has else has)
+  | Characteristic_check { characteristic; negation; navigation_binding = Some rb; holder; time_period; _ } -> (
       (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
          mirrored deliberately: an ABSENT link makes the check false for
          the positive AND the negated form — unlike comparison and
@@ -2204,40 +2204,40 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       (* the owner is a HOSTING statement about the pattern, not about the
          reached type, so it is crossed against the subject here exactly as on
          the scalar arm — the characteristic itself still lives on the far side *)
-      owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
-      let k = req "CharacteristicCheck.characteristic" kenmerk in
+      owner_hosts env.doc ~otype:self.otype ~characteristic holder;
+      let k = req "CharacteristicCheck.characteristic" characteristic in
       let role = bound_role env rb (* D53: the hop is the binding *) in
-      if role.rol_meervoudig then
+      if role.role_many then
         Value.fault
           "the navigated check reaches the to-many role %S in a scalar condition"
-          (Option.value role.rol_naam ~default:"?");
+          (Option.value role.role_identifier ~default:"?");
       (* the reached type, taken from the DECLARATION: on the qualified form
          the time-dependence cross must fire whether or not a link is there *)
-      let reached = Option.value role.rol_objecttype_naam ~default:"" in
-      match role_links world self role with
+      let reached = Option.value role.role_object_type_name ~default:"" in
+      match role_linked_instances world self role with
       | [] -> (
-          match periode with
-          | Some gp -> whole_period_kenmerk env ~ot:reached ~inst:None ~kenmerk:k ~negatie gp
+          match time_period with
+          | Some gp -> whole_period_characteristic env ~ot:reached ~inst:None ~characteristic:k ~negation gp
           | None -> false)
       | [ target ] -> (
-          match periode with
+          match time_period with
           | Some gp ->
-              whole_period_kenmerk env ~ot:target.otype ~inst:(Some target) ~kenmerk:k ~negatie gp
+              whole_period_characteristic env ~ot:target.otype ~inst:(Some target) ~characteristic:k ~negation gp
           | None ->
-              if kenmerk_temporal (objecttype env target.otype) k then
+              if characteristic_temporal (object_type env target.otype) k then
                 Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)"
                   k;
               let has = World.has_char target k in
-              if negatie then not has else has)
+              if negation then not has else has)
       | _ ->
           Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
-            (Option.value role.rol_naam ~default:"?")
+            (Option.value role.role_identifier ~default:"?")
             self.label)
-  | Samengesteld { kwantor; drempel; onderdelen; _ } ->
+  | Compound { quantifier_kind; cutoff; components; _ } ->
       (* the mirror note's second bound, checked BEFORE the short circuit
          below: the position is refused, not the reading, so a composite that
          would stop short of the window refuses all the same *)
-      periode_onder_telkwantor kwantor onderdelen;
+      period_under_count_quantifier quantifier_kind components;
       (* ch. 5.10, the composite's SHORT CIRCUIT: the members are evaluated
          left to right in WIRE order and evaluation stops at the first member
          after which the outcome stands. A member never reached produces no
@@ -2245,14 +2245,14 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          member gates a later one that would otherwise fault. The truth value
          is never affected; [settled] only reports an outcome the members still
          unread can no longer change. *)
-      let n = List.length onderdelen in
+      let n = List.length components in
       let verdict hits =
-        match kwantor with
-        | De | Alle -> hits = n
-        | Geen -> hits = 0
-        | Ten_minste -> hits >= drempel
-        | Ten_hoogste -> hits <= drempel
-        | Precies -> hits = drempel
+        match quantifier_kind with
+        | The | All -> hits = n
+        | None_of -> hits = 0
+        | At_least -> hits >= cutoff
+        | At_most -> hits <= cutoff
+        | Exactly -> hits = cutoff
       in
       (* [hits] over the [n - left] members already read, [left] still unread.
          One rule, no exception: every arm marks the moment the outcome can no
@@ -2262,18 +2262,18 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          EMPTY prefix and reads nothing at all — vacuously true for at-most at
          d >= n, vacuously false for at-least and exactly above n. *)
       let settled ~hits ~left =
-        match kwantor with
-        | De | Alle -> if hits < n - left then Some false else None
-        | Geen -> if hits > 0 then Some false else None
-        | Ten_minste ->
-            if hits >= drempel then Some true
-            else if hits + left < drempel then Some false
+        match quantifier_kind with
+        | The | All -> if hits < n - left then Some false else None
+        | None_of -> if hits > 0 then Some false else None
+        | At_least ->
+            if hits >= cutoff then Some true
+            else if hits + left < cutoff then Some false
             else None
-        | Ten_hoogste ->
-            if hits > drempel then Some false
-            else if hits + left <= drempel then Some true
+        | At_most ->
+            if hits > cutoff then Some false
+            else if hits + left <= cutoff then Some true
             else None
-        | Precies -> if hits > drempel || hits + left < drempel then Some false else None
+        | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
       in
       let rec read hits left parts =
         match settled ~hits ~left with
@@ -2285,10 +2285,10 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                 let hit = eval_cond env world self ~err c in
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
-      read 0 n onderdelen
-  | Regelversie { regel; inconsistent = true; _ } ->
-      World.channel_has world ~rule:(req "Regelversie.regel" regel)
-  | Regelversie { inconsistent = false; _ } ->
+      read 0 n components
+  | Rule_status_check { rule_def; inconsistent = true; _ } ->
+      World.channel_has world ~rule:(req "Regelversie.regel" rule_def)
+  | Rule_status_check { inconsistent = false; _ } ->
       Value.fault
         "'is gevuurd' is not implemented (row 30: decided as a dialect-only fixpoint predicate)"
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
@@ -2304,7 +2304,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          fact type's one role is its own other end. *)
       let own, other =
         match
-          Ir_v0.Checks.resolve_binding { doc = env.doc } { rb_feittype = fact_type; rb_rol = role }
+          Ir_v0.Checks.resolve_binding { doc = env.doc } { rb_fact_type = fact_type; rb_role = role }
         with
         | Ok (_, own, other) -> (own, other)
         | Error e -> Value.fault "role check: %s" e
@@ -2314,7 +2314,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           "role check: the subject %S does not fill the role %S of %S, so no link of it can \
            hold the subject there"
           self.otype role fact_type;
-      let linked = role_links world self other in
+      let linked = role_linked_instances world self other in
       let linked =
         match counterpart_type with
         | None -> linked
@@ -2329,8 +2329,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                 "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
                  declares"
                 ct
-                (Option.value other.rol_objecttype_naam ~default:"?")
-                (Option.value other.rol_naam ~default:"?");
+                (Option.value other.role_object_type_name ~default:"?")
+                (Option.value other.role_identifier ~default:"?");
             List.filter (fun (i : World.instance) -> isa env i.otype ct) linked
       in
       let exists = linked <> [] in
@@ -2349,15 +2349,15 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
      as a composite condition does (ch. 5.10): evaluation stops at the first
      contributor whose verdict settles the fold, so a member never reached
      produces no fault and no §9.5 channel fact. *)
-  | Kwantorvouw
-      { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
-        kv_bron_pad; _ } ->
-      periode_onder_telkwantor kv_kwantor
-        (List.filter_map Fun.id [ kv_filter; kv_toets ]);
-      let el = req "QuantifierFold.elementType" kv_element_objecttype in
-      let toets, drempel =
-        quantifier_fold_shape ~kwantor:kv_kwantor ~drempel:kv_drempel ~toets:kv_toets
-          ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
+  | Quantifier_fold
+      { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source_role;
+        kv_source_path; _ } ->
+      period_under_count_quantifier kv_quantifier
+        (List.filter_map Fun.id [ kv_filter; kv_test ]);
+      let el = req "QuantifierFold.elementType" kv_element_object_type in
+      let test, cutoff =
+        quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
+          ~source_role:kv_source_role ~source_path:kv_source_path
       in
       let keep (i : World.instance) =
         match kv_filter with
@@ -2366,7 +2366,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       in
       let members =
         filter_in_order keep
-          (fold_members ?binding:kv_bron_rol ?path:kv_bron_pad env world self ~element:el)
+          (fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el)
       in
       (* ch. 3.9a's count, and it is ch. 5.10's machinery over the
          CONTRIBUTORS instead of over a written member list — `all` is
@@ -2381,26 +2381,26 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          no longer be exceeded. *)
       let n = List.length members in
       let verdict hits =
-        match kv_kwantor with
-        | De | Alle -> hits = n
-        | Geen -> hits = 0
-        | Ten_minste -> hits >= drempel
-        | Ten_hoogste -> hits <= drempel
-        | Precies -> hits = drempel
+        match kv_quantifier with
+        | The | All -> hits = n
+        | None_of -> hits = 0
+        | At_least -> hits >= cutoff
+        | At_most -> hits <= cutoff
+        | Exactly -> hits = cutoff
       in
       let settled ~hits ~left =
-        match kv_kwantor with
-        | De | Alle -> if hits < n - left then Some false else None
-        | Geen -> if hits > 0 then Some false else None
-        | Ten_minste ->
-            if hits >= drempel then Some true
-            else if hits + left < drempel then Some false
+        match kv_quantifier with
+        | The | All -> if hits < n - left then Some false else None
+        | None_of -> if hits > 0 then Some false else None
+        | At_least ->
+            if hits >= cutoff then Some true
+            else if hits + left < cutoff then Some false
             else None
-        | Ten_hoogste ->
-            if hits > drempel then Some false
-            else if hits + left <= drempel then Some true
+        | At_most ->
+            if hits > cutoff then Some false
+            else if hits + left <= cutoff then Some true
             else None
-        | Precies -> if hits > drempel || hits + left < drempel then Some false else None
+        | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
       in
       let rec read hits left parts =
         match settled ~hits ~left with
@@ -2409,11 +2409,11 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             match parts with
             | [] -> verdict hits
             | m :: rest ->
-                let hit = eval_cond { env with subj = Some el } world m ~err toets in
+                let hit = eval_cond { env with subj = Some el } world m ~err test in
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
       read 0 n members
-  | Periode_conditie { vanaf; tot; tot_inclusief; _ } ->
+  | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
          first case, in its own six clauses: vanaf inclusive, tot exclusive,
          "tot en met" inclusive, an absent bound open, an UNSET evaluation
@@ -2422,9 +2422,9 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          [run_rule] takes the window off the condition position before a
          subject is taken, because the case distinction is on the rule's
          TARGET and a condition sees none. The bounds are read by
-         [venster_grenzen], the one reader both cases share, and BEFORE the
+         [window_bounds], the one reader both cases share, and BEFORE the
          verdict looks at the evaluation date. *)
-      let dv, dt = venster_grenzen env world self ~err vanaf tot in
+      let dv, dt = window_bounds env world self ~err starting_at up_to in
       (match (env.as_of, dv, dt) with
        | None, _, _ -> false (* an unset evaluation date never matches *)
        | _, Some None, _ | _, _, Some None -> false
@@ -2436,10 +2436,10 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
            | Value.Date today ->
                (match v with Some (Some z) -> z <= today | _ -> true)
                && (match t with
-                   | Some (Some z) -> if tot_inclusief then today <= z else today < z
+                   | Some (Some z) -> if to_inclusive then today <= z else today < z
                    | _ -> true)
            | _ -> assert false))
-  | Conditie_onopgelost _ -> Value.fault "Unresolved condition reached in evaluation"
+  | Condition_unresolved _ -> Value.fault "Unresolved condition reached in evaluation"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
@@ -2451,12 +2451,12 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
    clause is what makes that sound, since a pure condition never reaches the
    fact base and the `self` it is handed is never read. *)
 
-and day_kind_definition env (name : string) : resolved_dagsoort =
+and day_kind_definition env (name : string) : resolved_day_kind =
   match
     List.find_opt
-      (fun (d : resolved_dagsoort) ->
-        match d.rd_naam with Some n -> norm n = norm name | None -> false)
-      env.doc.resolved_dagsoorten
+      (fun (d : resolved_day_kind) ->
+        match d.rd_name with Some n -> norm n = norm name | None -> false)
+      env.doc.resolved_day_kind_definitions
   with
   | Some d -> d
   | None -> Value.fault "day kind %S has no definition" name
@@ -2468,7 +2468,7 @@ and day_kind_matches env world self ~err (name : string) (day : int) : bool =
        fixpoint"
       name;
   let def = day_kind_definition env name in
-  let c = match def.rd_voorwaarde with
+  let c = match def.rd_condition with
     | Some c -> c
     | None -> Value.fault "day kind %S has a definition without a condition" name
   in
@@ -2485,22 +2485,22 @@ and day_kind_matches env world self ~err (name : string) (day : int) : bool =
 (* the day kind a duration UNIT spelling names — its name or its plural,
    trimmed and case-insensitive (IR-SPEC ch. 2.9) — or None when no day kind
    is spelled so (then it is a calendar unit, or ill-formed) *)
-and day_kind_of_unit env (u : eenheid) : string option =
-  match u.afkorting with
+and day_kind_of_unit env (u : measure_unit) : string option =
+  match u.abbr_text with
   | None -> None
   | Some a ->
       List.find_map
-        (fun (d : dagsoort) ->
-          if String.trim d.dk_naam <> ""
-             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.dagsoort_spellingen d)
-          then Some d.dk_naam
+        (fun (d : day_kind) ->
+          if String.trim d.dk_name <> ""
+             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.day_kind_spellings d)
+          then Some d.dk_name
           else None)
-        env.doc.dagsoorten
+        env.doc.day_kinds
 
 and day_kind_pred env world self ~err (name : string) : int -> bool =
   fun day -> day_kind_matches env world self ~err name day
 
-let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>"
+let rule_name (r : resolved_rule) = Option.value r.rr_name ~default:"<naamloos>"
 
 (* --- rule forms --------------------------------------------------------- *)
 
@@ -2511,13 +2511,13 @@ let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>
    channel facts land on [world]: a creation reads the settled world of
    the generation before its own, not what its own generation makes or
    links (ch. 5.5) *)
-let over_subjects ?(exact = false) ?(behalve = []) ?read env world ~otype ~rule body =
+let over_subjects ?(exact = false) ?(except = []) ?read env world ~otype ~rule body =
   let isa a b =
     (if exact then norm a = norm b else isa env a b)
     (* the ch. 7.10 absorption: on these concrete types the rule IS a
        defaults base and the stack writes it, so firing here too would put
        two writers on one target *)
-    && not (List.exists (fun t -> norm t = norm a) behalve)
+    && not (List.exists (fun t -> norm t = norm a) except)
   in
   List.fold_left
     (fun (w, changed) (snapshot : World.instance) ->
@@ -2546,23 +2546,23 @@ let over_subjects ?(exact = false) ?(behalve = []) ?read env world ~otype ~rule 
    numbers, an open bound at the integer's end. The restriction cuts
    segments and keeps their values — Timeline.clip does exactly that — and
    an empty window (hi <= lo) leaves nothing. *)
-let clip_venster venster result =
-  match venster with
+let clip_window window result =
+  match window with
   | None -> result
   | Some (lo, hi) -> if hi <= lo then [] else Timeline.clip result [ (lo, hi) ]
 
-let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
-  let ot_decl = objecttype env ot in
-  match waarde with
-  | Functie
-      { kind = Tijdsevenredig_deel;
-        argumenten =
-          [ Attribuut_ref
-              { attribuut = Some b; objecttype = Some bot; navigatie_bindingen = None; _ } ];
-        filter = Some c; granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }
+let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
+  let ot_decl = object_type env ot in
+  match value_node with
+  | Function_call
+      { kind = Time_proportional_part;
+        call_arguments =
+          [ Attribute_reference
+              { attribute_ref = Some b; object_type = Some bot; navigation_bindings = None; _ } ];
+        filter = Some c; grain = Some g; empty_fallback = None; dimension_selection = None; _ }
     when norm bot = norm ot ->
       let target_gran =
-        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit attr with
+        match Ir_v0.Checks.find_ci ot_decl.attribute_granularity attr with
         | Some (Some tg) -> tg
         | _ -> Value.fault "pro-rata target %S without a granularity" attr
       in
@@ -2570,7 +2570,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
         Value.fault
           "pro-rata bucket granularity differs from the target's declared granularity";
       let base_gran =
-        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit b with
+        match Ir_v0.Checks.find_ci ot_decl.attribute_granularity b with
         | Some (Some bg) -> bg
         | _ -> Value.fault "pro-rata base %S is not a temporal attribute" b
       in
@@ -2580,14 +2580,14 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
          in the target's, which a start point off the calendar breaks — fenced
          until a corpus case lands *)
       if
-        (Timeline.attr_grid env.doc ot_decl attr).g_start <> Timeline.Kalender
-        || (Timeline.attr_grid env.doc ot_decl b).g_start <> Timeline.Kalender
+        (Timeline.attr_grid env.doc ot_decl attr).g_start <> Timeline.Calendar
+        || (Timeline.attr_grid env.doc ot_decl b).g_start <> Timeline.Calendar
       then
         Value.fault
           "pro-rata onto or from a grid that does not lie on the calendar is fenced \
            (RUNTIME-SEMANTICS ch. 3.2)";
-      (match Ir_v0.Checks.find_ci ot_decl.attributen b with
-      | Some (Some (Numeriek { eenheid = Some _; _ } | Percentage { eenheid = Some _; _ })) ->
+      (match Ir_v0.Checks.find_ci ot_decl.attributes b with
+      | Some (Some (Number { measure_unit = Some _; _ } | Percentage { measure_unit = Some _; _ })) ->
           (* ch. 3.7: a rate base restates by its exact factor FIRST —
              not executed here; refuse rather than prorate factor-free *)
           Value.fault "pro-rata over a unit-carrying base is not executed (no corpus case)"
@@ -2595,8 +2595,8 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       clip_member_qualifications c;
       let true_periods =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } ->
-            if not (kenmerk_temporal ot_decl k) then
+        | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } ->
+            if not (characteristic_temporal ot_decl k) then
               Value.fault "gedurende over %S, which is not a temporal characteristic" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
         | _ ->
@@ -2604,8 +2604,8 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
               "unsupported pro-rata condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
-      let basis = Option.value (World.timeline self b) ~default:[] in
-      let result = clip_venster venster (Timeline.pro_rata g basis true_periods) in
+      let base_expr = Option.value (World.timeline self b) ~default:[] in
+      let result = clip_window window (Timeline.pro_rata g base_expr true_periods) in
       (* ch. 7.8, the timeline arm: on a standing temporal target the
          fold decides only when its result is gevuld — an empty result
          (the temporal leeg) writes nothing and a case-supplied input
@@ -2616,16 +2616,16 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
              (Ir_v0.Desugar.standing_temporal_targets env.doc)
       then (w, false)
       else World.write_timeline w ~label:self.label ~attr result
-  | Functie
-      { kind = Aantal_dagen_in; argumenten = [];
-        filter = Some c; granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }
+  | Function_call
+      { kind = Day_count; call_arguments = [];
+        filter = Some c; grain = Some g; empty_fallback = None; dimension_selection = None; _ }
     ->
       (* ch. 3.8 "aantal dagen in": per touched bucket the true-day
          count; WF-058 mirrors WF-056's facets — bucket equals the
          target's declared granularity, gedurende over an own temporal
          characteristic *)
       let target_gran =
-        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit attr with
+        match Ir_v0.Checks.find_ci ot_decl.attribute_granularity attr with
         | Some (Some tg) -> tg
         | _ -> Value.fault "day-count target %S without a granularity" attr
       in
@@ -2635,8 +2635,8 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       clip_member_qualifications c;
       let true_periods =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } ->
-            if not (kenmerk_temporal ot_decl k) then
+        | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } ->
+            if not (characteristic_temporal ot_decl k) then
               Value.fault "gedurende over %S, which is not a temporal characteristic" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
         | _ ->
@@ -2647,8 +2647,8 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       (* the target's periods: the calendar's, or its fixed start point's
          (ch. 3.2) *)
       let result =
-        clip_venster venster
-          (Timeline.aantal_dagen_in_grid (Timeline.attr_grid env.doc ot_decl attr) true_periods)
+        clip_window window
+          (Timeline.count_days_in_grid (Timeline.attr_grid env.doc ot_decl attr) true_periods)
       in
       (* the ch. 7.8 timeline arm, as for pro-rata *)
       if
@@ -2690,17 +2690,17 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
    version of this kind with the value true on an attribute target passes it
    and writes a characteristic of the attribute's name, which no reader of
    that attribute sees; the verifier refuses that document (WF-022). *)
-let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
-  match r.waarde with
-  | Some (Literal { variant = Lv_boolean true; typ = Some Booleaan; _ }) -> ()
+let characteristic_value_constant_true (r : resolved_rule) ~ot ~attr =
+  match r.value_node with
+  | Some (Literal { variant = Lv_boolean true; typ = Some Boolean; _ }) -> ()
   | w ->
-      let datatype_woord (t : datatype) =
+      let datatype_word (t : datatype) =
         match t with
-        | Booleaan -> "Boolean"
-        | Tekst -> "Text"
-        | Numeriek _ | Percentage _ -> "Number"
-        | Datum_in_dagen | Datum_tijd -> "Date"
-        | Enumeratie _ -> "Enumeration"
+        | Boolean -> "Boolean"
+        | Text_type -> "Text"
+        | Number _ | Percentage _ -> "Number"
+        | Date_in_days | Date_time_type -> "Date"
+        | Enumeration _ -> "Enumeration"
         | Sum_type _ -> "SumType"
         | List_type _ -> "ListType"
         | Struct_type _ -> "StructType"
@@ -2713,10 +2713,10 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
             Printf.sprintf "{\"%s\": %S}" (Ir_v0.Checks.literal_variant_key v)
               (Ir_v0.Loader.literal_lexeme v)
       in
-      let waarde =
+      let value_node =
         match w with
         | Some (Literal { variant; typ = Some t; _ }) ->
-            Printf.sprintf "the literal %s typed %s" (variant_json variant) (datatype_woord t)
+            Printf.sprintf "the literal %s typed %s" (variant_json variant) (datatype_word t)
         | Some (Literal { variant; typ = None; _ }) ->
             Printf.sprintf "the untyped literal %s" (variant_json variant)
         | Some _ -> "a computed value"
@@ -2726,19 +2726,19 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
         "rule %S writes %S of %S as a characteristic, with %s: a version without a presentation \
          and without initialisation writes the boolean constant true and nothing else. Declined \
          at evaluation"
-        (rule_name r) attr ot waarde
+        (rule_name r) attr ot value_node
 
-let run_rule env world (r : resolved_regel) =
-  if not (applies env r.rr_geldigheid) then (world, false)
+let run_rule env world (r : resolved_rule) =
+  if not (applies env r.rr_validity) then (world, false)
   else
-    match r.doel with
-    | Some (Attribuut_ref { attribuut; objecttype = Some ot; _ }) ->
-        let attr = req "RuleVersion.target attribute" attribuut in
+    match r.objective with
+    | Some (Attribute_reference { attribute_ref; object_type = Some ot; _ }) ->
+        let attr = req "RuleVersion.target attribute" attribute_ref in
         let env = { env with subj = Some ot } in
         let temporal_target =
-          match r.rr_soort with
-          | Some Kenmerktoekenning -> false
-          | _ -> Ir_v0.Checks.attr_temporal (objecttype env ot) attr
+          match r.rr_presentation with
+          | Some Characteristic_attribution -> false
+          | _ -> Ir_v0.Checks.attr_temporal (object_type env ot) attr
         in
         (* ch. 3.10's case distinction asks whether the TARGET carries a
            timeline, and a CHARACTERISTIC target carries one through
@@ -2751,9 +2751,9 @@ let run_rule env world (r : resolved_regel) =
            backend PLAYED the scalar gate on a timeline target (present
            inside the window, absent outside it) while both Drools branches
            named it the §8.4.3 clip. So the two tables are asked apart. *)
-        let doel_tijdlijn =
-          match r.rr_soort with
-          | Some Kenmerktoekenning -> kenmerk_temporal (objecttype env ot) attr
+        let target_timeline =
+          match r.rr_presentation with
+          | Some Characteristic_attribution -> characteristic_temporal (object_type env ot) attr
           | _ -> temporal_target
         in
         (* ch. 3.10's CLIP (built 2026-09-23): on a timeline target the window
@@ -2764,16 +2764,16 @@ let run_rule env world (r : resolved_regel) =
            (ch. 3.11), and the window as a composite MEMBER, where the chapter
            says nothing about what the other members do to a timeline. *)
         let clip =
-          if doel_tijdlijn && Option.fold ~none:false ~some:bevat_periode r.rr_voorwaarde then
-            match (r.rr_soort, r.rr_voorwaarde) with
-            | Some Kenmerktoekenning, _ ->
+          if target_timeline && Option.fold ~none:false ~some:contains_time_window r.rr_condition then
+            match (r.rr_presentation, r.rr_condition) with
+            | Some Characteristic_attribution, _ ->
                 Value.fault
                   "a period condition on the temporal characteristic target %S is ch. 3.10's \
                    CLIP over a characteristic timeline, and no temporal characteristic is written \
                    here (ch. 3.11), so there is no timeline to cut. Declined at evaluation"
                   attr
-            | _, Some (Periode_conditie { vanaf; tot; tot_inclusief; _ }) ->
-                Some (vanaf, tot, tot_inclusief)
+            | _, Some (Time_window { starting_at; up_to; to_inclusive; _ }) ->
+                Some (starting_at, up_to, to_inclusive)
             | _ ->
                 Value.fault
                   "a period condition inside a composite on the temporal target %S: ch. 3.10 \
@@ -2783,8 +2783,8 @@ let run_rule env world (r : resolved_regel) =
           else None
         in
         (* the window for one subject: a leeg bound puts no day in it *)
-        let venster_van w self ~err (vanaf, tot, incl) =
-          match venster_grenzen env w self ~err vanaf tot with
+        let window_of w self ~err (starting_at, up_to, incl) =
+          match window_bounds env w self ~err starting_at up_to with
           | Some None, _ | _, Some None -> (0, 0)
           | dv, dt ->
               let lo = match dv with Some (Some z) -> z | _ -> min_int in
@@ -2794,15 +2794,15 @@ let run_rule env world (r : resolved_regel) =
         (* ch. 3.11: the only implemented temporal write is the ch. 3.7
            pro-rata target; every other temporal target refuses — never
            silently coerce a scalar into a timeline *)
-        (match r.rr_soort with
-        | Some Kenmerktoekenning ->
-            if kenmerk_temporal (objecttype env ot) attr then
+        (match r.rr_presentation with
+        | Some Characteristic_attribution ->
+            if characteristic_temporal (object_type env ot) attr then
               Value.fault "temporal characteristic %S: temporal writes are not implemented" attr;
-            kenmerkwaarde_constant_waar r ~ot ~attr
+            characteristic_value_constant_true r ~ot ~attr
         | _ ->
             if temporal_target then
-              match r.waarde with
-              | Some (Functie { kind = Tijdsevenredig_deel | Aantal_dagen_in; _ }) -> ()
+              match r.value_node with
+              | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> ()
               | _ ->
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"
@@ -2812,29 +2812,29 @@ let run_rule env world (r : resolved_regel) =
            written by the group, not here. The exclusion is per CONCRETE
            type and empty on every target whose chain declares no group —
            which is every ordinary rule in a flat model. *)
-        let behalve =
-          match r.rr_soort with
-          | Some Kenmerktoekenning -> []
+        let except =
+          match r.rr_presentation with
+          | Some Characteristic_attribution -> []
           | _ -> Ir_v0.Desugar.absorbed_on env.doc ~otype:ot ~attr
         in
-        over_subjects ~behalve env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
+        over_subjects ~except env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
-              match (clip, r.rr_voorwaarde) with
+              match (clip, r.rr_condition) with
               | Some _, _ -> true
               | None, Some c -> eval_cond env w self ~err c
               | None, None -> true
             in
             if not fire then (w, false)
             else
-              match r.rr_soort with
+              match r.rr_presentation with
               (* the value is the constant waar, checked before any subject
-                 was taken ([kenmerkwaarde_constant_waar]) *)
-              | Some Kenmerktoekenning -> World.set_char w ~label:self.label ~char:attr
-              | Some (Gelijkstelling | Berekening) when temporal_target ->
-                  let venster = Option.map (venster_van w self ~err) clip in
-                  run_pro_rata ?venster env w self ~ot ~attr (req "RuleVersion.value" r.waarde)
-              | Some (Gelijkstelling | Berekening) ->
-                  let v = eval_expr env w self ~err (req "RuleVersion.value" r.waarde) in
+                 was taken ([characteristic_value_constant_true]) *)
+              | Some Characteristic_attribution -> World.set_char w ~label:self.label ~char:attr
+              | Some (Equation | Calculation) when temporal_target ->
+                  let window = Option.map (window_of w self ~err) clip in
+                  run_pro_rata ?window env w self ~ot ~attr (req "RuleVersion.value" r.value_node)
+              | Some (Equation | Calculation) ->
+                  let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7
                      desugaring-domain target, whose defaults reading ref
                      replays natively — the rule decides like a default: a
@@ -2850,7 +2850,7 @@ let run_rule env world (r : resolved_regel) =
                   then (w, false)
                   else
                     World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v
-              | Some Initialisatie ->
+              | Some Initialisation ->
                   (* writes only where the target is empty (ch. 5.4) — apart
                      from its own write. A case input and a value another
                      writer placed switch the guard off, so the computed value
@@ -2862,25 +2862,25 @@ let run_rule env world (r : resolved_regel) =
                      had not yet written: the document order decided *)
                   if not (World.init_may_write w ~label:self.label ~attr) then (w, false)
                   else
-                    let v = eval_expr env w self ~err (req "RuleVersion.value" r.waarde) in
+                    let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
                     World.write_attr_init w ~label:self.label ~attr
                       ~decl:(attr_decl env ~otype:ot ~attr) v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.fault "rule %S: unsupported target shape" (rule_name r)
 
-let run_verdeling env world (v : resolved_verdeling) =
-  if not (applies env v.vd_geldigheid) then (world, false)
+let run_allocation env world (v : resolved_allocation) =
+  if not (applies env v.vd_validity) then (world, false)
   else begin
-    let name = Option.value v.vd_naam ~default:"<verdeling>" in
-    let bron_type = req "AllocationVersion.sourceType" v.bron_type in
-    let env = { env with subj = Some bron_type } in
-    let doel_type = req "AllocationVersion.targetType" v.doel_type in
-    let bron_attr = req "AllocationVersion.sourceAttribute" v.bron_attribuut in
-    let doel_attr = req "AllocationVersion.targetAttribute" v.doel_attribuut in
-    let methode = req "AllocationVersion.method" v.vd_methode in
-    over_subjects env world ~otype:bron_type ~rule:name (fun w src cond_err ->
+    let name = Option.value v.vd_name ~default:"<verdeling>" in
+    let source_type = req "AllocationVersion.sourceType" v.source_type in
+    let env = { env with subj = Some source_type } in
+    let objective_type_name = req "AllocationVersion.targetType" v.objective_type_name in
+    let source_attr = req "AllocationVersion.sourceAttribute" v.source_attribute in
+    let target_attr = req "AllocationVersion.targetAttribute" v.target_attribute in
+    let method_name = req "AllocationVersion.method" v.vd_method in
+    over_subjects env world ~otype:source_type ~rule:name (fun w src cond_err ->
         let cond_ok =
-          match v.vd_voorwaarde with
+          match v.vd_condition with
           | Some c -> eval_cond env w src ~err:cond_err c
           | None -> true
         in
@@ -2897,26 +2897,26 @@ let run_verdeling env world (v : resolved_verdeling) =
              before the chain existed. *)
           let recipients =
             List.filter
-              (fun (i : World.instance) -> isa env i.otype doel_type)
-              (linked env w src ~binding:v.verbindende_rol)
+              (fun (i : World.instance) -> isa env i.otype objective_type_name)
+              (linked env w src ~binding:v.connecting_role)
           in
           let recs =
             List.map
               (fun (i : World.instance) ->
                 {
                   Alloc.id = i.label;
-                  weight = Option.map (fun a -> World.attr i a) v.rato_attribuut;
-                  cap = Option.map (fun a -> World.attr i a) v.maximum_attribuut;
-                  key = Option.map (fun a -> World.attr i a) v.groepeer_attribuut;
+                  weight = Option.map (fun a -> World.attr i a) v.ratio_attribute;
+                  cap = Option.map (fun a -> World.attr i a) v.maximum_attribute;
+                  key = Option.map (fun a -> World.attr i a) v.ordering_attribute;
                 })
               recipients
           in
           let alloc_errs = ref [] in
           let err ~id (_ : string) = alloc_errs := id :: !alloc_errs in
           let outcome =
-            Alloc.allocate methode
-              ~afnemend:v.afnemend ~decimals:v.afronding_decimalen
-              ~pot:(World.attr src bron_attr) ~err recs
+            Alloc.allocate method_name
+              ~descending:v.descending ~decimals:v.rounding_decimals
+              ~pot:(World.attr src source_attr) ~err recs
           in
           let w =
             List.fold_left (fun w id -> World.insert_error w ~rule:name ~subject:id) w !alloc_errs
@@ -2924,7 +2924,7 @@ let run_verdeling env world (v : resolved_verdeling) =
           match outcome with
           | Alloc.Nothing -> (w, false)
           | Alloc.Distributed (shares, rest) ->
-              let decl = attr_decl env ~otype:doel_type ~attr:doel_attr in
+              let decl = attr_decl env ~otype:objective_type_name ~attr:target_attr in
               let w, ch =
                 List.fold_left
                   (fun (w, ch) (id, share) ->
@@ -2932,18 +2932,18 @@ let run_verdeling env world (v : resolved_verdeling) =
                     | Alloc.Excluded -> (w, ch) (* stays leeg, never 0 *)
                     | Alloc.Assigned q ->
                         let w, c =
-                          World.write_attr w ~label:id ~attr:doel_attr ~decl
+                          World.write_attr w ~label:id ~attr:target_attr ~decl
                             (Value.Num (q, Value.Unitless))
                         in
                         (w, ch || c))
                   (w, false) shares
               in
               let w, ch2 =
-                match v.restant_attribuut with
+                match v.remainder_attribute with
                 | None -> (w, false) (* undeclared: the rest lapses (a SHOULD, no WF rule) *)
                 | Some ra ->
                     World.write_attr w ~label:src.label ~attr:ra
-                      ~decl:(attr_decl env ~otype:bron_type ~attr:ra)
+                      ~decl:(attr_decl env ~otype:source_type ~attr:ra)
                       (Value.Num (rest, Value.Unitless))
               in
               (w, ch || ch2))
@@ -2959,53 +2959,53 @@ let run_verdeling env world (v : resolved_verdeling) =
    content; the wire requires it (B7). The anchors, the guard and the
    chain are read on [read], the settled world of the generation before;
    the links land on [world] (ch. 5.5, generations). *)
-let run_feit_creatie env ~read world (fc : resolved_feit_creatie) =
-  if not (applies env fc.fc_geldigheid) then (world, false)
+let run_fact_creation env ~read world (fc : resolved_fact_creation) =
+  if not (applies env fc.fc_validity) then (world, false)
   else begin
-    let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
+    let name = Option.value fc.fc_name ~default:"<feitcreatie>" in
     (* the anker: the one subject the guard can read on (WF-109) — a guard on
        the doel is a characteristic check and reads no attribute *)
-    let env = { env with subj = fc.anker } in
-    let ftn = fc.fc_feittype in
+    let env = { env with subj = fc.anchor_point } in
+    let ftn = fc.fc_fact_type in
     let role rname = created_role env ~fact_type:ftn ~role:rname in
-    let anker_rol = role fc.anker_rol in
-    let doel_rol = role fc.doel_rol in
+    let anchor_role = role fc.anchor_role in
+    let objective_role = role fc.objective_role in
     (* ch. 5.5: the host splits the guard into the two readings this position
        has. On the doel it FILTERS the targets — so the chain is walked first
        and the condition asked once per target — and on the anker it GATES the
        anker, which short-circuits the chain exactly as before. *)
-    let doel_guard = if guard_on_doel env.doc fc then fc.fc_voorwaarde else None in
-    let anker_guard = if doel_guard = None then fc.fc_voorwaarde else None in
-    over_subjects ~read env world ~otype:(req "FactCreationVersion.anchor" fc.anker) ~rule:name
+    let target_guard = if guard_on_target env.doc fc then fc.fc_condition else None in
+    let anchor_guard = if target_guard = None then fc.fc_condition else None in
+    over_subjects ~read env world ~otype:(req "FactCreationVersion.anchor" fc.anchor_point) ~rule:name
       (fun w self err ->
         let fire =
-          match anker_guard with Some c -> eval_cond env read self ~err c | None -> true
+          match anchor_guard with Some c -> eval_cond env read self ~err c | None -> true
         in
         if not fire then (w, false)
         else
           let hop insts rb =
-            List.concat_map (fun i -> role_links read i (bound_role env rb)) insts
+            List.concat_map (fun i -> role_linked_instances read i (bound_role env rb)) insts
           in
           let mids =
             List.fold_left
-              (fun insts (t : tussenstap) -> hop insts t.ts_rol)
-              [ self ] fc.tussenstappen
+              (fun insts (t : path_step) -> hop insts t.ts_role)
+              [ self ] fc.intermediates
           in
-          let targets = hop mids fc.join_rol in
+          let targets = hop mids fc.join_role in
           let targets =
-            match doel_guard with
+            match target_guard with
             | None -> targets
             | Some c -> List.filter (fun t -> eval_cond env read t ~err c) targets
           in
           List.fold_left
             (fun (w, ch) (t : World.instance) ->
               let w, c1 =
-                World.add_link w ~label:self.label ~keys:(role_keys doel_rol)
-                  ~many:doel_rol.rol_meervoudig ~target:t.label
+                World.add_link w ~label:self.label ~keys:(role_keys objective_role)
+                  ~many:objective_role.role_many ~target:t.label
               in
               let w, c2 =
-                World.add_link w ~label:t.label ~keys:(role_keys anker_rol)
-                  ~many:anker_rol.rol_meervoudig ~target:self.label
+                World.add_link w ~label:t.label ~keys:(role_keys anchor_role)
+                  ~many:anchor_role.role_many ~target:self.label
               in
               (w, ch || c1 || c2))
             (w, false) targets)
@@ -3051,23 +3051,23 @@ let run_feit_creatie env ~read world (fc : resolved_feit_creatie) =
    hops. *)
 let creation_budget = 100
 
-let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_object_creatie) =
-  if not (applies env oc.oc_geldigheid) then (world, false)
+let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_object_creation) =
+  if not (applies env oc.oc_validity) then (world, false)
   else begin
-    let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
-    let nieuw = req "ObjectCreationVersion.createdType" oc.nieuw_type in
+    let name = Option.value oc.oc_name ~default:"<objectcreatie>" in
+    let created = req "ObjectCreationVersion.createdType" oc.created_type in
     let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
     let env = { env with subj = Some subject } in
     let pair =
       (* the explicit back-link binding (extension, IR-SPEC ch. 3.3)
          wins over the type-pair derivation — the only route for a
          self-typed pair, whose derivation mirrors v0's null *)
-      match oc.oc_verbindende_rol with
+      match oc.oc_connecting_role with
       | Some rb -> (
           match Ir_v0.Checks.resolve_binding { doc = env.doc } rb with
-          | Ok (_, bound, other) -> Some (rb.rb_feittype, bound, other)
+          | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
           | Error e -> Value.fault "%s" e)
-      | None -> connecting_pair env ~from_type:subject ~to_type:nieuw
+      | None -> connecting_pair env ~from_type:subject ~to_type:created
     in
     over_subjects ~read env world ~otype:subject ~rule:name (fun w self err ->
         (* A subject that a higher stratum minted cannot occur: a creation
@@ -3088,7 +3088,7 @@ let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_obje
                    name stratum self.label k)
         in
         let fire =
-          match oc.oc_voorwaarde with Some c -> eval_cond env read self ~err c | None -> true
+          match oc.oc_condition with Some c -> eval_cond env read self ~err c | None -> true
         in
         if not fire then (w, false)
         else begin
@@ -3099,9 +3099,9 @@ let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_obje
           let label = Printf.sprintf "oc%d::%s" idx self.label in
           let blocked =
             match pair with
-            | Some (_, new_role, _) when not new_role.rol_meervoudig -> (
+            | Some (_, new_role, _) when not new_role.role_many -> (
                 match SMap.find_opt self.label world0.World.instances with
-                | Some i0 -> role_links world0 i0 new_role <> []
+                | Some i0 -> role_linked_instances world0 i0 new_role <> []
                 | None -> false)
             | _ -> false
           in
@@ -3116,16 +3116,16 @@ let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_obje
                 name stratum depth self.label creation_budget;
             let w =
               World.add_instance w
-                { World.label; otype = nieuw; attrs = SMap.empty; chars = [];
-                  links = SMap.empty; tls = SMap.empty; ctls = SMap.empty }
+                { World.label; otype = created; attrs = SMap.empty; chars = [];
+                  left_side = SMap.empty; tls = SMap.empty; ctls = SMap.empty }
             in
             let w = { w with World.mints = SMap.add label (stratum, depth) w.World.mints } in
             let w =
               List.fold_left
-                (fun w (t : toekenning) ->
-                  let m = req "MemberInit.member" t.toe_attribuut in
-                  if t.toe_kenmerk then (
-                    match t.toe_waarde with
+                (fun w (t : assignment) ->
+                  let m = req "MemberInit.member" t.to_attribute in
+                  if t.to_characteristic then (
+                    match t.to_value with
                     | Some (Literal { variant = Lv_boolean true; _ }) ->
                         fst (World.set_char w ~label ~char:m)
                     | Some (Literal { variant = Lv_boolean false; _ }) -> w
@@ -3155,12 +3155,12 @@ let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_obje
                         Value.fault
                           "characteristic initialisation of %S without a value" m)
                   else
-                    let v = eval_expr env read self ~err (req "MemberInit.value" t.toe_waarde) in
+                    let v = eval_expr env read self ~err (req "MemberInit.value" t.to_value) in
                     fst
                       (World.write_attr w ~label ~attr:m
-                         ~decl:(attr_decl env ~otype:nieuw ~attr:m)
+                         ~decl:(attr_decl env ~otype:created ~attr:m)
                          v))
-                w oc.toekenningen
+                w oc.assignments
             in
             let w =
               match pair with
@@ -3168,11 +3168,11 @@ let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_obje
               | Some (_, new_role, subj_role) ->
                   let w, _ =
                     World.add_link w ~label:self.label ~keys:(role_keys new_role)
-                      ~many:new_role.rol_meervoudig ~target:label
+                      ~many:new_role.role_many ~target:label
                   in
                   let w, _ =
                     World.add_link w ~label ~keys:(role_keys subj_role)
-                      ~many:subj_role.rol_meervoudig ~target:self.label
+                      ~many:subj_role.role_many ~target:self.label
                   in
                   w
             in
@@ -3211,9 +3211,9 @@ type chain_result = Decided of defaults_decision | Conflict of string | Undecide
 let run_defaults_group env world ~world0 ~owner
     (members : (prioritized_defaults * string list) list) =
   let l0 = fst (List.hd members) in
-  let env = { env with subj = Some l0.pd_onderwerp } in
+  let env = { env with subj = Some l0.pd_subject } in
   let target_name =
-    match (l0.pd_kenmerk, l0.pd_attribuut) with
+    match (l0.pd_characteristic, l0.pd_attribute) with
     | Some k, _ -> k
     | _, Some a -> a
     | _ -> "?"
@@ -3225,23 +3225,23 @@ let run_defaults_group env world ~world0 ~owner
   let declarant =
     Option.value
       (Ir_v0.Checks.declaring_type env.doc ~from:owner
-         ~kind:(if l0.pd_kenmerk <> None then `Characteristic else `Attribute)
+         ~kind:(if l0.pd_characteristic <> None then `Characteristic else `Attribute)
          ~member:target_name)
-      ~default:l0.pd_onderwerp
+      ~default:l0.pd_subject
   in
   let target_form = declarant ^ "." ^ target_name in
-  (match l0.pd_attribuut with
-  | Some a when Ir_v0.Checks.attr_temporal (objecttype env owner) a ->
+  (match l0.pd_attribute with
+  | Some a when Ir_v0.Checks.attr_temporal (object_type env owner) a ->
       Value.fault
         "temporal attribute %S as a defaults target: temporal writes are not implemented" a
   | _ -> ());
   (* the WF-086 characteristic arm's defense-in-depth: a temporal characteristic target would
      otherwise evaluate silently atemporally *)
-  (match l0.pd_kenmerk with
+  (match l0.pd_characteristic with
   | Some k
     when List.exists
            (fun (n, _) -> Ir_v0.Checks.norm n = Ir_v0.Checks.norm k)
-           (objecttype env owner).kenmerk_granulariteit ->
+           (object_type env owner).characteristic_granularity ->
       Value.fault
         "temporal characteristic %S as a defaults target: temporal writes are not implemented" k
   | _ -> ());
@@ -3286,17 +3286,17 @@ let run_defaults_group env world ~world0 ~owner
          deposits flush when — and only when — a default decides, composing
          through the recursion. *)
       let member_decision ((l : prioritized_defaults), origins) : chain_result =
-        if not (applies env l.pd_geldigheid) then Undecided
+        if not (applies env l.pd_validity) then Undecided
         else
-          let is_char = l.pd_kenmerk <> None in
+          let is_char = l.pd_characteristic <> None in
           (* a root default, and its exception groups with it, is evaluated on
              the position it was declared on: the composition moved an
              ancestor's default into this stack, and its own reads name the
              ancestor (WF-053) *)
           let env_at i = { env with subj = Some (List.nth origins i) } in
           let justified env (r : default) err =
-            if r.default_initialisatie then (
-              match l.pd_attribuut with
+            if r.default_initialisation then (
+              match l.pd_attribute with
               | Some a ->
                   (* ch. 7.3: justified where the target is empty in the INPUT
                      facts. Read off the running world instead, the default's
@@ -3308,11 +3308,11 @@ let run_defaults_group env world ~world0 ~owner
                   (match SMap.find_opt self.label world0.World.instances with
                   | Some (i0 : World.instance) -> World.attr i0 a = Value.Empty
                   | None -> true)
-                  && (match r.default_voorwaarde with
+                  && (match r.default_justification with
                      | Some c -> eval_cond env w self ~err c
                      | None -> true)
               | None -> Value.fault "initialisation default on characteristic defaults")
-            else eval_cond env w self ~err (req "default justification" r.default_voorwaarde)
+            else eval_cond env w self ~err (req "default justification" r.default_justification)
           in
           (* the default's OWN decision, exception groups aside (a plain default, the
              initialisation default, or a form-a default's fall-back): Some when it
@@ -3322,7 +3322,7 @@ let run_defaults_group env world ~world0 ~owner
               let j, flush = speculate (fun err -> justified env r err) in
               if j then (
                 flush ();
-                Some (Char_dec (req "default decision" r.default_besluit)))
+                Some (Char_dec (req "default decision" r.default_decision)))
               else None)
             else
               let outcome, flush =
@@ -3330,7 +3330,7 @@ let run_defaults_group env world ~world0 ~owner
                     if justified env r err then
                       Some
                         (eval_expr env w self ~err
-                           (req "default consequence" r.default_consequentie))
+                           (req "default consequence" r.default_consequence))
                     else None)
               in
               match outcome with
@@ -3348,13 +3348,13 @@ let run_defaults_group env world ~world0 ~owner
                     (* a form-a default falls back to its own decision; a
                        group-default (no own content) decides nothing (ch. 7.9) *)
                     let has_content =
-                      r.default_besluit <> None || r.default_consequentie <> None
+                      r.default_decision <> None || r.default_consequence <> None
                     in
                     if has_content then
                       match own_decision env r with Some d -> Decided d | None -> go (i + 1) rest
                     else go (i + 1) rest
                   in
-                  match r.default_excepties with
+                  match r.default_exceptions with
                   | Some egs -> (
                       (* the exception groups go first: reconcile them at this default's
                          path, then propagate its conflict, adopt its decision,
@@ -3364,7 +3364,7 @@ let run_defaults_group env world ~world0 ~owner
                         List.map
                           (fun (eg : exception_group) ->
                             decide ~env_at:(fun _ -> env) ~path:sub_path eg.eg_defaults)
-                          egs.egs_leden
+                          egs.egs_members
                       in
                       match reconcile ~path:sub_path results with
                       | (Conflict _ | Decided _) as d -> d
@@ -3385,25 +3385,25 @@ let run_defaults_group env world ~world0 ~owner
              bare-keyed at the root, path-keyed for a nested exception group *)
           (World.insert_error w ~rule ~subject:self.label, false)
       | Decided (Char_dec true) ->
-          World.set_char w ~label:self.label ~char:(req "defaults characteristic" l0.pd_kenmerk)
+          World.set_char w ~label:self.label ~char:(req "defaults characteristic" l0.pd_characteristic)
       | Decided (Char_dec false) -> (w, false)
       | Decided (Attr_dec v) ->
-          let a = req "defaults attribute" l0.pd_attribuut in
+          let a = req "defaults attribute" l0.pd_attribute in
           World.write_attr w ~label:self.label ~attr:a
             ~decl:(attr_decl env ~otype:owner ~attr:a)
             v)
 
 (* consistency and uniqueness fire at the computed fixpoint; violations
    are idempotent channel facts (ch. 5.6) *)
-let run_consistentie env world (c : resolved_consistentie) =
-  if not (applies env c.cons_geldigheid) then world
+let run_consistency env world (c : resolved_consistency) =
+  if not (applies env c.cons_validity) then world
   else
-    let name = Option.value c.cons_naam ~default:"<consistentie>" in
+    let name = Option.value c.cons_name ~default:"<consistentie>" in
     let env = { env with subj = c.cons_subject } in
     let world, _ =
       over_subjects env world ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
         (fun w self err ->
-          if eval_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertie) then (w, false)
+          if eval_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion) then (w, false)
           else (World.insert_error w ~rule:name ~subject:self.label, false))
     in
     world
@@ -3420,7 +3420,7 @@ let run_consistentie env world (c : resolved_consistentie) =
    values. One shared function carries the single form and the union
    (compositionality: the same key, the same reading, either form). *)
 let ever_tuples env ~otype ~keys (i : World.instance) : string list =
-  let ot_decl = objecttype env otype in
+  let ot_decl = object_type env otype in
   let temporal = List.filter (Ir_v0.Checks.attr_temporal ot_decl) keys in
   if List.length temporal > 1 then
     Value.fault
@@ -3430,7 +3430,7 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
     if not (Ir_v0.Checks.attr_temporal ot_decl k) then [ World.attr i k ]
     else
       match World.timeline i k with
-      | Some tl -> List.map (fun (s : Timeline.segment) -> s.s_waarde) tl
+      | Some tl -> List.map (fun (s : Timeline.segment) -> s.s_value) tl
       | None ->
           if World.attr i k <> Value.Empty then
             Value.fault
@@ -3459,10 +3459,10 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
   |> List.map (fun vs -> String.concat "\x00" (List.map key_lexeme vs))
   |> List.sort_uniq String.compare
 
-let run_uniciteit env world (u : resolved_uniciteit) =
-  if not (applies env u.uni_geldigheid) then world
+let run_uniqueness env world (u : resolved_uniqueness) =
+  if not (applies env u.uni_validity) then world
   else begin
-    let name = Option.value u.uni_naam ~default:"<uniciteit>" in
+    let name = Option.value u.uni_name ~default:"<uniciteit>" in
     let subject = req "Source.objectType" u.uni_subject in
     (* the scope hop of a parent-scoped uniqueness (ch. 5.9, WF-054):
        keys are unique within the sub-population sharing one scope
@@ -3470,13 +3470,13 @@ let run_uniciteit env world (u : resolved_uniciteit) =
        the pinned runtime's silent narrowing, mirrored and recorded *)
     let scope_of =
       (* D12: the scope is the binding; a uniqueness without it is unscoped *)
-      match u.scope_rol with
+      match u.scope_role with
       | Some rb ->
           let role = bound_role env rb in
-          Some (fun i -> role_links world i role)
+          Some (fun i -> role_linked_instances world i role)
       | None -> None
     in
-    let keys = List.map (req "Source.keys entry") u.sleutels in
+    let keys = List.map (req "Source.keys entry") u.key_list in
     (* a duplicate non-empty key (ch. 5.6): rows with an empty key
        component do not participate; temporal keys read ever-uniqueness
        through the shared tuple function, composed with the scope
@@ -3494,8 +3494,8 @@ let run_uniciteit env world (u : resolved_uniciteit) =
           let prefix =
             match scope_of with
             | None -> Some ""
-            | Some links -> (
-                match links i with
+            | Some left_side -> (
+                match left_side i with
                 | [] -> None (* scope-less: does not participate *)
                 | [ (p : World.instance) ] -> Some (p.label ^ "\x00")
                 | _ ->
@@ -3520,11 +3520,11 @@ let run_uniciteit env world (u : resolved_uniciteit) =
    component do not participate; every instance whose tuple occurs more
    than once in the union deposits one channel fact under the shared
    union name. *)
-let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
-  if not (applies env u.uu_geldigheid) then world
+let run_uniqueness_union env world (u : resolved_uniqueness_union) =
+  if not (applies env u.uu_validity) then world
   else begin
-    let name = Option.value u.uu_naam ~default:"<uniciteitsunie>" in
-    if List.length u.bronnen < 2 then
+    let name = Option.value u.uu_name ~default:"<uniciteitsunie>" in
+    if List.length u.source_list < 2 then
       Value.fault
         "a uniqueness union carries at least two sources (the v0 resolver never produces fewer)";
     (* one row per (instance × source) — v0 SUMS the per-source counts,
@@ -3532,16 +3532,16 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
        twice and duplicates against itself, exactly like the runtime *)
     let keyed =
       List.concat_map
-        (fun (b : uniciteit_unie_bron) ->
+        (fun (b : uniqueness_union_source) ->
           let t = req "Source.objectType" b.uub_type in
-          let keys = List.map (req "Source.keys entry") b.uub_sleutels in
+          let keys = List.map (req "Source.keys entry") b.uub_keys in
           (* the shared ever-tuple function (ch. 5.9): one reading for
              the union and the single form alike *)
           List.concat_map
             (fun (i : World.instance) ->
               List.map (fun key -> (key, i.label)) (ever_tuples env ~otype:t ~keys i))
             (World.of_type ~isa:(isa env) world t))
-        u.bronnen
+        u.source_list
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
     List.fold_left
@@ -3565,84 +3565,84 @@ let vintage_read_params (doc : document) : string list =
   let rec expr (e : expr) =
     match e with
     | Temporal_read
-        { basis = Parameter_ref { parameter = Some p; _ };
-          datum = Constante { naam = Some n; _ }; _ }
+        { base_expr = Parameter_ref { parameter = Some p; _ };
+          date_value = Context_value { ident = Some n; _ }; _ }
       when n = Ir_v0.Spelling.evaluation_date ->
         if not (List.exists (fun q -> norm q = norm p) !acc) then acc := p :: !acc
-    | Temporal_read { basis; datum; _ } ->
-        expr basis;
-        expr datum
-    | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
-    | Expr_onopgelost _ | Binder_ref _ ->
+    | Temporal_read { base_expr; date_value; _ } ->
+        expr base_expr;
+        expr date_value
+    | Literal _ | Attribute_reference _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
+    | Expr_unresolved _ | Binder_ref _ ->
         ()
-    | Tekst_reeks { delen; _ } ->
-        List.iter (function Ingevoegd { expr = Some e } -> expr e | _ -> ()) delen
-    | Binair { links; rechts; _ } -> opt links; opt rechts
-    | Functie { argumenten; leegwaarde; filter; _ } ->
-        List.iter expr argumenten;
-        opt leegwaarde;
+    | Text_composition { pieces; _ } ->
+        List.iter (function Embedded_expression { expr = Some e } -> expr e | _ -> ()) pieces
+    | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
+    | Function_call { call_arguments; empty_fallback; filter; _ } ->
+        List.iter expr call_arguments;
+        opt empty_fallback;
         copt filter
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
-    | Dimensie_cel { attribuut; _ } -> opt attribuut
+    | Rounding { base_expr; _ } -> opt base_expr
+    | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
+    | Dimension_cell_read { attribute_ref; _ } -> opt attribute_ref
     | Construct { argument; _ } -> opt argument
     | Match { scrutinee; arms; _ } ->
         expr scrutinee;
         List.iter (fun (_, _, body) -> expr body) arms
-    | Struct_literal { velden; _ } -> List.iter (fun (_, e) -> expr e) velden
+    | Struct_literal { field_list; _ } -> List.iter (fun (_, e) -> expr e) field_list
     | Field_access { base; _ } -> expr base
     | Let { value; body; _ } -> expr value; expr body
     | List_literal { elements; _ } -> List.iter expr elements
     | Lambda { body; _ } -> expr body
     | If_then_else { condition; then_; else_; _ } -> cond condition; expr then_; expr else_
-    | Invoke { functie; arguments; _ } ->
+    | Invoke { function_name; arguments; _ } ->
         List.iter expr arguments;
         (* recurse into the invoked FunctionDef body: a vintage read reachable
            only through named closed logic must still be discovered (WF-067
            makes this acyclic, so the walk terminates) *)
-        fn_body functie
-    | Fold { list; functie; init; _ } -> expr list; fold_fn functie; expr init
-    | Map_list { list; functie; _ } -> expr list; fold_fn functie
+        fn_body function_name
+    | Fold { list; function_name; init; _ } -> expr list; fold_fn function_name; expr init
+    | Map_list { list; function_name; _ } -> expr list; fold_fn function_name
     | Filter_list { list; condition; _ } -> expr list; cond condition
     | List_length { list; _ } -> expr list
     | Instance_set_union { branches; _ } ->
         List.iter (fun (b : instance_set_branch) -> copt b.isb_filter) branches
   and fn_body name =
-    match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm name) doc.function_defs with
+    match List.find_opt (fun (d : function_def) -> norm d.fd_name = norm name) doc.function_defs with
     | Some d -> expr d.fd_body
     | None -> ()
   and fold_fn = function Fn_lambda { body; _ } -> expr body | Fn_name name -> fn_body name
   and opt = function Some e -> expr e | None -> ()
-  and cond (c : conditie) =
+  and cond (c : condition_expr) =
     match c with
-    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
-    | Predicaat { operand; _ } -> opt operand
-    | Kenmerk_check _ | Role_membership _ | Regelversie _
-    | Conditie_onopgelost _ ->
+    | Comparison { left_side; right_side; _ } -> opt left_side; opt right_side
+    | Predicate { operand; _ } -> opt operand
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Condition_unresolved _ ->
         ()
-    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
-    | Samengesteld { onderdelen; _ } -> List.iter cond onderdelen
-    | Kwantorvouw { kv_filter; kv_toets; _ } -> copt kv_filter; copt kv_toets
+    | Time_window { starting_at; up_to; _ } -> opt starting_at; opt up_to
+    | Compound { components; _ } -> List.iter cond components
+    | Quantifier_fold { kv_filter; kv_test; _ } -> copt kv_filter; copt kv_test
   and copt = function Some c -> cond c | None -> ()
   in
   List.iter
-    (fun (r : resolved_regel) ->
-      opt r.doel;
-      opt r.waarde;
-      copt r.rr_voorwaarde)
-    doc.resolved_regels;
-  List.iter (fun (v : resolved_verdeling) -> copt v.vd_voorwaarde) doc.verdelingen;
-  List.iter (fun (c : resolved_consistentie) -> copt c.assertie) doc.consistenties;
-  List.iter (fun (d : resolved_dagsoort) -> copt d.rd_voorwaarde) doc.resolved_dagsoorten;
-  List.iter (fun (fc : resolved_feit_creatie) -> copt fc.fc_voorwaarde) doc.feit_creaties;
+    (fun (r : resolved_rule) ->
+      opt r.objective;
+      opt r.value_node;
+      copt r.rr_condition)
+    doc.resolved_rules;
+  List.iter (fun (v : resolved_allocation) -> copt v.vd_condition) doc.allocations;
+  List.iter (fun (c : resolved_consistency) -> copt c.assertion) doc.consistencies;
+  List.iter (fun (d : resolved_day_kind) -> copt d.rd_condition) doc.resolved_day_kind_definitions;
+  List.iter (fun (fc : resolved_fact_creation) -> copt fc.fc_condition) doc.fact_creations;
   List.iter
-    (fun (oc : resolved_object_creatie) ->
-      List.iter (fun (t : toekenning) -> opt t.toe_waarde) oc.toekenningen;
-      copt oc.oc_voorwaarde)
-    doc.object_creaties;
+    (fun (oc : resolved_object_creation) ->
+      List.iter (fun (t : assignment) -> opt t.to_value) oc.assignments;
+      copt oc.oc_condition)
+    doc.object_creations;
   !acc
 
-let parameterset_check env =
+let parameter_set_check env =
   List.iter
     (fun p ->
       match env.as_of with
@@ -3699,35 +3699,35 @@ let validate_input_precision env world =
     (* the unbounded form has no ceiling and carries any exact value (ch. 2.4
        point 3); the ASP backend holds it as a whole number and refuses a
        non-whole input on it by name, so the two part here on purpose *)
-    | Some (Numeriek { geheel = false; decimalen = 0; _ } | Percentage { geheel = false; decimalen = 0; _ }), Value.Num _ -> ()
-    | Some (Numeriek { decimalen; _ }), Value.Num (q, _)
-    | Some (Percentage { decimalen; _ }), Value.Num (q, _) ->
-        if not (fits ~decimals:decimalen q) then
-          Value.fault "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q) decimalen
+    | Some (Number { whole_part = false; decimal_places = 0; _ } | Percentage { whole_part = false; decimal_places = 0; _ }), Value.Num _ -> ()
+    | Some (Number { decimal_places; _ }), Value.Num (q, _)
+    | Some (Percentage { decimal_places; _ }), Value.Num (q, _) ->
+        if not (fits ~decimals:decimal_places q) then
+          Value.fault "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q) decimal_places
     (* recurse into composite values: an over-precise field of a record or
        element of a list is refused at the boundary too, exactly as the ASP
        backend scales every field/element — otherwise ref keeps a precision
        inside a struct or list that the declaration cannot hold while clingo
        faults (the same 5b gap for list elements, now closed for both) *)
-    | Some (Struct_type { velden; _ }), Value.Record fs ->
+    | Some (Struct_type { field_list; _ }), Value.Record fs ->
         List.iter
           (fun (fname, fv) ->
-            match List.find_opt (fun (n, _) -> norm n = norm fname) velden with
+            match List.find_opt (fun (n, _) -> norm n = norm fname) field_list with
             | Some (_, fdt) -> check ~what:(what ^ "." ^ fname) (Some fdt) fv
             | None -> ())
           fs
-    | Some (List_type { element }), Value.Lijst xs ->
+    | Some (List_type { element }), Value.List_value xs ->
         List.iteri (fun i x -> check ~what:(Printf.sprintf "%s[%d]" what i) (Some element) x) xs
     | _ -> ()
   in
   SMap.iter
     (fun _ (i : World.instance) ->
-      let decl attr = Option.join (Ir_v0.Checks.find_ci (objecttype env i.otype).attributen attr) in
+      let decl attr = Option.join (Ir_v0.Checks.find_ci (object_type env i.otype).attributes attr) in
       SMap.iter (fun a v -> check ~what:(i.label ^ "." ^ a) (decl a) v) i.attrs;
       SMap.iter
         (fun a (tl : Timeline.t) ->
           List.iter
-            (fun (s : Timeline.segment) -> check ~what:(i.label ^ "." ^ a) (decl a) s.s_waarde)
+            (fun (s : Timeline.segment) -> check ~what:(i.label ^ "." ^ a) (decl a) s.s_value)
             tl)
         i.tls)
     world.World.instances;
@@ -3740,7 +3740,7 @@ let validate_input_precision env world =
   SMap.iter
     (fun p (tl : Timeline.t) ->
       List.iter
-        (fun (s : Timeline.segment) -> check ~what:("parameter " ^ p) (param_decl p) s.s_waarde)
+        (fun (s : Timeline.segment) -> check ~what:("parameter " ^ p) (param_decl p) s.s_value)
         tl)
     env.param_tls
 
@@ -3749,7 +3749,7 @@ let evaluate env world =
      where one stands (the in-memory datatype does not carry the tag), and
      this interpreter refuses the document in the verifier's sentence rather
      than evaluate a form the verifier rejects *)
-  (match env.doc.presentatie_annotaties with
+  (match env.doc.presentation_annotations with
   | [] -> ()
   | at :: _ ->
       Value.fault
@@ -3766,7 +3766,7 @@ let evaluate env world =
   | { Ir_v0.Checks.wf; at; reason } :: _ ->
       Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
         wf at reason);
-  parameterset_check env;
+  parameter_set_check env;
   validate_input_precision env world;
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
   let world0 = world in
@@ -3896,14 +3896,14 @@ let evaluate env world =
               cannot be told apart"
              at);
       Hashtbl.replace asked at ())
-    (List.map (fun (r : resolved_regel) -> r.rr_pointer) env.doc.resolved_regels
-    @ List.map (fun (v : resolved_verdeling) -> v.vd_pointer) env.doc.verdelingen
+    (List.map (fun (r : resolved_rule) -> r.rr_pointer) env.doc.resolved_rules
+    @ List.map (fun (v : resolved_allocation) -> v.vd_pointer) env.doc.allocations
     @ List.mapi (fun i _ -> group_at i) env.doc.prioritized_defaults
-    @ List.map (fun (f : resolved_feit_creatie) -> f.fc_pointer) env.doc.feit_creaties
-    @ List.map (fun (o : resolved_object_creatie) -> o.oc_pointer) env.doc.object_creaties
-    @ List.map (fun (c : resolved_consistentie) -> c.cons_pointer) env.doc.consistenties
-    @ List.map (fun (u : resolved_uniciteit) -> u.uni_pointer) env.doc.uniciteiten
-    @ List.map (fun (u : resolved_uniciteit_unie) -> u.uu_pointer) env.doc.uniciteit_unies);
+    @ List.map (fun (f : resolved_fact_creation) -> f.fc_pointer) env.doc.fact_creations
+    @ List.map (fun (o : resolved_object_creation) -> o.oc_pointer) env.doc.object_creations
+    @ List.map (fun (c : resolved_consistency) -> c.cons_pointer) env.doc.consistencies
+    @ List.map (fun (u : resolved_uniqueness) -> u.uni_pointer) env.doc.uniquenesses
+    @ List.map (fun (u : resolved_uniqueness_union) -> u.uu_pointer) env.doc.uniqueness_unions);
   Array.iter
     (fun (f : Ir_v0.Checks.dep_form) ->
       if not (Hashtbl.mem asked f.df_at) then
@@ -3915,13 +3915,13 @@ let evaluate env world =
     arr;
   let stratum_of at = match Hashtbl.find_opt stratum_by_at at with Some i -> strata.(i) | None -> 0 in
   let kmax = Array.fold_left max 0 strata in
-  let rule_stratum (r : resolved_regel) = stratum_of r.rr_pointer in
-  let verdeling_stratum (v : resolved_verdeling) = stratum_of v.vd_pointer in
-  let fc_stratum (f : resolved_feit_creatie) = stratum_of f.fc_pointer in
-  let oc_stratum (o : resolved_object_creatie) = stratum_of o.oc_pointer in
-  let cons_stratum (c : resolved_consistentie) = stratum_of c.cons_pointer in
-  let uni_stratum (u : resolved_uniciteit) = stratum_of u.uni_pointer in
-  let uu_stratum (u : resolved_uniciteit_unie) = stratum_of u.uu_pointer in
+  let rule_stratum (r : resolved_rule) = stratum_of r.rr_pointer in
+  let allocation_stratum (v : resolved_allocation) = stratum_of v.vd_pointer in
+  let fc_stratum (f : resolved_fact_creation) = stratum_of f.fc_pointer in
+  let oc_stratum (o : resolved_object_creation) = stratum_of o.oc_pointer in
+  let cons_stratum (c : resolved_consistency) = stratum_of c.cons_pointer in
+  let uni_stratum (u : resolved_uniqueness) = stratum_of u.uni_pointer in
+  let uu_stratum (u : resolved_uniqueness_union) = stratum_of u.uu_pointer in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
   (* defaults groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
@@ -3950,19 +3950,19 @@ let evaluate env world =
     List.filter_map
       (fun r ->
         if rule_stratum r > k then None
-        else Some (named "rule" r.rr_naam, fun w -> run_rule env w r))
-      env.doc.resolved_regels
+        else Some (named "rule" r.rr_name, fun w -> run_rule env w r))
+      env.doc.resolved_rules
     @ List.filter_map
-        (fun (v : resolved_verdeling) ->
-          if verdeling_stratum v > k then None
-          else Some (named "allocation" v.vd_naam, fun w -> run_verdeling env w v))
-        env.doc.verdelingen
+        (fun (v : resolved_allocation) ->
+          if allocation_stratum v > k then None
+          else Some (named "allocation" v.vd_name, fun w -> run_allocation env w v))
+        env.doc.allocations
     @ List.filter_map
         (fun (stratum, owner, members) ->
           if stratum > k then None
           else
             Some
-              ( named "defaults group" (fst (List.hd members)).pd_naam,
+              ( named "defaults group" (fst (List.hd members)).pd_name,
                 fun w -> run_defaults_group env w ~world0 ~owner members ))
         defaults_groups
   in
@@ -3971,18 +3971,18 @@ let evaluate env world =
      writes on the second *)
   let creations ~k =
     List.filter_map
-      (fun (fc : resolved_feit_creatie) ->
+      (fun (fc : resolved_fact_creation) ->
         if fc_stratum fc > k then None
-        else Some (named "fact creation" fc.fc_naam, fun read w -> run_feit_creatie env ~read w fc))
-      env.doc.feit_creaties
+        else Some (named "fact creation" fc.fc_name, fun read w -> run_fact_creation env ~read w fc))
+      env.doc.fact_creations
     @ List.filter_map
-        (fun (i, (oc : resolved_object_creatie)) ->
+        (fun (i, (oc : resolved_object_creation)) ->
           if oc_stratum oc > k then None
           else
             Some
-              ( named "object creation" oc.oc_naam,
-                fun read w -> run_object_creatie env ~world0 ~idx:i ~stratum:(oc_stratum oc) ~read w oc ))
-        (indexed env.doc.object_creaties)
+              ( named "object creation" oc.oc_name,
+                fun read w -> run_object_creation env ~world0 ~idx:i ~stratum:(oc_stratum oc) ~read w oc ))
+        (indexed env.doc.object_creations)
   in
   (* one pass: every form that makes nothing once, each on the world the
      one before it left *)
@@ -4058,7 +4058,7 @@ let evaluate env world =
           Option.value ~default:attr
             (List.find_map
                (fun (n, _) -> if norm n = attr then Some n else None)
-               (objecttype env otype).attributen)
+               (object_type env otype).attributes)
         in
         let count =
           match List.length writers with 2 -> "two" | 3 -> "three" | 4 -> "four" | n -> string_of_int n
@@ -4123,17 +4123,17 @@ let evaluate env world =
   let checks j world =
     let world =
       List.fold_left
-        (fun w c -> if cons_stratum c = j then run_consistentie env w c else w)
-        world env.doc.consistenties
+        (fun w c -> if cons_stratum c = j then run_consistency env w c else w)
+        world env.doc.consistencies
     in
     let world =
       List.fold_left
-        (fun w u -> if uni_stratum u = j then run_uniciteit env w u else w)
-        world env.doc.uniciteiten
+        (fun w u -> if uni_stratum u = j then run_uniqueness env w u else w)
+        world env.doc.uniquenesses
     in
     List.fold_left
-      (fun w u -> if uu_stratum u = j then run_uniciteit_unie env w u else w)
-      world env.doc.uniciteit_unies
+      (fun w u -> if uu_stratum u = j then run_uniqueness_union env w u else w)
+      world env.doc.uniqueness_unions
   in
   let settle ~k world =
     let rec upto j world =
@@ -4162,7 +4162,7 @@ let evaluate env world =
 
      The number of generations needs no bound of its own. Every generation
      but the last mints an instance or lays a link; a (creation, subject)
-     mints at most once, and the creation budget ([run_object_creatie])
+     mints at most once, and the creation budget ([run_object_creation])
      bounds the depth of a stratum's mints, so a stratum mints finitely many
      instances and the links between them are finite too. Until 2026-10-09
      a stratum admitted 100 generations that mint or link, and that count

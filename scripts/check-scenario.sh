@@ -58,13 +58,13 @@ while IFS= read -r scen; do
     echo "$out" | sed 's/^/    /'
     bad=$((bad + 1)); rm -rf "$tmp"; continue
   fi
-  gemaakt=$(cd "$tmp/cases" && ls case*.json 2>/dev/null | sort)
-  gepind=$(cd "$d" && ls case*.json 2>/dev/null | sort)
-  if [ "$gemaakt" != "$gepind" ]; then
-    echo "SET DIFF: $n (lowered: $(echo $gemaakt); pinned: $(echo $gepind))"
+  made=$(cd "$tmp/cases" && ls case*.json 2>/dev/null | sort)
+  pinned=$(cd "$d" && ls case*.json 2>/dev/null | sort)
+  if [ "$made" != "$pinned" ]; then
+    echo "SET DIFF: $n (lowered: $(echo $made); pinned: $(echo $pinned))"
     bad=$((bad + 1))
   fi
-  for f in $gemaakt; do
+  for f in $made; do
     [ -f "$d/$f" ] || continue
     if cmp -s "$tmp/cases/$f" "$d/$f"; then
       cases=$((cases + 1))

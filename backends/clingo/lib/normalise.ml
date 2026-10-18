@@ -81,32 +81,32 @@ open Ir_v0.Ast
 
 let fault = Value.fault
 
-let unit_abbr (u : eenheid) = Option.value u.afkorting ~default:"?"
+let unit_abbr (u : measure_unit) = Option.value u.abbr_text ~default:"?"
 
 (* the plain (non-rate) declared units of a unit system — each declared unit
    once, its spellings being names of that one unit; a rate (denominator set)
    never enters normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its
    numerator/denominator normalise per their own systems, out of scope here and
    left to the existing refusal). *)
-let plain_units (s : eenheidstelsel) : eenheid list =
-  List.map (fun d -> d.ge_eenheid) s.eenheden |> List.filter (fun (u : eenheid) -> u.noemer = None)
+let plain_units (s : unit_system) : measure_unit list =
+  List.map (fun d -> d.ge_unit) s.unit_list |> List.filter (fun (u : measure_unit) -> u.denominator = None)
 
 (* proof obligation 3: a unit that NAMES the canonical it converts into, with a
    complete WF-092 conversion pair (so [Arith.factor] reads it rather than
    faulting). Recursive through a rate's denominator, like convertibility
    itself. *)
-let rec unit_named (u : eenheid) =
-  (u.canoniek <> None || u.afkorting <> None)
-  && (match (u.canoniek, u.factor_naar_canoniek) with
+let rec unit_named (u : measure_unit) =
+  (u.canonical_form <> None || u.abbr_text <> None)
+  && (match (u.canonical_form, u.factor_to_canonical) with
      | Some _, Some _ | None, None -> true
      | _ -> false)
-  && match u.noemer with Some n -> unit_named n | None -> true
+  && match u.denominator with Some n -> unit_named n | None -> true
 
 (* [u] restates into [tu] by an exact declared factor: the shared
    convertibility predicate — the ONE the verifier and ref/ both read — crossed
    with the naming demand above. This is the relation that makes the table
    cross unit systems. *)
-let restates_into (tu : eenheid) (u : eenheid) =
+let restates_into (tu : measure_unit) (u : measure_unit) =
   unit_named u && unit_named tu && Checks.units_convertible u tu
 
 (* SAME QUANTITY, NO FACTOR: the pair a scaled-integer encoding may cross
@@ -116,14 +116,14 @@ let restates_into (tu : eenheid) (u : eenheid) =
    integers already sit in the same scale. [Translate.units_identical_ok] reads
    this as its escape from record equality — the fence keeps refusing every pair
    that would need a multiplication, which is what the encoding cannot hold. *)
-let same_quantity (a : eenheid) (b : eenheid) =
+let same_quantity (a : measure_unit) (b : measure_unit) =
   restates_into b a && Q.equal (Arith.conv_factor a b) Q.one
 
 (* FINEST-UNIT DERIVATION over one conversion table. Returns the finest base
    unit u_min of [units] and the total factor-to-finest lookup
    factor(u → u_min). [where] names the table in the fault messages. Faults
    loudly (never a silent pick) on the failure modes above. *)
-let finest_of_units ~(where : string) (units : eenheid list) : eenheid * (eenheid -> Q.t) =
+let finest_of_units ~(where : string) (units : measure_unit list) : measure_unit * (measure_unit -> Q.t) =
   match units with
   | [] -> fault "%s declares no plain base unit to normalise" where
   | first :: rest ->
@@ -136,7 +136,7 @@ let finest_of_units ~(where : string) (units : eenheid list) : eenheid * (eenhei
           first rest
       in
       let ffin = Arith.factor finest in
-      let to_finest (u : eenheid) : Q.t = Q.div (Arith.factor u) ffin in
+      let to_finest (u : measure_unit) : Q.t = Q.div (Arith.factor u) ffin in
       (* proof obligation 2: multiply-only INTO the finest, exact integer *)
       List.iter
         (fun u ->
@@ -153,17 +153,17 @@ let finest_of_units ~(where : string) (units : eenheid list) : eenheid * (eenhei
    of the document that restates into [tu], across unit systems, plus [tu]
    itself (a unit restates into itself, and the target's own factor is what the
    finest is measured against). *)
-let table_for_target (doc : document) (tu : eenheid) : string * eenheid list =
+let table_for_target (doc : document) (tu : measure_unit) : string * measure_unit list =
   let systems =
     List.filter_map
       (fun (sn, s) -> if List.exists (restates_into tu) (plain_units s) then Some sn else None)
-      doc.eenheidstelsels
+      doc.unit_systems
   in
   let units =
-    tu :: (List.concat_map (fun (_, s) -> plain_units s) doc.eenheidstelsels
+    tu :: (List.concat_map (fun (_, s) -> plain_units s) doc.unit_systems
            |> List.filter (restates_into tu))
   in
-  let canon = match tu.canoniek with Some c -> c | None -> unit_abbr tu in
+  let canon = match tu.canonical_form with Some c -> c | None -> unit_abbr tu in
   ( Printf.sprintf "the canonical-%s conversion table (unit system%s %s)" canon
       (if List.length systems = 1 then "" else "s")
       (String.concat ", " systems),
@@ -181,11 +181,11 @@ let table_for_target (doc : document) (tu : eenheid) : string * eenheid list =
    same). Untouched-on-unknown is still the rule for a target this document
    really does not declare; what changed is which declarations count as the
    target's. Same defect class as [Translate.attr_temporal_decl]'s raw read. *)
-let target_unit (doc : document) ~ot ~attr : eenheid option =
+let target_unit (doc : document) ~ot ~attr : measure_unit option =
   match Checks.effective_ot doc ot with
   | Some otd -> (
-      match Checks.find_ci otd.attributen attr with
-      | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid
+      match Checks.find_ci otd.attributes attr with
+      | Some (Some (Number { measure_unit; _ } | Percentage { measure_unit; _ })) -> measure_unit
       | _ -> None)
   | None -> None
 
@@ -200,12 +200,12 @@ let decimals_of_lexeme lex =
    fence tests record equality, not mere convertibility. *)
 let restate_lit ~tu ~to_finest (e : expr) : expr =
   match e with
-  | Literal ({ variant = Lv_number lex; typ = Some (Numeriek n); _ } as lit)
-    when (match n.eenheid with Some u -> u.noemer = None && restates_into tu u | None -> false) ->
-      let u = Option.get n.eenheid in
+  | Literal ({ variant = Lv_number lex; typ = Some (Number n); _ } as lit)
+    when (match n.measure_unit with Some u -> u.denominator = None && restates_into tu u | None -> false) ->
+      let u = Option.get n.measure_unit in
       let r = to_finest u in
       if Q.equal r Q.one then
-        Literal { lit with typ = Some (Numeriek { n with eenheid = Some tu }) }
+        Literal { lit with typ = Some (Number { n with measure_unit = Some tu }) }
       else begin
         let lex' = Value.lexeme_of_q (Q.mul (Value.q_of_lexeme lex) r) in
         let d = decimals_of_lexeme lex' in
@@ -214,8 +214,8 @@ let restate_lit ~tu ~to_finest (e : expr) : expr =
             variant = Lv_number lex';
             typ =
               Some
-                (Numeriek
-                   { n with eenheid = Some tu; decimalen = d; geheel = d = 0 && n.geheel });
+                (Number
+                   { n with measure_unit = Some tu; decimal_places = d; whole_part = d = 0 && n.whole_part });
           }
       end
   | _ -> e
@@ -232,14 +232,14 @@ let restate_lit ~tu ~to_finest (e : expr) : expr =
 let rec has_restatable ~tu (e : expr) : bool =
   let opt = function Some x -> has_restatable ~tu x | None -> false in
   match e with
-  | Literal { typ = Some (Numeriek { eenheid = Some u; _ }); _ } ->
-      u.noemer = None && restates_into tu u && u <> tu
-  | Binair { op = Plus | Min | Verminderd_met; links; rechts; _ } -> opt links || opt rechts
-  | Afgerond { basis; _ } -> opt basis
-  | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
-  | Temporal_read { basis; _ } -> has_restatable ~tu basis
-  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten; _ } ->
-      List.exists (has_restatable ~tu) argumenten
+  | Literal { typ = Some (Number { measure_unit = Some u; _ }); _ } ->
+      u.denominator = None && restates_into tu u && u <> tu
+  | Binary { op = Plus | Min | Reduced_by; left_side; right_side; _ } -> opt left_side || opt right_side
+  | Rounding { base_expr; _ } -> opt base_expr
+  | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
+  | Temporal_read { base_expr; _ } -> has_restatable ~tu base_expr
+  | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments; _ } ->
+      List.exists (has_restatable ~tu) call_arguments
   | _ -> false
 
 (* walk a value expression, restating every table literal that sits in a
@@ -254,16 +254,16 @@ let rec norm_expr ~tu ~to_finest (e : expr) : expr =
   let recurse_opt = Option.map recurse in
   match e with
   | Literal _ -> restate_lit ~tu ~to_finest e
-  | Binair ({ op = Plus | Min | Verminderd_met; links; rechts; _ } as b) ->
-      Binair { b with links = recurse_opt links; rechts = recurse_opt rechts }
-  | Afgerond ({ basis; _ } as a) -> Afgerond { a with basis = recurse_opt basis }
-  | Begrensd ({ basis; minimum; maximum; _ } as g) ->
-      Begrensd
-        { g with basis = recurse_opt basis; minimum = recurse_opt minimum;
+  | Binary ({ op = Plus | Min | Reduced_by; left_side; right_side; _ } as b) ->
+      Binary { b with left_side = recurse_opt left_side; right_side = recurse_opt right_side }
+  | Rounding ({ base_expr; _ } as a) -> Rounding { a with base_expr = recurse_opt base_expr }
+  | Clamp ({ base_expr; minimum; maximum; _ } as g) ->
+      Clamp
+        { g with base_expr = recurse_opt base_expr; minimum = recurse_opt minimum;
           maximum = recurse_opt maximum }
-  | Temporal_read ({ basis; _ } as t) -> Temporal_read { t with basis = recurse basis }
-  | Functie ({ kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten; _ } as f) ->
-      Functie { f with argumenten = List.map recurse argumenten }
+  | Temporal_read ({ base_expr; _ } as t) -> Temporal_read { t with base_expr = recurse base_expr }
+  | Function_call ({ kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments; _ } as f) ->
+      Function_call { f with call_arguments = List.map recurse call_arguments }
   | _ -> e
 
 (* normalise one write rule when its numeric target is the finest unit of its
@@ -273,28 +273,28 @@ let rec norm_expr ~tu ~to_finest (e : expr) : expr =
    every conforming document, and it is what anchors the target in a real
    conversion table. The LITERALS it restates are not held to the target's
    system — the table spans the declared systems by canonical name. *)
-let norm_regel (doc : document) (r : resolved_regel) : resolved_regel =
-  match (r.rr_soort, r.doel, r.waarde) with
-  | ( Some (Berekening | Gelijkstelling),
-      Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }),
-      Some waarde ) -> (
+let normalise_rule (doc : document) (r : resolved_rule) : resolved_rule =
+  match (r.rr_presentation, r.objective, r.value_node) with
+  | ( Some (Calculation | Equation),
+      Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }),
+      Some value_node ) -> (
       match target_unit doc ~ot ~attr:a with
       | Some tu
-        when tu.noemer = None
-             && (match tu.stelsel with
-                | Some s -> Checks.find_ci doc.eenheidstelsels s <> None
+        when tu.denominator = None
+             && (match tu.system with
+                | Some s -> Checks.find_ci doc.unit_systems s <> None
                 | None -> false)
              (* the identity gate: no restatable literal ⇒ leave the rule
                 untouched and NEVER read the table's factors (so a table the
                 pass does not exercise never faults, whatever its factors). *)
-             && has_restatable ~tu waarde ->
+             && has_restatable ~tu value_node ->
           let where, units = table_for_target doc tu in
           let finest, to_finest = finest_of_units ~where units in
           (* only when the target IS the finest can the restated (finer) value be
              written without a divide-down the encoding cannot hold; a coarser
              target keeps the existing loud refusal. *)
           if Q.equal (Arith.factor tu) (Arith.factor finest) then
-            { r with waarde = Some (norm_expr ~tu ~to_finest waarde) }
+            { r with value_node = Some (norm_expr ~tu ~to_finest value_node) }
           else r
       | _ -> r)
   | _ -> r
@@ -305,4 +305,4 @@ let norm_regel (doc : document) (r : resolved_regel) : resolved_regel =
    annotations and literal values; desugaring restructures prioritized
    defaults). *)
 let document (doc : document) : document =
-  { doc with resolved_regels = List.map (norm_regel doc) doc.resolved_regels }
+  { doc with resolved_rules = List.map (normalise_rule doc) doc.resolved_rules }

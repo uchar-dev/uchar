@@ -67,9 +67,9 @@ let optional (k : string) (f : 'a -> json) : 'a option -> (string * json) list =
 let enum (fam : 'a Spelling.family) (c : 'a) : json = s (Spelling.encode fam c)
 
 (* the built-in '%' of a percentage that names no unit of its own *)
-let builtin_percent : eenheid =
-  { afkorting = Some "%"; stelsel = None; canoniek = Some "%";
-    factor_naar_canoniek = Some { num = 1; den = 1 }; noemer = None }
+let builtin_percent : measure_unit =
+  { abbr_text = Some "%"; system = None; canonical_form = Some "%";
+    factor_to_canonical = Some { num = 1; den = 1 }; denominator = None }
 
 (* The type system in its L5 shape: a Number always carries its sign (a sign
    the in-memory form leaves open is unspecified) and its unit only when it has
@@ -79,54 +79,54 @@ let builtin_percent : eenheid =
    the tag is never written); a date is one Date node with its precision. *)
 let rec datatype ?(decl = true) (d : datatype) : json =
   match d with
-  | Numeriek { geheel; decimalen; teken; eenheid } ->
+  | Number { whole_part; decimal_places; sign_char; measure_unit } ->
       node "Number"
-        ([ ("whole", b geheel); ("decimals", i decimalen);
-           ("sign", enum Spelling.sign (Option.value teken ~default:Onbepaald)) ]
-        @ match eenheid with None -> [] | Some e -> [ ("unit", unit_j e) ])
-  | Booleaan -> node "Boolean" []
-  | Datum_in_dagen | Datum_tijd -> node "Date" [ ("precision", enum Spelling.precision d) ]
-  | Tekst -> node "Text" []
-  | Percentage { geheel; decimalen; eenheid } ->
+        ([ ("whole", b whole_part); ("decimals", i decimal_places);
+           ("sign", enum Spelling.sign (Option.value sign_char ~default:Unspecified)) ]
+        @ match measure_unit with None -> [] | Some e -> [ ("unit", unit_j e) ])
+  | Boolean -> node "Boolean" []
+  | Date_in_days | Date_time_type -> node "Date" [ ("precision", enum Spelling.precision d) ]
+  | Text_type -> node "Text" []
+  | Percentage { whole_part; decimal_places; measure_unit } ->
       node "Number"
-        ([ ("whole", b geheel); ("decimals", i decimalen); ("sign", enum Spelling.sign Onbepaald);
-           ("unit", unit_j (Option.value eenheid ~default:builtin_percent)) ]
+        ([ ("whole", b whole_part); ("decimals", i decimal_places); ("sign", enum Spelling.sign Unspecified);
+           ("unit", unit_j (Option.value measure_unit ~default:builtin_percent)) ]
         @ if decl then [ ("presentation", s "percentage") ] else [])
-  | Enumeratie { domein; waarden } ->
-      node "Enumeration" [ ("domain", so domein); ("values", str_opt_list waarden) ]
-  | Sum_type { domein; constructoren } ->
+  | Enumeration { domain_spec; label_list } ->
+      node "Enumeration" [ ("domain", so domain_spec); ("values", str_opt_list label_list) ]
+  | Sum_type { domain_spec; constructor_list } ->
       node "SumType"
-        [ ("domain", s domein);
+        [ ("domain", s domain_spec);
           ("constructors",
            `List
              (List.map
                 (fun (nm, payload) ->
                   `Assoc [ ("name", s nm); ("payload", opt (datatype ~decl) payload) ])
-                constructoren)) ]
+                constructor_list)) ]
   | List_type { element } -> node "ListType" [ ("element", datatype ~decl element) ]
-  | Struct_type { domein; velden } ->
+  | Struct_type { domain_spec; field_list } ->
       node "StructType"
-        [ ("domain", s domein);
+        [ ("domain", s domain_spec);
           ("fields",
            `List
              (List.map
                 (fun (nm, dt) -> `Assoc [ ("name", s nm); ("datatype", datatype ~decl dt) ])
-                velden)) ]
+                field_list)) ]
 
 (* a Unit where it occurs: absent is the one spelling of a field not given,
    and the factor is the exact rational {num, den} *)
-and unit_j (e : eenheid) : json =
+and unit_j (e : measure_unit) : json =
   let abbreviation =
-    match e.afkorting with Some a -> a | None -> failwith "Emit: a unit without an abbreviation"
+    match e.abbr_text with Some a -> a | None -> failwith "Emit: a unit without an abbreviation"
   in
   node "Unit"
     ([ ("abbreviation", s abbreviation) ]
-    @ (match e.stelsel with Some x -> [ ("system", s x) ] | None -> [])
-    @ (match e.canoniek with Some x -> [ ("canonical", s x) ] | None -> [])
-    @ (match e.factor_naar_canoniek with
+    @ (match e.system with Some x -> [ ("system", s x) ] | None -> [])
+    @ (match e.canonical_form with Some x -> [ ("canonical", s x) ] | None -> [])
+    @ (match e.factor_to_canonical with
       | Some { num; den } -> [ ("factorToCanonical", `Assoc [ ("num", i num); ("den", i den) ]) ]
       | None -> [])
-    @ match e.noemer with Some n -> [ ("denominator", unit_j n) ] | None -> [])
+    @ match e.denominator with Some n -> [ ("denominator", unit_j n) ] | None -> [])
 
 (* an expression's own type: never a declaration position *)
 let annotation (d : datatype) : json = datatype ~decl:false d
@@ -134,8 +134,8 @@ let annotation (d : datatype) : json = datatype ~decl:false d
 (* the symbolic role binding (IR-SPEC ch. 2.6): a whole-or-nothing pair of
    plain strings — the back-link of an object creation and the hop of a
    navigated read (Phase 5c subscope lowering). *)
-let rol_binding (rb : rol_binding) : json =
-  node "RoleBinding" [ ("factType", s rb.rb_feittype); ("role", s rb.rb_rol) ]
+let role_binding (rb : role_binding) : json =
+  node "RoleBinding" [ ("factType", s rb.rb_fact_type); ("role", s rb.rb_role) ]
 
 (* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): one key, the
    variant the literal's type names. *)
@@ -152,31 +152,31 @@ let literal_value (v : literal_variant) : json =
 let rec expr (e : expr) : json =
   let typ t = ("type", opt annotation t) in
   match e with
-  | Literal { variant; typ = t; bron = br } ->
+  | Literal { variant; typ = t; source_name = br } ->
       node "Literal" [ ("value", literal_value variant); typ t; source br ]
-  | Binair { op; links; rechts; typ = t; bron = br } ->
+  | Binary { op; left_side; right_side; typ = t; source_name = br } ->
       node "Binary"
-        [ ("op", enum Spelling.binary_op op); ("left", opt expr links);
-          ("right", opt expr rechts); typ t; source br ]
-  | Afgerond { basis; modus; decimalen; typ = t; bron = br } ->
+        [ ("op", enum Spelling.binary_op op); ("left", opt expr left_side);
+          ("right", opt expr right_side); typ t; source br ]
+  | Rounding { base_expr; mode_kind; decimal_places; typ = t; source_name = br } ->
       node "Rounding"
-        [ ("base", opt expr basis); ("mode", enum Spelling.rounding_mode modus);
-          ("decimals", i decimalen); typ t; source br ]
-  | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen = nb } ->
+        [ ("base", opt expr base_expr); ("mode", enum Spelling.rounding_mode mode_kind);
+          ("decimals", i decimal_places); typ t; source br ]
+  | Attribute_reference { attribute_ref; object_type; source_name = br; navigation_bindings = nb } ->
       (* a reference writes no type (B13). path is written only when the
          reference actually navigates (Phase 5c subscope lowering: the caller
          reads a callee output over the back-link); without it the read is the
          subject's own (IR-SPEC ch. 4.1a) *)
       node "AttributeReference"
-        ([ ("attribute", so attribuut); ("subjectType", so objecttype); source br ]
-        @ optional "path" (fun hops -> `List (List.map rol_binding hops)) nb)
+        ([ ("attribute", so attribute_ref); ("subjectType", so object_type); source br ]
+        @ optional "path" (fun hops -> `List (List.map role_binding hops)) nb)
   (* the two context nodes (IR-SPEC ch. 4.1, delta B23): a session value
      carries its name and its datatype, the bound day of a day-kind
      definition its datatype. A name outside the closed set is refused in
      WF-098's sentence rather than written for the verifier to reject *)
-  | Constante { naam; typ = t; bron = br } ->
+  | Context_value { ident; typ = t; source_name = br } ->
       let name =
-        match naam with
+        match ident with
         | Some n -> (
             match Ir_v0.Checks.context_value_refusal n with
             | None -> n
@@ -187,7 +187,7 @@ let rec expr (e : expr) : json =
         match t with Some t -> t | None -> failwith "Emit.expr: a ContextValue carries its datatype"
       in
       node "ContextValue" [ ("name", s name); ("type", annotation t); source br ]
-  | Bound_day { typ = t; bron = br } ->
+  | Bound_day { typ = t; source_name = br } ->
       let t =
         match t with Some t -> t | None -> failwith "Emit.expr: a BoundDay carries its datatype"
       in
@@ -196,12 +196,12 @@ let rec expr (e : expr) : json =
      quoting its source snippet in [diagnostics] (WF-113 (b)), which this
      serialiser never writes: it refuses like any node the skeleton never
      builds. *)
-  | Expr_onopgelost _ -> failwith "Emit.expr: node not produced by the skeleton: Unresolved"
-  | Construct { typ = t; constructor_; argument; bron = br } ->
+  | Expr_unresolved _ -> failwith "Emit.expr: node not produced by the skeleton: Unresolved"
+  | Construct { typ = t; constructor_; argument; source_name = br } ->
       node "Construct"
         [ ("type", opt annotation t); ("constructor", s constructor_);
           ("argument", opt expr argument); source br ]
-  | Match { typ = t; scrutinee; arms; bron = br } ->
+  | Match { typ = t; scrutinee; arms; source_name = br } ->
       node "Match"
         [ ("type", opt annotation t); ("scrutinee", expr scrutinee);
           ("arms",
@@ -213,45 +213,45 @@ let rec expr (e : expr) : json =
                       ("body", expr body) ])
                 arms));
           source br ]
-  | Binder_ref { naam; bron = br } -> node "BinderRef" [ ("name", s naam); source br ]
-  | List_literal { typ = t; elements; bron = br } ->
+  | Binder_ref { ident; source_name = br } -> node "BinderRef" [ ("name", s ident); source br ]
+  | List_literal { typ = t; elements; source_name = br } ->
       node "ListLiteral"
         [ ("type", opt annotation t); ("elements", `List (List.map expr elements)); source br ]
-  | If_then_else { typ = t; condition; then_; else_; bron = br } ->
+  | If_then_else { typ = t; condition; then_; else_; source_name = br } ->
       node "IfThenElse"
-        [ ("type", opt annotation t); ("condition", conditie condition);
+        [ ("type", opt annotation t); ("condition", condition_expr condition);
           ("then", expr then_); ("else", expr else_); source br ]
-  | Invoke { typ = t; functie; arguments; bron = br } ->
+  | Invoke { typ = t; function_name; arguments; source_name = br } ->
       node "Invoke"
-        [ ("type", opt annotation t); ("function", s functie);
+        [ ("type", opt annotation t); ("function", s function_name);
           ("arguments", `List (List.map expr arguments)); source br ]
-  | Fold { typ = t; list; functie; init; bron = br } ->
+  | Fold { typ = t; list; function_name; init; source_name = br } ->
       node "Fold"
         [ ("type", opt annotation t); ("list", expr list);
-          ("function", fold_fn functie); ("init", expr init); source br ]
-  | Map_list { typ = t; list; functie; bron = br } ->
+          ("function", fold_fn function_name); ("init", expr init); source br ]
+  | Map_list { typ = t; list; function_name; source_name = br } ->
       node "MapList"
         [ ("type", opt annotation t); ("list", expr list);
-          ("function", fold_fn functie); source br ]
-  | Filter_list { typ = t; list; binder; condition; bron = br } ->
+          ("function", fold_fn function_name); source br ]
+  | Filter_list { typ = t; list; binder; condition; source_name = br } ->
       node "FilterList"
         [ ("type", opt annotation t); ("list", expr list); ("binder", s binder);
-          ("condition", conditie condition); source br ]
-  | List_length { typ = t; list; bron = br } ->
+          ("condition", condition_expr condition); source br ]
+  | List_length { typ = t; list; source_name = br } ->
       node "ListLength" [ ("type", opt annotation t); ("list", expr list); source br ]
-  | Struct_literal { typ = t; velden; bron = br } ->
+  | Struct_literal { typ = t; field_list; source_name = br } ->
       node "StructLiteral"
         [ ("type", opt annotation t);
           ("fields",
            `List
              (List.map
                 (fun (nm, v) -> `Assoc [ ("name", s nm); ("value", expr v) ])
-                velden));
+                field_list));
           source br ]
-  | Field_access { typ = t; base; veld; bron = br } ->
+  | Field_access { typ = t; base; field_name; source_name = br } ->
       node "FieldAccess"
-        [ ("type", opt annotation t); ("base", expr base); ("field", s veld); source br ]
-  | Let { typ = t; binder; value; body; bron = br } ->
+        [ ("type", opt annotation t); ("base", expr base); ("field", s field_name); source br ]
+  | Let { typ = t; binder; value; body; source_name = br } ->
       (* the value-level binding (IR-SPEC ch. 4.10): [type] is non-null on the wire and
          equals the body type (WF-076); [binder] joins the WF-064 regime *)
       node "Let"
@@ -266,10 +266,10 @@ let rec expr (e : expr) : json =
       failwith
         ("Emit.expr: node not produced by the skeleton: "
         ^ (match other with
-          | Parameter_ref _ -> "ParameterReference" | Variabele_ref _ -> "VariableReference"
-          | Tekst_reeks _ -> "TextComposition" | Functie _ -> "Aggregation or BuiltinCall"
-          | Afgerond _ -> "Rounding" | Begrensd _ -> "Clamp"
-          | Dimensie_cel _ -> "DimensionCellRead" | Temporal_read _ -> "TemporalRead"
+          | Parameter_ref _ -> "ParameterReference" | Variable_reference _ -> "VariableReference"
+          | Text_composition _ -> "TextComposition" | Function_call _ -> "Aggregation or BuiltinCall"
+          | Rounding _ -> "Rounding" | Clamp _ -> "Clamp"
+          | Dimension_cell_read _ -> "DimensionCellRead" | Temporal_read _ -> "TemporalRead"
           | Lambda _ -> "Lambda (position-restricted; only a Fold/MapList operand)"
           | _ -> "?"))
 
@@ -278,7 +278,7 @@ let rec expr (e : expr) : json =
 and fold_fn (f : fold_fn) : json =
   match f with
   | Fn_name n -> `String n
-  | Fn_lambda { parameters; body; bron = br } ->
+  | Fn_lambda { parameters; body; source_name = br } ->
       node "Lambda"
         [ ("parameters", param_list parameters); ("body", expr body); source br ]
 
@@ -286,27 +286,27 @@ and fold_fn (f : fold_fn) : json =
 and param_list (ps : (string * datatype) list) : json =
   `List (List.map (fun (n, dt) -> `Assoc [ ("name", s n); ("datatype", datatype dt) ]) ps)
 
-and conditie (c : conditie) : json =
+and condition_expr (c : condition_expr) : json =
   (* the translator builds no whole-period qualifier, and the plugin declares
      no time-dependent attribute or characteristic for one to qualify
      (WF-043), so a filled one refuses rather than being written *)
   let whole_period = function
     | None -> []
-    | Some (_ : geheel_periode) ->
+    | Some (_ : entire_period) ->
         failwith "Emit.conditie: condition shape not produced by the skeleton: a wholePeriod qualifier"
   in
   match c with
-  | Vergelijking { op; links; rechts; periode = p; bron = br } ->
+  | Comparison { op; left_side; right_side; time_period = p; source_name = br } ->
       node "Comparison"
-        ([ ("op", enum Spelling.comparison_op op); ("left", opt expr links);
-           ("right", opt expr rechts) ]
+        ([ ("op", enum Spelling.comparison_op op); ("left", opt expr left_side);
+           ("right", opt expr right_side) ]
         @ whole_period p @ [ source br ])
-  | Samengesteld { kwantor; drempel; onderdelen; bron = br } ->
+  | Compound { quantifier_kind; cutoff; components; source_name = br } ->
       node "Compound"
-        [ ("quantifier", enum Spelling.quantifier kwantor); ("threshold", i drempel);
-          ("parts", `List (List.map conditie onderdelen)); source br ]
-  | Kenmerk_check
-      { kenmerk; negatie; eigenaar; periode = p; bron = br; navigatie_binding = nb } ->
+        [ ("quantifier", enum Spelling.quantifier quantifier_kind); ("threshold", i cutoff);
+          ("parts", `List (List.map condition_expr components)); source br ]
+  | Characteristic_check
+      { characteristic; negation; holder; time_period = p; source_name = br; navigation_binding = nb } ->
       (* the host is written only when the check names one (absent is the
          subject, RUNTIME-SEMANTICS ch. 5.8b); navigation is written whole or
          not at all, only when the check actually navigates (ch. 4.1a/5: a
@@ -314,78 +314,78 @@ and conditie (c : conditie) : json =
          the condition sibling of a navigated AttributeReference); it is the
          hop *)
       node "CharacteristicCheck"
-        ([ ("characteristic", so kenmerk); ("negated", b negatie) ]
-        @ optional "host" s eigenaar @ whole_period p @ [ source br ]
-        @ optional "navigation" rol_binding nb)
+        ([ ("characteristic", so characteristic); ("negated", b negation) ]
+        @ optional "host" s holder @ whole_period p @ [ source br ]
+        @ optional "navigation" role_binding nb)
   (* no marker either: see the expression arm *)
-  | Conditie_onopgelost _ ->
+  | Condition_unresolved _ ->
       failwith "Emit.conditie: condition shape not produced by the skeleton: Unresolved"
   | _ -> failwith "Emit.conditie: condition shape not produced by the skeleton"
 
 (* an open side of a validity is an absent bound; neither bound is always *)
-let geldigheid (g : geldigheid) : json =
-  node "Validity" (optional "from" s g.geld_vanaf @ optional "to" s g.geld_tot)
+let validity_window (g : validity_window) : json =
+  node "Validity" (optional "from" s g.valid_from @ optional "to" s g.valid_to)
 
 (* A list entry of the M1 model carries its name once, on its node, so the
    in-memory map key and the node's own name must be one spelling; two
    spellings have no rule for choosing, so a mismatch refuses. *)
-let named what key (naam : string option) =
-  if naam <> Some key then
+let named what key (ident : string option) =
+  if ident <> Some key then
     failwith
       (Printf.sprintf "Emit: %s %S carries the name %s; the uchar-ir-v1 list entry has one" what
-         key (match naam with None -> "null" | Some n -> Printf.sprintf "%S" n))
+         key (match ident with None -> "null" | Some n -> Printf.sprintf "%S" n))
 
 (* ObjectType with its members as nodes (IR-SPEC ch. 2.2). The translator
    fills no member facet: no plural, dimension or timeline table. A filled
    one refuses rather than being written in a guessed form, which also
    retires the old constant-null granularity branch. *)
-let objecttype (key, (o : objecttype)) : json =
-  named "object type" key o.ot_naam;
+let object_type (key, (o : object_type)) : json =
+  named "object type" key o.ot_ident;
   let unfilled table = function
     | [] -> ()
     | _ -> failwith (Printf.sprintf "Emit: object type %S fills %s, which the plugin never builds" key table)
   in
-  unfilled "attribuut_meervoud" o.attribuut_meervoud;
-  unfilled "attribuut_dimensies" o.attribuut_dimensies;
-  unfilled "attribuut_granulariteit" o.attribuut_granulariteit;
-  unfilled "attribuut_tijdlijn_aantal" o.attribuut_tijdlijn_aantal;
-  unfilled "attribuut_tijdlijn_naam" o.attribuut_tijdlijn_naam;
-  unfilled "kenmerk_granulariteit" o.kenmerk_granulariteit;
-  unfilled "kenmerk_tijdlijn_aantal" o.kenmerk_tijdlijn_aantal;
-  let kenmerken =
+  unfilled "attribuut_meervoud" o.attribute_plural;
+  unfilled "attribuut_dimensies" o.attribute_dimensions;
+  unfilled "attribuut_granulariteit" o.attribute_granularity;
+  unfilled "attribuut_tijdlijn_aantal" o.attribute_timeline_count;
+  unfilled "attribuut_tijdlijn_naam" o.attribute_timeline_names;
+  unfilled "kenmerk_granulariteit" o.characteristic_granularity;
+  unfilled "kenmerk_tijdlijn_aantal" o.characteristic_timeline_count;
+  let characteristics =
     List.map
       (function
         | Some k -> k
         | None -> failwith (Printf.sprintf "Emit: object type %S declares a null characteristic" key))
-      o.kenmerken
+      o.characteristics
   in
   List.iter
     (fun (k, _) ->
-      if not (List.mem k kenmerken) then
+      if not (List.mem k characteristics) then
         failwith (Printf.sprintf "Emit: object type %S tags %S, which it does not declare" key k))
-    o.kenmerk_soorten;
+    o.characteristic_kinds;
   let supertype = match o.ot_supertype with None -> [] | Some p -> [ ("supertype", s p) ] in
-  let plural = match o.meervoud with None -> [] | Some p -> [ ("plural", s p) ] in
+  let plural = match o.plural with None -> [] | Some p -> [ ("plural", s p) ] in
   node "ObjectType"
-    ([ ("name", s key) ] @ supertype @ [ ("animate", b o.bezield) ] @ plural
+    ([ ("name", s key) ] @ supertype @ [ ("animate", b o.animate) ] @ plural
     @ [ ("attributes",
          `List
            (List.map
               (fun (a, dt) -> node "Attribute" [ ("name", s a); ("datatype", opt datatype dt) ])
-              o.attributen));
+              o.attributes));
         ("characteristics",
          `List
            (List.map
               (fun k ->
                 (* untagged is nominal (ch. 2.2) *)
                 let kind =
-                  match List.assoc_opt k o.kenmerk_soorten with
-                  | Some (Some soort) -> soort
-                  | Some None | None -> Zelfstandig
+                  match List.assoc_opt k o.characteristic_kinds with
+                  | Some (Some variety) -> variety
+                  | Some None | None -> Nominal
                 in
                 node "Characteristic"
                   [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
-              kenmerken)) ])
+              characteristics)) ])
 
 (* Domain (IR-SPEC ch. 2.3): the name is written here, so the datatype at
    this declaration position drops the self-name it carries at every
@@ -398,15 +398,15 @@ let domain (key, (d : datatype option)) : json =
   in
   let self_name =
     match dt with
-    | Enumeratie { domein; _ } -> Some domein
-    | Sum_type { domein; _ } | Struct_type { domein; _ } -> Some (Some domein)
+    | Enumeration { domain_spec; _ } -> Some domain_spec
+    | Sum_type { domain_spec; _ } | Struct_type { domain_spec; _ } -> Some (Some domain_spec)
     | _ -> None
   in
   let body =
     match (self_name, datatype dt) with
     | None, j -> j
-    | Some naam, `Assoc kvs ->
-        named "domain" key naam;
+    | Some ident, `Assoc kvs ->
+        named "domain" key ident;
         `Assoc (List.filter (fun (k, _) -> k <> "domain") kvs)
     | Some _, _ -> failwith (Printf.sprintf "Emit: domain %S did not serialise as an object" key)
   in
@@ -414,8 +414,8 @@ let domain (key, (d : datatype option)) : json =
 
 (* A version's validity is always written (IR-SPEC ch. 3.10): a record
    without one is valid always. *)
-let validity (g : geldigheid option) : json =
-  geldigheid (Option.value g ~default:{ geld_vanaf = None; geld_tot = None })
+let validity (g : validity_window option) : json =
+  validity_window (Option.value g ~default:{ valid_from = None; valid_to = None })
 
 (* A named form (IR-SPEC ch. 3, Versioning): {node, name, versions}. The
    plugin builds every rule, consistency and object creation with one
@@ -423,8 +423,8 @@ let validity (g : geldigheid option) : json =
    space, '#' and digits is the in-memory spelling of one version of a form
    with several, which the plugin never builds: it refuses rather than
    writing a name no reader loads. *)
-let form ~what kind (naam : string option) (version : json) : json =
-  (match naam with
+let form ~what kind (ident : string option) (version : json) : json =
+  (match ident with
   | Some n when Ir_v0.Loader.versioned_name n ->
       failwith
         (Printf.sprintf
@@ -432,81 +432,81 @@ let form ~what kind (naam : string option) (version : json) : json =
             version of a form with several, and the plugin builds no versions"
            what n)
   | _ -> ());
-  node kind [ ("name", so naam); ("versions", `List [ version ]) ]
+  node kind [ ("name", so ident); ("versions", `List [ version ]) ]
 
 (* A rule version (IR-SPEC ch. 3.1, delta B20): the in-memory kind is read
    back onto the initialisation flag and the presentation tag, and the target
    is an attribute reference. *)
-let rule (r : resolved_regel) : json =
-  if r.rr_bron_annotaties <> None then failwith "Emit: the plugin writes no statute annotations";
+let rule (r : resolved_rule) : json =
+  if r.rr_source_annotations <> None then failwith "Emit: the plugin writes no statute annotations";
   let initialisation, presentation =
-    match r.rr_soort with
-    | Some ((Gelijkstelling | Berekening) as k) ->
+    match r.rr_presentation with
+    | Some ((Equation | Calculation) as k) ->
         (false, [ ("presentation", enum Spelling.presentation k) ])
-    | Some Initialisatie -> (true, [])
-    | Some Kenmerktoekenning -> (false, [])
+    | Some Initialisation -> (true, [])
+    | Some Characteristic_attribution -> (false, [])
     | None -> failwith "Emit: a rule version without its kind"
   in
   let target =
-    match r.doel with
-    | Some (Attribuut_ref _ as t) -> expr t
+    match r.objective with
+    | Some (Attribute_reference _ as t) -> expr t
     | _ -> failwith "Emit: the target of a rule version is an AttributeReference"
   in
   let value =
-    match r.waarde with Some v -> expr v | None -> failwith "Emit: a rule version without its value"
+    match r.value_node with Some v -> expr v | None -> failwith "Emit: a rule version without its value"
   in
-  let condition = match r.rr_voorwaarde with None -> [] | Some c -> [ ("condition", conditie c) ] in
-  form ~what:"rule" "Rule" r.rr_naam
+  let condition = match r.rr_condition with None -> [] | Some c -> [ ("condition", condition_expr c) ] in
+  form ~what:"rule" "Rule" r.rr_name
     (`Assoc
-      ([ ("validity", validity r.rr_geldigheid); ("target", target); ("value", value) ]
+      ([ ("validity", validity r.rr_validity); ("target", target); ("value", value) ]
       @ condition
       @ [ ("initialisation", b initialisation) ]
       @ presentation))
 
-let consistency (c : resolved_consistentie) : json =
+let consistency (c : resolved_consistency) : json =
   let assertion =
-    match c.assertie with
-    | Some a -> conditie a
+    match c.assertion with
+    | Some a -> condition_expr a
     | None -> failwith "Emit: a consistency version without its assertion"
   in
-  form ~what:"consistency" "Consistency" c.cons_naam
+  form ~what:"consistency" "Consistency" c.cons_name
     (`Assoc
       (fields
          [ ("subject", so c.cons_subject); ("assertion", assertion);
-           ("validity", validity c.cons_geldigheid); source c.cons_bron ]))
+           ("validity", validity c.cons_validity); source c.cons_source ]))
 
 (* fact type + roles (IR-SPEC ch. 2.6): the connecting relation the plugin
    synthesises to carry a subscope back-link (Phase 5c). Each role names its
    filler object type; the plugin's roles are always to-one. *)
-let rol (r : rol) : json =
+let role_ref (r : role_ref) : json =
   node "Role"
-    ([ ("name", so r.rol_naam); ("objectType", so r.rol_objecttype_naam) ]
-    @ optional "plural" s r.rol_meervoud
-    @ [ ("many", b r.rol_meervoudig) ])
+    ([ ("name", so r.role_identifier); ("objectType", so r.role_object_type_name) ]
+    @ optional "plural" s r.role_plural
+    @ [ ("many", b r.role_many) ])
 
-let feittype (ft : feittype) : json =
+let fact_type_name (ft : fact_type_name) : json =
   node "FactType"
-    [ ("name", so ft.ft_naam); ("reciprocal", b ft.wederkerig);
-      ("roles", `List (List.map rol ft.rollen)) ]
+    [ ("name", so ft.ft_name); ("reciprocal", b ft.reciprocal);
+      ("roles", `List (List.map role_ref ft.role_names)) ]
 
-let toekenning (t : toekenning) : json =
+let assignment (t : assignment) : json =
   node "MemberInit"
-    [ ("member", so t.toe_attribuut); ("value", opt expr t.toe_waarde);
-      ("characteristic", b t.toe_kenmerk) ]
+    [ ("member", so t.to_attribute); ("value", opt expr t.to_value);
+      ("characteristic", b t.to_characteristic) ]
 
-let object_creation (oc : resolved_object_creatie) : json =
+let object_creation (oc : resolved_object_creation) : json =
   (* connectingRole is optional (IR-SPEC ch. 3.3) — the created-side role of
      the back-link, written whole when present *)
-  let condition = match oc.oc_voorwaarde with None -> [] | Some c -> [ ("condition", conditie c) ] in
+  let condition = match oc.oc_condition with None -> [] | Some c -> [ ("condition", condition_expr c) ] in
   let connecting =
-    match oc.oc_verbindende_rol with None -> [] | Some rb -> [ ("connectingRole", rol_binding rb) ]
+    match oc.oc_connecting_role with None -> [] | Some rb -> [ ("connectingRole", role_binding rb) ]
   in
-  form ~what:"object creation" "ObjectCreation" oc.oc_naam
+  form ~what:"object creation" "ObjectCreation" oc.oc_name
     (`Assoc
-      ([ ("createdType", so oc.nieuw_type); ("subject", so oc.oc_subject);
-         ("initialisations", `List (List.map toekenning oc.toekenningen)) ]
+      ([ ("createdType", so oc.created_type); ("subject", so oc.oc_subject);
+         ("initialisations", `List (List.map assignment oc.assignments)) ]
       @ condition
-      @ [ ("validity", validity oc.oc_geldigheid) ]
+      @ [ ("validity", validity oc.oc_validity) ]
       @ connecting))
 
 let rec default (d : default) : json =
@@ -514,16 +514,16 @@ let rec default (d : default) : json =
      loader's [ext] admission: no decision on an attribute or group default,
      no justification on an initialisation or group default, and an
      initialisation only when it is true *)
-  let init = if d.default_initialisatie then [ ("initialisation", `Bool true) ] else [] in
+  let init = if d.default_initialisation then [ ("initialisation", `Bool true) ] else [] in
   `Assoc
     (fields
        ([ ("node", `String "Default") ]
-       @ optional "decision" b d.default_besluit
-       @ optional "justification" conditie d.default_voorwaarde
-       @ optional "consequence" expr d.default_consequentie
+       @ optional "decision" b d.default_decision
+       @ optional "justification" condition_expr d.default_justification
+       @ optional "consequence" expr d.default_consequence
        @ init
-       @ optional "exceptions" exception_groups d.default_excepties
-       @ [ source d.default_bron ]))
+       @ optional "exceptions" exception_groups d.default_exceptions
+       @ [ source d.default_source ]))
 
 (* the nested exception group riding [exceptions] (v1, Phase 5c): the
    {unordered, members} object (no node discriminator) and its
@@ -531,30 +531,30 @@ let rec default (d : default) : json =
    [exception_groups]/[exception_group]. *)
 and exception_groups (egs : exception_groups) : json =
   `Assoc
-    [ ("unordered", b egs.egs_ongeordend);
-      ("members", `List (List.map exception_group egs.egs_leden)) ]
+    [ ("unordered", b egs.egs_unordered);
+      ("members", `List (List.map exception_group egs.egs_members)) ]
 
 and exception_group (eg : exception_group) : json =
   node "ExceptionGroup"
-    [ ("defaults", `List (List.map default eg.eg_defaults)); source eg.eg_bron ]
+    [ ("defaults", `List (List.map default eg.eg_defaults)); source eg.eg_source ]
 
 let prioritized_defaults (pd : prioritized_defaults) : json =
-  let unordered = if pd.pd_ongeordend then [ ("unordered", `Bool true) ] else [] in
+  let unordered = if pd.pd_unordered then [ ("unordered", `Bool true) ] else [] in
   `Assoc
     (fields
-       ([ ("node", `String "PrioritizedDefaults"); ("name", so pd.pd_naam);
-          ("subject", `String pd.pd_onderwerp) ]
-       @ optional "characteristic" s pd.pd_kenmerk
-       @ optional "attribute" s pd.pd_attribuut
+       ([ ("node", `String "PrioritizedDefaults"); ("name", so pd.pd_name);
+          ("subject", `String pd.pd_subject) ]
+       @ optional "characteristic" s pd.pd_characteristic
+       @ optional "attribute" s pd.pd_attribute
        @ [ ("defaults", `List (List.map default pd.defaults)) ]
        @ unordered
-       @ [ source pd.pd_bron; ("validity", opt geldigheid pd.pd_geldigheid) ]))
+       @ [ source pd.pd_source; ("validity", opt validity_window pd.pd_validity) ]))
 
 let function_def (fd : function_def) : json =
   node "FunctionDef"
-    [ ("name", s fd.fd_naam); ("parameters", param_list fd.fd_parameters);
+    [ ("name", s fd.fd_name); ("parameters", param_list fd.fd_parameters);
       ("result", datatype fd.fd_result); ("body", expr fd.fd_body);
-      source fd.fd_bron ]
+      source fd.fd_source ]
 
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
    rule lists under "rules" with their L5 keys, in the schema's property
@@ -571,17 +571,17 @@ let document (d : document) : json =
     | _ -> failwith (Printf.sprintf "Emit: the document fills %s, which the plugin never builds" list)
   in
   unfilled "parameters" d.parameters;
-  unfilled "unitSystems" d.eenheidstelsels;
-  unfilled "dimensions" d.dimensies;
-  unfilled "timelines" d.tijdlijnen;
-  unfilled "dayKinds" d.dagsoorten;
-  unfilled "dayKindDefinitions" d.resolved_dagsoorten;
-  unfilled "allocations" d.verdelingen;
-  unfilled "uniquenesses" d.uniciteiten;
-  unfilled "uniquenesses" d.uniciteit_unies;
-  unfilled "factCreations" d.feit_creaties;
-  unfilled "startPointDeterminations" d.resolved_startpunten;
-  unfilled "ruleGroups" d.regel_groepen;
+  unfilled "unitSystems" d.unit_systems;
+  unfilled "dimensions" d.dimensions;
+  unfilled "timelines" d.timelines;
+  unfilled "dayKinds" d.day_kinds;
+  unfilled "dayKindDefinitions" d.resolved_day_kind_definitions;
+  unfilled "allocations" d.allocations;
+  unfilled "uniquenesses" d.uniquenesses;
+  unfilled "uniquenesses" d.uniqueness_unions;
+  unfilled "factCreations" d.fact_creations;
+  unfilled "startPointDeterminations" d.resolved_start_point_determinations;
+  unfilled "ruleGroups" d.rule_groups;
   unfilled "diagnostics" d.diagnostics;
   let function_defs =
     match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
@@ -590,16 +590,16 @@ let document (d : document) : json =
     [ ("format", `String "uchar-ir-v1");
       ("model",
        `Assoc
-         ([ ("objectTypes", `List (List.map objecttype d.objecttypen));
+         ([ ("objectTypes", `List (List.map object_type d.object_types));
             ("factTypes",
              `List
                (List.map
-                  (fun (key, (ft : feittype)) ->
-                    named "fact type" key ft.ft_naam;
-                    feittype ft)
-                  d.feittypen));
+                  (fun (key, (ft : fact_type_name)) ->
+                    named "fact type" key ft.ft_name;
+                    fact_type_name ft)
+                  d.fact_types));
             ("parameters", `List []);
-            ("domains", `List (List.map domain d.domeinen));
+            ("domains", `List (List.map domain d.domain_specs));
             ("unitSystems", `List []);
             ("dimensions", `List []);
             ("timelines", `List []);
@@ -607,11 +607,11 @@ let document (d : document) : json =
          @ function_defs));
       ("rules",
        `Assoc
-         [ ("rules", `List (List.map rule d.resolved_regels));
+         [ ("rules", `List (List.map rule d.resolved_rules));
            ("dayKindDefinitions", `List []);
-           ("objectCreations", `List (List.map object_creation d.object_creaties));
+           ("objectCreations", `List (List.map object_creation d.object_creations));
            ("allocations", `List []);
-           ("consistencies", `List (List.map consistency d.consistenties));
+           ("consistencies", `List (List.map consistency d.consistencies));
            ("uniquenesses", `List []);
            ("factCreations", `List []);
            ("startPointDeterminations", `List []);

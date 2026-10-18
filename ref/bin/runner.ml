@@ -10,11 +10,11 @@
    checked against the raw input world — the gate-7 guard: a corpus a
    do-nothing executor satisfies has stopped testing anything.
 
-   With --bodemzin the case's PINS are read and compared against a list
+   With --bottom-sentence the case's PINS are read and compared against a list
    of refusal sentences; no ir.json, no world, no evaluation. See
-   [bodemzin] below. *)
+   [bottom_sentence] below. *)
 
-(* --- the bodemzin fence, gate 8's fourth leg ----------------------------
+(* --- the bottom-sentence fence, gate 8's fourth leg ----------------------------
    A red pin must cite a refusal that NAMES the form it refuses, never a
    fall-through arm's message, which is the same sentence for every form
    that arm catches. The gate owns the reason-carrying sentence list; this
@@ -26,13 +26,13 @@
    red path above runs a fault report through, so the fence tests exactly
    the relation the pin will have at replay.
 
-     runner --bodemzin <sentences-file> <case.json>
+     runner --bottom-sentence <sentences-file> <case.json>
 
    stdout: "PINS <n>", then one "HIT <key> <line> <fragment>" per
    citation, the fragment printed %S so a control character in it cannot
    break the line the gate reads back. A case declaring no readable
    expectedFault exits 2: the fence may not be hollowed out by silence. *)
-let bodemzin sentences_path case_path =
+let bottom_sentence sentences_path case_path =
   let sentences =
     let ic = open_in_bin sentences_path in
     let rec go acc n =
@@ -45,17 +45,17 @@ let bodemzin sentences_path case_path =
     go [] 1
   in
   if sentences = [] then (
-    Printf.eprintf "BODEMZIN: %s lists no sentence — an empty fence is never green\n"
+    Printf.eprintf "BOTTOM_SENTENCE: %s lists no sentence — an empty fence is never green\n"
       sentences_path;
     exit 2);
   match
     try Uchar_ref.Case.expected_fault_of_file case_path with
     | Uchar_ref.Case.Error msg | Sys_error msg | Yojson.Json_error msg ->
-        Printf.eprintf "BODEMZIN: %s is unreadable: %s\n" case_path msg;
+        Printf.eprintf "BOTTOM_SENTENCE: %s is unreadable: %s\n" case_path msg;
         exit 2
   with
   | None ->
-      Printf.eprintf "BODEMZIN: %s declares no expectedFault to check\n" case_path;
+      Printf.eprintf "BOTTOM_SENTENCE: %s declares no expectedFault to check\n" case_path;
       exit 2
   | Some { ef_ref; ef_clingo } ->
       print_endline "PINS 2";
@@ -76,14 +76,14 @@ let bodemzin sentences_path case_path =
 let () =
   let noop, ir_path, case_path =
     match Sys.argv with
-    | [| _; "--bodemzin"; sentences; case |] ->
-        bodemzin sentences case;
+    | [| _; "--bottom-sentence"; sentences; case |] ->
+        bottom_sentence sentences case;
         exit 0
     | [| _; "--noop"; ir; case |] -> (true, ir, case)
     | [| _; ir; case |] -> (false, ir, case)
     | _ ->
         prerr_endline
-          "usage: runner [--noop] <ir.json> <case.json> | runner --bodemzin <sentences> <case.json>";
+          "usage: runner [--noop] <ir.json> <case.json> | runner --bottom-sentence <sentences> <case.json>";
         exit 2
   in
   try

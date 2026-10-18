@@ -196,13 +196,13 @@ let enum_opt fam path = function `Null -> None | j -> Some (enum fam path j)
 
 (* The symbolic role binding (extension node, IR-SPEC ch. 2.6): both
    fields are plain strings — a binding is written whole or not at all. *)
-let rol_binding path j : rol_binding =
+let role_binding path j : role_binding =
   let kvs = obj path j in
   expect_node path kvs "RoleBinding";
   check_keys path kvs [ "node"; "factType"; "role" ];
   {
-    rb_feittype = str (path / "factType") (field path kvs "factType");
-    rb_rol = str (path / "role") (field path kvs "role");
+    rb_fact_type = str (path / "factType") (field path kvs "factType");
+    rb_role = str (path / "role") (field path kvs "role");
   }
 
 (* The presentation of a Number (IR-SPEC ch. 2.4): its one value, which no
@@ -220,7 +220,7 @@ let presentation path j =
    (c), a verifier check, so {2, 4} loads. Every other form — a JSON number,
    a string, a missing or unknown key, a value below 1 or beyond the native
    integer range — is refused in one sentence. *)
-let rationaal path j : rationaal =
+let rational path j : rational =
   let refuse () =
     fail path
       ("a conversion factor is an exact rational {num, den} whose two integers are at least \
@@ -237,25 +237,25 @@ let rationaal path j : rationaal =
    [extra] is the one further field a declaration in a unit system admits,
    its spellings: an occurrence admits none, so a spelling written there is
    an unknown field, refused by name rather than read and dropped. *)
-let rec unit_fields ~extra path kvs : eenheid =
+let rec unit_fields ~extra path kvs : measure_unit =
   expect_node path kvs "Unit";
   check_keys path kvs
     ~ext:([ "system"; "canonical"; "factorToCanonical"; "denominator" ] @ extra)
     [ "node"; "abbreviation" ];
   {
-    afkorting = Some (str (path / "abbreviation") (field path kvs "abbreviation"));
-    stelsel = ext_field path kvs "system" str;
-    canoniek = ext_field path kvs "canonical" str;
-    factor_naar_canoniek = ext_field path kvs "factorToCanonical" rationaal;
-    noemer = ext_field path kvs "denominator" eenheid;
+    abbr_text = Some (str (path / "abbreviation") (field path kvs "abbreviation"));
+    system = ext_field path kvs "system" str;
+    canonical_form = ext_field path kvs "canonical" str;
+    factor_to_canonical = ext_field path kvs "factorToCanonical" rational;
+    denominator = ext_field path kvs "denominator" measure_unit;
   }
 
-and eenheid path j : eenheid = unit_fields ~extra:[] path (obj path j)
+and measure_unit path j : measure_unit = unit_fields ~extra:[] path (obj path j)
 
 (* A unit as its unit system declares it, with its further spellings. The
    list is written whole or not at all: absent is no spelling, and an empty
    list is refused like an explicit null. *)
-let gedeclareerde_eenheid path j : gedeclareerde_eenheid =
+let declared_unit path j : declared_unit =
   let kvs = obj path j in
   let u = unit_fields ~extra:[ "spellings" ] path kvs in
   let spellings p j =
@@ -264,8 +264,8 @@ let gedeclareerde_eenheid path j : gedeclareerde_eenheid =
     | xs -> List.mapi (fun i x -> str (p / string_of_int i) x) xs
   in
   {
-    ge_eenheid = u;
-    ge_spellingen = Option.value ~default:[] (ext_field path kvs "spellings" spellings);
+    ge_unit = u;
+    ge_spellings = Option.value ~default:[] (ext_field path kvs "spellings" spellings);
   }
 
 let rec datatype path j : datatype =
@@ -276,34 +276,34 @@ let rec datatype path j : datatype =
       (* the in-memory form keeps the two v0 constructors (Ast header): a
          unit '%' makes the number a Percentage, whatever else it carries *)
       check_keys path kvs ~ext:[ "unit"; "presentation" ] [ "node"; "whole"; "decimals"; "sign" ];
-      let geheel = bool_ (path / "whole") (f "whole")
-      and decimalen = int_ (path / "decimals") (f "decimals")
+      let whole_part = bool_ (path / "whole") (f "whole")
+      and decimal_places = int_ (path / "decimals") (f "decimals")
       and sign = enum Spelling.sign (path / "sign") (f "sign")
-      and unit_ = ext_field path kvs "unit" eenheid
+      and unit_ = ext_field path kvs "unit" measure_unit
       and tag = ext_field path kvs "presentation" presentation in
       (match unit_ with
-       | Some ({ afkorting = Some "%"; _ } as u) ->
-           if sign <> Onbepaald then
+       | Some ({ abbr_text = Some "%"; _ } as u) ->
+           if sign <> Unspecified then
              fail (path / "sign")
                "a percentage carries no sign restriction: a number whose unit is '%' has the \
                 sign unspecified";
-           Percentage { geheel; decimalen; eenheid = Some u }
+           Percentage { whole_part; decimal_places; measure_unit = Some u }
        | _ ->
            if tag <> None then
              fail (path / "presentation")
                "the presentation \"percentage\" on a number whose unit is not '%'";
-           Numeriek { geheel; decimalen; teken = Some sign; eenheid = unit_ })
-  | "Text" -> check_keys path kvs [ "node" ]; Tekst
-  | "Boolean" -> check_keys path kvs [ "node" ]; Booleaan
+           Number { whole_part; decimal_places; sign_char = Some sign; measure_unit = unit_ })
+  | "Text" -> check_keys path kvs [ "node" ]; Text_type
+  | "Boolean" -> check_keys path kvs [ "node" ]; Boolean
   | "Date" ->
       check_keys path kvs [ "node"; "precision" ];
       enum Spelling.precision (path / "precision") (f "precision")
   | "Enumeration" ->
       check_keys path kvs [ "node"; "domain"; "values" ];
-      Enumeratie
+      Enumeration
         {
-          domein = str_opt (path / "domain") (f "domain");
-          waarden = str_opt_list (path / "values") (f "values");
+          domain_spec = str_opt (path / "domain") (f "domain");
+          label_list = str_opt_list (path / "values") (f "values");
         }
   | "SumType" ->
       (* extension node (v1, row 36): domain is a plain string; each
@@ -312,8 +312,8 @@ let rec datatype path j : datatype =
       check_keys path kvs [ "node"; "domain"; "constructors" ];
       Sum_type
         {
-          domein = str (path / "domain") (f "domain");
-          constructoren = sum_constructors (path / "constructors") (f "constructors");
+          domain_spec = str (path / "domain") (f "domain");
+          constructor_list = sum_constructors (path / "constructors") (f "constructors");
         }
   | "ListType" ->
       (* extension node (v1, row 10): the sole child is the element datatype,
@@ -327,7 +327,7 @@ let rec datatype path j : datatype =
          and sum types). *)
       check_keys path kvs [ "node"; "domain"; "fields" ];
       Struct_type
-        { domein = str (path / "domain") (f "domain"); velden = struct_fields (path / "fields") (f "fields") }
+        { domain_spec = str (path / "domain") (f "domain"); field_list = struct_fields (path / "fields") (f "fields") }
   | k -> fail (path / "node") ("unknown datatype node \"" ^ k ^ "\"")
 
 and sum_constructors path j =
@@ -362,26 +362,26 @@ let domain_datatype name path j : datatype =
       (* the designations of the values stand here and only here (IR-SPEC
          ch. 2.12); [vocabulaires] reads them *)
       check_keys path kvs ~ext:[ "valueDesignations" ] [ "node"; "values" ];
-      Enumeratie { domein = Some name; waarden = str_opt_list (path / "values") (f "values") }
+      Enumeration { domain_spec = Some name; label_list = str_opt_list (path / "values") (f "values") }
   | "SumType" ->
       check_keys path kvs [ "node"; "constructors" ];
       Sum_type
-        { domein = name; constructoren = sum_constructors (path / "constructors") (f "constructors") }
+        { domain_spec = name; constructor_list = sum_constructors (path / "constructors") (f "constructors") }
   | "StructType" ->
       check_keys path kvs [ "node"; "fields" ];
-      Struct_type { domein = name; velden = struct_fields (path / "fields") (f "fields") }
+      Struct_type { domain_spec = name; field_list = struct_fields (path / "fields") (f "fields") }
   | _ -> datatype path j
 
 (* The whole-period qualifier (IR-SPEC ch. 4.5): its granularity, read onto
-   the in-memory flag [gp_jaar] (year true, month false), and its negation. *)
-let geheel_periode path j : geheel_periode =
+   the in-memory flag [gp_granularity] (year true, month false), and its negation. *)
+let entire_period path j : entire_period =
   let kvs = obj path j in
   expect_node path kvs "WholePeriod";
   check_keys path kvs [ "node"; "granularity"; "negated" ];
   {
-    gp_jaar =
+    gp_granularity =
       enum Spelling.whole_period_granularity (path / "granularity") (field path kvs "granularity");
-    gp_niet = bool_ (path / "negated") (field path kvs "negated");
+    gp_negated = bool_ (path / "negated") (field path kvs "negated");
   }
 
 (* --- the source record ---------------------------------------------------- *)
@@ -473,7 +473,7 @@ let rec expr path j : expr =
   let kvs = obj path j in
   let f name = field path kvs name in
   let typ () = opt (path / "type") datatype (f "type") in
-  let bron () = source_text path kvs in
+  let source_name () = source_text path kvs in
   let arguments () =
     List.mapi
       (fun i x -> expr (path / "arguments" / string_of_int i) x)
@@ -483,27 +483,27 @@ let rec expr path j : expr =
   | "Literal" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "value"; "type" ];
       let variant = literal_variant (path / "value") (f "value") in
-      Literal { variant; typ = typ (); bron = bron () }
+      Literal { variant; typ = typ (); source_name = source_name () }
   | "TextComposition" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "parts"; "type" ];
-      Tekst_reeks
+      Text_composition
         {
-          delen =
+          pieces =
             List.mapi
-              (fun i x -> tekst_deel (path / "parts" / string_of_int i) x)
+              (fun i x -> text_part (path / "parts" / string_of_int i) x)
               (list_ (path / "parts") (f "parts"));
           typ = typ ();
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Binary" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "op"; "left"; "right"; "type" ];
-      Binair
+      Binary
         {
           op = enum Spelling.binary_op (path / "op") (f "op");
-          links = opt (path / "left") expr (f "left");
-          rechts = opt (path / "right") expr (f "right");
+          left_side = opt (path / "left") expr (f "left");
+          right_side = opt (path / "right") expr (f "right");
           typ = typ ();
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Aggregation" ->
       (* the eight folds (delta B21), read into the in-memory [Functie] with
@@ -513,8 +513,8 @@ let rec expr path j : expr =
                "sourcePath"; "source" ]
         [ "node"; "kind"; "arguments"; "type" ];
       let kind = enum Spelling.aggregation_kind (path / "kind") (f "kind") in
-      let argumenten = arguments () in
-      let element_objecttype = ext_field path kvs "elementType" str in
+      let call_arguments = arguments () in
+      let element_object_type = ext_field path kvs "elementType" str in
       (* the range (B12): one spelling at most, and a single-argument fold
          with an elementType carries one under every kind but total, where
          its absence is the subject's own read *)
@@ -523,29 +523,29 @@ let rec expr path j : expr =
           fail (path / "sourcePath")
             "sourcePath beside sourceRole: a fold carries one range, never two"
       | false, false
-        when element_objecttype <> None && List.length argumenten = 1 && kind <> Totaal ->
+        when element_object_type <> None && List.length call_arguments = 1 && kind <> Total ->
           fail path
             "a single-argument fold with an elementType carries its range (sourceRole or \
              sourcePath) under every kind but total: the range is written, never derived"
       | _ -> ());
-      Functie
+      Function_call
         {
           kind;
-          argumenten;
-          element_objecttype;
-          leegwaarde = ext_field path kvs "emptyFallback" expr;
-          filter = ext_field path kvs "filter" conditie;
-          dimensie_selectie = ext_field path kvs "dimensionSelection" dimensie_selectie;
+          call_arguments;
+          element_object_type;
+          empty_fallback = ext_field path kvs "emptyFallback" expr;
+          filter = ext_field path kvs "filter" condition_expr;
+          dimension_selection = ext_field path kvs "dimensionSelection" dimension_selection;
           typ = typ ();
-          bron = bron ();
-          granulariteit = None;
-          bron_rol = ext_field path kvs "sourceRole" rol_binding;
+          source_name = source_name ();
+          grain = None;
+          source_role = ext_field path kvs "sourceRole" role_binding;
           (* loaded verbatim, empty list included: WF-102 (b) owns the
              arity, so a defective path is a citable violation and not a
              load failure with no rule to name *)
-          bron_pad =
+          source_path =
             ext_field path kvs "sourcePath" (fun p j ->
-                List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
+                List.mapi (fun i x -> role_binding (p / string_of_int i) x) (list_ p j));
         }
   | "BuiltinCall" ->
       (* the seventeen other kinds (delta B21), with plain arguments: an
@@ -554,19 +554,19 @@ let rec expr path j : expr =
       check_keys path kvs ~ext:[ "filter"; "granularity"; "source" ]
         [ "node"; "kind"; "arguments"; "type" ];
       let kind = enum Spelling.builtin_kind (path / "kind") (f "kind") in
-      Functie
+      Function_call
         {
           kind;
-          argumenten = arguments ();
-          element_objecttype = None;
-          leegwaarde = None;
-          filter = ext_field path kvs "filter" conditie;
-          dimensie_selectie = None;
+          call_arguments = arguments ();
+          element_object_type = None;
+          empty_fallback = None;
+          filter = ext_field path kvs "filter" condition_expr;
+          dimension_selection = None;
           typ = typ ();
-          bron = bron ();
-          granulariteit = ext_field path kvs "granularity" (enum Spelling.granularity);
-          bron_rol = None;
-          bron_pad = None;
+          source_name = source_name ();
+          grain = ext_field path kvs "granularity" (enum Spelling.granularity);
+          source_role = None;
+          source_path = None;
         }
   | "InstanceSetUnion" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "branches" ];
@@ -579,68 +579,68 @@ let rec expr path j : expr =
             List.mapi
               (fun i x -> instance_set_branch (path / "branches" / string_of_int i) x)
               (list_ (path / "branches") (f "branches"));
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Rounding" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "base"; "mode"; "decimals"; "type" ];
-      Afgerond
+      Rounding
         {
-          basis = opt (path / "base") expr (f "base");
-          modus = enum Spelling.rounding_mode (path / "mode") (f "mode");
-          decimalen = int_ (path / "decimals") (f "decimals");
+          base_expr = opt (path / "base") expr (f "base");
+          mode_kind = enum Spelling.rounding_mode (path / "mode") (f "mode");
+          decimal_places = int_ (path / "decimals") (f "decimals");
           typ = typ ();
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Clamp" ->
       (* a bound is written whole or not at all: absent is no bound on that
          side, the v0 null *)
       check_keys path kvs ~ext:[ "minimum"; "maximum"; "source" ] [ "node"; "base"; "type" ];
-      Begrensd
+      Clamp
         {
-          basis = opt (path / "base") expr (f "base");
+          base_expr = opt (path / "base") expr (f "base");
           minimum = ext_field path kvs "minimum" expr;
           maximum = ext_field path kvs "maximum" expr;
           typ = typ ();
-          bron = bron ();
+          source_name = source_name ();
         }
   | "AttributeReference" ->
       (* the path is written whole or not at all: absent is the subject's own
          read, and a path without a hop is no navigation *)
       check_keys path kvs ~ext:[ "path"; "source" ] [ "node"; "attribute"; "subjectType" ];
-      Attribuut_ref
+      Attribute_reference
         {
-          attribuut = str_opt (path / "attribute") (f "attribute");
-          objecttype = str_opt (path / "subjectType") (f "subjectType");
-          bron = bron ();
-          navigatie_bindingen =
+          attribute_ref = str_opt (path / "attribute") (f "attribute");
+          object_type = str_opt (path / "subjectType") (f "subjectType");
+          source_name = source_name ();
+          navigation_bindings =
             ext_field path kvs "path" (fun p j ->
-                match List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j) with
+                match List.mapi (fun i x -> role_binding (p / string_of_int i) x) (list_ p j) with
                 | [] -> fail p "an empty path is not a navigation"
                 | hops -> hops);
         }
   | "DimensionCellRead" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "attribute"; "labels" ];
-      Dimensie_cel
+      Dimension_cell_read
         {
-          attribuut = opt (path / "attribute") expr (f "attribute");
+          attribute_ref = opt (path / "attribute") expr (f "attribute");
           labels = str_opt_list (path / "labels") (f "labels");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "ParameterReference" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "parameter" ];
-      Parameter_ref { parameter = str_opt (path / "parameter") (f "parameter"); bron = bron () }
+      Parameter_ref { parameter = str_opt (path / "parameter") (f "parameter"); source_name = source_name () }
   | "VariableReference" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "name" ];
-      Variabele_ref { naam = str_opt (path / "name") (f "name"); bron = bron () }
+      Variable_reference { ident = str_opt (path / "name") (f "name"); source_name = source_name () }
   | "TemporalRead" ->
       (* extension node (v1, row 11): all fields required, none nullable *)
       check_keys path kvs ~ext:[ "source" ] [ "node"; "base"; "date"; "type" ];
       Temporal_read
         {
-          basis = expr (path / "base") (f "base");
-          datum = expr (path / "date") (f "date");
+          base_expr = expr (path / "base") (f "base");
+          date_value = expr (path / "date") (f "date");
           typ = typ ();
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Construct" ->
       (* extension node (v1, row 36): argument present (an expr) iff unary,
@@ -651,7 +651,7 @@ let rec expr path j : expr =
           typ = typ ();
           constructor_ = str (path / "constructor") (f "constructor");
           argument = opt (path / "argument") expr (f "argument");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Match" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "scrutinee"; "arms" ];
@@ -669,11 +669,11 @@ let rec expr path j : expr =
                   str_opt (ap / "binder") (field ap akvs "binder"),
                   expr (ap / "body") (field ap akvs "body") ))
               (list_ (path / "arms") (f "arms"));
-          bron = bron ();
+          source_name = source_name ();
         }
   | "BinderRef" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "name" ];
-      Binder_ref { naam = str (path / "name") (f "name"); bron = bron () }
+      Binder_ref { ident = str (path / "name") (f "name"); source_name = source_name () }
   | "StructLiteral" ->
       (* extension node (v1, Phase 5c): the fields map name to a value expr,
          in declaration order (WF-073); type required not-null *)
@@ -681,7 +681,7 @@ let rec expr path j : expr =
       Struct_literal
         {
           typ = typ ();
-          velden =
+          field_list =
             List.mapi
               (fun i fld ->
                 let fp = path / "fields" / string_of_int i in
@@ -690,7 +690,7 @@ let rec expr path j : expr =
                 ( str (fp / "name") (field fp fkvs "name"),
                   expr (fp / "value") (field fp fkvs "value") ))
               (list_ (path / "fields") (f "fields"));
-          bron = bron ();
+          source_name = source_name ();
         }
   | "FieldAccess" ->
       (* extension node (v1, Phase 5c): base struct-typed, field a plain
@@ -700,8 +700,8 @@ let rec expr path j : expr =
         {
           typ = typ ();
           base = expr (path / "base") (f "base");
-          veld = str (path / "field") (f "field");
-          bron = bron ();
+          field_name = str (path / "field") (f "field");
+          source_name = source_name ();
         }
   | "ListLiteral" ->
       (* extension node (v1, row 10): ordered element expressions, one shared
@@ -714,7 +714,7 @@ let rec expr path j : expr =
             List.mapi
               (fun i x -> expr (path / "elements" / string_of_int i) x)
               (list_ (path / "elements") (f "elements"));
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Lambda" ->
       (* extension node (v1, row 10): a lambda as an ordinary expr operand is
@@ -726,29 +726,29 @@ let rec expr path j : expr =
         {
           parameters = lambda_params (path / "parameters") (f "parameters");
           body = expr (path / "body") (f "body");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "IfThenElse" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "condition"; "then"; "else" ];
       If_then_else
         {
           typ = typ ();
-          condition = conditie (path / "condition") (f "condition");
+          condition = condition_expr (path / "condition") (f "condition");
           then_ = expr (path / "then") (f "then");
           else_ = expr (path / "else") (f "else");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Invoke" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "function"; "arguments" ];
       Invoke
         {
           typ = typ ();
-          functie = str (path / "function") (f "function");
+          function_name = str (path / "function") (f "function");
           arguments =
             List.mapi
               (fun i x -> expr (path / "arguments" / string_of_int i) x)
               (list_ (path / "arguments") (f "arguments"));
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Fold" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list"; "function"; "init" ];
@@ -756,9 +756,9 @@ let rec expr path j : expr =
         {
           typ = typ ();
           list = expr (path / "list") (f "list");
-          functie = fold_fn (path / "function") (f "function");
+          function_name = fold_fn (path / "function") (f "function");
           init = expr (path / "init") (f "init");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "MapList" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list"; "function" ];
@@ -766,8 +766,8 @@ let rec expr path j : expr =
         {
           typ = typ ();
           list = expr (path / "list") (f "list");
-          functie = fold_fn (path / "function") (f "function");
-          bron = bron ();
+          function_name = fold_fn (path / "function") (f "function");
+          source_name = source_name ();
         }
   | "FilterList" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list"; "binder"; "condition" ];
@@ -776,12 +776,12 @@ let rec expr path j : expr =
           typ = typ ();
           list = expr (path / "list") (f "list");
           binder = str (path / "binder") (f "binder");
-          condition = conditie (path / "condition") (f "condition");
-          bron = bron ();
+          condition = condition_expr (path / "condition") (f "condition");
+          source_name = source_name ();
         }
   | "ListLength" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list" ];
-      List_length { typ = typ (); list = expr (path / "list") (f "list"); bron = bron () }
+      List_length { typ = typ (); list = expr (path / "list") (f "list"); source_name = source_name () }
   | "Let" ->
       (* extension node (v1, Phase 5c). Strict, in this loader's sense of the
          word (never the Let's semantics — ch. 10.6 is call-by-need): type
@@ -793,30 +793,30 @@ let rec expr path j : expr =
           binder = str (path / "binder") (f "binder");
           value = expr (path / "value") (f "value");
           body = expr (path / "body") (f "body");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "ContextValue" ->
       (* a session value (delta B23): its name is a string whatever it
          spells, carried verbatim — the closed set is WF-098's, crossed below
          for an executor ([reader]) — and its datatype is required *)
       check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "type" ];
-      let naam =
+      let ident =
         match f "name" with
         | `String s -> s
         | _ -> fail (path / "name") "a ContextValue carries its name as a string"
       in
-      Constante
+      Context_value
         {
-          naam = Some naam;
+          ident = Some ident;
           typ = Some (context_type ~refusal:"a ContextValue carries its datatype" path kvs);
-          bron = bron ();
+          source_name = source_name ();
         }
   | "BoundDay" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "type" ];
       Bound_day
         {
           typ = Some (context_type ~refusal:"a BoundDay carries its datatype" path kvs);
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Unresolved" ->
       (* the honest-marker node. Its type is written whole or not at all:
@@ -825,7 +825,7 @@ let rec expr path j : expr =
          loads it for, and an executor refuses it after the structural load
          ([executor_refusals]) *)
       check_keys path kvs ~ext:[ "type"; "source" ] [ "node" ];
-      Expr_onopgelost { typ = ext_field path kvs "type" datatype; bron = bron () }
+      Expr_unresolved { typ = ext_field path kvs "type" datatype; source_name = source_name () }
   | k -> fail (path / "node") ("unknown expr node \"" ^ k ^ "\"")
 
 (* One branch of an InstanceSetUnion (WF-110). *)
@@ -836,9 +836,9 @@ and instance_set_branch path j : instance_set_branch =
   check_keys path kvs ~ext:[ "source" ] [ "node"; "elementType"; "sourceRole"; "filter" ];
   {
     isb_element_type = str_opt (path / "elementType") (f "elementType");
-    isb_source_role = rol_binding (path / "sourceRole") (f "sourceRole");
-    isb_filter = opt (path / "filter") conditie (f "filter");
-    isb_bron = source_text path kvs;
+    isb_source_role = role_binding (path / "sourceRole") (f "sourceRole");
+    isb_filter = opt (path / "filter") condition_expr (f "filter");
+    isb_source = source_text path kvs;
   }
 
 (* Lambda / FunctionDef parameters: each carries a name and a datatype (both
@@ -867,80 +867,80 @@ and fold_fn path j : fold_fn =
         {
           parameters = lambda_params (path / "parameters") (field path kvs "parameters");
           body = expr (path / "body") (field path kvs "body");
-          bron = source_text path kvs;
+          source_name = source_text path kvs;
         }
   | j ->
       fail path
         ("expected a Lambda object or a function-name string, got " ^ Yojson.Safe.to_string j)
 
-and tekst_deel path j : tekst_deel =
+and text_part path j : text_part =
   let kvs = obj path j in
   let f name = field path kvs name in
   match node_kind path kvs with
   | "LiteralChunk" ->
       check_keys path kvs [ "node"; "text" ];
-      Letterlijk { tekst = str_opt (path / "text") (f "text") }
+      Literal_chunk { body_text = str_opt (path / "text") (f "text") }
   | "EmbeddedExpression" ->
       check_keys path kvs [ "node"; "expr" ];
-      Ingevoegd { expr = opt (path / "expr") expr (f "expr") }
+      Embedded_expression { expr = opt (path / "expr") expr (f "expr") }
   | k -> fail (path / "node") ("unknown TextCompositionPart node \"" ^ k ^ "\"")
 
-and dimensie_selectie path j : dimensie_selectie =
+and dimension_selection path j : dimension_selection =
   let kvs = obj path j in
   expect_node path kvs "DimensionSelection";
   check_keys path kvs ~ext:[ "source" ] [ "node"; "dimension"; "labels" ];
   {
-    ds_dimensie = str_opt (path / "dimension") (field path kvs "dimension");
+    ds_dimension = str_opt (path / "dimension") (field path kvs "dimension");
     ds_labels = str_opt_list (path / "labels") (field path kvs "labels");
-    ds_bron = source_text path kvs;
+    ds_source = source_text path kvs;
   }
 
-and conditie path j : conditie =
+and condition_expr path j : condition_expr =
   let kvs = obj path j in
   let f name = field path kvs name in
-  let bron () = source_text path kvs in
+  let source_name () = source_text path kvs in
   (* the whole-period qualifier is written whole or not at all: absent is
      none, the v0 null *)
-  let periode () = ext_field path kvs "wholePeriod" geheel_periode in
+  let time_period () = ext_field path kvs "wholePeriod" entire_period in
   match node_kind path kvs with
   | "Comparison" ->
       check_keys path kvs ~ext:[ "wholePeriod"; "source" ] [ "node"; "op"; "left"; "right" ];
-      Vergelijking
+      Comparison
         {
           op = enum Spelling.comparison_op (path / "op") (f "op");
-          links = opt (path / "left") expr (f "left");
-          rechts = opt (path / "right") expr (f "right");
-          periode = periode ();
-          bron = bron ();
+          left_side = opt (path / "left") expr (f "left");
+          right_side = opt (path / "right") expr (f "right");
+          time_period = time_period ();
+          source_name = source_name ();
         }
   | "Predicate" ->
       (* the day kind is written on a predicate of kind dayKind alone: absent
          elsewhere, the v0 null *)
       check_keys path kvs ~ext:[ "dayKind"; "wholePeriod"; "source" ]
         [ "node"; "kind"; "operand"; "negated"; "digits" ];
-      Predicaat
+      Predicate
         {
-          soort = enum Spelling.predicate_kind (path / "kind") (f "kind");
+          variety = enum Spelling.predicate_kind (path / "kind") (f "kind");
           operand = opt (path / "operand") expr (f "operand");
-          dagsoort = ext_field path kvs "dayKind" str;
-          negatie = bool_ (path / "negated") (f "negated");
-          cijfers = int_ (path / "digits") (f "digits");
-          periode = periode ();
-          bron = bron ();
+          day_kind = ext_field path kvs "dayKind" str;
+          negation = bool_ (path / "negated") (f "negated");
+          digit_chars = int_ (path / "digits") (f "digits");
+          time_period = time_period ();
+          source_name = source_name ();
         }
   | "CharacteristicCheck" ->
       (* the host is written whole or not at all: absent is the subject
          (RUNTIME-SEMANTICS ch. 5.8b), the v0 null *)
       check_keys path kvs ~ext:[ "host"; "wholePeriod"; "navigation"; "source" ]
         [ "node"; "characteristic"; "negated" ];
-      Kenmerk_check
+      Characteristic_check
         {
-          kenmerk = str_opt (path / "characteristic") (f "characteristic");
-          negatie = bool_ (path / "negated") (f "negated");
-          eigenaar = ext_field path kvs "host" str;
-          periode = periode ();
-          bron = bron ();
-          navigatie_binding = ext_field path kvs "navigation" rol_binding;
+          characteristic = str_opt (path / "characteristic") (f "characteristic");
+          negation = bool_ (path / "negated") (f "negated");
+          holder = ext_field path kvs "host" str;
+          time_period = time_period ();
+          source_name = source_name ();
+          navigation_binding = ext_field path kvs "navigation" role_binding;
         }
   | "RoleMembership" ->
       check_keys path kvs ~ext:[ "counterpartType"; "source" ] [ "node"; "factType"; "role"; "negated" ];
@@ -952,30 +952,30 @@ and conditie path j : conditie =
              declared filler, and a null is a load error *)
           counterpart_type = ext_field path kvs "counterpartType" str;
           negated = bool_ (path / "negated") (f "negated");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "TimeWindow" ->
       (* a bound is written whole or not at all: absent is open on that
          side, the v0 null; a window with neither is WF-042's *)
       check_keys path kvs ~ext:[ "from"; "to"; "source" ] [ "node"; "toInclusive" ];
-      Periode_conditie
+      Time_window
         {
-          vanaf = ext_field path kvs "from" expr;
-          tot = ext_field path kvs "to" expr;
-          tot_inclusief = bool_ (path / "toInclusive") (f "toInclusive");
-          bron = bron ();
+          starting_at = ext_field path kvs "from" expr;
+          up_to = ext_field path kvs "to" expr;
+          to_inclusive = bool_ (path / "toInclusive") (f "toInclusive");
+          source_name = source_name ();
         }
   | "Compound" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "quantifier"; "threshold"; "parts" ];
-      Samengesteld
+      Compound
         {
-          kwantor = enum Spelling.quantifier (path / "quantifier") (f "quantifier");
-          drempel = int_ (path / "threshold") (f "threshold");
-          onderdelen =
+          quantifier_kind = enum Spelling.quantifier (path / "quantifier") (f "quantifier");
+          cutoff = int_ (path / "threshold") (f "threshold");
+          components =
             List.mapi
-              (fun i x -> conditie (path / "parts" / string_of_int i) x)
+              (fun i x -> condition_expr (path / "parts" / string_of_int i) x)
               (list_ (path / "parts") (f "parts"));
-          bron = bron ();
+          source_name = source_name ();
         }
   | "QuantifierFold" ->
       check_keys path kvs ~ext:[ "threshold"; "filter"; "sourceRole"; "sourcePath"; "source" ]
@@ -990,47 +990,47 @@ and conditie path j : conditie =
             "a quantifier fold carries its range (sourceRole or sourcePath): the range is \
              written, never derived"
       | _ -> ());
-      Kwantorvouw
+      Quantifier_fold
         {
           (* `the` is read in both stances and refused by WF-108 (a); an
              executor refuses it after the structural load *)
-          kv_kwantor = enum Spelling.quantifier (path / "quantifier") (f "quantifier");
-          (* optional at the LOADER for the same reason [kv_toets] is: the
+          kv_quantifier = enum Spelling.quantifier (path / "quantifier") (f "quantifier");
+          (* optional at the LOADER for the same reason [kv_test] is: the
              field's PRESENCE is WF-108 (e)'s demand and its value WF-041's,
              so both are citable violations rather than load failures with no
              rule to name *)
-          kv_drempel = ext_field path kvs "threshold" int_;
-          kv_element_objecttype = str_opt (path / "elementType") (f "elementType");
+          kv_threshold = ext_field path kvs "threshold" int_;
+          kv_element_object_type = str_opt (path / "elementType") (f "elementType");
           (* the subselection is written whole or not at all: absent is none,
              the v0 null *)
-          kv_filter = ext_field path kvs "filter" conditie;
+          kv_filter = ext_field path kvs "filter" condition_expr;
           (* nullable at the LOADER, required by WF-108 (d): a missing matrix
              is a citable violation, never a load failure with no rule to name
              — the WF-102 discipline on sourcePath, applied to this node's own
              fields *)
-          kv_toets = opt (path / "test") conditie (f "test");
-          kv_bron = bron ();
-          kv_bron_rol = ext_field path kvs "sourceRole" rol_binding;
-          kv_bron_pad =
+          kv_test = opt (path / "test") condition_expr (f "test");
+          kv_source = source_name ();
+          kv_source_role = ext_field path kvs "sourceRole" role_binding;
+          kv_source_path =
             ext_field path kvs "sourcePath" (fun p j ->
-                List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
+                List.mapi (fun i x -> role_binding (p / string_of_int i) x) (list_ p j));
         }
   | "Regelversie" ->
       (* the one node that keeps its v0 shape: the rule-status check waits
          for its parity golden (delta B25); only its source text moved into
          the source record *)
       check_keys path kvs ~ext:[ "source" ] [ "node"; "regel"; "inconsistent" ];
-      Regelversie
+      Rule_status_check
         {
-          regel = str_opt (path / "regel") (f "regel");
+          rule_def = str_opt (path / "regel") (f "regel");
           inconsistent = bool_ (path / "inconsistent") (f "inconsistent");
-          bron = bron ();
+          source_name = source_name ();
         }
   | "Unresolved" ->
       (* as with the expression marker: a marker without a source loads for
          the verifier alone *)
       check_keys path kvs ~ext:[ "source" ] [ "node" ];
-      Conditie_onopgelost { bron = bron () }
+      Condition_unresolved { source_name = source_name () }
   | k -> fail (path / "node") ("unknown condition node \"" ^ k ^ "\"")
 
 (* --- model layer -------------------------------------------------------- *)
@@ -1053,11 +1053,11 @@ let timeline_facet ~named path j =
     ~ext:(if named then [ "fixedStart"; "timelineName" ] else [ "fixedStart" ])
     [ "node"; "granularity"; "count" ];
   ( enum Spelling.granularity (path / "granularity") (field path kvs "granularity"),
-    { tv_aantal = Some (int_ (path / "count") (field path kvs "count"));
-      tv_vast_startpunt = ext_field path kvs "fixedStart" str },
+    { tv_count = Some (int_ (path / "count") (field path kvs "count"));
+      tv_fixed_start_point = ext_field path kvs "fixedStart" str },
     ext_field path kvs "timelineName" str )
 
-let objecttype path j : string * objecttype =
+let object_type path j : string * object_type =
   let kvs = obj path j in
   expect_node path kvs "ObjectType";
   check_keys path kvs ~ext:[ "supertype"; "plural"; "origin"; "designations" ]
@@ -1097,26 +1097,26 @@ let objecttype path j : string * objecttype =
   let tl_char get = table (fun (n, _, t) -> Option.map (fun t -> (n, get t)) t) chars in
   ( name,
     {
-      ot_naam = Some name;
+      ot_ident = Some name;
       (* whole or not at all: the extension field is absent or a string,
          never null — a null parent would name a type called nothing *)
       ot_supertype = ext_field path kvs "supertype" str;
-      attributen = List.map (fun (n, dt, _, _, _) -> (n, dt)) attrs;
-      attribuut_meervoud = table (fun (n, _, pl, _, _) -> Option.map (fun p -> (n, Some p)) pl) attrs;
-      attribuut_dimensies = table (fun (n, _, _, ds, _) -> Option.map (fun d -> (n, d)) ds) attrs;
-      attribuut_granulariteit = tl_attr (fun (g, _, _) -> Some g);
-      attribuut_tijdlijn_aantal = tl_attr (fun (_, t, _) -> t);
-      attribuut_tijdlijn_naam =
+      attributes = List.map (fun (n, dt, _, _, _) -> (n, dt)) attrs;
+      attribute_plural = table (fun (n, _, pl, _, _) -> Option.map (fun p -> (n, Some p)) pl) attrs;
+      attribute_dimensions = table (fun (n, _, _, ds, _) -> Option.map (fun d -> (n, d)) ds) attrs;
+      attribute_granularity = tl_attr (fun (g, _, _) -> Some g);
+      attribute_timeline_count = tl_attr (fun (_, t, _) -> t);
+      attribute_timeline_names =
         table
           (fun (n, _, _, _, t) ->
             match t with Some (_, _, Some tn) -> Some (n, Some tn) | _ -> None)
           attrs;
-      kenmerken = List.map (fun (n, _, _) -> Some n) chars;
-      kenmerk_soorten = List.map (fun (n, k, _) -> (n, Some k)) chars;
-      kenmerk_granulariteit = tl_char (fun (g, _, _) -> Some g);
-      kenmerk_tijdlijn_aantal = tl_char (fun (_, t, _) -> t);
-      bezield = bool_ (path / "animate") (f "animate");
-      meervoud = ext_field path kvs "plural" str;
+      characteristics = List.map (fun (n, _, _) -> Some n) chars;
+      characteristic_kinds = List.map (fun (n, k, _) -> (n, Some k)) chars;
+      characteristic_granularity = tl_char (fun (g, _, _) -> Some g);
+      characteristic_timeline_count = tl_char (fun (_, t, _) -> t);
+      animate = bool_ (path / "animate") (f "animate");
+      plural = ext_field path kvs "plural" str;
     } )
 
 (* A Domain wrapper: the one place a domain's name is written. *)
@@ -1132,9 +1132,9 @@ let domain path j : string * datatype option =
    string since M1 (loader header). The node decoders read `name` into the
    AST's `string option` field, the type every reader of this library uses; a
    null is refused here, so no reader gets [None] from these two lists. *)
-let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : string * 'a =
+let named path (decode : string -> json -> 'a) (ident : 'a -> string option) j : string * 'a =
   let x = decode path j in
-  match naam x with
+  match ident x with
   | Some n -> (n, x)
   | None ->
       fail (path / "name")
@@ -1150,92 +1150,92 @@ let parameter path j : string * parameter =
   let facet = ext_field path kvs "timeline" (timeline_facet ~named:false) in
   ( name,
     {
-      par_naam = Some name;
+      par_name = Some name;
       par_datatype = Some (datatype (path / "datatype") (field path kvs "datatype"));
-      par_granulariteit = Option.map (fun (g, _, _) -> g) facet;
-      par_tijdlijn_aantal = Option.bind facet (fun (_, t, _) -> t.tv_aantal);
-      par_vast_startpunt = Option.bind facet (fun (_, t, _) -> t.tv_vast_startpunt);
+      par_granularity = Option.map (fun (g, _, _) -> g) facet;
+      par_timeline_count = Option.bind facet (fun (_, t, _) -> t.tv_count);
+      par_fixed_start_point = Option.bind facet (fun (_, t, _) -> t.tv_fixed_start_point);
     } )
 
-let eenheidstelsel path j : string * eenheidstelsel =
+let unit_system path j : string * unit_system =
   let kvs = obj path j in
   expect_node path kvs "UnitSystem";
   check_keys path kvs [ "node"; "name"; "units" ];
   let name = str (path / "name") (field path kvs "name") in
   ( name,
     {
-      es_naam = Some name;
-      eenheden =
+      es_name = Some name;
+      unit_list =
         List.mapi
-          (fun i u -> gedeclareerde_eenheid (path / "units" / string_of_int i) u)
+          (fun i u -> declared_unit (path / "units" / string_of_int i) u)
           (list_ (path / "units") (field path kvs "units"));
     } )
 
-let dagsoort path j : dagsoort =
+let day_kind path j : day_kind =
   let kvs = obj path j in
   expect_node path kvs "DayKind";
   check_keys path kvs ~ext:[ "plural" ] [ "node"; "name" ];
-  { dk_naam = str (path / "name") (field path kvs "name"); dk_meervoud = ext_field path kvs "plural" str }
+  { dk_name = str (path / "name") (field path kvs "name"); dk_plural = ext_field path kvs "plural" str }
 
 (* A role: its plural is written whole or not at all, absent the v0 null. *)
-let rol path j : rol =
+let role_ref path j : role_ref =
   let kvs = obj path j in
   expect_node path kvs "Role";
   check_keys path kvs ~ext:[ "plural"; "origin"; "designations" ] [ "node"; "name"; "objectType"; "many" ];
   {
-    rol_naam = str_opt (path / "name") (field path kvs "name");
-    rol_objecttype_naam = str_opt (path / "objectType") (field path kvs "objectType");
-    rol_meervoud = ext_field path kvs "plural" str;
-    rol_meervoudig = bool_ (path / "many") (field path kvs "many");
+    role_identifier = str_opt (path / "name") (field path kvs "name");
+    role_object_type_name = str_opt (path / "objectType") (field path kvs "objectType");
+    role_plural = ext_field path kvs "plural" str;
+    role_many = bool_ (path / "many") (field path kvs "many");
   }
 
-let feittype path j : feittype =
+let fact_type_name path j : fact_type_name =
   let kvs = obj path j in
   expect_node path kvs "FactType";
   check_keys path kvs ~ext:[ "origin"; "designations" ] [ "node"; "name"; "reciprocal"; "roles" ];
   {
-    ft_naam = str_opt (path / "name") (field path kvs "name");
-    wederkerig = bool_ (path / "reciprocal") (field path kvs "reciprocal");
-    rollen =
+    ft_name = str_opt (path / "name") (field path kvs "name");
+    reciprocal = bool_ (path / "reciprocal") (field path kvs "reciprocal");
+    role_names =
       List.mapi
-        (fun i x -> rol (path / "roles" / string_of_int i) x)
+        (fun i x -> role_ref (path / "roles" / string_of_int i) x)
         (list_ (path / "roles") (field path kvs "roles"));
   }
 
 (* A dimension: its plural and its preposition are written whole or not at
    all, absent the v0 null. *)
-let dimensie path j : dimensie =
+let dimension path j : dimension =
   let kvs = obj path j in
   expect_node path kvs "Dimension";
   check_keys path kvs ~ext:[ "plural"; "preposition" ] [ "node"; "name"; "labels" ];
   {
-    dim_naam = str_opt (path / "name") (field path kvs "name");
-    dim_naam_meervoud = ext_field path kvs "plural" str;
-    voorzetsel = ext_field path kvs "preposition" str;
-    dim_waarden = str_opt_list (path / "labels") (field path kvs "labels");
+    dim_name = str_opt (path / "name") (field path kvs "name");
+    dim_name_plural = ext_field path kvs "plural" str;
+    preposition = ext_field path kvs "preposition" str;
+    dim_values = str_opt_list (path / "labels") (field path kvs "labels");
   }
 
-let tijdlijn path j : tijdlijn =
+let timeline_state path j : timeline_state =
   let kvs = obj path j in
   expect_node path kvs "Timeline";
   check_keys path kvs ~ext:[ "fixedStart" ] [ "node"; "name"; "variableStart"; "granularity"; "count" ];
   {
-    tl_naam = str_opt (path / "name") (field path kvs "name");
-    variabel_startpunt = bool_ (path / "variableStart") (field path kvs "variableStart");
-    tl_granulariteit = enum_opt Spelling.granularity (path / "granularity") (field path kvs "granularity");
-    tl_aantal = int_ (path / "count") (field path kvs "count");
-    tl_vast_startpunt = ext_field path kvs "fixedStart" str;
+    tl_name = str_opt (path / "name") (field path kvs "name");
+    variable_start = bool_ (path / "variableStart") (field path kvs "variableStart");
+    tl_granularity = enum_opt Spelling.granularity (path / "granularity") (field path kvs "granularity");
+    tl_count = int_ (path / "count") (field path kvs "count");
+    tl_fixed_start_point = ext_field path kvs "fixedStart" str;
   }
 
 (* --- rule layer --------------------------------------------------------- *)
 
 (* A validity: each bound is written whole or not at all, absent the v0
    null — an open side; a validity with neither bound is always. *)
-let geldigheid path j : geldigheid =
+let validity_window path j : validity_window =
   let kvs = obj path j in
   expect_node path kvs "Validity";
   check_keys path kvs ~ext:[ "from"; "to" ] [ "node" ];
-  { geld_vanaf = ext_field path kvs "from" str; geld_tot = ext_field path kvs "to" str }
+  { valid_from = ext_field path kvs "from" str; valid_to = ext_field path kvs "to" str }
 
 (* Whether a name ends in a space, '#' and at least one digit: the schema's
    pattern on a form name, which may not end so. *)
@@ -1290,21 +1290,21 @@ let named_form ~node ?(ext = []) path j =
    an initialisation, and a version with neither assigns a characteristic.
    Initialisation true beside a presentation is no kind at all. Whether the
    target's member is the kind of member the version writes is WF-022's. *)
-let rule_version ~annotations name path j : resolved_regel =
+let rule_version ~annotations name path j : resolved_rule =
   let kvs = obj path j in
   check_keys path kvs ~ext:[ "condition"; "presentation" ]
     [ "validity"; "target"; "value"; "initialisation" ];
   let f name = field path kvs name in
   let initialisation = bool_ (path / "initialisation") (f "initialisation") in
-  let soort =
+  let variety =
     match (initialisation, ext_field path kvs "presentation" (enum Spelling.presentation)) with
     | true, Some _ ->
         fail (path / "presentation")
           "presentation beside initialisation true: a presentation tags a computing version, never \
            an initialisation"
-    | true, None -> Initialisatie
+    | true, None -> Initialisation
     | false, Some tag -> tag
-    | false, None -> Kenmerktoekenning
+    | false, None -> Characteristic_attribution
   in
   let target =
     match f "target" with
@@ -1313,20 +1313,20 @@ let rule_version ~annotations name path j : resolved_regel =
     | _ -> fail (path / "target") "the target of a rule version is an AttributeReference"
   in
   {
-    rr_naam = name;
-    rr_soort = Some soort;
-    doel = Some target;
-    waarde = Some (expr (path / "value") (f "value"));
-    rr_voorwaarde = ext_field path kvs "condition" conditie;
-    rr_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
-    rr_bron_annotaties = annotations;
+    rr_name = name;
+    rr_presentation = Some variety;
+    objective = Some target;
+    value_node = Some (expr (path / "value") (f "value"));
+    rr_condition = ext_field path kvs "condition" condition_expr;
+    rr_validity = Some (validity_window (path / "validity") (f "validity"));
+    rr_source_annotations = annotations;
     rr_pointer = path;
   }
 
 (* A Rule writes its statute annotations once, on the form; every version's
    record carries that list ([Ast]). An empty list or a blank entry loads:
    both are WF-082's. *)
-let rule path j : resolved_regel list =
+let rule path j : resolved_rule list =
   let kvs, versions = named_form ~node:"Rule" ~ext:[ "statuteAnnotations" ] path j in
   let annotations =
     ext_field path kvs "statuteAnnotations" (fun p j ->
@@ -1334,28 +1334,28 @@ let rule path j : resolved_regel list =
   in
   List.map (fun (name, p, x) -> rule_version ~annotations name p x) versions
 
-let resolved_dagsoort path j : resolved_dagsoort =
+let resolved_day_kind path j : resolved_day_kind =
   let kvs = obj path j in
   expect_node path kvs "DayKindDefinition";
   check_keys path kvs [ "node"; "dayKind"; "condition"; "validity" ];
   let f name = field path kvs name in
   {
-    rd_naam = str_opt (path / "dayKind") (f "dayKind");
-    rd_voorwaarde = opt (path / "condition") conditie (f "condition");
-    rd_geldigheid = opt (path / "validity") geldigheid (f "validity");
+    rd_name = str_opt (path / "dayKind") (f "dayKind");
+    rd_condition = opt (path / "condition") condition_expr (f "condition");
+    rd_validity = opt (path / "validity") validity_window (f "validity");
   }
 
-let toekenning path j : toekenning =
+let assignment path j : assignment =
   let kvs = obj path j in
   expect_node path kvs "MemberInit";
   check_keys path kvs [ "node"; "member"; "value"; "characteristic" ];
   {
-    toe_attribuut = str_opt (path / "member") (field path kvs "member");
-    toe_waarde = opt (path / "value") expr (field path kvs "value");
-    toe_kenmerk = bool_ (path / "characteristic") (field path kvs "characteristic");
+    to_attribute = str_opt (path / "member") (field path kvs "member");
+    to_value = opt (path / "value") expr (field path kvs "value");
+    to_characteristic = bool_ (path / "characteristic") (field path kvs "characteristic");
   }
 
-let object_creation path j : resolved_object_creatie list =
+let object_creation path j : resolved_object_creation list =
   let _, versions = named_form ~node:"ObjectCreation" path j in
   List.map
     (fun (name, path, j) ->
@@ -1364,21 +1364,21 @@ let object_creation path j : resolved_object_creatie list =
         [ "createdType"; "subject"; "initialisations"; "validity" ];
       let f name = field path kvs name in
       {
-        oc_naam = name;
-        nieuw_type = str_opt (path / "createdType") (f "createdType");
+        oc_name = name;
+        created_type = str_opt (path / "createdType") (f "createdType");
         oc_subject = str_opt (path / "subject") (f "subject");
-        toekenningen =
+        assignments =
           List.mapi
-            (fun i x -> toekenning (path / "initialisations" / string_of_int i) x)
+            (fun i x -> assignment (path / "initialisations" / string_of_int i) x)
             (list_ (path / "initialisations") (f "initialisations"));
-        oc_voorwaarde = ext_field path kvs "condition" conditie;
-        oc_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
-        oc_verbindende_rol = ext_field path kvs "connectingRole" rol_binding;
+        oc_condition = ext_field path kvs "condition" condition_expr;
+        oc_validity = Some (validity_window (path / "validity") (f "validity"));
+        oc_connecting_role = ext_field path kvs "connectingRole" role_binding;
         oc_pointer = path;
       })
     versions
 
-let allocation path j : resolved_verdeling list =
+let allocation path j : resolved_allocation list =
   let _, versions = named_form ~node:"Allocation" path j in
   List.map
     (fun (name, path, j) ->
@@ -1390,42 +1390,42 @@ let allocation path j : resolved_verdeling list =
           "descending"; "validity"; "connectingRole" ];
       let f name = field path kvs name in
       {
-        vd_naam = name;
-        bron_type = str_opt (path / "sourceType") (f "sourceType");
-        bron_attribuut = str_opt (path / "sourceAttribute") (f "sourceAttribute");
-        doel_type = str_opt (path / "targetType") (f "targetType");
-        doel_attribuut = str_opt (path / "targetAttribute") (f "targetAttribute");
-        vd_methode = Some (enum Spelling.method_ (path / "method") (f "method"));
-        rato_attribuut = ext_field path kvs "ratioAttribute" str;
-        maximum_attribuut = ext_field path kvs "maximumAttribute" str;
-        afronding_decimalen = ext_field path kvs "roundingDecimals" int_;
-        restant_attribuut = ext_field path kvs "remainderAttribute" str;
+        vd_name = name;
+        source_type = str_opt (path / "sourceType") (f "sourceType");
+        source_attribute = str_opt (path / "sourceAttribute") (f "sourceAttribute");
+        objective_type_name = str_opt (path / "targetType") (f "targetType");
+        target_attribute = str_opt (path / "targetAttribute") (f "targetAttribute");
+        vd_method = Some (enum Spelling.method_ (path / "method") (f "method"));
+        ratio_attribute = ext_field path kvs "ratioAttribute" str;
+        maximum_attribute = ext_field path kvs "maximumAttribute" str;
+        rounding_decimals = ext_field path kvs "roundingDecimals" int_;
+        remainder_attribute = ext_field path kvs "remainderAttribute" str;
         (* the sort key of an ordered allocation (RUNTIME-SEMANTICS
            ch. 4.2), the v0 field it was *)
-        groepeer_attribuut = ext_field path kvs "orderingAttribute" str;
-        afnemend = bool_ (path / "descending") (f "descending");
-        vd_voorwaarde = ext_field path kvs "condition" conditie;
-        vd_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
-        verbindende_rol = rol_binding (path / "connectingRole") (f "connectingRole");
+        ordering_attribute = ext_field path kvs "orderingAttribute" str;
+        descending = bool_ (path / "descending") (f "descending");
+        vd_condition = ext_field path kvs "condition" condition_expr;
+        vd_validity = Some (validity_window (path / "validity") (f "validity"));
+        connecting_role = role_binding (path / "connectingRole") (f "connectingRole");
         vd_pointer = path;
       })
     versions
 
-let consistency path j : resolved_consistentie list =
+let consistency path j : resolved_consistency list =
   let _, versions = named_form ~node:"Consistency" path j in
   List.map
     (fun (name, path, j) ->
       let kvs = obj path j in
       check_keys path kvs ~ext:[ "source" ] [ "subject"; "assertion"; "validity" ];
       let f name = field path kvs name in
-      let bron, line = source_with_line path kvs in
+      let source_name, line = source_with_line path kvs in
       {
-        cons_naam = name;
+        cons_name = name;
         cons_subject = str_opt (path / "subject") (f "subject");
-        assertie = Some (conditie (path / "assertion") (f "assertion"));
-        cons_bron = bron;
+        assertion = Some (condition_expr (path / "assertion") (f "assertion"));
+        cons_source = source_name;
         cons_line = line;
-        cons_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
+        cons_validity = Some (validity_window (path / "validity") (f "validity"));
         cons_pointer = path;
       })
     versions
@@ -1447,7 +1447,7 @@ let source path j : string option * string option list =
    or more the union, which carries no scope (a scoped union is an open
    design question, IR-SPEC ch. 3.6). The document splits the two into
    their own lists; the order of the wire's list carries no meaning. *)
-let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t list =
+let uniqueness path j : (resolved_uniqueness, resolved_uniqueness_union) Either.t list =
   let _, versions = named_form ~node:"Uniqueness" path j in
   List.map
     (fun (name, path, j) ->
@@ -1460,18 +1460,18 @@ let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t l
         | [] -> fail spath "a uniqueness version carries at least one source"
         | xs -> List.mapi (fun i x -> source (spath / string_of_int i) x) xs
       in
-      let validity = Some (geldigheid (path / "validity") (f "validity")) in
-      let bron = source_text path kvs in
+      let validity = Some (validity_window (path / "validity") (f "validity")) in
+      let source_name = source_text path kvs in
       match sources with
       | [ (subject, keys) ] ->
           Either.Left
             {
-              uni_naam = name;
+              uni_name = name;
               uni_subject = subject;
-              sleutels = keys;
-              uni_bron = bron;
-              uni_geldigheid = validity;
-              scope_rol = ext_field path kvs "scope" rol_binding;
+              key_list = keys;
+              uni_source = source_name;
+              uni_validity = validity;
+              scope_role = ext_field path kvs "scope" role_binding;
               uni_pointer = path;
             }
       | _ ->
@@ -1481,11 +1481,11 @@ let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t l
                an open design question";
           Either.Right
             {
-              uu_naam = name;
-              bronnen =
-                List.map (fun (t, keys) -> { uub_type = t; uub_sleutels = keys }) sources;
-              uu_bron = bron;
-              uu_geldigheid = validity;
+              uu_name = name;
+              source_list =
+                List.map (fun (t, keys) -> { uub_type = t; uub_keys = keys }) sources;
+              uu_source = source_name;
+              uu_validity = validity;
               uu_pointer = path;
             })
     versions
@@ -1496,22 +1496,22 @@ let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t l
    verifier's name identity, and the one of its two roles that the name
    matches. Where that does not resolve the target type stays empty, and
    WF-028 reports the creation. *)
-let target_filler feittypen ~fact_type ~role =
-  match Checks.find_ci feittypen fact_type with
-  | Some ({ rollen = [ a; b ]; _ } : feittype) -> (
-      let named (r : rol) =
-        match r.rol_naam with Some n -> Checks.norm n = Checks.norm role | None -> false
+let target_filler fact_types ~fact_type ~role =
+  match Checks.find_ci fact_types fact_type with
+  | Some ({ role_names = [ a; b ]; _ } : fact_type_name) -> (
+      let named (r : role_ref) =
+        match r.role_identifier with Some n -> Checks.norm n = Checks.norm role | None -> false
       in
       match (named a, named b) with
-      | true, false -> a.rol_objecttype_naam
-      | false, true -> b.rol_objecttype_naam
+      | true, false -> a.role_object_type_name
+      | false, true -> b.role_object_type_name
       | _ -> None)
   | _ -> None
 
 (* A fact creation's path is its whole join chain (IR-SPEC ch. 3.4), anchor
    outward: every hop but the last is a [tussenstap], the last reaches the
-   target and is the [join_rol]. *)
-let fact_creation feittypen path j : resolved_feit_creatie list =
+   target and is the [join_role]. *)
+let fact_creation fact_types path j : resolved_fact_creation list =
   let _, versions = named_form ~node:"FactCreation" path j in
   List.map
     (fun (name, path, j) ->
@@ -1524,48 +1524,48 @@ let fact_creation feittypen path j : resolved_feit_creatie list =
         match list_ ppath (f "path") with
         | [] -> fail ppath "a fact creation's path carries at least one hop"
         | xs ->
-            let hops = List.mapi (fun i x -> rol_binding (ppath / string_of_int i) x) xs in
+            let hops = List.mapi (fun i x -> role_binding (ppath / string_of_int i) x) xs in
             let last = List.length hops - 1 in
             (List.filteri (fun i _ -> i < last) hops, List.nth hops last)
       in
       let fact_type = str (path / "factType") (f "factType") in
       let target_role = str (path / "targetRole") (f "targetRole") in
       {
-        fc_naam = name;
-        anker = str_opt (path / "anchor") (f "anchor");
-        fc_doel = target_filler feittypen ~fact_type ~role:target_role;
-        tussenstappen = List.map (fun rb -> { ts_rol = rb }) steps;
-        fc_voorwaarde = ext_field path kvs "condition" conditie;
-        fc_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
-        fc_feittype = fact_type;
-        anker_rol = str (path / "anchorRole") (f "anchorRole");
-        doel_rol = target_role;
-        join_rol = join;
+        fc_name = name;
+        anchor_point = str_opt (path / "anchor") (f "anchor");
+        fc_target = target_filler fact_types ~fact_type ~role:target_role;
+        intermediates = List.map (fun rb -> { ts_role = rb }) steps;
+        fc_condition = ext_field path kvs "condition" condition_expr;
+        fc_validity = Some (validity_window (path / "validity") (f "validity"));
+        fc_fact_type = fact_type;
+        anchor_role = str (path / "anchorRole") (f "anchorRole");
+        objective_role = target_role;
+        join_role = join;
         fc_pointer = path;
       })
     versions
 
-let resolved_startpunt path j : resolved_startpunt =
+let resolved_start_point_determination path j : resolved_start_point_determination =
   let kvs = obj path j in
   expect_node path kvs "StartPointDetermination";
   check_keys path kvs [ "node"; "timeline"; "objectType"; "member" ];
   {
-    sp_tijdlijn = str_opt (path / "timeline") (field path kvs "timeline");
-    sp_objecttype = str_opt (path / "objectType") (field path kvs "objectType");
-    lid = str_opt (path / "member") (field path kvs "member");
+    sp_timeline = str_opt (path / "timeline") (field path kvs "timeline");
+    sp_subject_type = str_opt (path / "objectType") (field path kvs "objectType");
+    one_member = str_opt (path / "member") (field path kvs "member");
   }
 
-let resolved_regel_groep path j : resolved_regel_groep =
+let resolved_rule_group path j : resolved_rule_group =
   let kvs = obj path j in
   expect_node path kvs "RuleGroup";
   check_keys path kvs ~ext:[ "source"; "origin"; "designations" ] [ "node"; "name"; "recursive"; "members" ];
   let f name = field path kvs name in
-  let bron, line = source_with_line path kvs in
+  let source_name, line = source_with_line path kvs in
   {
-    rgr_naam = str_opt (path / "name") (f "name");
-    recursief = bool_ (path / "recursive") (f "recursive");
-    leden = str_opt_list (path / "members") (f "members");
-    rgr_bron = bron;
+    rgr_name = str_opt (path / "name") (f "name");
+    recursive = bool_ (path / "recursive") (f "recursive");
+    member_list = str_opt_list (path / "members") (f "members");
+    rgr_source = source_name;
     rgr_line = line;
   }
 
@@ -1595,13 +1595,13 @@ let rec default path j : default =
     ~ext:[ "decision"; "justification"; "consequence"; "initialisation"; "exceptions"; "source" ]
     [ "node" ];
   {
-    default_besluit = ext_field path kvs "decision" bool_;
-    default_voorwaarde = ext_field path kvs "justification" conditie;
-    default_consequentie = ext_field path kvs "consequence" expr;
-    default_initialisatie =
+    default_decision = ext_field path kvs "decision" bool_;
+    default_justification = ext_field path kvs "justification" condition_expr;
+    default_consequence = ext_field path kvs "consequence" expr;
+    default_initialisation =
       (match ext_field path kvs "initialisation" bool_ with Some b -> b | None -> false);
-    default_excepties = ext_field path kvs "exceptions" exception_groups;
-    default_bron = source_text path kvs;
+    default_exceptions = ext_field path kvs "exceptions" exception_groups;
+    default_source = source_text path kvs;
   }
 
 (* The nested exception groups riding [exceptions] (v1, Phase 5c;
@@ -1612,8 +1612,8 @@ and exception_groups path j : exception_groups =
   let kvs = obj path j in
   check_keys path kvs [ "unordered"; "members" ];
   {
-    egs_ongeordend = bool_ (path / "unordered") (field path kvs "unordered");
-    egs_leden =
+    egs_unordered = bool_ (path / "unordered") (field path kvs "unordered");
+    egs_members =
       List.mapi
         (fun i x -> exception_group (path / "members" / string_of_int i) x)
         (list_ (path / "members") (field path kvs "members"));
@@ -1628,7 +1628,7 @@ and exception_group path j : exception_group =
       List.mapi
         (fun i x -> default (path / "defaults" / string_of_int i) x)
         (list_ (path / "defaults") (field path kvs "defaults"));
-    eg_bron = source_text path kvs;
+    eg_source = source_text path kvs;
   }
 
 (* A defaults group: its target, a characteristic or an attribute, and its
@@ -1641,17 +1641,17 @@ let prioritized_defaults path j : prioritized_defaults =
     [ "node"; "name"; "subject"; "defaults"; "validity" ];
   let f name = field path kvs name in
   {
-    pd_naam = str_opt (path / "name") (f "name");
-    pd_onderwerp = str (path / "subject") (f "subject");
-    pd_kenmerk = ext_field path kvs "characteristic" str;
-    pd_attribuut = ext_field path kvs "attribute" str;
+    pd_name = str_opt (path / "name") (f "name");
+    pd_subject = str (path / "subject") (f "subject");
+    pd_characteristic = ext_field path kvs "characteristic" str;
+    pd_attribute = ext_field path kvs "attribute" str;
     defaults =
       List.mapi
         (fun i x -> default (path / "defaults" / string_of_int i) x)
         (list_ (path / "defaults") (f "defaults"));
-    pd_ongeordend = (match ext_field path kvs "unordered" bool_ with Some b -> b | None -> false);
-    pd_bron = source_text path kvs;
-    pd_geldigheid = opt (path / "validity") geldigheid (f "validity");
+    pd_unordered = (match ext_field path kvs "unordered" bool_ with Some b -> b | None -> false);
+    pd_source = source_text path kvs;
+    pd_validity = opt (path / "validity") validity_window (f "validity");
   }
 
 (* Extension form (v1, row 10): a named reusable function (IR-SPEC ch. 2.11).
@@ -1662,11 +1662,11 @@ let function_def path j : function_def =
   check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "parameters"; "result"; "body" ];
   let f name = field path kvs name in
   {
-    fd_naam = str (path / "name") (f "name");
+    fd_name = str (path / "name") (f "name");
     fd_parameters = lambda_params (path / "parameters") (f "parameters");
     fd_result = datatype (path / "result") (f "result");
     fd_body = expr (path / "body") (f "body");
-    fd_bron = source_text path kvs;
+    fd_source = source_text path kvs;
   }
 
 (* The JSON pointer of every presentation tag written inside a type
@@ -1675,7 +1675,7 @@ let function_def path j : function_def =
    string). The datatype reader validates the tag and drops it, because the
    in-memory datatype does not carry it (Ast header); WF-007 refuses it at
    these positions, so they are collected from the document as written. *)
-let presentatie_annotaties (j : json) : string list =
+let presentation_annotations (j : json) : string list =
   let rec walk ~annot path acc = function
     | `Assoc kvs ->
         let acc =
@@ -1697,20 +1697,20 @@ let presentatie_annotaties (j : json) : string list =
 (* --- the vocabulary side table (IR-SPEC ch. 2.12) ------------------------ *)
 
 (* A Vocabulary node of the root list. *)
-let vocabulaire path j : vocabulaire =
+let vocabulary path j : vocabulary =
   let kvs = obj path j in
   expect_node path kvs "Vocabulary";
   check_keys path kvs ~ext:[ "language" ] [ "node"; "name"; "default" ];
   {
-    voc_naam = str (path / "name") (field path kvs "name");
-    voc_standaard = bool_ (path / "default") (field path kvs "default");
-    voc_taal = ext_field path kvs "language" str;
+    voc_name = str (path / "name") (field path kvs "name");
+    voc_default = bool_ (path / "default") (field path kvs "default");
+    voc_language = ext_field path kvs "language" str;
     voc_at = path;
   }
 
 (* A list the side table writes whole or not at all: absent is none, and a
    present list holds at least one entry. *)
-let ext_lijst path kvs key what (decode : string -> json -> 'a) : 'a list =
+let ext_list path kvs key what (decode : string -> json -> 'a) : 'a list =
   match List.assoc_opt key kvs with
   | None -> []
   | Some j -> (
@@ -1720,13 +1720,13 @@ let ext_lijst path kvs key what (decode : string -> json -> 'a) : 'a list =
       | xs -> List.mapi (fun i x -> decode (lp / string_of_int i) x) xs)
 
 (* The designations of the declaration at [path], whose members are [kvs]. *)
-let benamingen path kvs : benaming list =
-  ext_lijst path kvs "designations" "a declaration's designations" (fun bp x ->
+let designations path kvs : designation list =
+  ext_list path kvs "designations" "a declaration's designations" (fun bp x ->
       let bkvs = obj bp x in
       check_keys bp bkvs [ "vocabulary"; "designation" ];
       {
-        ben_vocabulaire = str (bp / "vocabulary") (field bp bkvs "vocabulary");
-        ben_tekst = str (bp / "designation") (field bp bkvs "designation");
+        ben_vocabulary = str (bp / "vocabulary") (field bp bkvs "vocabulary");
+        ben_text = str (bp / "designation") (field bp bkvs "designation");
         ben_at = bp;
       })
 
@@ -1735,7 +1735,7 @@ let benamingen path kvs : benaming list =
    'owner' when written. The form and the kind are read as strings: a value
    outside their sets is WF-121 (a)'s to name, and an executor's to refuse
    ([document]). *)
-let herkomst path kvs : herkomst option =
+let origin path kvs : origin option =
   ext_field path kvs "origin" (fun op x ->
       let okvs = obj op x in
       check_keys op okvs [ "form"; "from" ];
@@ -1743,10 +1743,10 @@ let herkomst path kvs : herkomst option =
       let fkvs = obj fp (field op okvs "from") in
       check_keys fp fkvs ~ext:[ "owner" ] [ "kind"; "name" ];
       {
-        hk_vorm = str (op / "form") (field op okvs "form");
-        hk_soort = str (fp / "kind") (field fp fkvs "kind");
-        hk_eigenaar = ext_field fp fkvs "owner" str;
-        hk_naam = str (fp / "name") (field fp fkvs "name");
+        hk_form = str (op / "form") (field op okvs "form");
+        hk_kind = str (fp / "kind") (field fp fkvs "kind");
+        hk_owner = ext_field fp fkvs "owner" str;
+        hk_name = str (fp / "name") (field fp fkvs "name");
         hk_at = op;
       })
 
@@ -1764,9 +1764,9 @@ let herkomst path kvs : herkomst option =
    designations stand in `valueDesignations` beside its list: each entry is
    attached to the first value its `value` names under the name identity of
    ch. 2.1, and an entry that names none is kept apart for WF-117 (f). *)
-let vocabulaires (j : json) : vocabulaire_tafel =
+let vocabularies (j : json) : vocabulary_table =
   let kvs = obj "" j in
-  let vocs = ext_lijst "" kvs "vocabularies" "a document's vocabularies" vocabulaire in
+  let vocs = ext_list "" kvs "vocabularies" "a document's vocabularies" vocabulary in
   let model = obj "/model" (field "" kvs "model") in
   let rules = obj "/rules" (field "" kvs "rules") in
   let items p pkvs key =
@@ -1774,79 +1774,79 @@ let vocabulaires (j : json) : vocabulaire_tafel =
     | None -> []
     | Some x -> List.mapi (fun i y -> (p / key / string_of_int i, y)) (list_ (p / key) x)
   in
-  let element soort eigenaar naam at ekvs =
-    match naam with
+  let element variety holder ident at ekvs =
+    match ident with
     | None -> []
     | Some n ->
-        [ { bn_soort = soort; bn_eigenaar = eigenaar; bn_naam = n; bn_at = at;
-            bn_benamingen = benamingen at ekvs; bn_herkomst = herkomst at ekvs } ]
+        [ { bn_kind = variety; bn_owner = holder; bn_name = n; bn_at = at;
+            bn_designations = designations at ekvs; bn_origin = origin at ekvs } ]
   in
-  let naam_van p ekvs = str_opt (p / "name") (field p ekvs "name") in
-  let objecttypen =
+  let name_of p ekvs = str_opt (p / "name") (field p ekvs "name") in
+  let object_types =
     List.concat_map
       (fun (p, x) ->
         let okvs = obj p x in
-        let naam = naam_van p okvs in
-        let leden soort key =
+        let ident = name_of p okvs in
+        let member_list variety key =
           List.concat_map
-            (fun (lp, l) -> let lkvs = obj lp l in element soort naam (naam_van lp lkvs) lp lkvs)
+            (fun (lp, l) -> let lkvs = obj lp l in element variety ident (name_of lp lkvs) lp lkvs)
             (items p okvs key)
         in
-        element Bn_objecttype None naam p okvs
-        @ leden Bn_attribuut "attributes" @ leden Bn_kenmerk "characteristics")
+        element Bn_object_type None ident p okvs
+        @ member_list Bn_attribute "attributes" @ member_list Bn_characteristic "characteristics")
       (items "/model" model "objectTypes")
   in
-  let feittypen =
+  let fact_types =
     List.concat_map
       (fun (p, x) ->
         let fkvs = obj p x in
-        let naam = naam_van p fkvs in
-        element Bn_feittype None naam p fkvs
+        let ident = name_of p fkvs in
+        element Bn_fact_type None ident p fkvs
         @ List.concat_map
-            (fun (rp, r) -> let rkvs = obj rp r in element Bn_rol naam (naam_van rp rkvs) rp rkvs)
+            (fun (rp, r) -> let rkvs = obj rp r in element Bn_role ident (name_of rp rkvs) rp rkvs)
             (items p fkvs "roles"))
       (items "/model" model "factTypes")
   in
   let parameters =
     List.concat_map
-      (fun (p, x) -> let pkvs = obj p x in element Bn_parameter None (naam_van p pkvs) p pkvs)
+      (fun (p, x) -> let pkvs = obj p x in element Bn_parameter None (name_of p pkvs) p pkvs)
       (items "/model" model "parameters")
   in
-  let losse = ref [] in
-  let waarden =
+  let separate = ref [] in
+  let label_list =
     List.concat_map
       (fun (p, x) ->
         let dkvs = obj p x in
-        let domein = str (p / "name") (field p dkvs "name") in
+        let domain_spec = str (p / "name") (field p dkvs "name") in
         let dp = p / "datatype" in
         let dtkvs = obj dp (field p dkvs "datatype") in
         match List.assoc_opt "node" dtkvs with
         | Some (`String "Enumeration") ->
-            let waarden = str_opt_list (dp / "values") (field dp dtkvs "values") in
+            let label_list = str_opt_list (dp / "values") (field dp dtkvs "values") in
             let entries =
-              ext_lijst dp dtkvs "valueDesignations" "an enumeration's value designations"
+              ext_list dp dtkvs "valueDesignations" "an enumeration's value designations"
                 (fun ep e ->
                   let ekvs = obj ep e in
                   check_keys ep ekvs [ "value"; "vocabulary"; "designation" ];
                   ( str (ep / "value") (field ep ekvs "value"),
                     {
-                      ben_vocabulaire = str (ep / "vocabulary") (field ep ekvs "vocabulary");
-                      ben_tekst = str (ep / "designation") (field ep ekvs "designation");
+                      ben_vocabulary = str (ep / "vocabulary") (field ep ekvs "vocabulary");
+                      ben_text = str (ep / "designation") (field ep ekvs "designation");
                       ben_at = ep;
                     } ))
             in
             (* each entry to the first value it names *)
-            let eerste w =
-              let rec zoek i = function
+            let leading w =
+              let rec search i = function
                 | [] -> None
                 | Some v :: _ when Checks.norm v = Checks.norm w -> Some i
-                | _ :: rest -> zoek (i + 1) rest
+                | _ :: rest -> search (i + 1) rest
               in
-              zoek 0 waarden
+              search 0 label_list
             in
             List.iter
               (fun (w, b) ->
-                if eerste w = None then losse := (domein, w, b.ben_at / "value") :: !losse)
+                if leading w = None then separate := (domain_spec, w, b.ben_at / "value") :: !separate)
               entries;
             List.concat
               (List.mapi
@@ -1854,34 +1854,34 @@ let vocabulaires (j : json) : vocabulaire_tafel =
                    match v with
                    | None -> []
                    | Some v ->
-                       [ { bn_soort = Bn_enumeratiewaarde; bn_eigenaar = Some domein; bn_naam = v;
-                           bn_at = dp / "values" / string_of_int i; bn_herkomst = None;
-                           bn_benamingen =
+                       [ { bn_kind = Bn_enumeration_value; bn_owner = Some domain_spec; bn_name = v;
+                           bn_at = dp / "values" / string_of_int i; bn_origin = None;
+                           bn_designations =
                              List.filter_map
-                               (fun (w, b) -> if eerste w = Some i then Some b else None)
+                               (fun (w, b) -> if leading w = Some i then Some b else None)
                                entries } ])
-                 waarden)
+                 label_list)
         | _ -> [])
       (items "/model" model "domains")
   in
-  let vormen =
+  let form_list =
     List.concat_map
       (fun key ->
         List.concat_map
-          (fun (p, x) -> let vkvs = obj p x in element Bn_vorm None (naam_van p vkvs) p vkvs)
+          (fun (p, x) -> let vkvs = obj p x in element Bn_form None (name_of p vkvs) p vkvs)
           (items "/rules" rules key))
       [ "rules"; "objectCreations"; "allocations"; "consistencies"; "uniquenesses"; "factCreations";
         "prioritizedDefaults" ]
   in
-  let groepen =
+  let buckets =
     List.concat_map
-      (fun (p, x) -> let gkvs = obj p x in element Bn_regelgroep None (naam_van p gkvs) p gkvs)
+      (fun (p, x) -> let gkvs = obj p x in element Bn_rule_group None (name_of p gkvs) p gkvs)
       (items "/rules" rules "ruleGroups")
   in
   {
-    vt_vocabulaires = vocs;
-    vt_benoembaar = objecttypen @ feittypen @ parameters @ waarden @ vormen @ groepen;
-    vt_losse_waarden = List.rev !losse;
+    vt_vocabularies = vocs;
+    vt_designatable = object_types @ fact_types @ parameters @ label_list @ form_list @ buckets;
+    vt_separate_values = List.rev !separate;
   }
 
 (* Who loads the document. Two defects on the wire are a verifier rule's,
@@ -1909,7 +1909,7 @@ let vocabulaires (j : json) : vocabulaire_tafel =
    the marker of a variable the frontend could not bind resolves against
    nothing, and an executor that met it only at evaluation would refuse it in
    a residual arm's words. And so is a fixed start point that does not fit its
-   grid (WF-115, [Checks.wf115_bevindingen]): an executor lays the periods
+   grid (WF-115, [Checks.wf115_findings]): an executor lays the periods
    from it, and one it cannot read or that contradicts the timeline has no
    grid to lay. *)
 type reader = Verifier | Executor
@@ -2003,49 +2003,49 @@ let document ?(reader = Executor) (j : json) : document =
   let m name g = arr mpath model name g and r name g = arr rpath rules name g in
   let forms name g = List.concat (r name g) in
   (* the fact types first: a fact creation's target type is read from them *)
-  let feittypen = m "factTypes" (fun p -> named p feittype (fun (x : feittype) -> x.ft_naam)) in
+  let fact_types = m "factTypes" (fun p -> named p fact_type_name (fun (x : fact_type_name) -> x.ft_name)) in
   let uniqueness_versions = forms "uniquenesses" uniqueness in
   let doc =
     {
-      objecttypen = m "objectTypes" objecttype;
-      domeinen = m "domains" domain;
+      object_types = m "objectTypes" object_type;
+      domain_specs = m "domains" domain;
       parameters = m "parameters" parameter;
-      eenheidstelsels = m "unitSystems" eenheidstelsel;
-      feittypen;
-      dimensies = m "dimensions" (fun p -> named p dimensie (fun (x : dimensie) -> x.dim_naam));
-      tijdlijnen = m "timelines" tijdlijn;
-      dagsoorten = m "dayKinds" dagsoort;
-      resolved_regels = forms "rules" rule;
-      resolved_dagsoorten = r "dayKindDefinitions" resolved_dagsoort;
-      object_creaties = forms "objectCreations" object_creation;
-      verdelingen = forms "allocations" allocation;
-      consistenties = forms "consistencies" consistency;
-      uniciteiten = List.filter_map Either.find_left uniqueness_versions;
-      uniciteit_unies = List.filter_map Either.find_right uniqueness_versions;
-      feit_creaties = forms "factCreations" (fact_creation feittypen);
-      resolved_startpunten = r "startPointDeterminations" resolved_startpunt;
-      regel_groepen = r "ruleGroups" resolved_regel_groep;
+      unit_systems = m "unitSystems" unit_system;
+      fact_types;
+      dimensions = m "dimensions" (fun p -> named p dimension (fun (x : dimension) -> x.dim_name));
+      timelines = m "timelines" timeline_state;
+      day_kinds = m "dayKinds" day_kind;
+      resolved_rules = forms "rules" rule;
+      resolved_day_kind_definitions = r "dayKindDefinitions" resolved_day_kind;
+      object_creations = forms "objectCreations" object_creation;
+      allocations = forms "allocations" allocation;
+      consistencies = forms "consistencies" consistency;
+      uniquenesses = List.filter_map Either.find_left uniqueness_versions;
+      uniqueness_unions = List.filter_map Either.find_right uniqueness_versions;
+      fact_creations = forms "factCreations" (fact_creation fact_types);
+      resolved_start_point_determinations = r "startPointDeterminations" resolved_start_point_determination;
+      rule_groups = r "ruleGroups" resolved_rule_group;
       diagnostics = arr path kvs "diagnostics" diagnostic;
       prioritized_defaults = ext rpath rules "prioritizedDefaults" prioritized_defaults;
       function_defs = ext mpath model "functionDefs" function_def;
-      presentatie_annotaties = presentatie_annotaties j;
+      presentation_annotations = presentation_annotations j;
     }
   in
   (* the side table is read structurally by every reader, and for its
      content by none here (IR-SPEC ch. 2.12 and 2.13), except that an
      executor cannot keep an origin whose form or kind is no value of its
      set (WF-121 (a)) *)
-  let tafel = vocabulaires j in
+  let grid = vocabularies j in
   (match reader with
   | Executor -> (
       executor_refusals j;
       List.iter
-        (fun (b : benoembaar) ->
-          match Option.bind b.bn_herkomst Checks.herkomst_refusal with
+        (fun (b : designatable) ->
+          match Option.bind b.bn_origin Checks.origin_refusal with
           | Some (at, sentence) -> fail at sentence
           | None -> ())
-        tafel.vt_benoembaar;
-      match Checks.wf115_bevindingen doc with (at, sentence) :: _ -> fail at sentence | [] -> ())
+        grid.vt_designatable;
+      match Checks.wf115_findings doc with (at, sentence) :: _ -> fail at sentence | [] -> ())
   | Verifier -> ());
   doc
 

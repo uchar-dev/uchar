@@ -17,19 +17,19 @@
 
 open Value
 
-type segment = { s_van : int; s_tot : int; s_waarde : Value.t }
+type segment = { s_from : int; s_to : int; s_value : Value.t }
 type t = segment list
 
 (* degenerate segments (tot <= van) contribute nothing anywhere *)
 let normalise (segs : t) : t =
-  List.filter (fun s -> s.s_tot > s.s_van) segs
-  |> List.sort (fun a b -> compare a.s_van b.s_van)
+  List.filter (fun s -> s.s_to > s.s_from) segs
+  |> List.sort (fun a b -> compare a.s_from b.s_from)
 
 (* read never depends on segment order (ch. 3.1): scan the normalised
    list, so even ill-formed overlapping input reads deterministically *)
 let read (tl : t) (d : int) : Value.t =
-  match List.find_opt (fun s -> s.s_van <= d && d < s.s_tot) (normalise tl) with
-  | Some s -> s.s_waarde
+  match List.find_opt (fun s -> s.s_from <= d && d < s.s_to) (normalise tl) with
+  | Some s -> s.s_value
   | None -> Empty
 
 (* --- calendar arithmetic (ch. 3.2/3.8): month-end clamped -------------- *)
@@ -53,25 +53,25 @@ let add_months d k =
 
 (* whole calendar units between two days (ch. 3.2 job 1: weighting);
    quarters are whole months / 3 *)
-let whole_units (g : Ir_v0.Ast.granulariteit) van tot =
-  if tot <= van then 0
+let whole_units (g : Ir_v0.Ast.grain) van up_to =
+  if up_to <= van then 0
   else
     match g with
-    | Dag -> tot - van
-    | Week -> (tot - van) / 7
-    | Maand | Kwartaal | Jaar ->
-        let rec months k = if add_months van (k + 1) <= tot then months (k + 1) else k in
+    | Day -> up_to - van
+    | Week -> (up_to - van) / 7
+    | Month | Quarter | Year ->
+        let rec months k = if add_months van (k + 1) <= up_to then months (k + 1) else k in
         let m = months 0 in
-        (match g with Maand -> m | Kwartaal -> m / 3 | Jaar -> m / 12 | _ -> assert false)
+        (match g with Month -> m | Quarter -> m / 3 | Year -> m / 12 | _ -> assert false)
 
 (* the calendar bucket containing [d]: year buckets run 1 Jan to 1 Jan,
    month buckets first-of-month to first-of-next (ch. 3.2 job 2; only
    month and year buckets exist) *)
-let bucket (g : Ir_v0.Ast.granulariteit) d =
+let bucket (g : Ir_v0.Ast.grain) d =
   let y, m, _ = civil_from_days d in
   match g with
-  | Jaar -> (days_from_civil ~y ~m:1 ~d:1, days_from_civil ~y:(y + 1) ~m:1 ~d:1)
-  | Maand ->
+  | Year -> (days_from_civil ~y ~m:1 ~d:1, days_from_civil ~y:(y + 1) ~m:1 ~d:1)
+  | Month ->
       let van = days_from_civil ~y ~m ~d:1 in
       let y', m' = if m = 12 then (y + 1, 1) else (y, m + 1) in
       (van, days_from_civil ~y:y' ~m:m' ~d:1)
@@ -82,25 +82,25 @@ let bucket (g : Ir_v0.Ast.granulariteit) d =
 (* Where a timeline's periods start: on the calendar (no start point), from
    a fixed start point (a date, or a day-month anchored in a leap year), or
    from the anchor a start-point determination binds per object. *)
-type start = Kalender | Vast_datum of int | Vast_dag_maand of int | Variabel
+type start = Calendar | Fixed_date of int | Fixed_day_month of int | Variable
 
-type grid = { g_gran : Ir_v0.Ast.granulariteit; g_count : int; g_start : start }
+type grid = { g_gran : Ir_v0.Ast.grain; g_count : int; g_start : start }
 
-let calendar_grid g = { g_gran = g; g_count = 1; g_start = Kalender }
+let calendar_grid g = { g_gran = g; g_count = 1; g_start = Calendar }
 
 (* The grid of a facet: its granularity and count, and the start its fixed
    start point or its named timeline gives it. A fixed start point that is
    no WF-115 lexeme never reaches here: the loader refuses it. *)
 let grid_of ~gran ~count ~(fixed : string option) ~variable =
   let g_start =
-    if variable then Variabel
+    if variable then Variable
     else
       match fixed with
-      | None -> Kalender
+      | None -> Calendar
       | Some s -> (
-          match Ir_v0.Checks.lees_vast_startpunt s with
-          | Some (Vs_datum (y, m, d)) -> Vast_datum (days_from_civil ~y ~m ~d)
-          | Some (Vs_dag_maand (m, d)) -> Vast_dag_maand (days_from_civil ~y:2000 ~m ~d)
+          match Ir_v0.Checks.read_fixed_start_point s with
+          | Some (Vs_date (y, m, d)) -> Fixed_date (days_from_civil ~y ~m ~d)
+          | Some (Vs_day_month (m, d)) -> Fixed_day_month (days_from_civil ~y:2000 ~m ~d)
           | None -> fault "fixed start point '%s' is no WF-115 lexeme" s)
   in
   { g_gran = gran; g_count = count; g_start }
@@ -117,23 +117,23 @@ let grid_bucket (gr : grid) d =
        in ch. 3.12)"
       gr.g_count (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity gr.g_gran);
   match (gr.g_start, gr.g_gran) with
-  | Kalender, g -> bucket g d
-  | Variabel, _ ->
+  | Calendar, g -> bucket g d
+  | Variable, _ ->
       fault
         "a variable-start grid is laid per object from the anchor its start-point determination \
          binds, which this interpreter does not execute (ch. 3.2)"
-  | Vast_datum a, Week ->
+  | Fixed_date a, Week ->
       let k = if d >= a then (d - a) / 7 else -(((a - d) + 6) / 7) in
       (a + (7 * k), a + (7 * (k + 1)))
-  | Vast_dag_maand anchor, ((Maand | Kwartaal | Jaar) as g) ->
-      let step = Ir_v0.Checks.stap_maanden g in
+  | Fixed_day_month anchor, ((Month | Quarter | Year) as g) ->
+      let step = Ir_v0.Checks.step_months g in
       let ya, ma, _ = civil_from_days anchor and yd, md, _ = civil_from_days d in
       let months = ((yd - ya) * 12) + (md - ma) in
       let k = if months >= 0 then months / step else -(((-months) + step - 1) / step) in
       let wall k = add_months anchor (step * k) in
       let k = if wall k > d then k - 1 else k in
       (wall k, wall (k + 1))
-  | (Vast_datum _ | Vast_dag_maand _), _ ->
+  | (Fixed_date _ | Fixed_day_month _), _ ->
       fault "a fixed start point of this form lays no %s grid of one unit (WF-115)"
         (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity gr.g_gran)
 
@@ -145,9 +145,9 @@ let grid_bucket (gr : grid) d =
    true days, or whose start the base timeline does not cover (or
    covers with leeg), yields no segment; no summation across buckets,
    no auto-rounding, no coalescing of equal neighbours. *)
-let pro_rata (g : Ir_v0.Ast.granulariteit) (basis : t) (true_periods : (int * int) list) : t =
+let pro_rata (g : Ir_v0.Ast.grain) (base_expr : t) (true_periods : (int * int) list) : t =
   (match g with
-  | Maand | Jaar -> ()
+  | Month | Year -> ()
   | _ -> fault "pro-rata buckets are month or year only (ch. 3.7)");
   let module IMap = Map.Make (Int) in
   let acc =
@@ -173,10 +173,10 @@ let pro_rata (g : Ir_v0.Ast.granulariteit) (basis : t) (true_periods : (int * in
   IMap.fold
     (fun bs days segs ->
       let _, bn = bucket g bs in
-      match read basis bs with
+      match read base_expr bs with
       | Empty -> segs
       | Num (q, u) ->
-          { s_van = bs; s_tot = bn; s_waarde = Num (Q.mul q (Q.make (Z.of_int days) (Z.of_int (bn - bs))), u) }
+          { s_from = bs; s_to = bn; s_value = Num (Q.mul q (Q.make (Z.of_int days) (Z.of_int (bn - bs))), u) }
           :: segs
       | v -> fault "pro-rata base is not numeric: %s" (Value.to_string v))
     acc []
@@ -188,11 +188,11 @@ let pro_rata (g : Ir_v0.Ast.granulariteit) (basis : t) (true_periods : (int * in
    periods emit nothing. The counting fold is pro_rata's numerator
    (ch. 3.7), value the whole-day count itself, unitless. The grid is the
    target's: the calendar grid, or the one its fixed start point lays
-   (ch. 3.2); [aantal_dagen_in] below is the calendar case the whole-period
+   (ch. 3.2); [count_days_in] below is the calendar case the whole-period
    qualifier folds over. *)
-let aantal_dagen_in_grid (gr : grid) (true_periods : (int * int) list) : t =
+let count_days_in_grid (gr : grid) (true_periods : (int * int) list) : t =
   (match gr.g_gran with
-  | Maand | Jaar -> ()
+  | Month | Year -> ()
   | _ -> fault "day-count buckets are month or year only (ch. 3.8)");
   let module IMap = Map.Make (Int) in
   let acc =
@@ -218,12 +218,12 @@ let aantal_dagen_in_grid (gr : grid) (true_periods : (int * int) list) : t =
   IMap.fold
     (fun bs days segs ->
       let _, bn = grid_bucket gr bs in
-      { s_van = bs; s_tot = bn; s_waarde = Value.Num (Q.of_int days, Value.Unitless) } :: segs)
+      { s_from = bs; s_to = bn; s_value = Value.Num (Q.of_int days, Value.Unitless) } :: segs)
     acc []
   |> List.rev
 
-let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) list) : t =
-  aantal_dagen_in_grid (calendar_grid g) true_periods
+let count_days_in (g : Ir_v0.Ast.grain) (true_periods : (int * int) list) : t =
+  count_days_in_grid (calendar_grid g) true_periods
 
 (* ch. 3.9 "gedurende de gehele maand / het gehele jaar", the
    CHARACTERISTIC-HOLDS test:
@@ -234,7 +234,7 @@ let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) li
 
    A boolean timeline is its true-periods (ch. 3.1), so the buckets it
    touches and the days satisfying "the characteristic holds" come from
-   one and the same fold — [aantal_dagen_in]'s, which already emits one
+   one and the same fold — [count_days_in]'s, which already emits one
    whole-bucket segment per touched bucket carrying that bucket's true-day
    count. Reusing it is not thrift: it is what keeps "touched" meaning the
    same thing in ch. 3.8 and here.
@@ -250,19 +250,19 @@ let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) li
    satisfying days become the complement inside each of them. The
    QUALIFIER's negation ("niet gedurende …") is not here: it complements
    the folded result, which the caller does. *)
-let geheel_periode_kenmerk (g : Ir_v0.Ast.granulariteit) ~(negatie : bool)
+let entire_period_characteristic (g : Ir_v0.Ast.grain) ~(negation : bool)
     (true_periods : (int * int) list) : bool =
   List.for_all
     (fun s ->
-      let bucket_days = s.s_tot - s.s_van in
+      let bucket_days = s.s_to - s.s_from in
       let true_days =
-        match s.s_waarde with
+        match s.s_value with
         | Num (q, _) -> Q.to_int q
         | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
       in
-      let satisfied = if negatie then bucket_days - true_days else true_days in
+      let satisfied = if negation then bucket_days - true_days else true_days in
       satisfied >= bucket_days)
-    (aantal_dagen_in g true_periods)
+    (count_days_in g true_periods)
 
 (* ch. 3.9, the VALUE test — the same fold over a value timeline instead of
    a characteristic's true-periods:
@@ -270,7 +270,7 @@ let geheel_periode_kenmerk (g : Ir_v0.Ast.granulariteit) ~(negatie : bool)
      geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
                                  satisfied-days(B, toets) >= days(B)
 
-   The two [aantal_dagen_in] folds below are the whole implementation and
+   The two [count_days_in] folds below are the whole implementation and
    the split is the point: the FIRST says which buckets the value timeline
    touches, the SECOND how many days in each of them satisfy [pred]. Taking
    the touched buckets from the SATISFYING days instead — the shape the
@@ -289,28 +289,28 @@ let geheel_periode_kenmerk (g : Ir_v0.Ast.granulariteit) ~(negatie : bool)
 
    The QUALIFIER's own negation ("niet gedurende …") is not here: it
    complements the folded result, which the caller does. *)
-let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.t -> bool) : bool =
-  let segs = List.filter (fun s -> s.s_waarde <> Empty) (normalise tl) in
-  let interval s = (s.s_van, s.s_tot) in
-  let dagen (b : segment) =
-    match b.s_waarde with
+let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) : bool =
+  let segs = List.filter (fun s -> s.s_value <> Empty) (normalise tl) in
+  let interval s = (s.s_from, s.s_to) in
+  let day_count (b : segment) =
+    match b.s_value with
     | Num (q, _) -> Q.to_int q
     | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
   in
-  let geraakt = aantal_dagen_in g (List.map interval segs) in
+  let touched = count_days_in g (List.map interval segs) in
   let goed =
-    aantal_dagen_in g
-      (List.filter_map (fun s -> if pred s.s_waarde then Some (interval s) else None) segs)
+    count_days_in g
+      (List.filter_map (fun s -> if pred s.s_value then Some (interval s) else None) segs)
   in
   List.for_all
     (fun (b : segment) ->
       let satisfied =
-        match List.find_opt (fun (x : segment) -> x.s_van = b.s_van) goed with
-        | Some x -> dagen x
+        match List.find_opt (fun (x : segment) -> x.s_from = b.s_from) goed with
+        | Some x -> day_count x
         | None -> 0
       in
-      satisfied >= b.s_tot - b.s_van)
-    geraakt
+      satisfied >= b.s_to - b.s_from)
+    touched
 
 (* ch. 3.9, the LEEG and GEVULD tests over a value timeline:
 
@@ -321,7 +321,7 @@ let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.
    are the ones the FILLED segments touch: ch. 3.1 makes an explicit leeg
    segment and a gap the same thing under [read], so a bucket only an
    explicit leeg segment reaches is not touched, as in
-   [geheel_periode_waarde] above — the ASP backend cannot write such a
+   [whole_period_value] above — the ASP backend cannot write such a
    segment at all, so this is also where the two executors agree. Every bucket touched this way holds at least one filled day, so
    the leeg fold comes down to "no filled day anywhere" and the grid does
    not change its verdict; it is still computed per bucket, so the code
@@ -330,64 +330,64 @@ let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.
    [gevuld] selects the test after the INNER negation, which is per day:
    "niet leeg" holds on exactly the days "gevuld" does, so the caller passes
    the sister test. The qualifier's own negation is the caller's too. *)
-let geheel_periode_leeg_gevuld (g : Ir_v0.Ast.granulariteit) ~(gevuld : bool) ~(tl : t) : bool =
-  let gevuld_segs = List.filter (fun s -> match s.s_waarde with Empty -> false | _ -> true) (normalise tl) in
+let whole_period_empty_filled (g : Ir_v0.Ast.grain) ~(populated : bool) ~(tl : t) : bool =
+  let filled_segs = List.filter (fun s -> match s.s_value with Empty -> false | _ -> true) (normalise tl) in
   List.for_all
     (fun (b : segment) ->
-      let dagen_b = b.s_tot - b.s_van in
-      let gevulde_dagen =
-        match b.s_waarde with
+      let days_b = b.s_to - b.s_from in
+      let filled_days =
+        match b.s_value with
         | Num (q, _) -> Q.to_int q
         | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
       in
-      let satisfied = if gevuld then gevulde_dagen else dagen_b - gevulde_dagen in
-      satisfied >= dagen_b)
-    (aantal_dagen_in g (List.map (fun s -> (s.s_van, s.s_tot)) gevuld_segs))
+      let satisfied = if populated then filled_days else days_b - filled_days in
+      satisfied >= days_b)
+    (count_days_in g (List.map (fun s -> (s.s_from, s.s_to)) filled_segs))
 
 (* anchored bucket walls: every wall computed directly from the anchor —
    never by incrementing the previous wall — so a month-end anchor
    clamps consistently (ch. 3.2) *)
-let anchored_wall (g : Ir_v0.Ast.granulariteit) ~anchor k =
+let anchored_wall (g : Ir_v0.Ast.grain) ~anchor k =
   match g with
-  | Maand -> add_months anchor k
-  | Jaar -> add_months anchor (12 * k)
+  | Month -> add_months anchor k
+  | Year -> add_months anchor (12 * k)
   | _ -> fault "anchored buckets are defined for month and year only (ch. 3.2)"
 
 (* The grid of attribute [name] of [ot] (the chain-merged type): its facet's
    granularity, count and fixed start point, and a variable start where the
    facet names a timeline declared with one. *)
-let attr_grid (doc : Ir_v0.Ast.document) (ot : Ir_v0.Ast.objecttype) name =
+let attr_grid (doc : Ir_v0.Ast.document) (ot : Ir_v0.Ast.object_type) name =
   let gran =
-    match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
+    match Ir_v0.Checks.find_ci ot.attribute_granularity name with
     | Some (Some g) -> g
     | _ -> fault "temporal attribute %S without a granularity" name
   in
-  let tijdvak = Ir_v0.Checks.find_ci ot.attribuut_tijdlijn_aantal name in
+  let period = Ir_v0.Checks.find_ci ot.attribute_timeline_count name in
   let variable =
-    match Option.join (Ir_v0.Checks.find_ci ot.attribuut_tijdlijn_naam name) with
+    match Option.join (Ir_v0.Checks.find_ci ot.attribute_timeline_names name) with
     | Some n -> (
-        match Ir_v0.Checks.find_tijdlijn { Ir_v0.Checks.doc } n with
-        | Some tl -> tl.variabel_startpunt
+        match Ir_v0.Checks.find_timeline { Ir_v0.Checks.doc } n with
+        | Some tl -> tl.variable_start
         | None -> false)
     | None -> false
   in
   grid_of ~gran
-    ~count:(Option.value (Option.bind tijdvak (fun t -> t.tv_aantal)) ~default:1)
-    ~fixed:(Option.bind tijdvak (fun t -> t.tv_vast_startpunt))
+    ~count:(Option.value (Option.bind period (fun t -> t.tv_count)) ~default:1)
+    ~fixed:(Option.bind period (fun t -> t.tv_fixed_start_point))
     ~variable
 
 (* The grid of a time-dependent parameter; a parameter names no timeline. *)
 let param_grid (p : Ir_v0.Ast.parameter) =
-  match p.par_granulariteit with
+  match p.par_granularity with
   | Some gran ->
-      grid_of ~gran ~count:(Option.value p.par_tijdlijn_aantal ~default:1) ~fixed:p.par_vast_startpunt
+      grid_of ~gran ~count:(Option.value p.par_timeline_count ~default:1) ~fixed:p.par_fixed_start_point
         ~variable:false
-  | None -> fault "parameter %S has no timeline" (Option.value p.par_naam ~default:"")
+  | None -> fault "parameter %S has no timeline" (Option.value p.par_name ~default:"")
 
 (* --- cut sets ----------------------------------------------------------- *)
 
 let cuts (tls : t list) : int list =
-  List.concat_map (fun tl -> List.concat_map (fun s -> [ s.s_van; s.s_tot ]) tl) tls
+  List.concat_map (fun tl -> List.concat_map (fun s -> [ s.s_from; s.s_to ]) tl) tls
   |> List.sort_uniq compare
 
 (* adjacent result segments with equal values coalesce (ch. 3.4/3.5) *)
@@ -395,8 +395,8 @@ let coalesce (segs : t) : t =
   List.fold_left
     (fun acc s ->
       match acc with
-      | prev :: rest when prev.s_tot = s.s_van && Arith.equal prev.s_waarde s.s_waarde ->
-          { prev with s_tot = s.s_tot } :: rest
+      | prev :: rest when prev.s_to = s.s_from && Arith.equal prev.s_value s.s_value ->
+          { prev with s_to = s.s_to } :: rest
       | _ -> s :: acc)
     [] (normalise segs)
   |> List.rev
@@ -411,7 +411,7 @@ let cut_merge op (a : t) (b : t) : t =
   List.map
     (fun (c1, c2) ->
       let va = read a c1 and vb = read b c1 in
-      { s_van = c1; s_tot = c2; s_waarde = op va vb })
+      { s_from = c1; s_to = c2; s_value = op va vb })
     (pairs cs)
   |> coalesce
 
@@ -424,7 +424,7 @@ let min_ = cut_merge Arith.sub_min
    before the fold (exact factors, ch. 2.6). Zero contributors yield the
    empty timeline, fallback or not; all-leeg periods the fallback does
    not fill are emitted as explicit leeg segments. *)
-let som ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
+let summed ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
   match tls with
   | [] -> []
   | _ ->
@@ -447,7 +447,7 @@ let som ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
             | [] -> ( match fallback with Some f -> f | None -> Empty)
             | first :: rest -> List.fold_left Arith.add first rest
           in
-          { s_van = c1; s_tot = c2; s_waarde = v })
+          { s_from = c1; s_to = c2; s_value = v })
         (pairs cs)
       |> coalesce
 
@@ -463,9 +463,9 @@ let clip (tl : t) (true_periods : (int * int) list) : t =
   List.concat_map
     (fun s ->
       List.filter_map
-        (fun (van, tot) ->
-          let v = max s.s_van van and t = min s.s_tot tot in
-          if t > v then Some { s with s_van = v; s_tot = t } else None)
+        (fun (van, up_to) ->
+          let v = max s.s_from van and t = min s.s_to up_to in
+          if t > v then Some { s with s_from = v; s_to = t } else None)
         true_periods)
     tl
 
@@ -474,7 +474,7 @@ let clip (tl : t) (true_periods : (int * int) list) : t =
    rules apply per period — leeg satisfies ≠ against a filled bound) *)
 let true_periods_of (tested : t) ~(span : (int * int) list) (pred : Value.t -> bool) :
     (int * int) list =
-  let span_tl = List.map (fun (v, t) -> { s_van = v; s_tot = t; s_waarde = Bool true }) span in
+  let span_tl = List.map (fun (v, t) -> { s_from = v; s_to = t; s_value = Bool true }) span in
   let cs = cuts [ tested; span_tl ] in
   let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
   List.filter_map (fun (c1, c2) -> if pred (read tested c1) then Some (c1, c2) else None) (pairs cs)
@@ -515,23 +515,23 @@ let complement (true_periods : (int * int) list) ~(span : (int * int) list) : (i
     span
 
 (* the time unit the granularity's grid counts in (ch. 3.2 job 1) *)
-let granularity_time_unit : Ir_v0.Ast.granulariteit -> Ir_v0.Checks.time_unit = function
-  | Dag -> Tu_dag
+let granularity_time_unit : Ir_v0.Ast.grain -> Ir_v0.Checks.time_unit = function
+  | Day -> Tu_day
   | Week -> Tu_week
-  | Maand -> Tu_maand
-  | Kwartaal -> Tu_kwartaal
-  | Jaar -> Tu_jaar
+  | Month -> Tu_month
+  | Quarter -> Tu_quarter
+  | Year -> Tu_year
 
 let time_unit_name : Ir_v0.Checks.time_unit -> string = function
-  | Tu_jaar -> "jr"
-  | Tu_kwartaal -> "kw"
-  | Tu_maand -> "mnd"
+  | Tu_year -> "jr"
+  | Tu_quarter -> "kw"
+  | Tu_month -> "mnd"
   | Tu_week -> "wk"
-  | Tu_dag -> "dg"
-  | Tu_uur -> "u"
-  | Tu_minuut -> "min"
-  | Tu_seconde -> "sec"
-  | Tu_milliseconde -> "ms"
+  | Tu_day -> "dg"
+  | Tu_hour -> "u"
+  | Tu_minute -> "min"
+  | Tu_second -> "sec"
+  | Tu_millisecond -> "ms"
 
 (* The unit RECORD of a granularity's grid (ch. 3.6, the integration
    below). The grid counts in a calendar unit, but the exact conversion
@@ -543,21 +543,21 @@ let time_unit_name : Ir_v0.Checks.time_unit -> string = function
    totals in a document that declares no time unit at all. Two systems
    spelling the same grid unit with different canonical chains give the
    fold no single grid — loud, never a first-match guess. *)
-let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.granulariteit) :
-    (Ir_v0.Ast.eenheid, string) result =
-  let want = granularity_time_unit g in
+let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.grain) :
+    (Ir_v0.Ast.measure_unit, string) result =
+  let because = granularity_time_unit g in
   let candidates =
     List.concat_map
-      (fun (_, (es : Ir_v0.Ast.eenheidstelsel)) ->
-        List.map (fun (d : Ir_v0.Ast.gedeclareerde_eenheid) -> d.ge_eenheid) es.eenheden)
-      doc.eenheidstelsels
-    |> List.filter (fun (e : Ir_v0.Ast.eenheid) ->
-           e.noemer = None && Ir_v0.Checks.time_unit_of_eenheid e = Some want)
+      (fun (_, (es : Ir_v0.Ast.unit_system)) ->
+        List.map (fun (d : Ir_v0.Ast.declared_unit) -> d.ge_unit) es.unit_list)
+      doc.unit_systems
+    |> List.filter (fun (e : Ir_v0.Ast.measure_unit) ->
+           e.denominator = None && Ir_v0.Checks.time_unit_of_unit e = Some because)
   in
   (* the factor as the rational it is, so two spellings of one value are
      one grid *)
-  let key (e : Ir_v0.Ast.eenheid) =
-    (Option.map Ir_v0.Checks.norm e.canoniek, Option.map Arith.rational e.factor_naar_canoniek)
+  let key (e : Ir_v0.Ast.measure_unit) =
+    (Option.map Ir_v0.Checks.norm e.canonical_form, Option.map Arith.rational e.factor_to_canonical)
   in
   match (candidates, List.sort_uniq compare (List.map key candidates)) with
   | e :: _, [ _ ] -> Ok e
@@ -566,13 +566,13 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.granulariteit) :
         (Printf.sprintf
            "the document declares no %s unit, so this timeline's grid has no unit to integrate \
             against (ch. 3.6)"
-           (time_unit_name want))
+           (time_unit_name because))
   | _, ks ->
       Error
         (Printf.sprintf
            "the document declares %d different %s units, so this timeline's grid has no single \
             unit to integrate against (ch. 3.6)"
-           (List.length ks) (time_unit_name want))
+           (List.length ks) (time_unit_name because))
 
 (* the multiplier of one segment (ch. 3.6 "Units"): a plain or unitless
    value is weighted by a bare count, but a RATE value is INTEGRATED —
@@ -584,32 +584,32 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.granulariteit) :
    declared factor). A denominator the declarations do not connect to the
    grid unit is refused loudly, naming BOTH units: no executor may invent
    a factor nobody declared. *)
-let duration ?(grid_unit : (Ir_v0.Ast.eenheid, string) result option) units (v : Value.t) : Value.t
+let duration ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units (v : Value.t) : Value.t
     =
   let plain = Num (Q.of_int units, Unitless) in
   match v with
-  | Num (_, Unit ({ noemer = Some noemer; _ } as u)) -> (
+  | Num (_, Unit ({ denominator = Some denominator; _ } as u)) -> (
       match grid_unit with
       | None ->
           fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
             (Arith.show_unit (Unit u))
       | Some (Error why) -> fault "the temporal total of a %s value: %s" (Arith.show_unit (Unit u)) why
       | Some (Ok gu) ->
-          if Arith.convertible noemer gu then Num (Q.of_int units, Unit gu)
+          if Arith.convertible denominator gu then Num (Q.of_int units, Unit gu)
           else
             fault
               "the temporal total of a %s value cannot integrate over a %s grid: the declarations \
                connect no conversion between its denominator and the grid unit (ch. 3.6)"
               (Arith.show_unit (Unit u))
-              (Arith.show_eenheid gu))
+              (Arith.display_unit gu))
   (* a value unit without a denominator keeps the plain rule, and so does
      a unitless value. A Product is built ONLY by Arith.mul out of two
      denominator-free units, so it never carries a denominator either —
      the guard below is the fail-fast for a representation change that
      would silently drop one. *)
-  | Num (_, Unit { noemer = None; _ }) | Num (_, Unitless) -> plain
+  | Num (_, Unit { denominator = None; _ }) | Num (_, Unitless) -> plain
   | Num (_, Product (a, b)) ->
-      if a.noemer <> None || b.noemer <> None then
+      if a.denominator <> None || b.denominator <> None then
         fault "the temporal total of a %s value: a unit product with a denominator has no \
                integration rule (ch. 3.6)"
           (Arith.show_unit (Product (a, b)));
@@ -621,13 +621,13 @@ let duration ?(grid_unit : (Ir_v0.Ast.eenheid, string) result option) units (v :
    leeg case is the caller's, ch. 3.6). [grid_unit] is resolved once per
    fold by the caller (it needs the document); its absence only bites a
    rate-valued segment. *)
-let totaal ?grid_unit (g : Ir_v0.Ast.granulariteit) (tl : t) : Value.t =
+let grand_total ?grid_unit (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
   List.fold_left
     (fun acc s ->
-      match s.s_waarde with
+      match s.s_value with
       | Empty -> acc
       | v ->
-          let units = whole_units g s.s_van s.s_tot in
+          let units = whole_units g s.s_from s.s_to in
           Arith.add acc (Arith.mul v (duration ?grid_unit units v)))
     (Num (Q.zero, Unitless))
     (normalise tl)

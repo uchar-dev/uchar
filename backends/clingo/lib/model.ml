@@ -178,11 +178,11 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
     let d =
       match Ir_v0.Checks.effective_ot doc ot with
       | Some otd -> (
-          match Ir_v0.Checks.find_ci otd.attributen attr with
+          match Ir_v0.Checks.find_ci otd.attributes attr with
           | Some dt -> (
               match dt with
-              | Some (Numeriek { decimalen; _ } | Percentage { decimalen; _ }) -> decimalen
-              | Some Datum_in_dagen -> 0
+              | Some (Number { decimal_places; _ } | Percentage { decimal_places; _ }) -> decimal_places
+              | Some Date_in_days -> 0
               | _ -> fault "unscalable expected datatype")
           | None -> fault "unknown expected attribute %S" attr)
       | None -> fault "unknown object type %S" ot
@@ -208,16 +208,16 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
   let ctor_expect ~label ~attr (v : Value.t) : term =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
-    let constructoren =
+    let constructor_list =
       match Ir_v0.Checks.effective_ot doc ot with
       | Some otd -> (
-          match Ir_v0.Checks.find_ci otd.attributen attr with
-          | Some (Some (Sum_type { constructoren; _ })) -> constructoren
+          match Ir_v0.Checks.find_ci otd.attributes attr with
+          | Some (Some (Sum_type { constructor_list; _ })) -> constructor_list
           | _ -> fault "a constructor value expected on the non-sum-typed attribute %S" attr)
       | None -> fault "unknown object type %S" ot
     in
     match v with
-    | Value.Ctor (tag, payload) -> parse_term (Translate.ctor_value_term constructoren (tag, payload))
+    | Value.Ctor (tag, payload) -> parse_term (Translate.ctor_value_term constructor_list (tag, payload))
     | _ -> fault "ctor_expect on a non-constructor value"
   in
   (* the record-value expectation (RUNTIME-SEMANTICS ch. 11.3): built by the
@@ -229,48 +229,48 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
   let struct_expect ~label ~attr (v : Value.t) : term =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
-    let domein, velden =
+    let domain_spec, field_list =
       match Ir_v0.Checks.effective_ot doc ot with
       | Some otd -> (
-          match Ir_v0.Checks.find_ci otd.attributen attr with
-          | Some (Some (Struct_type { domein; velden })) -> (domein, velden)
+          match Ir_v0.Checks.find_ci otd.attributes attr with
+          | Some (Some (Struct_type { domain_spec; field_list })) -> (domain_spec, field_list)
           | _ -> fault "a record value expected on the non-struct-typed attribute %S" attr)
       | None -> fault "unknown object type %S" ot
     in
     match v with
-    | Value.Record fs -> parse_term (Translate.struct_value_term (domein, velden) fs)
+    | Value.Record fs -> parse_term (Translate.struct_value_term (domain_spec, field_list) fs)
     | _ -> fault "struct_expect on a non-record value"
   in
   List.filter_map
     (fun (e : Case.expectation) ->
       match e with
       | Attribute_value { label; attr; value = Value.Ctor _ as value } -> (
-          let want = ctor_expect ~label ~attr value in
+          let because = ctor_expect ~label ~attr value in
           match term_of model label attr with
-          | [ got ] when got = want -> None
+          | [ got ] when got = because -> None
           | [] ->
               Some
                 (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
-                   (render_term want))
+                   (render_term because))
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_term got))
-                   (render_term want)))
+                   (render_term because)))
       | Attribute_value { label; attr; value = Value.Record _ as value } -> (
-          let want = struct_expect ~label ~attr value in
+          let because = struct_expect ~label ~attr value in
           match term_of model label attr with
-          | [ got ] when got = want -> None
+          | [ got ] when got = because -> None
           | [] ->
               Some
                 (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
-                   (render_term want))
+                   (render_term because))
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_term got))
-                   (render_term want)))
-      | Attribute_value { value = Value.Lijst _; _ } ->
+                   (render_term because)))
+      | Attribute_value { value = Value.List_value _; _ } ->
           (* ch. 10.5: a list-valued expectation has no corpus case — the
              reified list rides internal lelem/lpres, never a shown val/3, so
              a structural list comparison is not built until a case wants one
@@ -285,46 +285,46 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
              pattern). A boolean expectation reads the val/3 carriage
              (waar/onwaar), never heeft/2 — mirroring ref, which checks the
              attribute slot, not the characteristic set. *)
-          let want = arg_of_term (parse_term (Translate.symbolic_value_term value)) in
+          let because = arg_of_term (parse_term (Translate.symbolic_value_term value)) in
           match val_present model label attr with
-          | [ got ] when got = want -> None
+          | [ got ] when got = because -> None
           | [] ->
               Some
                 (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
-                   (render_arg want))
+                   (render_arg because))
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_arg got))
-                   (render_arg want)))
+                   (render_arg because)))
       | Attribute_value { label; attr; value = Value.Date_time t } -> (
           (* ch. 3.8 the millisecond layer: a datum-tijd expectation is the
              pair term dt(D, MS), built by the SAME split the translator emits
              (Translate.datetime_term) and parsed by the SAME term parser — one
              source of truth, a structural term equality with no independent
              scaling path to drift (the ctor/struct pattern) *)
-          let want = parse_term (Translate.datetime_term t) in
+          let because = parse_term (Translate.datetime_term t) in
           match term_of model label attr with
-          | [ got ] when got = want -> None
+          | [ got ] when got = because -> None
           | [] ->
               Some
                 (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
-                   (render_term want))
+                   (render_term because))
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_term got))
-                   (render_term want)))
+                   (render_term because)))
       | Attribute_value { label; attr; value } -> (
-          let want = scaled_expect ~label ~attr value in
+          let because = scaled_expect ~label ~attr value in
           match val_of model label attr with
-          | [ got ] when got = want -> None
-          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %d" label attr want)
+          | [ got ] when got = because -> None
+          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %d" label attr because)
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %d" label attr
                    (String.concat ";" (List.map string_of_int got))
-                   want))
+                   because))
       | Attribute_empty { label; attr } -> (
           match val_present model label attr with
           | [] -> None
@@ -336,10 +336,10 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           (* segment-exact: the model's tl/5 atoms for this attribute
              (derived plus any case-supplied) must equal the expected
              list, values scaled by the declared decimals *)
-          let want =
+          let because =
             List.map
               (fun (s : Uchar_ref.Timeline.segment) ->
-                (s.s_van, s.s_tot, scaled_expect ~label ~attr s.s_waarde))
+                (s.s_from, s.s_to, scaled_expect ~label ~attr s.s_value))
               tl
           in
           let got =
@@ -353,7 +353,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               model
             |> List.sort compare
           in
-          if got = want then None
+          if got = because then None
           else
             let render l =
               if l = [] then "(empty)"
@@ -363,12 +363,12 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
             in
             Some
               (Printf.sprintf "%s.%s timeline = %s, expected %s" label attr (render got)
-                 (render want))
+                 (render because))
       | Char_present { label; char } ->
-          if has model "heeft" [ A_str label; A_str (norm char) ] then None
+          if has model "has" [ A_str label; A_str (norm char) ] then None
           else Some (Printf.sprintf "%s lacks characteristic %S" label char)
       | Char_absent { label; char } ->
-          if has model "heeft" [ A_str label; A_str (norm char) ] then
+          if has model "has" [ A_str label; A_str (norm char) ] then
             Some (Printf.sprintf "%s carries characteristic %S, expected absent" label char)
           else None
       | Consistent -> (
@@ -385,12 +385,12 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                | [ A_str r; subj ] ->
                    (match rule with
                    | None -> true
-                   | Some want ->
+                   | Some because ->
                        (* version-stripped on both sides, like ref's
                           checker: the channel key is version-stripped
                           (ch. 5.6) *)
                        norm (Ir_v0.Checks.strip_version r)
-                       = norm (Ir_v0.Checks.strip_version want))
+                       = norm (Ir_v0.Checks.strip_version because))
                    && (match label with
                       | None -> true
                       | Some l -> ( match subj with A_str s -> String.equal s l | _ -> false))
@@ -398,7 +398,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           in
           if List.exists matches model then None
           else
-            let want =
+            let because =
               match (rule, label) with
               | None, _ -> "any inconsistent fact"
               | Some r, None -> Printf.sprintf "an inconsistent fact from rule %S" r
@@ -414,6 +414,6 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 model
             in
             Some
-              (Printf.sprintf "expected inconsistent (%s), but the model carries: %s" want
+              (Printf.sprintf "expected inconsistent (%s), but the model carries: %s" because
                  (if carried = [] then "(none)" else String.concat "; " carried)))
     case.expected

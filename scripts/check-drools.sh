@@ -142,13 +142,13 @@ if [ "$FAST" -eq 0 ]; then
   # red case, that card drl-teksttak-op-truth-maintenance put in the suite (the owner's decision on norm question 1
   # of its fourth Fable advice), where the sweep below compares status lines only; so this build must have run
   # both its rows, by name, as its surefire report written after the build began says.
-  takdumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.BranchDumpsCorpusWitnessTest.xml
-  [ -f "$takdumps" ] && [ "$takdumps" -nt "$suite_begin" ] \
-    || fail "TakdumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $takdumps) — the suite's comparison of the two branches per case is required"
-  for rij in every_case_of_every_played_golden_has_the_same_dump_on_both_branches \
+  branch_dumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.BranchDumpsCorpusWitnessTest.xml
+  [ -f "$branch_dumps" ] && [ "$branch_dumps" -nt "$suite_begin" ] \
+    || fail "TakdumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $branch_dumps) — the suite's comparison of the two branches per case is required"
+  for table_row in every_case_of_every_played_golden_has_the_same_dump_on_both_branches \
              every_red_case_gives_the_same_red_result_on_both_branches; do
-    grep -q "<testcase name=\"$rij\"" "$takdumps" \
-      || fail "TakdumpsCorpusWitnessTest ran without its row '$rij' — the comparison of the two branches per case is required whole"
+    grep -q "<testcase name=\"$table_row\"" "$branch_dumps" \
+      || fail "TakdumpsCorpusWitnessTest ran without its row '$table_row' — the comparison of the two branches per case is required whole"
   done
 fi
 
@@ -462,8 +462,8 @@ EXPECTED_CHANNEL=(
 # is: the point of a source twin is that the SAME expectations hold over the emitted document, and
 # a refusal here would leave the second language's document outside the square its two siblings sit
 # inside. It also pins one shape the other two goldens do not: a to-many role that carries no
-# declared plural (F-logic has no grammatical number), so the case files key on `Rol.naam` where the
-# RegelSpraak twin has them keying on `Rol.meervoud`.
+# declared plural (F-logic has no grammatical number), so the case files key on `Rol.ident` where the
+# RegelSpraak twin has them keying on `Rol.plural`.
 # 133 -> 134 (2026-09-12, card drools-facet-keten): `jutterswet-erfwacht`, the first golden in which a
 # SUBTYPE instance carries an INHERITED TEMPORAL member — a monthly attribute and a monthly
 # characteristic declared on Jutter, folded from a Klipjutter subject. Until this card the loader
@@ -555,7 +555,7 @@ EXPECTED_CHANNEL=(
 # 2026-09-16 (card diedat-filter), 143 -> 144: `jutterswet-keurploeg` joins as a NEW PLAYER — the
 # ch. 3.9a quantifier fold with the §5.6 die/dat SUBSELECTION on its range, which the RegelSpraak
 # frontend now emits instead of dropping. No arm grew for it: this backend already constrained the
-# accumulate SOURCE with `Kwantorvouw.filter` exactly as it constrains `Expr.Functie.filter`, and the
+# accumulate SOURCE with `Quantifier_fold.filter` exactly as it constrains `Expr.Function_call.filter`, and the
 # golden's seven cells (three of which the filter alone decides) confirm it against ref and clingo.
 # 2026-09-16 (card diedat-filter), 144 -> 145: `jutterswet-keurlast` joins as a NEW PLAYER — the
 # per-element temporal fold with a die/dat subselection, where the member OUTSIDE the selection
@@ -820,7 +820,7 @@ EXPECTED_CHANNEL=(
 # 176 -> 177 (2026-09-22, fix round 3): jutterswet-uniekwantor, the same order law along a different
 # SPELLING of the negation. A compound with GEEN / TEN_HOOGSTE / PRECIES is negation-like
 # (RUNTIME-SEMANTICS ch. 6.1, and the verifier's dep_cond implements it in those words), and the walk
-# that found the fold-filter reads read polarity out of Kenmerk.negatie() alone — so "aan GEEN van de
+# that found the fold-filter reads read polarity out of Kenmerk.negation() alone — so "aan GEEN van de
 # volgende voorwaarden voldoen: gemerkt zijn" produced a POSITIVE read and left the consumer in band 0.
 # Measured on this document before the repair: ref and the ASP backend PASS with 11 expectations, both
 # Drools branches `verwacht afwezig, werkelijk aanwezig`. The walk now carries a conservative negation
@@ -1364,31 +1364,31 @@ EXPECTED_PLAYED=255
 #       is not a pin at all: it agrees with whatever that golden measures.
 # The DRL list arrived 2026-09-19 with the same two holes, which is why this is now one checker over
 # both rather than a second copy: the set of legal channels differs per list and nothing else does.
-keur_kanaallijst() {   # <list name> <legal channels> <entry>...
-  local lijst="$1" toegestaan="$2"; shift 2
+check_channel_list() {   # <list name> <legal channels> <entry>...
+  local element_list="$1" allowed="$2"; shift 2
   local e n rest ch why p k ok
-  local -a gezien=()
+  local -a seen_before=()
   for e in "$@"; do
     n="${e%%|*}"; rest="${e#*|}"; ch="${rest%%|*}"; why="${rest#*|}"
-    for p in "${gezien[@]:-}"; do
+    for p in "${seen_before[@]:-}"; do
       if [ "$p" = "$n" ]; then
-        fail "duplicate channel pin: '$n' appears more than once in $lijst — the first entry silently wins and the rest is dead text (a contradictory second pin would never be read)"
+        fail "duplicate channel pin: '$n' appears more than once in $element_list — the first entry silently wins and the rest is dead text (a contradictory second pin would never be read)"
       fi
     done
-    gezien+=("$n")
+    seen_before+=("$n")
     # Token equality, not a substring test over the joined string: a substring test accepts a pin
     # spelled "EXCLUDE DIVERGE", which the inline `case` this function replaced rejected. Such a pin
     # would still fail later on the drift comparison, so the hole was harmless — but a guard that is
     # strictly weaker than the one it replaces is not a guard, it is a regression with a green light.
     ok=0
-    for k in $toegestaan; do [ "$ch" = "$k" ] && ok=1; done
-    [ $ok -eq 1 ] || fail "malformed channel pin: '$n' is pinned '$ch' in $lijst — the list holds only NON-players ($toegestaan); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it"
+    for k in $allowed; do [ "$ch" = "$k" ] && ok=1; done
+    [ $ok -eq 1 ] || fail "malformed channel pin: '$n' is pinned '$ch' in $element_list — the list holds only NON-players ($allowed); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it"
     if [ -z "$why" ] || [ "$why" = "$rest" ]; then
-      fail "channel pin without a reason: '$n' in $lijst — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
+      fail "channel pin without a reason: '$n' in $element_list — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
     fi
   done
 }
-keur_kanaallijst EXPECTED_CHANNEL "EXCLUDE DIVERGE NOCASE" "${EXPECTED_CHANNEL[@]}"
+check_channel_list EXPECTED_CHANNEL "EXCLUDE DIVERGE NOCASE" "${EXPECTED_CHANNEL[@]}"
 
 expected_channel() {
   local n="$1" rest
@@ -1469,8 +1469,8 @@ done
 declare -a DRIFT=()
 for s in "${SEEN[@]:-}"; do
   [ -n "$s" ] || continue
-  n="${s%%|*}"; actual="${s#*|}"; want=$(expected_channel "$n")
-  [ "$actual" = "$want" ] || DRIFT+=("$n :: pinned $want, measured $actual")
+  n="${s%%|*}"; actual="${s#*|}"; because=$(expected_channel "$n")
+  [ "$actual" = "$because" ] || DRIFT+=("$n :: pinned $because, measured $actual")
 done
 if [ ${#DRIFT[@]} -gt 0 ]; then
   echo "check-drools: FAIL — ${#DRIFT[@]} golden(s) changed channel (the expected-channel floor):" >&2
@@ -1546,8 +1546,8 @@ while IFS= read -r ir; do
     fi
   fi
   drl_seen=$((drl_seen + 1))
-  want=$(exec_line "$name") || fail "the DRL-text sweep met '$name', which the exec-model sweep did not record — the two sweeps walk different corpora"
-  [ "$out" = "$want" ] || DRL_DRIFT+=("$name :: exec-model '$want' | drl-text '$out'")
+  because=$(exec_line "$name") || fail "the DRL-text sweep met '$name', which the exec-model sweep did not record — the two sweeps walk different corpora"
+  [ "$out" = "$because" ] || DRL_DRIFT+=("$name :: exec-model '$because' | drl-text '$out'")
 done < <(find corpus/golden -name ir.json | sort)
 # computed BEFORE the checks, and printed here: a FAILING sweep costs exactly as much as a passing
 # one, so hiding the figure behind a pass would hide it from the run that most wants to know it.

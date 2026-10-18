@@ -76,8 +76,8 @@ let got j =
   if String.length s <= max then s
   else
     (* back off to the first byte of the character the cut would split *)
-    let rec grens i = if i > 0 && Char.code s.[i] land 0xC0 = 0x80 then grens (i - 1) else i in
-    String.sub s 0 (grens max) ^ "\xe2\x80\xa6"
+    let rec boundary i = if i > 0 && Char.code s.[i] land 0xC0 = 0x80 then boundary (i - 1) else i in
+    String.sub s 0 (boundary max) ^ "\xe2\x80\xa6"
 let obj ~at = function `Assoc kvs -> kvs | j -> fail "%s: expected an object, got %s" (where at) (got j)
 let str ~at = function `String s -> s | j -> fail "%s: expected a string, got %s" (where at) (got j)
 let list_ ~at = function `List l -> l | j -> fail "%s: expected a list, got %s" (where at) (got j)
@@ -190,8 +190,8 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
   (* the variant's JSON string, positioned at the variant key *)
   let as_string () = str ~at:(child at variant) v in
   match (variant, decl) with
-  | "number", Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }) ->
-      let u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
+  | "number", Some (Number { measure_unit; _ } | Percentage { measure_unit; _ }) ->
+      let u = match measure_unit with Some e -> Value.Unit e | None -> Value.Unitless in
       Value.Num (number_at ~at (as_string ()), u)
   (* WF-059 backstop: a value against a datatype-less declaration would
      split the executors (ref would read a bare unitless number where
@@ -199,22 +199,22 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
      refuses it in both, last-line behind the verifier's rejection *)
   | "number", None ->
       fail "%s: a value against a declaration without a datatype" at
-  | "date", Some Datum_in_dagen -> date_at ~at (as_string ())
-  | "dateTime", Some Datum_tijd -> datetime_at ~at (as_string ())
-  | "boolean", Some Booleaan -> (
+  | "date", Some Date_in_days -> date_at ~at (as_string ())
+  | "dateTime", Some Date_time_type -> datetime_at ~at (as_string ())
+  | "boolean", Some Boolean -> (
       match v with
       | `Bool b -> Value.Bool b
       | j -> fail "%s: expected true or false, got %s" (child at variant) (got j))
-  | "text", Some Tekst -> Value.Text (as_string ())
-  | "enumeration", Some (Enumeratie { waarden; _ }) ->
+  | "text", Some Text_type -> Value.Text (as_string ())
+  | "enumeration", Some (Enumeration { label_list; _ }) ->
       let s = as_string () in
-      if List.exists (function Some w -> norm w = norm s | None -> false) waarden then Value.Enum s
+      if List.exists (function Some w -> norm w = norm s | None -> false) label_list then Value.Enum s
       else fail "%s: %S is not a declared enumeration value" at s
   (* the list value form of §2.5 (RUNTIME-SEMANTICS ch. 10.5): each element
      loads recursively against the declared element datatype, in order; a
      null/leeg element is refused — list positions are never leeg (ch. 10.1) *)
   | "list", Some (List_type { element }) ->
-      Value.Lijst
+      Value.List_value
         (List.mapi
            (fun i ej ->
              match ej with
@@ -231,11 +231,11 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
      fields, in declaration order, each loaded recursively against its field
      datatype. Fail fast on a missing, extra, wrong-typed or leeg field — the
      no-hole rule at the boundary (the WF-059/WF-018 backstop, widened). *)
-  | "struct", Some (Struct_type { velden; _ }) ->
+  | "struct", Some (Struct_type { field_list; _ }) ->
       let field_kvs = obj ~at:(child at variant) v in
-      if List.length field_kvs <> List.length velden then
+      if List.length field_kvs <> List.length field_list then
         fail "%s: record supplies %d fields, the struct declares %d" at (List.length field_kvs)
-          (List.length velden);
+          (List.length field_list);
       Value.Record
         (List.map
            (fun (fname, fdt) ->
@@ -244,7 +244,7 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
              | Some (_, `Null) ->
                  fail "%s.%s: a record field is leeg; record fields are never leeg (ch. 11.1)" at fname
              | Some (_, fj) -> (fname, value_of_json ~at:(at ^ "." ^ fname) (Some fdt) fj))
-           velden)
+           field_list)
   (* WF-059/WF-018 backstop, widened to the record value *)
   | "struct", None ->
       fail "%s: a value against a declaration without a datatype" at
@@ -259,8 +259,8 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
 and constructor_of_json ~at (decl : datatype option) kvs ctor_j : Value.t =
   let tag = str ~at:(child at "constructor") ctor_j in
   match decl with
-  | Some (Sum_type { constructoren; _ }) -> (
-      match List.find_opt (fun (name, _) -> norm name = norm tag) constructoren with
+  | Some (Sum_type { constructor_list; _ }) -> (
+      match List.find_opt (fun (name, _) -> norm name = norm tag) constructor_list with
       | None -> fail "%s: %S is not a declared constructor of the sum type" at tag
       | Some (_, payload_decl) -> (
           match (payload_decl, List.assoc_opt "payload" kvs) with
@@ -296,7 +296,7 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
      case, and the sentence says so: a day grid holds every boundary and is
      refused all the same. Until 2026-09-23 the bucketing's own fault left the
      loader here unconverted, as an evaluation fault without a position. *)
-  let geen_rooster grid =
+  let no_grid grid =
     fail
       "%s: the declared grid is %s, and v0 defines calendar buckets for month and year only \
        (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no %s grid to check the \
@@ -314,7 +314,7 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
        case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, \
        not as a defect of the case"
       at grid.g_count (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity grid.g_gran);
-  if grid.g_start = Timeline.Variabel then
+  if grid.g_start = Timeline.Variable then
     fail
       "%s: the declared grid is laid per object from the anchor of a variable start, which this \
        loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect \
@@ -323,43 +323,43 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
   let gran = grid.g_gran in
   let aligned d =
     match (grid.g_start, gran) with
-    | (Timeline.Vast_datum _ | Timeline.Vast_dag_maand _), _ ->
+    | (Timeline.Fixed_date _ | Timeline.Fixed_day_month _), _ ->
         let van, _ = Timeline.grid_bucket grid d in
         van = d
-    | _, (Maand | Jaar) ->
+    | _, (Month | Year) ->
         let van, _ = Timeline.bucket gran d in
         van = d
-    | _, Dag ->
+    | _, Day ->
         fail
           "%s: the declared grid is day, which every day boundary sits on, yet this loader checks \
            a timeline's grid through the calendar bucketing and v0 defines buckets for month and \
            year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
            a defect of the case"
           at
-    | _, Week -> geen_rooster "week"
-    | _, Kwartaal -> geen_rooster "quarter"
+    | _, Week -> no_grid "week"
+    | _, Quarter -> no_grid "quarter"
   in
   let parsed =
     List.mapi
       (fun i sj ->
         let seg = Printf.sprintf "%s.timeline[%d]" at i in
         let kvs = obj ~at:seg sj in
-        let grens what = day_at ~at:(child seg what) (str_field ~at:seg kvs what) in
-        let van = grens "from" in
-        let tot = grens "to" in
-        if tot <= van then fail "%s: segment 'to' must lie after 'from'" seg;
-        if not (aligned van && aligned tot) then
+        let boundary what = day_at ~at:(child seg what) (str_field ~at:seg kvs what) in
+        let van = boundary "from" in
+        let up_to = boundary "to" in
+        if up_to <= van then fail "%s: segment 'to' must lie after 'from'" seg;
+        if not (aligned van && aligned up_to) then
           fail "%s: segment boundaries must sit on the declared granularity grid" seg;
         {
-          Timeline.s_van = van;
-          s_tot = tot;
-          s_waarde = value_of_json ~at:(child seg "value") decl (field ~at:seg kvs "value");
+          Timeline.s_from = van;
+          s_to = up_to;
+          s_value = value_of_json ~at:(child seg "value") decl (field ~at:seg kvs "value");
         })
       segs
   in
   let rec check_order = function
     | a :: (b : Timeline.segment) :: rest ->
-        if a.Timeline.s_tot > b.s_van then
+        if a.Timeline.s_to > b.s_from then
           fail "%s: timeline segments must be ordered and non-overlapping" at;
         check_order (b :: rest)
     | _ -> ()
@@ -376,7 +376,7 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
    member is delivered and expected exactly like an own one. A case
    instance names its CONCRETE type in `objectType`; the chain is what the
    document adds to it, never something the case restates. *)
-let find_objecttype (doc : document) name =
+let find_object_type (doc : document) name =
   match Ir_v0.Checks.effective_ot doc name with
   | Some ot -> ot
   | None -> fail "instance objectType %S is not declared" name
@@ -390,26 +390,26 @@ let find_objecttype (doc : document) name =
 let resolve_role_ft (doc : document) ~otype ~key =
   let hits =
     List.concat_map
-      (fun (_, (ft : feittype)) ->
+      (fun (_, (ft : fact_type_name)) ->
         (* the declared filler type is an UPPER bound (ch. 2.6): an
            instance of S fills every role declared at a T with S ⊑ T *)
-        let fills (r : rol) =
+        let fills (r : role_ref) =
           Ir_v0.Checks.subtype_of doc ~sub:otype
-            ~super:(Option.value r.rol_objecttype_naam ~default:"")
+            ~super:(Option.value r.role_object_type_name ~default:"")
         in
-        let matches (r : rol) =
-          (match r.rol_naam with Some n -> norm n = norm key | None -> false)
-          || (match r.rol_meervoud with Some m -> norm m = norm key | None -> false)
+        let matches (r : role_ref) =
+          (match r.role_identifier with Some n -> norm n = norm key | None -> false)
+          || (match r.role_plural with Some m -> norm m = norm key | None -> false)
         in
-        match ft.rollen with
+        match ft.role_names with
         | [ a; b ] ->
             (if fills a && matches b then [ (ft, b, a) ] else [])
             @ if fills b && matches a then [ (ft, a, b) ] else []
-        | [ r ] when ft.wederkerig ->
+        | [ r ] when ft.reciprocal ->
             (* reciprocal: the single role is its own opposite *)
             if fills r && matches r then [ (ft, r, r) ] else []
         | _ -> [])
-      doc.feittypen
+      doc.fact_types
   in
   match hits with
   | [ p ] -> p
@@ -427,22 +427,22 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
      is written after its label: an empty one used to load and send those
      positions to the root ("objectType: …", ".vondstdag.date: …") *)
   if label = "" then fail "%s: expected a non-empty string, got \"\"" (child at "label");
-  (* "::" is the minted-instance namespace (Eval.run_object_creatie's
+  (* "::" is the minted-instance namespace (Eval.run_object_creation's
      deterministic labels); a case label there could silently suppress
      a creation — refused at load, never read wrong *)
   if contains ~needle:"::" label then
     fail "label %S: \"::\" is reserved for created instances" label;
   let otype_name = str_field ~at:label kvs "objectType" in
-  let ot = find_objecttype doc otype_name in
+  let ot = find_object_type doc otype_name in
   let attrs, tls =
     List.fold_left
       (fun (attrs, tls) (name, vj) ->
-        match Ir_v0.Checks.find_ci ot.attributen name with
+        match Ir_v0.Checks.find_ci ot.attributes name with
         | Some decl -> (
             let at = label ^ "." ^ name in
             match timeline_json vj with
             | Some t -> (
-              match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
+              match Ir_v0.Checks.find_ci ot.attribute_granularity name with
               | Some (Some _) ->
                   let grid = Timeline.attr_grid doc ot name in
                   (attrs, SMap.add (norm name) (timeline_of_json ~at ~grid decl t) tls)
@@ -465,7 +465,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
     List.mapi
       (fun i cj ->
         let c = str ~at:(Printf.sprintf "%s.characteristics[%d]" label i) cj in
-        if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) c) then
+        if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
           fail "characteristic %S is not declared on %S" c otype_name;
         (* The two deliveries are NOT interchangeable, and until 2026-09-09
            this arm asked only whether the name was declared. A characteristic
@@ -482,11 +482,11 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
            The sister arm below already refuses the mirror-image mistake — a
            timeline on a non-temporal characteristic — and the two now cover
            the seam from both sides. The predicate is KEY EXISTENCE in
-           [kenmerk_granulariteit], the same one the three clip readers use;
+           [characteristic_granularity], the same one the three clip readers use;
            since M1 the key is a timeline facet on the characteristic, whose
            granularity the loader requires, so key and value coincide for
            every loaded document. *)
-        if List.exists (fun (k, _) -> norm k = norm c) ot.kenmerk_granulariteit then
+        if List.exists (fun (k, _) -> norm k = norm c) ot.characteristic_granularity then
           fail
             "%s.%s: characteristic %S is declared time-dependent on %S, so it is delivered as a \
              \"characteristicTimelines\" entry — the static \"characteristics\" list asserts a \
@@ -495,7 +495,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         norm c)
       (list_field ~at:label kvs "characteristics")
   in
-  let links =
+  let left_side =
     List.fold_left
       (fun (acc, seen) (key, vj) ->
         let role = resolve_role doc ~otype:otype_name ~key in
@@ -503,16 +503,16 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
            name AND its plural) would make the first-non-empty-key
            readers see only half the links — refuse it at load time,
            never read it silently wrong *)
-        let role_id = Option.value role.rol_naam ~default:key in
+        let role_id = Option.value role.role_identifier ~default:key in
         (match List.assoc_opt (norm role_id) seen with
         | Some prev ->
             fail "role keys %S and %S on %S both name the role %S; deliver one key" prev key
               label role_id
         | None -> ());
-        let rol = child (child label "roles") key in
-        let labels = List.mapi (fun i l -> str ~at:(Printf.sprintf "%s[%d]" rol i) l) (list_ ~at:rol vj) in
-        if (not role.rol_meervoudig) && List.length labels <> 1 then
-          fail "%s: to-one role %S carries %d labels" rol key (List.length labels);
+        let role_ref = child (child label "roles") key in
+        let labels = List.mapi (fun i l -> str ~at:(Printf.sprintf "%s[%d]" role_ref i) l) (list_ ~at:role_ref vj) in
+        if (not role.role_many) && List.length labels <> 1 then
+          fail "%s: to-one role %S carries %d labels" role_ref key (List.length labels);
         (SMap.add (norm key) labels acc, (norm role_id, key) :: seen))
       (SMap.empty, [])
       (obj_field ~at:label kvs "roles")
@@ -524,11 +524,11 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
     | Some j ->
         List.fold_left
           (fun acc (cname, pj) ->
-            if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) cname) then
+            if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) cname) then
               fail "characteristic %S is not declared on %S" cname otype_name;
             let gran =
               match
-                List.find_opt (fun (k, _) -> norm k = norm cname) ot.kenmerk_granulariteit
+                List.find_opt (fun (k, _) -> norm k = norm cname) ot.characteristic_granularity
               with
               | Some (_, Some g) -> g
               | Some (_, None) ->
@@ -555,11 +555,11 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
                 (fun i sj ->
                   let per = Printf.sprintf "%s[%d]" at i in
                   let skvs = obj ~at:per sj in
-                  let grens what = day_at ~at:(child per what) (str_field ~at:per skvs what) in
-                  let van = grens "from" in
-                  let tot = grens "to" in
-                  if tot <= van then fail "%s: period 'to' must lie after 'from'" per;
-                  (van, tot))
+                  let boundary what = day_at ~at:(child per what) (str_field ~at:per skvs what) in
+                  let van = boundary "from" in
+                  let up_to = boundary "to" in
+                  if up_to <= van then fail "%s: period 'to' must lie after 'from'" per;
+                  (van, up_to))
                 (list_ ~at pj)
             in
             let sorted = List.sort compare periods in
@@ -573,7 +573,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
           SMap.empty
           (obj ~at:(child label "characteristicTimelines") j)
   in
-  { label; otype = otype_name; attrs; chars; links; tls; ctls }
+  { label; otype = otype_name; attrs; chars; left_side; tls; ctls }
 
 (* ch. 5.7a: a supplied role link ESTABLISHES the relation instance, and
    BOTH roles read it — a relation is symmetric, so the reader arriving
@@ -612,7 +612,7 @@ let materialise_relations (doc : document) (world : World.t) =
              if the SINGULAR key were the empty-but-present one. Stated
              rather than assumed, and not worth a third predicate. *)
           let sister_keys =
-            List.filter_map (fun k -> k) [ sister.rol_meervoud; sister.rol_naam ]
+            List.filter_map (fun k -> k) [ sister.role_plural; sister.role_identifier ]
           in
           List.fold_left
             (fun (w : World.t) t ->
@@ -622,22 +622,22 @@ let materialise_relations (doc : document) (world : World.t) =
                   let store_key =
                     (* land the reverse leg where the target already keys
                        the sister role, else under its first key *)
-                    match List.find_opt (fun k -> SMap.mem (norm k) ti.links) sister_keys with
+                    match List.find_opt (fun k -> SMap.mem (norm k) ti.left_side) sister_keys with
                     | Some k -> k
                     | None -> ( match sister_keys with k :: _ -> k | [] -> key)
                   in
                   let existing =
-                    Option.value (SMap.find_opt (norm store_key) ti.links) ~default:[]
+                    Option.value (SMap.find_opt (norm store_key) ti.left_side) ~default:[]
                   in
                   if List.mem i.label existing then w
-                  else if (not sister.rol_meervoudig) && existing <> [] then
+                  else if (not sister.role_many) && existing <> [] then
                     (* [store_key] is the STORAGE spelling, which is the role's
                        PLURAL where it declares one (the plural-then-name
                        preference above) — so a to-one role can be reported
                        under a plural key. That reads like a contradiction, so
                        the declared name is spelled out whenever it differs. *)
-                    let hoe =
-                      match sister.rol_naam with
+                    let how =
+                      match sister.role_identifier with
                       | Some n when norm n <> norm store_key ->
                           Printf.sprintf " (the storage spelling of the declared role %S)" n
                       | _ -> ""
@@ -647,17 +647,17 @@ let materialise_relations (doc : document) (world : World.t) =
                        %S -> %S conflicts"
                       key t
                       (String.concat ", " existing)
-                      store_key hoe i.label t
+                      store_key how i.label t
                   else
                     {
                       w with
                       instances =
                         SMap.add t
-                          { ti with links = SMap.add (norm store_key) (existing @ [ i.label ]) ti.links }
+                          { ti with left_side = SMap.add (norm store_key) (existing @ [ i.label ]) ti.left_side }
                           w.instances;
                     })
             w targets)
-        i.links w)
+        i.left_side w)
     world.instances world
 
 let check_role_targets (doc : document) (world : World.t) =
@@ -666,7 +666,7 @@ let check_role_targets (doc : document) (world : World.t) =
       SMap.iter
         (fun key labels ->
           let role = resolve_role doc ~otype:i.otype ~key in
-          let expect = Option.value role.rol_objecttype_naam ~default:"" in
+          let expect = Option.value role.role_object_type_name ~default:"" in
           List.iter
             (fun l ->
               match SMap.find_opt l world.instances with
@@ -678,7 +678,7 @@ let check_role_targets (doc : document) (world : World.t) =
                     fail "role %S on %S links %S of type %S; declared filler type is %S" key
                       i.label l target.otype expect)
             labels)
-        i.links)
+        i.left_side)
     world.instances
 
 let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) : expectation =
@@ -694,9 +694,9 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
   | "attributeValue" ->
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
-      let ot = find_objecttype doc i.otype in
+      let ot = find_object_type doc i.otype in
       let decl =
-        match Ir_v0.Checks.find_ci ot.attributen attr with
+        match Ir_v0.Checks.find_ci ot.attributes attr with
         | Some d -> d
         | None -> fail "expected attribute %S is not declared on %S" attr i.otype
       in
@@ -709,21 +709,21 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
   | "attributeEmpty" ->
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
-      let ot = find_objecttype doc i.otype in
+      let ot = find_object_type doc i.otype in
       if not (Ir_v0.Checks.has_attr ot attr) then
         fail "expected attribute %S is not declared on %S" attr i.otype;
       Attribute_empty { label = i.label; attr }
   | "attributeTimeline" ->
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
-      let ot = find_objecttype doc i.otype in
+      let ot = find_object_type doc i.otype in
       let decl =
-        match Ir_v0.Checks.find_ci ot.attributen attr with
+        match Ir_v0.Checks.find_ci ot.attributes attr with
         | Some d -> d
         | None -> fail "expected attribute %S is not declared on %S" attr i.otype
       in
       let grid =
-        match Ir_v0.Checks.find_ci ot.attribuut_granulariteit attr with
+        match Ir_v0.Checks.find_ci ot.attribute_granularity attr with
         | Some (Some _) -> Timeline.attr_grid doc ot attr
         | Some None ->
             (* the internal invariant of the input arms above *)
@@ -748,8 +748,8 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
   | "characteristicPresent" | "characteristicAbsent" ->
       let i = get_instance () in
       let c = str_field ~at kvs "characteristic" in
-      let ot = find_objecttype doc i.otype in
-      if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) c) then
+      let ot = find_object_type doc i.otype in
+      if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
         fail "expected characteristic %S is not declared on %S" c i.otype;
       if kind = "characteristicPresent" then
         Char_present { label = i.label; char = c }
@@ -773,18 +773,18 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
            (the path-keyed conflict a differing exception group propagates
            to the root). Defaults MEMBER names never reach the channel and
            are deliberately absent. *)
-        List.filter_map (fun (x : resolved_regel) -> x.rr_naam) doc.resolved_regels
-        @ List.filter_map (fun (x : resolved_object_creatie) -> x.oc_naam) doc.object_creaties
-        @ List.filter_map (fun (x : resolved_verdeling) -> x.vd_naam) doc.verdelingen
-        @ List.filter_map (fun (x : resolved_consistentie) -> x.cons_naam) doc.consistenties
-        @ List.filter_map (fun (x : resolved_uniciteit) -> x.uni_naam) doc.uniciteiten
-        @ List.filter_map (fun (x : resolved_uniciteit_unie) -> x.uu_naam) doc.uniciteit_unies
-        @ List.filter_map (fun (x : resolved_feit_creatie) -> x.fc_naam) doc.feit_creaties
+        List.filter_map (fun (x : resolved_rule) -> x.rr_name) doc.resolved_rules
+        @ List.filter_map (fun (x : resolved_object_creation) -> x.oc_name) doc.object_creations
+        @ List.filter_map (fun (x : resolved_allocation) -> x.vd_name) doc.allocations
+        @ List.filter_map (fun (x : resolved_consistency) -> x.cons_name) doc.consistencies
+        @ List.filter_map (fun (x : resolved_uniqueness) -> x.uni_name) doc.uniquenesses
+        @ List.filter_map (fun (x : resolved_uniqueness_union) -> x.uu_name) doc.uniqueness_unions
+        @ List.filter_map (fun (x : resolved_fact_creation) -> x.fc_name) doc.fact_creations
         @ List.concat_map
             (fun (l : prioritized_defaults) ->
               let target_form =
-                l.pd_onderwerp ^ "."
-                ^ match (l.pd_kenmerk, l.pd_attribuut) with
+                l.pd_subject ^ "."
+                ^ match (l.pd_characteristic, l.pd_attribute) with
                   | Some k, _ -> k
                   | _, Some a -> a
                   | _ -> "?"
@@ -796,14 +796,14 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
                 List.concat
                   (List.mapi
                      (fun i (r : default) ->
-                       match r.default_excepties with
+                       match r.default_exceptions with
                        | None -> []
                        | Some egs ->
                            let p = prefix @ [ i ] in
                            (target_form ^ "/" ^ String.concat "/" (List.map string_of_int p))
                            :: List.concat_map
                                 (fun (eg : exception_group) -> nested p eg.eg_defaults)
-                                egs.egs_leden)
+                                egs.egs_members)
                      defaults)
               in
               target_form :: nested [] l.defaults)
@@ -898,7 +898,7 @@ let load_file (doc : document) path : t =
             let at = "parameter " ^ name in
             match timeline_json vj with
             | Some t -> (
-              match p.par_granulariteit with
+              match p.par_granularity with
               | Some _ ->
                   (params,
                    SMap.add (norm name)
@@ -906,7 +906,7 @@ let load_file (doc : document) path : t =
                      ptls)
               | None -> fail "%s: a timeline value on a non-granular parameter" at)
             | None ->
-                if p.par_granulariteit <> None then
+                if p.par_granularity <> None then
                   (* the symmetric refusal: a granular parameter takes a
                      timeline, never a scalar — the scalar slot is unread
                      (ch. 8), so accepting one only breeds divergence *)
@@ -950,8 +950,8 @@ let check (case : t) (final : World.t) : string list =
           else Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual))
       | Attribute_timeline { label; attr; tl } -> (
           let show (s : Timeline.segment) =
-            Printf.sprintf "[%s,%s)=%s" (Value.iso_of_date s.s_van) (Value.iso_of_date s.s_tot)
-              (Value.to_string s.s_waarde)
+            Printf.sprintf "[%s,%s)=%s" (Value.iso_of_date s.s_from) (Value.iso_of_date s.s_to)
+              (Value.to_string s.s_value)
           in
           let render l = if l = [] then "(empty)" else String.concat " " (List.map show l) in
           match World.timeline (World.get final label) attr with
@@ -967,7 +967,7 @@ let check (case : t) (final : World.t) : string list =
                 List.length actual = List.length tl
                 && List.for_all2
                      (fun (a : Timeline.segment) (b : Timeline.segment) ->
-                       a.s_van = b.s_van && a.s_tot = b.s_tot && Arith.equal a.s_waarde b.s_waarde)
+                       a.s_from = b.s_from && a.s_to = b.s_to && Arith.equal a.s_value b.s_value)
                      actual tl
               in
               if same then None
@@ -1004,14 +1004,14 @@ let check (case : t) (final : World.t) : string list =
           match List.find_opt matches final.channel with
           | Some _ -> None
           | None ->
-              let want =
+              let because =
                 match (rule, label) with
                 | None, _ -> "any channel fact"
                 | Some r, None -> Printf.sprintf "a channel fact from rule %S" r
                 | Some r, Some l -> Printf.sprintf "a channel fact from rule %S on %S" r l
               in
               Some
-                (Printf.sprintf "expected inconsistent (%s), but the channel carries: %s" want
+                (Printf.sprintf "expected inconsistent (%s), but the channel carries: %s" because
                    (if final.channel = [] then "(empty)"
                     else
                       String.concat "; "

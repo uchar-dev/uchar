@@ -17,7 +17,7 @@ type instance = {
   otype : string; (* declared object-type name, as in the document *)
   attrs : Value.t SMap.t; (* keyed by norm name; absent = empty *)
   chars : SMap.key list; (* characteristics currently true (norm names) *)
-  links : string list SMap.t; (* norm role name -> linked labels *)
+  left_side : string list SMap.t; (* norm role name -> linked labels *)
   tls : Timeline.t SMap.t;
       (* full case-supplied timelines of temporal attributes (norm name);
          disjoint from [attrs] — a temporal attribute carries either the
@@ -75,7 +75,7 @@ let of_type ~isa w otype =
 
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
 let has_char i name = List.mem (norm name) i.chars
-let links i role_key = Option.value (SMap.find_opt (norm role_key) i.links) ~default:[]
+let left_side i role_key = Option.value (SMap.find_opt (norm role_key) i.left_side) ~default:[]
 let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* --- the write boundary (ch. 2.4) -------------------------------------- *)
@@ -88,19 +88,19 @@ let timeline i name = SMap.find_opt (norm name) i.tls
 let collapse ~at (decl : Ir_v0.Ast.datatype option) (v : Value.t) =
   match (v, decl) with
   | Empty, _ -> Value.Empty
-  | Num (q, u), Some (Numeriek { geheel; decimalen; eenheid; _ } | Percentage { geheel; decimalen; eenheid; _ }) ->
-      let target_u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
+  | Num (q, u), Some (Number { whole_part; decimal_places; measure_unit; _ } | Percentage { whole_part; decimal_places; measure_unit; _ }) ->
+      let target_u = match measure_unit with Some e -> Value.Unit e | None -> Value.Unitless in
       let q = Arith.restate_into target_u q u in
-      let scaled = Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) decimalen)) in
+      let scaled = Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) decimal_places)) in
       (* the unbounded form (not whole, 0 decimals: IR-SPEC ch. 2.4 (c)) has
          no ceiling, so ch. 2.4 point 3 exempts it: 0 decimals is its
          spelling, not a scale *)
-      if Z.equal (Q.den scaled) Z.one || ((not geheel) && decimalen = 0) then Value.Num (q, target_u)
+      if Z.equal (Q.den scaled) Z.one || ((not whole_part) && decimal_places = 0) then Value.Num (q, target_u)
       else
         Value.fault
           "%s: value %s does not fit the declared %d decimals — an explicit rounding is \
            mandatory (ch. 2.4)"
-          at (Q.to_string q) decimalen
+          at (Q.to_string q) decimal_places
   | _ -> v
 
 let update w inst = { w with instances = SMap.add inst.label inst w.instances }
@@ -156,7 +156,7 @@ let write_timeline w ~label ~attr:name (tl : Timeline.t) =
     List.length a = List.length b
     && List.for_all2
          (fun (x : Timeline.segment) (y : Timeline.segment) ->
-           x.s_van = y.s_van && x.s_tot = y.s_tot && Arith.equal x.s_waarde y.s_waarde)
+           x.s_from = y.s_from && x.s_to = y.s_to && Arith.equal x.s_value y.s_value)
          a b
   in
   match SMap.find_opt (norm name) i.tls with
@@ -179,17 +179,17 @@ let set_char w ~label ~char =
 let add_link w ~label ~keys ~many ~target =
   let i = get w label in
   let key =
-    match List.find_opt (fun k -> links i k <> []) keys with
+    match List.find_opt (fun k -> left_side i k <> []) keys with
     | Some k -> k
     | None -> ( match keys with k :: _ -> k | [] -> Value.fault "role without a name")
   in
-  let existing = links i key in
+  let existing = left_side i key in
   if List.mem target existing then (w, false)
   else if (not many) && existing <> [] then
     Value.fault "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
       key label
       (String.concat ", " existing)
-  else (update w { i with links = SMap.add (norm key) (existing @ [ target ]) i.links }, true)
+  else (update w { i with left_side = SMap.add (norm key) (existing @ [ target ]) i.left_side }, true)
 
 (* §9.5: one error fact per rule × subject, however often re-evaluated *)
 let insert_error w ~rule ~subject =

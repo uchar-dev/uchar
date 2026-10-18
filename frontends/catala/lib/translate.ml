@@ -102,7 +102,7 @@ let refuse fmt = Printf.ksprintf (fun s -> raise (Refuse s)) fmt
 let state_attr_name (vname : string) : string =
   String.map (function '#' -> ' ' | c -> c) vname
 
-(* Enums referenced by the translated document, recorded as [keuzetype_of]
+(* Enums referenced by the translated document, recorded as [choice_type_of]
    builds each keuzetype; [file_to_document] resets it per run and reads it to
    emit exactly the used enums as domains — [ctx_enums] also carries built-in
    enums (e.g. the desugarer's Optional), which no 5b program references. *)
@@ -116,7 +116,7 @@ let used_structs = ref StructName.Set.empty
 
 (* The reduce lowering (§3.5) needs a nominal Optional sum type carrying the
    concrete element datatype; Catala's builtin [option_enum] carries a
-   *universal* Present payload (Expr.option_enum_config), so [keuzetype_of] on
+   *universal* Present payload (Expr.option_enum_config), so [choice_type_of] on
    it would refuse. We build the concrete Optional here and record its element
    datatype so [file_to_document] declares the domain. One element datatype per
    document — a second, different one has no nominal home (recorded flank). *)
@@ -125,27 +125,27 @@ let optional_domain = EnumName.base ConstantNames.option_enum
 
 (* --- IR building blocks ------------------------------------------------- *)
 
-let geldig : I.geldigheid = { geld_vanaf = None; geld_tot = None }
-let num_int : I.datatype = Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
-let num_money : I.datatype = Numeriek { geheel = false; decimalen = 2; teken = Some Onbepaald; eenheid = None }
+let valid : I.validity_window = { valid_from = None; valid_to = None }
+let num_int : I.datatype = Number { whole_part = true; decimal_places = 0; sign_char = Some Unspecified; measure_unit = None }
+let num_money : I.datatype = Number { whole_part = false; decimal_places = 2; sign_char = Some Unspecified; measure_unit = None }
 (* the pinned Catala-decimal scale (PHASE5C-TUTORIAL §5, vraag 4-A): S = 4.
    A Catala decimal is an exact rational; it lands as a bounded Number at
    four decimals, and a value that does not terminate at four decimals faults
    loudly and consistently in both executors (ref's bounded-write gate,
    clingo's does-not-fit fence). *)
 let rat_scale = 4
-let num_rat : I.datatype = Numeriek { geheel = false; decimalen = rat_scale; teken = Some Onbepaald; eenheid = None }
+let num_rat : I.datatype = Number { whole_part = false; decimal_places = rat_scale; sign_char = Some Unspecified; measure_unit = None }
 
 let not_whole : I.datatype -> I.datatype = function
-  | Numeriek n -> Numeriek { n with geheel = false }
-  | Percentage p -> Percentage { p with geheel = false }
+  | Number n -> Number { n with whole_part = false }
+  | Percentage p -> Percentage { p with whole_part = false }
   | d -> d
-let always_true : I.conditie = Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = Some "altijd" }
+let always_true : I.condition_expr = Compound { quantifier_kind = All; cutoff = 0; components = []; source_name = Some "altijd" }
 
 let optional_dt (element : I.datatype) : I.datatype =
   Sum_type
-    { domein = optional_domain;
-      constructoren =
+    { domain_spec = optional_domain;
+      constructor_list =
         [ (EnumConstructor.to_string ConstantNames.none_constr, None);
           (EnumConstructor.to_string ConstantNames.some_constr, Some element) ] }
 
@@ -177,23 +177,23 @@ let note_optional (element : I.datatype) : unit =
 let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.datatype =
   match M.remove t with
   | TLit TInt -> num_int
-  | TLit TBool -> Booleaan
+  | TLit TBool -> Boolean
   | TLit TMoney -> num_money
-  | TLit TDate -> Datum_in_dagen
+  | TLit TDate -> Date_in_days
   | TLit TRat -> num_rat
   | TLit TDuration -> refuse "duration type: not supported in the 5a skeleton"
   | TLit (TUnit | TPos) -> refuse "unit/pos type: not a domain value"
   | TDefault inner -> catala_dt enums structs inner
   | TArrow _ -> refuse "function-valued variable: new kernel (row 10), designed spec-first in 5b"
   | TStruct name -> struct_type_of enums structs name
-  | TEnum name -> keuzetype_of enums structs name
+  | TEnum name -> choice_type_of enums structs name
   | TTuple _ ->
       refuse
         "tuple payload: an n-ary constructor payload de-tuplifies to a Catala tuple — 5c struct territory, single-payload constructors only (WF); refused"
   | TArray inner ->
       let element = catala_dt enums structs inner in
       (match element with
-       | Numeriek _ | Datum_in_dagen | Sum_type _ | Struct_type _ -> List_type { element }
+       | Number _ | Date_in_days | Sum_type _ | Struct_type _ -> List_type { element }
        | _ ->
            refuse
              "WF-065: a list element must be first-order and non-list (Number, day-precision date, \
@@ -204,13 +204,13 @@ let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.dataty
 (* An enum -> its keuzetype datatype: alternatives in declaration order
    (EnumConstructor ids are generative, so the map folds declaration-first).
    All-nullary normalises to an Enumeration (WF-087), otherwise a SumType. *)
-and keuzetype_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : I.datatype =
+and choice_type_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : I.datatype =
   used_enums := EnumName.Set.add name !used_enums;
   let sig_ =
     try EnumName.Map.find name enums
     with Not_found -> refuse "enum %S is not declared" (EnumName.base name)
   in
-  let constructoren =
+  let constructor_list =
     List.rev
       (EnumConstructor.Map.fold
          (fun c ty acc ->
@@ -220,11 +220,11 @@ and keuzetype_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) :
            (EnumConstructor.to_string c, payload) :: acc)
          sig_ [])
   in
-  if List.for_all (fun (_, payload) -> Option.is_none payload) constructoren then
-    Enumeratie
-      { domein = Some (EnumName.base name);
-        waarden = List.map (fun (c, _) -> Some c) constructoren }
-  else Sum_type { domein = EnumName.base name; constructoren }
+  if List.for_all (fun (_, payload) -> Option.is_none payload) constructor_list then
+    Enumeration
+      { domain_spec = Some (EnumName.base name);
+        label_list = List.map (fun (c, _) -> Some c) constructor_list }
+  else Sum_type { domain_spec = EnumName.base name; constructor_list }
 
 (* A struct -> its StructType datatype: fields in declaration order
    (StructField ids are generative, so the map folds declaration-first). Field
@@ -238,13 +238,13 @@ and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.
     try StructName.Map.find name structs
     with Not_found -> refuse "struct %S is not declared" (StructName.base name)
   in
-  let velden =
+  let field_list =
     List.rev
       (StructField.Map.fold
          (fun fld ty acc ->
            let dt = catala_dt enums structs ty in
            (match dt with
-            | Numeriek _ | Datum_in_dagen | Sum_type _ | Struct_type _ -> ()
+            | Number _ | Date_in_days | Sum_type _ | Struct_type _ -> ()
             | _ ->
                 refuse
                   "WF-071: struct %S field %S has an inadmissible datatype (only Number, \
@@ -254,9 +254,9 @@ and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.
            (StructField.to_string fld, dt) :: acc)
          sig_ [])
   in
-  Struct_type { domein = StructName.base name; velden }
+  Struct_type { domain_spec = StructName.base name; field_list }
 
-let is_bool_dt = function I.Booleaan -> true | _ -> false
+let is_bool_dt = function I.Boolean -> true | _ -> false
 
 (* A reference carries no type on the wire (B13): its declaration is the one
    source. The translator knows that declaration where it BUILDS a reference,
@@ -274,15 +274,15 @@ let typed_ref (e : I.expr) (dt : I.datatype option) : I.expr =
    its then-branch (WF-069), by construction rather than by re-inference. *)
 let ir_typ (e : I.expr) : I.datatype option =
   match e with
-  | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
-  | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Constante { typ; _ } | Bound_day { typ; _ } | Expr_onopgelost { typ; _ }
+  | Literal { typ; _ } | Text_composition { typ; _ } | Binary { typ; _ }
+  | Function_call { typ; _ } | Rounding { typ; _ } | Clamp { typ; _ }
+  | Context_value { typ; _ } | Bound_day { typ; _ } | Expr_unresolved { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
   | Struct_literal { typ; _ } | Field_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
-  | Attribuut_ref _ | Dimensie_cel _ | Parameter_ref _ | Variabele_ref _ | Binder_ref _ -> (
+  | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Binder_ref _ -> (
       match List.find_opt (fun (r, _) -> r == e) !ref_types with
       | Some (_, dt) -> dt
       | None -> failwith "Translate.ir_typ: a reference built without its declared datatype")
@@ -326,18 +326,18 @@ let rat_str (q : Q.t) : string =
 
 (* a Literal as the wire carries it (IR-SPEC ch. 4.1): the value variant its
    type names *)
-let literal (variant : I.literal_variant) (typ : I.datatype) ~bron : I.expr =
-  Literal { variant; typ = Some typ; bron }
+let literal (variant : I.literal_variant) (typ : I.datatype) ~source_name : I.expr =
+  Literal { variant; typ = Some typ; source_name }
 
 let literal_expr (l : lit) : I.expr =
   match l with
   | LBool b ->
       let w = if b then "waar" else "onwaar" in
-      literal (Lv_boolean b) Booleaan ~bron:(Some w)
-  | LInt z -> literal (Lv_number (Z.to_string z)) num_int ~bron:(Some (Z.to_string z))
-  | LMoney z -> literal (Lv_number (money_str z)) num_money ~bron:(Some (money_str z))
-  | LDate d -> literal (Lv_date (date_str d)) Datum_in_dagen ~bron:(Some (date_str d))
-  | LRat q -> literal (Lv_number (rat_str q)) num_rat ~bron:(Some (rat_str q))
+      literal (Lv_boolean b) Boolean ~source_name:(Some w)
+  | LInt z -> literal (Lv_number (Z.to_string z)) num_int ~source_name:(Some (Z.to_string z))
+  | LMoney z -> literal (Lv_number (money_str z)) num_money ~source_name:(Some (money_str z))
+  | LDate d -> literal (Lv_date (date_str d)) Date_in_days ~source_name:(Some (date_str d))
+  | LRat q -> literal (Lv_number (rat_str q)) num_rat ~source_name:(Some (rat_str q))
   | LDuration _ -> refuse "duration literal: not supported in the 5a skeleton"
   | LUnit -> refuse "unit literal: not a domain value"
 
@@ -566,10 +566,10 @@ type per_element_meta = {
 let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     ~(functions : (string * I.datatype) list)
     ~(read_var : operand:bool -> in_body:bool -> ScopeVar.t M.pos -> I.expr)
-    ~(check_var : in_body:bool -> ScopeVar.t M.pos -> I.conditie)
+    ~(check_var : in_body:bool -> ScopeVar.t M.pos -> I.condition_expr)
     ~(lookup_var : ScopeVar.t -> I.datatype option)
     ~(read_subscope_output : ScopeVar.t -> StructField.t -> I.expr option)
-    ~(check_subscope_output : ScopeVar.t -> StructField.t -> I.conditie option)
+    ~(check_subscope_output : ScopeVar.t -> StructField.t -> I.condition_expr option)
     ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta)
     ~fused_map =
   (* an EAbs (a fold/map/filter operand or a function) -> its bound variables,
@@ -594,13 +594,13 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
   let rec infer_dt ?(env = Var.Map.empty) e : I.datatype option =
     match M.remove (strip e) with
     | ELit (LInt _) -> Some num_int
-    | ELit (LBool _) -> Some Booleaan
+    | ELit (LBool _) -> Some Boolean
     | ELit (LMoney _) -> Some num_money
-    | ELit (LDate _) -> Some Datum_in_dagen
+    | ELit (LDate _) -> Some Date_in_days
     | ELit (LRat _) -> Some num_rat
     | EVar v -> Option.map snd (Var.Map.find_opt v env)
     | ELocation (ScopelangScopeVar { name }) -> lookup_var (M.remove name)
-    | EInj { name; _ } -> Some (keuzetype_of enums structs name)
+    | EInj { name; _ } -> Some (choice_type_of enums structs name)
     | EStruct { name; _ } -> Some (struct_type_of enums structs name)
     | EStructAccess { name; field; _ } ->
         Option.map (catala_dt enums structs)
@@ -631,10 +631,10 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | Op.Add_int_int | Op.Add_mon_mon | Op.Add_dur_dur | Op.Add_rat_rat
         | Op.Sub_int_int | Op.Sub_mon_mon | Op.Sub_dur_dur | Op.Sub_rat_rat -> (
             match (infer_dt ~env a, rest) with
-            | Some (Numeriek l), b :: _ -> (
+            | Some (Number l), b :: _ -> (
                 match infer_dt ~env b with
-                | Some (Numeriek { geheel = false; _ }) -> Some (Numeriek { l with geheel = false })
-                | _ -> Some (Numeriek l))
+                | Some (Number { whole_part = false; _ }) -> Some (Number { l with whole_part = false })
+                | _ -> Some (Number l))
             | t, _ -> t)
         | _ -> infer_dt ~env a)
     | _ -> None
@@ -661,45 +661,45 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            BinderRef (RUNTIME-SEMANTICS ch. 9.2/10.2); deliberately distinct
            from VariableReference (row 24) *)
         match Var.Map.find_opt v env with
-        | Some (nm, dt) -> typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some dt)
+        | Some (nm, dt) -> typed_ref (Binder_ref { ident = nm; source_name = Some nm }) (Some dt)
         | None -> refuse "unbound variable %S in a value position" (Bindlib.name_of v))
     | ELocation (ScopelangScopeVar { name }) -> read_var ~operand ~in_body name
     | EAppOp { op; args; _ } -> (
         let bin bop a b : I.expr =
-          Binair { op = bop; links = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
-                   rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env b);
-                   typ = infer_dt ~env e; bron = None }
+          Binary { op = bop; left_side = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
+                   right_side = Some (value_expr ~operand:true ~in_body ~in_let ~env b);
+                   typ = infer_dt ~env e; source_name = None }
         in
         match M.remove op, args with
         | (Op.Add_int_int | Op.Add_mon_mon | Op.Add_dur_dur | Op.Add_rat_rat), [ a; b ] -> bin Plus a b
         | (Op.Sub_int_int | Op.Sub_mon_mon | Op.Sub_dur_dur | Op.Sub_rat_rat), [ a; b ] ->
-            bin Verminderd_met a b
-        | (Op.Mult_int_int | Op.Mult_dur_int | Op.Mult_rat_rat), [ a; b ] -> bin Maal a b
+            bin Reduced_by a b
+        | (Op.Mult_int_int | Op.Mult_dur_int | Op.Mult_rat_rat), [ a; b ] -> bin Times a b
         | (Op.Mult_mon_int | Op.Mult_mon_rat), [ a; b ] ->
             (* Catala rounds a money product to the cent (o_mult_mon_rat, §5) —
                wrap the product in Rounding{halfAwayFromZero, 2} exactly as the money
                divisions are (the Div precedent). A money × 4-decimal rate takes
                clingo's split encoding downstream (money_mult_shape). *)
-            Afgerond
-              { basis = Some (bin Maal a b); modus = Rekenkundig; decimalen = 2;
-                typ = Some num_money; bron = None }
-        | (Op.Div_int_int | Op.Div_dur_dur | Op.Div_rat_rat), [ a; b ] -> bin Gedeeld_door a b
+            Rounding
+              { base_expr = Some (bin Times a b); mode_kind = Half_away_from_zero; decimal_places = 2;
+                typ = Some num_money; source_name = None }
+        | (Op.Div_int_int | Op.Div_dur_dur | Op.Div_rat_rat), [ a; b ] -> bin Divided_by a b
         | (Op.Div_mon_int | Op.Div_mon_rat), [ a; b ] ->
             (* Catala rounds money division to cents (arithmetic / nearest);
                wrap the quotient so the IR rounds identically instead of
                faulting on the remainder *)
-            Afgerond
-              { basis = Some (bin Gedeeld_door a b); modus = Rekenkundig;
-                decimalen = 2; typ = Some num_money; bron = None }
+            Rounding
+              { base_expr = Some (bin Divided_by a b); mode_kind = Half_away_from_zero;
+                decimal_places = 2; typ = Some num_money; source_name = None }
         | Op.Minus_rat, [ a ] ->
             (* unary rational negation -> 0 - a in the additive family (minus
                coalesces both operands to 0; the operand is not leeg here) *)
-            Binair
+            Binary
               { op = Min;
-                links =
-                  Some (literal (Lv_number (rat_str Q.zero)) num_rat ~bron:(Some (rat_str Q.zero)));
-                rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
-                typ = Some num_rat; bron = None }
+                left_side =
+                  Some (literal (Lv_number (rat_str Q.zero)) num_rat ~source_name:(Some (rat_str Q.zero)));
+                right_side = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
+                typ = Some num_rat; source_name = None }
         | (Op.ToRat_int | Op.ToRat_mon), [ a ] ->
             (* the decimal casts (decimal of n / of $m) are pass-through: a Catala
                decimal is already an exact rational, so the operand carries through
@@ -758,15 +758,15 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             let invoke : I.expr =
               Invoke
-                { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
-                  bron = Some pem.pem_fname }
+                { typ = Some pem.pem_result_ty; function_name = pem.pem_fname; arguments;
+                  source_name = Some pem.pem_fname }
             in
             Map_list
               { typ = Some (List_type { element = pem.pem_result_ty });
                 list = value_expr ~in_body ~in_let ~env source;
-                functie =
-                  Fn_lambda { parameters = [ (bname, elem_ty) ]; body = invoke; bron = Some bname };
-                bron = None }
+                function_name =
+                  Fn_lambda { parameters = [ (bname, elem_ty) ]; body = invoke; source_name = Some bname };
+                source_name = None }
         | Op.Map, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 1 then refuse "a map lambda takes exactly one parameter";
@@ -789,9 +789,9 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             Map_list
               { typ = Some (List_type { element = out_elt });
                 list = value_expr ~in_body ~in_let ~env lst;
-                functie = Fn_lambda { parameters = [ (pn, pt) ];
-                                      body = value_expr ~in_body:true ~in_let:false ~in_map_body:true ~env:env' body; bron = Some pn };
-                bron = None }
+                function_name = Fn_lambda { parameters = [ (pn, pt) ];
+                                      body = value_expr ~in_body:true ~in_let:false ~in_map_body:true ~env:env' body; source_name = Some pn };
+                source_name = None }
         | Op.Filter, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 1 then refuse "a filter lambda takes exactly one parameter";
@@ -804,7 +804,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             Filter_list
               { typ = Some src_ty; list = value_expr ~in_body ~in_let ~env lst; binder = pn;
-                condition = cond_expr ~in_body ~in_let ~env:env' body; bron = None }
+                condition = cond_expr ~in_body ~in_let ~env:env' body; source_name = None }
         | Op.Fold, [ f; init; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 2 then refuse "a fold lambda takes exactly two parameters";
@@ -813,11 +813,11 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             let env' = Var.Map.add vars.(1) (xn, xt) (Var.Map.add vars.(0) (an, at) env) in
             Fold
               { typ = Some at; list = value_expr ~in_body ~in_let ~env lst;
-                functie = Fn_lambda { parameters = [ (an, at); (xn, xt) ];
-                                      body = value_expr ~in_body:true ~in_let:false ~env:env' body; bron = None };
-                init = value_expr ~in_body ~in_let ~env init; bron = None }
+                function_name = Fn_lambda { parameters = [ (an, at); (xn, xt) ];
+                                      body = value_expr ~in_body:true ~in_let:false ~env:env' body; source_name = None };
+                init = value_expr ~in_body ~in_let ~env init; source_name = None }
         | Op.Length, [ lst ] ->
-            List_length { typ = Some num_int; list = value_expr ~in_body ~in_let ~env lst; bron = None }
+            List_length { typ = Some num_int; list = value_expr ~in_body ~in_let ~env lst; source_name = None }
         | Op.Reduce, _ ->
             refuse "a bare reduce appears only as the scrutinee of an Optional match (the sum/maximum/minimum lowering)"
         | Op.Sort _, _ ->
@@ -856,7 +856,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                 let bt = catala_dt enums structs (List.nth tys i) in
                 let v = value_expr ~in_body ~in_let ~env argv.(i) in
                 let rest = build (i + 1) (Var.Map.add vars.(i) (name, bt) env) in
-                I.Let { typ = ir_typ rest; binder = name; value = v; body = rest; bron = Some name }
+                I.Let { typ = ir_typ rest; binder = name; value = v; body = rest; source_name = Some name }
             in
             build 0 env
         | ELocation (ToplevelVar { name; _ }) ->
@@ -867,8 +867,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
               | None -> refuse "invocation of an unknown top-level function %S" fname
             in
             Invoke
-              { typ = Some rty; functie = fname;
-                arguments = List.map (value_expr ~operand:true ~in_body ~in_let ~env) args; bron = Some fname }
+              { typ = Some rty; function_name = fname;
+                arguments = List.map (value_expr ~operand:true ~in_body ~in_let ~env) args; source_name = Some fname }
         | _ -> refuse "application of a non-top-level expression is not supported")
     | EScopeCall _ ->
         (* a bare subscope call consumed as a whole struct value (rather than
@@ -922,8 +922,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                 pem.pem_params
             in
             Invoke
-              { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
-                bron = Some pem.pem_fname }
+              { typ = Some pem.pem_result_ty; function_name = pem.pem_fname; arguments;
+                source_name = Some pem.pem_fname }
         | EScopeCall _ when in_body ->
             (* an inline subscope call inside a closed body that is NOT directly
                the map lambda body — a fold-reducer body, a match arm, a
@@ -947,7 +947,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                propagates to the base — reading a field of a not-always-filled
                struct in arithmetic stays refused, since Catala reads it hard
                while a FieldAccess coalesces via the surrounding operator. *)
-            let veld_ty =
+            let field_ty =
               match
                 Option.bind (StructName.Map.find_opt name structs)
                   (StructField.Map.find_opt field)
@@ -958,18 +958,18 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                     (StructField.to_string field) (StructName.base name)
             in
             Field_access
-              { typ = Some veld_ty; base = value_expr ~operand ~in_body ~in_let ~env inner;
-                veld = StructField.to_string field; bron = None }))
+              { typ = Some field_ty; base = value_expr ~operand ~in_body ~in_let ~env inner;
+                field_name = StructField.to_string field; source_name = None }))
     | EInj { name; e = payload; cons } ->
         (* a constructor value. On a normalised all-nullary enum (WF-087) the
            keuzetype IS the Enumeration domain, so the alternative is an ordinary
            enumeration-value Literal (WF-039) — Construct stays sum-only. On a
            payload enum it is the row-36 Construct; unit payload = nullary
            (argument None). *)
-        let dt = keuzetype_of enums structs name in
+        let dt = choice_type_of enums structs name in
         let cons_name = EnumConstructor.to_string cons in
         (match dt with
-         | I.Enumeratie _ -> literal (Lv_enumeration cons_name) dt ~bron:(Some cons_name)
+         | I.Enumeration _ -> literal (Lv_enumeration cons_name) dt ~source_name:(Some cons_name)
          | _ ->
              let sig_ = EnumName.Map.find name enums in
              let payload_ty = EnumConstructor.Map.find cons sig_ in
@@ -978,7 +978,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                | TLit TUnit -> None
                | _ -> Some (value_expr ~in_body ~in_let ~env payload)
              in
-             Construct { typ = Some dt; constructor_ = cons_name; argument; bron = Some cons_name })
+             Construct { typ = Some dt; constructor_ = cons_name; argument; source_name = Some cons_name })
     | EMatch { name; e = scrut; cases } when EnumName.equal name ConstantNames.option_enum ->
         (* the §3.5 reduce lowering: [match (reduce f l) with Absent -> D |
            Present x -> x] — Catala's sum/maximum/minimum desugaring
@@ -1000,28 +1000,28 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         let none_c = EnumConstructor.to_string ConstantNames.none_constr in
         let some_c = EnumConstructor.to_string ConstantNames.some_constr in
         let some_of x : I.expr =
-          Construct { typ = Some opt; constructor_ = some_c; argument = Some x; bron = Some some_c }
+          Construct { typ = Some opt; constructor_ = some_c; argument = Some x; source_name = Some some_c }
         in
         let an = Bindlib.name_of rvars.(0) and xn = Bindlib.name_of rvars.(1) in
         let acc_name = fresh_acc_name [ an; xn ] in
         let env_step = Var.Map.add rvars.(1) (xn, elt) (Var.Map.add rvars.(0) (an, elt) env) in
         let present_body = some_of (value_expr ~in_body:true ~in_let:false ~env:env_step rbody) in
-        let absent_body = some_of (typed_ref (Binder_ref { naam = xn; bron = Some xn }) (Some elt)) in
+        let absent_body = some_of (typed_ref (Binder_ref { ident = xn; source_name = Some xn }) (Some elt)) in
         let step : I.expr =
           Match
             { typ = Some opt;
               scrutinee =
-                typed_ref (Binder_ref { naam = acc_name; bron = Some acc_name }) (Some opt);
+                typed_ref (Binder_ref { ident = acc_name; source_name = Some acc_name }) (Some opt);
               arms = [ (none_c, None, absent_body); (some_c, Some an, present_body) ];
-              bron = Some "de volgende vouwstap" }
+              source_name = Some "de volgende vouwstap" }
         in
         let fold : I.expr =
           Fold
             { typ = Some opt; list = value_expr ~in_body ~in_let ~env lst;
-              functie = Fn_lambda { parameters = [ (acc_name, opt); (xn, elt) ]; body = step;
-                                    bron = Some "de vouwstap" };
-              init = Construct { typ = Some opt; constructor_ = none_c; argument = None; bron = Some none_c };
-              bron = Some "gevouwen tot een optionele waarde" }
+              function_name = Fn_lambda { parameters = [ (acc_name, opt); (xn, elt) ]; body = step;
+                                    source_name = Some "de vouwstap" };
+              init = Construct { typ = Some opt; constructor_ = none_c; argument = None; source_name = Some none_c };
+              source_name = Some "gevouwen tot een optionele waarde" }
         in
         let none_case = EnumConstructor.Map.find ConstantNames.none_constr cases in
         let some_case = EnumConstructor.Map.find ConstantNames.some_constr cases in
@@ -1043,7 +1043,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         Match
           { typ = Some elt; scrutinee = fold;
             arms = [ (none_c, None, d_body); (some_c, Some sbinder, s_body) ];
-            bron = Some "de gevouwen waarde uitgepakt" }
+            source_name = Some "de gevouwen waarde uitgepakt" }
     | EMatch { name; e = scrut; cases } ->
         let sig_ = EnumName.Map.find name enums in
         (* exhaustiveness fold (mirrors dcalc/from_scopelang.ml:223–249):
@@ -1069,7 +1069,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            all-nullary enum every payload is unit, so every arm comes out with
            the value label in [constructor] and [binder] null — exactly the
            enumeration arm of WF-063, with the scrutinee typed Enumeration by
-           [keuzetype_of]. *)
+           [choice_type_of]. *)
         let arms_rev, inferred =
           EnumConstructor.Map.fold
             (fun c payload_ty (arms, inf) ->
@@ -1107,7 +1107,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         in
         Match
           { typ = Some result_dt; scrutinee = value_expr ~in_body ~in_let ~env scrut;
-            arms = List.rev arms_rev; bron = Some ("match " ^ EnumName.base name) }
+            arms = List.rev arms_rev; source_name = Some ("match " ^ EnumName.base name) }
     | EArray elts -> (
         match elts with
         | [] -> refuse "an empty list literal has no inferable element datatype in the fold fragment"
@@ -1119,7 +1119,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             List_literal
               { typ = Some (List_type { element = elt });
-                elements = List.map (value_expr ~in_body ~in_let ~env) elts; bron = None })
+                elements = List.map (value_expr ~in_body ~in_let ~env) elts; source_name = None })
     | EAbs _ -> refuse "a function value outside a fold/map operand is not first-class (WF-069): only a Fold/MapList function operand or a named function"
     | EStruct { name; fields } ->
         (* row-5c StructLiteral: fields in declaration order (WF-073). Catala's
@@ -1127,14 +1127,14 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            map is exactly the declared fields. A field evaluating leeg makes the
            whole literal leeg (NO-HOLE); that is the surrounding semantics, so
            the field values are ordinary (non-operand) reads. *)
-        let velden =
+        let field_list =
           List.rev
             (StructField.Map.fold
                (fun fld v acc ->
                  (StructField.to_string fld, value_expr ~in_body ~in_let ~env v) :: acc)
                fields [])
         in
-        Struct_literal { typ = Some (struct_type_of enums structs name); velden; bron = None }
+        Struct_literal { typ = Some (struct_type_of enums structs name); field_list; source_name = None }
     | EIfThenElse { cond; etrue; efalse } ->
         if not (in_body || in_let) then
           refuse
@@ -1147,32 +1147,32 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         let else_ = value_expr ~in_body ~in_let ~env efalse in
         If_then_else
           { typ = ir_typ then_; condition = cond_expr ~in_body ~in_let ~env cond;
-            then_; else_; bron = None }
+            then_; else_; source_name = None }
     | _ -> refuse "value-expression shape not supported in the 5a skeleton"
-  and cmp_op ?(env = Var.Map.empty) o a b : I.vergelijk_op =
-    let is_date = infer_dt ~env a = Some Datum_in_dagen || infer_dt ~env b = Some Datum_in_dagen in
+  and cmp_op ?(env = Var.Map.empty) o a b : I.compare_op =
+    let is_date = infer_dt ~env a = Some Date_in_days || infer_dt ~env b = Some Date_in_days in
     match o, is_date with
-    | Op.Lt, false -> Kleiner | Op.Lt, true -> Eerder
-    | Op.Lte, false -> Kleiner_of_gelijk | Op.Lte, true -> Eerder_of_gelijk
-    | Op.Gt, false -> Groter | Op.Gt, true -> Later
-    | Op.Gte, false -> Groter_of_gelijk | Op.Gte, true -> Later_of_gelijk
-    | Op.Eq, _ -> Gelijk
+    | Op.Lt, false -> Less | Op.Lt, true -> Earlier
+    | Op.Lte, false -> Less_or_equal | Op.Lte, true -> Earlier_or_equal
+    | Op.Gt, false -> Greater | Op.Gt, true -> Later
+    | Op.Gte, false -> Greater_or_equal | Op.Gte, true -> Later_or_equal
+    | Op.Eq, _ -> Equal
     | _ -> refuse "comparison operator not supported"
-  and cond_expr ?(in_body = false) ?(in_let = false) ?(env = Var.Map.empty) e : I.conditie =
+  and cond_expr ?(in_body = false) ?(in_let = false) ?(env = Var.Map.empty) e : I.condition_expr =
     let e = strip e in
     match M.remove e with
     | ELit (LBool true) -> always_true
     | ELit (LBool false) -> refuse "a literal-false condition is not expressible as a default justification"
     | ELocation (ScopelangScopeVar { name }) -> check_var ~in_body name
     | EAppOp { op; args; _ } -> (
-        let vergelijking vop a b : I.conditie =
-          Vergelijking
-            { op = vop; links = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
-              rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env b); periode = None; bron = None }
+        let comparison vop a b : I.condition_expr =
+          Comparison
+            { op = vop; left_side = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
+              right_side = Some (value_expr ~operand:true ~in_body ~in_let ~env b); time_period = None; source_name = None }
         in
         match M.remove op, args with
         | (Op.Lt | Op.Lte | Op.Gt | Op.Gte | Op.Eq), [ a; b ] ->
-            vergelijking (cmp_op ~env (M.remove op) a b) a b
+            comparison (cmp_op ~env (M.remove op) a b) a b
         | Op.Not, [ inner ] -> (
             (* Catala desugars [a != b] to [not (a = b)] (from_surface:705);
                it is the only Not shape the fragment expresses — a sum-type or
@@ -1181,18 +1181,18 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             match M.remove (strip inner) with
             | EAppOp { op = iop; args = [ a; b ]; _ } -> (
                 match M.remove iop with
-                | Op.Eq -> vergelijking Ongelijk a b
+                | Op.Eq -> comparison Not_equal a b
                 | _ -> refuse "operator Not is only expressible over an equality (a != b)")
             | _ -> refuse "operator Not is only expressible over an equality (a != b)")
         | Op.And, [ a; b ] ->
-            Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; bron = Some "en" }
+            Compound { quantifier_kind = All; cutoff = 0; components = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; source_name = Some "en" }
         | Op.Or, [ a; b ] ->
-            Samengesteld { kwantor = Ten_minste; drempel = 1; onderdelen = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; bron = Some "of" }
+            Compound { quantifier_kind = At_least; cutoff = 1; components = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; source_name = Some "of" }
         | o, _ -> refuse "operator %S not supported in a condition" (Operator.name o))
     | EStructAccess { e = inner; field; _ } -> (
         (* the navigated leaf-read in CONDITION position (IR-SPEC ch. 4.1a/5,
            WF-053): a boolean output of a declared subscope instance read as a
-           condition lowers to a navigated [Kenmerk_check] over the synthesised
+           condition lowers to a navigated [Characteristic_check] over the synthesised
            back-link — the condition sibling of the value-position
            [read_subscope_output], symmetric to the plain [check_var]. Only a
            declared subscope instance carries this image; a non-subscope
@@ -1309,7 +1309,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      declared subscope, globally unique by caller + instance variable; the
      callee fills a to-one role named for the instance variable, the caller the
      opposite role. *)
-  let subscope_feittype v = ot_name ^ "_" ^ M.remove (ScopeVar.get_info v) in
+  let subscope_fact_type v = ot_name ^ "_" ^ M.remove (ScopeVar.get_info v) in
   let subscope_callee_role v = M.remove (ScopeVar.get_info v) in
   let subscope_caller_role v = M.remove (ScopeVar.get_info v) ^ "_houder" in
   (* variable table: ScopeVar -> (declared name, IR datatype). Subscope
@@ -1349,7 +1349,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      declared subscope call). A boolean is a characteristic, and a value-position
      read of a characteristic has no expression image (read_var refuses it). The
      WF-027 relaxation (besluit 1) carries the kenmerk-init value as a
-     boolean-typed [Attribuut_ref], so such a caller boolean is declared as a
+     boolean-typed [Attribute_reference], so such a caller boolean is declared as a
      boolean ATTRIBUTE — the jutterswet-rekenkamer-overzee anchor's shape (ref
      reads it from attrs, clingo as heeft). A boolean read only as a condition
      stays a characteristic. The scope of this widening is exactly the
@@ -1362,7 +1362,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           | ELocation (ScopelangScopeVar { name }) -> (
               let cv = M.remove name in
               match ScopeVar.Map.find_opt cv vars with
-              | Some (_, Booleaan) -> Some cv
+              | Some (_, Boolean) -> Some cv
               | _ -> None)
           | _ -> None)
       | _ -> None
@@ -1416,7 +1416,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
            value guard and the inverse of check_subscope_output's condition
            guard; the author is pointed at the condition read that DOES lower. *)
         (match fld_ty with
-         | I.Booleaan ->
+         | I.Boolean ->
              refuse
                "boolean subscope output %S of %S read in a value position: it is a characteristic \
                 (kenmerk) on the callee, and a value-position read of a characteristic has no image \
@@ -1424,23 +1424,23 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                fld_name callee_type
          | _ -> ());
         let callee_role = subscope_callee_role v in
-        let bron = Printf.sprintf "de %s van de %s" fld_name (M.remove (ScopeVar.get_info v)) in
+        let source_name = Printf.sprintf "de %s van de %s" fld_name (M.remove (ScopeVar.get_info v)) in
         Some
           (typed_ref
-             (Attribuut_ref
-                { attribuut = Some fld_name; objecttype = Some callee_type; bron = Some bron;
-                  navigatie_bindingen =
-                    Some [ { rb_feittype = subscope_feittype v; rb_rol = callee_role } ] })
+             (Attribute_reference
+                { attribute_ref = Some fld_name; object_type = Some callee_type; source_name = Some source_name;
+                  navigation_bindings =
+                    Some [ { rb_fact_type = subscope_fact_type v; rb_role = callee_role } ] })
              (Some fld_ty))
   in
   (* a declared subscope's per-field output read in CONDITION position (IR-SPEC
      ch. 4.1a/5, WF-053): an [EStructAccess] on the instance variable whose
      callee output field is BOOLEAN — a characteristic on the callee — lowers to
-     a navigated [Kenmerk_check] over the same synthesised back-link the
+     a navigated [Characteristic_check] over the same synthesised back-link the
      value-position read navigates. A non-boolean output field read as a
      condition, and the multi-state flank, refuse exactly as the value-position
      read does. *)
-  let check_subscope_output v (field : StructField.t) : I.conditie option =
+  let check_subscope_output v (field : StructField.t) : I.condition_expr option =
     match ScopeVar.Map.find_opt v subscope_meta with
     | None -> None
     | Some (scope, _args, out_struct) ->
@@ -1462,19 +1462,19 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
               refuse "subscope output field %S is not declared on callee %S" fld_name callee_type
         in
         (match fld_ty with
-         | I.Booleaan -> ()
+         | I.Boolean -> ()
          | _ ->
              refuse
                "non-boolean subscope output %S of %S read as a condition: only a boolean output (a \
                 callee characteristic) lowers to a navigated CharacteristicCheck"
                fld_name callee_type);
         let callee_role = subscope_callee_role v in
-        let bron = Printf.sprintf "de %s is %s" (M.remove (ScopeVar.get_info v)) fld_name in
+        let source_name = Printf.sprintf "de %s is %s" (M.remove (ScopeVar.get_info v)) fld_name in
         Some
-          (Kenmerk_check
-             { kenmerk = Some fld_name; negatie = false;
-               eigenaar = None; periode = None; bron = Some bron;
-               navigatie_binding = Some { I.rb_feittype = subscope_feittype v; rb_rol = callee_role } })
+          (Characteristic_check
+             { characteristic = Some fld_name; negation = false;
+               holder = None; time_period = None; source_name = Some source_name;
+               navigation_binding = Some { I.rb_fact_type = subscope_fact_type v; rb_role = callee_role } })
   in
   (* variables that are always filled: inputs (the case dossier fulfils
      Catala's input contract) or variables carrying an unconditional default
@@ -1498,28 +1498,28 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   let is_filled v = ScopeVar.Set.mem v filled in
   (* object type members, in declaration order *)
-  let attributen = ref [] and kenmerken = ref [] in
+  let attributes = ref [] and characteristics = ref [] in
   ScopeVar.Map.iter
     (fun v (vname, dt) ->
-      if is_bool_dt dt && not (is_value_bool v) then kenmerken := vname :: !kenmerken
-      else attributen := (vname, Some dt) :: !attributen)
+      if is_bool_dt dt && not (is_value_bool v) then characteristics := vname :: !characteristics
+      else attributes := (vname, Some dt) :: !attributes)
     vars;
-  let attributen = List.rev !attributen and kenmerken = List.rev !kenmerken in
-  let objecttype : I.objecttype =
-    { ot_naam = Some ot_name;
+  let attributes = List.rev !attributes and characteristics = List.rev !characteristics in
+  let object_type : I.object_type =
+    { ot_ident = Some ot_name;
       ot_supertype = None;  (* this frontend models no type hierarchy *)
-      attributen;
-      attribuut_meervoud = [];
-      attribuut_dimensies = [];
-      attribuut_granulariteit = [];
-      attribuut_tijdlijn_aantal = [];
-      attribuut_tijdlijn_naam = [];
-      kenmerken = List.map (fun k -> Some k) kenmerken;
-      kenmerk_soorten = List.map (fun k -> (k, Some I.Bijvoeglijk)) kenmerken;
-      kenmerk_granulariteit = [];
-      kenmerk_tijdlijn_aantal = [];
-      bezield = true;
-      meervoud = None }
+      attributes;
+      attribute_plural = [];
+      attribute_dimensions = [];
+      attribute_granularity = [];
+      attribute_timeline_count = [];
+      attribute_timeline_names = [];
+      characteristics = List.map (fun k -> Some k) characteristics;
+      characteristic_kinds = List.map (fun k -> (k, Some I.Adjectival)) characteristics;
+      characteristic_granularity = [];
+      characteristic_timeline_count = [];
+      animate = true;
+      plural = None }
   in
   (* scope-variable reads resolve to attribute/characteristic reads; inside a
      closed body they are captures and refuse (WF-067). *)
@@ -1529,15 +1529,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      lives on the callee (the defaults-group subject), so its caller reads
      navigate callee -> caller. *)
   let attr_ref ?nav vname dt : I.expr =
-    let navigatie_bindingen =
+    let navigation_bindings =
       match nav with
       | None -> None
-      | Some (ft, rol) -> Some [ { I.rb_feittype = ft; rb_rol = rol } ]
+      | Some (ft, role_ref) -> Some [ { I.rb_fact_type = ft; rb_role = role_ref } ]
     in
     typed_ref
-      (Attribuut_ref
-         { attribuut = Some vname; objecttype = Some ot_name; bron = Some ("de " ^ vname);
-           navigatie_bindingen })
+      (Attribute_reference
+         { attribute_ref = Some vname; object_type = Some ot_name; source_name = Some ("de " ^ vname);
+           navigation_bindings })
       (Some dt)
   in
   (* the shared scalar-read check (subscope/closed-body/boolean-carriage/
@@ -1579,8 +1579,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     else (vname, dt)
   in
   (* the shared characteristic-read check; [check_var] wraps it in a bare
-     [Kenmerk_check], the override reader in a navigated one. *)
-  let kenmerk_read ~in_body name : string =
+     [Characteristic_check], the override reader in a navigated one. *)
+  let characteristic_read ~in_body name : string =
     let v = M.remove name in
     if is_subscope v then
       refuse
@@ -1617,11 +1617,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     let vname, dt = scalar_read ~operand ~in_body name in
     attr_ref vname dt
   in
-  let check_var ~in_body name : I.conditie =
-    let k = kenmerk_read ~in_body name in
-    Kenmerk_check
-      { kenmerk = Some k; negatie = false; eigenaar = None; periode = None; bron = Some k;
-        navigatie_binding = None }
+  let check_var ~in_body name : I.condition_expr =
+    let k = characteristic_read ~in_body name in
+    Characteristic_check
+      { characteristic = Some k; negation = false; holder = None; time_period = None; source_name = Some k;
+        navigation_binding = None }
   in
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
@@ -1634,17 +1634,17 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      caller role): the override default sits on the callee's defaults group yet
      reads the caller's override value and guard — Reading B expressed as
      default order, no standing machinery. *)
-  let override_exprs ~feittype ~rol =
+  let override_exprs ~fact_type_name ~role_ref =
     make_exprs ~enums ~structs ~functions
       ~read_var:(fun ~operand ~in_body name ->
         let vname, dt = scalar_read ~operand ~in_body name in
-        attr_ref ~nav:(feittype, rol) vname dt)
+        attr_ref ~nav:(fact_type_name, role_ref) vname dt)
       ~check_var:(fun ~in_body name ->
-        let k = kenmerk_read ~in_body name in
-        Kenmerk_check
-          { kenmerk = Some k; negatie = false; eigenaar = None;
-            periode = None; bron = Some k;
-            navigatie_binding = Some { I.rb_feittype = feittype; rb_rol = rol } })
+        let k = characteristic_read ~in_body name in
+        Characteristic_check
+          { characteristic = Some k; negation = false; holder = None;
+            time_period = None; source_name = Some k;
+            navigation_binding = Some { I.rb_fact_type = fact_type_name; rb_role = role_ref } })
       ~lookup_var ~read_subscope_output ~check_subscope_output ~fused_map:(fun _ -> None)
       ~per_element_call:(fun _ _ ->
         refuse
@@ -1666,38 +1666,38 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let combine a b =
     match a, b with
     | None, x | x, None -> x
-    | Some x, Some y -> Some (I.Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ x; y ]; bron = Some "en" })
+    | Some x, Some y -> Some (I.Compound { quantifier_kind = All; cutoff = 0; components = [ x; y ]; source_name = Some "en" })
   in
   (* accumulators *)
-  let regels = ref [] and defaults_groups = ref [] and consistenties = ref [] in
-  let feittypen = ref [] and creaties = ref [] in
+  let rule_defs = ref [] and defaults_groups = ref [] and consistencies = ref [] in
+  let fact_types = ref [] and creations = ref [] in
   (* besluit 6: caller override highest defaults, keyed by (callee object type,
      callee attribute); [file_to_document] prepends them onto that callee's
      own defaults group once every scope is translated. *)
   let override_contribs : (string * string * I.default list) list ref = ref [] in
-  let add_regel r = regels := r :: !regels in
+  let add_rule r = rule_defs := r :: !rule_defs in
   let add_defaults_group g = defaults_groups := g :: !defaults_groups in
-  let berekening vname dt value ~cond : I.resolved_regel =
-    { rr_naam = Some ("berekening " ^ rule_label vname); rr_soort = Some Berekening;
-      doel = Some (attr_ref vname dt);
-      waarde = Some (value_expr value); rr_voorwaarde = cond; rr_geldigheid = Some geldig;
-      rr_bron_annotaties = None;
+  let computation vname dt value ~cond : I.resolved_rule =
+    { rr_name = Some ("berekening " ^ rule_label vname); rr_presentation = Some Calculation;
+      objective = Some (attr_ref vname dt);
+      value_node = Some (value_expr value); rr_condition = cond; rr_validity = Some valid;
+      rr_source_annotations = None;
       (* the wire pointer is the loader's to set on a record it reads; the
          plugin's records are only ever serialised *)
       rr_pointer = "" }
   in
-  let kenmerktoekenning vname ~voorwaarde : I.resolved_regel =
-    { rr_naam = Some ("kenmerktoekenning " ^ rule_label vname); rr_soort = Some Kenmerktoekenning;
-      doel = Some (attr_ref vname Booleaan);
-      waarde = Some (literal (Lv_boolean true) Booleaan ~bron:(Some "waar"));
-      rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig; rr_bron_annotaties = None;
+  let characteristic_attribution vname ~precondition : I.resolved_rule =
+    { rr_name = Some ("kenmerktoekenning " ^ rule_label vname); rr_presentation = Some Characteristic_attribution;
+      objective = Some (attr_ref vname Boolean);
+      value_node = Some (literal (Lv_boolean true) Boolean ~source_name:(Some "waar"));
+      rr_condition = precondition; rr_validity = Some valid; rr_source_annotations = None;
       rr_pointer = "" }
   in
   (* dispatch one variable definition *)
   let translate_def v e =
     let vname, dt = lookup v in
     let is_bool = is_bool_dt dt in
-    let bool_besluit value =
+    let bool_decision value =
       match M.remove (strip value) with
       | ELit (LBool b) -> b
       | _ -> refuse "a characteristic default's value must be a literal true/false"
@@ -1711,33 +1711,33 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       | Plain (cond, value) -> content_default cond value None
       | Form_a (cond, value, g) -> content_default cond value (Some (build_group g))
       | Group_default g ->
-          { default_besluit = None; default_voorwaarde = None; default_consequentie = None;
-            default_initialisatie = false; default_excepties = Some (build_group g);
-            default_bron = Some vname }
-    and content_default cond value excepties : I.default =
+          { default_decision = None; default_justification = None; default_consequence = None;
+            default_initialisation = false; default_exceptions = Some (build_group g);
+            default_source = Some vname }
+    and content_default cond value exceptions : I.default =
       if is_bool then
-        { default_besluit = Some (bool_besluit value); default_voorwaarde = cond_default cond;
-          default_consequentie = None; default_initialisatie = false;
-          default_excepties = excepties; default_bron = Some vname }
+        { default_decision = Some (bool_decision value); default_justification = cond_default cond;
+          default_consequence = None; default_initialisation = false;
+          default_exceptions = exceptions; default_source = Some vname }
       else
-        { default_besluit = None; default_voorwaarde = cond_default cond;
-          default_consequentie = Some (value_expr value); default_initialisatie = false;
-          default_excepties = excepties; default_bron = Some vname }
+        { default_decision = None; default_justification = cond_default cond;
+          default_consequence = Some (value_expr value); default_initialisation = false;
+          default_exceptions = exceptions; default_source = Some vname }
     and build_group (g : _ pgroup) : I.exception_groups =
-      { egs_ongeordend = List.length g >= 2;
-        egs_leden =
+      { egs_unordered = List.length g >= 2;
+        egs_members =
           List.map
             (fun member : I.exception_group ->
-              { eg_defaults = List.map build_default member; eg_bron = Some vname })
+              { eg_defaults = List.map build_default member; eg_source = Some vname })
             g }
     in
-    let build_defaults_group ?(ongeordend = false) suffix (chain : _ pdefault list) :
+    let build_defaults_group ?(unordered = false) suffix (chain : _ pdefault list) :
         I.prioritized_defaults =
-      { pd_naam = Some (rule_label vname ^ suffix); pd_onderwerp = ot_name;
-        pd_kenmerk = (if is_bool then Some vname else None);
-        pd_attribuut = (if is_bool then None else Some vname);
+      { pd_name = Some (rule_label vname ^ suffix); pd_subject = ot_name;
+        pd_characteristic = (if is_bool then Some vname else None);
+        pd_attribute = (if is_bool then None else Some vname);
         defaults = List.map build_default chain;
-        pd_ongeordend = ongeordend; pd_bron = Some vname; pd_geldigheid = Some geldig }
+        pd_unordered = unordered; pd_source = Some vname; pd_validity = Some valid }
     in
     (* besluit 6: a reentrant variable's own default must be a DEFAULTS GROUP
        (never a bare Berekening), so a caller override can ride above it as a
@@ -1767,7 +1767,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             let suffix = " #" ^ string_of_int (i + 1) in
             match parse_tree m with
             | Some chain ->
-                add_defaults_group (build_defaults_group ~ongeordend:true suffix chain)
+                add_defaults_group (build_defaults_group ~unordered:true suffix chain)
             | None ->
                 refuse
                   "variable %S: an unordered-group member is outside the fragment (besluit 4)"
@@ -1788,11 +1788,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                default must be a defaults-group base for the caller highest
                default to sit above (besluit 6) *)
             if is_bool then
-              add_regel
-                (kenmerktoekenning vname
-                   ~voorwaarde:(combine (cond_opt cond) (bool_value_guard value)))
+              add_rule
+                (characteristic_attribution vname
+                   ~precondition:(combine (cond_opt cond) (bool_value_guard value)))
             else if is_true cond && not (is_reentrant_top v) then
-              add_regel (berekening vname dt value ~cond:None)
+              add_rule (computation vname dt value ~cond:None)
             else add_defaults_group (build_defaults_group "" [ Plain (cond, value) ])
         | Some chain -> add_defaults_group (build_defaults_group "" chain))
   in
@@ -1807,25 +1807,25 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     let instance_var = M.remove (ScopeVar.get_info v) in
     let callee_role = subscope_callee_role v in
     let caller_role = subscope_caller_role v in
-    let feittype = subscope_feittype v in
-    if List.exists (fun (ft : I.feittype) -> ft.ft_naam = Some feittype) !feittypen then
+    let fact_type_name = subscope_fact_type v in
+    if List.exists (fun (ft : I.fact_type_name) -> ft.ft_name = Some fact_type_name) !fact_types then
       refuse
         "two declared subscopes collide on the synthesised fact type %S (creation-per-subject key); \
          only one call per caller subject is keyable — refused (PHASE5C-TUTORIAL §3 flank)"
-        feittype;
-    let ft : I.feittype =
-      { ft_naam = Some feittype; wederkerig = false;
-        rollen =
-          [ { rol_naam = Some caller_role; rol_objecttype_naam = Some ot_name; rol_meervoud = None;
-              rol_meervoudig = false };
-            { rol_naam = Some callee_role; rol_objecttype_naam = Some callee_type;
-              rol_meervoud = None; rol_meervoudig = false } ] }
+        fact_type_name;
+    let ft : I.fact_type_name =
+      { ft_name = Some fact_type_name; reciprocal = false;
+        role_names =
+          [ { role_identifier = Some caller_role; role_object_type_name = Some ot_name; role_plural = None;
+              role_many = false };
+            { role_identifier = Some callee_role; role_object_type_name = Some callee_type;
+              role_plural = None; role_many = false } ] }
     in
     (* besluit 6: which of this callee's inputs are reentrant context targets
        carrying an own default — those args become highest defaults, not member
        initialisations. *)
     let ovr_set = top_default_vars scope in
-    let ve_ov, ce_ov = override_exprs ~feittype ~rol:caller_role in
+    let ve_ov, ce_ov = override_exprs ~fact_type_name ~role_ref:caller_role in
     (* a subscope input definition carries the ordinary scope-variable default
        shape [error_empty ⟨ ⟨true ⊢ ⟨X⟩⟩ | false ⊢ ∅ ⟩] — one unconditional
        plain default. Anything richer (a conditional base or a defaults group) is
@@ -1850,11 +1850,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     let override_default callee_var (pdef : _ pdefault) : I.default =
       match pdef with
       | Plain (just, value) ->
-          { I.default_besluit = None;
-            default_voorwaarde = Some (if is_true just then always_true else ce_ov just);
-            default_consequentie = Some (ve_ov value);
-            default_initialisatie = false; default_excepties = None;
-            default_bron = Some ("context-override " ^ callee_var) }
+          { I.default_decision = None;
+            default_justification = Some (if is_true just then always_true else ce_ov just);
+            default_consequence = Some (ve_ov value);
+            default_initialisation = false; default_exceptions = None;
+            default_source = Some ("context-override " ^ callee_var) }
       | Form_a _ | Group_default _ ->
           refuse
             "a caller override of the context variable %S is a branching tree (a nested or \
@@ -1877,32 +1877,32 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                  refused"
                 callee_var)
       args;
-    let toekenningen =
+    let assignments =
       List.rev
         (ScopeVar.Map.fold
            (fun k (_pos, argexpr) acc ->
              if ScopeVar.Set.mem k ovr_set then acc
              else begin
                let attr = M.remove (ScopeVar.get_info k) in
-               let waarde = arg_value argexpr in
+               let value_node = arg_value argexpr in
                (* a boolean input binds as a characteristic initialisation
-                  (toe_kenmerk = true): the callee's input boolean is a kenmerk,
+                  (to_characteristic = true): the callee's input boolean is a kenmerk,
                   and the WF-027 relaxation (besluit 1) carries the caller's
                   boolean-typed value expression as its init. Numeric/date/struct/
                   enum inputs stay attribute initialisations. *)
-               let toe_kenmerk = (match ir_typ waarde with Some Booleaan -> true | _ -> false) in
-               { I.toe_attribuut = Some attr; toe_waarde = Some waarde; toe_kenmerk } :: acc
+               let to_characteristic = (match ir_typ value_node with Some Boolean -> true | _ -> false) in
+               { I.to_attribute = Some attr; to_value = Some value_node; to_characteristic } :: acc
              end)
            args [])
     in
-    let oc : I.resolved_object_creatie =
-      { oc_naam = Some ("richt " ^ instance_var ^ " op"); nieuw_type = Some callee_type;
-        oc_subject = Some ot_name; toekenningen; oc_voorwaarde = None; oc_geldigheid = Some geldig;
-        oc_verbindende_rol = Some { rb_feittype = feittype; rb_rol = callee_role };
+    let oc : I.resolved_object_creation =
+      { oc_name = Some ("richt " ^ instance_var ^ " op"); created_type = Some callee_type;
+        oc_subject = Some ot_name; assignments; oc_condition = None; oc_validity = Some valid;
+        oc_connecting_role = Some { rb_fact_type = fact_type_name; rb_role = callee_role };
         oc_pointer = "" }
     in
-    feittypen := ft :: !feittypen;
-    creaties := oc :: !creaties
+    fact_types := ft :: !fact_types;
+    creations := oc :: !creations
   in
   (* walk the scope body *)
   List.iteri
@@ -1921,15 +1921,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                 | Catala_runtime.OnlyInput -> () (* input: filled by the case, no rule *)
                 | _ -> translate_def (fst var) e))
       | Sc.Assertion { e; _ } ->
-          consistenties :=
-            { I.cons_naam = Some ("assertie " ^ ot_name ^ " " ^ string_of_int (idx + 1));
-              cons_subject = Some ot_name; assertie = Some (cond_expr e);
-              cons_bron = Some "assertion"; cons_line = idx + 1; cons_geldigheid = Some geldig;
+          consistencies :=
+            { I.cons_name = Some ("assertie " ^ ot_name ^ " " ^ string_of_int (idx + 1));
+              cons_subject = Some ot_name; assertion = Some (cond_expr e);
+              cons_source = Some "assertion"; cons_line = idx + 1; cons_validity = Some valid;
               cons_pointer = "" }
-            :: !consistenties)
+            :: !consistencies)
     sd.scope_decl_rules;
-  ( ot_name, objecttype, List.rev !regels, List.rev !defaults_groups, List.rev !consistenties,
-    List.rev !feittypen, List.rev !creaties, List.rev !override_contribs )
+  ( ot_name, object_type, List.rev !rule_defs, List.rev !defaults_groups, List.rev !consistencies,
+    List.rev !fact_types, List.rev !creations, List.rev !override_contribs )
 
 (* --- top-level definitions -> FunctionDefs (row 10, DMN's BKM) ---------- *)
 
@@ -1982,9 +1982,9 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
               (fun acc v p -> Var.Map.add v p acc)
               Var.Map.empty (Array.to_list vars) params
           in
-          { I.fd_naam = fname; fd_parameters = params;
+          { I.fd_name = fname; fd_parameters = params;
             fd_result = List.assoc fname functions;
-            fd_body = value_expr ~in_body:true ~in_let:false ~env body; fd_bron = Some fname }
+            fd_body = value_expr ~in_body:true ~in_let:false ~env body; fd_source = Some fname }
       | _ ->
           refuse
             "a plain-value top-level definition (a constant, not a function) is refused until a case wants it (recorded)")
@@ -2081,7 +2081,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         let v = M.remove name in
         if ScopeVar.Set.mem v input_set then
           let nm = M.remove (ScopeVar.get_info v) in
-          typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some (dt_of v))
+          typed_ref (Binder_ref { ident = nm; source_name = Some nm }) (Some (dt_of v))
         else
           refuse
             "a nested subscope in %S forwards %S, which is not one of %S's inputs: a nested \
@@ -2089,7 +2089,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
             cname (M.remove (ScopeVar.get_info v)) cname
     | ELit l -> literal_expr l
     | EStructAccess { name; e = base; field } ->
-        let veld_ty =
+        let field_ty =
           match
             Option.bind (StructName.Map.find_opt name structs) (StructField.Map.find_opt field)
           with
@@ -2099,8 +2099,8 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
                 (StructName.base name)
         in
         Field_access
-          { typ = Some veld_ty; base = arg_ir_inner base; veld = StructField.to_string field;
-            bron = None }
+          { typ = Some field_ty; base = arg_ir_inner base; field_name = StructField.to_string field;
+            source_name = None }
     | _ ->
         refuse
           "a nested subscope argument in %S is not an input forward (a bare input, a field of an \
@@ -2135,8 +2135,8 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         in
         Some
           (Invoke
-             { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
-               bron = Some pem.pem_fname })
+             { typ = Some pem.pem_result_ty; function_name = pem.pem_fname; arguments;
+               source_name = Some pem.pem_fname })
   in
   (* the closed body: an input read -> its parameter binder; a subscope-output
      read -> a nested Invoke; any other scope read refuses (non-input read); no
@@ -2147,7 +2147,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         let v = M.remove name in
         if ScopeVar.Set.mem v input_set then
           let nm = M.remove (ScopeVar.get_info v) in
-          typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some (dt_of v))
+          typed_ref (Binder_ref { ident = nm; source_name = Some nm }) (Some (dt_of v))
         else
           refuse
             "per-element callee %S reads %S, which is not one of its inputs (non-input read): \
@@ -2207,7 +2207,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
           let then_ = value_expr ~in_body:true cons in
           If_then_else
             { typ = ir_typ then_; condition = cond_expr ~in_body:true just; then_;
-              else_ = body_of rest; bron = None }
+              else_ = body_of rest; source_name = None }
     | (Form_a _ | Group_default _) :: _ ->
         refuse
           "per-element callee %S output %S carries unordered/conflict exception groups: refused \
@@ -2221,7 +2221,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
      ([closed_term], §S15) now carries — beyond the additive [Plus]/[Min] — the
      multiplicative [Maal], the money×rate cent product ([Afgerond] over a Maal),
      and a division by a COMPILE-TIME CONSTANT divisor. It still faults on binary
-     subtraction ([Verminderd_met] — the additive family is Plus/Min only), a
+     subtraction ([Reduced_by] — the additive family is Plus/Min only), a
      RUNTIME divisor, the abs-division, a power and a percentage: a per-element
      callee whose closed body carries one computes in ref but TRANSLATION-FAULTs
      in clingo. Refuse those loudly here so the divergence surfaces as a refusal,
@@ -2229,14 +2229,14 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
      money×rate wrapper rides [Afgerond].) *)
   let rec fence_expr (e : I.expr) : unit =
     match e with
-    | Binair { op = (Plus | Min | Maal); links; rechts; _ } ->
-        Option.iter fence_expr links; Option.iter fence_expr rechts
-    | Binair { op = Gedeeld_door; links; rechts; _ } ->
+    | Binary { op = (Plus | Min | Times); left_side; right_side; _ } ->
+        Option.iter fence_expr left_side; Option.iter fence_expr right_side
+    | Binary { op = Divided_by; left_side; right_side; _ } ->
         (* clingo's closed_division carries a compile-time POSITIVE constant
            divisor only (br = [] and the scaled value a positive int). A runtime
            or non-positive divisor faults there — refuse it here so the fence
            matches clingo (card clingo-bodymult). *)
-        (match rechts with
+        (match right_side with
          | Some (Literal { variant = Lv_number w; _ })
            when (match float_of_string_opt w with Some f -> f > 0.0 | None -> false) -> ()
          | _ ->
@@ -2245,36 +2245,36 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
                 body: clingo's closed-body division carries only a compile-time positive constant \
                 divisor (card clingo-bodymult) — refused per element"
                cname);
-        Option.iter fence_expr links; Option.iter fence_expr rechts
-    | Binair { op = (Verminderd_met | Gedeeld_door_abs | Tot_de_macht | Percentage_van); _ } ->
+        Option.iter fence_expr left_side; Option.iter fence_expr right_side
+    | Binary { op = (Reduced_by | Divided_by_abs | Power | Percentage_of); _ } ->
         refuse
           "per-element callee %S carries a non-carried binary operator in its closed body (binary \
            subtraction, abs-division, power or percentage): clingo's closed-body term carries +, -, \
            ×, the money×rate cent product and a constant-divisor division, but not this form (card \
            clingo-bodymult) — refused per element"
           cname
-    | Literal _ | Binder_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
-    | Attribuut_ref _ | Expr_onopgelost _ -> ()
-    | Functie { argumenten; leegwaarde; filter; _ } ->
-        List.iter fence_expr argumenten; Option.iter fence_expr leegwaarde;
+    | Literal _ | Binder_ref _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
+    | Attribute_reference _ | Expr_unresolved _ -> ()
+    | Function_call { call_arguments; empty_fallback; filter; _ } ->
+        List.iter fence_expr call_arguments; Option.iter fence_expr empty_fallback;
         Option.iter fence_cond filter
-    | Afgerond { basis = Some basis; _ } ->
+    | Rounding { base_expr = Some base_expr; _ } ->
         (* clingo's closed-body [Afgerond] carries ONLY the money × 4-decimal-rate
            cent product ([money_mult_shape]: a Maal of a 2-decimal money by a
-           4-decimal rate). A money DIVISION ([Afgerond] over a [Gedeeld_door]) or
+           4-decimal rate). A money DIVISION ([Afgerond] over a [Divided_by]) or
            a money×integer rounding has no closed-body image — refuse those, or the
            fence lets a ref-only lowering slip (card clingo-bodymult, S18(c)). *)
         let dec e =
-          match ir_typ e with Some (Numeriek { decimalen; _ }) -> Some decimalen | _ -> None
+          match ir_typ e with Some (Number { decimal_places; _ }) -> Some decimal_places | _ -> None
         in
         let rec money_rate (b : I.expr) =
           match b with
           | Let { body; _ } -> money_rate body
-          | Binair { op = Maal; links = Some m; rechts = Some r; _ } ->
+          | Binary { op = Times; left_side = Some m; right_side = Some r; _ } ->
               dec m = Some 2 && dec r = Some 4
           | _ -> false
         in
-        if money_rate basis then fence_expr basis
+        if money_rate base_expr then fence_expr base_expr
         else
           refuse
             "per-element callee %S wraps a rounding (Rounding) that is not the money × 4-decimal-rate \
@@ -2282,20 +2282,20 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
              — a money division or a money×integer rounding has no closed-body image, refused per \
              element"
             cname
-    | Afgerond { basis = None; _ } -> ()
-    | Begrensd { basis; minimum; maximum; _ } ->
-        Option.iter fence_expr basis; Option.iter fence_expr minimum;
+    | Rounding { base_expr = None; _ } -> ()
+    | Clamp { base_expr; minimum; maximum; _ } ->
+        Option.iter fence_expr base_expr; Option.iter fence_expr minimum;
         Option.iter fence_expr maximum
-    | Tekst_reeks { delen; _ } ->
+    | Text_composition { pieces; _ } ->
         List.iter
-          (function I.Ingevoegd { expr = Some x } -> fence_expr x | _ -> ())
-          delen
-    | Dimensie_cel { attribuut; _ } -> Option.iter fence_expr attribuut
-    | Temporal_read { basis; datum; _ } -> fence_expr basis; fence_expr datum
+          (function I.Embedded_expression { expr = Some x } -> fence_expr x | _ -> ())
+          pieces
+    | Dimension_cell_read { attribute_ref; _ } -> Option.iter fence_expr attribute_ref
+    | Temporal_read { base_expr; date_value; _ } -> fence_expr base_expr; fence_expr date_value
     | Construct { argument; _ } -> Option.iter fence_expr argument
     | Match { scrutinee; arms; _ } ->
         fence_expr scrutinee; List.iter (fun (_, _, b) -> fence_expr b) arms
-    | Struct_literal { velden; _ } -> List.iter (fun (_, v) -> fence_expr v) velden
+    | Struct_literal { field_list; _ } -> List.iter (fun (_, v) -> fence_expr v) field_list
     | Field_access { base; _ } -> fence_expr base
     | Let { value; body; _ } -> fence_expr value; fence_expr body
     | List_literal { elements; _ } -> List.iter fence_expr elements
@@ -2303,9 +2303,9 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | If_then_else { condition; then_; else_; _ } ->
         fence_cond condition; fence_expr then_; fence_expr else_
     | Invoke { arguments; _ } -> List.iter fence_expr arguments
-    | Fold { list; functie; init; _ } ->
-        fence_expr list; fence_fn functie; fence_expr init
-    | Map_list { list; functie; _ } -> fence_expr list; fence_fn functie
+    | Fold { list; function_name; init; _ } ->
+        fence_expr list; fence_fn function_name; fence_expr init
+    | Map_list { list; function_name; _ } -> fence_expr list; fence_fn function_name
     | Filter_list { list; condition; _ } -> fence_expr list; fence_cond condition
     | List_length { list; _ } -> fence_expr list
     (* the §5.7 instance-set union (IR-SPEC ch. 4.3, WF-110) reaches a body
@@ -2316,26 +2316,26 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
           "instance-set union: the §5.7 concatenation counts object INSTANCES, which this \
            frontend's value fragment has no term for"
   and fence_fn = function Fn_lambda { body; _ } -> fence_expr body | Fn_name _ -> ()
-  and fence_cond (c : I.conditie) : unit =
+  and fence_cond (c : I.condition_expr) : unit =
     match c with
-    | Vergelijking { links; rechts; _ } ->
-        Option.iter fence_expr links; Option.iter fence_expr rechts
-    | Predicaat { operand; _ } -> Option.iter fence_expr operand
-    | Periode_conditie { vanaf; tot; _ } ->
-        Option.iter fence_expr vanaf; Option.iter fence_expr tot
-    | Samengesteld { onderdelen; _ } -> List.iter fence_cond onderdelen
+    | Comparison { left_side; right_side; _ } ->
+        Option.iter fence_expr left_side; Option.iter fence_expr right_side
+    | Predicate { operand; _ } -> Option.iter fence_expr operand
+    | Time_window { starting_at; up_to; _ } ->
+        Option.iter fence_expr starting_at; Option.iter fence_expr up_to
+    | Compound { components; _ } -> List.iter fence_cond components
     (* the quantifier fold (IR-SPEC ch. 4.5) reaches this walk only through
        its two sub-conditions; this frontend never produces one, and the
        arm is here so that adding a condition node stays a compile error
        for the walks that must see it rather than a silent leaf *)
-    | Kwantorvouw { kv_filter; kv_toets; _ } ->
-        Option.iter fence_cond kv_filter; Option.iter fence_cond kv_toets
-    | Kenmerk_check _ | Role_membership _
-    | Regelversie _ | Conditie_onopgelost _ -> ()
+    | Quantifier_fold { kv_filter; kv_test; _ } ->
+        Option.iter fence_cond kv_filter; Option.iter fence_cond kv_test
+    | Characteristic_check _ | Role_membership _
+    | Rule_status_check _ | Condition_unresolved _ -> ()
   in
   fence_expr body;
-  ( { I.fd_naam = fname; fd_parameters = params; fd_result = out_dt; fd_body = body;
-      fd_bron = Some fname },
+  ( { I.fd_name = fname; fd_parameters = params; fd_result = out_dt; fd_body = body;
+      fd_source = Some fname },
     { pem_fname = fname; pem_params = inputs; pem_result_ty = out_dt } )
 
 (* --- driver ------------------------------------------------------------- *)
@@ -2459,20 +2459,20 @@ let file_to_document (input : string) : I.document =
         synth_fns := (key, (fd, meta)) :: !synth_fns;
         meta
   in
-  let objecttypen = ref [] and regels = ref [] and defaults_groups = ref [] and cons = ref [] in
-  let feittypen = ref [] and creaties = ref [] and overrides = ref [] in
+  let object_types = ref [] and rule_defs = ref [] and defaults_groups = ref [] and cons = ref [] in
+  let fact_types = ref [] and creations = ref [] and overrides = ref [] in
   List.iter
     (fun (name, decl) ->
       let ot_name, ot, rs, gs, cs, fts, ocs, ovs =
         translate_scope enums structs functions ~ambiguous ~top_default_vars ~callee_multistate
           ~per_element_call name (M.remove decl)
       in
-      objecttypen := (ot_name, ot) :: !objecttypen;
-      regels := !regels @ rs;
+      object_types := (ot_name, ot) :: !object_types;
+      rule_defs := !rule_defs @ rs;
       defaults_groups := !defaults_groups @ gs;
       cons := !cons @ cs;
-      feittypen := !feittypen @ List.map (fun (ft : I.feittype) -> (Option.get ft.ft_naam, ft)) fts;
-      creaties := !creaties @ ocs;
+      fact_types := !fact_types @ List.map (fun (ft : I.fact_type_name) -> (Option.get ft.ft_name, ft)) fts;
+      creations := !creations @ ocs;
       overrides := !overrides @ ovs)
     scopes;
   (* prepend each caller override's highest defaults onto its callee's own
@@ -2483,7 +2483,7 @@ let file_to_document (input : string) : I.document =
     (fun (ot, var, _) ->
       if not (List.exists
                 (fun (g : I.prioritized_defaults) ->
-                  g.pd_onderwerp = ot && g.pd_attribuut = Some var)
+                  g.pd_subject = ot && g.pd_attribute = Some var)
                 !defaults_groups)
       then refuse "a context override on %s.%s found no callee defaults group (besluit 6)" ot var)
     !overrides;
@@ -2493,7 +2493,7 @@ let file_to_document (input : string) : I.document =
         let extra =
           List.concat_map
             (fun (ot, var, ds) ->
-              if g.pd_onderwerp = ot && g.pd_attribuut = Some var then ds else [])
+              if g.pd_subject = ot && g.pd_attribute = Some var then ds else [])
             !overrides
         in
         if extra = [] then g else { g with defaults = extra @ g.defaults })
@@ -2504,28 +2504,28 @@ let file_to_document (input : string) : I.document =
     @ List.rev_map (fun (_, (fd, _)) -> fd) !synth_fns
   in
   (* the enums and structs actually referenced above become keuzetype/StructType
-     domains, in declaration order — each enum on the variant [keuzetype_of]
+     domains, in declaration order — each enum on the variant [choice_type_of]
      decided (SumType, or Enumeration when all-nullary, WF-087); the reduce
      lowering's Optional (payload-carrying, built with the concrete element
      datatype) joins them when used. *)
-  let domeinen =
+  let domain_specs =
     (match !used_optional with
      | Some elt -> [ (optional_domain, Some (optional_dt elt)) ]
      | None -> [])
     @ List.map
-        (fun name -> (EnumName.base name, Some (keuzetype_of enums structs name)))
+        (fun name -> (EnumName.base name, Some (choice_type_of enums structs name)))
         (EnumName.Set.elements !used_enums)
     @ List.map
         (fun name -> (StructName.base name, Some (struct_type_of enums structs name)))
         (StructName.Set.elements !used_structs)
   in
-  { objecttypen = List.rev !objecttypen;
-    domeinen; parameters = []; eenheidstelsels = []; feittypen = !feittypen;
-    dimensies = []; tijdlijnen = []; dagsoorten = [];
-    resolved_regels = !regels; resolved_dagsoorten = [];
-    object_creaties = !creaties; verdelingen = []; consistenties = !cons;
-    uniciteiten = []; uniciteit_unies = []; feit_creaties = [];
-    resolved_startpunten = []; regel_groepen = []; diagnostics = [];
-    prioritized_defaults = defaults_groups; function_defs; presentatie_annotaties = [] }
+  { object_types = List.rev !object_types;
+    domain_specs; parameters = []; unit_systems = []; fact_types = !fact_types;
+    dimensions = []; timelines = []; day_kinds = [];
+    resolved_rules = !rule_defs; resolved_day_kind_definitions = [];
+    object_creations = !creations; allocations = []; consistencies = !cons;
+    uniquenesses = []; uniqueness_unions = []; fact_creations = [];
+    resolved_start_point_determinations = []; rule_groups = []; diagnostics = [];
+    prioritized_defaults = defaults_groups; function_defs; presentation_annotations = [] }
 
 let run ~input ~output = Emit.to_file output (file_to_document input)

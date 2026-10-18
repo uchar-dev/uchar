@@ -137,10 +137,10 @@ let some_names l = List.filter_map (fun x -> x) l
    assumption held of nothing: a sign-prefixed extended year sorts before
    every four-digit year and a non-date sorts after every one of them, both
    silently (measured 2026-09-11). *)
-let validity_overlaps (a : geldigheid option) (b : geldigheid option) =
+let validity_overlaps (a : validity_window option) (b : validity_window option) =
   let bounds = function
     | None -> (None, None)
-    | Some g -> (g.geld_vanaf, g.geld_tot)
+    | Some g -> (g.valid_from, g.valid_to)
   in
   let (a1, a2) = bounds a and (b1, b2) = bounds b in
   let le lo hi =
@@ -151,30 +151,30 @@ let validity_overlaps (a : geldigheid option) (b : geldigheid option) =
 
 (* --- datatype predicates ------------------------------------------------ *)
 
-let is_number_like = function Numeriek _ | Percentage _ -> true | _ -> false
-let is_date = function Datum_in_dagen | Datum_tijd -> true | _ -> false
+let is_number_like = function Number _ | Percentage _ -> true | _ -> false
+let is_date = function Date_in_days | Date_time_type -> true | _ -> false
 
 let is_orderable = function
-  | Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd -> true
+  | Number _ | Percentage _ | Date_in_days | Date_time_type -> true
   | _ -> false
 
 let unit_of = function
-  | Numeriek { eenheid; _ } | Percentage { eenheid; _ } -> eenheid
+  | Number { measure_unit; _ } | Percentage { measure_unit; _ } -> measure_unit
   | _ -> None
 
 (* Convertibility at dump level: same shape (plain vs rate), canonical names
    equal within the same system, rates recursively convertible (IR-SPEC
    ch. 2.5). Conservative: unknown structure counts as compatible, so this
    check under-reports rather than mis-fires. *)
-let rec units_convertible (a : eenheid) (b : eenheid) =
-  let canon (u : eenheid) =
-    match u.canoniek with Some c -> Some (norm c)
-    | None -> Option.map norm u.afkorting
+let rec units_convertible (a : measure_unit) (b : measure_unit) =
+  let canon (u : measure_unit) =
+    match u.canonical_form with Some c -> Some (norm c)
+    | None -> Option.map norm u.abbr_text
   in
   (match canon a, canon b with
    | Some x, Some y -> x = y
    | _ -> true)
-  && (match a.noemer, b.noemer with
+  && (match a.denominator, b.denominator with
       | None, None -> true
       | Some x, Some y -> units_convertible x y
       | _ -> false)
@@ -188,8 +188,8 @@ let units_compatible a b =
 (* WF-035/036 mirrored convenience (IR-SPEC ch. 4.6): a unitless numeric
    literal adopts its sibling's unit before any unit-compatibility check. *)
 let is_unitless_numeric_literal = function
-  | Some (Literal { typ = Some (Numeriek { eenheid = None; _ }); _ })
-  | Some (Literal { typ = Some (Percentage { eenheid = None; _ }); _ }) -> true
+  | Some (Literal { typ = Some (Number { measure_unit = None; _ }); _ })
+  | Some (Literal { typ = Some (Percentage { measure_unit = None; _ }); _ }) -> true
   | _ -> false
 
 let units_compatible_adopting lexpr rexpr a b =
@@ -205,29 +205,29 @@ let units_compatible_adopting lexpr rexpr a b =
    system are irrelevant to calendar arithmetic (a unit may name no system):
    a year is a calendar year, never a second count. *)
 type time_unit =
-  | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag
-  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde
+  | Tu_year | Tu_quarter | Tu_month | Tu_week | Tu_day
+  | Tu_hour | Tu_minute | Tu_second | Tu_millisecond
 
 let time_unit_of_spelling s =
   match String.lowercase_ascii (String.trim s) with
-  | "jaar" | "jr" | "jaren" -> Some Tu_jaar
-  | "maand" | "mnd" | "maanden" -> Some Tu_maand
-  | "kwartaal" | "kw" | "kwartalen" -> Some Tu_kwartaal
+  | "jaar" | "jr" | "jaren" -> Some Tu_year
+  | "maand" | "mnd" | "maanden" -> Some Tu_month
+  | "kwartaal" | "kw" | "kwartalen" -> Some Tu_quarter
   | "week" | "wk" | "weken" -> Some Tu_week
-  | "dag" | "dg" | "dagen" -> Some Tu_dag
-  | "uur" | "u" | "uren" -> Some Tu_uur
-  | "minuut" | "min" | "minuten" -> Some Tu_minuut
-  | "seconde" | "sec" | "s" | "seconden" | "secondes" -> Some Tu_seconde
-  | "milliseconde" | "ms" | "milliseconden" | "millisecondes" -> Some Tu_milliseconde
+  | "dag" | "dg" | "dagen" -> Some Tu_day
+  | "uur" | "u" | "uren" -> Some Tu_hour
+  | "minuut" | "min" | "minuten" -> Some Tu_minute
+  | "seconde" | "sec" | "s" | "seconden" | "secondes" -> Some Tu_second
+  | "milliseconde" | "ms" | "milliseconden" | "millisecondes" -> Some Tu_millisecond
   | _ -> None
 
-let time_unit_of_eenheid (e : eenheid) =
-  match e.afkorting with Some a -> time_unit_of_spelling a | None -> None
+let time_unit_of_unit (e : measure_unit) =
+  match e.abbr_text with Some a -> time_unit_of_spelling a | None -> None
 
 (* sub-day units demand millisecond-precision operands *)
 let time_unit_sub_day = function
-  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde -> true
-  | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag -> false
+  | Tu_hour | Tu_minute | Tu_second | Tu_millisecond -> true
+  | Tu_year | Tu_quarter | Tu_month | Tu_week | Tu_day -> false
 
 (* The sign of the VALUE a number variant's string spells (the grammar of
    WF-081: an integer, a decimal or a rational). Zero whenever the numerator
@@ -251,11 +251,11 @@ let lexeme_negative s =
 let literal_sign_refusal ~target t w =
   let under = if target then " is written into a target under a " else " under a " in
   match t with
-  | Niet_negatief when lexeme_negative w ->
+  | Non_negative when lexeme_negative w ->
       Some ("negative literal '" ^ w ^ "'" ^ under ^ "non-negative sign restriction")
-  | Positief when lexeme_negative w || lexeme_zero w ->
+  | Positive when lexeme_negative w || lexeme_zero w ->
       Some ("literal '" ^ w ^ "'" ^ under ^ "positive sign restriction")
-  | Negatief when not (lexeme_negative w) ->
+  | Negative when not (lexeme_negative w) ->
       Some ("literal '" ^ w ^ "'" ^ under ^ "negative sign restriction")
   | _ -> None
 
@@ -331,7 +331,7 @@ let lexeme_iso_date s =
    the emitter still wrote it into `waarde`; since the emitter writes ISO
    there (card p5-datumtijd-lexeem, 2026-09-22) the snippet belongs in the
    source record alone, as WF-084 already has it for a day-precision date. *)
-let lexeme_datum_tijd s =
+let lexeme_date_time s =
   let n = String.length s in
   let digit i = i < n && s.[i] >= '0' && s.[i] <= '9' in
   let digits_at i k =
@@ -374,12 +374,12 @@ let literal_variant_key = function
   | Lv_constructor _ -> "constructor"
 
 let variant_named_by = function
-  | Numeriek _ | Percentage _ -> Some "number"
-  | Booleaan -> Some "boolean"
-  | Tekst -> Some "text"
-  | Datum_in_dagen -> Some "date"
-  | Datum_tijd -> Some "dateTime"
-  | Enumeratie _ -> Some "enumeration"
+  | Number _ | Percentage _ -> Some "number"
+  | Boolean -> Some "boolean"
+  | Text_type -> Some "text"
+  | Date_in_days -> Some "date"
+  | Date_time_type -> Some "dateTime"
+  | Enumeration _ -> Some "enumeration"
   | Sum_type _ -> Some "constructor"
   | List_type _ | Struct_type _ -> None
 
@@ -389,12 +389,12 @@ let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
   else
     let named =
       match typ with
-      | Numeriek _ | Percentage _ -> "a Number"
-      | Booleaan -> "a Boolean"
-      | Tekst -> "a Text"
-      | Datum_in_dagen -> "a day-precision Date"
-      | Datum_tijd -> "a millisecond-precision Date"
-      | Enumeratie _ -> "an Enumeration"
+      | Number _ | Percentage _ -> "a Number"
+      | Boolean -> "a Boolean"
+      | Text_type -> "a Text"
+      | Date_in_days -> "a day-precision Date"
+      | Date_time_type -> "a millisecond-precision Date"
+      | Enumeration _ -> "an Enumeration"
       | Sum_type _ -> "a SumType"
       | List_type _ -> "a ListType"
       | Struct_type _ -> "a StructType"
@@ -418,8 +418,8 @@ let context_value_names = Spelling.context_value_names
    by a BinderRef (ch. 4.10) — so the reference resolves against nothing.
    Shared with the loader: every executor refuses it at load in this
    sentence. *)
-let variable_reference_refusal naam =
-  (match naam with
+let variable_reference_refusal ident =
+  (match ident with
    | Some n -> "variable reference '" ^ n ^ "'"
    | None -> "a variable reference without a name")
   ^ " resolves against no binding: a rule-local variable is a Let, read by a BinderRef"
@@ -475,10 +475,10 @@ let context_value_refusal name =
 let context_value_type_refusal name (typ : datatype) =
   let fixed =
     if name = Spelling.evaluation_date then
-      match typ with Datum_in_dagen -> None | _ -> Some "a day-precision Date"
+      match typ with Date_in_days -> None | _ -> Some "a day-precision Date"
     else if name = Spelling.evaluation_year then
       match typ with
-      | Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None } -> None
+      | Number { whole_part = true; decimal_places = 0; sign_char = Some Unspecified; measure_unit = None } -> None
       | _ -> Some "a whole Number with 0 decimals, the sign unspecified and no unit"
     else None
   in
@@ -514,7 +514,7 @@ let severity_refusal : severity option -> string option = function
 
 (* WF-081, WF-084 and WF-095 (IR-SPEC ch. 4.1): the string of a number, date
    or dateTime variant outside its grammar ([lexeme_bare_number],
-   [lexeme_iso_date], [lexeme_datum_tijd]). Shared with the loader like the
+   [lexeme_iso_date], [lexeme_date_time]). Shared with the loader like the
    two sentences above. *)
 let number_lexeme_refusal w =
   if lexeme_bare_number w then None
@@ -532,7 +532,7 @@ let date_lexeme_refusal w =
      ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)")
 
 let date_time_lexeme_refusal w =
-  if lexeme_datum_tijd w then None
+  if lexeme_date_time w then None
   else
     Some
       ("millisecond-precision date literal lexeme '" ^ w
@@ -544,61 +544,61 @@ let date_time_lexeme_refusal w =
    lexemes — a date yyyy-mm-dd (WF-084's) or a day-month --mm-dd naming a day
    of a leap year, the year a day-month is anchored in (RUNTIME-SEMANTICS
    ch. 3.2) — and the three sentences the rule refuses in. The executors
-   read a fixed start point through [lees_vast_startpunt] and refuse at load
+   read a fixed start point through [read_fixed_start_point] and refuse at load
    in the same sentences ([Loader.reader]), and the Drools loader copies them
    letter for letter, so the four readers cannot drift apart. *)
-type vast_startpunt = Vs_datum of int * int * int | Vs_dag_maand of int * int
+type fixed_start_point = Vs_date of int * int * int | Vs_day_month of int * int
 
-let lees_vast_startpunt s =
+let read_fixed_start_point s =
   let digits str = str <> "" && String.for_all (fun c -> c >= '0' && c <= '9') str in
-  if lexeme_iso_date s then Scanf.sscanf s "%4d-%2d-%2d" (fun y m d -> Some (Vs_datum (y, m, d)))
+  if lexeme_iso_date s then Scanf.sscanf s "%4d-%2d-%2d" (fun y m d -> Some (Vs_date (y, m, d)))
   else
     match String.split_on_char '-' s with
     | [ ""; ""; m; d ] when String.length m = 2 && String.length d = 2 && digits m && digits d ->
         let m = int_of_string m and d = int_of_string d in
-        if m >= 1 && m <= 12 && d >= 1 && d <= days_in_month 2000 m then Some (Vs_dag_maand (m, d))
+        if m >= 1 && m <= 12 && d >= 1 && d <= days_in_month 2000 m then Some (Vs_day_month (m, d))
         else None
     | _ -> None
 
 (* The months between two walls of a one-unit month, quarter or year grid;
    0 for a day or week grid. *)
-let stap_maanden = function Maand -> 1 | Kwartaal -> 3 | Jaar -> 12 | Dag | Week -> 0
+let step_months = function Month -> 1 | Quarter -> 3 | Year -> 12 | Day | Week -> 0
 
 (* The canonical day-month of a one-unit month, quarter or year grid with a
    wall on day [d] of month [m]: the earliest month of the year in that
    month's cycle that has the day itself; None when no month of it has. *)
-let canonieke_dag_maand g m d =
-  let stap = stap_maanden g in
-  if stap = 0 || m < 1 || m > 12 || d < 1 then None
+let canonical_day_month g m d =
+  let step_item = step_months g in
+  if step_item = 0 || m < 1 || m > 12 || d < 1 then None
   else
-    let rec vanaf mm =
+    let rec starting_at mm =
       if mm > 12 then None
       else if d <= days_in_month 2000 mm then Some (Printf.sprintf "--%02d-%02d" mm d)
-      else vanaf (mm + stap)
+      else starting_at (mm + step_item)
     in
-    vanaf (((m - 1) mod stap) + 1)
+    starting_at (((m - 1) mod step_item) + 1)
 
 (* WF-115 (b): the refusal of fixed start point [s] on a grid of [g] and
    count [n], or None when it fits. A count below 1 is WF-005's. *)
-let vast_startpunt_refusal g n s =
+let fixed_start_point_refusal g n s =
   if n < 1 then None
   else
-    let reden =
-      match (g, lees_vast_startpunt s) with
-      | Dag, _ when n = 1 -> Some "a day grid has a wall at every day boundary and takes no start point"
+    let cause =
+      match (g, read_fixed_start_point s) with
+      | Day, _ when n = 1 -> Some "a day grid has a wall at every day boundary and takes no start point"
       | _, l when g = Week || n >= 2 -> (
           match l with
-          | Some (Vs_datum _) -> None
+          | Some (Vs_date _) -> None
           | _ ->
               Some
                 "a week grid and a grid of several units start on a date, written yyyy-mm-dd, the \
                  ISO form of a day of the calendar")
-      | _, (None | Some (Vs_datum _)) ->
+      | _, (None | Some (Vs_date _)) ->
           Some
             "a month, quarter or year grid of one unit starts on a day-month, written --mm-dd, a \
              day of month mm in a leap year"
-      | _, Some (Vs_dag_maand (m, d)) -> (
-          match canonieke_dag_maand g m d with
+      | _, Some (Vs_day_month (m, d)) -> (
+          match canonical_day_month g m d with
           | Some "--01-01" -> Some "it lays the calendar's own grid, which is written without a fixedStart"
           | Some c when c = s -> None
           | Some c ->
@@ -611,19 +611,19 @@ let vast_startpunt_refusal g n s =
       (fun r ->
         "fixed start point '" ^ s ^ "' does not fit a " ^ Spelling.encode Spelling.granularity g
         ^ " grid of count " ^ string_of_int n ^ ": " ^ r)
-      reden
+      cause
 
 (* WF-115 (a). *)
-let vast_startpunt_variabel_refusal tijdlijn s =
-  "timeline '" ^ tijdlijn ^ "' has a variable start and a fixedStart '" ^ s
+let fixed_start_point_variable_refusal timeline_state s =
+  "timeline '" ^ timeline_state ^ "' has a variable start and a fixedStart '" ^ s
   ^ "': its periods run from the anchor its start-point determination binds per object, and a \
      timeline has one start"
 
 (* WF-115 (c): a facet's fixed start point against its named timeline's. *)
-let vast_startpunt_overname_refusal ~facet ~tijdlijn ~van_tijdlijn =
-  let tekst = function None -> "none" | Some s -> "'" ^ s ^ "'" in
-  "named-timeline adoption is partial: fixed start point " ^ tekst facet ^ " on the facet, "
-  ^ tekst van_tijdlijn ^ " on timeline '" ^ tijdlijn ^ "'"
+let fixed_start_point_adoption_refusal ~facet ~timeline_state ~from_timeline =
+  let body_text = function None -> "none" | Some s -> "'" ^ s ^ "'" in
+  "named-timeline adoption is partial: fixed start point " ^ body_text facet ^ " on the facet, "
+  ^ body_text from_timeline ^ " on timeline '" ^ timeline_state ^ "'"
 
 (* --- document context --------------------------------------------------- *)
 
@@ -652,24 +652,24 @@ type ctx = { doc : document }
    fields, an object creation's subject and created type, a uniqueness key,
    a consistency subject, every reference position in the expression walk —
    already resolves through [objecttype] below. *)
-let declared_objecttype ctx name = find_ci ctx.doc.objecttypen name
+let declared_object_type ctx name = find_ci ctx.doc.object_types name
 
 (* The chain from [ot] upward, own type first, root last. Cycle-safe by
    construction — a name already on the path stops the walk — because
    WF-104 reports the cycle while every other check must still terminate
    on that same document. *)
-let chain_from ctx (ot : objecttype) =
-  let rec go seen (ot : objecttype) acc =
+let chain_from ctx (ot : object_type) =
+  let rec go seen (ot : object_type) acc =
     let acc = ot :: acc in
     match ot.ot_supertype with
     | None -> List.rev acc
     | Some s when List.mem (norm s) seen -> List.rev acc
     | Some s -> (
-        match declared_objecttype ctx s with
+        match declared_object_type ctx s with
         | None -> List.rev acc
         | Some p -> go (norm s :: seen) p acc)
   in
-  go [ norm (Option.value ot.ot_naam ~default:"") ] ot []
+  go [ norm (Option.value ot.ot_ident ~default:"") ] ot []
 
 (* The EFFECTIVE object type: the declared record with every member list
    replaced by the chain-closed union, NEAREST DECLARATION FIRST, so
@@ -677,7 +677,7 @@ let chain_from ctx (ot : objecttype) =
    ch. 2.2. Identity on a root type — which is every type in a document
    without a supertype edge, so the chain-closed view costs nothing where
    there is no chain. *)
-let effective_objecttype ctx (ot : objecttype) =
+let effective_object_type ctx (ot : object_type) =
   match ot.ot_supertype with
   | None -> ot
   | Some _ ->
@@ -685,34 +685,34 @@ let effective_objecttype ctx (ot : objecttype) =
       let cat f = List.concat_map f types in
       {
         ot with
-        attributen = cat (fun t -> t.attributen);
-        attribuut_meervoud = cat (fun t -> t.attribuut_meervoud);
-        attribuut_dimensies = cat (fun t -> t.attribuut_dimensies);
-        attribuut_granulariteit = cat (fun t -> t.attribuut_granulariteit);
-        attribuut_tijdlijn_aantal = cat (fun t -> t.attribuut_tijdlijn_aantal);
-        attribuut_tijdlijn_naam = cat (fun t -> t.attribuut_tijdlijn_naam);
-        kenmerken = cat (fun t -> t.kenmerken);
-        kenmerk_soorten = cat (fun t -> t.kenmerk_soorten);
-        kenmerk_granulariteit = cat (fun t -> t.kenmerk_granulariteit);
-        kenmerk_tijdlijn_aantal = cat (fun t -> t.kenmerk_tijdlijn_aantal);
+        attributes = cat (fun t -> t.attributes);
+        attribute_plural = cat (fun t -> t.attribute_plural);
+        attribute_dimensions = cat (fun t -> t.attribute_dimensions);
+        attribute_granularity = cat (fun t -> t.attribute_granularity);
+        attribute_timeline_count = cat (fun t -> t.attribute_timeline_count);
+        attribute_timeline_names = cat (fun t -> t.attribute_timeline_names);
+        characteristics = cat (fun t -> t.characteristics);
+        characteristic_kinds = cat (fun t -> t.characteristic_kinds);
+        characteristic_granularity = cat (fun t -> t.characteristic_granularity);
+        characteristic_timeline_count = cat (fun t -> t.characteristic_timeline_count);
       }
 
 (* Resolution walks the chain UPWARD ONLY: this is the one lookup every
    member cross goes through, so a member declared on a strict subtype and
    read at the supertype still does not resolve — not every instance of the
    supertype has it. That refusal is the chain-aware WF-034. *)
-let objecttype ctx name = Option.map (effective_objecttype ctx) (declared_objecttype ctx name)
+let object_type ctx name = Option.map (effective_object_type ctx) (declared_object_type ctx name)
 
 (* S ⊑ T — the reflexive-transitive closure of the supertype edge. *)
 let is_sub ctx ~sub ~super =
   norm sub = norm super
   ||
-  match declared_objecttype ctx sub with
+  match declared_object_type ctx sub with
   | None -> false
   | Some ot ->
       List.exists
-        (fun (t : objecttype) ->
-          match t.ot_naam with Some n -> norm n = norm super | None -> false)
+        (fun (t : object_type) ->
+          match t.ot_ident with Some n -> norm n = norm super | None -> false)
         (chain_from ctx ot)
 
 (* Comparable in one chain, either direction — WF-047's "agree" widened
@@ -728,7 +728,7 @@ let type_compatible ctx a b = is_sub ctx ~sub:a ~super:b || is_sub ctx ~sub:b ~s
    a check context — the reference interpreter's loader and evaluator and
    the ASP translator resolve members through these, so the chain has one
    definition in the house and the three readers cannot drift on it. *)
-let effective_ot doc name = objecttype { doc } name
+let effective_ot doc name = object_type { doc } name
 let subtype_of doc ~sub ~super = is_sub { doc } ~sub ~super
 
 (* CAN one object be both an [a] and a [b]? Populations are EXTENSIONAL — a
@@ -755,12 +755,12 @@ let populations_overlap doc a b =
   is_sub ctx ~sub:a ~super:b
   || is_sub ctx ~sub:b ~super:a
   || List.exists
-       (fun ((name, _) : string * objecttype) ->
+       (fun ((name, _) : string * object_type) ->
          is_sub ctx ~sub:name ~super:a && is_sub ctx ~sub:name ~super:b)
-       doc.objecttypen
+       doc.object_types
 
 (* WF-109's sentences (IR-SPEC ch. 4.6 (q1)), in the one place the verifier and
-   the reader that decides a fact creation's guard (ref's [guard_on_doel], which
+   the reader that decides a fact creation's guard (ref's [guard_on_target], which
    the ASP backend calls) take them from, so a host that names no single object
    is refused in the same words wherever it is met. [bound] is the (role, type)
    list of the objects the position binds, [hits] those that SATISFY the host
@@ -797,26 +797,26 @@ let wf109_host_sentence ~host ~(bound : (string * string) list) ~hits ~near =
    concrete type would make one target report under as many names as it has
    subtypes. *)
 let declaring_type doc ~from ~kind ~member =
-  match declared_objecttype { doc } from with
+  match declared_object_type { doc } from with
   | None -> None
   | Some ot ->
       List.find_map
-        (fun (t : objecttype) ->
+        (fun (t : object_type) ->
           let hit =
             match kind with
-            | `Attribute -> List.exists (fun (k, _) -> norm k = norm member) t.attributen
-            | `Characteristic -> mem_ci (some_names t.kenmerken) member
+            | `Attribute -> List.exists (fun (k, _) -> norm k = norm member) t.attributes
+            | `Characteristic -> mem_ci (some_names t.characteristics) member
           in
-          if hit then t.ot_naam else None)
+          if hit then t.ot_ident else None)
         (chain_from { doc } ot)
 
 (* A defaults group's target as the ch. 7.10 composition keys it: the target
    KIND and name, without the subject, so an attribute and a characteristic
    sharing a name (WF-002) stay two targets. *)
 let target_key (l : prioritized_defaults) =
-  (if l.pd_kenmerk <> None then "K:" else "A:")
+  (if l.pd_characteristic <> None then "K:" else "A:")
   ^
-  match (l.pd_kenmerk, l.pd_attribuut) with
+  match (l.pd_characteristic, l.pd_attribute) with
   | Some k, _ -> norm k
   | _, Some a -> norm a
   | _ -> "?"
@@ -832,10 +832,10 @@ let chain_group_keys doc t =
       if subtype_of doc ~sub:t ~super:s then
         List.filter_map
           (fun (l : prioritized_defaults) ->
-            if norm l.pd_onderwerp = norm s then Some (target_key l) else None)
+            if norm l.pd_subject = norm s then Some (target_key l) else None)
           doc.prioritized_defaults
       else [])
-    doc.objecttypen
+    doc.object_types
   |> List.sort_uniq compare
 
 (* The concrete types on which the ch. 7.10 fold takes an ordinary rule
@@ -853,7 +853,7 @@ let absorbing_types doc ~otype ~attr : string list =
   let key = "A:" ^ norm attr in
   if
     List.exists
-      (fun (l : prioritized_defaults) -> norm l.pd_onderwerp = norm otype && target_key l = key)
+      (fun (l : prioritized_defaults) -> norm l.pd_subject = norm otype && target_key l = key)
       doc.prioritized_defaults
   then []
   else
@@ -861,7 +861,7 @@ let absorbing_types doc ~otype ~attr : string list =
       (fun (t, _) ->
         if subtype_of doc ~sub:t ~super:otype && List.mem key (chain_group_keys doc t) then Some t
         else None)
-      doc.objecttypen
+      doc.object_types
 
 (* --- the chain arms of the single-writer fences ---------------------------
 
@@ -926,34 +926,34 @@ let dedup_reports (reports : violation list) =
         true))
     reports
 
-let attr_of ot name = find_ci ot.attributen name
-let has_attr ot name = List.exists (fun (k, _) -> norm k = norm name) ot.attributen
-let has_kenmerk ot name = mem_ci (some_names ot.kenmerken) name
+let attr_of ot name = find_ci ot.attributes name
+let has_attr ot name = List.exists (fun (k, _) -> norm k = norm name) ot.attributes
+let has_characteristic ot name = mem_ci (some_names ot.characteristics) name
 
 let attr_temporal ot name =
-  List.exists (fun (k, _) -> norm k = norm name) ot.attribuut_granulariteit
+  List.exists (fun (k, _) -> norm k = norm name) ot.attribute_granularity
 
-let find_tijdlijn ctx name =
+let find_timeline ctx name =
   List.find_opt
-    (fun tl -> match tl.tl_naam with
+    (fun tl -> match tl.tl_name with
        | Some n -> tl_norm n = tl_norm name
        | None -> false)
-    ctx.doc.tijdlijnen
+    ctx.doc.timelines
 
 (* The spellings of a day kind: its name and its plural, every spelling it
    has on the wire (IR-SPEC ch. 2.9). Both name it as a duration unit. *)
-let dagsoort_spellingen (d : dagsoort) = d.dk_naam :: Option.to_list d.dk_meervoud
+let day_kind_spellings (d : day_kind) = d.dk_name :: Option.to_list d.dk_plural
 
-let dagsoort_namen ctx = List.map (fun (d : dagsoort) -> d.dk_naam) ctx.doc.dagsoorten
+let day_kind_names ctx = List.map (fun (d : day_kind) -> d.dk_name) ctx.doc.day_kinds
 
 (* a unit spelling that names a declared day kind: admitted beside the nine
    time units in date arithmetic and tijdsduur (WF-035/WF-038) — the
    executors stay loud on those forms *)
-let day_kind_unit ctx (u : eenheid) =
-  match u.afkorting with
+let day_kind_unit ctx (u : measure_unit) =
+  match u.abbr_text with
   | Some a ->
-      List.exists (fun d -> List.exists (fun s -> norm s = norm a) (dagsoort_spellingen d))
-        ctx.doc.dagsoorten
+      List.exists (fun d -> List.exists (fun s -> norm s = norm a) (day_kind_spellings d))
+        ctx.doc.day_kinds
   | None -> false
 
 (* The position of a version pointer in its wire list, form index first:
@@ -968,17 +968,17 @@ let wire_order at =
    single-source and union uniquenesses are one wire list (delta B27); the
    loader keeps them in two in-memory lists, merged back here. *)
 let form_arrays ctx =
-  [ ("rules", List.map (fun r -> (r.rr_naam, r.rr_geldigheid, r.rr_pointer)) ctx.doc.resolved_regels);
-    ("objectCreations", List.map (fun r -> (r.oc_naam, r.oc_geldigheid, r.oc_pointer)) ctx.doc.object_creaties);
-    ("allocations", List.map (fun r -> (r.vd_naam, r.vd_geldigheid, r.vd_pointer)) ctx.doc.verdelingen);
+  [ ("rules", List.map (fun r -> (r.rr_name, r.rr_validity, r.rr_pointer)) ctx.doc.resolved_rules);
+    ("objectCreations", List.map (fun r -> (r.oc_name, r.oc_validity, r.oc_pointer)) ctx.doc.object_creations);
+    ("allocations", List.map (fun r -> (r.vd_name, r.vd_validity, r.vd_pointer)) ctx.doc.allocations);
     ("consistencies",
-     List.map (fun r -> (r.cons_naam, r.cons_geldigheid, r.cons_pointer)) ctx.doc.consistenties);
+     List.map (fun r -> (r.cons_name, r.cons_validity, r.cons_pointer)) ctx.doc.consistencies);
     ("uniquenesses",
      List.sort
        (fun (_, _, a) (_, _, b) -> compare (wire_order a) (wire_order b))
-       (List.map (fun r -> (r.uni_naam, r.uni_geldigheid, r.uni_pointer)) ctx.doc.uniciteiten
-       @ List.map (fun r -> (r.uu_naam, r.uu_geldigheid, r.uu_pointer)) ctx.doc.uniciteit_unies));
-    ("factCreations", List.map (fun r -> (r.fc_naam, r.fc_geldigheid, r.fc_pointer)) ctx.doc.feit_creaties) ]
+       (List.map (fun r -> (r.uni_name, r.uni_validity, r.uni_pointer)) ctx.doc.uniquenesses
+       @ List.map (fun r -> (r.uu_name, r.uu_validity, r.uu_pointer)) ctx.doc.uniqueness_unions));
+    ("factCreations", List.map (fun r -> (r.fc_name, r.fc_validity, r.fc_pointer)) ctx.doc.fact_creations) ]
 
 (* Every array that puts a NAME on the wire: the seven versioned rule forms
    above plus the defaults groups of ch. 6.1, which carry a name and a
@@ -996,7 +996,7 @@ let named_forms ctx =
   @ [ ("prioritizedDefaults",
        List.mapi
          (fun i (l : prioritized_defaults) ->
-           (l.pd_naam, l.pd_geldigheid, Printf.sprintf "/prioritizedDefaults/%d" i))
+           (l.pd_name, l.pd_validity, Printf.sprintf "/prioritizedDefaults/%d" i))
          ctx.doc.prioritized_defaults) ]
 
 (* The FORMS of one array as the wire writes them, one entry per form:
@@ -1046,25 +1046,25 @@ let wf001 ctx =
         v "WF-001" at
           (Printf.sprintf "namespace '%s': names '%s' and '%s' collide case-insensitively" label a b))
   in
-  ns ~label:"objectTypes" "objecttypen" (List.map fst ctx.doc.objecttypen)
-  @ ns ~label:"domains" "domeinen" (List.map fst ctx.doc.domeinen)
+  ns ~label:"objectTypes" "objecttypen" (List.map fst ctx.doc.object_types)
+  @ ns ~label:"domains" "domeinen" (List.map fst ctx.doc.domain_specs)
   @ ns "parameters" (List.map fst ctx.doc.parameters)
-  @ ns ~label:"unitSystems" "eenheidstelsels" (List.map fst ctx.doc.eenheidstelsels)
-  @ ns ~label:"factTypes" "feittypen" (List.map fst ctx.doc.feittypen)
-  @ ns ~label:"dimensions" "dimensies" (List.map fst ctx.doc.dimensies)
-  @ ns ~label:"dayKinds" "dagsoorten" (dagsoort_namen ctx)
+  @ ns ~label:"unitSystems" "eenheidstelsels" (List.map fst ctx.doc.unit_systems)
+  @ ns ~label:"factTypes" "feittypen" (List.map fst ctx.doc.fact_types)
+  @ ns ~label:"dimensions" "dimensies" (List.map fst ctx.doc.dimensions)
+  @ ns ~label:"dayKinds" "dagsoorten" (day_kind_names ctx)
 
 let wf002 ctx =
   List.concat_map
     (fun (otn, ot) ->
       let at = "/objecttypen/" ^ otn in
-      (dups_by norm (List.map (fun (k, _) -> (k, at ^ "/attributen")) ot.attributen)
+      (dups_by norm (List.map (fun (k, _) -> (k, at ^ "/attributen")) ot.attributes)
        |> List.map (fun (a, b, p) ->
            v "WF-002" p (Printf.sprintf "attributes '%s' and '%s' collide case-insensitively" a b)))
-      @ (dups_by norm (List.map (fun k -> (k, at ^ "/kenmerken")) (some_names ot.kenmerken))
+      @ (dups_by norm (List.map (fun k -> (k, at ^ "/kenmerken")) (some_names ot.characteristics))
          |> List.map (fun (a, b, p) ->
              v "WF-002" p (Printf.sprintf "characteristics '%s' and '%s' collide case-insensitively" a b))))
-    ctx.doc.objecttypen
+    ctx.doc.object_types
 
 let wf003 ctx =
   (* Model-layer resolution: enumeration domains resolve (an unfindable
@@ -1072,35 +1072,35 @@ let wf003 ctx =
      types resolve; named-timeline references resolve. (Parameters: WF-018;
      dimension refs: WF-004.) *)
   let dt_check at = function
-    | Some (Enumeratie { domein = Some d; _ }) when find_ci ctx.doc.domeinen d = None ->
+    | Some (Enumeration { domain_spec = Some d; _ }) when find_ci ctx.doc.domain_specs d = None ->
         [ v "WF-003" at ("enumeration references undeclared domain '" ^ d ^ "'") ]
     | _ -> []
   in
   List.concat_map
     (fun (otn, ot) ->
       let at = "/objecttypen/" ^ otn in
-      List.concat_map (fun (a, dt) -> dt_check (at ^ "/attributen/" ^ a) dt) ot.attributen
+      List.concat_map (fun (a, dt) -> dt_check (at ^ "/attributen/" ^ a) dt) ot.attributes
       @ List.concat_map
           (fun (a, tln) ->
             match tln with
-            | Some n when find_tijdlijn ctx n = None ->
+            | Some n when find_timeline ctx n = None ->
                 [ v "WF-003" (at ^ "/attribuutTijdlijnNaam/" ^ a)
                     ("reference to undeclared timeline '" ^ n ^ "'") ]
             | _ -> [])
-          ot.attribuut_tijdlijn_naam)
-    ctx.doc.objecttypen
-  @ List.concat_map (fun (d, dt) -> dt_check ("/domeinen/" ^ d) dt) ctx.doc.domeinen
+          ot.attribute_timeline_names)
+    ctx.doc.object_types
+  @ List.concat_map (fun (d, dt) -> dt_check ("/domeinen/" ^ d) dt) ctx.doc.domain_specs
   @ List.concat_map
       (fun (fn, ft) ->
         List.concat_map
           (fun r ->
-            match r.rol_objecttype_naam with
-            | Some o when objecttype ctx o = None ->
+            match r.role_object_type_name with
+            | Some o when object_type ctx o = None ->
                 [ v "WF-003" ("/feittypen/" ^ fn)
                     ("role filler type '" ^ o ^ "' is not a declared object type") ]
             | _ -> [])
-          ft.rollen)
-      ctx.doc.feittypen
+          ft.role_names)
+      ctx.doc.fact_types
 
 let wf004 ctx =
   List.concat_map
@@ -1115,15 +1115,15 @@ let wf004 ctx =
           @ List.concat_map
               (fun d ->
                 match d with
-                | Some d when find_ci ctx.doc.dimensies d = None ->
+                | Some d when find_ci ctx.doc.dimensions d = None ->
                     [ v "WF-004" at ("reference to undeclared dimension '" ^ d ^ "'") ]
                 | Some _ -> []
                 (* the loader reads every entry of a `dimensions` list as a
                    string, so a null entry cannot reach this walk since M1 *)
                 | None -> assert false)
               dims)
-        ot.attribuut_dimensies)
-    ctx.doc.objecttypen
+        ot.attribute_dimensions)
+    ctx.doc.object_types
 
 let wf005 ctx =
   List.concat_map
@@ -1131,44 +1131,44 @@ let wf005 ctx =
       let at = "/objecttypen/" ^ otn in
       let counts prefix l =
         List.concat_map
-          (fun (a, (t : tijdvak)) ->
-            match t.tv_aantal with
+          (fun (a, (t : period)) ->
+            match t.tv_count with
             | Some n when n < 1 ->
                 [ v "WF-005" (at ^ prefix ^ a)
                     (Printf.sprintf "timeline facet count %d < 1" n) ]
             | _ -> [])
           l
       in
-      counts "/attribuutTijdlijnAantal/" ot.attribuut_tijdlijn_aantal
-      @ counts "/kenmerkTijdlijnAantal/" ot.kenmerk_tijdlijn_aantal
+      counts "/attribuutTijdlijnAantal/" ot.attribute_timeline_count
+      @ counts "/kenmerkTijdlijnAantal/" ot.characteristic_timeline_count
       @ List.concat_map
           (fun (a, tln) ->
             match tln with
             | Some n -> (
-                match find_tijdlijn ctx n with
+                match find_timeline ctx n with
                 | None -> [] (* WF-003 reports the dangling reference *)
                 | Some tl ->
-                    let facet_gran = find_ci ot.attribuut_granulariteit a |> Option.join in
+                    let facet_gran = find_ci ot.attribute_granularity a |> Option.join in
                     let facet_count =
-                      match Option.bind (find_ci ot.attribuut_tijdlijn_aantal a) (fun t -> t.tv_aantal) with
+                      match Option.bind (find_ci ot.attribute_timeline_count a) (fun t -> t.tv_count) with
                       | Some c -> c
                       (* a timeline name sits inside a TimelineFacet, whose count
                          is a required field since M1: v0's "absent = 1" has no
                          wire form left *)
                       | None -> assert false
                     in
-                    (if facet_gran <> tl.tl_granulariteit then
+                    (if facet_gran <> tl.tl_granularity then
                        [ v "WF-005" (at ^ "/attribuutTijdlijnNaam/" ^ a)
                            "named-timeline adoption is partial: granularity differs from the declaration" ]
                      else [])
                     @
-                    if facet_count <> tl.tl_aantal then
+                    if facet_count <> tl.tl_count then
                       [ v "WF-005" (at ^ "/attribuutTijdlijnNaam/" ^ a)
                           "named-timeline adoption is partial: period count differs from the declaration" ]
                     else [])
             | None -> [])
-          ot.attribuut_tijdlijn_naam)
-    ctx.doc.objecttypen
+          ot.attribute_timeline_names)
+    ctx.doc.object_types
   (* a parameter's facet (WF-018 defers to this rule): the count clause; a
      parameter's facet names no timeline.
 
@@ -1179,7 +1179,7 @@ let wf005 ctx =
      two-period facet as a one-period one and the third refuses it. *)
   @ List.concat_map
       (fun (p, (par : parameter)) ->
-        match par.par_tijdlijn_aantal with
+        match par.par_timeline_count with
         | Some n when n < 1 ->
             [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
                 (Printf.sprintf "the timeline facet of parameter '%s' has count %d < 1" p n) ]
@@ -1197,38 +1197,38 @@ let wf006 ctx =
   List.concat_map
     (fun (d, dt) ->
       match dt with
-      | Some (Enumeratie { waarden; _ }) ->
+      | Some (Enumeration { label_list; _ }) ->
           let at = "/domeinen/" ^ d in
-          (if waarden = [] then [ v "WF-006" at "enumeration domain declares no values" ] else [])
-          @ (if List.exists (fun x -> x = None) waarden then
+          (if label_list = [] then [ v "WF-006" at "enumeration domain declares no values" ] else [])
+          @ (if List.exists (fun x -> x = None) label_list then
                [ v "WF-006" at "enumeration domain contains a null value" ]
              else [])
-          @ (dups_by norm (List.map (fun x -> (x, at)) (some_names waarden))
+          @ (dups_by norm (List.map (fun x -> (x, at)) (some_names label_list))
              |> List.map (fun (x, _, p) -> v "WF-006" p ("duplicate enumeration value '" ^ x ^ "'")))
       | _ -> [])
-    ctx.doc.domeinen
+    ctx.doc.domain_specs
 
 (* WF-007 needs every Numeriek/Percentage in the document; collected by the
    datatype walk below (model layer) and the expression walk (types). *)
 let check_number_form at = function
-  | Numeriek { geheel; decimalen; _ } | Percentage { geheel; decimalen; _ } ->
-      if decimalen < 0 then
-        [ v "WF-007" at (Printf.sprintf "decimals %d < 0" decimalen) ]
-      else if geheel && decimalen >= 1 then
+  | Number { whole_part; decimal_places; _ } | Percentage { whole_part; decimal_places; _ } ->
+      if decimal_places < 0 then
+        [ v "WF-007" at (Printf.sprintf "decimals %d < 0" decimal_places) ]
+      else if whole_part && decimal_places >= 1 then
         [ v "WF-007" at
             (Printf.sprintf "whole number with %d decimals: not one of the three precision forms"
-               decimalen) ]
+               decimal_places) ]
       else []
   | _ -> []
 
 (* the declared unit systems, by name — the table every unit's `system`
    back-reference (in memory [stelsel]) resolves against (WF-034,
    ch. 4.6 (r)). *)
-let stelsel_namen ctx = List.map fst ctx.doc.eenheidstelsels
+let system_names ctx = List.map fst ctx.doc.unit_systems
 
 (* A factor as a message writes it: a whole number bare, any other as
    num/den, the two integers exactly as the wire carries them. *)
-let rationaal_render { num; den } =
+let rational_render { num; den } =
   if den = 1 then string_of_int num else Printf.sprintf "%d/%d" num den
 
 let rec ggd a b = if b = 0 then a else ggd b (a mod b)
@@ -1258,26 +1258,26 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
 
    This function also carries WF-034's arm on the unit's `system`
    (maintainer decision 2026-09-05, sixth wave; IR-SPEC ch. 4.6 (r)), for the
-   same reason WF-092 lives here: [check_eenheid_form] is the ONE walk that
+   same reason WF-092 lives here: [check_unit_form] is the ONE walk that
    reaches every unit record in a document, denominators included, and the
    `system` is a reference like any other — it names the declared unit system
    whose conversion table gives the unit its meaning. [stelsels] is the
    declared-system name list, threaded from the context; it is a required
    argument rather than an optional one so a new call site cannot silently opt
    out of the cross. *)
-let rec check_eenheid_form ~stelsels at (u : eenheid) =
+let rec check_unit_form ~systems at (u : measure_unit) =
   let named =
-    match u.afkorting with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit"
+    match u.abbr_text with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit"
   in
-  (match u.stelsel with
-   | Some s when not (mem_ci stelsels s) ->
+  (match u.system with
+   | Some s when not (mem_ci systems s) ->
        [ v "WF-034" (at ^ "/system")
            (Printf.sprintf
               "unit %s declares unit system '%s', which no declaration carries: the unit \
                resolves against no conversion table"
               named s) ]
    | _ -> [])
-  @ (match (u.canoniek, u.factor_naar_canoniek) with
+  @ (match (u.canonical_form, u.factor_to_canonical) with
   | Some c, None ->
       [ v "WF-092" at
           (Printf.sprintf
@@ -1289,42 +1289,42 @@ let rec check_eenheid_form ~stelsels at (u : eenheid) =
           (Printf.sprintf
              "unit %s carries conversion factor %s but names no canonical unit to convert into: a \
               half-filled conversion pair is not a unit (both fields, or neither)"
-             named (rationaal_render f)) ]
+             named (rational_render f)) ]
   | Some _, Some _ | None, None -> [])
-  @ (match u.factor_naar_canoniek with
+  @ (match u.factor_to_canonical with
     | Some { num; den } when ggd num den <> 1 ->
         let g = ggd num den in
         [ v "WF-092" (at ^ "/factorToCanonical")
             (Printf.sprintf
                "unit %s carries conversion factor %d/%d, which is not in lowest terms: an exact \
                 factor has one spelling, here %s"
-               named num den (rationaal_render { num = num / g; den = den / g })) ]
+               named num den (rational_render { num = num / g; den = den / g })) ]
     | _ -> [])
-  @ (match u.noemer with Some n -> check_eenheid_form ~stelsels (at ^ "/denominator") n | None -> [])
+  @ (match u.denominator with Some n -> check_unit_form ~systems (at ^ "/denominator") n | None -> [])
 
 (* every unit a datatype carries, denominators and composite element/field/
    payload datatypes included — WF-092 reaches strictly further into a
    datatype than [check_number_form] does, so the form law holds at unit
    positions WF-007's row records as out of its own reach. *)
-let rec check_datatype_units ~stelsels at = function
-  | Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ } ->
-      check_eenheid_form ~stelsels (at ^ "/unit") u
-  | List_type { element } -> check_datatype_units ~stelsels (at ^ "/element") element
-  | Struct_type { velden; _ } ->
+let rec check_datatype_units ~systems at = function
+  | Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ } ->
+      check_unit_form ~systems (at ^ "/unit") u
+  | List_type { element } -> check_datatype_units ~systems (at ^ "/element") element
+  | Struct_type { field_list; _ } ->
       List.concat
         (List.mapi
-           (fun i (_, d) -> check_datatype_units ~stelsels (Printf.sprintf "%s/fields/%d/datatype" at i) d)
-           velden)
-  | Sum_type { constructoren; _ } ->
+           (fun i (_, d) -> check_datatype_units ~systems (Printf.sprintf "%s/fields/%d/datatype" at i) d)
+           field_list)
+  | Sum_type { constructor_list; _ } ->
       List.concat
         (List.mapi
            (fun i (_, p) ->
              match p with
              | Some d ->
-                 check_datatype_units ~stelsels (Printf.sprintf "%s/constructors/%d/payload" at i) d
+                 check_datatype_units ~systems (Printf.sprintf "%s/constructors/%d/payload" at i) d
              | None -> [])
-           constructoren)
-  | Numeriek _ | Percentage _ | Tekst | Booleaan | Datum_in_dagen | Datum_tijd | Enumeratie _ ->
+           constructor_list)
+  | Number _ | Percentage _ | Text_type | Boolean | Date_in_days | Date_time_type | Enumeration _ ->
       []
 
 (* WF-092's model half: the declared unit systems (the source of truth for
@@ -1332,25 +1332,25 @@ let rec check_datatype_units ~stelsels at = function
    rides walk_expr's type prologue, where WF-007 collects the same "every
    datatype in the document" split. *)
 let wf092 ctx =
-  let stelsels = stelsel_namen ctx in
-  let site at = function Some d -> check_datatype_units ~stelsels at d | None -> [] in
+  let systems = system_names ctx in
+  let site at = function Some d -> check_datatype_units ~systems at d | None -> [] in
   List.concat_map
     (fun (sn, es) ->
       List.concat
         (List.mapi
-           (fun j (d : gedeclareerde_eenheid) ->
-             check_eenheid_form ~stelsels
+           (fun j (d : declared_unit) ->
+             check_unit_form ~systems
                (Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j)
-               d.ge_eenheid)
-           es.eenheden))
-    ctx.doc.eenheidstelsels
+               d.ge_unit)
+           es.unit_list))
+    ctx.doc.unit_systems
   @ List.concat_map
       (fun (otn, ot) ->
         List.concat_map
           (fun (a, dt) -> site ("/objecttypen/" ^ otn ^ "/attributen/" ^ a) dt)
-          ot.attributen)
-      ctx.doc.objecttypen
-  @ List.concat_map (fun (d, dt) -> site ("/domeinen/" ^ d) dt) ctx.doc.domeinen
+          ot.attributes)
+      ctx.doc.object_types
+  @ List.concat_map (fun (d, dt) -> site ("/domeinen/" ^ d) dt) ctx.doc.domain_specs
   @ List.concat_map
       (fun (p, par) -> site ("/parameters/" ^ p ^ "/datatype") par.par_datatype)
       ctx.doc.parameters
@@ -1361,9 +1361,9 @@ let wf092 ctx =
            List.concat
              (List.mapi
                 (fun j (_, dt) ->
-                  check_datatype_units ~stelsels (Printf.sprintf "%s/parameters/%d/datatype" at j) dt)
+                  check_datatype_units ~systems (Printf.sprintf "%s/parameters/%d/datatype" at j) dt)
                 fd.fd_parameters)
-           @ check_datatype_units ~stelsels (at ^ "/result") fd.fd_result)
+           @ check_datatype_units ~systems (at ^ "/result") fd.fd_result)
          ctx.doc.function_defs)
 
 let wf007_model ctx =
@@ -1374,12 +1374,12 @@ let wf007_model ctx =
           match dt with
           | Some d -> check_number_form ("/objecttypen/" ^ otn ^ "/attributen/" ^ a) d
           | None -> [])
-        ot.attributen)
-    ctx.doc.objecttypen
+        ot.attributes)
+    ctx.doc.object_types
   @ List.concat_map
       (fun (d, dt) ->
         match dt with Some x -> check_number_form ("/domeinen/" ^ d) x | None -> [])
-      ctx.doc.domeinen
+      ctx.doc.domain_specs
   @ List.concat_map
       (fun (p, par) ->
         match par.par_datatype with
@@ -1391,15 +1391,15 @@ let wf007_model ctx =
    to a DECLARED datatype and never to a type annotation. An annotation is a
    copy the readers compare with the declaration, and a tag there would be a
    second presentation of one percentage, which the declaration alone decides.
-   The loader collects the positions (Loader.presentatie_annotaties), because
+   The loader collects the positions (Loader.presentation_annotations), because
    the in-memory datatype does not carry the tag. *)
-let wf007_presentatie ctx =
+let wf007_presentation ctx =
   List.map
     (fun at ->
       v "WF-007" at
         "the presentation tag \"percentage\" on a type annotation: the tag is written only \
          where a datatype is declared")
-    ctx.doc.presentatie_annotaties
+    ctx.doc.presentation_annotations
 
 (* WF-009: the canonical chain of every declared unit terminates inside its
    own system. A canonical name resolves against the system's units by
@@ -1421,11 +1421,11 @@ let wf009 ctx =
         dups_by norm
           (List.concat
              (List.mapi
-                (fun j (d : gedeclareerde_eenheid) ->
-                  match d.ge_eenheid.afkorting with
+                (fun j (d : declared_unit) ->
+                  match d.ge_unit.abbr_text with
                   | Some a -> [ (a, Printf.sprintf "/eenheidstelsels/%s/units/%d/abbreviation" sn j) ]
                   | None -> [])
-                es.eenheden))
+                es.unit_list))
         |> List.map (fun (_, a, at) ->
                v "WF-009" at
                  (Printf.sprintf
@@ -1435,20 +1435,20 @@ let wf009 ctx =
       in
       let lookup c =
         List.find_map
-          (fun (d : gedeclareerde_eenheid) ->
-            match d.ge_eenheid.afkorting with
-            | Some a when norm a = norm c -> Some d.ge_eenheid
+          (fun (d : declared_unit) ->
+            match d.ge_unit.abbr_text with
+            | Some a when norm a = norm c -> Some d.ge_unit
             | _ -> None)
-          es.eenheden
+          es.unit_list
       in
       List.concat
         (List.mapi
-           (fun j (d : gedeclareerde_eenheid) ->
+           (fun j (d : declared_unit) ->
              let at = Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j in
              let rec follow seen u =
-               match u.canoniek with
+               match u.canonical_form with
                | None -> []
-               | Some c when u.afkorting = Some c -> [] (* self-canonical *)
+               | Some c when u.abbr_text = Some c -> [] (* self-canonical *)
                | Some c ->
                    if List.mem (norm c) seen then
                      [ v "WF-009" at ("conversion cycle through '" ^ c ^ "'") ]
@@ -1457,22 +1457,22 @@ let wf009 ctx =
                      | None -> [ v "WF-009" at ("conversion targets unknown unit '" ^ c ^ "'") ]
                      | Some next -> follow (norm c :: seen) next)
              in
-             follow (Option.to_list (Option.map norm d.ge_eenheid.afkorting)) d.ge_eenheid)
-           es.eenheden)
+             follow (Option.to_list (Option.map norm d.ge_unit.abbr_text)) d.ge_unit)
+           es.unit_list)
       @ twice)
-    ctx.doc.eenheidstelsels
+    ctx.doc.unit_systems
 
 let wf011 ctx =
   List.concat_map
     (fun (fn, ft) ->
-      let n = List.length ft.rollen in
+      let n = List.length ft.role_names in
       let at = "/feittypen/" ^ fn in
-      if ft.wederkerig && n <> 1 then
+      if ft.reciprocal && n <> 1 then
         [ v "WF-011" at (Printf.sprintf "reciprocal fact type with %d roles (must be 1)" n) ]
-      else if (not ft.wederkerig) && n < 2 then
+      else if (not ft.reciprocal) && n < 2 then
         [ v "WF-011" at (Printf.sprintf "fact type with %d roles (must be >= 2)" n) ]
       else [])
-    ctx.doc.feittypen
+    ctx.doc.fact_types
 
 let wf012 ctx =
   List.concat_map
@@ -1481,17 +1481,17 @@ let wf012 ctx =
       let names =
         List.concat_map
           (fun r ->
-            (match r.rol_naam with Some n -> [ (n, at) ] | None -> [])
-            @ (match r.rol_meervoud with Some n -> [ (n, at) ] | None -> []))
-          ft.rollen
+            (match r.role_identifier with Some n -> [ (n, at) ] | None -> [])
+            @ (match r.role_plural with Some n -> [ (n, at) ] | None -> []))
+          ft.role_names
       in
       (* collisions across *distinct* roles: dedupe within one role first *)
       let per_role =
         List.map
           (fun r ->
             List.sort_uniq compare
-              (List.filter_map (fun x -> Option.map norm x) [ r.rol_naam; r.rol_meervoud ]))
-          ft.rollen
+              (List.filter_map (fun x -> Option.map norm x) [ r.role_identifier; r.role_plural ]))
+          ft.role_names
       in
       let all = List.concat per_role in
       let colliding =
@@ -1502,34 +1502,34 @@ let wf012 ctx =
       List.map
         (fun n -> v "WF-012" at ("role name or plural '" ^ n ^ "' is ambiguous within the fact type"))
         colliding)
-    ctx.doc.feittypen
+    ctx.doc.fact_types
 
 let wf013 ctx =
   List.concat_map
     (fun (fn, ft) ->
-      match ft.rollen with
-      | [ r ] when ft.wederkerig && r.rol_meervoudig ->
+      match ft.role_names with
+      | [ r ] when ft.reciprocal && r.role_many ->
           [ v "WF-013" ("/feittypen/" ^ fn) "reciprocal fact type's role must be to-one" ]
       | _ -> [])
-    ctx.doc.feittypen
+    ctx.doc.fact_types
 
 let wf014 ctx =
   List.concat_map
     (fun (dn, d) ->
       let at = "/dimensies/" ^ dn in
-      (if d.dim_waarden = [] then [ v "WF-014" at "dimension with an empty label set" ] else [])
-      @ (if List.exists (fun x -> x = None) d.dim_waarden then
+      (if d.dim_values = [] then [ v "WF-014" at "dimension with an empty label set" ] else [])
+      @ (if List.exists (fun x -> x = None) d.dim_values then
            [ v "WF-014" at "dimension contains a null label" ]
          else [])
-      @ (dups_by norm (List.map (fun x -> (x, at)) (some_names d.dim_waarden))
+      @ (dups_by norm (List.map (fun x -> (x, at)) (some_names d.dim_values))
          |> List.map (fun (x, _, p) -> v "WF-014" p ("duplicate label '" ^ x ^ "'"))))
-    ctx.doc.dimensies
+    ctx.doc.dimensions
 
 let wf015 ctx =
   dups_by tl_norm
     (List.filter_map
-       (fun tl -> Option.map (fun n -> (n, "/tijdlijnen")) tl.tl_naam)
-       ctx.doc.tijdlijnen)
+       (fun tl -> Option.map (fun n -> (n, "/tijdlijnen")) tl.tl_name)
+       ctx.doc.timelines)
   |> List.map (fun (a, b, at) ->
       v "WF-015" at
         (Printf.sprintf "timelines '%s' and '%s' collide under normalized-name identity" a b))
@@ -1537,21 +1537,21 @@ let wf015 ctx =
 let wf016 ctx =
   List.concat_map
     (fun tl ->
-      match tl.tl_naam with
-      | Some n when tl.variabel_startpunt ->
+      match tl.tl_name with
+      | Some n when tl.variable_start ->
           if
             List.exists
               (fun sp ->
-                match sp.sp_tijdlijn with
+                match sp.sp_timeline with
                 | Some t -> tl_norm t = tl_norm n
                 | None -> false)
-              ctx.doc.resolved_startpunten
+              ctx.doc.resolved_start_point_determinations
           then []
           else
             [ v "WF-016" "/tijdlijnen"
                 ("variable-start timeline '" ^ n ^ "' has no start-point determination") ]
       | _ -> [])
-    ctx.doc.tijdlijnen
+    ctx.doc.timelines
 
 (* A spelling the NORMATIVE calendar table carries (RUNTIME-SEMANTICS ch. 3.8).
    The comparison goes through `time_unit_of_spelling` — the same table WF-035
@@ -1595,45 +1595,45 @@ let calendar_spelling s = time_unit_of_spelling (norm s) <> None
    `corpus/negatief/wf017-meervoud-botst-met-vreemd-meervoud` pins it: its two
    plurals differ in case alone. *)
 let wf017 ctx =
-  let kinds = List.mapi (fun i (d : dagsoort) -> (i, d)) ctx.doc.dagsoorten in
+  let kinds = List.mapi (fun i (d : day_kind) -> (i, d)) ctx.doc.day_kinds in
   let at i field = Printf.sprintf "/dagsoorten/%d/%s" i field in
   List.concat_map
-    (fun (i, (d : dagsoort)) ->
-      (if calendar_spelling d.dk_naam then
-         [ v "WF-017" (at i "name") ("day-kind '" ^ d.dk_naam ^ "' shadows a built-in calendar unit") ]
+    (fun (i, (d : day_kind)) ->
+      (if calendar_spelling d.dk_name then
+         [ v "WF-017" (at i "name") ("day-kind '" ^ d.dk_name ^ "' shadows a built-in calendar unit") ]
        else [])
       @
-      match d.dk_meervoud with
+      match d.dk_plural with
       | Some p when calendar_spelling p ->
           [ v "WF-017" (at i "plural")
               (Printf.sprintf "the plural '%s' of day kind '%s' shadows a built-in calendar unit"
-                 p d.dk_naam) ]
+                 p d.dk_name) ]
       | _ -> [])
     kinds
   @ List.concat_map
-      (fun (i, (d : dagsoort)) ->
-        match d.dk_meervoud with
+      (fun (i, (d : day_kind)) ->
+        match d.dk_plural with
         | None -> []
         | Some p ->
             List.filter_map
-              (fun (j, (e : dagsoort)) ->
+              (fun (j, (e : day_kind)) ->
                 if j = i then None
-                else if norm p = norm e.dk_naam then
+                else if norm p = norm e.dk_name then
                   Some
                     (v "WF-017" (at i "plural")
                        (Printf.sprintf
                           "the plural '%s' of day kind '%s' is the name of day kind '%s': one \
                            spelling names two day kinds"
-                          p d.dk_naam e.dk_naam))
+                          p d.dk_name e.dk_name))
                 else
-                  match e.dk_meervoud with
+                  match e.dk_plural with
                   | Some q when j < i && norm p = norm q ->
                       Some
                         (v "WF-017" (at i "plural")
                            (Printf.sprintf
                               "the plural '%s' of day kind '%s' is the plural '%s' of day kind \
                                '%s': one spelling names two day kinds"
-                              p d.dk_naam q e.dk_naam))
+                              p d.dk_name q e.dk_name))
                   | _ -> None)
               kinds)
       kinds
@@ -1648,7 +1648,7 @@ let wf018 ctx =
     (fun (p, par) ->
       let at = "/parameters/" ^ p in
       match par.par_datatype with
-      | Some (Enumeratie { domein = Some d; _ }) when find_ci ctx.doc.domeinen d = None ->
+      | Some (Enumeration { domain_spec = Some d; _ }) when find_ci ctx.doc.domain_specs d = None ->
           [ v "WF-018" at ("parameter enumeration references undeclared domain '" ^ d ^ "'") ]
       | Some _ -> []
       | None -> assert false (* the loader reads the datatype as required *))
@@ -1765,7 +1765,7 @@ let wf020 ctx =
    names a day that does not exist — a reader that PARSES the bound refuses
    it, as the executors now do, where an opaque-string reader does not. *)
 let wf101 ctx =
-  let bounds at (g : geldigheid option) =
+  let bounds at (g : validity_window option) =
     match g with
     | None -> []
     | Some g ->
@@ -1780,7 +1780,7 @@ let wf101 ctx =
                       ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges \
                          — ch. 4.1)"))
             | _ -> None)
-          [ ("from", g.geld_vanaf); ("to", g.geld_tot) ]
+          [ ("from", g.valid_from); ("to", g.valid_to) ]
   in
   List.concat_map (fun (_, entries) -> List.concat_map (fun (_, g, at) -> bounds at g) entries)
     (named_forms ctx)
@@ -1790,9 +1790,9 @@ let wf101 ctx =
      holds of every Validity on the wire rather than of eight of nine. *)
   @ List.concat
       (List.mapi
-         (fun i (r : resolved_dagsoort) ->
-           bounds (Printf.sprintf "/dayKindDefinitions/%d" i) r.rd_geldigheid)
-         ctx.doc.resolved_dagsoorten)
+         (fun i (r : resolved_day_kind) ->
+           bounds (Printf.sprintf "/dayKindDefinitions/%d" i) r.rd_validity)
+         ctx.doc.resolved_day_kind_definitions)
 
 (* The versions of one form are the records that share its form pointer
    ([forms_of]); two forms of one name are WF-020's, not a pair of versions. *)
@@ -1830,15 +1830,15 @@ let wf021 ctx =
    is read into it. *)
 let wf022 ctx =
   List.concat_map
-    (fun (r : resolved_regel) ->
+    (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
-      match r.doel with
-      | Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ }) -> (
-          match objecttype ctx otn with
+      match r.objective with
+      | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }) -> (
+          match object_type ctx otn with
           | None -> [ v "WF-022" (at ^ "/target") ("target object type '" ^ otn ^ "' is not declared") ]
           | Some ot -> (
-              let computes = r.rr_soort <> Some Kenmerktoekenning in
-              match (has_attr ot a, has_kenmerk ot a) with
+              let computes = r.rr_presentation <> Some Characteristic_attribution in
+              match (has_attr ot a, has_characteristic ot a) with
               | true, true ->
                   [ v "WF-022" (at ^ "/target")
                       ("target '" ^ a ^ "' names both an attribute and a characteristic of '" ^ otn
@@ -1851,8 +1851,8 @@ let wf022 ctx =
                      ^ "' is a characteristic of '" ^ otn ^ "'") ]
               | false, true -> (
                   (* characteristic target: value must be the constant true *)
-                  match r.waarde with
-                  | Some (Literal { variant = Lv_boolean true; typ = Some Booleaan; _ }) -> []
+                  match r.value_node with
+                  | Some (Literal { variant = Lv_boolean true; typ = Some Boolean; _ }) -> []
                   | _ ->
                       [ v "WF-022" (at ^ "/value")
                           "characteristic target's value must be the boolean constant true" ])
@@ -1867,29 +1867,29 @@ let wf022 ctx =
                       ("target '" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn ^ "'") ]))
       | Some _ -> [ v "WF-022" (at ^ "/target") "rule target is not an attribute reference" ]
       | None -> [ v "WF-022" (at ^ "/target") "rule without a target" ])
-    ctx.doc.resolved_regels
+    ctx.doc.resolved_rules
 
 let wf025 ctx =
   List.concat_map
-    (fun (r : resolved_verdeling) ->
+    (fun (r : resolved_allocation) ->
       let at = r.vd_pointer in
-      (match r.vd_methode, r.rato_attribuut with
-       | Some Gelijke_delen, Some _ ->
+      (match r.vd_method, r.ratio_attribute with
+       | Some Equal_shares, Some _ ->
            [ v "WF-025" at "equal-shares allocation with a ratio attribute" ]
-       | Some Naar_rato, None ->
+       | Some Proportional, None ->
            [ v "WF-025" at "proportional allocation without a ratio attribute" ]
        | _ -> [])
-      @ (match r.maximum_attribuut, r.rato_attribuut with
+      @ (match r.maximum_attribute, r.ratio_attribute with
          | Some _, None -> [ v "WF-025" at "maximum requires a ratio attribute" ]
          | _ -> [])
-      @ (match r.groepeer_attribuut, r.vd_methode with
-         | Some _, Some m when m <> Op_volgorde ->
+      @ (match r.ordering_attribute, r.vd_method with
+         | Some _, Some m when m <> Ordered ->
              [ v "WF-025" at "ordering key on a non-ordered allocation" ]
          | _ -> [])
       @
-      match r.groepeer_attribuut, r.doel_type with
+      match r.ordering_attribute, r.objective_type_name with
       | Some key, Some dt -> (
-          match objecttype ctx dt with
+          match object_type ctx dt with
           | Some ot -> (
               match attr_of ot key with
               | Some (Some d) when not (is_orderable d) ->
@@ -1897,7 +1897,7 @@ let wf025 ctx =
               | _ -> [])
           | None -> [])
       | _ -> [])
-    ctx.doc.verdelingen
+    ctx.doc.allocations
 
 (* The single-writer fences (WF-026 here, WF-050 and WF-079 below) key on
    the DECLARED object-type name, and under subtyping they MUST keep doing
@@ -1924,8 +1924,8 @@ let wf025 ctx =
 let wf026 ctx =
   let named =
     List.map
-      (fun r -> (Option.map strip_version r.vd_naam, r.doel_type, r.doel_attribuut, r.vd_pointer))
-      ctx.doc.verdelingen
+      (fun r -> (Option.map strip_version r.vd_name, r.objective_type_name, r.target_attribute, r.vd_pointer))
+      ctx.doc.allocations
   in
   let rec pairs = function
     | [] -> []
@@ -1989,27 +1989,27 @@ let wf026 ctx =
    `sourceType`/`targetType`, equally emptyable and equally clean. Both are name
    resolution against the object-type table, a wider movement than this arm's
    empty-field class — and both are CLOSED by the fourth wave seventy lines
-   below, [wf034_verdeling_typen] and [wf034_verdeling_naamresolutie]
+   below, [wf034_allocation_types] and [wf034_allocation_name_resolution]
    (maintainer decision 2026-09-04, IR-SPEC ch. 4.6 (j)–(k)). What stays this
    arm's own is the NULL half: an absent field names nothing to resolve, so
    there is no scope question to ask and no message to phrase in terms of a
    declaration table. *)
-let wf034_verdelingen ctx =
+let wf034_allocations ctx =
   List.concat_map
-    (fun (r : resolved_verdeling) ->
+    (fun (r : resolved_allocation) ->
       let at = r.vd_pointer in
-      (match r.bron_attribuut with
+      (match r.source_attribute with
        | None ->
            [ v "WF-034" (at ^ "/sourceAttribute")
                "allocation without a source attribute: it resolves against no declaration" ]
        | Some _ -> [])
       @
-      match r.doel_attribuut with
+      match r.target_attribute with
       | None ->
           [ v "WF-034" (at ^ "/targetAttribute")
               "allocation without a target attribute: it resolves against no declaration" ]
       | Some _ -> [])
-    ctx.doc.verdelingen
+    ctx.doc.allocations
 
 (* WF-034 on the allocation's SIX attribute-name fields, the filled half of the
    same defect (maintainer decision 2026-09-04, third wave, fix round). The arm
@@ -2045,9 +2045,9 @@ let wf034_verdelingen ctx =
 
    The three silent rows are where the differential square is blind: only the
    hand-pinned anchor expectations catch them, never backend agreement. *)
-let wf034_verdeling_namen ctx =
+let wf034_allocation_names ctx =
   List.concat_map
-    (fun (r : resolved_verdeling) ->
+    (fun (r : resolved_allocation) ->
       let at = r.vd_pointer in
       let filled field = function
         | Some a when norm a = "" ->
@@ -2057,13 +2057,13 @@ let wf034_verdeling_namen ctx =
                   resolves against no declaration") ]
         | _ -> []
       in
-      filled "sourceAttribute" r.bron_attribuut
-      @ filled "targetAttribute" r.doel_attribuut
-      @ filled "ratioAttribute" r.rato_attribuut
-      @ filled "maximumAttribute" r.maximum_attribuut
-      @ filled "remainderAttribute" r.restant_attribuut
-      @ filled "orderingAttribute" r.groepeer_attribuut)
-    ctx.doc.verdelingen
+      filled "sourceAttribute" r.source_attribute
+      @ filled "targetAttribute" r.target_attribute
+      @ filled "ratioAttribute" r.ratio_attribute
+      @ filled "maximumAttribute" r.maximum_attribute
+      @ filled "remainderAttribute" r.remainder_attribute
+      @ filled "orderingAttribute" r.ordering_attribute)
+    ctx.doc.allocations
 
 (* WF-034 on the allocation's two TYPE fields (maintainer decision 2026-09-04,
    fourth wave). The empty-reference class of the earlier waves, one field
@@ -2088,22 +2088,22 @@ let wf034_verdeling_namen ctx =
    compared; the type-less allocation negatiefs lose an incidental line and
    keep their verdict) — and dropping the whole clause frees those two and
    nothing else: 6 reports, 2 verdicts. *)
-let wf034_verdeling_typen ctx =
+let wf034_allocation_types ctx =
   List.concat_map
-    (fun (r : resolved_verdeling) ->
+    (fun (r : resolved_allocation) ->
       let at = r.vd_pointer in
-      (match r.bron_type with
+      (match r.source_type with
        | None ->
            [ v "WF-034" (at ^ "/sourceType")
                "allocation without a source object type: it resolves against no declaration" ]
        | Some _ -> [])
       @
-      match r.doel_type with
+      match r.objective_type_name with
       | None ->
           [ v "WF-034" (at ^ "/targetType")
               "allocation without a target object type: it resolves against no declaration" ]
       | Some _ -> [])
-    ctx.doc.verdelingen
+    ctx.doc.allocations
 
 (* WF-034 on the allocation's six attribute names, the RESOLUTION half
    (maintainer decision 2026-09-04, fourth wave). The two arms above ask
@@ -2159,15 +2159,15 @@ let wf034_verdeling_typen ctx =
    costs the parity casus its six incidental lines, without moving its
    verdict). Deleting the whole clause frees those six and nothing else —
    7 reports, 6 verdicts. *)
-let wf034_verdeling_naamresolutie ctx =
+let wf034_allocation_name_resolution ctx =
   List.concat
     (List.map
-       (fun (r : resolved_verdeling) ->
+       (fun (r : resolved_allocation) ->
          let at = r.vd_pointer in
          let resolve ~side ~scope field name =
            match (scope, name) with
            | Some tn, Some a when norm a <> "" -> (
-               match objecttype ctx tn with
+               match object_type ctx tn with
                | None -> [] (* the type itself is undeclared: WF-047 *)
                | Some ot ->
                    if has_attr ot a then []
@@ -2179,13 +2179,13 @@ let wf034_verdeling_naamresolutie ctx =
                             a side tn field) ])
            | _ -> []
          in
-         resolve ~side:"source" ~scope:r.bron_type "sourceAttribute" r.bron_attribuut
-         @ resolve ~side:"source" ~scope:r.bron_type "remainderAttribute" r.restant_attribuut
-         @ resolve ~side:"target" ~scope:r.doel_type "targetAttribute" r.doel_attribuut
-         @ resolve ~side:"target" ~scope:r.doel_type "ratioAttribute" r.rato_attribuut
-         @ resolve ~side:"target" ~scope:r.doel_type "maximumAttribute" r.maximum_attribuut
-         @ resolve ~side:"target" ~scope:r.doel_type "orderingAttribute" r.groepeer_attribuut)
-       ctx.doc.verdelingen)
+         resolve ~side:"source" ~scope:r.source_type "sourceAttribute" r.source_attribute
+         @ resolve ~side:"source" ~scope:r.source_type "remainderAttribute" r.remainder_attribute
+         @ resolve ~side:"target" ~scope:r.objective_type_name "targetAttribute" r.target_attribute
+         @ resolve ~side:"target" ~scope:r.objective_type_name "ratioAttribute" r.ratio_attribute
+         @ resolve ~side:"target" ~scope:r.objective_type_name "maximumAttribute" r.maximum_attribute
+         @ resolve ~side:"target" ~scope:r.objective_type_name "orderingAttribute" r.ordering_attribute)
+       ctx.doc.allocations)
 
 (* WF-034 on an object creation's SUBJECT (maintainer decision 2026-09-04,
    fifth wave). `subject` names the object type the creation RUNS OVER (ch.
@@ -2222,13 +2222,13 @@ let wf034_verdeling_naamresolutie ctx =
    Carried by zero of the 30 object creations the four zones hold on
    2026-09-05; witnesses `wf034-objectcreatie-onbekend-subject` and
    `wf034-objectcreatie-loos-subject`. *)
-let wf034_objectcreatie_subject ctx =
+let wf034_object_creation_subject ctx =
   List.concat
     (List.map
-       (fun (r : resolved_object_creatie) ->
+       (fun (r : resolved_object_creation) ->
          let at = r.oc_pointer ^ "/subject" in
          match r.oc_subject with
-         | Some s when objecttype ctx s = None ->
+         | Some s when object_type ctx s = None ->
              [ v "WF-034" at
                  ("object creation's subject type '" ^ s
                 ^ "' is not declared: the creation resolves against no declaration") ]
@@ -2237,7 +2237,7 @@ let wf034_objectcreatie_subject ctx =
                  "object creation without a subject: the population it runs over, and the type \
                   its member values evaluate on, resolve against no declaration" ]
          | Some _ -> [])
-       ctx.doc.object_creaties)
+       ctx.doc.object_creations)
 
 (* The annotation a node carries of its own. Since L2 the five reference
    classes carry none (B13): a reference's type is its declaration's, which
@@ -2245,15 +2245,15 @@ let wf034_objectcreatie_subject ctx =
    union denotes instances, so neither carries one either; an Unresolved
    without a type is a value of unknown type. *)
 let annotation = function
-  | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
-  | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Constante { typ; _ } | Bound_day { typ; _ } | Expr_onopgelost { typ; _ }
+  | Literal { typ; _ } | Text_composition { typ; _ } | Binary { typ; _ }
+  | Function_call { typ; _ } | Rounding { typ; _ } | Clamp { typ; _ }
+  | Context_value { typ; _ } | Bound_day { typ; _ } | Expr_unresolved { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
   | Struct_literal { typ; _ } | Field_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
-  | Attribuut_ref _ | Dimensie_cel _ | Parameter_ref _ | Variabele_ref _ | Binder_ref _
+  | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Binder_ref _
   | Lambda _ | Instance_set_union _ ->
       None
 
@@ -2265,8 +2265,8 @@ let annotation = function
    undeclared type or member, a characteristic, a count source's role
    name — which the member checks report. *)
 let resolved_attr_datatype ctx = function
-  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } -> (
-      match objecttype ctx otn with
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ } -> (
+      match object_type ctx otn with
       | Some ot -> ( match attr_of ot a with Some (Some dt) -> Some dt | _ -> None)
       | None -> None)
   | _ -> None
@@ -2280,37 +2280,37 @@ let resolved_attr_datatype ctx = function
    it), an unbound variable marker, an Unresolved of unknown type. *)
 let expr_type ctx ~(binders : (string * datatype option) list) (e : expr) =
   match e with
-  | Attribuut_ref _ -> resolved_attr_datatype ctx e
-  | Dimensie_cel { attribuut = Some inner; _ } -> resolved_attr_datatype ctx inner
-  | Dimensie_cel { attribuut = None; _ } -> None
+  | Attribute_reference _ -> resolved_attr_datatype ctx e
+  | Dimension_cell_read { attribute_ref = Some inner; _ } -> resolved_attr_datatype ctx inner
+  | Dimension_cell_read { attribute_ref = None; _ } -> None
   | Parameter_ref { parameter = Some p; _ } -> (
       match find_ci ctx.doc.parameters p with Some par -> par.par_datatype | None -> None)
   | Parameter_ref { parameter = None; _ } -> None
-  | Binder_ref { naam; _ } -> (
-      match List.find_opt (fun (b, _) -> norm b = norm naam) binders with
+  | Binder_ref { ident; _ } -> (
+      match List.find_opt (fun (b, _) -> norm b = norm ident) binders with
       | Some (_, dt) -> dt
       | None -> None)
-  | Variabele_ref _ -> None
+  | Variable_reference _ -> None
   | _ -> annotation e
 
 let wf027 ctx =
   List.concat_map
-    (fun (r : resolved_object_creatie) ->
+    (fun (r : resolved_object_creation) ->
       let at = r.oc_pointer in
-      match r.nieuw_type with
+      match r.created_type with
       | None -> [ v "WF-027" at "object creation without a created type" ]
       | Some tn -> (
-          match objecttype ctx tn with
+          match object_type ctx tn with
           | None -> [ v "WF-027" at ("created type '" ^ tn ^ "' is not declared") ]
           | Some ot ->
               List.concat_map
                 (fun (j, t) ->
                   let tat = Printf.sprintf "%s/initialisations/%d" at j in
-                  match t.toe_attribuut with
+                  match t.to_attribute with
                   | None -> [ v "WF-027" tat "member initialisation without a member name" ]
                   | Some m ->
-                      if t.toe_kenmerk then
-                        (if not (has_kenmerk ot m) then
+                      if t.to_characteristic then
+                        (if not (has_characteristic ot m) then
                            [ v "WF-027" tat
                                ("'" ^ m ^ "' is not a declared characteristic of '" ^ tn ^ "'") ]
                          else [])
@@ -2327,7 +2327,7 @@ let wf027 ctx =
                            statically and defers to the runtime fail-fast at
                            the write. A node that is never a value (a Lambda)
                            stays refused. *)
-                        (match t.toe_waarde with
+                        (match t.to_value with
                          | None ->
                              [ v "WF-027" tat "characteristic initialisation without a value" ]
                          | Some (Lambda _ | Instance_set_union _) ->
@@ -2336,7 +2336,7 @@ let wf027 ctx =
                                   boolean-typed expression" ]
                          | Some w -> (
                              match expr_type ctx ~binders:[] w with
-                             | Some Booleaan | None -> []
+                             | Some Boolean | None -> []
                              | Some _ ->
                                  [ v "WF-027" tat
                                      "characteristic initialisation's value must be a \
@@ -2344,27 +2344,27 @@ let wf027 ctx =
                       else if not (has_attr ot m) then
                         [ v "WF-027" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]
                       else [])
-                (List.mapi (fun j t -> (j, t)) r.toekenningen)))
-    ctx.doc.object_creaties
+                (List.mapi (fun j t -> (j, t)) r.assignments)))
+    ctx.doc.object_creations
 
 let wf029 ctx =
   List.concat_map
-    (fun (r : resolved_consistentie) ->
+    (fun (r : resolved_consistency) ->
       let at = r.cons_pointer in
       (match r.cons_subject with
        | None -> [ v "WF-029" at "consistency without a subject type" ]
-       | Some s when objecttype ctx s = None ->
+       | Some s when object_type ctx s = None ->
            [ v "WF-029" at ("subject type '" ^ s ^ "' is not declared") ]
        | Some _ -> [])
-      @ match r.assertie with
+      @ match r.assertion with
         | None -> [ v "WF-029" at "consistency without an assertion" ]
         | Some _ -> [])
-    ctx.doc.consistenties
+    ctx.doc.consistencies
 
 let datatype_kind = function
-  | Numeriek _ -> "number" | Percentage _ -> "percentage" | Tekst -> "text"
-  | Booleaan -> "boolean" | Datum_in_dagen -> "date-day" | Datum_tijd -> "date-ms"
-  | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
+  | Number _ -> "number" | Percentage _ -> "percentage" | Text_type -> "text"
+  | Boolean -> "boolean" | Date_in_days -> "date-day" | Date_time_type -> "date-ms"
+  | Enumeration _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
   | Struct_type _ -> "struct"
 
 (* WF-038 on the two numeric builtins (IR-SPEC ch. 4.3): a square root and an
@@ -2431,51 +2431,51 @@ type detail_facet =
 
 let rec datatype_detail ?(facets = []) dt =
   let has f = List.mem f facets in
-  let unit_label (e : eenheid) =
+  let unit_label (e : measure_unit) =
     match e with
-    | { afkorting = Some a; _ } -> a
-    | { canoniek = Some c; _ } -> c
+    | { abbr_text = Some a; _ } -> a
+    | { canonical_form = Some c; _ } -> c
     | _ -> "unit"
   in
-  let dec_unit geheel decimalen teken eenheid =
-    let u = match eenheid with None -> "" | Some e -> ", " ^ unit_label e in
-    let w = if not (has Wholeness) then "" else if geheel then ", whole" else ", fractional" in
+  let dec_unit whole_part decimal_places sign_char measure_unit =
+    let u = match measure_unit with None -> "" | Some e -> ", " ^ unit_label e in
+    let w = if not (has Wholeness) then "" else if whole_part then ", whole" else ", fractional" in
     let s =
       if not (has Sign) then ""
       else
-        match teken with
+        match sign_char with
         | Some t -> ", sign " ^ Spelling.encode Spelling.sign t
         | None -> ", no sign"
     in
     let of_unit f render =
-      match eenheid with Some e when has f -> render e | _ -> ""
+      match measure_unit with Some e when has f -> render e | _ -> ""
     in
     let sys =
       of_unit Unit_system (fun e ->
-          match e.stelsel with Some st -> ", system " ^ st | None -> ", no system")
+          match e.system with Some st -> ", system " ^ st | None -> ", no system")
     in
     let can =
       of_unit Unit_canonical (fun e ->
-          match e.canoniek with Some c -> ", canonical " ^ c | None -> ", no canonical unit")
+          match e.canonical_form with Some c -> ", canonical " ^ c | None -> ", no canonical unit")
     in
     let fac =
       of_unit Unit_factor (fun e ->
-          match e.factor_naar_canoniek with
+          match e.factor_to_canonical with
           | Some { num; den } -> Printf.sprintf ", factor %d/%d" num den
           | None -> ", no factor")
     in
     let per =
       of_unit Unit_denominator (fun e ->
-          match e.noemer with Some n -> ", per " ^ unit_label n | None -> ", no denominator")
+          match e.denominator with Some n -> ", per " ^ unit_label n | None -> ", no denominator")
     in
-    Printf.sprintf "(%d decimals%s%s%s%s%s%s%s)" decimalen u w s sys can fac per
+    Printf.sprintf "(%d decimals%s%s%s%s%s%s%s)" decimal_places u w s sys can fac per
   in
   match dt with
-  | Numeriek { geheel; decimalen; teken; eenheid } -> "number" ^ dec_unit geheel decimalen teken eenheid
-  | Percentage { geheel; decimalen; eenheid } -> "percentage" ^ dec_unit geheel decimalen None eenheid
-  | Enumeratie { domein = Some d; _ } -> "enumeration '" ^ d ^ "'"
-  | Sum_type { domein; _ } -> "sumtype '" ^ domein ^ "'"
-  | Struct_type { domein; _ } -> "struct '" ^ domein ^ "'"
+  | Number { whole_part; decimal_places; sign_char; measure_unit } -> "number" ^ dec_unit whole_part decimal_places sign_char measure_unit
+  | Percentage { whole_part; decimal_places; measure_unit } -> "percentage" ^ dec_unit whole_part decimal_places None measure_unit
+  | Enumeration { domain_spec = Some d; _ } -> "enumeration '" ^ d ^ "'"
+  | Sum_type { domain_spec; _ } -> "sumtype '" ^ domain_spec ^ "'"
+  | Struct_type { domain_spec; _ } -> "struct '" ^ domain_spec ^ "'"
   | List_type { element } -> "list of " ^ datatype_detail ~facets element
   | other -> datatype_kind other
 
@@ -2483,8 +2483,8 @@ let rec datatype_detail ?(facets = []) dt =
    differ; [datatype_detail] renders none of them by default *)
 let rec differing_facets a b =
   let parts = function
-    | Numeriek { geheel; teken; eenheid; _ } -> Some (geheel, teken, eenheid)
-    | Percentage { geheel; eenheid; _ } -> Some (geheel, None, eenheid)
+    | Number { whole_part; sign_char; measure_unit; _ } -> Some (whole_part, sign_char, measure_unit)
+    | Percentage { whole_part; measure_unit; _ } -> Some (whole_part, None, measure_unit)
     | _ -> None
   in
   match (a, b) with
@@ -2497,10 +2497,10 @@ let rec differing_facets a b =
           @ when_ (t1 <> t2) Sign
           @ (match (e1, e2) with
             | Some u1, Some u2 ->
-                when_ (u1.stelsel <> u2.stelsel) Unit_system
-                @ when_ (u1.canoniek <> u2.canoniek) Unit_canonical
-                @ when_ (u1.factor_naar_canoniek <> u2.factor_naar_canoniek) Unit_factor
-                @ when_ (u1.noemer <> u2.noemer) Unit_denominator
+                when_ (u1.system <> u2.system) Unit_system
+                @ when_ (u1.canonical_form <> u2.canonical_form) Unit_canonical
+                @ when_ (u1.factor_to_canonical <> u2.factor_to_canonical) Unit_factor
+                @ when_ (u1.denominator <> u2.denominator) Unit_denominator
             | _ -> [])
       | _ -> [])
 
@@ -2511,20 +2511,20 @@ let rec differing_facets a b =
 let rec datatype_detail_full dt =
   let all = [ Wholeness; Sign; Unit_system; Unit_canonical; Unit_factor; Unit_denominator ] in
   match dt with
-  | Numeriek _ | Percentage _ -> datatype_detail ~facets:all dt
-  | Enumeratie { domein; waarden } ->
-      (match domein with Some d -> "enumeration '" ^ d ^ "'" | None -> "enumeration")
-      ^ " [" ^ String.concat ", " (List.map (Option.value ~default:"?") waarden) ^ "]"
-  | Sum_type { domein; constructoren } ->
-      "sumtype '" ^ domein ^ "' ["
+  | Number _ | Percentage _ -> datatype_detail ~facets:all dt
+  | Enumeration { domain_spec; label_list } ->
+      (match domain_spec with Some d -> "enumeration '" ^ d ^ "'" | None -> "enumeration")
+      ^ " [" ^ String.concat ", " (List.map (Option.value ~default:"?") label_list) ^ "]"
+  | Sum_type { domain_spec; constructor_list } ->
+      "sumtype '" ^ domain_spec ^ "' ["
       ^ String.concat ", "
           (List.map
              (fun (c, p) -> match p with None -> c | Some p -> c ^ " of " ^ datatype_detail_full p)
-             constructoren)
+             constructor_list)
       ^ "]"
-  | Struct_type { domein; velden } ->
-      "struct '" ^ domein ^ "' {"
-      ^ String.concat ", " (List.map (fun (f, t) -> f ^ ": " ^ datatype_detail_full t) velden)
+  | Struct_type { domain_spec; field_list } ->
+      "struct '" ^ domain_spec ^ "' {"
+      ^ String.concat ", " (List.map (fun (f, t) -> f ^ ": " ^ datatype_detail_full t) field_list)
       ^ "}"
   | List_type { element } -> "list of " ^ datatype_detail_full element
   | other -> datatype_kind other
@@ -2549,28 +2549,28 @@ let detail_vs a ~against =
    drifted element domain on a list-typed reference is the wrong-answer flank
    the card measured (clingo folded 0 where ref faulted). None for every
    other datatype and for an Enumeration carrying no domain. The variant
-   travels with the name because `domeinen` is ONE namespace: a domain
+   travels with the name because `domain_specs` is ONE namespace: a domain
    declared as one variant and used as the other is never the same keuzetype
    (fix round 1: an enumeration-typed reference over a sum-typed attribute
    of the same name was verifier-clean and faulted in both executors). *)
-type keuzetype = Kt_enum of string | Kt_sum of string
+type choice_type = Kt_enum of string | Kt_sum of string
 
-let rec keuzetype_domain = function
-  | Enumeratie { domein = Some d; _ } -> Some (Kt_enum d)
-  | Enumeratie { domein = None; _ } -> None
-  | Sum_type { domein; _ } -> Some (Kt_sum domein)
-  | List_type { element } -> keuzetype_domain element
+let rec choice_type_domain = function
+  | Enumeration { domain_spec = Some d; _ } -> Some (Kt_enum d)
+  | Enumeration { domain_spec = None; _ } -> None
+  | Sum_type { domain_spec; _ } -> Some (Kt_sum domain_spec)
+  | List_type { element } -> choice_type_domain element
   | _ -> None
 
-let keuzetype_name = function Kt_enum d | Kt_sum d -> d
+let choice_type_name = function Kt_enum d | Kt_sum d -> d
 
-let keuzetype_variant = function
+let choice_type_variant = function
   | Kt_enum _ -> "enumeration domain"
   | Kt_sum _ -> "sum-type domain"
 
 (* the identity: the same variant and the same name, compared ci (WF-001) *)
-let keuzetype_same a b =
-  norm (keuzetype_name a) = norm (keuzetype_name b)
+let choice_type_same a b =
+  norm (choice_type_name a) = norm (choice_type_name b)
   && match (a, b) with Kt_enum _, Kt_enum _ | Kt_sum _, Kt_sum _ -> true | _ -> false
 
 (* WF-089 (domain identity, IR-SPEC ch. 2.4): a derived node's annotation
@@ -2592,42 +2592,42 @@ let wf089_domain_identity ?(source = "the declaration it reads from") at ~what ~
   match (decl, typ) with
   | None, _ | _, None -> []
   | Some d, Some t -> (
-      match (keuzetype_domain t, keuzetype_domain d) with
+      match (choice_type_domain t, choice_type_domain d) with
       | None, None -> []
-      | Some a, Some b when keuzetype_same a b -> []
-      | Some a, Some b when norm (keuzetype_name a) = norm (keuzetype_name b) ->
+      | Some a, Some b when choice_type_same a b -> []
+      | Some a, Some b when norm (choice_type_name a) = norm (choice_type_name b) ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed as the %s '%s', but %s is the %s '%s' \
                   (one namespace: a domain has one variant)"
-                 what (keuzetype_variant a) (keuzetype_name a) source (keuzetype_variant b)
-                 (keuzetype_name b)) ]
+                 what (choice_type_variant a) (choice_type_name a) source (choice_type_variant b)
+                 (choice_type_name b)) ]
       | Some a, Some b ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed with keuzetype domain '%s', but %s names domain '%s'"
-                 what (keuzetype_name a) source (keuzetype_name b)) ]
+                 what (choice_type_name a) source (choice_type_name b)) ]
       | Some a, None ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed with keuzetype domain '%s', but %s is %s and names no keuzetype \
                   domain"
-                 what (keuzetype_name a) source (datatype_kind d)) ]
+                 what (choice_type_name a) source (datatype_kind d)) ]
       | None, Some b ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed %s, naming no keuzetype domain, but %s names domain '%s'"
-                 what (datatype_kind t) source (keuzetype_name b)) ])
+                 what (datatype_kind t) source (choice_type_name b)) ])
 
 (* The struct domain a datatype names (IR-SPEC ch. 2.4) — a StructType's
    declaring domain, looked up THROUGH a ListType's element exactly as
-   [keuzetype_domain] is. A struct domain is NOT a keuzetype (the ch. 2.4
+   [choice_type_domain] is. A struct domain is NOT a keuzetype (the ch. 2.4
    family term covers Enumeration and SumType only, maintainer decision), and
-   `domeinen` being one namespace there is no variant to carry: a domain
+   `domain_specs` being one namespace there is no variant to carry: a domain
    declared as a struct and named as a struct is the same domain iff the
    names agree (ci, WF-001). *)
 let rec struct_domain = function
-  | Struct_type { domein; _ } -> Some domein
+  | Struct_type { domain_spec; _ } -> Some domain_spec
   | List_type { element } -> struct_domain element
   | _ -> None
 
@@ -2695,34 +2695,34 @@ let use_site_domain ?(source = "the declaration it reads from") at ~what ~decl ~
    do not match, so a `KG`/`GEWICHT`/`KG` copy of a `kg`/`Gewicht`/`kg`
    declaration answers 3750.00 where ref and clingo answer 3.75. The factor
    and the denominator shape stay exact as well: those are not names. *)
-let rec eenheid_identical (a : eenheid) (b : eenheid) =
-  a.afkorting = b.afkorting && a.stelsel = b.stelsel && a.canoniek = b.canoniek
-  && a.factor_naar_canoniek = b.factor_naar_canoniek
+let rec unit_identical (a : measure_unit) (b : measure_unit) =
+  a.abbr_text = b.abbr_text && a.system = b.system && a.canonical_form = b.canonical_form
+  && a.factor_to_canonical = b.factor_to_canonical
   &&
-  match (a.noemer, b.noemer) with
+  match (a.denominator, b.denominator) with
   | None, None -> true
-  | Some x, Some y -> eenheid_identical x y
+  | Some x, Some y -> unit_identical x y
   | _ -> false
 
-let rec eenheid_render (u : eenheid) =
-  (match u.afkorting with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit")
-  ^ (match u.stelsel with Some s -> " of system '" ^ s ^ "'" | None -> "")
-  ^ (match (u.factor_naar_canoniek, u.canoniek) with
-    | Some f, Some c -> Printf.sprintf " (factor %s to '%s')" (rationaal_render f) c
-    | Some f, None -> Printf.sprintf " (factor %s)" (rationaal_render f)
+let rec render_unit (u : measure_unit) =
+  (match u.abbr_text with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit")
+  ^ (match u.system with Some s -> " of system '" ^ s ^ "'" | None -> "")
+  ^ (match (u.factor_to_canonical, u.canonical_form) with
+    | Some f, Some c -> Printf.sprintf " (factor %s to '%s')" (rational_render f) c
+    | Some f, None -> Printf.sprintf " (factor %s)" (rational_render f)
     | None, Some c -> Printf.sprintf " (canonical '%s')" c
     | None, None -> "")
-  ^ match u.noemer with Some n -> " per " ^ eenheid_render n | None -> ""
+  ^ match u.denominator with Some n -> " per " ^ render_unit n | None -> ""
 
-let unit_render = function None -> "no unit" | Some u -> eenheid_render u
+let unit_render = function None -> "no unit" | Some u -> render_unit u
 
 (* The numeric facets a type turns on. The sign is not among them: see the
    note on [use_site_identity]. *)
-type num_facets = { nf_geheel : bool; nf_decimalen : int; nf_eenheid : eenheid option }
+type num_facets = { nf_whole : bool; nf_decimals : int; nf_unit : measure_unit option }
 
 let num_facets_of = function
-  | Numeriek { geheel; decimalen; eenheid; _ } | Percentage { geheel; decimalen; eenheid } ->
-      Some { nf_geheel = geheel; nf_decimalen = decimalen; nf_eenheid = eenheid }
+  | Number { whole_part; decimal_places; measure_unit; _ } | Percentage { whole_part; decimal_places; measure_unit } ->
+      Some { nf_whole = whole_part; nf_decimals = decimal_places; nf_unit = measure_unit }
   | _ -> None
 
 (* the numeric facets are read THROUGH matching ListType layers, exactly as
@@ -2748,7 +2748,7 @@ let rec peel_lists a b =
    IS its declaration's ([expr_type]), so there is no copy to cross.
 
    The soort facet deliberately stops short of the domain-carrying kinds:
-   `domeinen` is ONE namespace, so enumeration-versus-sum-type and
+   `domain_specs` is ONE namespace, so enumeration-versus-sum-type and
    domain-versus-no-domain are the domain facet's own clauses (WF-089's
    variant and one-sided arms, WF-090's), stated and numbered there.
 
@@ -2777,8 +2777,8 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
             (Printf.sprintf "%s mismatch: %s is typed %s, but %s is %s" facet what shown_t source
                shown_d) ]
       in
-      let names_a_domain x = keuzetype_domain x <> None || struct_domain x <> None in
-      let soort_facet () =
+      let names_a_domain x = choice_type_domain x <> None || struct_domain x <> None in
+      let kind_facet () =
         if names_a_domain t || names_a_domain d then []
         else if datatype_kind t = datatype_kind d then []
         else mismatch "soort" (datatype_kind t) (datatype_kind d)
@@ -2794,24 +2794,24 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
         match (num_facets_of tl, num_facets_of dl) with
         | Some ft, Some fd
           when not
-                 (match (ft.nf_eenheid, fd.nf_eenheid) with
+                 (match (ft.nf_unit, fd.nf_unit) with
                  | None, None -> true
-                 | Some a, Some b -> eenheid_identical a b
+                 | Some a, Some b -> unit_identical a b
                  | _ -> false) ->
-            mismatch "unit" (unit_render ft.nf_eenheid) (unit_render fd.nf_eenheid)
+            mismatch "unit" (unit_render ft.nf_unit) (unit_render fd.nf_unit)
         | _ -> []
       in
       let decimals_facet () =
         numeric
-          (fun f -> f.nf_decimalen)
+          (fun f -> f.nf_decimals)
           "decimals"
-          (fun f -> Printf.sprintf "%d decimals" f.nf_decimalen)
+          (fun f -> Printf.sprintf "%d decimals" f.nf_decimals)
       in
       let whole_facet () =
         numeric
-          (fun f -> f.nf_geheel)
+          (fun f -> f.nf_whole)
           "wholeness"
-          (fun f -> if f.nf_geheel then "whole" else "fractional")
+          (fun f -> if f.nf_whole then "whole" else "fractional")
       in
       let rec first = function
         | [] -> []
@@ -2820,7 +2820,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
       first
         (List.filter_map
            (fun (n, f) -> if List.mem n skip then None else Some f)
-           [ ("soort", soort_facet); ("domain", domain_facet); ("unit", unit_facet);
+           [ ("soort", kind_facet); ("domain", domain_facet); ("unit", unit_facet);
              ("decimals", decimals_facet); ("wholeness", whole_facet) ])
 
 (* --- the DERIVED expectation on composite positions (WF-091) ------------ *)
@@ -2862,8 +2862,8 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
    goldens widen nonNegative to unspecified. Measured 2026-09-04: crossing it
    costs 5 golden+rood documents on the additive arm, 7 over all arms. *)
 
-let dt_decimals = function Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> decimalen | _ -> 0
-let dt_whole = function Numeriek { geheel; _ } | Percentage { geheel; _ } -> geheel | _ -> false
+let dt_decimals = function Number { decimal_places; _ } | Percentage { decimal_places; _ } -> decimal_places | _ -> 0
+let dt_whole = function Number { whole_part; _ } | Percentage { whole_part; _ } -> whole_part | _ -> false
 
 (* A number an arm below derives is built in the loader's reading
    ([Loader.datatype], the Ast header): a unit '%' — a rate whose numerator
@@ -2876,10 +2876,10 @@ let dt_whole = function Numeriek { geheel; _ } | Percentage { geheel; _ } -> geh
    reads that as a percentage (measured 2026-09-24: before this reading,
    WF-091 refused the soort of the frontend's own plus, minus and
    reducedBy over two percentage attributes). *)
-let derived_number ~geheel ~decimalen (eenheid : eenheid option) =
-  match eenheid with
-  | Some { afkorting = Some "%"; _ } -> Percentage { geheel; decimalen; eenheid }
-  | _ -> Numeriek { geheel; decimalen; teken = Some Onbepaald; eenheid }
+let derived_number ~whole_part ~decimal_places (measure_unit : measure_unit option) =
+  match measure_unit with
+  | Some { abbr_text = Some "%"; _ } -> Percentage { whole_part; decimal_places; measure_unit }
+  | _ -> Number { whole_part; decimal_places; sign_char = Some Unspecified; measure_unit }
 
 (* The ch. 2.6 times join, in the two shapes the IR fixes: a unitless operand
    hands the other unit through (the dimensionless 1 absorbs), and a rate
@@ -2894,14 +2894,14 @@ let derived_number ~geheel ~decimalen (eenheid : eenheid option) =
    2026-09-04: no times node in golden, rood, negatief or the parity zone has
    two unit-bearing operands, so the cancel arm is pinned by a negatief and
    nothing else). *)
-let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option =
+let times_unit (a : measure_unit option) (b : measure_unit option) : measure_unit option option =
   match (a, b) with
   | None, x | x, None -> Some x
   | Some x, Some y ->
-      let cancel (rate : eenheid) (plain : eenheid) =
-        match rate.noemer with
-        | Some n when plain.noemer = None && units_convertible plain n ->
-            Some (Some { rate with noemer = None })
+      let cancel (rate : measure_unit) (plain : measure_unit) =
+        match rate.denominator with
+        | Some n when plain.denominator = None && units_convertible plain n ->
+            Some (Some { rate with denominator = None })
         | _ -> None
       in
       (match cancel x y with Some u -> Some u | None -> cancel y x)
@@ -2928,11 +2928,11 @@ let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option 
    ill-formed in a fold source since the widening. The corpus carries none
    of the three shapes: every total operand in golden, rood, negatief and
    the parity zone resolves (measured 2026-09-04). *)
-let set_lezing ctx ~ranged (args : expr list) : bool option =
+let set_reading ctx ~ranged (args : expr list) : bool option =
   match args with
-  | [ Attribuut_ref { objecttype = Some otn; attribuut = Some a; _ } ] when ranged -> (
-      match objecttype ctx otn with Some ot -> Some (not (attr_temporal ot a)) | None -> None)
-  | [ Attribuut_ref _ ] when ranged -> None
+  | [ Attribute_reference { object_type = Some otn; attribute_ref = Some a; _ } ] when ranged -> (
+      match object_type ctx otn with Some ot -> Some (not (attr_temporal ot a)) | None -> None)
+  | [ Attribute_reference _ ] when ranged -> None
   | _ -> Some false
 
 (* The expectation for one composite position, or [None] where v0 derives
@@ -2957,11 +2957,11 @@ let composite_expectation ctx ~binders (e : expr) :
   let ty x = expr_type ctx ~binders x in
   let operand_t x = Option.bind x ty in
   match e with
-  | Binair { op = (Plus | Min | Verminderd_met) as op; links; rechts; _ } -> (
+  | Binary { op = (Plus | Min | Reduced_by) as op; left_side; right_side; _ } -> (
       let what = "the " ^ Spelling.encode Spelling.binary_op op ^ " composite" in
-      match (operand_t links, operand_t rechts) with
+      match (operand_t left_side, operand_t right_side) with
       | Some l, Some r ->
-          if op <> Verminderd_met && is_date l && is_number_like r && unit_of r <> None then
+          if op <> Reduced_by && is_date l && is_number_like r && unit_of r <> None then
             (* date +/- duration (ch. 2.2): the result IS the date operand's
                type, unchanged — the duration operand carries the calendar
                unit and contributes nothing to the result type *)
@@ -2976,8 +2976,8 @@ let composite_expectation ctx ~binders (e : expr) :
             Some
               ( what, "the type derived from its operands",
                 derived_number
-                  ~geheel:(dt_whole l && dt_whole r)
-                  ~decimalen:(max (dt_decimals l) (dt_decimals r))
+                  ~whole_part:(dt_whole l && dt_whole r)
+                  ~decimal_places:(max (dt_decimals l) (dt_decimals r))
                   (unit_of l),
                 [] )
           else
@@ -2989,10 +2989,10 @@ let composite_expectation ctx ~binders (e : expr) :
                formula. *)
             None
       | _ -> None)
-  | Binair { op = Maal; links; rechts; _ } -> (
-      match (operand_t links, operand_t rechts) with
+  | Binary { op = Times; left_side; right_side; _ } -> (
+      match (operand_t left_side, operand_t right_side) with
       | Some l, Some r when is_number_like l && is_number_like r -> (
-          match maal_unit (unit_of l) (unit_of r) with
+          match times_unit (unit_of l) (unit_of r) with
           | None -> None
           | Some u ->
               (* the UNIT and the WHOLENESS. ch. 2.3: a product is never whole,
@@ -3005,10 +3005,10 @@ let composite_expectation ctx ~binders (e : expr) :
                  annotated whole any more (measured: 0 of 57). *)
               Some
                 ( "the times composite", "the type derived from its operands",
-                  derived_number ~geheel:false ~decimalen:0 u,
+                  derived_number ~whole_part:false ~decimal_places:0 u,
                   [ "decimals" ] ))
       | _ -> None)
-  | Binair { op = (Gedeeld_door | Tot_de_macht) as op; links; rechts; _ } -> (
+  | Binary { op = (Divided_by | Power) as op; left_side; right_side; _ } -> (
       (* the WHOLENESS only (ch. 2.3: a quotient and a power are never whole).
          Their unit is ch. 2.10's fourth class, which v0 derives nothing for,
          so the unit exception set stays gate 13's; their decimals, maxDec, are
@@ -3016,25 +3016,25 @@ let composite_expectation ctx ~binders (e : expr) :
          since a derivation that names no unit cannot tell a percentage from a
          number. Measured 2026-09-25: no quotient or power in golden, rood,
          negatief or the parity zone is annotated whole (0 of 74). *)
-      match (operand_t links, operand_t rechts) with
+      match (operand_t left_side, operand_t right_side) with
       | Some l, Some r when is_number_like l && is_number_like r ->
           Some
             ( "the " ^ Spelling.encode Spelling.binary_op op ^ " composite",
-              (if op = Gedeeld_door then "the type a quotient derives" else "the type a power derives"),
-              derived_number ~geheel:false ~decimalen:0 None,
+              (if op = Divided_by then "the type a quotient derives" else "the type a power derives"),
+              derived_number ~whole_part:false ~decimal_places:0 None,
               [ "soort"; "unit"; "decimals" ] )
       | _ -> None)
-  | Afgerond { basis = Some b; decimalen; _ } -> (
+  | Rounding { base_expr = Some b; decimal_places; _ } -> (
       (* ch. 2.4 clause 2: a rounding changes the FACING precision to its own
          decimal count (whole when 0) and touches nothing else — ch. 2.10:
          it carries its base's unit. *)
       match ty b with
-      | Some (Numeriek { teken; eenheid; _ }) ->
+      | Some (Number { sign_char; measure_unit; _ }) ->
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
-              Numeriek { geheel = decimalen = 0; decimalen; teken; eenheid },
+              Number { whole_part = decimal_places = 0; decimal_places; sign_char; measure_unit },
               [] )
-      | Some (Percentage { eenheid; _ }) ->
+      | Some (Percentage { measure_unit; _ }) ->
           (* the percentage arm carries NO corpus witness (measured 2026-09-04:
              zero roundings over a percentage base in any zone); it keeps the
              base's unit, which is what ch. 2.10, the ASP translator and the
@@ -3042,27 +3042,27 @@ let composite_expectation ctx ~binders (e : expr) :
              a divergence recorded rather than followed *)
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
-              Percentage { geheel = decimalen = 0; decimalen; eenheid },
+              Percentage { whole_part = decimal_places = 0; decimal_places; measure_unit },
               [] )
       | Some other ->
           Some ("the rounding", "the type derived from its base", other, [])
       | None -> None)
-  | Begrensd { basis = Some b; _ } -> (
+  | Clamp { base_expr = Some b; _ } -> (
       (* ch. 2.7: a clamp returns one of three values of the base's own type.
          Its SIGN is the sharpest case for the exclusion the header states: a
          clamp with a minimum of 0 IS non-negative whatever its base says. *)
       match ty b with
       | Some d -> Some ("the clamp", "the type derived from its base", d, [])
       | None -> None)
-  | Functie { kind = Aantal; _ } ->
+  | Function_call { kind = Count; _ } ->
       (* ch. 2.3: a count is a whole, non-negative, unitless number. Two
          anchor goldens write unspecified on a count — the header's exclusion in
          its widening direction. *)
       Some
         ( "the count aggregation", "the type a count derives",
-          Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
+          Number { whole_part = true; decimal_places = 0; sign_char = Some Non_negative; measure_unit = None },
           [] )
-  | Functie { kind = Aantal_gevulde; _ } ->
+  | Function_call { kind = Filled_count; _ } ->
       (* The SAME derivation, and it needs its own arm because this engine
          matches on the kind: the filled count answers a CARDINALITY, so
          ch. 3.4c fixes its result to a whole, unitless number whatever unit
@@ -3076,19 +3076,19 @@ let composite_expectation ctx ~binders (e : expr) :
          allowed to say anything. *)
       Some
         ( "the filledCount aggregation", "the type a filled count derives",
-          Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
+          Number { whole_part = true; decimal_places = 0; sign_char = Some Non_negative; measure_unit = None },
           [] )
-  | Functie { kind = (Som | Eerste | Laatste | Totaal | Minimum | Maximum) as k;
-              argumenten = a0 :: rest; bron_rol; bron_pad; _ } -> (
+  | Function_call { kind = (Sum_function | First | Last | Total | Minimum | Maximum) as k;
+              call_arguments = a0 :: rest; source_role; source_path; _ } -> (
       let what = "the " ^ Spelling.encode Spelling.aggregation_kind k ^ " aggregation" in
       match ty a0 with
       | None -> None
       | Some t0 -> (
           match k with
-          | Som ->
+          | Sum_function ->
               (* §4.6 Eenheid1: a sum is its first operand's type, unchanged *)
               Some (what, "the type derived from its first operand", t0, [])
-          | Eerste | Laatste ->
+          | First | Last ->
               (* an element-passing fold returns a contributor unchanged. The
                  DOMAIN facet is skipped here and only here because it is
                  already crossed at this position, once per operand and under
@@ -3097,11 +3097,11 @@ let composite_expectation ctx ~binders (e : expr) :
               Some
                 ( what, "the type derived from its first operand", t0,
                   [ "domain" ] )
-          | Totaal -> (
+          | Total -> (
               (* §4.20: the temporal total INTEGRATES a rate over time, so the
                  result drops the /tijdseenheid and keeps the numerator — but
                  only where the operand integrates. The scheidslijn is the
-                 emitter's own, [set_lezing] above: the NON-TEMPORAL SET
+                 emitter's own, [set_reading] above: the NON-TEMPORAL SET
                  reading ("het totaal van <x> van alle <elementen>" over a
                  plain attribute) is an ALIAS of the sum, an instance fold
                  over nothing, and carries the element type verbatim exactly
@@ -3114,7 +3114,7 @@ let composite_expectation ctx ~binders (e : expr) :
                  answer the first operand's unit whole) — a divergence recorded
                  at the card, harmless on this corpus, where every total's own
                  annotation follows the emitter. *)
-              match set_lezing ctx ~ranged:(bron_rol <> None || bron_pad <> None) (a0 :: rest) with
+              match set_reading ctx ~ranged:(source_role <> None || source_path <> None) (a0 :: rest) with
               | None -> None
               | Some true ->
                   Some (what, "the type derived from its first operand", t0, [])
@@ -3128,10 +3128,10 @@ let composite_expectation ctx ~binders (e : expr) :
                      second arm, WF-091 refused the unit of that total) *)
                   let d =
                     match t0 with
-                    | Numeriek ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as n) ->
-                        Numeriek { n with eenheid = Some { u with noemer = None } }
-                    | Percentage ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as p) ->
-                        Percentage { p with eenheid = Some { u with noemer = None } }
+                    | Number ({ measure_unit = Some ({ denominator = Some _; _ } as u); _ } as n) ->
+                        Number { n with measure_unit = Some { u with denominator = None } }
+                    | Percentage ({ measure_unit = Some ({ denominator = Some _; _ } as u); _ } as p) ->
+                        Percentage { p with measure_unit = Some { u with denominator = None } }
                     | other -> other
                   in
                   Some (what, "the type derived from its first operand", d, []))
@@ -3148,16 +3148,16 @@ let composite_expectation ctx ~binders (e : expr) :
                   (* ch. 2.3 / ch. 4.1: the least operand precision, the
                      conjunction of wholeness, operand 0's sign and unit *)
                   (match t0 with
-                   | Numeriek { teken; eenheid; _ } ->
+                   | Number { sign_char; measure_unit; _ } ->
                        Some
                          ( what, "the type derived from its operands",
-                           Numeriek
-                             { geheel = List.for_all dt_whole ts;
-                               decimalen =
+                           Number
+                             { whole_part = List.for_all dt_whole ts;
+                               decimal_places =
                                  List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
-                               teken; eenheid },
+                               sign_char; measure_unit },
                            [ "domain" ] )
-                   | Percentage { eenheid; _ } ->
+                   | Percentage { measure_unit; _ } ->
                        (* the same formula over a percentage operand 0: since
                           L3 a '%' number is a [Percentage], and the RegelSpraak
                           frontend's minimum over two percentage sums writes
@@ -3168,10 +3168,10 @@ let composite_expectation ctx ~binders (e : expr) :
                        Some
                          ( what, "the type derived from its operands",
                            Percentage
-                             { geheel = List.for_all dt_whole ts;
-                               decimalen =
+                             { whole_part = List.for_all dt_whole ts;
+                               decimal_places =
                                  List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
-                               eenheid },
+                               measure_unit },
                            [ "domain" ] )
                    | _ ->
                        Some
@@ -3198,11 +3198,11 @@ let composite_expectation ctx ~binders (e : expr) :
    reports, the identity cross below does not run: there is no derived type
    to compare with. *)
 let wire_type_name = function
-  | Numeriek _ | Percentage _ -> "Number"
-  | Datum_in_dagen | Datum_tijd -> "Date"
-  | Tekst -> "Text"
-  | Booleaan -> "Boolean"
-  | Enumeratie _ -> "Enumeration"
+  | Number _ | Percentage _ -> "Number"
+  | Date_in_days | Date_time_type -> "Date"
+  | Text_type -> "Text"
+  | Boolean -> "Boolean"
+  | Enumeration _ -> "Enumeration"
   | Sum_type _ -> "SumType"
   | List_type _ -> "ListType"
   | Struct_type _ -> "StructType"
@@ -3213,7 +3213,7 @@ let numeric_operand_arm ctx ~binders at (e : expr) =
     | Some d when not (is_number_like d) ->
         let operand =
           match a with
-          | Attribuut_ref { attribuut = Some n; objecttype = Some ot; _ } ->
+          | Attribute_reference { attribute_ref = Some n; object_type = Some ot; _ } ->
               Printf.sprintf "'%s' on '%s'" n ot
           | Parameter_ref { parameter = Some p; _ } -> Printf.sprintf "the parameter '%s'" p
           | _ -> Printf.sprintf "its operand %d" i
@@ -3221,7 +3221,7 @@ let numeric_operand_arm ctx ~binders at (e : expr) =
         let t = wire_type_name d in
         let why =
           match d with
-          | Datum_in_dagen | Datum_tijd -> "Date values are calendar positions"
+          | Date_in_days | Date_time_type -> "Date values are calendar positions"
           | _ -> t ^ " values are not amounts"
         in
         [ v "WF-091"
@@ -3233,10 +3233,10 @@ let numeric_operand_arm ctx ~binders at (e : expr) =
     | _ -> []
   in
   match e with
-  | Functie { kind = (Som | Totaal) as k; argumenten; _ } ->
+  | Function_call { kind = (Sum_function | Total) as k; call_arguments; _ } ->
       let head = "the " ^ Spelling.encode Spelling.aggregation_kind k in
-      List.concat (List.mapi (refuse ~head ~verb:"folds") argumenten)
-  | Functie { kind = Tijdsevenredig_deel as k; argumenten = base :: _; _ } ->
+      List.concat (List.mapi (refuse ~head ~verb:"folds") call_arguments)
+  | Function_call { kind = Time_proportional_part as k; call_arguments = base :: _; _ } ->
       let head = "the pro-rata part (" ^ Spelling.encode Spelling.builtin_kind k ^ ")" in
       refuse ~head ~verb:"scales" 0 base
   | _ -> []
@@ -3262,7 +3262,7 @@ let wf030 ctx =
     match otn with
     | None -> [ v "WF-030" (at ^ "/objectType") "uniqueness source without an object type" ]
     | Some otn -> (
-        match objecttype ctx otn with
+        match object_type ctx otn with
         | None -> [ v "WF-030" (at ^ "/objectType") ("source type '" ^ otn ^ "' is not declared") ]
         | Some ot ->
             List.concat
@@ -3278,18 +3278,18 @@ let wf030 ctx =
                  keys))
   in
   List.concat_map
-    (fun (r : resolved_uniciteit) -> source_checks (r.uni_pointer ^ "/sources/0") r.uni_subject r.sleutels)
-    ctx.doc.uniciteiten
+    (fun (r : resolved_uniqueness) -> source_checks (r.uni_pointer ^ "/sources/0") r.uni_subject r.key_list)
+    ctx.doc.uniquenesses
   @ List.concat_map
-      (fun (r : resolved_uniciteit_unie) ->
+      (fun (r : resolved_uniqueness_union) ->
         let at = r.uu_pointer in
-        let per_bron =
+        let per_source =
           List.concat
             (List.mapi
-               (fun k b -> source_checks (Printf.sprintf "%s/sources/%d" at k) b.uub_type b.uub_sleutels)
-               r.bronnen)
+               (fun k b -> source_checks (Printf.sprintf "%s/sources/%d" at k) b.uub_type b.uub_keys)
+               r.source_list)
         in
-        let arities = List.map (fun b -> List.length b.uub_sleutels) r.bronnen in
+        let arities = List.map (fun b -> List.length b.uub_keys) r.source_list in
         let arity_v =
           match arities with
           | a :: rest when List.exists (fun x -> x <> a) rest ->
@@ -3301,17 +3301,17 @@ let wf030 ctx =
           match b.uub_type with
           | None -> None
           | Some t ->
-              objecttype ctx t
+              object_type ctx t
               |> Option.map (fun ot ->
                   List.map
                     (fun k ->
                       match k with
                       | Some k -> attr_of ot k |> Option.join |> Option.map datatype_kind
                       | None -> None)
-                    b.uub_sleutels)
+                    b.uub_keys)
         in
         let kind_v =
-          match List.filter_map kinds_of r.bronnen with
+          match List.filter_map kinds_of r.source_list with
           | first :: rest when arity_v = [] ->
               if
                 List.exists
@@ -3331,17 +3331,17 @@ let wf030 ctx =
           match b.uub_type with
           | None -> None
           | Some t ->
-              objecttype ctx t
+              object_type ctx t
               |> Option.map (fun ot ->
                   List.map
                     (fun k ->
                       match k with
                       | Some k -> attr_of ot k |> Option.join |> Option.map unit_of
                       | None -> None)
-                    b.uub_sleutels)
+                    b.uub_keys)
         in
         let unit_v =
-          match List.filter_map units_of r.bronnen with
+          match List.filter_map units_of r.source_list with
           | first :: rest when arity_v = [] ->
               if
                 List.exists
@@ -3354,8 +3354,8 @@ let wf030 ctx =
               else []
           | _ -> []
         in
-        per_bron @ arity_v @ kind_v @ unit_v)
-      ctx.doc.uniciteit_unies
+        per_source @ arity_v @ kind_v @ unit_v)
+      ctx.doc.uniqueness_unions
 
 (* One structural pass over a day-kind condition (IR-SPEC par. 5, the
    stratum-0 framing; ch. 3.7). It collects, in one walk:
@@ -3368,7 +3368,7 @@ let wf030 ctx =
      documents this);
    - the day-kind names it references (a Predicate of kind dayKind), for the
      WF-085 reference graph. *)
-let dagsoort_scan at (c0 : conditie) : violation list * string list =
+let day_kind_scan at (c0 : condition_expr) : violation list * string list =
   let viols = ref [] and refs = ref [] in
   let impure kind name =
     viols :=
@@ -3393,7 +3393,7 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
   let rec ex (e : expr) =
     let opt = function Some e -> ex e | None -> () in
     match e with
-    | Attribuut_ref { attribuut; _ } -> impure "attribute" (Option.value attribuut ~default:"?")
+    | Attribute_reference { attribute_ref; _ } -> impure "attribute" (Option.value attribute_ref ~default:"?")
     (* The context value is the one place this walk must read a NAME. WF-098
        (ch. 4.1) closes the set to the two session values and says nothing
        about POSITION; the position rule belongs here, because it is a
@@ -3408,35 +3408,35 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
        report as well — measured on `wf098-onbekende-contextwaarde-naam`,
        whose `de dagX` sits in exactly this position). A context value
        without a name cannot be written since L4. *)
-    | Constante { naam = Some n; _ }
+    | Context_value { ident = Some n; _ }
       when norm n = norm Spelling.evaluation_date || norm n = norm Spelling.evaluation_year ->
         session n
-    | Constante _ | Bound_day _ | Literal _ | Parameter_ref _ | Variabele_ref _
-    | Expr_onopgelost _ | Binder_ref _ ->
+    | Context_value _ | Bound_day _ | Literal _ | Parameter_ref _ | Variable_reference _
+    | Expr_unresolved _ | Binder_ref _ ->
         ()
-    | Dimensie_cel { attribuut; _ } -> opt attribuut
-    | Binair { links; rechts; _ } -> opt links; opt rechts
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
+    | Dimension_cell_read { attribute_ref; _ } -> opt attribute_ref
+    | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
+    | Rounding { base_expr; _ } -> opt base_expr
+    | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
     | Field_access { base; _ } -> ex base
-    | Struct_literal { velden; _ } -> List.iter (fun (_, e) -> ex e) velden
+    | Struct_literal { field_list; _ } -> List.iter (fun (_, e) -> ex e) field_list
     | List_literal { elements; _ } -> List.iter ex elements
     | Construct { argument; _ } -> opt argument
-    | Temporal_read { basis; datum; _ } -> ex basis; ex datum
+    | Temporal_read { base_expr; date_value; _ } -> ex base_expr; ex date_value
     | Invoke { arguments; _ } -> List.iter ex arguments
-    | Tekst_reeks { delen; _ } ->
-        List.iter (function Ingevoegd { expr = Some e } -> ex e | _ -> ()) delen
-    | Functie { argumenten; leegwaarde; filter; _ } ->
-        List.iter ex argumenten;
-        opt leegwaarde;
+    | Text_composition { pieces; _ } ->
+        List.iter (function Embedded_expression { expr = Some e } -> ex e | _ -> ()) pieces
+    | Function_call { call_arguments; empty_fallback; filter; _ } ->
+        List.iter ex call_arguments;
+        opt empty_fallback;
         (match filter with Some c -> co c | None -> ())
     | If_then_else { condition; then_; else_; _ } -> co condition; ex then_; ex else_
     | List_length { list; _ } -> ex list
     | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
     | Lambda { body; _ } -> ex body
     | Filter_list { list; condition; _ } -> ex list; co condition
-    | Fold { list; functie; init; _ } -> ex list; ex init; fold_fn functie
-    | Map_list { list; functie; _ } -> ex list; fold_fn functie
+    | Fold { list; function_name; init; _ } -> ex list; ex init; fold_fn function_name
+    | Map_list { list; function_name; _ } -> ex list; fold_fn function_name
     | Let { value; body; _ } -> ex value; ex body
     | Instance_set_union { branches; _ } ->
         (* a union ranges over INSTANCES, which a day kind — a function of
@@ -3448,28 +3448,28 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
             match b.isb_filter with Some c -> co c | None -> ())
           branches
   and fold_fn = function Fn_lambda { body; _ } -> ex body | Fn_name _ -> ()
-  and co (c : conditie) =
+  and co (c : condition_expr) =
     let opt = function Some e -> ex e | None -> () in
     match c with
-    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
-    | Predicaat { soort = Dagsoort; dagsoort; operand; _ } ->
-        (match dagsoort with Some dk -> refs := dk :: !refs | None -> ());
+    | Comparison { left_side; right_side; _ } -> opt left_side; opt right_side
+    | Predicate { variety = Day_kind_predicate; day_kind; operand; _ } ->
+        (match day_kind with Some dk -> refs := dk :: !refs | None -> ());
         opt operand
-    | Predicaat { operand; _ } -> opt operand
-    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
-    | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
-    | Kenmerk_check { kenmerk; _ } -> impure "characteristic" (Option.value kenmerk ~default:"?")
+    | Predicate { operand; _ } -> opt operand
+    | Time_window { starting_at; up_to; _ } -> opt starting_at; opt up_to
+    | Compound { components; _ } -> List.iter co components
+    | Characteristic_check { characteristic; _ } -> impure "characteristic" (Option.value characteristic ~default:"?")
     (* the WF-031 admission list is closed: relation membership and rule-version state are
        derived fact-base reads, outside "dates, date-components, easterSunday, literals,
        parameters and other day kinds" — flag them like the attribute/characteristic reads *)
     | Role_membership { role; _ } -> impure "role membership" role
-    | Regelversie { regel; _ } -> impure "rule-version state" (Option.value regel ~default:"?")
+    | Rule_status_check { rule_def; _ } -> impure "rule-version state" (Option.value rule_def ~default:"?")
     (* the quantifier fold ranges over the fact base — instances reached
        through a relation — which is the same derived read the membership
        arms above are flagged for; the day-kind admission list is closed *)
-    | Kwantorvouw { kv_element_objecttype; _ } ->
-        impure "instance quantification" (Option.value kv_element_objecttype ~default:"?")
-    | Conditie_onopgelost _ -> ()
+    | Quantifier_fold { kv_element_object_type; _ } ->
+        impure "instance quantification" (Option.value kv_element_object_type ~default:"?")
+    | Condition_unresolved _ -> ()
   in
   co c0;
   (List.rev !viols, List.rev !refs)
@@ -3478,23 +3478,23 @@ let wf031 ctx =
   let named =
     List.filter_map
       (fun (i, r) ->
-        Option.map (fun n -> (n, Printf.sprintf "/dayKindDefinitions/%d" i)) r.rd_naam)
-      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
+        Option.map (fun n -> (n, Printf.sprintf "/dayKindDefinitions/%d" i)) r.rd_name)
+      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_day_kind_definitions)
   in
   (dups_by norm named
    |> List.map (fun (a, _, at) -> v "WF-031" at ("more than one definition for day kind '" ^ a ^ "'")))
   @ List.concat_map
       (fun (i, r) ->
         let at = Printf.sprintf "/dayKindDefinitions/%d" i in
-        (match r.rd_voorwaarde with
+        (match r.rd_condition with
          | None -> [ v "WF-031" at "day-kind definition without a condition" ]
          (* the purity clause (IR-SPEC par. 5): no derived-state read *)
-         | Some c -> fst (dagsoort_scan (at ^ "/condition") c))
+         | Some c -> fst (day_kind_scan (at ^ "/condition") c))
         (* The validity MUST be always, neither bound written: no executor
            consults a day-kind window, so a bounded one would be silently
            dead. *)
-        @ (match r.rd_geldigheid with
-           | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+        @ (match r.rd_validity with
+           | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
                [ v "WF-031" at
                    "day-kind definition with a bounded validity window; must be always (from and to both absent)" ]
            | _ -> [])
@@ -3509,7 +3509,7 @@ let wf031 ctx =
            unreachable in practice: a blank name is not a declared day kind
            either, so the resolution arm would answer first and report
            "undeclared day kind ' '" — true, and the wrong diagnosis. *)
-        @ match r.rd_naam with
+        @ match r.rd_name with
           | None ->
               [ v "WF-031" at
                   "day-kind definition without a name; it defines no declared day kind and is \
@@ -3518,10 +3518,10 @@ let wf031 ctx =
               [ v "WF-031" at
                   "day-kind definition with a blank name; it defines no declared day kind and is \
                    silently dead" ]
-          | Some n when not (mem_ci (dagsoort_namen ctx) n) ->
+          | Some n when not (mem_ci (day_kind_names ctx) n) ->
               [ v "WF-031" at ("definition for undeclared day kind '" ^ n ^ "'") ]
           | _ -> [])
-      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
+      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_day_kind_definitions)
 
 (* WF-085 — the day-kind reference graph MUST be acyclic (IR-SPEC par. 5,
    the stratum-0 framing / ch. 3.7). A day-kind condition may reference other
@@ -3532,30 +3532,30 @@ let wf031 ctx =
    no edge here (an unresolvable reference never hides a cycle in a clean
    document, the dep_forms discipline). *)
 let wf085 ctx =
-  let defs = Array.of_list ctx.doc.resolved_dagsoorten in
+  let defs = Array.of_list ctx.doc.resolved_day_kind_definitions in
   let n = Array.length defs in
   (* name (normalised) -> first defining index; duplicates are WF-031's concern *)
   let index = Hashtbl.create 16 in
   Array.iteri
-    (fun i (d : resolved_dagsoort) ->
-      match d.rd_naam with
+    (fun i (d : resolved_day_kind) ->
+      match d.rd_name with
       | Some nm when not (Hashtbl.mem index (norm nm)) -> Hashtbl.add index (norm nm) i
       | _ -> ())
     defs;
   let succ =
     Array.map
-      (fun (d : resolved_dagsoort) ->
-        match d.rd_voorwaarde with
+      (fun (d : resolved_day_kind) ->
+        match d.rd_condition with
         | None -> []
         | Some c ->
-            snd (dagsoort_scan "" c)
+            snd (day_kind_scan "" c)
             |> List.filter_map (fun r -> Hashtbl.find_opt index (norm r))
             |> List.sort_uniq compare)
       defs
   in
   let color = Array.make n 0 in
   let viols = ref [] in
-  let name i = Option.value defs.(i).rd_naam ~default:(Printf.sprintf "#%d" i) in
+  let name i = Option.value defs.(i).rd_name ~default:(Printf.sprintf "#%d" i) in
   let rec dfs path i =
     match color.(i) with
     | 1 ->
@@ -3582,40 +3582,40 @@ let wf085 ctx =
   List.rev !viols
 
 let wf032 ctx =
-  let entries = List.mapi (fun i r -> (i, r)) ctx.doc.resolved_startpunten in
+  let entries = List.mapi (fun i r -> (i, r)) ctx.doc.resolved_start_point_determinations in
   List.concat_map
     (fun (i, r) ->
       let at = Printf.sprintf "/startPointDeterminations/%d" i in
-      (match r.sp_tijdlijn with
+      (match r.sp_timeline with
        | None -> [ v "WF-032" at "start point without a timeline" ]
        | Some t -> (
-           match find_tijdlijn ctx t with
+           match find_timeline ctx t with
            | None -> [ v "WF-032" at ("start point for undeclared timeline '" ^ t ^ "'") ]
-           | Some tl when not tl.variabel_startpunt ->
+           | Some tl when not tl.variable_start ->
                [ v "WF-032" at ("start point for fixed-start timeline '" ^ t ^ "'") ]
            | Some _ -> []))
-      @ (match r.sp_objecttype, r.lid with
-         | Some otn, Some lid -> (
-             match objecttype ctx otn with
+      @ (match r.sp_subject_type, r.one_member with
+         | Some otn, Some one_member -> (
+             match object_type ctx otn with
              | None -> [ v "WF-032" at ("object type '" ^ otn ^ "' is not declared") ]
              | Some ot -> (
-                 match attr_of ot lid with
-                 | Some (Some Datum_in_dagen) -> []
+                 match attr_of ot one_member with
+                 | Some (Some Date_in_days) -> []
                  | Some (Some d) ->
                      [ v "WF-032" at
-                         ("anchor member '" ^ lid ^ "' is " ^ datatype_kind d
+                         ("anchor member '" ^ one_member ^ "' is " ^ datatype_kind d
                           ^ ", must be a day-precision date") ]
                  | Some None | None ->
                      [ v "WF-032" at
-                         ("anchor member '" ^ lid ^ "' is not a declared attribute of '" ^ otn ^ "'") ]))
+                         ("anchor member '" ^ one_member ^ "' is not a declared attribute of '" ^ otn ^ "'") ]))
          | _ -> [ v "WF-032" at "start point without object type or member" ])
       @
-      match r.sp_objecttype, r.sp_tijdlijn with
+      match r.sp_subject_type, r.sp_timeline with
       | Some otn, Some t ->
           List.filter_map
             (fun (j, r2) ->
               if j > i then
-                match r2.sp_objecttype, r2.sp_tijdlijn with
+                match r2.sp_subject_type, r2.sp_timeline with
                 | Some otn2, Some t2 when norm otn2 = norm otn && tl_norm t2 = tl_norm t ->
                     Some (v "WF-032" at
                             (Printf.sprintf
@@ -3639,51 +3639,51 @@ let wf033 ctx =
   let ocs_by_name n =
     List.filter
       (fun r ->
-        match r.oc_naam with
+        match r.oc_name with
         | Some m -> norm (strip_version m) = norm (strip_version n)
         | None -> false)
-      ctx.doc.object_creaties
+      ctx.doc.object_creations
   in
   List.concat_map
     (fun (i, g) ->
       let at = Printf.sprintf "/ruleGroups/%d" i in
-      let leden = some_names g.leden in
+      let member_list = some_names g.member_list in
       List.concat_map
-        (fun lid ->
-          if List.mem (norm (strip_version lid)) all_form_names then []
-          else [ v "WF-033" at ("group member '" ^ lid ^ "' does not resolve to a rule form") ])
-        leden
+        (fun one_member ->
+          if List.mem (norm (strip_version one_member)) all_form_names then []
+          else [ v "WF-033" at ("group member '" ^ one_member ^ "' does not resolve to a rule form") ])
+        member_list
       @
-      if g.recursief then
-        let ocs = List.map ocs_by_name leden |> List.filter (( <> ) []) in
-        let fc_member lid =
+      if g.recursive then
+        let ocs = List.map ocs_by_name member_list |> List.filter (( <> ) []) in
+        let fc_member one_member =
           List.exists
-            (fun (f : resolved_feit_creatie) ->
-              match f.fc_naam with
-              | Some m -> norm (strip_version m) = norm (strip_version lid)
+            (fun (f : resolved_fact_creation) ->
+              match f.fc_name with
+              | Some m -> norm (strip_version m) = norm (strip_version one_member)
               | None -> false)
-            ctx.doc.feit_creaties
+            ctx.doc.fact_creations
         in
         (* the recursion carrier is a creation member of EITHER kind:
            an object creation needs its guard (each generation mints new
            instances), a relation creation is idempotent over the fixed
            universe and needs none (ch. 5.5) *)
-        (if ocs = [] && not (List.exists fc_member leden) then
+        (if ocs = [] && not (List.exists fc_member member_list) then
            [ v "WF-033" at "recursive group without a creation member" ]
          else [])
         @ List.concat_map
             (fun oc ->
               (* a version of a form with several carries its number in its
                  name ('<form> #2'), so the sentence names the version *)
-              if oc.oc_voorwaarde = None then
+              if oc.oc_condition = None then
                 [ v "WF-033" at
                     ("unguarded object creation '"
-                     ^ Option.value oc.oc_naam ~default:"?"
+                     ^ Option.value oc.oc_name ~default:"?"
                      ^ "' in a recursive group") ]
               else [])
             (List.concat ocs)
       else [])
-    (List.mapi (fun i g -> (i, g)) ctx.doc.regel_groepen)
+    (List.mapi (fun i g -> (i, g)) ctx.doc.rule_groups)
 
 (* ======================================================================= *)
 (* Expression layer: WF-034 .. WF-043 (walk)                               *)
@@ -3695,13 +3695,13 @@ let wf033 ctx =
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
 let expr_temporal ctx = function
-  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } -> (
-      match objecttype ctx otn with
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ } -> (
+      match object_type ctx otn with
       | Some ot -> attr_temporal ot a
       | None -> false)
   | Parameter_ref { parameter = Some p; _ } -> (
       match find_ci ctx.doc.parameters p with
-      | Some par -> par.par_granulariteit <> None
+      | Some par -> par.par_granularity <> None
       | None -> false)
   | _ -> false
 
@@ -3711,9 +3711,9 @@ let expr_temporal ctx = function
    [domeinen]) as a SumType. This is the nominal source of truth for
    WF-061..064: a use site names a domain, and the declaration is what it
    must agree with — never the inline (possibly drifted) copy. *)
-let sum_decl ctx domein : (string * datatype option) list option =
-  match find_ci ctx.doc.domeinen domein with
-  | Some (Some (Sum_type { constructoren; _ })) -> Some constructoren
+let sum_decl ctx domain_spec : (string * datatype option) list option =
+  match find_ci ctx.doc.domain_specs domain_spec with
+  | Some (Some (Sum_type { constructor_list; _ })) -> Some constructor_list
   | _ -> None
 
 (* The declared value list of a domain, iff it is declared (in [domeinen]) as
@@ -3722,10 +3722,10 @@ let sum_decl ctx domein : (string * datatype option) list option =
    alternative is nullary by construction, so its "payload" is always None:
    returning the (label, payload) shape lets the Match totality and binder
    checks read one alternative list for both wire variants. *)
-let enum_decl ctx domein : (string * datatype option) list option =
-  match find_ci ctx.doc.domeinen domein with
-  | Some (Some (Enumeratie { waarden; _ })) ->
-      Some (List.map (fun w -> (w, None)) (some_names waarden))
+let enum_decl ctx domain_spec : (string * datatype option) list option =
+  match find_ci ctx.doc.domain_specs domain_spec with
+  | Some (Some (Enumeration { label_list; _ })) ->
+      Some (List.map (fun w -> (w, None)) (some_names label_list))
   | _ -> None
 
 (* WF-088: the enumeration sibling of WF-061. Every Enumeration datatype
@@ -3746,29 +3746,29 @@ let enum_decl ctx domein : (string * datatype option) list option =
    WF-003 and WF-063 own the unresolved reference. *)
 let rec enum_use_site ctx at (d : datatype) : violation list =
   match d with
-  | Enumeratie { domein = Some dn; waarden } -> (
-      match find_ci ctx.doc.domeinen dn with
-      | Some (Some (Enumeratie { waarden = declared; _ })) ->
+  | Enumeration { domain_spec = Some dn; label_list } -> (
+      match find_ci ctx.doc.domain_specs dn with
+      | Some (Some (Enumeration { label_list = declared; _ })) ->
           if
-            List.length waarden = List.length declared
+            List.length label_list = List.length declared
             && List.for_all2
                  (fun a b ->
                    match (a, b) with Some x, Some y -> norm x = norm y | _ -> false)
-                 waarden declared
+                 label_list declared
           then []
           else
             [ v "WF-088" at
                 ("enumeration use site disagrees with the declaration of domain '" ^ dn
                ^ "' (the same values, in declaration order, required)") ]
       | _ -> [])
-  | Enumeratie { domein = None; _ } -> []
+  | Enumeration { domain_spec = None; _ } -> []
   | List_type { element } -> enum_use_site ctx at element
-  | Sum_type { constructoren; _ } ->
+  | Sum_type { constructor_list; _ } ->
       List.concat_map
         (function _, Some p -> enum_use_site ctx at p | _, None -> [])
-        constructoren
-  | Struct_type { velden; _ } ->
-      List.concat_map (fun (_, fd) -> enum_use_site ctx at fd) velden
+        constructor_list
+  | Struct_type { field_list; _ } ->
+      List.concat_map (fun (_, fd) -> enum_use_site ctx at fd) field_list
   | _ -> []
 
 (* Two datatypes are the same datatype when they agree the way IR-SPEC
@@ -3779,14 +3779,14 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
 let rec same_datatype a b =
   let same_name x y = norm x = norm y in
   match (a, b) with
-  | Enumeratie { domein = d1; waarden = w1 }, Enumeratie { domein = d2; waarden = w2 } ->
+  | Enumeration { domain_spec = d1; label_list = w1 }, Enumeration { domain_spec = d2; label_list = w2 } ->
       Option.equal same_name d1 d2 && List.equal (Option.equal same_name) w1 w2
-  | Sum_type { domein = d1; constructoren = c1 }, Sum_type { domein = d2; constructoren = c2 } ->
+  | Sum_type { domain_spec = d1; constructor_list = c1 }, Sum_type { domain_spec = d2; constructor_list = c2 } ->
       same_name d1 d2
       && List.equal
            (fun (n1, p1) (n2, p2) -> same_name n1 n2 && Option.equal same_datatype p1 p2)
            c1 c2
-  | Struct_type { domein = d1; velden = v1 }, Struct_type { domein = d2; velden = v2 } ->
+  | Struct_type { domain_spec = d1; field_list = v1 }, Struct_type { domain_spec = d2; field_list = v2 } ->
       same_name d1 d2
       && List.equal (fun (n1, t1) (n2, t2) -> same_name n1 n2 && same_datatype t1 t2) v1 v2
   | List_type { element = e1 }, List_type { element = e2 } -> same_datatype e1 e2
@@ -3803,9 +3803,9 @@ let constructors_agree (a : (string * datatype option) list)
 (* The declared field list of a domain, iff it is declared (in [domeinen])
    as a StructType — the nominal source of truth for WF-072..074, the
    struct sibling of [sum_decl]. *)
-let struct_decl ctx domein : (string * datatype) list option =
-  match find_ci ctx.doc.domeinen domein with
-  | Some (Some (Struct_type { velden; _ })) -> Some velden
+let struct_decl ctx domain_spec : (string * datatype) list option =
+  match find_ci ctx.doc.domain_specs domain_spec with
+  | Some (Some (Struct_type { field_list; _ })) -> Some field_list
   | _ -> None
 
 (* Two field lists agree when they carry the same fields in the same order
@@ -3841,24 +3841,24 @@ let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
    WF-061's already-recorded open flank, not this rule's. *)
 let rec struct_use_site ctx at (d : datatype) : violation list =
   match d with
-  | Struct_type { domein; velden } -> (
-      match struct_decl ctx domein with
+  | Struct_type { domain_spec; field_list } -> (
+      match struct_decl ctx domain_spec with
       | None ->
           [ v "WF-072" at
-              ("struct-type use site names domain '" ^ domein
+              ("struct-type use site names domain '" ^ domain_spec
              ^ "', which is not a declared struct type") ]
       | Some decl ->
-          if fields_agree decl velden then []
+          if fields_agree decl field_list then []
           else
             [ v "WF-072" at
-                ("struct-type use site disagrees with the declaration of domain '" ^ domein
+                ("struct-type use site disagrees with the declaration of domain '" ^ domain_spec
                ^ "' (same fields, datatypes and order required)") ])
   | List_type { element } -> struct_use_site ctx at element
   | _ -> []
 
 (* The declared FunctionDef of [name], iff present (WF-067..068/070). *)
 let function_decl ctx name : function_def option =
-  List.find_opt (fun (fd : function_def) -> norm fd.fd_naam = norm name) ctx.doc.function_defs
+  List.find_opt (fun (fd : function_def) -> norm fd.fd_name = norm name) ctx.doc.function_defs
 
 let is_list_type = function List_type _ -> true | _ -> false
 
@@ -3867,17 +3867,17 @@ let is_list_type = function List_type _ -> true | _ -> false
    widened by Phase 5c with struct elements) and the pattern WF-060 uses for
    constructor payloads. *)
 let admissible_element ctx = function
-  | Numeriek _ | Datum_in_dagen -> true
-  | Sum_type { domein; _ } -> sum_decl ctx domein <> None
-  | Struct_type { domein; _ } -> struct_decl ctx domein <> None
+  | Number _ | Date_in_days -> true
+  | Sum_type { domain_spec; _ } -> sum_decl ctx domain_spec <> None
+  | Struct_type { domain_spec; _ } -> struct_decl ctx domain_spec <> None
   | _ -> false
 
 let scalar_one_arg_kinds =
-  [ Wortel; Absolute_waarde; Eerste_paasdag; Jaar_uit; Maand_uit; Dag_uit;
-    Uur_uit; Minuut_uit; Seconde_uit; Milliseconde_uit ]
+  [ Square_root; Absolute_value; Easter_sunday; Year_of; Month_of; Day_of;
+    Hour_of; Minute_of; Second_of; Millisecond_of ]
 
 let aggregation_kinds =
-  [ Som; Totaal; Aantal; Minimum; Maximum; Eerste; Laatste; Aantal_gevulde ]
+  [ Sum_function; Total; Count; Minimum; Maximum; First; Last; Filled_count ]
 
 (* The folds that hand an ELEMENT through unchanged: they select a
    contributor, they never compute a new value, so the node's own type is
@@ -3889,7 +3889,7 @@ let aggregation_kinds =
 let passthrough_folds =
   List.map
     (fun k -> (k, Spelling.encode Spelling.aggregation_kind k))
-    [ Eerste; Laatste; Minimum; Maximum ]
+    [ First; Last; Minimum; Maximum ]
 
 (* Does [name] match a declared role's name or plural (ci)? *)
 let is_role_name ctx name =
@@ -3897,10 +3897,10 @@ let is_role_name ctx name =
     (fun (_, ft) ->
       List.exists
         (fun r ->
-          (match r.rol_naam with Some n -> norm n = norm name | None -> false)
-          || match r.rol_meervoud with Some n -> norm n = norm name | None -> false)
-        ft.rollen)
-    ctx.doc.feittypen
+          (match r.role_identifier with Some n -> norm n = norm name | None -> false)
+          || match r.role_plural with Some n -> norm n = norm name | None -> false)
+        ft.role_names)
+    ctx.doc.fact_types
 
 (* The ch. 4.1 type-pair derivation, mirrored from the executors: the
    two-role fact types relating [from_type] to [to_type] (either way).
@@ -3933,22 +3933,22 @@ let is_role_name ctx name =
    a position must HOLD what reaches it, [type_compatible] only where a
    position is READ through, which is sound upward from every filler and
    is what WF-047 already meant by "agree". *)
-let fills ctx ~inst ~(role : rol) =
-  is_sub ctx ~sub:inst ~super:(Option.value role.rol_objecttype_naam ~default:"")
+let fills ctx ~inst ~(role : role_ref) =
+  is_sub ctx ~sub:inst ~super:(Option.value role.role_object_type_name ~default:"")
 
 let connecting_candidates ctx ~from_type ~to_type =
   List.filter_map
-    (fun (fn, (ft : feittype)) ->
+    (fun (fn, (ft : fact_type_name)) ->
       let f inst role = fills ctx ~inst ~role in
-      match ft.rollen with
+      match ft.role_names with
       | [ a; b ] ->
           if (f from_type a && f to_type b) || (f from_type b && f to_type a) then Some fn
           else None
-      | [ r ] when ft.wederkerig ->
+      | [ r ] when ft.reciprocal ->
           (* the single reciprocal role relates the type to itself *)
           if f from_type r && norm from_type = norm to_type then Some fn else None
       | _ -> None)
-    ctx.doc.feittypen
+    ctx.doc.fact_types
 
 (* Candidate ROLES, not fact types — v0's verbindendeRol derivation (every
    role of the far type whose fact type also relates the near type). Since
@@ -3962,16 +3962,16 @@ let connecting_candidates ctx ~from_type ~to_type =
    left with that fallback (B12). *)
 let connecting_role_candidates ctx ~from_type ~to_type =
   List.concat_map
-    (fun (_, (ft : feittype)) ->
+    (fun (_, (ft : fact_type_name)) ->
       let f inst role = fills ctx ~inst ~role in
-      match ft.rollen with
+      match ft.role_names with
       | [ a; b ] ->
           (if f from_type a && f to_type b then [ b ] else [])
           @ (if f from_type b && f to_type a then [ a ] else [])
-      | [ r ] when ft.wederkerig ->
+      | [ r ] when ft.reciprocal ->
           if f from_type r && norm from_type = norm to_type then [ r ] else []
       | _ -> [])
-    ctx.doc.feittypen
+    ctx.doc.fact_types
 
 (* The SEVEN aggregation kinds that read a VALUE per contributor — every fold
    kind except count, which reads the contributors themselves (ch. 1.2e: a
@@ -3991,7 +3991,7 @@ let connecting_role_candidates ctx ~from_type ~to_type =
    whose semantics fold CONTRIBUTORS, and this kind's semantics fold
    values. *)
 let value_fold_name = function
-  | (Som | Totaal | Minimum | Maximum | Eerste | Laatste | Aantal_gevulde) as k ->
+  | (Sum_function | Total | Minimum | Maximum | First | Last | Filled_count) as k ->
       Some (Spelling.encode Spelling.aggregation_kind k)
   | _ -> None
 
@@ -4002,21 +4002,21 @@ let value_fold_name = function
    fills a role declared at any of its supertypes (ch. 2.6). Returns
    (fact type, reached role). *)
 let roles_named_from ctx ~from_type ~name =
-  let matches (r : rol) =
-    (match r.rol_naam with Some n -> norm n = norm name | None -> false)
-    || match r.rol_meervoud with Some m -> norm m = norm name | None -> false
+  let matches (r : role_ref) =
+    (match r.role_identifier with Some n -> norm n = norm name | None -> false)
+    || match r.role_plural with Some m -> norm m = norm name | None -> false
   in
   List.filter_map
-    (fun (fn, (ft : feittype)) ->
+    (fun (fn, (ft : fact_type_name)) ->
       let f role = fills ctx ~inst:from_type ~role in
-      match ft.rollen with
+      match ft.role_names with
       | [ a; b ] ->
           if f a && matches b then Some (fn, b)
           else if f b && matches a then Some (fn, a)
           else None
-      | [ r ] when ft.wederkerig -> if f r && matches r then Some (fn, r) else None
+      | [ r ] when ft.reciprocal -> if f r && matches r then Some (fn, r) else None
       | _ -> None)
-    ctx.doc.feittypen
+    ctx.doc.fact_types
 
 (* The reading of an instance fold's SOURCE — the single argument of an
    aggregation carrying an elementType (IR-SPEC ch. 4.3, the reading of the source). The
@@ -4049,13 +4049,13 @@ type source_reading =
 let source_reading ctx ~element_type ~subject ~kind ~ranged a =
   if not ranged then Src_own
   else
-    match objecttype ctx element_type with
+    match object_type ctx element_type with
     | None -> Src_undecided
     | Some ot -> (
-        let member = has_attr ot a || has_kenmerk ot a in
+        let member = has_attr ot a || has_characteristic ot a in
         match (kind, member) with
-        | Aantal, true -> Src_count_of_member
-        | Aantal, false -> Src_count
+        | Count, true -> Src_count_of_member
+        | Count, false -> Src_count
         | _, true -> Src_value
         | _, false ->
             let role =
@@ -4090,10 +4090,10 @@ let source_reading ctx ~element_type ~subject ~kind ~ranged a =
    WF-047's (it must denote the bound role), so it is exempt here. *)
 let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen; _ } -> (
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings; _ } -> (
       (* a fold source never navigates: its relation is the fold's range —
          navigation bindings in this slot are ill-formed (WF-053) *)
-      (match navigatie_bindingen with
+      (match navigation_bindings with
        | Some _ ->
            [ v "WF-053" at
                "a path on a fold source is ill-formed (the fold's relation is its range, \
@@ -4136,14 +4136,14 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
                     different declarations") ]
          | _ -> [])
       @
-      match objecttype ctx otn with
+      match object_type ctx otn with
       | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
       | Some ot -> (
           match reading with
           | Src_count | Src_count_of_member | Src_role_under_value_fold | Src_undecided -> []
           | Src_value | Src_unresolved | Src_own ->
               if has_attr ot a then []
-              else if has_kenmerk ot a then
+              else if has_characteristic ot a then
                 (* WF-080: an aggregation source is a value position — a
                    characteristic endpoint carries no value here *)
                 [ v "WF-080" at
@@ -4160,46 +4160,46 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
 
 (* Resolve a binding to (fact type, bound role, opposite role). Only the
    declared role name binds — the plural is presentation (WF-047). *)
-let resolve_binding ctx (rb : rol_binding) =
-  match find_ci ctx.doc.feittypen rb.rb_feittype with
-  | None -> Error ("role binding names undeclared fact type '" ^ rb.rb_feittype ^ "'")
-  | Some (ft : feittype) -> (
-      match ft.rollen with
+let resolve_binding ctx (rb : role_binding) =
+  match find_ci ctx.doc.fact_types rb.rb_fact_type with
+  | None -> Error ("role binding names undeclared fact type '" ^ rb.rb_fact_type ^ "'")
+  | Some (ft : fact_type_name) -> (
+      match ft.role_names with
       | [ a; b ] -> (
           let matches r =
-            match r.rol_naam with Some n -> norm n = norm rb.rb_rol | None -> false
+            match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false
           in
           match (matches a, matches b) with
           | true, false -> Ok (ft, a, b)
           | false, true -> Ok (ft, b, a)
           | true, true ->
               Error
-                ("role name '" ^ rb.rb_rol ^ "' is ambiguous within fact type '"
-               ^ rb.rb_feittype ^ "'")
+                ("role name '" ^ rb.rb_role ^ "' is ambiguous within fact type '"
+               ^ rb.rb_fact_type ^ "'")
           | false, false ->
               Error
-                ("role binding names no declared role '" ^ rb.rb_rol ^ "' of fact type '"
-               ^ rb.rb_feittype ^ "' (the plural does not bind)"))
-      | [ r ] when ft.wederkerig ->
+                ("role binding names no declared role '" ^ rb.rb_role ^ "' of fact type '"
+               ^ rb.rb_fact_type ^ "' (the plural does not bind)"))
+      | [ r ] when ft.reciprocal ->
           (* the reciprocal shape (§13.3.9.2, WF-011/013): one role
              relating the type to itself — bound and opposite are the
              same role *)
-          let matches (r : rol) =
-            match r.rol_naam with Some n -> norm n = norm rb.rb_rol | None -> false
+          let matches (r : role_ref) =
+            match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false
           in
           if matches r then Ok (ft, r, r)
           else
             Error
-              ("role binding names no declared role '" ^ rb.rb_rol ^ "' of fact type '"
-             ^ rb.rb_feittype ^ "' (the plural does not bind)")
+              ("role binding names no declared role '" ^ rb.rb_role ^ "' of fact type '"
+             ^ rb.rb_fact_type ^ "' (the plural does not bind)")
       | _ ->
           Error
-            ("role binding into fact type '" ^ rb.rb_feittype
+            ("role binding into fact type '" ^ rb.rb_fact_type
            ^ "', which does not have exactly two roles (or one, reciprocal)"))
 
 (* WF-047: the binding resolves and its fillers agree with the node's
    declared source/target types (skip a side the node leaves unnamed). *)
-let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
+let wf047_binding ctx at (rb : role_binding) ~bound_filler ~other_filler =
   match resolve_binding ctx rb with
   | Error e -> [ v "WF-047" at e ]
   | Ok (_, bound, other) ->
@@ -4208,15 +4208,15 @@ let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
          declared on a supertype legitimately carries subtype instances and
          a node may name either end of one chain. Two types in different
          chains still disagree. *)
-      let agree what (r : rol) = function
+      let agree what (r : role_ref) = function
         | None -> []
         | Some expected ->
-            let filler = Option.value r.rol_objecttype_naam ~default:"" in
+            let filler = Option.value r.role_object_type_name ~default:"" in
             if type_compatible ctx filler expected then []
             else
               [ v "WF-047" at
                   (Printf.sprintf "the %s role '%s' fills '%s', but the node names '%s'" what
-                     (Option.value r.rol_naam ~default:"?")
+                     (Option.value r.role_identifier ~default:"?")
                      filler expected) ]
       in
       agree "bound" bound bound_filler @ agree "opposite" other other_filler
@@ -4231,9 +4231,9 @@ let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
    directly. Since L2 the bindings are the whole navigation (B11): a read
    without them is the subject's own read, so there is nothing here to
    derive. *)
-let nav_hops ctx ~subject ~(bindings : rol_binding list) ~(endpoint : string option) :
-    ((string * rol) list, string list) result =
-  let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+let nav_hops ctx ~subject ~(bindings : role_binding list) ~(endpoint : string option) :
+    ((string * role_ref) list, string list) result =
+  let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
   (* ONE-SIDED, deliberately: the walk lands on a role whose declared
      filler is [c], so every instance it can hold is ⊑ c, and all of them
      satisfy the endpoint only when c ⊑ e. The other direction — a
@@ -4248,7 +4248,7 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list) ~(endpoint : string opt
         [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
     | _ -> []
   in
-  let step (i, cur, acc, errs) (rb : rol_binding) =
+  let step (i, cur, acc, errs) (rb : role_binding) =
     match resolve_binding ctx rb with
     | Error e -> (i + 1, None, acc, errs @ [ e ])
     | Ok (_, bound, opposite) ->
@@ -4257,10 +4257,10 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list) ~(endpoint : string opt
           | Some c when not (fills ctx ~inst:c ~role:opposite) ->
               [ Printf.sprintf
                   "hop %d over '%s': the near side fills '%s', but the walk stands at '%s'" i
-                  rb.rb_feittype (filler opposite) c ]
+                  rb.rb_fact_type (filler opposite) c ]
           | _ -> []
         in
-        (i + 1, Some (filler bound), acc @ [ (rb.rb_feittype, bound) ], errs @ near)
+        (i + 1, Some (filler bound), acc @ [ (rb.rb_fact_type, bound) ], errs @ near)
   in
   let _, cur, acc, errs = List.fold_left step (0, Some subject, [], []) bindings in
   match errs @ endpoint_check cur with [] -> Ok acc | errs -> Error errs
@@ -4271,20 +4271,20 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list) ~(endpoint : string opt
    is its marker). Every position this is called for wants ONE value: a
    fold's set source never navigates (its relation is the fold's range), so
    no read reaches here that could consume a collection. *)
-let wf053_attribuut_ref ctx at ~subject ~bindings ~endpoint =
+let wf053_attribute_ref ctx at ~subject ~bindings ~endpoint =
   match nav_hops ctx ~subject ~bindings ~endpoint with
   | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs
   | Ok hops ->
       List.concat
         (List.mapi
-           (fun i ((_, (r : rol))) ->
-             if r.rol_meervoudig then
+           (fun i ((_, (r : role_ref))) ->
+             if r.role_many then
                [ v "WF-053" at
                    (Printf.sprintf
                       "hop %d reaches the to-many role '%s' in a scalar slot — a to-many step \
                        needs an aggregation, never a silent first pick"
                       i
-                      (Option.value r.rol_naam ~default:"?")) ]
+                      (Option.value r.role_identifier ~default:"?")) ]
              else [])
            hops)
 
@@ -4293,10 +4293,10 @@ let wf053_attribuut_ref ctx at ~subject ~bindings ~endpoint =
    its subjectType MUST be the subject type — a foreign subjectType there
    names a type the read never reaches. A position with no subject (a
    day-kind condition) anchors nothing. *)
-let wf053_read ctx at ~subject ~objecttype:otn ~bindings =
+let wf053_read ctx at ~subject ~object_type:otn ~bindings =
   match (subject, bindings) with
   | None, _ -> []
-  | Some st, Some hops -> wf053_attribuut_ref ctx at ~subject:st ~bindings:hops ~endpoint:(Some otn)
+  | Some st, Some hops -> wf053_attribute_ref ctx at ~subject:st ~bindings:hops ~endpoint:(Some otn)
   | Some st, None when norm st <> norm otn ->
       [ v "WF-053" at
           (Printf.sprintf
@@ -4332,22 +4332,22 @@ let rec mentions_binder b (e : expr) : bool =
   let same n = norm n = norm b in
   let opt = function Some e -> mentions_binder b e | None -> false in
   match e with
-  | Binder_ref { naam; _ } -> same naam
-  | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
-  | Attribuut_ref _ | Dimensie_cel _ | Expr_onopgelost _ -> false
-  | Binair { links; rechts; _ } -> opt links || opt rechts
-  | Afgerond { basis; _ } -> opt basis
-  | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
+  | Binder_ref { ident; _ } -> same ident
+  | Literal _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
+  | Attribute_reference _ | Dimension_cell_read _ | Expr_unresolved _ -> false
+  | Binary { left_side; right_side; _ } -> opt left_side || opt right_side
+  | Rounding { base_expr; _ } -> opt base_expr
+  | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
   | Field_access { base; _ } -> mentions_binder b base
-  | Struct_literal { velden; _ } -> List.exists (fun (_, e) -> mentions_binder b e) velden
+  | Struct_literal { field_list; _ } -> List.exists (fun (_, e) -> mentions_binder b e) field_list
   | List_literal { elements; _ } -> List.exists (mentions_binder b) elements
   | Construct { argument; _ } -> opt argument
-  | Temporal_read { basis; datum; _ } -> mentions_binder b basis || mentions_binder b datum
+  | Temporal_read { base_expr; date_value; _ } -> mentions_binder b base_expr || mentions_binder b date_value
   | Invoke { arguments; _ } -> List.exists (mentions_binder b) arguments
-  | Tekst_reeks { delen; _ } ->
-      List.exists (function Ingevoegd { expr = Some e } -> mentions_binder b e | _ -> false) delen
-  | Functie { argumenten; leegwaarde; filter; _ } ->
-      List.exists (mentions_binder b) argumenten || opt leegwaarde
+  | Text_composition { pieces; _ } ->
+      List.exists (function Embedded_expression { expr = Some e } -> mentions_binder b e | _ -> false) pieces
+  | Function_call { call_arguments; empty_fallback; filter; _ } ->
+      List.exists (mentions_binder b) call_arguments || opt empty_fallback
       || (match filter with Some c -> mentions_binder_cond b c | None -> false)
   | If_then_else { condition; then_; else_; _ } ->
       mentions_binder_cond b condition || mentions_binder b then_ || mentions_binder b else_
@@ -4365,9 +4365,9 @@ let rec mentions_binder b (e : expr) : bool =
       if List.exists (fun (pn, _) -> same pn) parameters then false else mentions_binder b lbody
   | Filter_list { list; binder; condition; _ } ->
       mentions_binder b list || (if same binder then false else mentions_binder_cond b condition)
-  | Fold { list; functie; init; _ } ->
-      mentions_binder b list || mentions_binder b init || mentions_binder_fold_fn b functie
-  | Map_list { list; functie; _ } -> mentions_binder b list || mentions_binder_fold_fn b functie
+  | Fold { list; function_name; init; _ } ->
+      mentions_binder b list || mentions_binder b init || mentions_binder_fold_fn b function_name
+  | Map_list { list; function_name; _ } -> mentions_binder b list || mentions_binder_fold_fn b function_name
   | Let { value; binder; body; _ } ->
       mentions_binder b value || (if same binder then false else mentions_binder b body)
   | Instance_set_union { branches; _ } ->
@@ -4385,18 +4385,18 @@ and mentions_binder_fold_fn b = function
       else mentions_binder b lbody
   | Fn_name _ -> false
 
-and mentions_binder_cond b (c : conditie) : bool =
+and mentions_binder_cond b (c : condition_expr) : bool =
   let opt = function Some e -> mentions_binder b e | None -> false in
   match c with
-  | Vergelijking { links; rechts; _ } -> opt links || opt rechts
-  | Predicaat { operand; _ } -> opt operand
-  | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
-  | Samengesteld { onderdelen; _ } -> List.exists (mentions_binder_cond b) onderdelen
-  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+  | Comparison { left_side; right_side; _ } -> opt left_side || opt right_side
+  | Predicate { operand; _ } -> opt operand
+  | Time_window { starting_at; up_to; _ } -> opt starting_at || opt up_to
+  | Compound { components; _ } -> List.exists (mentions_binder_cond b) components
+  | Quantifier_fold { kv_filter; kv_test; _ } ->
       let sub = function Some c -> mentions_binder_cond b c | None -> false in
-      sub kv_filter || sub kv_toets
-  | Kenmerk_check _ | Role_membership _ | Regelversie _
-  | Conditie_onopgelost _ -> false
+      sub kv_filter || sub kv_test
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _
+  | Condition_unresolved _ -> false
 
 (* WF-077 — the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
    IfThenElse is admissible, its condition may READ only binders, parameters
@@ -4410,14 +4410,14 @@ let rec bound_only_expr (e : expr) : bool =
   let opt = function Some e -> bound_only_expr e | None -> true in
   match e with
   | Binder_ref _ | Parameter_ref _ | Literal _ -> true
-  | Binair { links; rechts; _ } -> opt links && opt rechts
-  | Afgerond { basis; _ } -> opt basis
-  | Begrensd { basis; minimum; maximum; _ } -> opt basis && opt minimum && opt maximum
-  | Tekst_reeks { delen; _ } ->
-      List.for_all (function Ingevoegd { expr = Some e } -> bound_only_expr e | _ -> true) delen
+  | Binary { left_side; right_side; _ } -> opt left_side && opt right_side
+  | Rounding { base_expr; _ } -> opt base_expr
+  | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr && opt minimum && opt maximum
+  | Text_composition { pieces; _ } ->
+      List.for_all (function Embedded_expression { expr = Some e } -> bound_only_expr e | _ -> true) pieces
   | _ -> false
 
-let wf077_condition at (c : conditie) : violation list =
+let wf077_condition at (c : condition_expr) : violation list =
   let operand slot = function
     | Some e when not (bound_only_expr e) ->
         [ v "WF-077" slot
@@ -4425,17 +4425,17 @@ let wf077_condition at (c : conditie) : violation list =
              attribute, field or characteristic read must pass through a Let binding first" ]
     | _ -> []
   in
-  let rec walk at (c : conditie) =
+  let rec walk at (c : condition_expr) =
     match c with
-    | Vergelijking { links; rechts; _ } ->
-        operand (at ^ "/left") links @ operand (at ^ "/right") rechts
-    | Predicaat { operand = o; _ } -> operand (at ^ "/operand") o
-    | Periode_conditie { vanaf; tot; _ } -> operand (at ^ "/from") vanaf @ operand (at ^ "/to") tot
-    | Samengesteld { onderdelen; _ } ->
+    | Comparison { left_side; right_side; _ } ->
+        operand (at ^ "/left") left_side @ operand (at ^ "/right") right_side
+    | Predicate { operand = o; _ } -> operand (at ^ "/operand") o
+    | Time_window { starting_at; up_to; _ } -> operand (at ^ "/from") starting_at @ operand (at ^ "/to") up_to
+    | Compound { components; _ } ->
         List.concat
-          (List.mapi (fun i c -> walk (Printf.sprintf "%s/parts/%d" at i) c) onderdelen)
-    | Kenmerk_check _ | Role_membership _ | Regelversie _
-    | Kwantorvouw _ | Conditie_onopgelost _ ->
+          (List.mapi (fun i c -> walk (Printf.sprintf "%s/parts/%d" at i) c) components)
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Quantifier_fold _ | Condition_unresolved _ ->
         [ v "WF-077" at
             "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
              binders, parameters and literals may be read; route state reads through a Let \
@@ -4467,28 +4467,28 @@ let wf077_condition at (c : conditie) : violation list =
 
    The composite all clip recurses through the same arm, so a member of a
    composite is fenced exactly as a plain member is. *)
-let wf097_clip_qualifications at (c : conditie) : violation list =
-  let rec walk (c : conditie) =
+let wf097_clip_qualifications at (c : condition_expr) : violation list =
+  let rec walk (c : condition_expr) =
     match c with
-    | Kenmerk_check { kenmerk; eigenaar; periode; _ } ->
-        let naam = Option.value kenmerk ~default:"?" in
-        (match eigenaar with
+    | Characteristic_check { characteristic; holder; time_period; _ } ->
+        let ident = Option.value characteristic ~default:"?" in
+        (match holder with
          | Some e ->
              [ v "WF-097" at
                  ("host '" ^ e
                 ^ "' on a gedurende clip member: the clip reads the SUBJECT's characteristic \
                    timeline, so a host here names a subject no reader consults") ]
          | None -> [])
-        @ (match periode with
+        @ (match time_period with
            | Some p ->
                [ v "WF-097" at
                    (Printf.sprintf
                       "wholePeriod qualifier (%s) on the gedurende clip member '%s': the clip \
                        already ranges over the whole timeline, so the qualifier — negated or not \
                        — names no reading the clip has"
-                      (if p.gp_niet then "negated" else "affirmative") naam) ]
+                      (if p.gp_negated then "negated" else "affirmative") ident) ]
            | None -> [])
-    | Samengesteld { onderdelen; _ } -> List.concat_map walk onderdelen
+    | Compound { components; _ } -> List.concat_map walk components
     | _ -> []
   in
   walk c
@@ -4521,9 +4521,9 @@ let wf111_bound ctx ~subject at side (e : expr) =
            side) ]
   in
   match e with
-  | Literal { typ = Some Datum_tijd; _ } -> instant
+  | Literal { typ = Some Date_time_type; _ } -> instant
   | Literal _ -> []
-  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
     -> (
       match subject with
       | None -> refuse ("the attribute '" ^ a ^ "' at a position with no subject to own it")
@@ -4532,13 +4532,13 @@ let wf111_bound ctx ~subject at side (e : expr) =
             (Printf.sprintf "the attribute '%s' of '%s', which the subject '%s' does not satisfy" a
                otn st)
       | Some _ -> (
-          match objecttype ctx otn with
+          match object_type ctx otn with
           | Some ot when attr_temporal ot a ->
               refuse ("the time-dependent attribute '" ^ a ^ "'")
-          | Some ot when attr_of ot a = Some (Some Datum_tijd) -> instant
+          | Some ot when attr_of ot a = Some (Some Date_time_type) -> instant
           | _ -> []))
-  | Attribuut_ref { attribuut; _ } ->
-      refuse ("a navigated read of '" ^ Option.value attribuut ~default:"?" ^ "'")
+  | Attribute_reference { attribute_ref; _ } ->
+      refuse ("a navigated read of '" ^ Option.value attribute_ref ~default:"?" ^ "'")
   | Parameter_ref { parameter; _ } ->
       refuse ("the parameter '" ^ Option.value parameter ~default:"?" ^ "'")
   | _ -> refuse "a computed date expression"
@@ -4549,20 +4549,20 @@ let wf111_bound ctx ~subject at side (e : expr) =
    outer one — and it enters a fold's filter and test, where the same
    quantifiers range over instances. It stops at nothing else, because no
    other condition node holds a condition. *)
-let rec cond_has_window (c : conditie) =
+let rec cond_has_window (c : condition_expr) =
   match c with
-  | Periode_conditie _ -> true
-  | Samengesteld { onderdelen; _ } -> List.exists cond_has_window onderdelen
-  | Kwantorvouw { kv_filter; kv_toets; _ } ->
-      List.exists cond_has_window (List.filter_map Fun.id [ kv_filter; kv_toets ])
-  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Role_membership _ | Regelversie _
-  | Conditie_onopgelost _ ->
+  | Time_window _ -> true
+  | Compound { components; _ } -> List.exists cond_has_window components
+  | Quantifier_fold { kv_filter; kv_test; _ } ->
+      List.exists cond_has_window (List.filter_map Fun.id [ kv_filter; kv_test ])
+  | Comparison _ | Predicate _ | Characteristic_check _ | Role_membership _ | Rule_status_check _
+  | Condition_unresolved _ ->
       false
 
-let wf112_position at (kwantor : kwantor) (parts : conditie list) =
-  match kwantor with
-  | Alle | De -> []
-  | Geen | Ten_minste | Ten_hoogste | Precies ->
+let wf112_position at (quantifier_kind : quantifier_kind) (parts : condition_expr list) =
+  match quantifier_kind with
+  | All | The -> []
+  | None_of | At_least | At_most | Exactly ->
       if List.exists cond_has_window parts then
         [ v "WF-112" at
             "a time window under none or a counting quantifier: the window gates the RULE, and no \
@@ -4588,15 +4588,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
        denotes INSTANCES, so neither carries one either — their own
        position disciplines are WF-069 and WF-110 (a). An Unresolved
        without a type is a value of unknown type, WF-044's. *)
-    | Attribuut_ref _ | Dimensie_cel _ | Parameter_ref _ | Variabele_ref _ | Binder_ref _
+    | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Binder_ref _
     | Lambda _ | Instance_set_union _
-    | Expr_onopgelost { typ = None; _ } ->
+    | Expr_unresolved { typ = None; _ } ->
         []
     | _ -> (
         match annotation e with
         | Some d ->
             check_number_form (sub "type") d
-            @ check_datatype_units ~stelsels:(stelsel_namen ctx) (sub "type") d
+            @ check_datatype_units ~systems:(system_names ctx) (sub "type") d
             @ enum_use_site ctx (sub "type") d
             @ struct_use_site ctx (sub "type") d
         | None ->
@@ -4625,12 +4625,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            Some [ v wf at (phrase ^ " is not admissible inside a closed function or lambda body") ]
          in
          match e with
-         | Attribuut_ref _ -> deny "an attribute or characteristic read"
-         | Dimensie_cel _ -> deny "a dimension-cell read"
-         | Functie { kind; _ } when List.mem kind aggregation_kinds -> deny "an aggregation"
-         | Functie _ -> deny "a builtin call"
+         | Attribute_reference _ -> deny "an attribute or characteristic read"
+         | Dimension_cell_read _ -> deny "a dimension-cell read"
+         | Function_call { kind; _ } when List.mem kind aggregation_kinds -> deny "an aggregation"
+         | Function_call _ -> deny "a builtin call"
          | Temporal_read _ -> deny "a temporal read"
-         | Variabele_ref _ -> deny "a variable read"
+         | Variable_reference _ -> deny "a variable read"
          | _ -> None)
    in
    match closed with
@@ -4657,29 +4657,29 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           [ v "WF-084" vat (Option.get (date_lexeme_refusal w)) ]
       | Lv_date_time w, _ when date_time_lexeme_refusal w <> None ->
           [ v "WF-095" vat (Option.get (date_time_lexeme_refusal w)) ]
-      | Lv_enumeration w, Some (Enumeratie { waarden; _ }) when not (mem_ci (some_names waarden) w) ->
+      | Lv_enumeration w, Some (Enumeration { label_list; _ }) when not (mem_ci (some_names label_list) w) ->
           [ v "WF-039" vat ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
-      | Lv_number w, Some (Numeriek { teken = Some t; _ }) -> (
+      | Lv_number w, Some (Number { sign_char = Some t; _ }) -> (
           match literal_sign_refusal ~target:false t w with
           | Some sentence -> [ v "WF-039" vat sentence ]
           | None -> [])
       | _ -> [])
-  | Tekst_reeks { delen; _ } ->
+  | Text_composition { pieces; _ } ->
       List.concat
         (List.mapi
            (fun i d ->
              match d with
-             | Letterlijk _ -> []
-             | Ingevoegd { expr = Some e } ->
+             | Literal_chunk _ -> []
+             | Embedded_expression { expr = Some e } ->
                  walk_expr ctx ~binders ~subject ~body (Printf.sprintf "%s/parts/%d/expr" at i) e
-             | Ingevoegd { expr = None } -> [])
-           delen)
-  | Binair { op; links; rechts; _ } ->
-      let lt = Option.bind links ty and rt = Option.bind rechts ty in
+             | Embedded_expression { expr = None } -> [])
+           pieces)
+  | Binary { op; left_side; right_side; _ } ->
+      let lt = Option.bind left_side ty and rt = Option.bind right_side ty in
       let numeric_required =
         match op with
-        | Maal | Gedeeld_door | Gedeeld_door_abs | Percentage_van | Verminderd_met
-        | Tot_de_macht -> true
+        | Times | Divided_by | Divided_by_abs | Percentage_of | Reduced_by
+        | Power -> true
         | Plus | Min -> false (* may be date +/- duration *)
       in
       (if numeric_required then
@@ -4692,14 +4692,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            [ ("left", lt); ("right", rt) ]
        else [])
       @ (match op, lt, rt with
-         | Tot_de_macht, Some l, Some r
+         | Power, Some l, Some r
            when unit_of l <> None || unit_of r <> None ->
              [ v "WF-035" at "power operands must be unitless" ]
-         | (Plus | Min | Verminderd_met), Some l, Some r when is_number_like l && is_number_like r ->
+         | (Plus | Min | Reduced_by), Some l, Some r when is_number_like l && is_number_like r ->
              (* reducedBy belongs to the additive family (ch. 1.2a);
                 ref restates its right operand like plus/min — a hunted
                 gap: the compatibility clause skipped it entirely *)
-             if not (units_compatible_adopting links rechts (unit_of l) (unit_of r)) then
+             if not (units_compatible_adopting left_side right_side (unit_of l) (unit_of r)) then
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
@@ -4718,16 +4718,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                match unit_of d with
                | None -> [ v "WF-035" (sub side) date_duration_without_time_unit ]
                | Some u -> (
-                   match time_unit_of_eenheid u with
+                   match time_unit_of_unit u with
                    | Some tu ->
-                       if time_unit_sub_day tu && date_t = Datum_in_dagen then
+                       if time_unit_sub_day tu && date_t = Date_in_days then
                          [ v "WF-035" at sub_day_unit_on_day_date ]
                        else []
                    | None ->
                        if day_kind_unit ctx u then []
                        else
                          [ v "WF-035" (sub side)
-                             (date_duration_unknown_unit (Option.value u.afkorting ~default:"?")) ]))
+                             (date_duration_unknown_unit (Option.value u.abbr_text ~default:"?")) ]))
          in
          match op, lt, rt with
          | (Plus | Min), Some l, Some r when is_date l && is_date r ->
@@ -4738,28 +4738,28 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              [ v "WF-035" at (duration_before_date_refusal ~minus:false) ]
          | (Plus | Min), Some l, _ when is_date l -> duration_side "right" rt l
          | _ -> [])
-      @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])
-      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "right") e | None -> [])
-  | Functie f ->
-      let arity = List.length f.argumenten in
+      @ (match left_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])
+      @ (match right_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "right") e | None -> [])
+  | Function_call f ->
+      let arity = List.length f.call_arguments in
       (* with a range the single argument is the set source; without one it
          is the subject's own read (the loader admits that under total
          alone) *)
-      let ranged = f.bron_rol <> None || f.bron_pad <> None in
+      let ranged = f.source_role <> None || f.source_path <> None in
       (* the fold SOURCE position (ch. 4.3): the single argument of an
          aggregation carrying an elementType. Every other operand — a listed
          value fold's, a builtin's — is an ordinary read *)
       let source_position =
-        arity = 1 && f.element_objecttype <> None && List.mem f.kind aggregation_kinds
+        arity = 1 && f.element_object_type <> None && List.mem f.kind aggregation_kinds
       in
       (* a fold that names its population and hands no source (WF-037, the
          arm below). Computed once because the filled count's arity and
          set-source arms and WF-047's range arm step aside on it, so that the
          node is reported once, by that arm *)
       let sourceless =
-        match (f.element_objecttype, f.argumenten) with
+        match (f.element_object_type, f.call_arguments) with
         | Some el, [] -> Some (el, `No_operand)
-        | Some el, [ List_literal _ ] when f.kind = Aantal || f.kind = Aantal_gevulde ->
+        | Some el, [ List_literal _ ] when f.kind = Count || f.kind = Filled_count ->
             Some (el, `List_literal)
         | _ -> None
       in
@@ -4769,30 +4769,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          aside on it. A list literal is the arm above's under the counts and
          WF-091's under the value folds, and a union under a count WF-110 (c)'s *)
       let non_source =
-        match (f.element_objecttype, f.argumenten) with
+        match (f.element_object_type, f.call_arguments) with
         | Some el, [ a ] when List.mem f.kind aggregation_kinds -> (
             match a with
-            | Attribuut_ref _ | List_literal _ -> None
-            | Instance_set_union _ when f.kind = Aantal -> None
+            | Attribute_reference _ | List_literal _ -> None
+            | Instance_set_union _ when f.kind = Count -> None
             | _ -> Some (el, a))
         | _ -> None
       in
       (* WF-037: facet validity per kind *)
-      (if f.leegwaarde <> None && f.kind <> Som then
+      (if f.empty_fallback <> None && f.kind <> Sum_function then
          [ v "WF-037" at "empty-value fallback on a non-sum aggregation" ]
        else [])
-      @ (if f.dimensie_selectie <> None && not (List.mem f.kind [ Som; Minimum; Maximum ]) then
+      @ (if f.dimension_selection <> None && not (List.mem f.kind [ Sum_function; Minimum; Maximum ]) then
            [ v "WF-037" at "dimension selection on a kind other than sum/min/max" ]
          else [])
-      @ (match f.granulariteit, f.kind with
-         | Some _, (Tijdsevenredig_deel | Aantal_dagen_in) -> []
+      @ (match f.grain, f.kind with
+         | Some _, (Time_proportional_part | Day_count) -> []
          | Some _, _ -> [ v "WF-037" at "granularity facet on a non-bucketing kind" ]
-         | None, (Tijdsevenredig_deel | Aantal_dagen_in) ->
+         | None, (Time_proportional_part | Day_count) ->
              [ v "WF-037" at "bucketing builtin without a granularity" ]
          | None, _ -> [])
       @ (if List.mem f.kind scalar_one_arg_kinds && arity <> 1 then
            [ v "WF-037" at (Printf.sprintf "builtin arity %d, expected 1" arity) ]
-         else if List.mem f.kind [ Tijdsduur; Absolute_tijdsduur ] && arity <> 2 then
+         else if List.mem f.kind [ Duration; Absolute_duration ] && arity <> 2 then
            [ v "WF-037" at (Printf.sprintf "builtin arity %d, expected 2" arity) ]
          else [])
       (* This clause is what DEFINES the listed value fold: no element type,
@@ -4801,9 +4801,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          their own arity law lives in the two arms below, and removing either
          exclusion here would state it twice, in the wrong words. *)
       @ (if
-           List.mem f.kind aggregation_kinds && f.element_objecttype = None
-           && f.dimensie_selectie = None && arity < 2 && f.kind <> Aantal
-           && f.kind <> Aantal_gevulde
+           List.mem f.kind aggregation_kinds && f.element_object_type = None
+           && f.dimension_selection = None && arity < 2 && f.kind <> Count
+           && f.kind <> Filled_count
          then [ v "WF-037" at "value fold with fewer than two operands" ]
          else [])
       (* WF-037, the count's arity (IR-SPEC ch. 4.3, semantics
@@ -4838,12 +4838,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          union. Reported here, at the node it is about, which is also what
          keeps the union argument itself from being reported a second time
          for standing in the right position under a wrong node. *)
-      @ (match f.argumenten with
-         | [ Instance_set_union _ ] when f.kind = Aantal ->
+      @ (match f.call_arguments with
+         | [ Instance_set_union _ ] when f.kind = Count ->
              let named =
-               (if f.element_objecttype <> None then [ "elementType" ] else [])
-               @ (if f.bron_rol <> None then [ "sourceRole" ] else [])
-               @ (if f.bron_pad <> None then [ "sourcePath" ] else [])
+               (if f.element_object_type <> None then [ "elementType" ] else [])
+               @ (if f.source_role <> None then [ "sourceRole" ] else [])
+               @ (if f.source_path <> None then [ "sourcePath" ] else [])
                @ if f.filter <> None then [ "filter" ] else []
              in
              if named = [] then []
@@ -4856,7 +4856,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        is a second claim on one node (ch. 4.3)"
                       (String.concat " + " named)) ]
          | _ -> [])
-      @ (if f.kind = Aantal && arity >= 2 then
+      @ (if f.kind = Count && arity >= 2 then
            [ v "WF-037" at
                (Printf.sprintf
                   "a count folds INSTANCES and has no LISTED form, and this node carries %d \
@@ -4881,9 +4881,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          element type beside an instance-set union, whose selections each carry
          their own, so there the source is present and sits one node down.
          Arity ≥ 2 is the listed-form arm above and is not reported twice. *)
-      @ (match f.kind, f.element_objecttype, f.argumenten with
-         | Aantal, None, [ Instance_set_union _ ] -> []
-         | Aantal, None, ([] | [ _ ]) ->
+      @ (match f.kind, f.element_object_type, f.call_arguments with
+         | Count, None, [ Instance_set_union _ ] -> []
+         | Count, None, ([] | [ _ ]) ->
              [ v "WF-037" at
                  "the count is an INSTANCE fold and MUST carry an element type: without one its \
                   argument is no fold source at all — and with no argument there is none — so \
@@ -4956,7 +4956,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          filled count that names its population and hands no source is the
          arm above that one: the arity sentence reads its ground from the
          listed form, which an empty argument list is not. *)
-      @ (if f.kind <> Aantal_gevulde || sourceless <> None || non_source <> None then []
+      @ (if f.kind <> Filled_count || sourceless <> None || non_source <> None then []
          else if arity <> 1 then
            [ v "WF-037" at
                (Printf.sprintf
@@ -4966,7 +4966,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    (ch. 4.3)"
                   arity) ]
          else
-           match f.element_objecttype with
+           match f.element_object_type with
            | None ->
                [ v "WF-037" at
                    "the filled count is an INSTANCE fold and MUST carry an element type: \
@@ -4974,30 +4974,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     contributors whose values it could test for presence (ch. 4.3)" ]
            | Some _ -> [])
       (* WF-034: references *)
-      @ (match f.element_objecttype with
-         | Some t when objecttype ctx t = None ->
+      @ (match f.element_object_type with
+         | Some t when object_type ctx t = None ->
              [ v "WF-034" at ("aggregation element type '" ^ t ^ "' is not declared") ]
          | _ -> [])
       (* WF-038: operand typing slices *)
-      @ (match f.kind, f.argumenten with
-         | (Wortel | Absolute_waarde), [ a ] -> (
+      @ (match f.kind, f.call_arguments with
+         | (Square_root | Absolute_value), [ a ] -> (
              match Option.bind (ty a) (numeric_builtin_operand_refusal f.kind) with
              | Some sentence -> [ v "WF-038" at sentence ]
              | None -> [])
-         | Eerste_paasdag, [ a ] -> (
+         | Easter_sunday, [ a ] -> (
              match ty a with
-             | Some (Numeriek { geheel = true; eenheid = None; _ }) -> []
+             | Some (Number { whole_part = true; measure_unit = None; _ }) -> []
              | Some d ->
                  [ v "WF-038" at ("easterSunday operand is " ^ datatype_kind d
                                   ^ ", must be a whole unitless number") ]
              | None -> [])
-         | (Uur_uit | Minuut_uit | Seconde_uit | Milliseconde_uit), [ a ] -> (
+         | (Hour_of | Minute_of | Second_of | Millisecond_of), [ a ] -> (
              match ty a with
-             | Some Datum_tijd | None -> []
+             | Some Date_time_type | None -> []
              | Some d ->
                  [ v "WF-038" at ("sub-day extractor operand is " ^ datatype_kind d
                                   ^ ", must be a millisecond-precision date") ])
-         | (Jaar_uit | Maand_uit | Dag_uit), [ a ] -> (
+         | (Year_of | Month_of | Day_of), [ a ] -> (
              (* the day-precision extractors read civil components (ch. 3.8
                 of RUNTIME-SEMANTICS): the operand must be a date — either
                 precision, mirroring the v0 field read *)
@@ -5006,7 +5006,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  [ v "WF-038" at ("day-precision extractor operand is " ^ datatype_kind d
                                   ^ ", must be a date") ]
              | _ -> [])
-         | (Tijdsduur | Absolute_tijdsduur), [ a; b ] ->
+         | (Duration | Absolute_duration), [ a; b ] ->
              (* the WF-038 duration clause (RUNTIME-SEMANTICS ch. 3.8): both
                 operands dates of one precision; the node type carries the
                 counted unit — a recognised time-unit or declared day-kind
@@ -5035,10 +5035,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     match unit_of t with
                     | None -> [ v "WF-038" at (duration_without_time_unit f.kind) ]
                     | Some u -> (
-                        match time_unit_of_eenheid u with
+                        match time_unit_of_unit u with
                         | Some tu ->
                             if time_unit_sub_day tu
-                               && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
+                               && (ta = Some Date_in_days || tb = Some Date_in_days)
                             then [ v "WF-038" at (duration_sub_day_on_day_dates f.kind) ]
                             else []
                         | None ->
@@ -5046,7 +5046,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             else
                               [ v "WF-038" at
                                   (duration_unknown_unit f.kind
-                                     (Option.value u.afkorting ~default:"?")) ])))
+                                     (Option.value u.abbr_text ~default:"?")) ])))
          | _ -> [])
       (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
          semantics `RUNTIME-SEMANTICS.md` ch. 1.2): first/last/
@@ -5080,11 +5080,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                if is_number_like d then Some `Num
                else
                  match d with
-                 | Datum_in_dagen -> Some `Date_day
-                 | Datum_tijd -> Some `Date_ms
+                 | Date_in_days -> Some `Date_day
+                 | Date_time_type -> Some `Date_ms
                  | _ -> None
              in
-             let typed = List.mapi (fun i a -> (i, ty a)) f.argumenten in
+             let typed = List.mapi (fun i a -> (i, ty a)) f.call_arguments in
              List.concat_map
                (fun (i, t) ->
                  match t with
@@ -5121,7 +5121,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                           (kn ^ " orders operands of two comparable families, numbers and \
                                 dates, which share no ordering") ]
                 | _ -> []))
-      @ (match f.leegwaarde with
+      @ (match f.empty_fallback with
          | Some lw -> (
              (match ty lw with
               | Some d when not (is_number_like d) ->
@@ -5131,11 +5131,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              @ walk_expr ctx ~binders ~subject (sub "emptyFallback") lw)
          | None -> [])
       (* WF-040: dimension selection labels *)
-      @ (match f.dimensie_selectie with
+      @ (match f.dimension_selection with
          | Some ds -> (
-             match ds.ds_dimensie with
+             match ds.ds_dimension with
              | Some dn -> (
-                 match find_ci ctx.doc.dimensies dn with
+                 match find_ci ctx.doc.dimensions dn with
                  | None ->
                      [ v "WF-040" (sub "dimensionSelection")
                          ("selection over undeclared dimension '" ^ dn ^ "'") ]
@@ -5143,7 +5143,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      List.concat_map
                        (fun l ->
                          match l with
-                         | Some l when not (mem_ci (some_names dim.dim_waarden) l) ->
+                         | Some l when not (mem_ci (some_names dim.dim_values) l) ->
                              [ v "WF-040" (sub "dimensionSelection")
                                  ("label '" ^ l ^ "' is not declared on dimension '" ^ dn ^ "'") ]
                          | _ -> [])
@@ -5157,7 +5157,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 subject (the gedurende clip's elementType is the subject
                 itself, so this switch is uniform) *)
              let fsubject =
-               match f.element_objecttype with Some el -> Some el | None -> subject
+               match f.element_object_type with Some el -> Some el | None -> subject
              in
              walk_cond ctx ~binders ~subject:fsubject (sub "filter") c
          | None -> [])
@@ -5190,7 +5190,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       ~source:(Printf.sprintf "operand %d" i)
                       ~what:(Printf.sprintf "the %s aggregation" kn)
                       ~decl:(ty a) ~typ:f.typ)
-                  f.argumenten))
+                  f.call_arguments))
       (* WF-083 (c), the element type of the subject's own read (IR-SPEC
          ch. 4.3, L2 fix round). A total without a range is the subject's
          own read: it totals the subject's own timeline, so the type it
@@ -5200,8 +5200,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          the fix round ref, the ASP backend and the Drools loader refuse it
          with this sentence. Equality in the WF-001 form, the comparison
          the source's own anchor makes in [aggregation_source_check]. *)
-      @ (match (f.kind, f.element_objecttype, subject) with
-         | Totaal, Some el, Some st when source_position && (not ranged) && norm el <> norm st ->
+      @ (match (f.kind, f.element_object_type, subject) with
+         | Total, Some el, Some st when source_position && (not ranged) && norm el <> norm st ->
              [ v "WF-083" (sub "elementType")
                  (Printf.sprintf
                     "the elementType '%s' of a total without a range is not the fold subject \
@@ -5219,18 +5219,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           (List.mapi
              (fun i a ->
                let p = Printf.sprintf "%s/arguments/%d" at i in
-               match (a, f.element_objecttype) with
-               | Attribuut_ref { attribuut; objecttype = None; _ }, Some _ when source_position ->
+               match (a, f.element_object_type) with
+               | Attribute_reference { attribute_ref; object_type = None; _ }, Some _ when source_position ->
                    [ v "WF-034" p
                        ("attribute reference '"
-                       ^ Option.value attribuut ~default:"?"
+                       ^ Option.value attribute_ref ~default:"?"
                        ^ "' without a subjectType: it resolves against no declaration") ]
-               | Attribuut_ref { attribuut = None; objecttype = Some otn; _ }, Some _
+               | Attribute_reference { attribute_ref = None; object_type = Some otn; _ }, Some _
                  when source_position ->
                    [ v "WF-034" p
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ]
-               | Attribuut_ref _, Some el when source_position ->
+               | Attribute_reference _, Some el when source_position ->
                    aggregation_source_check ctx p ~element_type:el ~subject ~kind:f.kind ~ranged a
                | _ ->
                    (* the union's admissible position (WF-110 (a)): the SINGLE
@@ -5244,46 +5244,46 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       source: reported once, there, in the sentence ref, the
                       ASP backend and the Drools loader give. *)
                    walk_expr ctx ~binders ~subject
-                     ~union_ok:((f.kind = Aantal && arity = 1) || non_source <> None)
+                     ~union_ok:((f.kind = Count && arity = 1) || non_source <> None)
                      p a)
-             f.argumenten)
+             f.call_arguments)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
          timeline operation; its condition is an own temporal
          characteristic check or a per-segment comparison of an own
          temporal attribute against a scalar bound *)
-      @ (match (f.kind, f.argumenten, f.filter) with
-         | ( Totaal,
-             [ Attribuut_ref
-                 { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ],
+      @ (match (f.kind, f.call_arguments, f.filter) with
+         | ( Total,
+             [ Attribute_reference
+                 { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ],
              Some c )
            when (not ranged)
-                && (match objecttype ctx aot with
+                && (match object_type ctx aot with
                    | Some ot -> attr_temporal ot a
                    | None -> false) -> (
              let temporal_char k =
-               match objecttype ctx aot with
+               match object_type ctx aot with
                | Some ot ->
-                   List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit
+                   List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity
                | None -> false
              in
              let rec clip_cond_ok c =
                match c with
-               | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; _ } ->
+               | Characteristic_check { characteristic = Some k; navigation_binding = None; _ } ->
                    if temporal_char k then []
                    else
                      [ v "WF-055" (sub "filter")
                          ("gedurende over '" ^ k
                         ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
-               | Vergelijking
-                   { links = Some (Attribuut_ref
-                       { attribuut = Some b; objecttype = Some botn; navigatie_bindingen = None; _ });
-                     rechts = Some _; periode = None; _ }
+               | Comparison
+                   { left_side = Some (Attribute_reference
+                       { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ });
+                     right_side = Some _; time_period = None; _ }
                  when norm botn = norm aot
-                      && (match objecttype ctx botn with
+                      && (match object_type ctx botn with
                          | Some ot -> attr_temporal ot b
                          | None -> false) ->
                    []
-               | Samengesteld { kwantor = Alle; onderdelen = (_ :: _) as onderdelen; _ } ->
+               | Compound { quantifier_kind = All; components = (_ :: _) as components; _ } ->
                    (* the FLAT composite all clip (ch. 3.6): members are
                       own-temporal-characteristic checks only. The v0
                       boundary, stated precisely: v0 partitions STATIC
@@ -5297,7 +5297,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    List.concat_map
                      (fun part ->
                        match part with
-                       | Kenmerk_check _ -> clip_cond_ok part
+                       | Characteristic_check _ -> clip_cond_ok part
                        | _ ->
                            [ v "WF-055" (sub "filter")
                                "a composite gedurende member is an own temporal \
@@ -5305,7 +5305,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                                 members into value-side guards and markers nested \
                                 bullets; v1 narrows composite members to characteristic \
                                 checks -- a recorded narrowing)" ])
-                     onderdelen
+                     components
                | _ ->
                    [ v "WF-055" (sub "filter")
                        "the gedurende condition is an own temporal characteristic check, a \
@@ -5327,25 +5327,25 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          folds at once — and three clips behind them, with no second copy
          of the test to drift. *)
       @ (match (f.kind, f.filter) with
-         | (Tijdsevenredig_deel | Aantal_dagen_in), Some c ->
+         | (Time_proportional_part | Day_count), Some c ->
              wf097_clip_qualifications (sub "filter") c
          | _ -> [])
-      @ (if f.kind <> Tijdsevenredig_deel then []
+      @ (if f.kind <> Time_proportional_part then []
          else
            (match f.filter with
            | None -> [ v "WF-056" at "timeProportionalPart without a gedurende condition" ]
-           | Some (Kenmerk_check { kenmerk = Some k; navigatie_binding = None; _ }) -> (
+           | Some (Characteristic_check { characteristic = Some k; navigation_binding = None; _ }) -> (
                (* the gedurende characteristic MUST be temporal — a
                   non-temporal one has no periods to prorate over (a
                   hunted gap: ref faulted, clingo silently emptied) *)
-               match f.argumenten with
-               | [ Attribuut_ref { objecttype = Some bot; _ } ] -> (
-                   match objecttype ctx bot with
+               match f.call_arguments with
+               | [ Attribute_reference { object_type = Some bot; _ } ] -> (
+                   match object_type ctx bot with
                    | Some ot
                      when not
                             (List.exists
                                (fun (n, _) -> norm n = norm k)
-                               ot.kenmerk_granulariteit) ->
+                               ot.characteristic_granularity) ->
                        [ v "WF-056" (sub "filter")
                            ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
                        ]
@@ -5353,15 +5353,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                | _ -> [])
            | Some _ -> [])
            @
-           match f.argumenten with
-           | [ Attribuut_ref { attribuut = Some b; objecttype = Some bot; _ } ] -> (
-               match objecttype ctx bot with
+           match f.call_arguments with
+           | [ Attribute_reference { attribute_ref = Some b; object_type = Some bot; _ } ] -> (
+               match object_type ctx bot with
                | Some ot -> (
                    match
-                     List.find_opt (fun (n, _) -> norm n = norm b) ot.attribuut_granulariteit
+                     List.find_opt (fun (n, _) -> norm n = norm b) ot.attribute_granularity
                    with
                    | Some (_, Some bg) -> (
-                       match f.granulariteit with
+                       match f.grain with
                        | Some g when bg < g ->
                            [ v "WF-056" (sub "arguments/0")
                                "pro-rata base granularity is finer than the bucket" ]
@@ -5372,7 +5372,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                | None -> [])
            | [ Parameter_ref { parameter = Some p; _ } ] -> (
                match find_ci ctx.doc.parameters p with
-               | Some { par_granulariteit = Some _; _ } -> []
+               | Some { par_granularity = Some _; _ } -> []
                | _ ->
                    [ v "WF-056" (sub "arguments/0")
                        ("pro-rata base parameter '" ^ p ^ "' is not granular") ])
@@ -5380,9 +5380,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-047 and WF-102: the fold's range. The loader has already seen to
          its presence and to one spelling (B12) *)
       @ (let fold_source =
-           match (f.element_objecttype, f.argumenten) with
-           | Some el, [ Attribuut_ref { attribuut; _ } ] when source_position && ranged -> (
-               match attribuut with
+           match (f.element_object_type, f.call_arguments) with
+           | Some el, [ Attribute_reference { attribute_ref; _ } ] when source_position && ranged -> (
+               match attribute_ref with
                | Some a -> (
                    match source_reading ctx ~element_type:el ~subject ~kind:f.kind ~ranged a with
                    | Src_count | Src_role_under_value_fold -> Some (el, `Role_name a)
@@ -5394,17 +5394,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             may be a PATH. Placed AHEAD of the one-step logic and returning
             instead of falling through, so exactly one of the two shapes is
             judged. *)
-         match f.bron_pad with
-         | Some pad ->
+         match f.source_path with
+         | Some trail ->
              (* (b) the arity: the empty list and the single step are the
                 one-step spelling's territory, not the path's *)
-             (if List.length pad >= 2 then []
+             (if List.length trail >= 2 then []
               else
                 [ v "WF-102" (sub "sourcePath")
                     (Printf.sprintf
                        "a sourcePath carries at least TWO steps, found %d — the one-step range \
                         is spelled sourceRole"
-                       (List.length pad)) ])
+                       (List.length trail)) ])
              (* (c) the position: the set source of a single-argument VALUE
                 fold. A count's range is one step, spelled sourceRole — its
                 source names the one relation whose role it counts. *)
@@ -5424,16 +5424,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 unresolved step would name the wrong defect. *)
              @ (let rec chain i from_t = function
                   | [] -> []
-                  | (rb : rol_binding) :: rest -> (
+                  | (rb : role_binding) :: rest -> (
                       let step = sub ("sourcePath/" ^ string_of_int i) in
                       match resolve_binding ctx rb with
                       | Error e -> [ v "WF-047" step e ]
                       | Ok (_, bound, other) ->
                           let bound_filler =
-                            Option.value bound.rol_objecttype_naam ~default:""
+                            Option.value bound.role_object_type_name ~default:""
                           in
                           let other_filler =
-                            Option.value other.rol_objecttype_naam ~default:""
+                            Option.value other.role_object_type_name ~default:""
                           in
                           let joins =
                             match from_t with
@@ -5444,7 +5444,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                                     (Printf.sprintf
                                        "the opposite role '%s' fills '%s', but this step starts \
                                         at '%s' (%s) — a sourcePath is a connected walk"
-                                       (Option.value other.rol_naam ~default:"?")
+                                       (Option.value other.role_identifier ~default:"?")
                                        other_filler ft
                                        (if i = 0 then "the fold subject"
                                         else "the type the previous step reaches")) ]
@@ -5458,30 +5458,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                           let lands =
                             if rest <> [] then []
                             else
-                              match f.element_objecttype with
+                              match f.element_object_type with
                               | Some el when not (type_compatible ctx bound_filler el) ->
                                   [ v "WF-102" step
                                       (Printf.sprintf
                                          "the last step's bound role '%s' fills '%s', but the \
                                           fold's elementType is '%s' — the path must land on \
                                           the element type"
-                                         (Option.value bound.rol_naam ~default:"?")
+                                         (Option.value bound.role_identifier ~default:"?")
                                          bound_filler el) ]
                               | _ -> []
                           in
                           joins @ lands @ chain (i + 1) (Some bound_filler) rest)
                 in
-                chain 0 subject pad)
+                chain 0 subject trail)
          | None -> (
-             match (fold_source, f.bron_rol) with
+             match (fold_source, f.source_role) with
              | _, None -> []
              (* the range beside a count's union is WF-110 (c)'s second claim, and
                 a count's operand that is no source is WF-037's, and so is a
                 fold that names its population and hands no source — what is
                 wrong there is the operand, not an instance fold for the
                 binding to belong to: one defect, one rule *)
-             | None, Some _ when f.kind = Aantal && arity = 1
-                                 && (match f.argumenten with
+             | None, Some _ when f.kind = Count && arity = 1
+                                 && (match f.call_arguments with
                                     | [ Instance_set_union _ ] -> true
                                     | _ -> false) ->
                  []
@@ -5500,18 +5500,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  match (resolve_binding ctx rb, written) with
                  | Ok (_, bound, _), `Role_name w
                    when not
-                          ((match bound.rol_naam with Some n -> norm n = norm w | None -> false)
-                          || match bound.rol_meervoud with
+                          ((match bound.role_identifier with Some n -> norm n = norm w | None -> false)
+                          || match bound.role_plural with
                              | Some m -> norm m = norm w
                              | None -> false) ->
                      [ v "WF-047" (sub "sourceRole")
                          (Printf.sprintf
                             "the written fold source '%s' does not denote the bound role '%s'" w
-                            (Option.value bound.rol_naam ~default:"?")) ]
+                            (Option.value bound.role_identifier ~default:"?")) ]
                  | _ -> [])))
-  | Afgerond { basis; _ } ->
-      (match basis with Some e -> walk_expr ctx ~binders ~subject ~body (sub "base") e | None -> [])
-  | Begrensd { basis; minimum; maximum; _ } ->
+  | Rounding { base_expr; _ } ->
+      (match base_expr with Some e -> walk_expr ctx ~binders ~subject ~body (sub "base") e | None -> [])
+  | Clamp { base_expr; minimum; maximum; _ } ->
       (if minimum = None && maximum = None then
          [ v "WF-035" at "clamp without any bound" ]
        else [])
@@ -5525,7 +5525,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  | _ -> [])
                 @ walk_expr ctx ~binders ~subject ~body (sub n) e
             | None -> [])
-          [ ("base", basis); ("minimum", minimum); ("maximum", maximum) ]
+          [ ("base", base_expr); ("minimum", minimum); ("maximum", maximum) ]
       (* WF-099 (maintainer decision 2026-09-10): a clamp RESTATES each bound
          into the BASE's unit before it compares magnitudes, so the two units
          must be compatible — the very demand WF-035 makes of an additive join
@@ -5538,32 +5538,32 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          Skipped unless both sides are number-like — a non-numeric operand is
          the WF-035 arm directly above, and one node should not report the same
          defect twice. *)
-      @ (match Option.bind basis ty with
+      @ (match Option.bind base_expr ty with
          | Some bt when is_number_like bt ->
              List.concat_map
                (fun (n, e) ->
                  match Option.bind e ty with
                  | Some d
                    when is_number_like d
-                        && not (units_compatible_adopting basis e (unit_of bt) (unit_of d)) ->
+                        && not (units_compatible_adopting base_expr e (unit_of bt) (unit_of d)) ->
                      [ v "WF-099" (sub n) ("clamp " ^ n ^ " and base have incompatible units") ]
                  | _ -> [])
                [ ("minimum", minimum); ("maximum", maximum) ]
          | _ -> [])
-  | Attribuut_ref { attribuut; objecttype = otn; navigatie_bindingen; _ } -> (
+  | Attribute_reference { attribute_ref; object_type = otn; navigation_bindings; _ } -> (
       match otn with
       | Some otn -> (
-          match objecttype ctx otn with
+          match object_type ctx otn with
           | None ->
               [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
           | Some ot ->
               (* [objecttype] is the type the value lives on — the subject
                  itself or the navigation endpoint — so the member check
                  covers both shapes *)
-              (match attribuut with
+              (match attribute_ref with
                | Some a ->
                    if has_attr ot a then []
-                   else if has_kenmerk ot a then
+                   else if has_characteristic ot a then
                      (* WF-080: a value position reads a value; a characteristic
                         endpoint carries no attribute value here. A
                         characteristic is read through a characteristic check
@@ -5586,31 +5586,31 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ])
               (* WF-053: the navigated read, or the subject's own *)
-              @ wf053_read ctx at ~subject ~objecttype:otn ~bindings:navigatie_bindingen)
+              @ wf053_read ctx at ~subject ~object_type:otn ~bindings:navigation_bindings)
       | None ->
           (* WF-034 (widened, maintainer decision 2026-09-04): the absent
              endpoint resolves against nothing — it skips the member
              resolution, WF-053 and WF-080 at once *)
           [ v "WF-034" at
               ("attribute reference '"
-              ^ Option.value attribuut ~default:"?"
+              ^ Option.value attribute_ref ~default:"?"
               ^ "' without a subjectType: it resolves against no declaration") ])
-  | Dimensie_cel { attribuut; labels; _ } ->
-      (match attribuut with
-       | Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } as inner) ->
-           (match objecttype ctx otn with
+  | Dimension_cell_read { attribute_ref; labels; _ } ->
+      (match attribute_ref with
+       | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ } as inner) ->
+           (match object_type ctx otn with
             | Some ot -> (
-                match find_ci ot.attribuut_dimensies a with
+                match find_ci ot.attribute_dimensions a with
                 | Some dims ->
                     let dims = some_names dims in
                     let lbls = some_names labels in
                     List.concat_map
                       (fun dn ->
-                        match find_ci ctx.doc.dimensies dn with
+                        match find_ci ctx.doc.dimensions dn with
                         | None -> [] (* WF-004 reports it *)
                         | Some dim ->
                             let hits =
-                              List.filter (fun l -> mem_ci (some_names dim.dim_waarden) l) lbls
+                              List.filter (fun l -> mem_ci (some_names dim.dim_values) l) lbls
                             in
                             if List.length hits <> 1 then
                               [ v "WF-040" at
@@ -5629,7 +5629,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     [ v "WF-040" at ("cell read of undimensioned attribute '" ^ a ^ "'") ])
             | None -> [])
            @ walk_expr ctx ~binders ~subject (sub "attribute") inner
-       | Some (Attribuut_ref _ as inner) ->
+       | Some (Attribute_reference _ as inner) ->
            (* an attribute reference with an empty half: the walk's own
               WF-034 arms report that endpoint, so this arm stays silent
               rather than reporting the same defect twice *)
@@ -5676,8 +5676,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           [ v "WF-034" at
               "parameter reference without a parameter name: it resolves against no declaration"
           ])
-  | Variabele_ref { naam; _ } -> [ v "WF-034" at (variable_reference_refusal naam) ]
-  | Constante { naam; typ; _ } -> (
+  | Variable_reference { ident; _ } -> [ v "WF-034" at (variable_reference_refusal ident) ]
+  | Context_value { ident; typ; _ } -> (
       (* WF-098 (maintainer decision 2026-09-10): the context-value name is a
          CLOSED SET, not a reference. Nothing in the document declares it, so
          there is no table to resolve against — the two admissible names are
@@ -5695,7 +5695,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          document, and every executor refuses it at load with this same
          sentence ([Loader.reader]). A context value without a name cannot be
          written since L4 (the loader refuses it). *)
-      match naam with
+      match ident with
       | None -> []
       | Some n -> (
           match context_value_refusal n with
@@ -5705,14 +5705,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               | Some sentence -> [ v "WF-098" (sub "type") sentence ]
               | None -> [])))
   | Bound_day _ -> []
-  | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
-  | Temporal_read { basis; datum; typ; _ } ->
+  | Expr_unresolved _ -> [] (* honest marker; WF-044 is behavioural *)
+  | Temporal_read { base_expr; date_value; typ; _ } ->
       (* WF-049: the point-in-time read (extension node, row 11) *)
-      let basis_checks =
-        match basis with
-        | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+      let point_in_time_checks =
+        match base_expr with
+        | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
           -> (
-            match objecttype ctx otn with
+            match object_type ctx otn with
             | None -> [] (* resolution is the walk's WF-034, below *)
             | Some ot ->
                 (if attr_temporal ot a then []
@@ -5728,7 +5728,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                   | _ -> [])
                 @
                 (* the node's type is the timeline's element datatype *)
-                (match (typ, find_ci ot.attributen a) with
+                (match (typ, find_ci ot.attributes a) with
                 | Some t, Some (Some decl) when not (same_datatype t decl) ->
                     [ v "WF-049" (sub "type")
                         "the read's type must equal the timeline's element datatype" ]
@@ -5739,7 +5739,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             match find_ci ctx.doc.parameters p with
             | None -> [] (* WF-034 below *)
             | Some par ->
-                (if par.par_granulariteit <> None then []
+                (if par.par_granularity <> None then []
                  else
                    [ v "WF-049" (sub "base")
                        ("temporal read of parameter '" ^ p ^ "', which is not granular") ])
@@ -5755,9 +5755,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 "the read's base must be an own temporal attribute reference or a granular \
                  parameter reference (a temporal characteristic operand is OPEN)" ]
       in
-      let datum_checks =
-        match ty datum with
-        | Some Datum_in_dagen -> []
+      let date_checks =
+        match ty date_value with
+        | Some Date_in_days -> []
         | Some d ->
             [ v "WF-049" (sub "date")
                 ("the read's date operand is " ^ datatype_kind d
@@ -5766,27 +5766,27 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             [ v "WF-049" (sub "date")
                 "the read's date operand carries no type (extension node: day precision required)" ]
       in
-      basis_checks @ datum_checks
-      @ walk_expr ctx ~binders ~subject (sub "base") basis
-      @ walk_expr ctx ~binders ~subject (sub "date") datum
+      point_in_time_checks @ date_checks
+      @ walk_expr ctx ~binders ~subject (sub "base") base_expr
+      @ walk_expr ctx ~binders ~subject (sub "date") date_value
   | Construct { typ; constructor_; argument; _ } ->
       (* WF-062: the constructor is declared in the node's sum type; the
          argument is present iff the constructor is unary; the argument's
          static type equals the declared payload datatype *)
       (match typ with
        | None -> [ v "WF-062" (sub "type") "construct carries no sum type" ]
-       | Some (Sum_type { domein; _ }) -> (
-           match sum_decl ctx domein with
+       | Some (Sum_type { domain_spec; _ }) -> (
+           match sum_decl ctx domain_spec with
            | None ->
                [ v "WF-062" (sub "type")
-                   ("construct names sum-type domain '" ^ domein
+                   ("construct names sum-type domain '" ^ domain_spec
                   ^ "', which is not a declared sum type") ]
            | Some ctors -> (
                match List.find_opt (fun (n, _) -> norm n = norm constructor_) ctors with
                | None ->
                    [ v "WF-062" at
                        ("'" ^ constructor_ ^ "' is not a declared constructor of sum type '"
-                      ^ domein ^ "'") ]
+                      ^ domain_spec ^ "'") ]
                | Some (_, payload) -> (
                    match payload, argument with
                    | None, None | Some _, Some _ ->
@@ -5823,10 +5823,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          only the words in the messages differ. *)
       let decl =
         match ty scrutinee with
-        | Some (Sum_type { domein; _ }) -> `Sum (domein, sum_decl ctx domein)
-        | Some (Enumeratie { domein = Some d; _ }) -> `Enum (d, enum_decl ctx d)
-        | Some (Enumeratie { domein = None; _ }) -> `NoDomain
-        | Some d -> `NotKeuzetype d
+        | Some (Sum_type { domain_spec; _ }) -> `Sum (domain_spec, sum_decl ctx domain_spec)
+        | Some (Enumeration { domain_spec = Some d; _ }) -> `Enum (d, enum_decl ctx d)
+        | Some (Enumeration { domain_spec = None; _ }) -> `NoDomain
+        | Some d -> `NotChoiceType d
         | None -> `NoType
       in
       let alt, family =
@@ -5837,20 +5837,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       let scrutinee_checks, ctors =
         match decl with
         | `NoType -> ([ v "WF-063" (sub "scrutinee") "match scrutinee carries no type" ], None)
-        | `NotKeuzetype d ->
+        | `NotChoiceType d ->
             ([ v "WF-063" (sub "scrutinee")
                  ("match scrutinee is " ^ datatype_kind d
                 ^ ", which is no keuzetype (a sum type or an enumeration)") ], None)
         | `NoDomain ->
             ([ v "WF-063" (sub "scrutinee")
                  "match scrutinee is an enumeration naming no declaring domain" ], None)
-        | `Sum (domein, None) ->
+        | `Sum (domain_spec, None) ->
             ([ v "WF-063" (sub "scrutinee")
-                 ("match scrutinee names sum-type domain '" ^ domein
+                 ("match scrutinee names sum-type domain '" ^ domain_spec
                 ^ "', which is not a declared sum type") ], None)
-        | `Enum (domein, None) ->
+        | `Enum (domain_spec, None) ->
             ([ v "WF-063" (sub "scrutinee")
-                 ("match scrutinee names enumeration domain '" ^ domein
+                 ("match scrutinee names enumeration domain '" ^ domain_spec
                 ^ "', which is not a declared enumeration domain") ], None)
         | `Sum (_, Some cs) | `Enum (_, Some cs) -> ([], Some cs)
       in
@@ -5940,7 +5940,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                walk_expr ctx ~binders:(arm_binders cname binder) ~subject ~body
                  (Printf.sprintf "%s/arms/%d/body" at i) arm_body)
              arms)
-  | Binder_ref { naam; _ } -> (
+  | Binder_ref { ident; _ } -> (
       (* WF-064: a binder reference resolves lexically to an enclosing binder
          (a match arm, or a lambda/function parameter — row 10); a
          VariableReference stays outside this rule (row 24). Inside a closed body
@@ -5951,35 +5951,35 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          outer name it names when we still remember it. Since L2 the read
          carries no type of its own: the binder's declaration is its type
          ([expr_type]). *)
-      match List.find_opt (fun (b, _) -> norm b = norm naam) binders with
+      match List.find_opt (fun (b, _) -> norm b = norm ident) binders with
       | None ->
           let outside =
             match body with
-            | Closed_pos (_, outer) -> List.exists (fun n -> norm n = norm naam) outer
+            | Closed_pos (_, outer) -> List.exists (fun n -> norm n = norm ident) outer
             | Rule_pos | Let_pos -> false
           in
           if outside then
             [ v "WF-064" at
-                ("binder reference '" ^ naam
+                ("binder reference '" ^ ident
                ^ "' is bound outside the enclosing closed body — a closed function or lambda body \
                   reads only its own parameters and inner bindings") ]
-          else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
+          else [ v "WF-064" at ("binder reference '" ^ ident ^ "' resolves to no enclosing binder") ]
       | Some _ -> [])
-  | Struct_literal { typ; velden; _ } ->
+  | Struct_literal { typ; field_list; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
          exactly the declared fields, each once; each value's static type
          equals the field declaration *)
       (match typ with
        | None -> [ v "WF-073" (sub "type") "struct literal carries no type" ]
-       | Some (Struct_type { domein; _ }) -> (
-           match struct_decl ctx domein with
+       | Some (Struct_type { domain_spec; _ }) -> (
+           match struct_decl ctx domain_spec with
            | None ->
                [ v "WF-073" (sub "type")
-                   ("struct literal names struct-type domain '" ^ domein
+                   ("struct literal names struct-type domain '" ^ domain_spec
                   ^ "', which is not a declared struct type") ]
            | Some decl ->
                let declared_names = List.map fst decl in
-               let lit_names = List.map fst velden in
+               let lit_names = List.map fst field_list in
                List.map
                  (fun (_, dup, _) ->
                    v "WF-073" at ("field '" ^ dup ^ "' is supplied by more than one entry"))
@@ -5990,7 +5990,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      else
                        Some
                          (v "WF-073" at
-                            ("field '" ^ n ^ "' is not a declared field of struct '" ^ domein ^ "'")))
+                            ("field '" ^ n ^ "' is not a declared field of struct '" ^ domain_spec ^ "'")))
                    lit_names
                @ List.filter_map
                    (fun d ->
@@ -6008,7 +6008,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                                  ("field '" ^ fname ^ "' value is " ^ detail_vs vt ~against:fdt
                                 ^ ", but the declared field datatype is " ^ detail_vs fdt ~against:vt) ]
                          | _ -> []))
-                   velden)
+                   field_list)
        | Some d ->
            [ v "WF-073" (sub "type")
                ("struct literal type is " ^ datatype_kind d ^ ", not a struct type") ])
@@ -6016,22 +6016,22 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           (List.mapi
              (fun i (_, value) ->
                walk_expr ctx ~binders ~subject ~body (sub (Printf.sprintf "fields/%d/value" i)) value)
-             velden)
-  | Field_access { typ; base; veld; _ } ->
+             field_list)
+  | Field_access { typ; base; field_name; _ } ->
       (* WF-074: the base is struct-typed; the field is a declared field; the
          node type equals that field's declared datatype *)
       (match ty base with
-       | Some (Struct_type { domein; _ }) -> (
-           match struct_decl ctx domein with
+       | Some (Struct_type { domain_spec; _ }) -> (
+           match struct_decl ctx domain_spec with
            | None ->
                [ v "WF-074" (sub "base")
-                   ("field access base names struct-type domain '" ^ domein
+                   ("field access base names struct-type domain '" ^ domain_spec
                   ^ "', which is not a declared struct type") ]
            | Some decl -> (
-               match List.find_opt (fun (n, _) -> norm n = norm veld) decl with
+               match List.find_opt (fun (n, _) -> norm n = norm field_name) decl with
                | None ->
                    [ v "WF-074" at
-                       ("'" ^ veld ^ "' is not a declared field of struct '" ^ domein ^ "'") ]
+                       ("'" ^ field_name ^ "' is not a declared field of struct '" ^ domain_spec ^ "'") ]
                | Some (_, fdt) -> (
                    match typ with
                    | Some t when not (same_datatype t fdt) ->
@@ -6131,16 +6131,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ walk_cond ctx ~binders ~subject ~body (sub "condition") condition
       @ walk_expr ctx ~binders ~subject ~body (sub "then") then_
       @ walk_expr ctx ~binders ~subject ~body (sub "else") else_
-  | Invoke { typ; functie; arguments; _ } ->
+  | Invoke { typ; function_name; arguments; _ } ->
       (* WF-068: resolvable function; arity; argument types; result type *)
-      (match function_decl ctx functie with
+      (match function_decl ctx function_name with
        | None ->
-           [ v "WF-068" at ("invoke names '" ^ functie ^ "', which is not a declared function") ]
+           [ v "WF-068" at ("invoke names '" ^ function_name ^ "', which is not a declared function") ]
        | Some fd ->
            (if List.length arguments <> List.length fd.fd_parameters then
               [ v "WF-068" at
                   (Printf.sprintf "invoke of '%s' supplies %d arguments, but it declares %d parameters"
-                     functie (List.length arguments) (List.length fd.fd_parameters)) ]
+                     function_name (List.length arguments) (List.length fd.fd_parameters)) ]
             else
               List.concat
                 (List.mapi
@@ -6161,7 +6161,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           (List.mapi
              (fun i a -> walk_expr ctx ~binders ~subject ~body (sub (Printf.sprintf "arguments/%d" i)) a)
              arguments)
-  | Fold { typ; list; functie; init; _ } ->
+  | Fold { typ; list; function_name; init; _ } ->
       let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
       fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the accumulator (node type = init type) is one first-order
@@ -6177,10 +6177,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
         | _ -> [])
       (* WF-069/070: the (accumulator, element) function, its closed body *)
       @ check_fold_fn ctx ~binders ~subject ~host:"the fold" (sub "function") ~params:[ typ; src_elem ]
-          ~result:typ functie
+          ~result:typ function_name
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
       @ walk_expr ctx ~binders ~subject ~body (sub "init") init
-  | Map_list { typ; list; functie; _ } ->
+  | Map_list { typ; list; function_name; _ } ->
       let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
       let out_elem = match typ with Some (List_type { element }) -> Some element | _ -> None in
       fold_source_check ctx ~binders (sub "list") list
@@ -6191,7 +6191,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             [ v "WF-070" (sub "type") ("map result is " ^ datatype_kind d ^ ", must be a list type") ]
         | None -> [ v "WF-070" (sub "type") "map carries no result type" ])
       @ check_fold_fn ctx ~binders ~subject ~host:"the MapList" (sub "function") ~params:[ src_elem ]
-          ~result:out_elem functie
+          ~result:out_elem function_name
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
   | Filter_list { typ; list; binder; condition; _ } ->
       let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
@@ -6209,7 +6209,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the count is a whole number *)
       @ (match typ with
-        | Some (Numeriek { geheel = true; _ }) -> []
+        | Some (Number { whole_part = true; _ }) -> []
         | Some d ->
             [ v "WF-070" (sub "type") ("length is " ^ datatype_kind d ^ ", must be a whole number") ]
         | None -> [ v "WF-070" (sub "type") "length carries no type" ])
@@ -6289,7 +6289,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        [ v "WF-110" (bat ^ "/elementType")
                            "an instance-set union's selection MUST name the population it \
                             ranges over (ch. 4.3)" ]
-                   | Some el when objecttype ctx el = None ->
+                   | Some el when object_type ctx el = None ->
                        [ v "WF-034" (bat ^ "/elementType")
                            ("instance-set selection element type '" ^ el ^ "' is not declared") ]
                    | Some _ -> [])
@@ -6345,7 +6345,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
       @ List.concat
           (List.mapi
              (fun j (_, pt) ->
-               check_datatype_units ~stelsels:(stelsel_namen ctx)
+               check_datatype_units ~systems:(system_names ctx)
                  (Printf.sprintf "%s/parameters/%d/datatype" at j)
                  pt)
              parameters)
@@ -6379,17 +6379,17 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
          ^ "', but must be an inline lambda (a named function reaches a fold via a lambda body \
             that invokes it)") ]
 
-(* [fc_doel] is the SECOND object a position binds, and exactly one position
+(* [fc_target] is the SECOND object a position binds, and exactly one position
    has one: the guard of a fact creation (IR-SPEC ch. 3.4), which iterates the
    anchor and reaches the target. It is passed only at that guard's OWN node and
    never propagated — the recursive calls below all omit it — so the composite
    arm, the expression walk and every other descent see a one-object position,
    which is the positional half of WF-109's scope (ch. 4.6 (q2)). *)
-and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie) :
+and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condition_expr) :
     violation list =
   let sub p = at ^ "/" ^ p in
-  let whole_period_check periode operands =
-    match periode with
+  let whole_period_check time_period operands =
+    match time_period with
     | None -> []
     | Some _ ->
         if List.exists (fun e -> match e with Some e -> expr_temporal ctx e | None -> false) operands
@@ -6406,7 +6406,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
     | Rule_pos | Let_pos -> None
     | Closed_pos (wf, _) -> (
         match c with
-        | Vergelijking _ | Predicaat _ -> None
+        | Comparison _ | Predicate _ -> None
         | _ ->
             Some
               [ v wf at
@@ -6417,14 +6417,14 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
   | Some vs -> vs
   | None ->
   match c with
-  | Vergelijking { op; links; rechts; periode; _ } ->
-      let lt = Option.bind links (expr_type ctx ~binders)
-      and rt = Option.bind rechts (expr_type ctx ~binders) in
+  | Comparison { op; left_side; right_side; time_period; _ } ->
+      let lt = Option.bind left_side (expr_type ctx ~binders)
+      and rt = Option.bind right_side (expr_type ctx ~binders) in
       let ordering =
         match op with
-        | Kleiner | Kleiner_of_gelijk | Groter | Groter_of_gelijk -> `Num
-        | Eerder | Eerder_of_gelijk | Later | Later_of_gelijk -> `Date
-        | Gelijk | Ongelijk -> `Eq
+        | Less | Less_or_equal | Greater | Greater_or_equal -> `Num
+        | Earlier | Earlier_or_equal | Later | Later_or_equal -> `Date
+        | Equal | Not_equal -> `Eq
       in
       (match ordering, lt, rt with
        | `Num, Some l, Some r ->
@@ -6435,7 +6435,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                 [ v "WF-036" (sub "right") ("ordering operand is " ^ datatype_kind r) ]
               else [])
            @ (if is_number_like l && is_number_like r
-                 && not (units_compatible_adopting links rechts (unit_of l) (unit_of r))
+                 && not (units_compatible_adopting left_side right_side (unit_of l) (unit_of r))
               then [ v "WF-036" at "ordering operands have incompatible units" ]
               else [])
        | `Date, Some l, Some r ->
@@ -6456,30 +6456,30 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
               whose type nothing declares defers (the outer match skips
               it); its own rule reports it. *)
            @ (match l, r with
-              | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
+              | Date_in_days, Date_time_type | Date_time_type, Date_in_days ->
                   [ v "WF-036" at
                       "date ordering across two date precisions (day and millisecond), which \
                        share no order" ]
               | _ -> [])
        | `Eq, Some l, Some r -> (
            match l, r with
-           | Enumeratie { domein = Some d1; _ }, Enumeratie { domein = Some d2; _ }
+           | Enumeration { domain_spec = Some d1; _ }, Enumeration { domain_spec = Some d2; _ }
              when norm d1 <> norm d2 ->
                [ v "WF-036" at "equality across different enumeration domains" ]
-           | Sum_type { domein = d1; _ }, Sum_type { domein = d2; _ } when norm d1 <> norm d2 ->
+           | Sum_type { domain_spec = d1; _ }, Sum_type { domain_spec = d2; _ } when norm d1 <> norm d2 ->
                (* WF-061 (nominal): two sum-typed operands of one comparison
                   MUST name the same declaring domain *)
                [ v "WF-061" at
                    ("comparison across different sum-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
-           | Struct_type { domein = d1; _ }, Struct_type { domein = d2; _ } when norm d1 <> norm d2 ->
+           | Struct_type { domain_spec = d1; _ }, Struct_type { domain_spec = d2; _ } when norm d1 <> norm d2 ->
                (* WF-072 (nominal): two struct-typed operands of one comparison
                   MUST name the same declaring domain *)
                [ v "WF-072" at
                    ("comparison across different struct-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
-           | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
+           | Date_in_days, Date_time_type | Date_time_type, Date_in_days ->
                [ v "WF-036" at "equality across date precisions" ]
            | a, b when is_number_like a && is_number_like b ->
-               if not (units_compatible_adopting links rechts (unit_of a) (unit_of b)) then
+               if not (units_compatible_adopting left_side right_side (unit_of a) (unit_of b)) then
                  [ v "WF-036" at "equality operands have incompatible units" ]
                else []
            | a, b when datatype_kind a <> datatype_kind b
@@ -6488,32 +6488,32 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                    ("equality across families: " ^ datatype_kind a ^ " vs " ^ datatype_kind b) ]
            | _ -> [])
        | _ -> [])
-      @ whole_period_check periode [ links; rechts ]
-      @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])
-      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "right") e | None -> [])
-  | Predicaat { soort; operand; dagsoort; periode; _ } ->
+      @ whole_period_check time_period [ left_side; right_side ]
+      @ (match left_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])
+      @ (match right_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "right") e | None -> [])
+  | Predicate { variety; operand; day_kind; time_period; _ } ->
       let ot = Option.bind operand (expr_type ctx ~binders) in
-      (match soort, ot with
-       | Elfproef, Some d -> (
+      (match variety, ot with
+       | Eleven_test, Some d -> (
            match d with
-           | Tekst -> []
-           | Numeriek { geheel = true; eenheid = None; _ } -> []
+           | Text_type -> []
+           | Number { whole_part = true; measure_unit = None; _ } -> []
            | _ ->
                [ v "WF-036" at
                    ("elevenTest operand is " ^ datatype_kind d
                     ^ ", must be text or a whole unitless number") ])
-       | Numeriek_met_exact, Some d when d <> Tekst ->
+       | Exact_digits, Some d when d <> Text_type ->
            [ v "WF-036" at ("exactDigits operand is " ^ datatype_kind d ^ ", must be text") ]
-       | Dagsoort, Some d when not (is_date d) ->
+       | Day_kind_predicate, Some d when not (is_date d) ->
            [ v "WF-036" at ("day-kind predicate operand is " ^ datatype_kind d ^ ", must be a date") ]
        | _ -> [])
-      @ (match soort, dagsoort with
-         | Dagsoort, Some dk when not (mem_ci (dagsoort_namen ctx) dk) ->
+      @ (match variety, day_kind with
+         | Day_kind_predicate, Some dk when not (mem_ci (day_kind_names ctx) dk) ->
              [ v "WF-034" at ("reference to undeclared day kind '" ^ dk ^ "'") ]
          | _ -> [])
-      @ whole_period_check periode [ operand ]
+      @ whole_period_check time_period [ operand ]
       @ (match operand with Some e -> walk_expr ctx ~binders ~subject ~body (sub "operand") e | None -> [])
-  | Kenmerk_check { kenmerk; periode; navigatie_binding; eigenaar; _ } ->
+  | Characteristic_check { characteristic; time_period; navigation_binding; holder; _ } ->
       (* WF-034 (widened, maintainer decision 2026-09-05, sixth wave; IR-SPEC
          ch. 4.6 (q)): a characteristic check's EXPLICIT OWNER. `host`
          names the object type the characteristic is read on when it is not
@@ -6546,8 +6546,8 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          characteristic cross below is therefore keyed on `host` where the
          field is present and on `subject` only where it is absent, and an
          owner that does not declare the named characteristic is WF-100. *)
-      (match eigenaar with
-       | Some e when objecttype ctx e = None ->
+      (match holder with
+       | Some e when object_type ctx e = None ->
            [ v "WF-034" (sub "host")
                ("characteristic check's host '" ^ e
               ^ "' is not a declared object type: the check resolves against no declaration") ]
@@ -6557,7 +6557,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            object it names must be one the position actually binds — exactly
            one. Every position binds the enclosing form's subject and nothing
            else, except the fact-creation guard, which binds the anchor AND the
-           target ([fc_doel] above).
+           target ([fc_target] above).
 
            Until this rule the ZERO case was an EXECUTOR refusal: `ref` and the
            ASP backend faulted on a host they had no object for, while the two
@@ -6605,10 +6605,10 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            enough either: it would ADMIT a host naming a strict subtype of the
            binding, where the reading holds for some objects and faults for
            others — a verdict the wire cannot settle, so it keeps failing. *)
-      (match eigenaar with
-       | Some e when objecttype ctx e <> None ->
+      (match holder with
+       | Some e when object_type ctx e <> None ->
            let bound =
-             match fc_doel, navigatie_binding, periode with
+             match fc_target, navigation_binding, time_period with
              | Some d, None, None -> (
                  match subject with
                  | Some a -> [ ("anchor", a); ("target", d) ]
@@ -6621,7 +6621,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
             | None -> []
             | Some m -> [ v "WF-109" (sub "host") m ])
        | _ -> [])
-      @ (match kenmerk with
+      @ (match characteristic with
        | None ->
            (* WF-034 (widened, maintainer decision 2026-09-04, third wave):
               a characteristic check resolves through exactly one field, and
@@ -6649,22 +6649,22 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            characteristic lives on the REACHED type (the WF-053 arm below
            crosses it there), so an owner is not that type and crossing it
            would reject a form nothing has decided. *)
-      (let decl_key = match eigenaar with Some _ as e -> e | None -> subject in
-       let keyed_wf = match eigenaar with Some _ -> "WF-100" | None -> "WF-034" in
-       let keyed_at = match eigenaar with Some _ -> sub "host" | None -> at in
-       (match kenmerk, navigatie_binding, decl_key with
+      (let decl_key = match holder with Some _ as e -> e | None -> subject in
+       let keyed_wf = match holder with Some _ -> "WF-100" | None -> "WF-034" in
+       let keyed_at = match holder with Some _ -> sub "host" | None -> at in
+       (match characteristic, navigation_binding, decl_key with
         | Some k, None, Some otn -> (
-            match objecttype ctx otn with
-            | Some ot when not (has_kenmerk ot k) ->
+            match object_type ctx otn with
+            | Some ot when not (has_characteristic ot k) ->
                 [ v keyed_wf keyed_at
                     ("'" ^ k ^ "' is not a declared characteristic of '" ^ otn ^ "'") ]
             | _ -> [])
         | _ -> [])
-       @ (match periode, kenmerk, navigatie_binding, decl_key with
+       @ (match time_period, characteristic, navigation_binding, decl_key with
           | Some _, Some k, None, Some otn -> (
-              match objecttype ctx otn with
+              match object_type ctx otn with
               | Some ot
-                when not (List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit) ->
+                when not (List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity) ->
                   [ v "WF-043" at "wholePeriod qualifier on a non-time-dependent characteristic" ]
               | _ -> [])
           | _ -> []))
@@ -6672,10 +6672,10 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            to-one only (the v0 resolver's NAAR_VEEL marker, lifted);
            the characteristic lives on the REACHED type. Without a binding
            the check reads the subject itself. *)
-      (match (navigatie_binding, subject) with
+      (match (navigation_binding, subject) with
        | None, _ | Some _, None -> []
        | Some rb, Some st -> (
-           let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+           let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
            match resolve_binding ctx rb with
            | Error e -> [ v "WF-053" at e ]
            | Ok (_, bound, opposite) ->
@@ -6683,20 +6683,20 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                  [ v "WF-053" at
                      (Printf.sprintf
                         "the near side of '%s' fills '%s', but the check's subject is '%s'"
-                        rb.rb_feittype (filler opposite) st) ]
+                        rb.rb_fact_type (filler opposite) st) ]
                else
-                 (if bound.rol_meervoudig then
+                 (if bound.role_many then
                     [ v "WF-053" at
                         (Printf.sprintf
                            "the navigated check reaches the to-many role '%s' — a to-many \
                             step needs an aggregation, never a silent first pick"
-                           (Option.value bound.rol_naam ~default:"?")) ]
+                           (Option.value bound.role_identifier ~default:"?")) ]
                   else [])
                  @
-                 match kenmerk with
+                 match characteristic with
                  | Some k -> (
-                     match objecttype ctx (filler bound) with
-                     | Some ot when not (has_kenmerk ot k) ->
+                     match object_type ctx (filler bound) with
+                     | Some ot when not (has_characteristic ot k) ->
                          [ v "WF-034" at
                              ("'" ^ k ^ "' is not a declared characteristic of '"
                             ^ filler bound ^ "'") ]
@@ -6725,16 +6725,16 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          instances the relation can never hold at that end, so the check
          would ask for nothing, the same mistake one field further. A
          reciprocal fact type has one role, bound and opposite at once. *)
-      match find_ci ctx.doc.feittypen fact_type with
+      match find_ci ctx.doc.fact_types fact_type with
       | None ->
           [ v "WF-034" (sub "factType")
               ("role check names fact type '" ^ fact_type
              ^ "', which is not declared: the check resolves against no declaration") ]
-      | Some (ft : feittype) -> (
-          let named (r : rol) =
-            match r.rol_naam with Some n -> norm n = norm role | None -> false
+      | Some (ft : fact_type_name) -> (
+          let named (r : role_ref) =
+            match r.role_identifier with Some n -> norm n = norm role | None -> false
           in
-          match List.filter named ft.rollen with
+          match List.filter named ft.role_names with
           | [] ->
               [ v "WF-034" (sub "role")
                   ("'" ^ role ^ "' is not a declared role of fact type '" ^ fact_type
@@ -6747,44 +6747,44 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                          "the subject '%s' does not fill the role '%s' of fact type '%s', which \
                           is filled by '%s': the check names a link the subject can never be in"
                          st role fact_type
-                         (Option.value r.rol_objecttype_naam ~default:"?")) ]
+                         (Option.value r.role_object_type_name ~default:"?")) ]
               | _ -> [])
               @
               match counterpart_type with
               | None -> []
               | Some ct -> (
                   let other =
-                    match List.filter (fun x -> x != r) ft.rollen with
+                    match List.filter (fun x -> x != r) ft.role_names with
                     | [ o ] -> Some o
                     | [] -> Some r (* the reciprocal role is its own other end *)
                     | _ -> None
                   in
-                  match (objecttype ctx ct, other) with
+                  match (object_type ctx ct, other) with
                   | None, _ ->
                       [ v "WF-034" (sub "counterpartType")
                           ("role check's counterpart type '" ^ ct
                          ^ "' is not a declared object type: the check resolves against no \
                             declaration") ]
-                  | Some _, Some (o : rol)
+                  | Some _, Some (o : role_ref)
                     when not
                            (is_sub ctx ~sub:ct
-                              ~super:(Option.value o.rol_objecttype_naam ~default:"")) ->
+                              ~super:(Option.value o.role_object_type_name ~default:"")) ->
                       [ v "WF-034" (sub "counterpartType")
                           (Printf.sprintf
                              "the counterpart type '%s' is no subtype of '%s', the filler of the \
                               other role '%s' of fact type '%s': the check names a link whose \
                               other end can never be one"
                              ct
-                             (Option.value o.rol_objecttype_naam ~default:"?")
-                             (Option.value o.rol_naam ~default:"?")
+                             (Option.value o.role_object_type_name ~default:"?")
+                             (Option.value o.role_identifier ~default:"?")
                              fact_type) ]
                   | _ -> []))
           | _ ->
               [ v "WF-034" (sub "role")
                   ("role name '" ^ role ^ "' is ambiguous within fact type '" ^ fact_type ^ "'")
               ]))
-  | Periode_conditie { vanaf; tot; _ } ->
-      (if vanaf = None && tot = None then
+  | Time_window { starting_at; up_to; _ } ->
+      (if starting_at = None && up_to = None then
          [ v "WF-042" at "time window without any bound" ]
        else [])
       @ List.concat_map
@@ -6798,17 +6798,17 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                 @ wf111_bound ctx ~subject (sub n) n e
                 @ walk_expr ctx ~binders ~subject (sub n) e
             | None -> [])
-          [ ("from", vanaf); ("to", tot) ]
-  | Samengesteld { kwantor; drempel; onderdelen; _ } ->
-      (match kwantor with
-       | Ten_minste | Ten_hoogste | Precies when drempel < 1 ->
-           [ v "WF-041" at (Printf.sprintf "counting quantifier with threshold %d < 1" drempel) ]
+          [ ("from", starting_at); ("to", up_to) ]
+  | Compound { quantifier_kind; cutoff; components; _ } ->
+      (match quantifier_kind with
+       | At_least | At_most | Exactly when cutoff < 1 ->
+           [ v "WF-041" at (Printf.sprintf "counting quantifier with threshold %d < 1" cutoff) ]
        | _ -> [])
-      @ wf112_position at kwantor onderdelen
+      @ wf112_position at quantifier_kind components
       @ List.concat
           (List.mapi
              (fun i c -> walk_cond ctx ~binders ~subject (Printf.sprintf "%s/parts/%d" at i) c)
-             onderdelen)
+             components)
   (* WF-108 — the QUANTIFIER FOLD's shape (IR-SPEC ch. 4.5; semantics
      RUNTIME-SEMANTICS ch. 3.9a). Five arms, and each closes a way the node
      could state a quantification with nothing to quantify over.
@@ -6822,7 +6822,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
      engines (until L2 also [wf048_derivable], which left with the
      bindingless range, B12). An unresolvable binding therefore still reports
      WF-047, exactly as a fold's does. *)
-  | Kwantorvouw k ->
+  | Quantifier_fold k ->
       let sub p = at ^ "/" ^ p in
       (* (a) the quantifier: all, none and — since 2026-09-16 — the three
          counting forms, Compound's vocabulary over INSTANCES instead of
@@ -6830,10 +6830,10 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          set, and is refused by name rather than ignored: a reader that took
          an unhandled quantifier for all would answer the opposite of "geen
          van de". *)
-      (match k.kv_kwantor with
-       | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> []
-       | De -> [ v "WF-108" (sub "quantifier") quantifier_fold_the_refusal ])
-      @ wf112_position at k.kv_kwantor (List.filter_map Fun.id [ k.kv_filter; k.kv_toets ])
+      (match k.kv_quantifier with
+       | All | None_of | At_least | At_most | Exactly -> []
+       | The -> [ v "WF-108" (sub "quantifier") quantifier_fold_the_refusal ])
+      @ wf112_position at k.kv_quantifier (List.filter_map Fun.id [ k.kv_filter; k.kv_test ])
       (* (e) the threshold: present EXACTLY under a counting quantifier. A
          counting fold without one names no number to compare the count with;
          one under all/none records a quantification the quantifier field
@@ -6841,20 +6841,20 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          not this rule's — a bound below 1 is WF-041, reported at this
          position exactly as an unresolvable binding reports WF-047, on the
          shared-rule discipline arm (c) states. *)
-      @ (match (k.kv_kwantor, k.kv_drempel) with
-         | (Ten_minste | Ten_hoogste | Precies), None ->
+      @ (match (k.kv_quantifier, k.kv_threshold) with
+         | (At_least | At_most | Exactly), None ->
              [ v "WF-108" at
                  "counting quantifier fold without a threshold: the verdict compares the number \
                   of contributors satisfying the matrix with a threshold, and there is none to \
                   compare it with" ]
-         | (Alle | Geen | De), Some d ->
+         | (All | None_of | The), Some d ->
              [ v "WF-108" (sub "threshold")
                  (Printf.sprintf
                     "quantifier fold with a threshold (%d) under a NON-counting quantifier: the \
                      threshold is read only by the counting quantifiers, and a number no reader \
                      consults states a quantification the quantifier contradicts"
                     d) ]
-         | (Ten_minste | Ten_hoogste | Precies), Some d when d < 1 ->
+         | (At_least | At_most | Exactly), Some d when d < 1 ->
              [ v "WF-041" (sub "threshold")
                  (Printf.sprintf "counting quantifier with threshold %d < 1" d) ]
          | _ -> [])
@@ -6862,19 +6862,19 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          type reference; this arm owns the node's REQUIREMENT that one be
          there at all, because a quantifier with no element type ranges over
          nothing a reader can name. *)
-      @ (match k.kv_element_objecttype with
+      @ (match k.kv_element_object_type with
          | None ->
              [ v "WF-108" (sub "elementType")
                  "quantifier fold without an elementType: the population it ranges over is \
                   unnamed" ]
-         | Some t when objecttype ctx t = None ->
+         | Some t when object_type ctx t = None ->
              [ v "WF-034" (sub "elementType")
                  ("quantifier-fold element type '" ^ t ^ "' is not declared") ]
          | Some _ -> [])
       (* (d) the matrix. A quantifier with no matrix states a range and
          asks nothing of it; the loader carries the absence so this rule
          can name it. *)
-      @ (match k.kv_toets with
+      @ (match k.kv_test with
          | None ->
              [ v "WF-108" (sub "test")
                  "quantifier fold without a test: the matrix is what every contributor must \
@@ -6884,23 +6884,23 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          discipline under this node's own number. Its presence and its one
          spelling are the loader's since L2 (B12): the range is written,
          never derived. *)
-      @ (match k.kv_bron_pad with
-         | Some pad ->
-             (if List.length pad >= 2 then []
+      @ (match k.kv_source_path with
+         | Some trail ->
+             (if List.length trail >= 2 then []
                 else
                   [ v "WF-108" (sub "sourcePath")
                       (Printf.sprintf
                          "a quantifier fold's sourcePath carries at least TWO steps, found %d — \
                           the one-step range is spelled sourceRole"
-                         (List.length pad)) ])
+                         (List.length trail)) ])
              @ (let rec chain i from_t = function
                   | [] -> []
-                  | (rb : rol_binding) :: rest -> (
+                  | (rb : role_binding) :: rest -> (
                       let step = sub ("sourcePath/" ^ string_of_int i) in
                       match resolve_binding ctx rb with
                       | Error e -> [ v "WF-047" step e ]
                       | Ok (_, bound, other) ->
-                          let bound_filler = Option.value bound.rol_objecttype_naam ~default:"" in
+                          let bound_filler = Option.value bound.role_object_type_name ~default:"" in
                           let joins =
                             match from_t with
                             | None -> []
@@ -6910,8 +6910,8 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                                     (Printf.sprintf
                                        "the opposite role '%s' fills '%s', but this step starts \
                                         at '%s' (%s) — a quantifier range is a connected walk"
-                                       (Option.value other.rol_naam ~default:"?")
-                                       (Option.value other.rol_objecttype_naam ~default:"")
+                                       (Option.value other.role_identifier ~default:"?")
+                                       (Option.value other.role_object_type_name ~default:"")
                                        ft
                                        (if i = 0 then "the quantifier's subject"
                                         else "the type the previous step reaches")) ]
@@ -6919,22 +6919,22 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                           let lands =
                             if rest <> [] then []
                             else
-                              match k.kv_element_objecttype with
+                              match k.kv_element_object_type with
                               | Some el when not (type_compatible ctx bound_filler el) ->
                                   [ v "WF-108" step
                                       (Printf.sprintf
                                          "the last step's bound role '%s' fills '%s', but the \
                                           quantifier's elementType is '%s' — the path must \
                                           land on the element type"
-                                         (Option.value bound.rol_naam ~default:"?")
+                                         (Option.value bound.role_identifier ~default:"?")
                                          bound_filler el) ]
                               | _ -> []
                           in
                           joins @ lands @ chain (i + 1) (Some bound_filler) rest)
                 in
-                chain 0 subject pad)
+                chain 0 subject trail)
          | None -> (
-             match (k.kv_element_objecttype, k.kv_bron_rol) with
+             match (k.kv_element_object_type, k.kv_source_role) with
              | Some el, Some rb ->
                  wf047_binding ctx (sub "sourceRole") rb ~bound_filler:(Some el)
                    ~other_filler:subject
@@ -6944,23 +6944,23 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          (walk_expr's Functie arm), so an element-own read resolves against
          the element type and not against the outer subject *)
       @ (let esubject =
-           match k.kv_element_objecttype with Some el -> Some el | None -> subject
+           match k.kv_element_object_type with Some el -> Some el | None -> subject
          in
          let walk_sub p = function
            | Some c -> walk_cond ctx ~binders ~subject:esubject ~body (sub p) c
            | None -> []
          in
-         walk_sub "filter" k.kv_filter @ walk_sub "test" k.kv_toets)
-  | Regelversie _ -> [] (* row-30 split; admissibility OPEN *)
-  | Conditie_onopgelost _ -> []
+         walk_sub "filter" k.kv_filter @ walk_sub "test" k.kv_test)
+  | Rule_status_check _ -> [] (* row-30 split; admissibility OPEN *)
+  | Condition_unresolved _ -> []
 
 let expression_layer ctx =
   List.concat_map
-    (fun (r : resolved_regel) ->
+    (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
       let subject =
-        match r.doel with
-        | Some (Attribuut_ref { objecttype; _ }) -> objecttype
+        match r.objective with
+        | Some (Attribute_reference { object_type; _ }) -> object_type
         | _ -> None
       in
       (* The target lvalue is WF-022's job, not part of the walk. Since L2 it
@@ -6970,18 +6970,18 @@ let expression_layer ctx =
       (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
          same facet for the ch. 3.8 day count *)
-      (match (r.doel, r.waarde) with
-      | ( Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }),
+      (match (r.objective, r.value_node) with
+      | ( Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }),
           Some
-            (Functie
-               { kind = (Tijdsevenredig_deel | Aantal_dagen_in) as kind;
-                 granulariteit = Some g; _ }) ) -> (
+            (Function_call
+               { kind = (Time_proportional_part | Day_count) as kind;
+                 grain = Some g; _ }) ) -> (
           let wf, what =
-            if kind = Tijdsevenredig_deel then ("WF-056", "pro-rata") else ("WF-058", "day-count")
+            if kind = Time_proportional_part then ("WF-056", "pro-rata") else ("WF-058", "day-count")
           in
-          match objecttype ctx ot with
+          match object_type ctx ot with
           | Some otd -> (
-              match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribuut_granulariteit with
+              match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribute_granularity with
               | Some (_, Some tg) when tg <> g ->
                   [ v wf (at ^ "/value")
                       (what ^ " bucket granularity differs from the target's declared granularity")
@@ -6994,20 +6994,20 @@ let expression_layer ctx =
       (* WF-058 (rule level): the day count MUST carry a gedurende
          condition over an own temporal characteristic and takes no
          arguments (the counting fold has no base) *)
-      @ (match r.waarde with
-        | Some (Functie ({ kind = Aantal_dagen_in; _ } as f)) ->
-            (if f.argumenten <> [] then
+      @ (match r.value_node with
+        | Some (Function_call ({ kind = Day_count; _ } as f)) ->
+            (if f.call_arguments <> [] then
                [ v "WF-058" (at ^ "/value/arguments") "dayCount takes no arguments" ]
              else [])
             @ (match f.filter with
               | None -> [ v "WF-058" (at ^ "/value") "dayCount without a gedurende condition" ]
-              | Some (Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ }) -> (
-                  match Option.bind subject (objecttype ctx) with
+              | Some (Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ }) -> (
+                  match Option.bind subject (object_type ctx) with
                   | Some otd
                     when not
                            (List.exists
                               (fun (n, _) -> norm n = norm k)
-                              otd.kenmerk_granulariteit) ->
+                              otd.characteristic_granularity) ->
                       [ v "WF-058" (at ^ "/value/filter")
                           ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
                       ]
@@ -7017,18 +7017,18 @@ let expression_layer ctx =
                       "the day-count gedurende condition is an own temporal characteristic check"
                   ])
         | _ -> [])
-      @ (match r.waarde with Some e -> walk_expr ctx ~binders:[] ~subject (at ^ "/value") e | None -> [])
-      @ (match r.rr_voorwaarde with
+      @ (match r.value_node with Some e -> walk_expr ctx ~binders:[] ~subject (at ^ "/value") e | None -> [])
+      @ (match r.rr_condition with
          | Some c -> walk_cond ctx ~binders:[] ~subject (at ^ "/condition") c
          | None -> []))
-    ctx.doc.resolved_regels
+    ctx.doc.resolved_rules
   @ List.concat_map
-      (fun (r : resolved_object_creatie) ->
+      (fun (r : resolved_object_creation) ->
         let at = r.oc_pointer in
         List.concat
           (List.mapi
              (fun j t ->
-               match t.toe_waarde with
+               match t.to_value with
                | Some e ->
                    (* member values evaluate on the creation SUBJECT
                       (ch. 5.5) — the walking type for navigation and
@@ -7037,66 +7037,66 @@ let expression_layer ctx =
                    walk_expr ctx ~binders:[] ~subject:r.oc_subject
                      (Printf.sprintf "%s/initialisations/%d/value" at j) e
                | None -> [])
-             r.toekenningen)
-        @ (match r.oc_voorwaarde with
+             r.assignments)
+        @ (match r.oc_condition with
            | Some c -> walk_cond ctx ~binders:[] ~subject:r.oc_subject (at ^ "/condition") c
            | None -> [])
-        @ (match r.oc_verbindende_rol with
+        @ (match r.oc_connecting_role with
            | Some rb ->
                (* the back-link binding (extension): the bound role is
                   the created side, the opposite the subject side *)
-               wf047_binding ctx (at ^ "/connectingRole") rb ~bound_filler:r.nieuw_type
+               wf047_binding ctx (at ^ "/connectingRole") rb ~bound_filler:r.created_type
                  ~other_filler:r.oc_subject
            | None -> []))
-      ctx.doc.object_creaties
+      ctx.doc.object_creations
   @ List.concat_map
-      (fun (r : resolved_verdeling) ->
-        match r.vd_voorwaarde with
-        | Some c -> walk_cond ctx ~binders:[] ~subject:r.bron_type (r.vd_pointer ^ "/condition") c
+      (fun (r : resolved_allocation) ->
+        match r.vd_condition with
+        | Some c -> walk_cond ctx ~binders:[] ~subject:r.source_type (r.vd_pointer ^ "/condition") c
         | None -> [])
-      ctx.doc.verdelingen
+      ctx.doc.allocations
   @ List.concat_map
-      (fun (r : resolved_consistentie) ->
-        match r.assertie with
+      (fun (r : resolved_consistency) ->
+        match r.assertion with
         | Some c ->
             walk_cond ctx ~binders:[] ~subject:r.cons_subject (r.cons_pointer ^ "/assertion") c
         | None -> [])
-      ctx.doc.consistenties
+      ctx.doc.consistencies
   @ List.concat_map
       (fun (i, r) ->
-        match r.rd_voorwaarde with
+        match r.rd_condition with
         | Some c ->
             walk_cond ctx ~binders:[] ~subject:None
               (Printf.sprintf "/dayKindDefinitions/%d/condition" i) c
         | None -> [])
-      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
+      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_day_kind_definitions)
   @ List.concat_map
-      (fun (r : resolved_feit_creatie) ->
-        match r.fc_voorwaarde with
+      (fun (r : resolved_fact_creation) ->
+        match r.fc_condition with
         | Some c ->
             (* the ONE position that binds two objects: the anchor it iterates
                and the target its join chain reaches (WF-109, ch. 4.6 (q2)) *)
-            walk_cond ctx ~binders:[] ~subject:r.anker ?fc_doel:r.fc_doel
+            walk_cond ctx ~binders:[] ~subject:r.anchor_point ?fc_target:r.fc_target
               (r.fc_pointer ^ "/condition") c
         | None -> [])
-      ctx.doc.feit_creaties
+      ctx.doc.fact_creations
   @ List.concat_map
       (fun (i, (l : prioritized_defaults)) ->
         (* the expression walk descends into sub-defaults (ch. 7.9): a
            sub-default's justification and consequence are checked exactly as
            a root default's, the exception group inheriting the root subject *)
         let rec default_walk prefix (r : default) =
-          (match r.default_voorwaarde with
+          (match r.default_justification with
           | Some c ->
-              walk_cond ctx ~binders:[] ~subject:(Some l.pd_onderwerp)
+              walk_cond ctx ~binders:[] ~subject:(Some l.pd_subject)
                 (prefix ^ "/justification") c
           | None -> [])
-          @ (match r.default_consequentie with
+          @ (match r.default_consequence with
             | Some e ->
-                walk_expr ctx ~binders:[] ~subject:(Some l.pd_onderwerp)
+                walk_expr ctx ~binders:[] ~subject:(Some l.pd_subject)
                   (prefix ^ "/consequence") e
             | None -> [])
-          @ (match r.default_excepties with
+          @ (match r.default_exceptions with
             | Some egs ->
                 List.concat
                   (List.mapi
@@ -7108,7 +7108,7 @@ let expression_layer ctx =
                                 (Printf.sprintf "%s/exceptions/members/%d/defaults/%d" prefix k m)
                                 d)
                             eg.eg_defaults))
-                     egs.egs_leden)
+                     egs.egs_members)
             | None -> [])
         in
         List.concat
@@ -7162,12 +7162,12 @@ let n_pop ot = "pop:" ^ norm ot
    write is ch. 6.1's conservative proxy beside the relation node — so
    lifting a proxy up a chain buys false edges and no missed cycle. *)
 let pop_writes ctx t =
-  match declared_objecttype ctx t with
+  match declared_object_type ctx t with
   | None -> [ n_pop t ]
   | Some ot ->
       List.sort_uniq compare
         (n_pop t
-         :: List.filter_map (fun (a : objecttype) -> Option.map n_pop a.ot_naam) (chain_from ctx ot))
+         :: List.filter_map (fun (a : object_type) -> Option.map n_pop a.ot_ident) (chain_from ctx ot))
 
 (* The same closure for a MEMBER write, and [~over] is what decides how far
    it reaches, because the two writing forms do not put the value on the
@@ -7207,24 +7207,24 @@ let pop_writes ctx t =
 let member_writes ctx ~kind ~over ot m =
   let node = match kind with `Attribute -> n_attr | `Characteristic -> n_char in
   let carries s =
-    match objecttype ctx s with
+    match object_type ctx s with
     | None -> false
-    | Some e -> ( match kind with `Attribute -> has_attr e m | `Characteristic -> has_kenmerk e m)
+    | Some e -> ( match kind with `Attribute -> has_attr e m | `Characteristic -> has_characteristic e m)
   in
   let reached =
     match over with
     | `Minted -> (
-        match declared_objecttype ctx ot with
+        match declared_object_type ctx ot with
         | None -> []
-        | Some o -> List.filter_map (fun (a : objecttype) -> a.ot_naam) (chain_from ctx o))
+        | Some o -> List.filter_map (fun (a : object_type) -> a.ot_ident) (chain_from ctx o))
     | `Extension ->
         List.map
-          (fun (key, (o : objecttype)) -> Option.value o.ot_naam ~default:key)
+          (fun (key, (o : object_type)) -> Option.value o.ot_ident ~default:key)
           (List.filter
-             (fun (key, (o : objecttype)) ->
-               let n = Option.value o.ot_naam ~default:key in
+             (fun (key, (o : object_type)) ->
+               let n = Option.value o.ot_ident ~default:key in
                is_sub ctx ~sub:n ~super:ot || is_sub ctx ~sub:ot ~super:n)
-             ctx.doc.objecttypen)
+             ctx.doc.object_types)
   in
   List.sort_uniq compare
     (node ot m :: List.filter_map (fun n -> if carries n then Some (node n m) else None) reached)
@@ -7251,70 +7251,70 @@ type dep_form = {
    navigated shapes' hop relations *)
 let rec dep_expr ctx ~subject acc (e : expr) =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; navigatie_bindingen; _ } ->
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ } ->
       (* a navigated read consumes the link set of every hop relation
          (ch. 6.1) — the edge that orders navigation-after-creation. Since
          L2 the bindings name every relation it walks (B11); an own read
          walks none *)
       let rel_edges =
-        match navigatie_bindingen with
-        | Some hops -> List.map (fun (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos)) hops
+        match navigation_bindings with
+        | Some hops -> List.map (fun (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos)) hops
         | None -> []
       in
       rel_edges @ ((n_attr ot a, Dep_pos) :: acc)
-  | Attribuut_ref _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _
-  | Bound_day _ | Expr_onopgelost _ ->
+  | Attribute_reference _ | Literal _ | Parameter_ref _ | Variable_reference _ | Context_value _
+  | Bound_day _ | Expr_unresolved _ ->
       acc
-  | Tekst_reeks { delen; _ } ->
+  | Text_composition { pieces; _ } ->
       List.fold_left
         (fun acc -> function
-          | Letterlijk _ -> acc
-          | Ingevoegd { expr = Some e } -> dep_expr ctx ~subject acc e
-          | Ingevoegd { expr = None } -> acc)
-        acc delen
-  | Binair { links; rechts; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
-  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; bron_rol; bron_pad; _ } ->
+          | Literal_chunk _ -> acc
+          | Embedded_expression { expr = Some e } -> dep_expr ctx ~subject acc e
+          | Embedded_expression { expr = None } -> acc)
+        acc pieces
+  | Binary { left_side; right_side; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc left_side) right_side
+  | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; source_role; source_path; _ } ->
       let acc =
-        match element_objecttype with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
+        match element_object_type with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
       in
       let acc =
         (* WF-102: a multi-step range reads EVERY step's link set — the
            same edge the one-step form draws, once per relation walked, so
            a creation that fills an intermediate relation still orders
            before the fold *)
-        match bron_pad with
-        | Some pad ->
+        match source_path with
+        | Some trail ->
             List.fold_left
-              (fun acc (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc)
-              acc pad
+              (fun acc (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos) :: acc)
+              acc trail
         | None -> acc
       in
       let acc =
         (* a bound fold reads the named relation's link set — the edge a
            fact creation's write reaches, from either end (ch. 6.1) *)
-        match bron_rol with
-        | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
+        match source_role with
+        | Some (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos) :: acc
         | None -> acc
       in
       (* the count source names the relation's role, not an attribute: it
          reads the link set drawn above and the population, never a member *)
       let count_source =
-        match (kind, element_objecttype, argumenten, bron_rol, bron_pad) with
-        | Aantal, Some el, [ Attribuut_ref { attribuut = Some a; _ } ], _, _
-          when bron_rol <> None || bron_pad <> None -> (
-            match objecttype ctx el with
-            | Some ot -> not (has_attr ot a || has_kenmerk ot a)
+        match (kind, element_object_type, call_arguments, source_role, source_path) with
+        | Count, Some el, [ Attribute_reference { attribute_ref = Some a; _ } ], _, _
+          when source_role <> None || source_path <> None -> (
+            match object_type ctx el with
+            | Some ot -> not (has_attr ot a || has_characteristic ot a)
             | None -> false)
         | _ -> false
       in
       let acc =
-        if count_source then acc else List.fold_left (dep_expr ctx ~subject) acc argumenten
+        if count_source then acc else List.fold_left (dep_expr ctx ~subject) acc call_arguments
       in
-      let acc = dep_opt ctx ~subject acc leegwaarde in
+      let acc = dep_opt ctx ~subject acc empty_fallback in
       (* the filter's reads are the ELEMENT's (ch. 6.1): a filter over a
          derived characteristic of the contributor type must sit above
          that characteristic's writer *)
-      let fsubject = match element_objecttype with Some el -> Some el | None -> subject in
+      let fsubject = match element_object_type with Some el -> Some el | None -> subject in
       (match filter with Some c -> dep_cond ctx ~subject:fsubject ~neg:false acc c | None -> acc)
   | Instance_set_union { branches; _ } ->
       (* every branch is a fold source of its own and draws a fold source's
@@ -7327,20 +7327,20 @@ let rec dep_expr ctx ~subject acc (e : expr) =
           let acc =
             match b.isb_element_type with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
           in
-          let acc = (n_rel b.isb_source_role.rb_feittype, Dep_pos) :: acc in
+          let acc = (n_rel b.isb_source_role.rb_fact_type, Dep_pos) :: acc in
           match b.isb_filter with
           | Some c -> dep_cond ctx ~subject:b.isb_element_type ~neg:false acc c
           | None -> acc)
         acc branches
-  | Afgerond { basis; _ } -> dep_opt ctx ~subject acc basis
-  | Begrensd { basis; minimum; maximum; _ } ->
-      dep_opt ctx ~subject (dep_opt ctx ~subject (dep_opt ctx ~subject acc basis) minimum) maximum
-  | Dimensie_cel { attribuut; _ } -> dep_opt ctx ~subject acc attribuut
-  | Temporal_read { basis; datum; _ } ->
+  | Rounding { base_expr; _ } -> dep_opt ctx ~subject acc base_expr
+  | Clamp { base_expr; minimum; maximum; _ } ->
+      dep_opt ctx ~subject (dep_opt ctx ~subject (dep_opt ctx ~subject acc base_expr) minimum) maximum
+  | Dimension_cell_read { attribute_ref; _ } -> dep_opt ctx ~subject acc attribute_ref
+  | Temporal_read { base_expr; date_value; _ } ->
       (* the read consumes its timeline reference and its date operand;
          the base is an attribute/parameter reference whose own case
          adds the right edge *)
-      dep_expr ctx ~subject (dep_expr ctx ~subject acc basis) datum
+      dep_expr ctx ~subject (dep_expr ctx ~subject acc base_expr) date_value
   | Construct { argument; _ } -> dep_opt ctx ~subject acc argument
   | Match { scrutinee; arms; _ } ->
       (* the reads are the scrutinee's and every arm body's; a binder is
@@ -7352,8 +7352,8 @@ let rec dep_expr ctx ~subject acc (e : expr) =
   | Binder_ref _ -> acc
   (* the record forms (Phase 5c): the reads live in the field values and the
      accessed base *)
-  | Struct_literal { velden; _ } ->
-      List.fold_left (fun acc (_, value) -> dep_expr ctx ~subject acc value) acc velden
+  | Struct_literal { field_list; _ } ->
+      List.fold_left (fun acc (_, value) -> dep_expr ctx ~subject acc value) acc field_list
   | Field_access { base; _ } -> dep_expr ctx ~subject acc base
   (* the Let binding (Phase 5c): its reads live in the value and the body; the
      binder is lexical, contributing no attribute/parameter edge of its own.
@@ -7370,10 +7370,10 @@ let rec dep_expr ctx ~subject acc (e : expr) =
       let acc = dep_cond ctx ~subject ~neg:false acc condition in
       dep_expr ctx ~subject (dep_expr ctx ~subject acc then_) else_
   | Invoke { arguments; _ } -> List.fold_left (dep_expr ctx ~subject) acc arguments
-  | Fold { list; functie; init; _ } ->
-      dep_fold_fn ctx ~subject (dep_expr ctx ~subject (dep_expr ctx ~subject acc list) init) functie
-  | Map_list { list; functie; _ } ->
-      dep_fold_fn ctx ~subject (dep_expr ctx ~subject acc list) functie
+  | Fold { list; function_name; init; _ } ->
+      dep_fold_fn ctx ~subject (dep_expr ctx ~subject (dep_expr ctx ~subject acc list) init) function_name
+  | Map_list { list; function_name; _ } ->
+      dep_fold_fn ctx ~subject (dep_expr ctx ~subject acc list) function_name
   | Filter_list { list; condition; _ } ->
       dep_cond ctx ~subject ~neg:false (dep_expr ctx ~subject acc list) condition
   | List_length { list; _ } -> dep_expr ctx ~subject acc list
@@ -7384,10 +7384,10 @@ and dep_fold_fn ctx ~subject acc = function
 
 and dep_opt ctx ~subject acc = function Some e -> dep_expr ctx ~subject acc e | None -> acc
 
-and dep_cond ctx ~subject ~neg acc (c : conditie) =
+and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
   match c with
-  | Vergelijking { links; rechts; _ } ->
-      dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
+  | Comparison { left_side; right_side; _ } ->
+      dep_opt ctx ~subject (dep_opt ctx ~subject acc left_side) right_side
   (* WF-046, the leeg/gevuld test (maintainer decision 2026-09-23): every
      read under the test is a NEGATIVE edge, in BOTH polarities. The test
      depends on absence whether it carries `negated: false` or `true`, so
@@ -7419,30 +7419,30 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      coalesces leeg to 0) keep their positive or stratum-strict reading
      here. They were measured on the same cycle shape and are recorded as
      open, not decided. *)
-  | Predicaat { soort = Leeg | Gevuld; operand; _ } ->
+  | Predicate { variety = Empty_predicate | Filled; operand; _ } ->
       List.map (fun (node, _) -> (node, Dep_neg)) (dep_opt ctx ~subject [] operand) @ acc
-  | Predicaat { operand; _ } -> dep_opt ctx ~subject acc operand
-  | Kenmerk_check { kenmerk = Some k; negatie; navigatie_binding = Some rb; _ } -> (
+  | Predicate { operand; _ } -> dep_opt ctx ~subject acc operand
+  | Characteristic_check { characteristic = Some k; negation; navigation_binding = Some rb; _ } -> (
       (* the navigated check: the characteristic lives on the REACHED
          type, and the hop relation itself is read positively (only the
          characteristic sits under the negation — an absent link makes
          the check false either way, never true). An unresolvable hop
          contributes no edges; WF-053 reports it. *)
-      let kind = if neg || negatie then Dep_neg else Dep_pos in
+      let kind = if neg || negation then Dep_neg else Dep_pos in
       match resolve_binding ctx rb with
       | Ok (_, r, _) ->
-          (n_rel rb.rb_feittype, Dep_pos)
-          :: (n_char (Option.value r.rol_objecttype_naam ~default:"") k, kind)
+          (n_rel rb.rb_fact_type, Dep_pos)
+          :: (n_char (Option.value r.role_object_type_name ~default:"") k, kind)
           :: acc
       | Error _ -> acc)
-  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie_binding = None; _ } -> (
+  | Characteristic_check { characteristic = Some k; holder; negation; navigation_binding = None; _ } -> (
       (* once negative, conservatively negative — double negation does
          not cancel (ch. 6.1) *)
-      let kind = if neg || negatie then Dep_neg else Dep_pos in
-      match (match eigenaar with Some _ as e -> e | None -> subject) with
+      let kind = if neg || negation then Dep_neg else Dep_pos in
+      match (match holder with Some _ as e -> e | None -> subject) with
       | Some ot -> (n_char ot k, kind) :: acc
       | None -> acc)
-  | Kenmerk_check _ -> acc
+  | Characteristic_check _ -> acc
   | Role_membership { fact_type; negated; _ } ->
       (* the role check reads the link set of the relation it names
          (ch. 6.1), so it sits above the creations that write it. Until
@@ -7450,14 +7450,14 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
          analysis. Negated, it holds on absence, and a later link can make
          it false: a negative edge, as a negated characteristic is *)
       (n_rel fact_type, if neg || negated then Dep_neg else Dep_pos) :: acc
-  | Periode_conditie { vanaf; tot; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc vanaf) tot
-  | Samengesteld { kwantor; onderdelen; _ } ->
+  | Time_window { starting_at; up_to; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc starting_at) up_to
+  | Compound { quantifier_kind; components; _ } ->
       let neg' =
-        match kwantor with
-        | Geen | Ten_hoogste | Precies -> true (* negation-like: conservative, ch. 6.1 *)
-        | De | Alle | Ten_minste -> neg
+        match quantifier_kind with
+        | None_of | At_most | Exactly -> true (* negation-like: conservative, ch. 6.1 *)
+        | The | All | At_least -> neg
       in
-      List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc onderdelen
+      List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc components
   (* the quantifier fold (ch. 3.9a), maintainer decision 2026-09-23: the
      RANGE is a negative edge under all, none, atMost and exactly,
      because the verdict can be lost when the range grows; under atLeast
@@ -7486,29 +7486,29 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      The range is written since L2 (B12): the loader admits the node with
      exactly one of sourceRole and sourcePath, so the reach is always the relations
      it names. *)
-  | Kwantorvouw { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ }
+  | Quantifier_fold { kv_quantifier; kv_element_object_type; kv_filter; kv_test; kv_source_role; kv_source_path; _ }
     ->
-      let range_neg = neg || kv_kwantor <> Ten_minste in
-      let matrix_neg = neg || not (kv_kwantor = Ten_minste || kv_kwantor = Alle) in
+      let range_neg = neg || kv_quantifier <> At_least in
+      let matrix_neg = neg || not (kv_quantifier = At_least || kv_quantifier = All) in
       let reach =
         List.map
-          (fun (rb : rol_binding) -> n_rel rb.rb_feittype)
-          ((match kv_bron_rol with Some rb -> [ rb ] | None -> [])
-          @ Option.value kv_bron_pad ~default:[])
+          (fun (rb : role_binding) -> n_rel rb.rb_fact_type)
+          ((match kv_source_role with Some rb -> [ rb ] | None -> [])
+          @ Option.value kv_source_path ~default:[])
       in
       let part ~negative = function
         | Some c ->
-            let reads = dep_cond ctx ~subject:kv_element_objecttype ~neg:negative [] c in
+            let reads = dep_cond ctx ~subject:kv_element_object_type ~neg:negative [] c in
             if negative then List.map (fun (node, _) -> (node, Dep_neg)) reads else reads
         | None -> []
       in
       List.map (fun node -> (node, if range_neg then Dep_neg else Dep_pos)) reach
       @ part ~negative:range_neg kv_filter
-      @ part ~negative:matrix_neg kv_toets
+      @ part ~negative:matrix_neg kv_test
       @ acc
-  | Regelversie { regel = Some r; _ } -> (n_chan r, Dep_neg) :: acc
-  | Regelversie _ -> acc
-  | Conditie_onopgelost _ -> acc
+  | Rule_status_check { rule_def = Some r; _ } -> (n_chan r, Dep_neg) :: acc
+  | Rule_status_check _ -> acc
+  | Condition_unresolved _ -> acc
 
 (* A form of the six named forms (IR-SPEC ch. 3, Versioning) is recorded
    at the wire pointer of its version, which the loader sets
@@ -7518,8 +7518,8 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
 let dep_forms ctx : dep_form list =
   let recursive_members =
     List.concat_map
-      (fun g -> if g.recursief then List.map (fun n -> norm (strip_version n)) (some_names g.leden) else [])
-      ctx.doc.regel_groepen
+      (fun g -> if g.recursive then List.map (fun n -> norm (strip_version n)) (some_names g.member_list) else [])
+      ctx.doc.rule_groups
   in
   let cond ~subject c = match c with Some c -> dep_cond ctx ~subject ~neg:false [] c | None -> [] in
   (* a form with irrevocable writes (characteristic attribution, channel
@@ -7535,22 +7535,22 @@ let dep_forms ctx : dep_form list =
         else (node, kind))
       reads
   in
-  let regels =
+  let rule_defs =
     List.map
-      (fun (r : resolved_regel) ->
+      (fun (r : resolved_rule) ->
         let at = r.rr_pointer in
-        let name = Option.value r.rr_naam ~default:at in
-        match r.doel with
-        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
+        let name = Option.value r.rr_name ~default:at in
+        match r.objective with
+        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
             let writes =
               member_writes ctx ~over:`Extension
-                ~kind:(if r.rr_soort = Some Kenmerktoekenning then `Characteristic else `Attribute)
+                ~kind:(if r.rr_presentation = Some Characteristic_attribution then `Characteristic else `Attribute)
                 ot a
             in
             let subject = Some ot in
-            let reads = dep_opt ctx ~subject (cond ~subject r.rr_voorwaarde) r.waarde in
+            let reads = dep_opt ctx ~subject (cond ~subject r.rr_condition) r.value_node in
             let reads =
-              if r.rr_soort = Some Kenmerktoekenning then strict_unless_char reads
+              if r.rr_presentation = Some Characteristic_attribution then strict_unless_char reads
               else if absorbing_types ctx.doc ~otype:ot ~attr:a <> [] then
                 (* a rule the ch. 7.10 fold takes into a stack reads there as
                    the default it becomes: its condition and value reads are
@@ -7563,62 +7563,62 @@ let dep_forms ctx : dep_form list =
             in
             Some { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads }
         | _ -> None)
-      ctx.doc.resolved_regels
+      ctx.doc.resolved_rules
     |> List.filter_map (fun x -> x)
   in
-  let verdelingen =
+  let allocations =
     List.map
-      (fun (v : resolved_verdeling) ->
+      (fun (v : resolved_allocation) ->
         let at = v.vd_pointer in
-        let name = Option.value v.vd_naam ~default:at in
-        let bt = Option.value v.bron_type ~default:"" in
-        let dt = Option.value v.doel_type ~default:"" in
+        let name = Option.value v.vd_name ~default:at in
+        let bt = Option.value v.source_type ~default:"" in
+        let dt = Option.value v.objective_type_name ~default:"" in
         let writes =
-          (match v.doel_attribuut with
+          (match v.target_attribute with
           | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute dt a
           | None -> [])
-          @ (match v.restant_attribuut with
+          @ (match v.remainder_attribute with
             | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute bt a
             | None -> [])
         in
         let reads =
           (n_pop dt, Dep_pos)
-          :: (n_rel v.verbindende_rol.rb_feittype, Dep_pos)
+          :: (n_rel v.connecting_role.rb_fact_type, Dep_pos)
           :: []
-          @ (match v.bron_attribuut with Some a -> [ (n_attr bt a, Dep_pos) ] | None -> [])
+          @ (match v.source_attribute with Some a -> [ (n_attr bt a, Dep_pos) ] | None -> [])
           @ List.filter_map
               (fun a -> Option.map (fun a -> (n_attr dt a, Dep_pos)) a)
-              [ v.rato_attribuut; v.maximum_attribuut; v.groepeer_attribuut ]
-          @ cond ~subject:v.bron_type v.vd_voorwaarde
+              [ v.ratio_attribute; v.maximum_attribute; v.ordering_attribute ]
+          @ cond ~subject:v.source_type v.vd_condition
         in
         { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads })
-      ctx.doc.verdelingen
+      ctx.doc.allocations
   in
-  let consistenties =
+  let consistencies =
     List.map
-      (fun (c : resolved_consistentie) ->
+      (fun (c : resolved_consistency) ->
         let at = c.cons_pointer in
-        let name = Option.value c.cons_naam ~default:at in
+        let name = Option.value c.cons_name ~default:at in
         {
           df_at = at;
           df_name = name;
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
-          df_reads = strict_unless_char (cond ~subject:c.cons_subject c.assertie);
+          df_reads = strict_unless_char (cond ~subject:c.cons_subject c.assertion);
         })
-      ctx.doc.consistenties
+      ctx.doc.consistencies
   in
-  let uniciteiten =
+  let uniquenesses =
     List.map
-      (fun (u : resolved_uniciteit) ->
+      (fun (u : resolved_uniqueness) ->
         let at = u.uni_pointer in
-        let name = Option.value u.uni_naam ~default:at in
+        let name = Option.value u.uni_name ~default:at in
         let subj = Option.value u.uni_subject ~default:"" in
         (* a parent-scoped uniqueness reads the scope relation's link set
            (ch. 6.1), named by its binding (B8) *)
         let scope_read =
-          match u.scope_rol with
-          | Some rb -> [ (n_rel rb.rb_feittype, Dep_strict) ]
+          match u.scope_role with
+          | Some rb -> [ (n_rel rb.rb_fact_type, Dep_strict) ]
           | None -> []
         in
         {
@@ -7630,15 +7630,15 @@ let dep_forms ctx : dep_form list =
             scope_read
             @ List.map
                 (fun k -> (n_attr subj (Option.value k ~default:""), Dep_strict))
-                u.sleutels;
+                u.key_list;
         })
-      ctx.doc.uniciteiten
+      ctx.doc.uniquenesses
   in
-  let uniciteit_unies =
+  let uniqueness_unions =
     List.map
-      (fun (u : resolved_uniciteit_unie) ->
+      (fun (u : resolved_uniqueness_union) ->
         let at = u.uu_pointer in
-        let name = Option.value u.uu_naam ~default:at in
+        let name = Option.value u.uu_name ~default:at in
         {
           df_at = at;
           df_name = name;
@@ -7646,31 +7646,31 @@ let dep_forms ctx : dep_form list =
           df_writes = [ n_chan name ];
           df_reads =
             List.concat_map
-              (fun (b : uniciteit_unie_bron) ->
+              (fun (b : uniqueness_union_source) ->
                 match b.uub_type with
                 | Some t ->
                     List.map
                       (fun k -> (n_attr t (Option.value k ~default:""), Dep_strict))
-                      b.uub_sleutels
+                      b.uub_keys
                 | None -> [])
-              u.bronnen;
+              u.source_list;
         })
-      ctx.doc.uniciteit_unies
+      ctx.doc.uniqueness_unions
   in
-  let creaties =
+  let creations =
     List.map
-      (fun (o : resolved_object_creatie) ->
+      (fun (o : resolved_object_creation) ->
         let at = o.oc_pointer in
-        let name = Option.value o.oc_naam ~default:at in
-        let nt = Option.value o.nieuw_type ~default:"" in
+        let name = Option.value o.oc_name ~default:at in
+        let nt = Option.value o.created_type ~default:"" in
         let subject = o.oc_subject in
         let writes =
           pop_writes ctx nt
-          @ (match (o.oc_verbindende_rol, subject) with
+          @ (match (o.oc_connecting_role, subject) with
              | Some rb, _ ->
                  (* the explicit back-link binding (extension) names
                     the written relation directly *)
-                 [ n_rel rb.rb_feittype ]
+                 [ n_rel rb.rb_fact_type ]
              | None, Some st -> (
                  (* the back-link (ch. 5.5): a uniquely-derivable
                     connecting relation is written on both ends. A
@@ -7680,25 +7680,25 @@ let dep_forms ctx : dep_form list =
                     unambiguous *)
                  match connecting_candidates ctx ~from_type:st ~to_type:nt with
                  | [ fn ] -> (
-                     match find_ci ctx.doc.feittypen fn with
-                     | Some (ft : feittype)
-                       when norm st = norm nt && not ft.wederkerig ->
+                     match find_ci ctx.doc.fact_types fn with
+                     | Some (ft : fact_type_name)
+                       when norm st = norm nt && not ft.reciprocal ->
                          []
                      | _ -> [ n_rel fn ])
                  | _ -> [])
              | None, None -> [])
           @ List.concat_map
-               (fun (t : toekenning) ->
-                 match t.toe_attribuut with
+               (fun (t : assignment) ->
+                 match t.to_attribute with
                  | Some a ->
                      (* `Minted, not `Extension: this value lands on the ONE
                         instance the creation makes, and its concrete type
                         is exactly nt (creation is not polymorphic) *)
                      member_writes ctx ~over:`Minted
-                       ~kind:(if t.toe_kenmerk then `Characteristic else `Attribute)
+                       ~kind:(if t.to_characteristic then `Characteristic else `Attribute)
                        nt a
                  | None -> [])
-               o.toekenningen
+               o.assignments
         in
         let reads =
           strict_unless_char
@@ -7709,9 +7709,9 @@ let dep_forms ctx : dep_form list =
                 grounding *)
              (match subject with Some st -> [ (n_pop st, Dep_pos) ] | None -> [])
             @ List.fold_left
-                (fun acc (t : toekenning) -> dep_opt ctx ~subject acc t.toe_waarde)
-                (cond ~subject o.oc_voorwaarde)
-                o.toekenningen)
+                (fun acc (t : assignment) -> dep_opt ctx ~subject acc t.to_value)
+                (cond ~subject o.oc_condition)
+                o.assignments)
         in
         {
           df_at = at;
@@ -7720,13 +7720,13 @@ let dep_forms ctx : dep_form list =
           df_writes = writes;
           df_reads = reads;
         })
-      ctx.doc.object_creaties
+      ctx.doc.object_creations
   in
-  let feit_creaties =
+  let fact_creations =
     List.map
-      (fun (f : resolved_feit_creatie) ->
+      (fun (f : resolved_fact_creation) ->
         let at = f.fc_pointer in
-        let name = Option.value f.fc_naam ~default:at in
+        let name = Option.value f.fc_name ~default:at in
         (* the creation writes the created relation's link set and reads
            the link set of every hop it traverses (ch. 6.1) — the edge that
            orders creation-after-creation. It writes no population: it
@@ -7736,10 +7736,10 @@ let dep_forms ctx : dep_form list =
            relation (B12); that proxy closed a false cycle with an object
            creation that counts the members of a role over that type
            (golden jutterswet-premiepot) *)
-        let rel_writes = [ n_rel f.fc_feittype ] in
+        let rel_writes = [ n_rel f.fc_fact_type ] in
         let hop_reads =
-          List.map (fun (t : tussenstap) -> (n_rel t.ts_rol.rb_feittype, Dep_pos)) f.tussenstappen
-          @ [ (n_rel f.join_rol.rb_feittype, Dep_pos) ]
+          List.map (fun (t : path_step) -> (n_rel t.ts_role.rb_fact_type, Dep_pos)) f.intermediates
+          @ [ (n_rel f.join_role.rb_fact_type, Dep_pos) ]
         in
         {
           df_at = at;
@@ -7750,9 +7750,9 @@ let dep_forms ctx : dep_form list =
           df_recursive_creation = List.mem (norm (strip_version name)) recursive_members;
           df_writes = rel_writes;
           df_reads =
-            strict_unless_char (hop_reads @ cond ~subject:f.anker f.fc_voorwaarde);
+            strict_unless_char (hop_reads @ cond ~subject:f.anchor_point f.fc_condition);
         })
-      ctx.doc.feit_creaties
+      ctx.doc.fact_creations
   in
   let defaults_groups =
     (* ch. 7.4/WF-051: every default-justification read — and, on
@@ -7766,29 +7766,29 @@ let dep_forms ctx : dep_form list =
     List.mapi
       (fun i (l : prioritized_defaults) ->
         let at = Printf.sprintf "/prioritizedDefaults/%d" i in
-        let name = Option.value l.pd_naam ~default:at in
+        let name = Option.value l.pd_name ~default:at in
         let rec default_reads (r : default) =
-          (match r.default_voorwaarde with
-          | Some c -> dep_cond ctx ~subject:(Some l.pd_onderwerp) ~neg:false [] c
+          (match r.default_justification with
+          | Some c -> dep_cond ctx ~subject:(Some l.pd_subject) ~neg:false [] c
           | None -> [])
-          @ (match r.default_consequentie with
-            | Some e -> dep_expr ctx ~subject:(Some l.pd_onderwerp) [] e
+          @ (match r.default_consequence with
+            | Some e -> dep_expr ctx ~subject:(Some l.pd_subject) [] e
             | None -> [])
-          @ (match r.default_excepties with
+          @ (match r.default_exceptions with
             | Some egs ->
                 List.concat_map
                   (fun (eg : exception_group) -> List.concat_map default_reads eg.eg_defaults)
-                  egs.egs_leden
+                  egs.egs_members
             | None -> [])
         in
         let reads = List.concat_map default_reads l.defaults in
         let writes =
-          (match l.pd_kenmerk with
-          | Some k -> member_writes ctx ~over:`Extension ~kind:`Characteristic l.pd_onderwerp k
+          (match l.pd_characteristic with
+          | Some k -> member_writes ctx ~over:`Extension ~kind:`Characteristic l.pd_subject k
           | None -> [])
           @
-          match l.pd_attribuut with
-          | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute l.pd_onderwerp a
+          match l.pd_attribute with
+          | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute l.pd_subject a
           | None -> []
         in
         {
@@ -7800,8 +7800,8 @@ let dep_forms ctx : dep_form list =
         })
       ctx.doc.prioritized_defaults
   in
-  regels @ verdelingen @ consistenties @ uniciteiten @ uniciteit_unies @ creaties
-  @ feit_creaties @ defaults_groups
+  rule_defs @ allocations @ consistencies @ uniquenesses @ uniqueness_unions @ creations
+  @ fact_creations @ defaults_groups
 
 (* The edges of the dependency graph over [forms] (ch. 5.1, 5.2), as
    (producer, consumer, node, kind) over the forms' indices: one for every
@@ -7919,40 +7919,40 @@ let wf045_046 ctx =
 (* WF-047 on the allocation's recipient role, which it carries since L2
    (B12): the binding resolves and its fillers agree with the source and
    target types. *)
-let wf047_verdelingen ctx =
+let wf047_allocations ctx =
   List.concat_map
-    (fun (r : resolved_verdeling) ->
-      wf047_binding ctx (r.vd_pointer ^ "/connectingRole") r.verbindende_rol
-        ~bound_filler:r.doel_type ~other_filler:r.bron_type)
-    ctx.doc.verdelingen
+    (fun (r : resolved_allocation) ->
+      wf047_binding ctx (r.vd_pointer ^ "/connectingRole") r.connecting_role
+        ~bound_filler:r.objective_type_name ~other_filler:r.source_type)
+    ctx.doc.allocations
 
 (* WF-028 over the fact creation (IR-SPEC ch. 3.4). Since L2 the symbolic
    block is the whole creation (B7) and the loader reads it as required:
    the created relation and the roles its two ends fill, and since L4 the
    join chain as one path, anchor outward, whose last hop reaches the target
    type — the declared filler of the target role, which the wire no longer
-   writes ([Ast], [fc_doel]). What is left to cross is its meaning — every
+   writes ([Ast], [fc_target]). What is left to cross is its meaning — every
    binding resolves, the ends agree, and the path reaches the target through
    a relation that differs from the created one. *)
 let wf028 ctx =
   List.concat
     (List.map
-       (fun (fc : resolved_feit_creatie) ->
+       (fun (fc : resolved_fact_creation) ->
          let at = fc.fc_pointer in
-         let ftn = fc.fc_feittype in
-         let anker_rol = fc.anker_rol in
-         let doel_rol = fc.doel_rol in
-         let join = fc.join_rol in
-         let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+         let ftn = fc.fc_fact_type in
+         let anchor_role = fc.anchor_role in
+         let objective_role = fc.objective_role in
+         let join = fc.join_role in
+         let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
          let created_checks =
-           match find_ci ctx.doc.feittypen ftn with
+           match find_ci ctx.doc.fact_types ftn with
            | None -> [ v "WF-028" at ("created fact type '" ^ ftn ^ "' is not declared") ]
-           | Some (ft : feittype) -> (
-               match ft.rollen with
+           | Some (ft : fact_type_name) -> (
+               match ft.role_names with
                | [ a; b ] ->
                    let pick name =
                      let m r =
-                       match r.rol_naam with
+                       match r.role_identifier with
                        | Some n -> norm n = norm name
                        | None -> false
                      in
@@ -7970,7 +7970,7 @@ let wf028 ctx =
                       must be able to hold all of them — so the node's type
                       sits AT OR BELOW the role's declared filler, never
                       above it. The target type is that filler itself since
-                      L4 ([fc_doel]), so on the target side only the role's
+                      L4 ([fc_target]), so on the target side only the role's
                       resolution is left to cross.
                       The other direction (a role filling a strict
                       subtype while the node names the parent) writes
@@ -7991,11 +7991,11 @@ let wf028 ctx =
                                     what name (filler r) t) ]
                          | _ -> [])
                    in
-                   (if norm anker_rol = norm doel_rol then
+                   (if norm anchor_role = norm objective_role then
                       [ v "WF-028" at "anchorRole and targetRole must be distinct roles" ]
                     else [])
-                   @ end_check "anchorRole" anker_rol fc.anker
-                   @ end_check "targetRole" doel_rol fc.fc_doel
+                   @ end_check "anchorRole" anchor_role fc.anchor_point
+                   @ end_check "targetRole" objective_role fc.fc_target
                | _ ->
                    [ v "WF-028" at
                        ("created fact type '" ^ ftn ^ "' does not have exactly two roles") ])
@@ -8015,7 +8015,7 @@ let wf028 ctx =
                            (Printf.sprintf
                               "hop over '%s': the near side fills '%s', but the chain stands \
                                at '%s'"
-                              rb.rb_feittype (filler other) cur) ]
+                              rb.rb_fact_type (filler other) cur) ]
                  | _ -> Ok (Some (filler bound)))
            in
            let rec go j cur = function
@@ -8035,27 +8035,27 @@ let wf028 ctx =
                         would silently create fewer relations instead of fewer
                         contributors — and that deserves its own measurement
                         rather than riding along here. *)
-                     (match (reached, fc.fc_doel) with
+                     (match (reached, fc.fc_target) with
                      | Some r, Some d when norm r <> norm d ->
                          [ v "WF-028" at
                              (Printf.sprintf "the join chain reaches '%s', not the target '%s'"
                                 r d) ]
                      | _ -> [])
                      @
-                     if norm join.rb_feittype = norm ftn then
+                     if norm join.rb_fact_type = norm ftn then
                        [ v "WF-028" at
                            "the created relation must differ from the relation of the final \
                             hop" ]
                      else [])
-             | (t : tussenstap) :: rest -> (
-                 match step (Printf.sprintf "%s/path/%d" at j) cur t.ts_rol with
+             | (t : path_step) :: rest -> (
+                 match step (Printf.sprintf "%s/path/%d" at j) cur t.ts_role with
                  | Error vs -> vs
                  | Ok reached -> go (j + 1) reached rest)
            in
-           go 0 fc.anker fc.tussenstappen
+           go 0 fc.anchor_point fc.intermediates
          in
          created_checks @ chain_checks)
-       ctx.doc.feit_creaties)
+       ctx.doc.fact_creations)
 
 let wf050 ctx =
   List.concat
@@ -8063,7 +8063,7 @@ let wf050 ctx =
        (fun i (l : prioritized_defaults) ->
          let at = Printf.sprintf "/prioritizedDefaults/%d" i in
          let target_name =
-           match (l.pd_kenmerk, l.pd_attribuut) with
+           match (l.pd_characteristic, l.pd_attribute) with
            | Some k, None -> Some k
            | None, Some a -> Some a
            | _ -> None
@@ -8076,23 +8076,23 @@ let wf050 ctx =
                [ v "WF-050" at
                    "a defaults group targets exactly one of a characteristic or an attribute" ]
            | Some _ -> [])
-         @ (match objecttype ctx l.pd_onderwerp with
+         @ (match object_type ctx l.pd_subject with
            | None ->
                [ v "WF-050" at
-                   ("defaults-group subject '" ^ l.pd_onderwerp ^ "' is not a declared object type") ]
+                   ("defaults-group subject '" ^ l.pd_subject ^ "' is not a declared object type") ]
            | Some ot -> (
-               (match l.pd_kenmerk with
-               | Some k when not (mem_ci (some_names ot.kenmerken) k) ->
+               (match l.pd_characteristic with
+               | Some k when not (mem_ci (some_names ot.characteristics) k) ->
                    [ v "WF-050" at
                        ("defaults target '" ^ k ^ "' is not a declared characteristic of '"
-                      ^ l.pd_onderwerp ^ "'") ]
+                      ^ l.pd_subject ^ "'") ]
                | _ -> [])
                @
-               match l.pd_attribuut with
+               match l.pd_attribute with
                | Some a when not (has_attr ot a) ->
                    [ v "WF-050" at
                        ("defaults target '" ^ a ^ "' is not a declared attribute of '"
-                      ^ l.pd_onderwerp ^ "'") ]
+                      ^ l.pd_subject ^ "'") ]
                | _ -> []))
          (* default shapes per target kind (ch. 7.1); the content-kind and
             justification-presence checks recurse into sub-defaults (ch. 7.9 —
@@ -8101,24 +8101,24 @@ let wf050 ctx =
             decision to its exception groups: it is exempt from the content and
             justification requirements. A contentless default (neither content
             nor exception group) is WF-075's concern. *)
-         @ (let is_char = l.pd_kenmerk <> None in
+         @ (let is_char = l.pd_characteristic <> None in
             let rec shape prefix (defaults : default list) =
               List.concat
                 (List.mapi
                    (fun j (r : default) ->
                      let rat = Printf.sprintf "%s/defaults/%d" prefix j in
                      let has_content =
-                       r.default_besluit <> None || r.default_consequentie <> None
+                       r.default_decision <> None || r.default_consequence <> None
                      in
-                     let is_group = r.default_excepties <> None && not has_content in
+                     let is_group = r.default_exceptions <> None && not has_content in
                      (* present content must match the target kind *)
-                     (match (is_char, r.default_besluit, r.default_consequentie) with
+                     (match (is_char, r.default_decision, r.default_consequence) with
                      | true, _, Some _ ->
                          [ v "WF-050" rat "a characteristic default carries no consequence" ]
                      | false, Some _, _ ->
                          [ v "WF-050" rat "an attribute default carries no decision" ]
                      | _ -> [])
-                     @ (match (r.default_initialisatie, is_group, r.default_voorwaarde) with
+                     @ (match (r.default_initialisation, is_group, r.default_justification) with
                        | true, _, Some _ ->
                            [ v "WF-050" rat
                                "the initialisation default carries no written justification (its \
@@ -8126,7 +8126,7 @@ let wf050 ctx =
                        | false, false, None when has_content ->
                            [ v "WF-050" rat "a non-initialisation default carries a justification" ]
                        | _ -> [])
-                     @ (match r.default_excepties with
+                     @ (match r.default_exceptions with
                        | Some egs ->
                            List.concat
                              (List.mapi
@@ -8134,7 +8134,7 @@ let wf050 ctx =
                                   shape
                                     (Printf.sprintf "%s/exceptions/members/%d" rat k)
                                     eg.eg_defaults)
-                                egs.egs_leden)
+                                egs.egs_members)
                        | None -> []))
                    defaults)
             in
@@ -8145,13 +8145,13 @@ let wf050 ctx =
              (List.mapi
                 (fun j (r : default) ->
                   let rat = Printf.sprintf "%s/defaults/%d" at j in
-                  (if r.default_initialisatie && l.pd_kenmerk <> None then
+                  (if r.default_initialisation && l.pd_characteristic <> None then
                      [ v "WF-050" rat
                          "an initialisation default on characteristic defaults is meaningless \
                           (characteristics start absent)" ]
                    else [])
                   @
-                  if r.default_initialisatie && j <> List.length l.defaults - 1 then
+                  if r.default_initialisation && j <> List.length l.defaults - 1 then
                     [ v "WF-050" rat "the initialisation default sits lowest (last)" ]
                   else [])
                 l.defaults)
@@ -8167,36 +8167,36 @@ let wf050 ctx =
                   inheritance folds them into ONE effective stack rather
                   than putting two writers on one target. *)
                let key =
-                 (if l.pd_kenmerk <> None then "K:" else "A:")
-                 ^ norm l.pd_onderwerp ^ ":" ^ norm tn
+                 (if l.pd_characteristic <> None then "K:" else "A:")
+                 ^ norm l.pd_subject ^ ":" ^ norm tn
                in
                let group_size =
                  List.length
                    (List.filter
                       (fun (o : prioritized_defaults) ->
                         match
-                          (o.pd_kenmerk, o.pd_attribuut)
+                          (o.pd_characteristic, o.pd_attribute)
                         with
-                        | Some k, None -> "K:" ^ norm o.pd_onderwerp ^ ":" ^ norm k = key
-                        | None, Some a -> "A:" ^ norm o.pd_onderwerp ^ ":" ^ norm a = key
+                        | Some k, None -> "K:" ^ norm o.pd_subject ^ ":" ^ norm k = key
+                        | None, Some a -> "A:" ^ norm o.pd_subject ^ ":" ^ norm a = key
                         | _ -> false)
                       ctx.doc.prioritized_defaults)
                in
                (* The flat creation clause and its chain arm read this one
                   predicate, so they cannot disagree on which initialisations
                   write the group's target. *)
-               let initialises (oc : resolved_object_creatie) =
+               let initialises (oc : resolved_object_creation) =
                  List.exists
-                   (fun (t : toekenning) ->
-                     (match t.toe_attribuut with
+                   (fun (t : assignment) ->
+                     (match t.to_attribute with
                      | Some a -> norm a = norm tn
                      | None -> false)
-                     && t.toe_kenmerk = (l.pd_kenmerk <> None))
-                   oc.toekenningen
+                     && t.to_characteristic = (l.pd_characteristic <> None))
+                   oc.assignments
                in
-               (if group_size > 1 && not l.pd_ongeordend then
+               (if group_size > 1 && not l.pd_unordered then
                   [ v "WF-050" at
-                      ("multiple defaults groups on target '" ^ l.pd_onderwerp ^ "." ^ tn
+                      ("multiple defaults groups on target '" ^ l.pd_subject ^ "." ^ tn
                      ^ "' without the declared-unordered marking — priority is explicit \
                         (defaults) or explicitly absent ('unordered'), never implicit \
                         (ch. 7.2)") ]
@@ -8206,36 +8206,36 @@ let wf050 ctx =
                   the defaults group would silently defeat its decisions *)
                (if
                   List.exists
-                    (fun (r : resolved_regel) ->
-                      match r.doel with
-                      | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
-                          norm ot = norm l.pd_onderwerp
+                    (fun (r : resolved_rule) ->
+                      match r.objective with
+                      | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
+                          norm ot = norm l.pd_subject
                           && norm a = norm tn
                           &&
-                          (match (l.pd_kenmerk, r.rr_soort) with
-                          | Some _, Some Kenmerktoekenning -> true
+                          (match (l.pd_characteristic, r.rr_presentation) with
+                          | Some _, Some Characteristic_attribution -> true
                           | Some _, _ -> false
                           | None, _ -> true)
                       | _ -> false)
-                    ctx.doc.resolved_regels
+                    ctx.doc.resolved_rules
                 then
                   [ v "WF-050" at
-                      ("a rule also writes defaults target '" ^ l.pd_onderwerp ^ "." ^ tn
+                      ("a rule also writes defaults target '" ^ l.pd_subject ^ "." ^ tn
                      ^ "' — an unordered plain writer would silently defeat the group's \
                         decisions") ]
                 else [])
                @ (if
                     List.exists
-                      (fun (oc : resolved_object_creatie) ->
-                        (match oc.nieuw_type with
-                        | Some nt -> norm nt = norm l.pd_onderwerp
+                      (fun (oc : resolved_object_creation) ->
+                        (match oc.created_type with
+                        | Some nt -> norm nt = norm l.pd_subject
                         | None -> false)
                         && initialises oc)
-                      ctx.doc.object_creaties
+                      ctx.doc.object_creations
                   then
                     [ v "WF-050" at
                         ("an object creation also initialises defaults target '"
-                       ^ l.pd_onderwerp ^ "." ^ tn
+                       ^ l.pd_subject ^ "." ^ tn
                        ^ "' — a creation-time write would silently defeat the group's \
                           decisions (and void the initialisation default's input-emptiness \
                           justification)") ]
@@ -8251,10 +8251,10 @@ let wf050 ctx =
                   allocation writes every instance of its type. *)
                @ dedup_reports
                    (List.filter_map
-                      (fun (oc : resolved_object_creatie) ->
-                        match oc.nieuw_type with
+                      (fun (oc : resolved_object_creation) ->
+                        match oc.created_type with
                         | Some nt when initialises oc -> (
-                            match chain_lower ctx ~ty:Fun.id nt l.pd_onderwerp with
+                            match chain_lower ctx ~ty:Fun.id nt l.pd_subject with
                             | Some (low, _) when norm low = norm nt ->
                                 Some
                                   (v "WF-050" at
@@ -8264,30 +8264,30 @@ let wf050 ctx =
                                          on %s, the created type %s — and an object creation \
                                          is never folded into a stack, so an instance of %s \
                                          it creates has both writers"
-                                        l.pd_onderwerp tn l.pd_onderwerp nt nt))
+                                        l.pd_subject tn l.pd_subject nt nt))
                             | _ -> None)
                         | _ -> None)
-                      ctx.doc.object_creaties)
+                      ctx.doc.object_creations)
                @
-               match l.pd_attribuut with
+               match l.pd_attribute with
                | None -> []
                | Some a ->
                    (if
                      List.exists
-                       (fun (vd : resolved_verdeling) ->
-                         (match (vd.doel_type, vd.doel_attribuut) with
+                       (fun (vd : resolved_allocation) ->
+                         (match (vd.objective_type_name, vd.target_attribute) with
                          | Some dt, Some da ->
-                             norm dt = norm l.pd_onderwerp && norm da = norm a
+                             norm dt = norm l.pd_subject && norm da = norm a
                          | _ -> false)
                          ||
-                         match (vd.bron_type, vd.restant_attribuut) with
+                         match (vd.source_type, vd.remainder_attribute) with
                          | Some bt, Some ra ->
-                             norm bt = norm l.pd_onderwerp && norm ra = norm a
+                             norm bt = norm l.pd_subject && norm ra = norm a
                          | _ -> false)
-                       ctx.doc.verdelingen
+                       ctx.doc.allocations
                    then
                      [ v "WF-050" at
-                         ("an allocation also writes defaults target '" ^ l.pd_onderwerp ^ "."
+                         ("an allocation also writes defaults target '" ^ l.pd_subject ^ "."
                         ^ a ^ "'") ]
                    else [])
                    (* The lift's chain arm, over the same two writes an
@@ -8299,12 +8299,12 @@ let wf050 ctx =
                       the target, above the group or below it: no gate. *)
                    @ dedup_reports
                        (List.concat_map
-                          (fun (vd : resolved_verdeling) ->
+                          (fun (vd : resolved_allocation) ->
                             List.filter_map
                               (fun (part, wt, wa) ->
                                 match (wt, wa) with
                                 | Some t, Some wa when norm wa = norm a -> (
-                                    match chain_lower ctx ~ty:Fun.id l.pd_onderwerp t with
+                                    match chain_lower ctx ~ty:Fun.id l.pd_subject t with
                                     | Some (low, _) ->
                                         Some
                                           (v "WF-050" at
@@ -8314,12 +8314,12 @@ let wf050 ctx =
                                                  declared on %s, the allocation's %s on %s — \
                                                  and an allocation is never folded into a \
                                                  stack, so an instance of %s has both writers"
-                                                l.pd_onderwerp a l.pd_onderwerp part t low))
+                                                l.pd_subject a l.pd_subject part t low))
                                     | None -> None)
                                 | _ -> None)
-                              [ ("shares", vd.doel_type, vd.doel_attribuut);
-                                ("remainder", vd.bron_type, vd.restant_attribuut) ])
-                          ctx.doc.verdelingen)))
+                              [ ("shares", vd.objective_type_name, vd.target_attribute);
+                                ("remainder", vd.source_type, vd.remainder_attribute) ])
+                          ctx.doc.allocations)))
          )
        ctx.doc.prioritized_defaults)
 
@@ -8336,23 +8336,23 @@ let wf050 ctx =
    versions overlap being WF-021's question, as WF-079 reads the versions of
    a computing rule. *)
 let wf052 ctx =
-  let form (o : resolved_object_creatie) =
-    match o.oc_naam with Some n -> norm (strip_version n) | None -> o.oc_pointer
+  let form (o : resolved_object_creation) =
+    match o.oc_name with Some n -> norm (strip_version n) | None -> o.oc_pointer
   in
   let writers =
     List.filter_map
-      (fun (o : resolved_object_creatie) ->
+      (fun (o : resolved_object_creation) ->
         let at = o.oc_pointer in
         let form = form o in
-        match o.oc_verbindende_rol with
+        match o.oc_connecting_role with
         | Some rb -> (
             (* the explicit binding names the created-side role *)
             match resolve_binding ctx rb with
-            | Ok (_, bound, _) when not bound.rol_meervoudig ->
-                Some (norm rb.rb_feittype, form, at)
+            | Ok (_, bound, _) when not bound.role_many ->
+                Some (norm rb.rb_fact_type, form, at)
             | _ -> None)
         | None -> (
-            match (o.oc_subject, o.nieuw_type) with
+            match (o.oc_subject, o.created_type) with
             | Some st, Some nt -> (
                 match connecting_candidates ctx ~from_type:st ~to_type:nt with
                 | [ fn ] -> (
@@ -8364,18 +8364,18 @@ let wf052 ctx =
                        that question and answers it wrongly under ⊑: a
                        subtype instance fills its ANCESTOR's role too, so a
                        relation whose roles are (parent, to-many) and
-                       (subtype, to-one) would read [rol_meervoudig] off the
+                       (subtype, to-one) would read [role_many] off the
                        parent role and the verdict would follow the order
                        the wire happens to list the roles in. A self-typed
                        two-role pair offers BOTH roles, derives nothing and
                        writes no link — the block ref keeps as well, and the
                        reason this arm needs no separate guard for it. *)
                     match connecting_role_candidates ctx ~from_type:st ~to_type:nt with
-                    | [ r ] when not r.rol_meervoudig -> Some (norm fn, form, at)
+                    | [ r ] when not r.role_many -> Some (norm fn, form, at)
                     | _ -> None)
                 | _ -> None)
             | _ -> None))
-      ctx.doc.object_creaties
+      ctx.doc.object_creations
   in
   List.concat_map
     (fun (ftn, form, at) ->
@@ -8440,31 +8440,31 @@ let wf079 ctx =
   let has_defaults otn a =
     List.exists
       (fun (l : prioritized_defaults) ->
-        match l.pd_attribuut with
-        | Some la -> norm l.pd_onderwerp = norm otn && norm la = norm a
+        match l.pd_attribute with
+        | Some la -> norm l.pd_subject = norm otn && norm la = norm a
         | None -> false)
       ctx.doc.prioritized_defaults
   in
   let computing =
     List.filter_map
-      (fun (r : resolved_regel) ->
-        match (r.rr_soort, r.doel, r.rr_voorwaarde) with
-        | ( Some (Gelijkstelling | Berekening),
-            Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ }),
+      (fun (r : resolved_rule) ->
+        match (r.rr_presentation, r.objective, r.rr_condition) with
+        | ( Some (Equation | Calculation),
+            Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }),
             None ) ->
-            Some (Option.map strip_version r.rr_naam, otn, a, r.rr_geldigheid, r.rr_pointer)
+            Some (Option.map strip_version r.rr_name, otn, a, r.rr_validity, r.rr_pointer)
         | _ -> None)
-      ctx.doc.resolved_regels
+      ctx.doc.resolved_rules
   in
   let initialisations =
     List.filter_map
-      (fun (r : resolved_regel) ->
-        match (r.rr_soort, r.doel) with
-        | Some Initialisatie, Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ })
+      (fun (r : resolved_rule) ->
+        match (r.rr_presentation, r.objective) with
+        | Some Initialisation, Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
           ->
-            Some (Option.map strip_version r.rr_naam, otn, a, r.rr_geldigheid, r.rr_pointer)
+            Some (Option.map strip_version r.rr_name, otn, a, r.rr_validity, r.rr_pointer)
         | _ -> None)
-      ctx.doc.resolved_regels
+      ctx.doc.resolved_rules
   in
   let writers =
     List.filter_map
@@ -8533,13 +8533,13 @@ let wf079 ctx =
    (RUNTIME-SEMANTICS ch. 5.9). *)
 let wf054 ctx =
   List.concat_map
-    (fun (r : resolved_uniciteit) ->
+    (fun (r : resolved_uniqueness) ->
       let at = r.uni_pointer ^ "/scope" in
-      match (r.scope_rol, r.uni_subject) with
+      match (r.scope_role, r.uni_subject) with
       | None, _ -> []
       | Some _, None -> [] (* WF-030 reports the missing subject *)
       | Some rb, Some subj -> (
-          let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+          let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
           match resolve_binding ctx rb with
           | Error e -> [ v "WF-054" at e ]
           | Ok (_, bound, opposite) ->
@@ -8547,14 +8547,14 @@ let wf054 ctx =
                 [ v "WF-054" at
                     (Printf.sprintf
                        "the near side of '%s' fills '%s', but the uniqueness subject is '%s'"
-                       rb.rb_feittype (filler opposite) subj) ]
-              else if bound.rol_meervoudig then
+                       rb.rb_fact_type (filler opposite) subj) ]
+              else if bound.role_many then
                 [ v "WF-054" at
                     (Printf.sprintf
                        "the scope role '%s' is to-many — a scope parent is one instance"
-                       (Option.value bound.rol_naam ~default:"?")) ]
+                       (Option.value bound.role_identifier ~default:"?")) ]
               else []))
-    ctx.doc.uniciteiten
+    ctx.doc.uniquenesses
 
 (* WF-023 (the shallow slice), at every attribute WRITE position — a rule's
    target, an object creation's attribute member, a defaults consequence:
@@ -8579,10 +8579,10 @@ let wf054 ctx =
 let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype) =
   let sign_conflict d w =
     match (d, w) with
-    | Numeriek { teken = Some (Niet_negatief | Positief); _ },
-      Numeriek { teken = Some Negatief; _ }
-    | Numeriek { teken = Some Negatief; _ },
-      Numeriek { teken = Some (Niet_negatief | Positief); _ } ->
+    | Number { sign_char = Some (Non_negative | Positive); _ },
+      Number { sign_char = Some Negative; _ }
+    | Number { sign_char = Some Negative; _ },
+      Number { sign_char = Some (Non_negative | Positive); _ } ->
         true
     | _ -> false
   in
@@ -8602,10 +8602,10 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
        restriction contradicts the target's — the sign clause below reports
        it — so one defect gives one report. *)
   (match (value, dt) with
-   | Some (Literal { variant = Lv_number w; typ; _ }), Numeriek { teken = Some t; _ } -> (
+   | Some (Literal { variant = Lv_number w; typ; _ }), Number { sign_char = Some t; _ } -> (
        let own =
          match typ with
-         | Some (Numeriek { teken = Some o; _ }) -> literal_sign_refusal ~target:false o w
+         | Some (Number { sign_char = Some o; _ }) -> literal_sign_refusal ~target:false o w
          | _ -> None
        in
        match (own, literal_sign_refusal ~target:true t w) with
@@ -8653,71 +8653,71 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
      one family (a list of a keuzetype against a list of something else,
      an enumeration without a domain) — across families the family
      message already names the defect *)
-  match (keuzetype_domain dt, keuzetype_domain wt) with
+  match (choice_type_domain dt, choice_type_domain wt) with
   | None, None -> []
-  | Some a, Some b when keuzetype_same a b -> []
+  | Some a, Some b when choice_type_same a b -> []
   | Some a, Some b ->
       [ v "WF-023" at
           (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
-             (keuzetype_variant b) (keuzetype_name b) (keuzetype_variant a)
-             (keuzetype_name a)) ]
+             (choice_type_variant b) (choice_type_name b) (choice_type_variant a)
+             (choice_type_name a)) ]
   | Some a, None when same_family ->
       [ v "WF-023" at
           (Printf.sprintf
              "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
-             (datatype_kind wt) (keuzetype_variant a) (keuzetype_name a)) ]
+             (datatype_kind wt) (choice_type_variant a) (choice_type_name a)) ]
   | None, Some b when same_family ->
       [ v "WF-023" at
           (Printf.sprintf
              "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
-             (keuzetype_variant b) (keuzetype_name b) (datatype_kind dt)) ]
+             (choice_type_variant b) (choice_type_name b) (datatype_kind dt)) ]
   | _ -> []
 
 let wf023 ctx =
   (* position 1: the rule target — the attribute declaration it writes
      (WF-022 owns its resolution) against the value's static type *)
   List.concat_map
-    (fun (r : resolved_regel) ->
+    (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
-      match (r.rr_soort, r.doel, r.waarde) with
-      | Some (Gelijkstelling | Berekening | Initialisatie), Some doel, Some w -> (
-          match (resolved_attr_datatype ctx doel, expr_type ctx ~binders:[] w) with
+      match (r.rr_presentation, r.objective, r.value_node) with
+      | Some (Equation | Calculation | Initialisation), Some objective, Some w -> (
+          match (resolved_attr_datatype ctx objective, expr_type ctx ~binders:[] w) with
           | Some dt, Some wt ->
-              wf023_assignment at ~target:r.doel ~value:r.waarde ~value_at:(at ^ "/value") dt wt
+              wf023_assignment at ~target:r.objective ~value:r.value_node ~value_at:(at ^ "/value") dt wt
           | _ -> [])
       | _ -> [])
-    ctx.doc.resolved_regels
+    ctx.doc.resolved_rules
   (* position 2: an object creation's attribute member (WF-027 owns the
      characteristic member and the member's existence) *)
   @ List.concat_map
-      (fun (r : resolved_object_creatie) ->
-        match Option.bind r.nieuw_type (objecttype ctx) with
+      (fun (r : resolved_object_creation) ->
+        match Option.bind r.created_type (object_type ctx) with
         | None -> []
         | Some ot ->
             List.concat_map
-              (fun (j, (t : toekenning)) ->
+              (fun (j, (t : assignment)) ->
                 let tat = Printf.sprintf "%s/initialisations/%d" r.oc_pointer j in
-                match (t.toe_kenmerk, t.toe_attribuut, t.toe_waarde) with
+                match (t.to_characteristic, t.to_attribute, t.to_value) with
                 | false, Some m, Some w -> (
                     match (attr_of ot m, expr_type ctx ~binders:[] w) with
                     | Some (Some dt), Some wt ->
                         wf023_assignment tat ~target:None ~value:(Some w) ~value_at:(tat ^ "/value") dt wt
                     | _ -> [])
                 | _ -> [])
-              (List.mapi (fun j t -> (j, t)) r.toekenningen))
-      ctx.doc.object_creaties
+              (List.mapi (fun j t -> (j, t)) r.assignments))
+      ctx.doc.object_creations
   (* position 3: a defaults consequence, recursing into sub-defaults (ch.
      7.9 — an exception group inherits the root target) *)
   @ List.concat_map
       (fun (i, (l : prioritized_defaults)) ->
         match
-          Option.bind l.pd_attribuut (fun a ->
-              Option.bind (objecttype ctx l.pd_onderwerp) (fun ot -> attr_of ot a))
+          Option.bind l.pd_attribute (fun a ->
+              Option.bind (object_type ctx l.pd_subject) (fun ot -> attr_of ot a))
         with
         | Some (Some dt) ->
             let rec walk prefix (r : default) =
               (match
-                 Option.bind r.default_consequentie (fun e ->
+                 Option.bind r.default_consequence (fun e ->
                      Option.map (fun wt -> (e, wt)) (expr_type ctx ~binders:[] e))
                with
               | Some (e, wt) ->
@@ -8725,7 +8725,7 @@ let wf023 ctx =
                     ~value_at:(prefix ^ "/consequence") dt wt
               | None -> [])
               @
-              match r.default_excepties with
+              match r.default_exceptions with
               | Some egs ->
                   List.concat
                     (List.mapi
@@ -8737,7 +8737,7 @@ let wf023 ctx =
                                   (Printf.sprintf "%s/exceptions/members/%d/defaults/%d" prefix k m)
                                   d)
                               eg.eg_defaults))
-                       egs.egs_leden)
+                       egs.egs_members)
               | None -> []
             in
             List.concat
@@ -8756,10 +8756,10 @@ let wf023 ctx =
    its first version. *)
 let wf082 ctx =
   List.concat_map
-    (fun (r : resolved_regel) ->
+    (fun (r : resolved_rule) ->
       let at = form_pointer r.rr_pointer ^ "/statuteAnnotations" in
       let first_version = r.rr_pointer = form_pointer r.rr_pointer ^ "/versions/0" in
-      match r.rr_bron_annotaties with
+      match r.rr_source_annotations with
       | _ when not first_version -> []
       | None -> []
       | Some [] ->
@@ -8777,7 +8777,7 @@ let wf082 ctx =
                        "statute annotation carries leading/trailing whitespace — entries are trimmed" ]
                  else [])
                entries))
-    ctx.doc.resolved_regels
+    ctx.doc.resolved_rules
 
 (* WF-051: no dependency cycle may pass through prioritized defaults — their
    displacement edges are negative (dep_forms above), so any such cycle
@@ -8813,7 +8813,7 @@ let wf051 ctx =
          | Some (fi, _) when reaches fi fi ->
              [ v "WF-051" at
                  ("a dependency cycle passes through defaults group '"
-                 ^ Option.value l.pd_naam ~default:at
+                 ^ Option.value l.pd_name ~default:at
                  ^ "' — its displacement reads are negative edges; no strata exist") ]
          | _ -> [])
        ctx.doc.prioritized_defaults)
@@ -8840,23 +8840,23 @@ let wf075 ctx =
                 (fun j (r : default) ->
                   let rat = Printf.sprintf "%s/defaults/%d" prefix j in
                   let has_content =
-                    r.default_besluit <> None || r.default_consequentie <> None
+                    r.default_decision <> None || r.default_consequence <> None
                   in
-                  (if in_sub && r.default_initialisatie then
+                  (if in_sub && r.default_initialisation then
                      [ v "WF-075" rat
                          "a default inside an exception group carries no initialisation (the \
                           initialisation and input defaults are root-only, ch. 7.9)" ]
                    else [])
-                  @ (if (not has_content) && r.default_excepties = None
-                        && not r.default_initialisatie
+                  @ (if (not has_content) && r.default_exceptions = None
+                        && not r.default_initialisation
                      then
                        [ v "WF-075" rat
                            "a default carries its own decision/consequence or a nested \
                             exception group (a contentless default decides nothing, \
                             ch. 7.9)" ]
                      else [])
-                  @ (if r.default_excepties <> None && (not has_content)
-                        && r.default_voorwaarde <> None && not r.default_initialisatie
+                  @ (if r.default_exceptions <> None && (not has_content)
+                        && r.default_justification <> None && not r.default_initialisation
                      then
                        [ v "WF-075" rat
                            "a group-default (exceptions present, no own decision or \
@@ -8864,15 +8864,15 @@ let wf075 ctx =
                             groups decide, so a condition here would be silently ignored \
                             (ch. 7.9)" ]
                      else [])
-                  @ (match r.default_excepties with
+                  @ (match r.default_exceptions with
                     | None -> []
                     | Some egs ->
-                        (if egs.egs_leden = [] then
+                        (if egs.egs_members = [] then
                            [ v "WF-075" (rat ^ "/exceptions")
                                "the exceptions field carries at least one exception group \
                                 (ch. 7.9)" ]
                          else [])
-                        @ (if List.length egs.egs_leden >= 2 && not egs.egs_ongeordend then
+                        @ (if List.length egs.egs_members >= 2 && not egs.egs_unordered then
                              [ v "WF-075" (rat ^ "/exceptions")
                                  "two or more exception groups must be declared unordered \
                                   (the root regime, ch. 7.9)" ]
@@ -8883,7 +8883,7 @@ let wf075 ctx =
                                  walk ~in_sub:true
                                    (Printf.sprintf "%s/exceptions/members/%d" rat k)
                                    eg.eg_defaults)
-                               egs.egs_leden)))
+                               egs.egs_members)))
                 defaults)
          in
          walk ~in_sub:false at l.defaults)
@@ -8924,52 +8924,52 @@ let wf057 ctx =
   let keys at what pairs = List.concat_map (fun (k, _) -> check at what (Some k)) pairs in
   List.concat
     [ List.concat_map
-        (fun (key, (ot : objecttype)) ->
+        (fun (key, (ot : object_type)) ->
           let at = "/objecttypen/" ^ key in
           (* the key IS the node's name since M1 (the loader builds both from
              one field), so a second reading would report the name twice *)
           check at "object type name" (Some key)
-          @ check at "plural" ot.meervoud
-          @ keys at "attribute name" ot.attributen
-          @ List.concat_map (fun (_, m) -> check at "attribute plural" m) ot.attribuut_meervoud
-          @ List.concat_map (fun k -> check at "characteristic name" k) ot.kenmerken)
-        ctx.doc.objecttypen;
+          @ check at "plural" ot.plural
+          @ keys at "attribute name" ot.attributes
+          @ List.concat_map (fun (_, m) -> check at "attribute plural" m) ot.attribute_plural
+          @ List.concat_map (fun k -> check at "characteristic name" k) ot.characteristics)
+        ctx.doc.object_types;
       List.concat_map
-        (fun (key, (ft : feittype)) ->
+        (fun (key, (ft : fact_type_name)) ->
           let at = "/feittypen/" ^ key in
           check at "fact type name" (Some key)
           @ List.concat_map
-              (fun (r : rol) ->
-                check at "role name" r.rol_naam @ check at "role plural" r.rol_meervoud)
-              ft.rollen)
-        ctx.doc.feittypen;
+              (fun (r : role_ref) ->
+                check at "role name" r.role_identifier @ check at "role plural" r.role_plural)
+              ft.role_names)
+        ctx.doc.fact_types;
       keys "/parameters" "parameter name" ctx.doc.parameters;
-      keys "/domeinen" "domain name" ctx.doc.domeinen;
-      keys "/eenheidstelsels" "unit system name" ctx.doc.eenheidstelsels;
+      keys "/domeinen" "domain name" ctx.doc.domain_specs;
+      keys "/eenheidstelsels" "unit system name" ctx.doc.unit_systems;
       List.concat_map
-        (fun (key, (d : dimensie)) ->
+        (fun (key, (d : dimension)) ->
           let at = "/dimensies/" ^ key in
           check at "dimension name" (Some key)
-          @ check at "dimension plural" d.dim_naam_meervoud)
-        ctx.doc.dimensies;
-      List.concat_map (fun (tl : tijdlijn) -> check "/tijdlijnen" "timeline name" tl.tl_naam)
-        ctx.doc.tijdlijnen;
+          @ check at "dimension plural" d.dim_name_plural)
+        ctx.doc.dimensions;
+      List.concat_map (fun (tl : timeline_state) -> check "/tijdlijnen" "timeline name" tl.tl_name)
+        ctx.doc.timelines;
       List.concat
         (List.mapi
-           (fun i (d : dagsoort) ->
-             check (Printf.sprintf "/dagsoorten/%d/name" i) "day kind name" (Some d.dk_naam))
-           ctx.doc.dagsoorten);
+           (fun i (d : day_kind) ->
+             check (Printf.sprintf "/dagsoorten/%d/name" i) "day kind name" (Some d.dk_name))
+           ctx.doc.day_kinds);
       List.concat_map
         (fun (_, entries) ->
           List.concat_map (fun (n, _, at) -> check at "form name" n) entries)
         (form_arrays ctx);
       List.concat_map
-        (fun (g : resolved_regel_groep) ->
-          check "/ruleGroups" "rule group name" g.rgr_naam)
-        ctx.doc.regel_groepen;
+        (fun (g : resolved_rule_group) ->
+          check "/ruleGroups" "rule group name" g.rgr_name)
+        ctx.doc.rule_groups;
       List.mapi
         (fun i (l : prioritized_defaults) ->
-          check (Printf.sprintf "/prioritizedDefaults/%d" i) "defaults-group name" l.pd_naam)
+          check (Printf.sprintf "/prioritizedDefaults/%d" i) "defaults-group name" l.pd_name)
         ctx.doc.prioritized_defaults
       |> List.concat ]
 
@@ -8989,7 +8989,7 @@ let wf057 ctx =
    cannot be written (IR-SPEC ch. 2.2, WF index). *)
 let wf059 ctx =
   List.concat_map
-    (fun (key, (ot : objecttype)) ->
+    (fun (key, (ot : object_type)) ->
       List.concat_map
         (fun (an, dt) ->
           match dt with
@@ -8998,8 +8998,8 @@ let wf059 ctx =
                   ("/objecttypen/" ^ key ^ "/attributen/" ^ an)
                   "declared attribute carries no datatype" ]
           | Some _ -> [])
-        ot.attributen)
-    ctx.doc.objecttypen
+        ot.attributes)
+    ctx.doc.object_types
 
 (* The composite domains a declared domain directly references — the sum-type
    payloads and the struct fields that name another (sum or struct) domain.
@@ -9007,14 +9007,14 @@ let wf059 ctx =
    types or structs (the term-depth fence for the ASP encoding, ch. 2.4). *)
 let domain_refs ctx name : string list =
   let composite_domain = function
-    | Sum_type { domein; _ } | Struct_type { domein; _ } -> Some domein
+    | Sum_type { domain_spec; _ } | Struct_type { domain_spec; _ } -> Some domain_spec
     | _ -> None
   in
-  match find_ci ctx.doc.domeinen name with
-  | Some (Some (Sum_type { constructoren; _ })) ->
-      List.filter_map (fun (_, p) -> Option.bind p composite_domain) constructoren
-  | Some (Some (Struct_type { velden; _ })) ->
-      List.filter_map (fun (_, d) -> composite_domain d) velden
+  match find_ci ctx.doc.domain_specs name with
+  | Some (Some (Sum_type { constructor_list; _ })) ->
+      List.filter_map (fun (_, p) -> Option.bind p composite_domain) constructor_list
+  | Some (Some (Struct_type { field_list; _ })) ->
+      List.filter_map (fun (_, d) -> composite_domain d) field_list
   | _ -> []
 
 (* Is [target] reachable from [name] through the composite-domain graph? *)
@@ -9037,33 +9037,33 @@ let wf060 ctx =
   List.concat_map
     (fun (name, dt) ->
       match dt with
-      | Some (Sum_type { constructoren; _ }) ->
+      | Some (Sum_type { constructor_list; _ }) ->
           let at = "/domeinen/" ^ name in
-          (if constructoren = [] then [ v "WF-060" at "sum type declares no constructor" ]
+          (if constructor_list = [] then [ v "WF-060" at "sum type declares no constructor" ]
            else [])
           @ List.map
               (fun (first, dup, at') ->
                 v "WF-060" at'
                   (Printf.sprintf "duplicate constructor name '%s' (already declared as '%s')"
                      dup first))
-              (dups_by norm (List.map (fun (n, _) -> (n, at)) constructoren))
+              (dups_by norm (List.map (fun (n, _) -> (n, at)) constructor_list))
           @ List.concat_map
               (fun (_, payload) ->
                 match payload with
-                | None | Some (Numeriek _) | Some Datum_in_dagen -> []
-                | Some (Sum_type { domein; _ }) -> (
-                    match sum_decl ctx domein with
+                | None | Some (Number _) | Some Date_in_days -> []
+                | Some (Sum_type { domain_spec; _ }) -> (
+                    match sum_decl ctx domain_spec with
                     | Some _ -> []
                     | None ->
                         [ v "WF-060" at
-                            ("constructor payload names sum-type domain '" ^ domein
+                            ("constructor payload names sum-type domain '" ^ domain_spec
                            ^ "', which is not a declared sum type") ])
                 | Some d ->
                     [ v "WF-060" at
                         ("constructor payload is " ^ datatype_kind d
                        ^ ", which is not an admissible sum-type payload (number, day-precision \
                           date, or a declared sum type)") ])
-              constructoren
+              constructor_list
           @
           if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
             [ v "WF-060" at
@@ -9073,7 +9073,7 @@ let wf060 ctx =
             ]
           else []
       | _ -> [])
-    ctx.doc.domeinen
+    ctx.doc.domain_specs
 
 (* WF-087: a SumType declaration whose constructors ALL carry a null payload
    is ill-formed ON THE WIRE. The keuzetype family (IR-SPEC ch. 2.4) has
@@ -9091,15 +9091,15 @@ let wf087 ctx =
   List.concat_map
     (fun (name, dt) ->
       match dt with
-      | Some (Sum_type { constructoren; _ })
-        when constructoren <> [] && List.for_all (fun (_, p) -> p = None) constructoren ->
+      | Some (Sum_type { constructor_list; _ })
+        when constructor_list <> [] && List.for_all (fun (_, p) -> p = None) constructor_list ->
           [ v "WF-087" ("/domeinen/" ^ name)
               ("sum type '" ^ name
              ^ "' declares only nullary constructors — the nullary keuzetype has one wire form: \
                 normalise it to an Enumeration domain carrying those names as its values (ch. 2.4)")
           ]
       | _ -> [])
-    ctx.doc.domeinen
+    ctx.doc.domain_specs
 
 (* WF-061: a SumType use site (an attribute or parameter datatype that is a
    SumType) MUST name a declared domain whose declaration it agrees with —
@@ -9108,29 +9108,29 @@ let wf087 ctx =
    comparison name the same domain) rides the expression walk, walk_cond. *)
 let wf061 ctx =
   let use_site at = function
-    | Sum_type { domein; constructoren } -> (
-        match sum_decl ctx domein with
+    | Sum_type { domain_spec; constructor_list } -> (
+        match sum_decl ctx domain_spec with
         | None ->
             [ v "WF-061" at
-                ("sum-type use site names domain '" ^ domein
+                ("sum-type use site names domain '" ^ domain_spec
                ^ "', which is not a declared sum type") ]
         | Some decl ->
-            if constructors_agree decl constructoren then []
+            if constructors_agree decl constructor_list then []
             else
               [ v "WF-061" at
-                  ("sum-type use site disagrees with the declaration of domain '" ^ domein
+                  ("sum-type use site disagrees with the declaration of domain '" ^ domain_spec
                  ^ "' (same constructors, payloads and order required)") ])
     | _ -> []
   in
   List.concat_map
-    (fun (otname, (ot : objecttype)) ->
+    (fun (otname, (ot : object_type)) ->
       List.concat_map
         (fun (an, dt) ->
           match dt with
           | Some st -> use_site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) st
           | None -> [])
-        ot.attributen)
-    ctx.doc.objecttypen
+        ot.attributes)
+    ctx.doc.object_types
   @ List.concat_map
       (fun (pn, (p : parameter)) ->
         match p.par_datatype with
@@ -9146,11 +9146,11 @@ let wf061 ctx =
 let wf088 ctx =
   let site at = function Some d -> enum_use_site ctx at d | None -> [] in
   List.concat_map
-    (fun (otname, (ot : objecttype)) ->
+    (fun (otname, (ot : object_type)) ->
       List.concat_map
         (fun (an, dt) -> site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) dt)
-        ot.attributen)
-    ctx.doc.objecttypen
+        ot.attributes)
+    ctx.doc.object_types
   @ List.concat_map
       (fun (pn, (p : parameter)) -> site ("/parameters/" ^ pn) p.par_datatype)
       ctx.doc.parameters
@@ -9174,38 +9174,38 @@ let wf071 ctx =
   List.concat_map
     (fun (name, dt) ->
       match dt with
-      | Some (Struct_type { velden; _ }) ->
+      | Some (Struct_type { field_list; _ }) ->
           let at = "/domeinen/" ^ name in
-          (if velden = [] then [ v "WF-071" at "struct type declares no field" ] else [])
+          (if field_list = [] then [ v "WF-071" at "struct type declares no field" ] else [])
           @ List.map
               (fun (first, dup, at') ->
                 v "WF-071" at'
                   (Printf.sprintf "duplicate field name '%s' (already declared as '%s')" dup first))
-              (dups_by norm (List.map (fun (n, _) -> (n, at)) velden))
+              (dups_by norm (List.map (fun (n, _) -> (n, at)) field_list))
           @ List.concat_map
               (fun (fname, fdt) ->
                 match fdt with
-                | Numeriek _ | Datum_in_dagen -> []
-                | Sum_type { domein; _ } -> (
-                    match sum_decl ctx domein with
+                | Number _ | Date_in_days -> []
+                | Sum_type { domain_spec; _ } -> (
+                    match sum_decl ctx domain_spec with
                     | Some _ -> []
                     | None ->
                         [ v "WF-071" at
-                            ("field '" ^ fname ^ "' names sum-type domain '" ^ domein
+                            ("field '" ^ fname ^ "' names sum-type domain '" ^ domain_spec
                            ^ "', which is not a declared sum type") ])
-                | Struct_type { domein; _ } -> (
-                    match struct_decl ctx domein with
+                | Struct_type { domain_spec; _ } -> (
+                    match struct_decl ctx domain_spec with
                     | Some _ -> []
                     | None ->
                         [ v "WF-071" at
-                            ("field '" ^ fname ^ "' names struct-type domain '" ^ domein
+                            ("field '" ^ fname ^ "' names struct-type domain '" ^ domain_spec
                            ^ "', which is not a declared struct type") ])
                 | d ->
                     [ v "WF-071" at
                         ("field '" ^ fname ^ "' is " ^ datatype_kind d
                        ^ ", which is not an admissible struct-field datatype (number, day-precision \
                           date, sum type, or struct type)") ])
-              velden
+              field_list
           @
           if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
             [ v "WF-071" at
@@ -9215,7 +9215,7 @@ let wf071 ctx =
             ]
           else []
       | _ -> [])
-    ctx.doc.domeinen
+    ctx.doc.domain_specs
 
 (* WF-072: a StructType use site MUST name a declared domain whose declaration
    it agrees with — same fields, datatypes, order (IR-SPEC ch. 2.4). The
@@ -9226,7 +9226,7 @@ let wf071 ctx =
    tree via [struct_use_site]: an attribute or parameter datatype, a
    `ListType` element inside one, a `FunctionDef` parameter or
    result, and — unlike WF-088, whose enumerations WF-060/065/071 fence out of
-   every declaration position — a struct field datatype inside `domeinen`,
+   every declaration position — a struct field datatype inside `domain_specs`,
    which WF-071 admits and which is therefore a use site of ANOTHER domain's
    declaration. The expression-layer half rides walk_expr's type prologue,
    beside [enum_use_site] (the same "every datatype in the document" split
@@ -9238,11 +9238,11 @@ let wf071 ctx =
 let wf072 ctx =
   let site at = function Some d -> struct_use_site ctx at d | None -> [] in
   List.concat_map
-    (fun (otname, (ot : objecttype)) ->
+    (fun (otname, (ot : object_type)) ->
       List.concat_map
         (fun (an, dt) -> site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) dt)
-        ot.attributen)
-    ctx.doc.objecttypen
+        ot.attributes)
+    ctx.doc.object_types
   @ List.concat_map
       (fun (pn, (p : parameter)) -> site ("/parameters/" ^ pn) p.par_datatype)
       ctx.doc.parameters
@@ -9264,14 +9264,14 @@ let wf072 ctx =
            inline copy of ANOTHER domain's declaration. (A sum-type payload
            needs no walk: WF-060 admits no struct payload at all.) *)
         match dt with
-        | Some (Struct_type { velden; _ }) ->
+        | Some (Struct_type { field_list; _ }) ->
             List.concat
               (List.mapi
                  (fun j (_, fdt) ->
                    struct_use_site ctx (Printf.sprintf "/domeinen/%s/fields/%d" name j) fdt)
-                 velden)
+                 field_list)
         | _ -> [])
-      ctx.doc.domeinen
+      ctx.doc.domain_specs
 
 (* WF-065: a ListType element MUST be first-order and non-list (Number,
    day-precision Date, a declared SumType, or a declared StructType — the
@@ -9288,7 +9288,7 @@ let wf065 ctx =
             sum type, or a declared struct type)") ]
   in
   List.concat_map
-    (fun (otname, (ot : objecttype)) ->
+    (fun (otname, (ot : object_type)) ->
       List.concat_map
         (fun (an, dt) ->
           match dt with
@@ -9298,15 +9298,15 @@ let wf065 ctx =
               @ (if
                    (* a facet's presence is the temporality decision; since M1
                       it always carries its grid, so the key alone decides *)
-                   List.exists (fun (n, _) -> norm n = norm an) ot.attribuut_granulariteit
+                   List.exists (fun (n, _) -> norm n = norm an) ot.attribute_granularity
                  then
                    [ v "WF-065" at
                        "a list-typed attribute carries a granularity — a list-typed temporal \
                         attribute is ill-formed" ]
                  else [])
           | _ -> [])
-        ot.attributen)
-    ctx.doc.objecttypen
+        ot.attributes)
+    ctx.doc.object_types
   @ List.concat_map
       (fun (pn, (p : parameter)) ->
         match p.par_datatype with
@@ -9318,45 +9318,45 @@ let wf065 ctx =
         match dt with
         | Some (List_type { element }) -> element_check ("/domeinen/" ^ dn) element
         | _ -> [])
-      ctx.doc.domeinen
+      ctx.doc.domain_specs
 
 (* The function names invoked by an expression — Invoke targets and named
    Fold/MapList operands — for the WF-067 acyclicity check. *)
 let rec invoked_expr acc (e : expr) : string list =
   match e with
-  | Invoke { functie; arguments; _ } -> List.fold_left invoked_expr (functie :: acc) arguments
-  | Fold { list; functie; init; _ } ->
-      invoked_fold_fn (invoked_expr (invoked_expr acc list) init) functie
-  | Map_list { list; functie; _ } -> invoked_fold_fn (invoked_expr acc list) functie
+  | Invoke { function_name; arguments; _ } -> List.fold_left invoked_expr (function_name :: acc) arguments
+  | Fold { list; function_name; init; _ } ->
+      invoked_fold_fn (invoked_expr (invoked_expr acc list) init) function_name
+  | Map_list { list; function_name; _ } -> invoked_fold_fn (invoked_expr acc list) function_name
   | Filter_list { list; condition; _ } -> invoked_cond (invoked_expr acc list) condition
   | List_length { list; _ } -> invoked_expr acc list
   | List_literal { elements; _ } -> List.fold_left invoked_expr acc elements
   | Lambda { body; _ } -> invoked_expr acc body
   | If_then_else { condition; then_; else_; _ } ->
       invoked_expr (invoked_expr (invoked_cond acc condition) then_) else_
-  | Binair { links; rechts; _ } -> invoked_opt (invoked_opt acc links) rechts
-  | Functie { argumenten; leegwaarde; filter; _ } ->
-      let acc = List.fold_left invoked_expr acc argumenten in
-      let acc = invoked_opt acc leegwaarde in
+  | Binary { left_side; right_side; _ } -> invoked_opt (invoked_opt acc left_side) right_side
+  | Function_call { call_arguments; empty_fallback; filter; _ } ->
+      let acc = List.fold_left invoked_expr acc call_arguments in
+      let acc = invoked_opt acc empty_fallback in
       (match filter with Some c -> invoked_cond acc c | None -> acc)
-  | Afgerond { basis; _ } -> invoked_opt acc basis
-  | Begrensd { basis; minimum; maximum; _ } ->
-      invoked_opt (invoked_opt (invoked_opt acc basis) minimum) maximum
+  | Rounding { base_expr; _ } -> invoked_opt acc base_expr
+  | Clamp { base_expr; minimum; maximum; _ } ->
+      invoked_opt (invoked_opt (invoked_opt acc base_expr) minimum) maximum
   | Construct { argument; _ } -> invoked_opt acc argument
   | Match { scrutinee; arms; _ } ->
       List.fold_left (fun acc (_, _, b) -> invoked_expr acc b) (invoked_expr acc scrutinee) arms
-  | Struct_literal { velden; _ } ->
-      List.fold_left (fun acc (_, value) -> invoked_expr acc value) acc velden
+  | Struct_literal { field_list; _ } ->
+      List.fold_left (fun acc (_, value) -> invoked_expr acc value) acc field_list
   | Field_access { base; _ } -> invoked_expr acc base
   | Let { value; body = lbody; _ } -> invoked_expr (invoked_expr acc value) lbody
-  | Tekst_reeks { delen; _ } ->
+  | Text_composition { pieces; _ } ->
       List.fold_left
-        (fun acc -> function Ingevoegd { expr = Some e } -> invoked_expr acc e | _ -> acc)
-        acc delen
-  | Dimensie_cel { attribuut; _ } -> invoked_opt acc attribuut
-  | Temporal_read { basis; datum; _ } -> invoked_expr (invoked_expr acc basis) datum
-  | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
-  | Bound_day _ | Expr_onopgelost _ | Binder_ref _ ->
+        (fun acc -> function Embedded_expression { expr = Some e } -> invoked_expr acc e | _ -> acc)
+        acc pieces
+  | Dimension_cell_read { attribute_ref; _ } -> invoked_opt acc attribute_ref
+  | Temporal_read { base_expr; date_value; _ } -> invoked_expr (invoked_expr acc base_expr) date_value
+  | Literal _ | Attribute_reference _ | Parameter_ref _ | Variable_reference _ | Context_value _
+  | Bound_day _ | Expr_unresolved _ | Binder_ref _ ->
       acc
   (* a union's branch fields are symbolic and its filter is a condition, which
      this walk over EXPRESSIONS does not enter — the same boundary the fold's
@@ -9369,17 +9369,17 @@ and invoked_fold_fn acc = function
   | Fn_lambda { body; _ } -> invoked_expr acc body
   | Fn_name n -> n :: acc
 
-and invoked_cond acc (c : conditie) : string list =
+and invoked_cond acc (c : condition_expr) : string list =
   match c with
-  | Vergelijking { links; rechts; _ } -> invoked_opt (invoked_opt acc links) rechts
-  | Predicaat { operand; _ } -> invoked_opt acc operand
-  | Samengesteld { onderdelen; _ } -> List.fold_left invoked_cond acc onderdelen
-  | Periode_conditie { vanaf; tot; _ } -> invoked_opt (invoked_opt acc vanaf) tot
-  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+  | Comparison { left_side; right_side; _ } -> invoked_opt (invoked_opt acc left_side) right_side
+  | Predicate { operand; _ } -> invoked_opt acc operand
+  | Compound { components; _ } -> List.fold_left invoked_cond acc components
+  | Time_window { starting_at; up_to; _ } -> invoked_opt (invoked_opt acc starting_at) up_to
+  | Quantifier_fold { kv_filter; kv_test; _ } ->
       let sub acc = function Some c -> invoked_cond acc c | None -> acc in
-      sub (sub acc kv_filter) kv_toets
-  | Kenmerk_check _ | Role_membership _ | Regelversie _
-  | Conditie_onopgelost _ ->
+      sub (sub acc kv_filter) kv_test
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _
+  | Condition_unresolved _ ->
       acc
 
 (* WF-067: FunctionDef discipline (IR-SPEC ch. 2.11) — ci-unique names, typed
@@ -9388,7 +9388,7 @@ and invoked_cond acc (c : conditie) : string list =
 let wf067 ctx =
   let fds = ctx.doc.function_defs in
   let name_dups =
-    dups_by norm (List.mapi (fun i fd -> (fd.fd_naam, Printf.sprintf "/functionDefs/%d" i)) fds)
+    dups_by norm (List.mapi (fun i fd -> (fd.fd_name, Printf.sprintf "/functionDefs/%d" i)) fds)
     |> List.map (fun (first, dup, at) ->
            v "WF-067" at
              (Printf.sprintf "duplicate function name '%s' (already declared as '%s')" dup first))
@@ -9416,9 +9416,9 @@ let wf067 ctx =
                      (Printf.sprintf "duplicate parameter name '%s' (already declared as '%s')" dup
                         first)))
            @ (match fd.fd_result with
-             | Sum_type { domein; _ } when sum_decl ctx domein = None ->
+             | Sum_type { domain_spec; _ } when sum_decl ctx domain_spec = None ->
                  [ v "WF-067" at
-                     ("result names sum-type domain '" ^ domein ^ "', which is not a declared sum \
+                     ("result names sum-type domain '" ^ domain_spec ^ "', which is not a declared sum \
                        type") ]
              | _ -> [])
            (* the body's static type IS the declared result — full datatype
@@ -9448,9 +9448,9 @@ let wf067 ctx =
            @ walk_expr ctx
                ~binders:(List.map (fun (n, dt) -> (n, Some dt)) fd.fd_parameters)
                ~subject:None ~body:(Closed_pos ("WF-067", [])) (at ^ "/body") fd.fd_body
-           @ (if reaches ~target:fd.fd_naam ~visited:[ norm fd.fd_naam ] fd.fd_naam then
+           @ (if reaches ~target:fd.fd_name ~visited:[ norm fd.fd_name ] fd.fd_name then
                 [ v "WF-067" at
-                    ("function '" ^ fd.fd_naam
+                    ("function '" ^ fd.fd_name
                    ^ "' is part of a recursive invocation cycle — the invocation graph must be \
                       acyclic") ]
               else []))
@@ -9472,14 +9472,14 @@ let wf086 ctx =
     (List.mapi
        (fun i (l : prioritized_defaults) ->
          let at = Printf.sprintf "/prioritizedDefaults/%d" i in
-         match (l.pd_attribuut, l.pd_kenmerk, objecttype ctx l.pd_onderwerp) with
+         match (l.pd_attribute, l.pd_characteristic, object_type ctx l.pd_subject) with
          | Some a, _, Some ot when attr_temporal ot a ->
              [ v "WF-086" at
                  ("defaults target '" ^ a
                 ^ "' is a temporal attribute (declared granularity) — a defaults group decides \
                    at one fixpoint and cannot write a timeline (ch. 6)") ]
          | _, Some k, Some ot
-           when List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit ->
+           when List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity ->
              [ v "WF-086" at
                  ("defaults target '" ^ k
                 ^ "' is a temporal characteristic (declared granularity) — a defaults group \
@@ -9501,9 +9501,9 @@ let wf086 ctx =
    because a witness has to be able to name it. *)
 let wf103 ctx =
   List.filter_map
-    (fun (key, (ot : objecttype)) ->
+    (fun (key, (ot : object_type)) ->
       match ot.ot_supertype with
-      | Some s when declared_objecttype ctx s = None ->
+      | Some s when declared_object_type ctx s = None ->
           Some
             (v "WF-103"
                ("/objecttypen/" ^ key ^ "/supertype")
@@ -9511,7 +9511,7 @@ let wf103 ctx =
               ^ "' is not a declared object type: the chain ends at a name nothing declares, so \
                  no member resolves through it"))
       | _ -> None)
-    ctx.doc.objecttypen
+    ctx.doc.object_types
 
 (* WF-104: the supertype graph is acyclic, self-reference included. Colour
    DFS with a named cycle path — WF-085's shape, because the failure is the
@@ -9519,14 +9519,14 @@ let wf103 ctx =
    root to stop at, and every reader would walk it forever or cut it off at
    a private depth of its own. *)
 let wf104 ctx =
-  let defs = Array.of_list ctx.doc.objecttypen in
+  let defs = Array.of_list ctx.doc.object_types in
   let n = Array.length defs in
-  (* keyed by MAP KEY, which is what [declared_objecttype] resolves against *)
+  (* keyed by MAP KEY, which is what [declared_object_type] resolves against *)
   let index = Hashtbl.create 16 in
   Array.iteri (fun i (key, _) -> if not (Hashtbl.mem index (norm key)) then Hashtbl.add index (norm key) i) defs;
   let succ =
     Array.map
-      (fun (_, (ot : objecttype)) ->
+      (fun (_, (ot : object_type)) ->
         match ot.ot_supertype with
         | None -> []
         | Some s -> ( match Hashtbl.find_opt index (norm s) with Some j -> [ j ] | None -> []))
@@ -9572,20 +9572,20 @@ let wf104 ctx =
    instance is of two incomparable types, so no read is ambiguous. *)
 let wf105 ctx =
   List.concat_map
-    (fun (key, (ot : objecttype)) ->
+    (fun (key, (ot : object_type)) ->
       match ot.ot_supertype with
       | None -> []
       | Some _ ->
           let ancestors = match chain_from ctx ot with _ :: rest -> rest | [] -> [] in
           let above ~kind name =
             List.find_map
-              (fun (a : objecttype) ->
+              (fun (a : object_type) ->
                 let hit =
                   match kind with
-                  | `Attribute -> List.exists (fun (k, _) -> norm k = norm name) a.attributen
-                  | `Characteristic -> mem_ci (some_names a.kenmerken) name
+                  | `Attribute -> List.exists (fun (k, _) -> norm k = norm name) a.attributes
+                  | `Characteristic -> mem_ci (some_names a.characteristics) name
                 in
-                if hit then Some (Option.value a.ot_naam ~default:"?") else None)
+                if hit then Some (Option.value a.ot_ident ~default:"?") else None)
               ancestors
           in
           let report ~kind ~what ~at name =
@@ -9604,13 +9604,13 @@ let wf105 ctx =
             (fun (a, _) ->
               report ~kind:`Attribute ~what:"attribute"
                 ~at:("/objecttypen/" ^ key ^ "/attributen/" ^ a) a)
-            ot.attributen
+            ot.attributes
           @ List.filter_map
               (fun k ->
                 report ~kind:`Characteristic ~what:"characteristic"
                   ~at:("/objecttypen/" ^ key ^ "/kenmerken") k)
-              (some_names ot.kenmerken))
-    ctx.doc.objecttypen
+              (some_names ot.characteristics))
+    ctx.doc.object_types
 
 (* WF-113: `diagnostics` is the producer's own account of what stayed
    unresolved in a document it did write (IR-SPEC ch. 2, decision V2 (ii);
@@ -9654,27 +9654,27 @@ let rec markers_expr acc (e : expr) : string option list =
   let o acc = function Some e -> markers_expr acc e | None -> acc in
   let c acc = function Some x -> markers_cond acc x | None -> acc in
   match e with
-  | Expr_onopgelost { bron; _ } -> bron :: acc
-  | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
+  | Expr_unresolved { source_name; _ } -> source_name :: acc
+  | Literal _ | Attribute_reference _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
   | Binder_ref _ ->
       acc
-  | Tekst_reeks { delen; _ } ->
+  | Text_composition { pieces; _ } ->
       List.fold_left
-        (fun acc -> function Ingevoegd { expr } -> o acc expr | Letterlijk _ -> acc)
-        acc delen
-  | Binair { links; rechts; _ } -> o (o acc links) rechts
-  | Functie { argumenten; leegwaarde; filter; _ } ->
-      c (o (List.fold_left markers_expr acc argumenten) leegwaarde) filter
+        (fun acc -> function Embedded_expression { expr } -> o acc expr | Literal_chunk _ -> acc)
+        acc pieces
+  | Binary { left_side; right_side; _ } -> o (o acc left_side) right_side
+  | Function_call { call_arguments; empty_fallback; filter; _ } ->
+      c (o (List.fold_left markers_expr acc call_arguments) empty_fallback) filter
   | Instance_set_union { branches; _ } ->
       List.fold_left (fun acc (b : instance_set_branch) -> c acc b.isb_filter) acc branches
-  | Afgerond { basis; _ } -> o acc basis
-  | Begrensd { basis; minimum; maximum; _ } -> o (o (o acc basis) minimum) maximum
-  | Dimensie_cel { attribuut; _ } -> o acc attribuut
-  | Temporal_read { basis; datum; _ } -> markers_expr (markers_expr acc basis) datum
+  | Rounding { base_expr; _ } -> o acc base_expr
+  | Clamp { base_expr; minimum; maximum; _ } -> o (o (o acc base_expr) minimum) maximum
+  | Dimension_cell_read { attribute_ref; _ } -> o acc attribute_ref
+  | Temporal_read { base_expr; date_value; _ } -> markers_expr (markers_expr acc base_expr) date_value
   | Construct { argument; _ } -> o acc argument
   | Match { scrutinee; arms; _ } ->
       List.fold_left (fun acc (_, _, b) -> markers_expr acc b) (markers_expr acc scrutinee) arms
-  | Struct_literal { velden; _ } -> List.fold_left (fun acc (_, x) -> markers_expr acc x) acc velden
+  | Struct_literal { field_list; _ } -> List.fold_left (fun acc (_, x) -> markers_expr acc x) acc field_list
   | Field_access { base; _ } -> markers_expr acc base
   | Let { value; body; _ } -> markers_expr (markers_expr acc value) body
   | List_literal { elements; _ } -> List.fold_left markers_expr acc elements
@@ -9682,24 +9682,24 @@ let rec markers_expr acc (e : expr) : string option list =
   | If_then_else { condition; then_; else_; _ } ->
       markers_expr (markers_expr (markers_cond acc condition) then_) else_
   | Invoke { arguments; _ } -> List.fold_left markers_expr acc arguments
-  | Fold { list; functie; init; _ } -> markers_fn (markers_expr (markers_expr acc list) init) functie
-  | Map_list { list; functie; _ } -> markers_fn (markers_expr acc list) functie
+  | Fold { list; function_name; init; _ } -> markers_fn (markers_expr (markers_expr acc list) init) function_name
+  | Map_list { list; function_name; _ } -> markers_fn (markers_expr acc list) function_name
   | Filter_list { list; condition; _ } -> markers_cond (markers_expr acc list) condition
   | List_length { list; _ } -> markers_expr acc list
 
 and markers_fn acc = function Fn_lambda { body; _ } -> markers_expr acc body | Fn_name _ -> acc
 
-and markers_cond acc (c : conditie) : string option list =
+and markers_cond acc (c : condition_expr) : string option list =
   let o acc = function Some e -> markers_expr acc e | None -> acc in
   let oc acc = function Some x -> markers_cond acc x | None -> acc in
   match c with
-  | Conditie_onopgelost { bron } -> bron :: acc
-  | Vergelijking { links; rechts; _ } -> o (o acc links) rechts
-  | Predicaat { operand; _ } -> o acc operand
-  | Periode_conditie { vanaf; tot; _ } -> o (o acc vanaf) tot
-  | Samengesteld { onderdelen; _ } -> List.fold_left markers_cond acc onderdelen
-  | Kwantorvouw { kv_filter; kv_toets; _ } -> oc (oc acc kv_filter) kv_toets
-  | Kenmerk_check _ | Role_membership _ | Regelversie _ -> acc
+  | Condition_unresolved { source_name } -> source_name :: acc
+  | Comparison { left_side; right_side; _ } -> o (o acc left_side) right_side
+  | Predicate { operand; _ } -> o acc operand
+  | Time_window { starting_at; up_to; _ } -> o (o acc starting_at) up_to
+  | Compound { components; _ } -> List.fold_left markers_cond acc components
+  | Quantifier_fold { kv_filter; kv_test; _ } -> oc (oc acc kv_filter) kv_test
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _ -> acc
 
 (* Every expression and condition position of the document, with the
    markers below it in document order. *)
@@ -9709,10 +9709,10 @@ let marker_positions ctx : (string * string option list) list =
   let oc at = function Some x -> [ (at, List.rev (markers_cond [] x)) ] | None -> [] in
   let idx name f l = List.concat (List.mapi (fun i x -> f (Printf.sprintf "/%s/%d" name i) x) l) in
   let rec default at (d : default) =
-    oc (at ^ "/justification") d.default_voorwaarde
-    @ oe (at ^ "/consequence") d.default_consequentie
+    oc (at ^ "/justification") d.default_justification
+    @ oe (at ^ "/consequence") d.default_consequence
     @
-    match d.default_excepties with
+    match d.default_exceptions with
     | Some egs ->
         List.concat
           (List.mapi
@@ -9721,35 +9721,35 @@ let marker_positions ctx : (string * string option list) list =
                  (List.mapi
                     (fun m x -> default (Printf.sprintf "%s/exceptions/members/%d/defaults/%d" at k m) x)
                     eg.eg_defaults))
-             egs.egs_leden)
+             egs.egs_members)
     | None -> []
   in
   (* a version of a named form at the pointer the loader recorded, its
      fields under their wire names *)
   List.concat_map
-    (fun (r : resolved_regel) ->
+    (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
-      oe (at ^ "/target") r.doel @ oe (at ^ "/value") r.waarde @ oc (at ^ "/condition") r.rr_voorwaarde)
-    ctx.doc.resolved_regels
+      oe (at ^ "/target") r.objective @ oe (at ^ "/value") r.value_node @ oc (at ^ "/condition") r.rr_condition)
+    ctx.doc.resolved_rules
   @ idx "dayKindDefinitions"
-      (fun at (r : resolved_dagsoort) -> oc (at ^ "/condition") r.rd_voorwaarde)
-      ctx.doc.resolved_dagsoorten
+      (fun at (r : resolved_day_kind) -> oc (at ^ "/condition") r.rd_condition)
+      ctx.doc.resolved_day_kind_definitions
   @ List.concat_map
-      (fun (r : resolved_object_creatie) ->
+      (fun (r : resolved_object_creation) ->
         let at = r.oc_pointer in
-        idx "initialisations" (fun t (x : toekenning) -> oe (at ^ t ^ "/value") x.toe_waarde)
-          r.toekenningen
-        @ oc (at ^ "/condition") r.oc_voorwaarde)
-      ctx.doc.object_creaties
+        idx "initialisations" (fun t (x : assignment) -> oe (at ^ t ^ "/value") x.to_value)
+          r.assignments
+        @ oc (at ^ "/condition") r.oc_condition)
+      ctx.doc.object_creations
   @ List.concat_map
-      (fun (r : resolved_verdeling) -> oc (r.vd_pointer ^ "/condition") r.vd_voorwaarde)
-      ctx.doc.verdelingen
+      (fun (r : resolved_allocation) -> oc (r.vd_pointer ^ "/condition") r.vd_condition)
+      ctx.doc.allocations
   @ List.concat_map
-      (fun (r : resolved_consistentie) -> oc (r.cons_pointer ^ "/assertion") r.assertie)
-      ctx.doc.consistenties
+      (fun (r : resolved_consistency) -> oc (r.cons_pointer ^ "/assertion") r.assertion)
+      ctx.doc.consistencies
   @ List.concat_map
-      (fun (r : resolved_feit_creatie) -> oc (r.fc_pointer ^ "/condition") r.fc_voorwaarde)
-      ctx.doc.feit_creaties
+      (fun (r : resolved_fact_creation) -> oc (r.fc_pointer ^ "/condition") r.fc_condition)
+      ctx.doc.fact_creations
   @ idx "prioritizedDefaults"
       (fun at (l : prioritized_defaults) ->
         idx "defaults" (fun d x -> default (at ^ d) x) l.defaults)
@@ -9786,7 +9786,7 @@ let wf113 ctx =
                d.diag_line) ])
     diags
   @ List.concat_map
-      (fun (at, brons) ->
+      (fun (at, sources_of) ->
         List.filter_map
           (function
             | None -> Some (v "WF-113" at marker_without_source)
@@ -9812,7 +9812,7 @@ let wf113 ctx =
                           "Unresolved marker '%s' is not accounted for: no diagnostic message \
                            contains its source snippet verbatim"
                           b)))
-          brons)
+          sources_of)
       (marker_positions ctx)
 
 (* The second step of the M1 path mapping ([m1_root] is the first): a
@@ -9840,12 +9840,12 @@ let m1_named (doc : document) at =
       (List.mapi (fun i n -> (i, n)) names)
   in
   let tables =
-    [ ("objecttypen", "objectTypes", List.map fst doc.objecttypen);
-      ("feittypen", "factTypes", List.map fst doc.feittypen);
+    [ ("objecttypen", "objectTypes", List.map fst doc.object_types);
+      ("feittypen", "factTypes", List.map fst doc.fact_types);
       ("parameters", "parameters", List.map fst doc.parameters);
-      ("domeinen", "domains", List.map fst doc.domeinen);
-      ("eenheidstelsels", "unitSystems", List.map fst doc.eenheidstelsels);
-      ("dimensies", "dimensions", List.map fst doc.dimensies) ]
+      ("domeinen", "domains", List.map fst doc.domain_specs);
+      ("eenheidstelsels", "unitSystems", List.map fst doc.unit_systems);
+      ("dimensies", "dimensions", List.map fst doc.dimensions) ]
   in
   (* the v0 facet tables the checks still name: the member list the entry
      became part of, and the field of the member node that holds it *)
@@ -9859,12 +9859,12 @@ let m1_named (doc : document) at =
       ("kenmerkTijdlijnAantal", ("characteristics", "/timeline/count"));
       ("kenmerkVastStartpunt", ("characteristics", "/timeline/fixedStart")) ]
   in
-  let member_tail (ot : objecttype) tail =
+  let member_tail (ot : object_type) tail =
     match String.split_on_char '/' tail with
     | "" :: seg :: _ when List.mem_assoc seg facets -> (
         let members, field = List.assoc seg facets in
         let names =
-          if members = "attributes" then List.map fst ot.attributen else some_names ot.kenmerken
+          if members = "attributes" then List.map fst ot.attributes else some_names ot.characteristics
         in
         match if tail = "/" ^ seg then None else pick names (after (String.length seg + 2) tail) with
         | Some (j, n) ->
@@ -9884,7 +9884,7 @@ let m1_named (doc : document) at =
           let tail = after (String.length v0 + 2 + String.length n) at in
           match v0 with
           | "domeinen" -> decl ^ "/datatype" ^ tail
-          | "objecttypen" -> decl ^ member_tail (snd (List.nth doc.objecttypen i)) tail
+          | "objecttypen" -> decl ^ member_tail (snd (List.nth doc.object_types i)) tail
           | _ -> decl ^ tail))
 
 (* WF-115 (IR-SPEC ch. 2.8): every fixed start point fits its grid — on a
@@ -9895,273 +9895,273 @@ let m1_named (doc : document) at =
    carry their wire pointers, mapped here because the executors' loader
    refuses the first of them itself ([Loader.reader]). (c) points at the
    timeline name, which is present where the fixed start point may not be. *)
-let wf115_bevindingen (doc : document) : (string * string) list =
-  let benoemd n =
+let wf115_findings (doc : document) : (string * string) list =
+  let named_item n =
     List.find_opt
-      (fun tl -> match tl.tl_naam with Some x -> tl_norm x = tl_norm n | None -> false)
-      doc.tijdlijnen
+      (fun tl -> match tl.tl_name with Some x -> tl_norm x = tl_norm n | None -> false)
+      doc.timelines
   in
-  let tijdlijnen =
+  let timelines =
     List.concat
       (List.mapi
-         (fun i (tl : tijdlijn) ->
+         (fun i (tl : timeline_state) ->
            let at = Printf.sprintf "/tijdlijnen/%d/fixedStart" i in
-           match (tl.tl_vast_startpunt, tl.variabel_startpunt, tl.tl_granulariteit) with
+           match (tl.tl_fixed_start_point, tl.variable_start, tl.tl_granularity) with
            | Some s, true, _ ->
-               [ (at, vast_startpunt_variabel_refusal (Option.value tl.tl_naam ~default:"") s) ]
+               [ (at, fixed_start_point_variable_refusal (Option.value tl.tl_name ~default:"") s) ]
            | Some s, false, Some g ->
-               Option.to_list (Option.map (fun r -> (at, r)) (vast_startpunt_refusal g tl.tl_aantal s))
+               Option.to_list (Option.map (fun r -> (at, r)) (fixed_start_point_refusal g tl.tl_count s))
            | _ -> [])
-         doc.tijdlijnen)
+         doc.timelines)
   in
-  let facetten =
+  let facet_list =
     List.concat_map
-      (fun (otn, (ot : objecttype)) ->
-        let at tabel lid = "/objecttypen/" ^ otn ^ "/" ^ tabel ^ "/" ^ lid in
-        let past tabel granulariteiten tijdvakken =
+      (fun (otn, (ot : object_type)) ->
+        let at lookup_table one_member = "/objecttypen/" ^ otn ^ "/" ^ lookup_table ^ "/" ^ one_member in
+        let fits_in lookup_table granularities periods =
           List.filter_map
-            (fun (lid, (t : tijdvak)) ->
-              match (t.tv_vast_startpunt, Option.join (find_ci granulariteiten lid), t.tv_aantal) with
+            (fun (one_member, (t : period)) ->
+              match (t.tv_fixed_start_point, Option.join (find_ci granularities one_member), t.tv_count) with
               | Some s, Some g, Some n ->
-                  Option.map (fun r -> (at tabel lid, r)) (vast_startpunt_refusal g n s)
+                  Option.map (fun r -> (at lookup_table one_member, r)) (fixed_start_point_refusal g n s)
               | _ -> None)
-            tijdvakken
+            periods
         in
-        past "attribuutVastStartpunt" ot.attribuut_granulariteit ot.attribuut_tijdlijn_aantal
-        @ past "kenmerkVastStartpunt" ot.kenmerk_granulariteit ot.kenmerk_tijdlijn_aantal
+        fits_in "attribuutVastStartpunt" ot.attribute_granularity ot.attribute_timeline_count
+        @ fits_in "kenmerkVastStartpunt" ot.characteristic_granularity ot.characteristic_timeline_count
         @ List.filter_map
-            (fun (lid, naam) ->
-              match Option.bind naam benoemd with
+            (fun (one_member, ident) ->
+              match Option.bind ident named_item with
               | None -> None (* WF-003 reports the dangling reference *)
               | Some tl ->
                   let facet =
-                    Option.bind (find_ci ot.attribuut_tijdlijn_aantal lid) (fun t -> t.tv_vast_startpunt)
+                    Option.bind (find_ci ot.attribute_timeline_count one_member) (fun t -> t.tv_fixed_start_point)
                   in
-                  if facet = tl.tl_vast_startpunt then None
+                  if facet = tl.tl_fixed_start_point then None
                   else
                     Some
-                      ( at "attribuutTijdlijnNaam" lid,
-                        vast_startpunt_overname_refusal ~facet ~tijdlijn:(Option.get naam)
-                          ~van_tijdlijn:tl.tl_vast_startpunt ))
-            ot.attribuut_tijdlijn_naam)
-      doc.objecttypen
+                      ( at "attribuutTijdlijnNaam" one_member,
+                        fixed_start_point_adoption_refusal ~facet ~timeline_state:(Option.get ident)
+                          ~from_timeline:tl.tl_fixed_start_point ))
+            ot.attribute_timeline_names)
+      doc.object_types
   in
   let parameters =
     List.filter_map
       (fun (p, (par : parameter)) ->
-        match (par.par_vast_startpunt, par.par_granulariteit, par.par_tijdlijn_aantal) with
+        match (par.par_fixed_start_point, par.par_granularity, par.par_timeline_count) with
         | Some s, Some g, Some n ->
             Option.map
               (fun r -> ("/parameters/" ^ p ^ "/timeline/fixedStart", r))
-              (vast_startpunt_refusal g n s)
+              (fixed_start_point_refusal g n s)
         | _ -> None)
       doc.parameters
   in
-  List.map (fun (at, r) -> (m1_named doc (m1_root at), r)) (tijdlijnen @ facetten @ parameters)
+  List.map (fun (at, r) -> (m1_named doc (m1_root at), r)) (timelines @ facet_list @ parameters)
 
-let wf115 ctx = List.map (fun (at, r) -> v "WF-115" at r) (wf115_bevindingen ctx.doc)
+let wf115 ctx = List.map (fun (at, r) -> v "WF-115" at r) (wf115_findings ctx.doc)
 
 (* --- WF-116 to WF-120: the vocabulary side table (IR-SPEC ch. 2.12) ----- *)
 
-(* The table is read by [Loader.vocabulaires] and handed in beside the
+(* The table is read by [Loader.vocabularies] and handed in beside the
    document, which does not keep it (Ast): [all] runs without it, and the
    verifier runs both. Every pointer here is a pointer into the document as
    written, so no path is mapped. *)
 
 (* The whitespace [String.trim] strips: space, tab, line feed, carriage
    return and form feed. *)
-let is_wit c = c = ' ' || c = '\t' || c = '\n' || c = '\r' || c = '\012'
+let is_whitespace c = c = ' ' || c = '\t' || c = '\n' || c = '\r' || c = '\012'
 
 (* A word, as a vocabulary's name is one (ch. 2.12): not empty, and free of
    whitespace, parentheses and the colon, so that the dialect's annotation
    (<vocabulary>: <designation>) can write it. *)
-let is_woord s =
-  s <> "" && not (String.exists (fun c -> is_wit c || c = '(' || c = ')' || c = ':') s)
+let is_word s =
+  s <> "" && not (String.exists (fun c -> is_whitespace c || c = '(' || c = ')' || c = ':') s)
 
 (* A language code, which is not checked beyond its form: not empty, and free
    of whitespace. *)
-let is_taalcode s = s <> "" && not (String.exists is_wit s)
+let is_language_code s = s <> "" && not (String.exists is_whitespace s)
 
 (* A designation's text: not empty, and no whitespace at either end. *)
-let is_getrimd s = s <> "" && String.trim s = s
+let is_trimmed s = s <> "" && String.trim s = s
 
-let heeft_haakje s = String.exists (fun c -> c = '(' || c = ')') s
+let has_bracket s = String.exists (fun c -> c = '(' || c = ')') s
 
-let beschrijving (b : benoembaar) =
-  let eig = Option.value ~default:"" b.bn_eigenaar in
-  match b.bn_soort with
-  | Bn_objecttype -> Printf.sprintf "the object type '%s'" b.bn_naam
-  | Bn_attribuut -> Printf.sprintf "the attribute '%s' of '%s'" b.bn_naam eig
-  | Bn_kenmerk -> Printf.sprintf "the characteristic '%s' of '%s'" b.bn_naam eig
-  | Bn_feittype -> Printf.sprintf "the fact type '%s'" b.bn_naam
-  | Bn_rol -> Printf.sprintf "the role '%s' of '%s'" b.bn_naam eig
-  | Bn_enumeratiewaarde -> Printf.sprintf "the value '%s' of '%s'" b.bn_naam eig
-  | Bn_parameter -> Printf.sprintf "the parameter '%s'" b.bn_naam
-  | Bn_vorm -> Printf.sprintf "the form '%s'" b.bn_naam
-  | Bn_regelgroep -> Printf.sprintf "the rule group '%s'" b.bn_naam
+let description (b : designatable) =
+  let eig = Option.value ~default:"" b.bn_owner in
+  match b.bn_kind with
+  | Bn_object_type -> Printf.sprintf "the object type '%s'" b.bn_name
+  | Bn_attribute -> Printf.sprintf "the attribute '%s' of '%s'" b.bn_name eig
+  | Bn_characteristic -> Printf.sprintf "the characteristic '%s' of '%s'" b.bn_name eig
+  | Bn_fact_type -> Printf.sprintf "the fact type '%s'" b.bn_name
+  | Bn_role -> Printf.sprintf "the role '%s' of '%s'" b.bn_name eig
+  | Bn_enumeration_value -> Printf.sprintf "the value '%s' of '%s'" b.bn_name eig
+  | Bn_parameter -> Printf.sprintf "the parameter '%s'" b.bn_name
+  | Bn_form -> Printf.sprintf "the form '%s'" b.bn_name
+  | Bn_rule_group -> Printf.sprintf "the rule group '%s'" b.bn_name
 
 (* WF-116: the vocabulary declarations. *)
-let wf116 (t : vocabulaire_tafel) : violation list =
+let wf116 (t : vocabulary_table) : violation list =
   let v at reason = { wf = "WF-116"; at; reason } in
-  let naam =
+  let ident =
     List.filter_map
-      (fun (x : vocabulaire) ->
-        if is_woord x.voc_naam then None
+      (fun (x : vocabulary) ->
+        if is_word x.voc_name then None
         else
           Some
             (v (x.voc_at ^ "/name")
                (Printf.sprintf
                   "vocabulary name '%s' is not a word: it is empty, or carries whitespace, a \
                    parenthesis or a colon"
-                  x.voc_naam)))
-      t.vt_vocabulaires
+                  x.voc_name)))
+      t.vt_vocabularies
   in
-  let dubbel =
+  let duplicate =
     List.map
-      (fun (eerste, tweede, at) ->
+      (fun (leading, second, at) ->
         v (at ^ "/name")
-          (Printf.sprintf "vocabularies '%s' and '%s' collide case-insensitively" eerste tweede))
-      (dups_by norm (List.map (fun (x : vocabulaire) -> (x.voc_naam, x.voc_at)) t.vt_vocabulaires))
+          (Printf.sprintf "vocabularies '%s' and '%s' collide case-insensitively" leading second))
+      (dups_by norm (List.map (fun (x : vocabulary) -> (x.voc_name, x.voc_at)) t.vt_vocabularies))
   in
-  let standaard =
-    match List.filter (fun (x : vocabulaire) -> x.voc_standaard) t.vt_vocabulaires with
-    | eerste :: rest ->
+  let fallback =
+    match List.filter (fun (x : vocabulary) -> x.voc_default) t.vt_vocabularies with
+    | leading :: rest ->
         List.map
-          (fun (x : vocabulaire) ->
+          (fun (x : vocabulary) ->
             v (x.voc_at ^ "/default")
               (Printf.sprintf
                  "vocabularies '%s' and '%s' are both the default: a document has at most one default \
                   vocabulary"
-                 eerste.voc_naam x.voc_naam))
+                 leading.voc_name x.voc_name))
           rest
     | [] -> []
   in
-  let taal =
+  let language =
     List.filter_map
-      (fun (x : vocabulaire) ->
-        match x.voc_taal with
-        | Some l when not (is_taalcode l) ->
+      (fun (x : vocabulary) ->
+        match x.voc_language with
+        | Some l when not (is_language_code l) ->
             Some
               (v (x.voc_at ^ "/language")
                  (Printf.sprintf "language '%s' of vocabulary '%s' is not a code: it is empty or carries \
                                   whitespace"
-                    l x.voc_naam))
+                    l x.voc_name))
         | _ -> None)
-      t.vt_vocabulaires
+      t.vt_vocabularies
   in
-  naam @ dubbel @ standaard @ taal
+  ident @ duplicate @ fallback @ language
 
-let vocabulaire_van (t : vocabulaire_tafel) naam =
-  List.find_opt (fun (x : vocabulaire) -> norm x.voc_naam = norm naam) t.vt_vocabulaires
+let vocabulary_of (t : vocabulary_table) ident =
+  List.find_opt (fun (x : vocabulary) -> norm x.voc_name = norm ident) t.vt_vocabularies
 
 (* WF-117: every designation. A designation is text in every vocabulary
    (maintainer decision 2026-09-27): its form is asked whatever vocabulary it
    names. *)
-let wf117 (t : vocabulaire_tafel) : violation list =
+let wf117 (t : vocabulary_table) : violation list =
   let v at reason = { wf = "WF-117"; at; reason } in
-  let per_element (b : benoembaar) =
-    let rec loop gezien = function
+  let per_element (b : designatable) =
+    let rec loop seen_before = function
       | [] -> []
-      | (x : benaming) :: rest ->
-          let d = x.ben_tekst in
-          let onbekend =
-            match vocabulaire_van t x.ben_vocabulaire with
+      | (x : designation) :: rest ->
+          let d = x.ben_text in
+          let unknown =
+            match vocabulary_of t x.ben_vocabulary with
             | None ->
                 [ v (x.ben_at ^ "/vocabulary")
                     (Printf.sprintf
                        "designation '%s' names the vocabulary '%s', which the document does not declare"
-                       d x.ben_vocabulaire) ]
+                       d x.ben_vocabulary) ]
             | Some _ -> []
           in
-          let tweede =
+          let second =
             match
-              List.find_opt (fun (y : benaming) -> norm y.ben_vocabulaire = norm x.ben_vocabulaire) gezien
+              List.find_opt (fun (y : designation) -> norm y.ben_vocabulary = norm x.ben_vocabulary) seen_before
             with
-            | Some eerder ->
+            | Some earlier ->
                 [ v x.ben_at
                     (Printf.sprintf "a second designation in the vocabulary '%s' on %s: '%s' and '%s'"
-                       x.ben_vocabulaire (beschrijving b) eerder.ben_tekst d) ]
+                       x.ben_vocabulary (description b) earlier.ben_text d) ]
             | None -> []
           in
-          let vorm =
-            (if is_getrimd d then []
+          let form_kind =
+            (if is_trimmed d then []
              else
                [ v (x.ben_at ^ "/designation")
                    (Printf.sprintf
                       "designation '%s' in the vocabulary '%s' is empty or not trimmed: a designation is \
                        text without whitespace at either end"
-                      d x.ben_vocabulaire) ])
+                      d x.ben_vocabulary) ])
             @
-            if heeft_haakje d then
+            if has_bracket d then
               [ v (x.ben_at ^ "/designation")
                   (Printf.sprintf
                      "designation '%s' in the vocabulary '%s' carries a parenthesis, which the source form \
                       (<vocabulary>: <designation>) cannot write"
-                     d x.ben_vocabulaire) ]
+                     d x.ben_vocabulary) ]
             else []
           in
-          onbekend @ tweede @ vorm @ loop (gezien @ [ x ]) rest
+          unknown @ second @ form_kind @ loop (seen_before @ [ x ]) rest
     in
-    loop [] b.bn_benamingen
+    loop [] b.bn_designations
   in
-  List.concat_map per_element t.vt_benoembaar
+  List.concat_map per_element t.vt_designatable
   @ List.map
-      (fun (domein, w, at) ->
+      (fun (domain_spec, w, at) ->
         v at (Printf.sprintf "a value designation names '%s', which the enumeration '%s' does not declare"
-                w domein))
-      t.vt_losse_waarden
+                w domain_spec))
+      t.vt_separate_values
 
 (* The designation of [b] in the declared vocabulary [voc], if it carries one. *)
-let benaming_in (voc : vocabulaire) (b : benoembaar) =
-  List.find_opt (fun (x : benaming) -> norm x.ben_vocabulaire = norm voc.voc_naam) b.bn_benamingen
+let designation_in (voc : vocabulary) (b : designatable) =
+  List.find_opt (fun (x : designation) -> norm x.ben_vocabulary = norm voc.voc_name) b.bn_designations
 
 (* The effective name of [b] in [voc]: its designation there, or its canonical
    name; the flag says whether it is a designation. *)
-let effectief voc b =
-  match benaming_in voc b with Some x -> (x.ben_tekst, true) | None -> (b.bn_naam, false)
+let effective voc b =
+  match designation_in voc b with Some x -> (x.ben_text, true) | None -> (b.bn_name, false)
 
 (* The supertype chain of an object type, itself first, cycle-safe (WF-104
    reports a cycle; this walk only stops at it). *)
-let keten (doc : document) naam =
+let link_chain (doc : document) ident =
   let rec loop acc n =
     if List.exists (fun m -> norm m = norm n) acc then List.rev acc
     else
-      match find_ci doc.objecttypen n with
+      match find_ci doc.object_types n with
       | Some ot -> (
           match ot.ot_supertype with Some s -> loop (n :: acc) s | None -> List.rev (n :: acc))
       | None -> List.rev (n :: acc)
   in
-  loop [] naam
+  loop [] ident
 
 (* WF-118: within each vocabulary the effective names of one scope are unique
    (ci). A collision of two canonical names is another rule's and is not
    repeated. Each colliding pair is reported once: in a chain scope at the
    type the later member of the pair is declared on or inherited by first,
    which is the type whose own members take part in it. *)
-let wf118 (doc : document) (t : vocabulaire_tafel) : violation list =
+let wf118 (doc : document) (t : vocabulary_table) : violation list =
   let v at reason = { wf = "WF-118"; at; reason } in
-  let meervoud = function
-    | Bn_objecttype -> "object types" | Bn_attribuut -> "attributes"
-    | Bn_kenmerk -> "characteristics" | Bn_feittype -> "fact types" | Bn_rol -> "roles"
-    | Bn_enumeratiewaarde -> "values" | Bn_parameter -> "parameters" | Bn_vorm -> "forms"
-    | Bn_regelgroep -> "rule groups"
+  let plural = function
+    | Bn_object_type -> "object types" | Bn_attribute -> "attributes"
+    | Bn_characteristic -> "characteristics" | Bn_fact_type -> "fact types" | Bn_role -> "roles"
+    | Bn_enumeration_value -> "values" | Bn_parameter -> "parameters" | Bn_form -> "forms"
+    | Bn_rule_group -> "rule groups"
   in
-  let van soort = List.filter (fun (b : benoembaar) -> b.bn_soort = soort) t.vt_benoembaar in
-  let eigenaar_is n (b : benoembaar) = match b.bn_eigenaar with Some e -> norm e = norm n | None -> false in
+  let van variety = List.filter (fun (b : designatable) -> b.bn_kind = variety) t.vt_designatable in
+  let owner_is n (b : designatable) = match b.bn_owner with Some e -> norm e = norm n | None -> false in
   (* the pairs of [leden] that collide in [voc], each once; [telt] says which
      pairs this scope reports *)
-  let botsingen voc ~scope ~telt leden =
-    let effs = List.map (fun b -> (b, effectief voc b)) leden in
+  let collisions voc ~scope ~tallies member_list =
+    let effs = List.map (fun b -> (b, effective voc b)) member_list in
     let rec paren = function
       | [] -> []
-      | (a, (na, da)) :: rest ->
+      | (a, (denominator_a, da)) :: rest ->
           List.filter_map
             (fun (b, (nb, db)) ->
-              if norm na = norm nb && (da || db) && telt a b then
+              if norm denominator_a = norm nb && (da || db) && tallies a b then
                 Some
                   (v b.bn_at
                      (Printf.sprintf "%s '%s' and '%s'%s share the effective name '%s' in the vocabulary '%s'"
-                        (meervoud a.bn_soort) a.bn_naam b.bn_naam scope nb voc.voc_naam))
+                        (plural a.bn_kind) a.bn_name b.bn_name scope nb voc.voc_name))
               else None)
             rest
           @ paren rest
@@ -10169,78 +10169,78 @@ let wf118 (doc : document) (t : vocabulaire_tafel) : violation list =
     paren effs
   in
   List.concat_map
-    (fun (voc : vocabulaire) ->
-      let globaal =
+    (fun (voc : vocabulary) ->
+      let global =
         List.concat_map
-          (fun s -> botsingen voc ~scope:"" ~telt:(fun _ _ -> true) (van s))
-          [ Bn_objecttype; Bn_feittype; Bn_parameter; Bn_vorm; Bn_regelgroep ]
+          (fun s -> collisions voc ~scope:"" ~tallies:(fun _ _ -> true) (van s))
+          [ Bn_object_type; Bn_fact_type; Bn_parameter; Bn_form; Bn_rule_group ]
       in
-      let per_eigenaar soort eigenaars scope_van =
+      let per_owner variety owners scope_of =
         List.concat_map
           (fun e ->
-            botsingen voc ~scope:(scope_van e) ~telt:(fun _ _ -> true)
-              (List.filter (eigenaar_is e) (van soort)))
-          eigenaars
+            collisions voc ~scope:(scope_of e) ~tallies:(fun _ _ -> true)
+              (List.filter (owner_is e) (van variety)))
+          owners
       in
-      let feittypen = List.map (fun (b : benoembaar) -> b.bn_naam) (van Bn_feittype) in
-      let domeinen =
+      let fact_types = List.map (fun (b : designatable) -> b.bn_name) (van Bn_fact_type) in
+      let domain_specs =
         List.sort_uniq compare
-          (List.filter_map (fun (b : benoembaar) -> b.bn_eigenaar) (van Bn_enumeratiewaarde))
+          (List.filter_map (fun (b : designatable) -> b.bn_owner) (van Bn_enumeration_value))
       in
-      let rollen = per_eigenaar Bn_rol feittypen (Printf.sprintf " of the fact type '%s'") in
-      let waarden = per_eigenaar Bn_enumeratiewaarde domeinen (Printf.sprintf " of the enumeration '%s'") in
-      let leden soort =
+      let role_names = per_owner Bn_role fact_types (Printf.sprintf " of the fact type '%s'") in
+      let label_list = per_owner Bn_enumeration_value domain_specs (Printf.sprintf " of the enumeration '%s'") in
+      let member_list variety =
         List.concat_map
-          (fun (ot : benoembaar) ->
-            let k = keten doc ot.bn_naam in
-            let eigen = List.filter (eigenaar_is ot.bn_naam) (van soort) in
-            let geerfd =
-              List.concat_map (fun n -> List.filter (eigenaar_is n) (van soort)) (List.tl k)
+          (fun (ot : designatable) ->
+            let k = link_chain doc ot.bn_name in
+            let owned = List.filter (owner_is ot.bn_name) (van variety) in
+            let inherited =
+              List.concat_map (fun n -> List.filter (owner_is n) (van variety)) (List.tl k)
             in
-            botsingen voc
-              ~scope:(Printf.sprintf " of the object type '%s'" ot.bn_naam)
-              ~telt:(fun a b -> List.memq a eigen || List.memq b eigen)
-              (eigen @ geerfd))
-          (van Bn_objecttype)
+            collisions voc
+              ~scope:(Printf.sprintf " of the object type '%s'" ot.bn_name)
+              ~tallies:(fun a b -> List.memq a owned || List.memq b owned)
+              (owned @ inherited))
+          (van Bn_object_type)
       in
-      globaal @ leden Bn_attribuut @ leden Bn_kenmerk @ rollen @ waarden)
-    t.vt_vocabulaires
+      global @ member_list Bn_attribute @ member_list Bn_characteristic @ role_names @ label_list)
+    t.vt_vocabularies
 
 (* WF-119: the default vocabulary names every designatable declaration. *)
-let wf119 (t : vocabulaire_tafel) : violation list =
+let wf119 (t : vocabulary_table) : violation list =
   List.concat_map
-    (fun (voc : vocabulaire) ->
-      if not voc.voc_standaard then []
+    (fun (voc : vocabulary) ->
+      if not voc.voc_default then []
       else
         List.filter_map
-          (fun (b : benoembaar) ->
-            match benaming_in voc b with
+          (fun (b : designatable) ->
+            match designation_in voc b with
             | Some _ -> None
             | None ->
                 Some
                   { wf = "WF-119"; at = b.bn_at;
                     reason =
                       Printf.sprintf "%s carries no designation in the default vocabulary '%s'"
-                        (beschrijving b) voc.voc_naam })
-          t.vt_benoembaar)
-    t.vt_vocabulaires
+                        (description b) voc.voc_name })
+          t.vt_designatable)
+    t.vt_vocabularies
 
 (* WF-120: a redundant designation, in a vocabulary that is not the default
    and byte-equal to its declaration's canonical name, is accounted for by a
    diagnostic whose message contains it, as WF-113 (b) accounts for a marker. *)
-let wf120 (doc : document) (t : vocabulaire_tafel) : violation list =
-  let gemeld d =
+let wf120 (doc : document) (t : vocabulary_table) : violation list =
+  let reported d =
     List.exists
       (fun (x : diagnostic) ->
         match x.message with Some m -> contains_verbatim ~hay:m ~needle:d | None -> false)
       doc.diagnostics
   in
   List.concat_map
-    (fun (b : benoembaar) ->
+    (fun (b : designatable) ->
       List.filter_map
-        (fun (x : benaming) ->
-          match vocabulaire_van t x.ben_vocabulaire with
-          | Some voc when (not voc.voc_standaard) && x.ben_tekst = b.bn_naam && not (gemeld x.ben_tekst) ->
+        (fun (x : designation) ->
+          match vocabulary_of t x.ben_vocabulary with
+          | Some voc when (not voc.voc_default) && x.ben_text = b.bn_name && not (reported x.ben_text) ->
               Some
                 { wf = "WF-120"; at = x.ben_at ^ "/designation";
                   reason =
@@ -10248,52 +10248,52 @@ let wf120 (doc : document) (t : vocabulaire_tafel) : violation list =
                       "designation '%s' in the vocabulary '%s' spells the canonical name of %s, and no \
                        diagnostic accounts for it: a redundant designation is admitted with a warning \
                        whose message contains it"
-                      x.ben_tekst voc.voc_naam (beschrijving b) }
+                      x.ben_text voc.voc_name (description b) }
           | _ -> None)
-        b.bn_benamingen)
-    t.vt_benoembaar
+        b.bn_designations)
+    t.vt_designatable
 
 (* --- WF-121: the origin of a made declaration (IR-SPEC ch. 2.13) -------- *)
 
 (* The closed set of forms, in the order of the spec's table. *)
-let herkomst_vormen =
+let origin_forms =
   [ "inputAboveComputation"; "exceptionForSubtype"; "decisionTableRow"; "stepsAfterSet"; "startPoint" ]
 
 (* The closed set of kinds, each with the kind of declaration it names;
    [decisionTable] names none, since a decision table is no declaration on
    the wire (its rows are). *)
-let herkomst_soorten =
-  [ ("objectType", Some Bn_objecttype); ("attribute", Some Bn_attribuut);
-    ("characteristic", Some Bn_kenmerk); ("factType", Some Bn_feittype); ("role", Some Bn_rol);
-    ("enumerationValue", Some Bn_enumeratiewaarde); ("parameter", Some Bn_parameter);
-    ("namedForm", Some Bn_vorm); ("ruleGroup", Some Bn_regelgroep); ("decisionTable", None) ]
+let origin_kinds =
+  [ ("objectType", Some Bn_object_type); ("attribute", Some Bn_attribute);
+    ("characteristic", Some Bn_characteristic); ("factType", Some Bn_fact_type); ("role", Some Bn_role);
+    ("enumerationValue", Some Bn_enumeration_value); ("parameter", Some Bn_parameter);
+    ("namedForm", Some Bn_form); ("ruleGroup", Some Bn_rule_group); ("decisionTable", None) ]
 
 (* The kind of 'from' each form names (WF-121 (d)). *)
-let herkomst_bronsoort = function
+let origin_source_kind = function
   | "inputAboveComputation" | "stepsAfterSet" -> Some "attribute"
   | "exceptionForSubtype" | "startPoint" -> Some "namedForm"
   | "decisionTableRow" -> Some "decisionTable"
   | _ -> None
 
 (* The kinds whose declaration is scoped by an owner. *)
-let herkomst_met_eigenaar = [ "attribute"; "characteristic"; "role"; "enumerationValue" ]
+let origin_with_owner = [ "attribute"; "characteristic"; "role"; "enumerationValue" ]
 
 (* WF-121 (a), the pointer and the sentence: the verifier cites it under the
    rule's number, and every other reader refuses the document at load in the
    same sentence ([Loader.document]), because a reader that keeps the origin
    cannot hold a value its set does not name. *)
-let herkomst_refusal (h : herkomst) : (string * string) option =
-  let lijst xs = String.concat ", " (List.map (Printf.sprintf "'%s'") xs) in
-  if not (List.mem h.hk_vorm herkomst_vormen) then
+let origin_refusal (h : origin) : (string * string) option =
+  let element_list xs = String.concat ", " (List.map (Printf.sprintf "'%s'") xs) in
+  if not (List.mem h.hk_form origin_forms) then
     Some
       ( h.hk_at ^ "/form",
-        Printf.sprintf "the origin form '%s' is none of the forms of IR-SPEC ch. 2.13 (%s)" h.hk_vorm
-          (lijst herkomst_vormen) )
-  else if not (List.mem_assoc h.hk_soort herkomst_soorten) then
+        Printf.sprintf "the origin form '%s' is none of the forms of IR-SPEC ch. 2.13 (%s)" h.hk_form
+          (element_list origin_forms) )
+  else if not (List.mem_assoc h.hk_kind origin_kinds) then
     Some
       ( h.hk_at ^ "/from/kind",
         Printf.sprintf "the origin's source kind '%s' is none of the kinds of IR-SPEC ch. 2.13 (%s)"
-          h.hk_soort (lijst (List.map fst herkomst_soorten)) )
+          h.hk_kind (element_list (List.map fst origin_kinds)) )
   else None
 
 (* The declaration an origin's 'from' names: of its kind, under the name
@@ -10301,121 +10301,121 @@ let herkomst_refusal (h : herkomst) : (string * string) option =
    characteristic is found on the object type that declares it, which is the
    owner the table records for it. [None] for an unknown kind, for
    'decisionTable', and for a name no declaration of the kind carries. *)
-let herkomst_bron (t : vocabulaire_tafel) (h : herkomst) : benoembaar option =
-  match List.assoc_opt h.hk_soort herkomst_soorten with
-  | Some (Some soort) ->
+let origin_source (t : vocabulary_table) (h : origin) : designatable option =
+  match List.assoc_opt h.hk_kind origin_kinds with
+  | Some (Some variety) ->
       List.find_opt
-        (fun (b : benoembaar) ->
-          b.bn_soort = soort && norm b.bn_naam = norm h.hk_naam
-          && (match (b.bn_eigenaar, h.hk_eigenaar) with
+        (fun (b : designatable) ->
+          b.bn_kind = variety && norm b.bn_name = norm h.hk_name
+          && (match (b.bn_owner, h.hk_owner) with
              | Some e, Some o -> norm e = norm o
              | None, _ -> true
              | Some _, None -> false))
-        t.vt_benoembaar
+        t.vt_designatable
   | Some None | None -> None
 
 (* An origin's source as a phrase: the kind as written, its owner where
    written, and its name. *)
-let herkomst_noemt (h : herkomst) =
-  match h.hk_eigenaar with
-  | Some o -> Printf.sprintf "the %s '%s' of '%s'" h.hk_soort h.hk_naam o
-  | None -> Printf.sprintf "the %s '%s'" h.hk_soort h.hk_naam
+let origin_names (h : origin) =
+  match h.hk_owner with
+  | Some o -> Printf.sprintf "the %s '%s' of '%s'" h.hk_kind h.hk_name o
+  | None -> Printf.sprintf "the %s '%s'" h.hk_kind h.hk_name
 
 (* WF-121: (a) the closed sets; (b) 'owner' exactly on a scoped kind, and a
    source that resolves; (c) no origin naming its own declaration, and no
    cycle — each reported once, at its member that comes first in the
    document; (d) the kind the form names. A clause that needs a value (a)
    refuses is not asked. *)
-let wf121 (t : vocabulaire_tafel) : violation list =
+let wf121 (t : vocabulary_table) : violation list =
   let v at reason = { wf = "WF-121"; at; reason } in
-  let dragers =
+  let carriers =
     List.filter_map
-      (fun (b : benoembaar) -> Option.map (fun h -> (b, h)) b.bn_herkomst)
-      t.vt_benoembaar
+      (fun (b : designatable) -> Option.map (fun h -> (b, h)) b.bn_origin)
+      t.vt_designatable
   in
-  let index (b : benoembaar) =
-    let rec zoek i = function
+  let index (b : designatable) =
+    let rec search i = function
       | [] -> max_int
-      | (x : benoembaar) :: rest -> if x.bn_at = b.bn_at then i else zoek (i + 1) rest
+      | (x : designatable) :: rest -> if x.bn_at = b.bn_at then i else search (i + 1) rest
     in
-    zoek 0 t.vt_benoembaar
+    search 0 t.vt_designatable
   in
   List.concat_map
-    (fun ((b : benoembaar), (h : herkomst)) ->
-      let a = match herkomst_refusal h with Some (at, r) -> [ v at r ] | None -> [] in
-      let soort_bekend = List.mem_assoc h.hk_soort herkomst_soorten in
+    (fun ((b : designatable), (h : origin)) ->
+      let a = match origin_refusal h with Some (at, r) -> [ v at r ] | None -> [] in
+      let kind_known = List.mem_assoc h.hk_kind origin_kinds in
       let bv =
-        if not soort_bekend then []
+        if not kind_known then []
         else
-          let scoped = List.mem h.hk_soort herkomst_met_eigenaar in
-          let eigenaar =
-            match (scoped, h.hk_eigenaar) with
+          let scoped = List.mem h.hk_kind origin_with_owner in
+          let holder =
+            match (scoped, h.hk_owner) with
             | true, None ->
                 [ v (h.hk_at ^ "/from")
                     (Printf.sprintf
                        "the origin of %s comes from the %s '%s' without an owner, and a source of that kind \
                         names the declaration that scopes it"
-                       (beschrijving b) h.hk_soort h.hk_naam) ]
+                       (description b) h.hk_kind h.hk_name) ]
             | false, Some o ->
                 [ v (h.hk_at ^ "/from/owner")
                     (Printf.sprintf
                        "the origin of %s comes from the %s '%s' with the owner '%s', and a source of that \
                         kind has none"
-                       (beschrijving b) h.hk_soort h.hk_naam o) ]
+                       (description b) h.hk_kind h.hk_name o) ]
             | _ -> []
           in
-          let bestaat =
-            if h.hk_soort = "decisionTable" || eigenaar <> [] || herkomst_bron t h <> None then []
+          let exists =
+            if h.hk_kind = "decisionTable" || holder <> [] || origin_source t h <> None then []
             else
               [ v (h.hk_at ^ "/from")
                   (Printf.sprintf "the origin of %s comes from %s, which the document does not declare"
-                     (beschrijving b) (herkomst_noemt h)) ]
+                     (description b) (origin_names h)) ]
           in
-          eigenaar @ bestaat
+          holder @ exists
       in
       let c =
-        match herkomst_bron t h with
+        match origin_source t h with
         | Some x when x.bn_at = b.bn_at ->
             [ v (h.hk_at ^ "/from")
-                (Printf.sprintf "the origin of %s names that declaration itself" (beschrijving b)) ]
+                (Printf.sprintf "the origin of %s names that declaration itself" (description b)) ]
         | Some first -> (
             (* follow the origins from [b]; report a cycle through [b] at the
                member of it that comes first in the document *)
-            let rec loop pad (x : benoembaar) =
-              if x.bn_at = b.bn_at then Some (List.rev pad)
-              else if List.exists (fun (y : benoembaar) -> y.bn_at = x.bn_at) pad then None
+            let rec loop trail (x : designatable) =
+              if x.bn_at = b.bn_at then Some (List.rev trail)
+              else if List.exists (fun (y : designatable) -> y.bn_at = x.bn_at) trail then None
               else
-                match x.bn_herkomst with
+                match x.bn_origin with
                 | None -> None
                 | Some hx -> (
-                    match herkomst_bron t hx with
-                    | Some y -> loop (x :: pad) y
+                    match origin_source t hx with
+                    | Some y -> loop (x :: trail) y
                     | None -> None)
             in
             match loop [] first with
-            | Some kring when List.for_all (fun y -> index b < index y) kring ->
+            | Some cycle when List.for_all (fun y -> index b < index y) cycle ->
                 [ v (h.hk_at ^ "/from")
                     (Printf.sprintf "following 'from' from %s through %s comes back to it: the origins form a cycle"
-                       (beschrijving b)
-                       (String.concat ", " (List.map beschrijving kring))) ]
+                       (description b)
+                       (String.concat ", " (List.map description cycle))) ]
             | _ -> [])
         | None -> []
       in
       let d =
-        match herkomst_bronsoort h.hk_vorm with
-        | Some verwacht when soort_bekend && verwacht <> h.hk_soort ->
+        match origin_source_kind h.hk_form with
+        | Some expected_value when kind_known && expected_value <> h.hk_kind ->
             [ v (h.hk_at ^ "/from/kind")
                 (Printf.sprintf
                    "the origin of %s has the form '%s', which comes from a source of kind '%s', and its \
                     source is of kind '%s'"
-                   (beschrijving b) h.hk_vorm verwacht h.hk_soort) ]
+                   (description b) h.hk_form expected_value h.hk_kind) ]
         | _ -> []
       in
       a @ bv @ c @ d)
-    dragers
+    carriers
 
 (* The side-table rules, beside [all]: the verifier runs both. *)
-let vocabulaires (doc : document) (t : vocabulaire_tafel) : violation list =
+let vocabularies (doc : document) (t : vocabulary_table) : violation list =
   wf116 t @ wf117 t @ wf118 doc t @ wf119 t @ wf120 doc t @ wf121 t
 
 let all (doc : document) : violation list =
@@ -10424,14 +10424,14 @@ let all (doc : document) : violation list =
   @@ List.concat
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
       wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
-      wf007_model ctx; wf007_presentatie ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
+      wf007_model ctx; wf007_presentation ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
       wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
-      wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
-      wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
+      wf034_allocations ctx; wf034_allocation_names ctx; wf034_allocation_types ctx;
+      wf034_allocation_name_resolution ctx; wf034_object_creation_subject ctx;
       wf045_046 ctx;
-      wf047_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
+      wf047_allocations ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx ]

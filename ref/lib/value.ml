@@ -13,9 +13,9 @@
 
 type unit_ =
   | Unitless
-  | Unit of Ir_v0.Ast.eenheid
+  | Unit of Ir_v0.Ast.measure_unit
       (* a declared unit, possibly a rate (noemer set) *)
-  | Product of Ir_v0.Ast.eenheid * Ir_v0.Ast.eenheid
+  | Product of Ir_v0.Ast.measure_unit * Ir_v0.Ast.measure_unit
       (* opaque product unit, ch. 2.6 *)
 
 type t =
@@ -30,7 +30,7 @@ type t =
       (* a constructor value (RUNTIME-SEMANTICS ch. 9.1): a declared tag
          and, for a unary constructor, its payload value; it never carries
          a leeg payload — a Construct with a leeg argument propagates leeg *)
-  | Lijst of t list
+  | List_value of t list
       (* a list value (RUNTIME-SEMANTICS ch. 10.1): an ordered, possibly
          empty sequence of element values. [] is a value (gevuld), distinct
          from leeg; no element position is ever leeg — a ListLiteral with a
@@ -141,13 +141,13 @@ let read_iso_datetime s : (int, string) result =
   let n = String.length s in
   let pos = ref 0 in
   let bad msg = raise (Dt_bad msg) in
-  let want w = bad (Printf.sprintf "at offset %d: expected %s" !pos w) in
+  let because w = bad (Printf.sprintf "at offset %d: expected %s" !pos w) in
   let digit i = i < n && s.[i] >= '0' && s.[i] <= '9' in
-  let ch c = if !pos < n && s.[!pos] = c then incr pos else want (Printf.sprintf "%C" c) in
+  let ch c = if !pos < n && s.[!pos] = c then incr pos else because (Printf.sprintf "%C" c) in
   (* exactly [k] digits, no more and no fewer at this position *)
   let fixed k w =
     let rec ok j = j = k || (digit (!pos + j) && ok (j + 1)) in
-    if not (ok 0) then want w;
+    if not (ok 0) then because w;
     let v = int_of_string (String.sub s !pos k) in
     pos := !pos + k;
     v
@@ -171,7 +171,7 @@ let read_iso_datetime s : (int, string) result =
       end
       else 0
     in
-    if !pos <> n then want "the end of the lexeme";
+    if !pos <> n then because "the end of the lexeme";
     if m < 1 || m > 12 then bad (Printf.sprintf "month %d is out of range" m);
     if d < 1 || d > days_in_month ~y ~m then bad (Printf.sprintf "day %d is out of range" d);
     if hh > 23 then bad (Printf.sprintf "hour %d is out of range" hh);
@@ -277,7 +277,7 @@ let rec to_string = function
   | Ctor (tag, None) -> tag
   | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (to_string v)
   (* the deterministic list rendering: [12.5, 30, 7.25], [] *)
-  | Lijst xs -> "[" ^ String.concat ", " (List.map to_string xs) ^ "]"
+  | List_value xs -> "[" ^ String.concat ", " (List.map to_string xs) ^ "]"
   (* the deterministic record rendering: {waarde: 125.5, telling: 2} *)
   | Record fs ->
       "{" ^ String.concat ", " (List.map (fun (n, v) -> n ^ ": " ^ to_string v) fs) ^ "}"

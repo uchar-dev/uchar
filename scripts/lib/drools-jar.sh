@@ -145,7 +145,7 @@ drools-jar.sh)
     trap 'rm -rf "$tmp"' EXIT
     step=0
     jar=
-    for want in any rebuilt fresh rebuilt rebuilt rebuilt rebuilt fresh; do
+    for because in any rebuilt fresh rebuilt rebuilt rebuilt rebuilt fresh; do
         # every touch waits a second first, so a step also holds on whole-second mtimes
         case $step in
             0) what='the tree as found' ;;
@@ -167,14 +167,14 @@ drools-jar.sh)
         if [ "$rc" -ne 0 ] || [ "$nerr" -ne 1 ] || [ ! -f "$jar" ]; then
             ok=
         fi
-        case $want:$line in
+        case $because:$line in
             any:'drools-jar: fresh ('*|any:'drools-jar: rebuilt ('*) ;;
             fresh:'drools-jar: fresh ('*|rebuilt:'drools-jar: rebuilt ('*) ;;
             *) ok= ;;
         esac
         if [ -z "$ok" ]; then
             cat "$tmp/err" >&2
-            echo "drools-jar selftest: FAIL — step $step ($what): expected $want with status 0, one status line and a jar path; got status $rc and the stderr above" >&2
+            echo "drools-jar selftest: FAIL — step $step ($what): expected $because with status 0, one status line and a jar path; got status $rc and the stderr above" >&2
             exit 1
         fi
         step=$((step + 1))

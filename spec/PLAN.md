@@ -453,7 +453,7 @@ The differential holds as gates 5–6 (ref ≡ clingo, anchored to
 hand-written absolute values — corpus-scoped, as every such claim
 is), and the toolchain conforms through the `SPEC_REV` pin
 (`make uchar-conformance`: every emitter golden byte-identical at the
-pinned revision). In ASP a fact type is simply the predicate `rol/3`
+pinned revision). In ASP a fact type is simply the predicate `role/3`
 — the claim this phase existed to earn.
 
 ### Phase 4 — The default model in the IR

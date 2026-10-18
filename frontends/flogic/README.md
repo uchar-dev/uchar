@@ -122,7 +122,7 @@ the verifier is the second net. Because Flora-2 has no per-item id, a
 named barred statement carries exactly its one definition.
 
 `sign` is `onbepaald`, `niet_negatief`, `negatief` or `positief`; `scale`
-is `geheel` or a decimal count. `soort` is `bijvoeglijk`, `bezittelijk` or
+is `whole_part` or a decimal count. `variety` is `bijvoeglijk`, `bezittelijk` or
 `zelfstandig`. A cardinality whose upper bound is `*`, or greater than 1,
 makes the role to-many.
 

@@ -50,8 +50,8 @@ The fixed predicate vocabulary:
 |---|---|
 | `is_a/2` | instance → object type |
 | `val/3` | instance, attribute, scaled (or S2 symbolic) value |
-| `heeft/2` | instance, characteristic |
-| `rol/3` | holder, canonical role name, filler |
+| `has/2` | instance, characteristic |
+| `role/3` | holder, canonical role name, filler |
 | `tl/5` | instance, attribute, from, to, scaled value (timeline segment) |
 | `ktl/4` | instance, characteristic, from, to (condition timeline) |
 | `param/2`, `param_tl/4` | parameter values, scalar and vintaged |
@@ -125,9 +125,9 @@ it, replayed at an `asOfDate` on each side).
 
 The case loader's world enters as ground facts. Per instance: `is_a`
 with its label; each scalar attribute value as `val/3` (scaled); each
-characteristic as `heeft/2`; each attribute timeline segment as
+characteristic as `has/2`; each attribute timeline segment as
 `tl/5`; each condition timeline as `ktl/4`; each role filling as
-`rol/3`. Parameters enter as `param/2`, vintaged (granular) parameters
+`role/3`. Parameters enter as `param/2`, vintaged (granular) parameters
 as `param_tl/4` segments; a *scalar* value on a granular parameter is
 refused at load by the shared case loader (both executors identically
 — the fence that keeps an unread slot from splitting the
@@ -154,7 +154,7 @@ the same `val/3` slot, beside the integer encoding
 string (ref compares `String.equal` — spelling and case are
 load-bearing), an **enum** label its NORMALISED quoted string (ref
 compares norm-equal, so both executors normalise at the same point),
-and a **boolean** the bare symbol `waar`/`onwaar`. An embedded
+and a **boolean** the bare symbol `true`/`false`. An embedded
 **double-quote** or **backslash** in a text or enum value is lowered to
 its gringo escape (backslash-quote, doubled-backslash) — identically on
 this value side and on the literal side (`symbolic_literal_term`, S4,
@@ -163,9 +163,9 @@ so the equality join stays sound; the expectation-check parser reads the
 same escaped shape back, escape-aware, and a control character < 0x20,
 which has no escape, still faults (S19). A boolean input
 additionally keeps its closed-world characteristic reading — `true` →
-`heeft/2`, `false` → absence (the `bool_atoms` read of S11) — because
-the equality read needs the three-way distinction (waar / onwaar /
-leeg) that `heeft/2` alone cannot carry: `false` is a *value* in the
+`has/2`, `false` → absence (the `bool_atoms` read of S11) — because
+the equality read needs the three-way distinction (true / false /
+empty) that `has/2` alone cannot carry: `false` is a *value* in the
 `val/3` carriage, distinct from absence. Day-precision **dates** are
 not symbolic: a date is its civil day number in the integer encoding
 (S4). Date *ordering* and *inequality* ride the numeric rules on that
@@ -205,7 +205,7 @@ Each version of a `Rule` translates by kind, which the wire does not
 write: a version with a `presentation` tag computes, one with
 `initialisation: true` initialises, and one with neither attributes the
 characteristic its `target` names. **Characteristic attribution**
-(value `{"boolean": true}`): `heeft(S,k) :- is_a(S,ot),
+(value `{"boolean": true}`): `has(S,k) :- is_a(S,ot),
 ⟨condition atoms⟩.` — negation-as-failure gives the absent case for
 free, and WF-045/046 stratification makes the negated reads sound.
 **Computation/equation** (`calculation`/`equation`) to a scalar
@@ -288,7 +288,7 @@ binds no atom, so the rule does not fire and the target is leeg
 has no monotone encoding here (the sum-target sibling) and is fenced
 loudly. A **boolean computed target** is refused with its reason: a
 boolean is a characteristic in v0, so rule forms *read* it
-closed-world through `heeft/2` (the WF-027 `bool_atoms` guard, S11),
+closed-world through `has/2` (the WF-027 `bool_atoms` guard, S11),
 which a derived `val/3` would not feed — the two encodings would
 split, and no corpus case computes a boolean attribute. Witnesses:
 `jutterswet-vondstetiket` (the literal write `rubriek` and the copy
@@ -333,13 +333,13 @@ value) it lowers through `symbolic_term` to its S2 ground term, never
 through `expr_term`. **Parameter reference**: body atom `param("p",P)`,
 term `P`; granular parameters are refused in scalar slots (ch. 3.3/8).
 **Attribute reference**: body atom `val(S,a,A)`; a *navigated*
-reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
+reference (ch. 5.8) chains one `role/3` atom per to-one hop before the
 final `val` — the shared variable is the join, and an absent link
 simply leaves the body underivable. The hops are the reference's role
 bindings (`path`, since L2 the only spelling of a hop), each
 resolved through the reference interpreter's own `Eval.bound_role`, so
 both executors resolve navigation identically. A reference without
-bindings is the subject's own read (ch. 5.8 rule 4): no `rol/3` atom is
+bindings is the subject's own read (ch. 5.8 rule 4): no `role/3` atom is
 emitted at all and the `val` atom reads the subject itself — the
 unconditional own read, structurally (witness
 `jutterswet-aanmelderkrediet`) — and its `subjectType` must be the subject
@@ -844,22 +844,22 @@ directions (witnesses `jutterswet-vondstetiket`,
 takes the bare positive harmonised join (any empty operand false —
 the RS ch. 1.2d date row, witness `jutterswet-paasvondst` case5)
 while date-typed ongelijk-aan stays on the eqN complement, whose
-cells match the date row (witness `jutterswet-jutdatum` case3). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
-`not heeft(S,k)` under negation — stratification (WF-045/046) makes
-this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
+cells match the date row (witness `jutterswet-jutdatum` case3). **Characteristic check** (kenmerk-check): `has(S,k)`, or
+`not has(S,k)` under negation — stratification (WF-045/046) makes
+this sound. The *navigated* check walks the `role/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent
 link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Role membership**
 (`RoleMembership`, RUNTIME-SEMANTICS ch. 5.8a): the subject's links are
 read over the OTHER role of `factType` (a reciprocal fact type's one role
-is its own other end), so the positive form is a bare `rol(S,r,N)` join
+is its own other end), so the positive form is a bare `role(S,r,N)` join
 keyed on that role's canonical name, the far variable free — N
 groundings collapse onto one head, so the check is existence, never a
 count, and the multiplicity of either role is no condition. A written
 `counterpartType` adds `isa(N,ct)`, the program's extensional membership
 closure (ch. 2.2), so an instance of a subtype satisfies it; absent, no
 literal is added. The negated form derives a per-subject helper
-`rmN(S) :- isa(S,ot), rol(S,r,N)` (plus the `isa(N,ct)` literal where a
+`rmN(S) :- isa(S,ot), role(S,r,N)` (plus the `isa(N,ct)` literal where a
 counterpart is written) and reads it negated, the subject kept bound by
 the helper's `isa` base — the plain complement, which *flips*, unlike
 the navigated characteristic check. The pair is resolved as the verifier
@@ -1021,11 +1021,11 @@ well-formedness the verifier enforces before translation.
 
 ### S8. Aggregations and folds
 
-**Count** (aantal): `V = #count { X : rol(S,role,X), ⟨filter
+**Count** (aantal): `V = #count { X : role(S,role,X), ⟨filter
 atoms⟩ }`, scale 1 — the role is the node's `bronRol` (since L2
 required on a count over one source argument, IR-SPEC ch. 4.3), and the
 count keys that role's **canonical** name — never the raw written
-lexeme, which as a `rol/3` key silently counted 0 whenever it differed
+lexeme, which as a `role/3` key silently counted 0 whenever it differed
 from the declared plural that keys the facts (the written singular of a
 to-many role, or an undeclared synthesized plural; hardened 2026-08-26,
 witnessed by `jutterswet-kaveltelling`). A count source whose written
@@ -1046,7 +1046,7 @@ every other count. *Until L2* the written role stood in the argument's
 presentation, not navigation — behind the ref mirror's
 `self_denoting_role` check, and an away-pointing role kept the loud
 translation fault.
-**Sum** (som): contributor body `rol(S,role,X), val(X,a,G), ⟨filter⟩`
+**Sum** (som): contributor body `role(S,role,X), val(X,a,G), ⟨filter⟩`
 and `V = #sum { G,X : ⟨body⟩ }` at the element attribute's scale —
 an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which the **fallback-0** facet reads
@@ -1115,7 +1115,7 @@ cases as `jutterswet-vondstvenster`, whose `first`/`last` are the
 same fold under another name).
 
 Every fold join closes with `isa(X,el)` on the ELEMENT variable — the
-ch. 2.2 population, joined against the reach the `rol/3` atoms deliver.
+ch. 2.2 population, joined against the reach the `role/3` atoms deliver.
 It is emitted unconditionally, including for a `sourcePath` (where it lands
 on the last step only, never on an intermediate), and it is the same
 chain-closed `isa/2` the allocation's `vdN_ontv` joins on. On a document
@@ -1330,7 +1330,7 @@ filled-gate for free); higher defaults displace lower ones by `not
 dlI_decides_m` for every higher m. The decision projects into
 `dlI_dec(S,b)` (characteristic arm) or `dlI_out(S,term)` (attribute
 arm), and the head fires under the group's conflict guard:
-`heeft(S,k) :- dlI_dec(S,1), not grpG_conflict(S), ...` /
+`has(S,k) :- dlI_dec(S,1), not grpG_conflict(S), ...` /
 `val(S,a,V) :- dlI_out(S,V), not grpG_conflict(S), ...`. Equal-priority
 disagreement between members derives
 `inconsistent("onderwerp.target",S) :- dlI_dec(S,X), dlJ_dec(S,Y),
@@ -1370,18 +1370,18 @@ input must survive an ineffective producer.
 deterministic function term `ocI(S)` — set semantics gives
 idempotence for free (re-deriving the same head is the same atom).
 `is_a(ocI(S),new) :- ⟨body⟩.`, member initialisations as
-`val(ocI(S),m,⟨term⟩)`/`heeft(ocI(S),m)`, and the back-link doubled
-in both directions (`rol(S,new_role,ocI(S))` and
-`rol(ocI(S),subj_role,S)`). A **characteristic initialisation** deposits
-`heeft(ocI(S),m)`: the two boolean constants are the v0 form — `waar`
+`val(ocI(S),m,⟨term⟩)`/`has(ocI(S),m)`, and the back-link doubled
+in both directions (`role(S,new_role,ocI(S))` and
+`role(ocI(S),subj_role,S)`). A **characteristic initialisation** deposits
+`has(ocI(S),m)`: the two boolean constants are the v0 form — `waar`
 an unconditional head, `onwaar` no head at all — and the WF-027
 relaxation (besluit 1) admits a boolean-typed **expression**, which
-*guards* the head on the SUBJECT (`heeft(ocI(S),m) :- ⟨body⟩,
+*guards* the head on the SUBJECT (`has(ocI(S),m) :- ⟨body⟩,
 ⟨bool atoms⟩`): a boolean is a characteristic in v0, so an own-subject
-boolean-attribute read is `heeft(S,a)` — present iff true, absent iff
+boolean-attribute read is `has(S,a)` — present iff true, absent iff
 false, so the deposit fires exactly on true and the mark stays unset on
 false (closed-world, ref's reading; `translate_case` carries a boolean
-input attribute the same way — `heeft(label,a)` when true, absence when
+input attribute the same way — `has(label,a)` when true, absence when
 false). The 1:1 input-snapshot narrowing guards
 the creating body with `not inputrol(S,new_role,_)` — creation reads
 the *input* world, not the growing one (ch. 5.5). Recursive creation
@@ -1393,7 +1393,7 @@ resolution reuses `Eval.connecting_pair`; an ambiguous back-link
 faults in both executors (`corpus/rood/ambiguous-backlink`).
 
 **Fact creation** (ch. 3.4): the symbolic form walks its join chain
-— one positive `rol/3` atom per step — and asserts the new filling
+— one positive `role/3` atom per step — and asserts the new filling
 in both directions. The to-one guard is a `viol/2` witness when a
 second filler appears on a to-one role
 (`corpus/rood/to-one-second-filler`). Bean-field-only fact creations
@@ -1481,7 +1481,7 @@ narrowest acyclic form.
 `inconsistent("name",S1) :- is_a(S1,ot), is_a(S2,ot), S1 != S2,
 ⟨key atoms S1⟩, ⟨key atoms S2⟩, ⟨scope⟩.` — with scalar keys read
 via `val/3`, at most one temporal key component read *ever* via
-`tl(L,k,_,_,K)`, and the WF-054 scope hop as a shared `rol/3`
+`tl(L,k,_,_,K)`, and the WF-054 scope hop as a shared `role/3`
 parent. The **union** shares one key predicate `uuI_key(S,J,⟨K…⟩)`
 across its sources (positions harmonised to the max scale, each
 upscale fenced), colliding by `2 <= #count { O,J : uuI_key(O,J,⟨V…⟩)
@@ -1602,8 +1602,8 @@ positive join fails in both directions alike — leeg-correct for free. The
 NAF complement would instead make `Ongelijk` **true** on leeg (the S5
 non-complement warning, honoured here rather than merely cited). The
 anchor's two characteristic rules are exactly these forms —
-`heeft(S,bevoorschot) :- …, val(S,beschikking,V), V == aangehouden.`
-and `heeft(S,afgehandeld) :- …, val(S,beschikking,V), V != aangehouden.`
+`has(S,bevoorschot) :- …, val(S,beschikking,V), V == aangehouden.`
+and `has(S,afgehandeld) :- …, val(S,beschikking,V), V != aangehouden.`
 
 On the check side (`model.ml`), a constructor term is parsed
 **recursively** (the earlier flat lexer could not parse a bare nullary
@@ -1860,7 +1860,7 @@ functor-unification as a bound-term match, over a term produced by a
 
 On the check side, `model.ml` reads the fold family's scalar results as
 ordinary `val/3` — the reified lists are internal (`#show` carries only
-`val`/`heeft`/`inconsistent`/`tl`), so a numeric fold result and a
+`val`/`has`/`inconsistent`/`tl`), so a numeric fold result and a
 `ListLength` count are plain numeric expectations, and a leeg target
 (absent list) reports underived through the same `val_present` path. A
 **list-valued** `attributeValue` expectation has no corpus case and
@@ -1979,8 +1979,8 @@ positive join fails in **both** directions — Tabel 38's non-numeric
 branch (leeg makes `=` *and* `≠` false), the same both-false corner the
 sum world honours (never the NAF complement, which would make `Ongelijk`
 true on leeg). The anchor's `dubbel` / `afwijkend` rules are exactly
-these forms — `heeft(S,dubbel) :- …, val(S,dossier,B), B == dossier(12050,3).`
-and `heeft(S,afwijkend) :- …, val(S,dossier,B), B != dossier(12050,3).`
+these forms — `has(S,dubbel) :- …, val(S,dossier,B), B == dossier(12050,3).`
+and `has(S,afwijkend) :- …, val(S,dossier,B), B != dossier(12050,3).`
 
 The **gevuld gate** (`Predicate` kind `filled`, ref: value ≠ leeg) is the
 operand's binding atoms as a **positive join**: a struct operand rides
@@ -2534,7 +2534,7 @@ read nor a literal (navigated reads await a case), temporal
 text/enum/boolean carriage (a recorded flank, the sum/struct
 sibling), a case-supplied text/enum *computed* target (the ch. 6d
 superset-model fence), and a **boolean computed target** (the
-closed-world `heeft/2` read and a derived `val/3` would split — S3);
+closed-world `has/2` read and a derived `val/3` would split — S3);
 unscalable datatypes in the integer encoding (a
 datatype-less *declaration* is since 2026-08-21 rejected by WF-059
 with the shared loader refusing its input as backstop — the fault
@@ -2654,7 +2654,7 @@ translated (no corpus case)`) and every member kind that keeps its
 own fault (a TimeWindow member — the vormenkabinet's peiling rule, still
 refused by both executors — an Unresolved bullet, a
 comparison carrying a periode, the negated gevuld predicate; the role
-check rides the S7 `rol/3` join, above, with no to-many exception since
+check rides the S7 `role/3` join, above, with no to-many exception since
 L2 — until L2 the near-side `Rollidmaatschap`'s **to-many connecting
 reference** faulted loudly in both executors (`the rolcheck's
 connecting reference to … is the to-many role …`; the red case
@@ -3221,7 +3221,7 @@ the statute's intent, reproduced under stable-model semantics.
    translation target. The symbolic `RolBinding` delta is not just
    cleaner — for this backend it is the only thing that *can* exist.
    *Landed (2026-08-16):* the binding rides the wire (`IR-SPEC.md`
-   ch. 2.6, WF-047/048) and `backends/clingo` reads the `rol/3` join
+   ch. 2.6, WF-047/048) and `backends/clingo` reads the `role/3` join
    role from it; until L2 it derived the role for bindingless v0
    dumps, and since L2 the binding is required and nothing is derived
    (B12).

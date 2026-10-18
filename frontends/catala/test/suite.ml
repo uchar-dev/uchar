@@ -76,7 +76,7 @@ let () =
   in
   (* ref + clingo passing programs: source -> its case files *)
   let passing =
-    [ ("proef.catala_en",
+    [ ("trial.catala_en",
        [ "cases/proef_12.json"; "cases/proef_6.json"; "cases/proef_25.json" ]);
       ("root_unordered.catala_en",
        [ "cases/root_12.json"; "cases/root_3.json"; "cases/root_7.json" ]);
@@ -104,13 +104,13 @@ let () =
       (* WF-087's LOWER boundary on the plugin side: ONE nullary constructor.
          A unit type is a nullary keuzetype too, so it lands on the Enumeration
          domain as well — the shape a [List.length > 1] weakening of
-         [keuzetype_of] would let escape into a SumType (its verifier twin is
+         [choice_type_of] would let escape into a SumType (its verifier twin is
          negatief `wf087-unit-sumtype`). The wire assertion below is what
          makes that weakening red *)
       ("enum_unit.catala_en", [ "cases/meld_gemeld.json" ]);
       (* row-10 fold family: a map + explicit numeric fold (MapList as a fold
          source, the aanspraaktelling pattern) *)
-      ("lijst.catala_en", [ "cases/lijst_twee.json"; "cases/lijst_leeg.json" ]);
+      ("element_list.catala_en", [ "cases/lijst_twee.json"; "cases/lijst_leeg.json" ]);
       (* row-10 + row-36: maximum … or if list empty then … — the §3.5 reduce
          lowering (Optional-som, IfThenElse reducer, Fold, extraction Match)
          through the full differential, including the empty-list default *)
@@ -235,7 +235,7 @@ let () =
       ("subscope_perelement_multi.catala_en", [ "cases/perelement_drie.json" ]);
       (* an integer division, a decimal in Catala: 7 / 2 and 9 / 4, exact at
          the pinned scale *)
-      ("deling.catala_en", [ "cases/deling_zeven.json"; "cases/deling_negen.json" ]) ]
+      ("division.catala_en", [ "cases/deling_zeven.json"; "cases/deling_negen.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -244,8 +244,8 @@ let () =
      (the aanspraaktelling anchor) but not yet a rule-level Invoke — a recorded
      backend limit, not a plugin bug. *)
   let passing_ref_only =
-    [ ("datum.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]);
-      ("functie.catala_en", [ "cases/functie_tien.json" ]) ]
+    [ ("date_value.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]);
+      ("function_name.catala_en", [ "cases/functie_tien.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
   (* Wire-shape assertions for the keuzetype normalisation (WF-087, maintainer
@@ -301,10 +301,10 @@ let () =
      operands — an integer division too, which the plugin typed after its first
      operand, whole, until 2026-09-25. An E2E replay cannot see an annotation,
      so the emitted JSON is read back and every dividedBy asserted. *)
-  Printf.printf "[wire] deling.catala_en (a quotient is not whole)\n%!";
+  Printf.printf "[wire] division.catala_en (a quotient is not whole)\n%!";
   let out = Filename.temp_file "catfe" ".ir.json" in
-  let code, o = run [ plugin; "deling.catala_en"; out ] in
-  check "deling.catala_en : translate (quotient)" (code = 0) (Printf.sprintf "exit %d\n%s" code o);
+  let code, o = run [ plugin; "division.catala_en"; out ] in
+  check "division.catala_en : translate (quotient)" (code = 0) (Printf.sprintf "exit %d\n%s" code o);
   if code = 0 then begin
     let rec quotients acc (j : Yojson.Safe.t) =
       match j with
@@ -319,7 +319,7 @@ let () =
       | _ -> acc
     in
     let qs = quotients [] (Yojson.Safe.from_file out) in
-    check "deling.catala_en : the program divides" (qs <> []) "no dividedBy in the emitted IR";
+    check "division.catala_en : the program divides" (qs <> []) "no dividedBy in the emitted IR";
     List.iter
       (fun q ->
         let whole =
@@ -330,7 +330,7 @@ let () =
               | _ -> None)
           | _ -> None
         in
-        check "deling.catala_en : the quotient is typed not whole" (whole = Some (`Bool false))
+        check "division.catala_en : the quotient is typed not whole" (whole = Some (`Bool false))
           (Yojson.Safe.to_string q))
       qs
   end;
@@ -381,7 +381,7 @@ let () =
          OTHER than a bare per-field map — a list-length (`number of shares`) or
          a whole read into an output (`picked equals shares`, Direction B) —
          must refuse loudly, not raise [Not_found] on the absent [vars] entry
-         (exit 2, an uncaught internal error). Both scalar_read and kenmerk_read
+         (exit 2, an uncaught internal error). Both scalar_read and characteristic_read
          now mirror the sibling [is_subscope] guard *)
       ("refuse_perelement_wholestruct_read.catala_en", "read other than per field");
       ("refuse_perelement_wholestruct_whole.catala_en", "read other than per field");
@@ -390,7 +390,7 @@ let () =
          FOLD reducer body (not the map body) — its Invoke would land as a
          closed_term the clingo backend cannot translate; the gate is the DIRECT
          map body ([in_map_body]), not the broader [in_body]; (2) a callee with a
-         binary-subtraction body — [Verminderd_met] is outside clingo's closed-body
+         binary-subtraction body — [Reduced_by] is outside clingo's closed-body
          additive fence (Plus/Min; card clingo-bodymult widened it to ×, the
          money×rate cent product and a constant-divisor division, but NOT binary
          subtraction). Each refuses loudly per element, not ref-only IR *)
@@ -457,7 +457,7 @@ let () =
      drives them instead. A marker written without its warning fails WF-113
      (b) at the verifier, and a filled list written as [] drops what it held
      without a word, so each has to refuse at the serialiser. *)
-  let m1_doc ?(parameters = "") ?(regels = "") ?(diagnostics = "") () =
+  let m1_doc ?(parameters = "") ?(rule_defs = "") ?(diagnostics = "") () =
     Printf.sprintf
       {|{ "format": "uchar-ir-v1",
   "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [],
@@ -466,37 +466,37 @@ let () =
     "allocations": [], "consistencies": [], "uniquenesses": [],
     "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": [%s] }|}
-      parameters regels diagnostics
+      parameters rule_defs diagnostics
   in
   (* one rule version with an attribute target, whose value and condition
      each test fills: the wire carries no rule without a kind, a target or a
      value since the L4 landing *)
-  let regel ~waarde ~voorwaarde =
+  let rule_def ~value_node ~precondition =
     Printf.sprintf
       {|{ "node": "Rule", "name": "r", "versions": [ {
   "validity": { "node": "Validity" },
   "target": { "node": "AttributeReference", "attribute": "a", "subjectType": "T", "source": { "snippet": "de a" } },
   "value": %s,%s "initialisation": false, "presentation": "calculation" } ] }|}
-      waarde
-      (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
+      value_node
+      (match precondition with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
   in
-  let getal =
+  let number_value =
     {|{ "node": "Literal", "value": { "number": "1" },
   "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "1" } }|}
   in
   let emit_refusals =
     [ ("an expression Unresolved",
        m1_doc
-         ~regels:
-           (regel ~voorwaarde:None
-              ~waarde:{|{ "node": "Unresolved", "source": { "snippet": "de onbekende waarde" } }|})
+         ~rule_defs:
+           (rule_def ~precondition:None
+              ~value_node:{|{ "node": "Unresolved", "source": { "snippet": "de onbekende waarde" } }|})
          (),
        "Unresolved");
       ("a condition Unresolved",
        m1_doc
-         ~regels:
-           (regel ~waarde:getal
-              ~voorwaarde:(Some {|{ "node": "Unresolved", "source": { "snippet": "de onbekende voorwaarde" } }|}))
+         ~rule_defs:
+           (rule_def ~value_node:number_value
+              ~precondition:(Some {|{ "node": "Unresolved", "source": { "snippet": "de onbekende voorwaarde" } }|}))
          (),
        "Unresolved");
       ("a filled diagnostics list",
@@ -519,23 +519,23 @@ let () =
          time-dependent operand to qualify (WF-043) *)
       ("a ParameterReference",
        m1_doc
-         ~regels:
-           (regel ~voorwaarde:None
-              ~waarde:{|{ "node": "ParameterReference", "parameter": "drempel", "source": { "snippet": "de drempel" } }|})
+         ~rule_defs:
+           (rule_def ~precondition:None
+              ~value_node:{|{ "node": "ParameterReference", "parameter": "drempel", "source": { "snippet": "de drempel" } }|})
          (),
        "node not produced by the skeleton: ParameterReference");
       ("a VariableReference",
        m1_doc
-         ~regels:
-           (regel ~voorwaarde:None
-              ~waarde:{|{ "node": "VariableReference", "name": "drempel", "source": { "snippet": "de drempel" } }|})
+         ~rule_defs:
+           (rule_def ~precondition:None
+              ~value_node:{|{ "node": "VariableReference", "name": "drempel", "source": { "snippet": "de drempel" } }|})
          (),
        "node not produced by the skeleton: VariableReference");
       ("a wholePeriod qualifier",
        m1_doc
-         ~regels:
-           (regel ~waarde:getal
-              ~voorwaarde:
+         ~rule_defs:
+           (rule_def ~value_node:number_value
+              ~precondition:
                 (Some
                    {|{ "node": "Comparison", "op": "greater",
   "left": { "node": "AttributeReference", "attribute": "a", "subjectType": "T", "source": { "snippet": "de a" } },
@@ -547,9 +547,9 @@ let () =
        "condition shape not produced by the skeleton: a wholePeriod qualifier");
       ("a wholePeriod qualifier on a characteristic check",
        m1_doc
-         ~regels:
-           (regel ~waarde:getal
-              ~voorwaarde:
+         ~rule_defs:
+           (rule_def ~value_node:number_value
+              ~precondition:
                 (Some
                    {|{ "node": "CharacteristicCheck", "characteristic": "k", "negated": false,
   "wholePeriod": { "node": "WholePeriod", "granularity": "month", "negated": true },
@@ -583,89 +583,89 @@ let () =
      E2E emission is, and the loader must read each of those forms back into
      the value it was written from. *)
   let module A = Ir_v0.Ast in
-  let num0 : A.datatype = Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None } in
-  let zaak : A.objecttype =
-    { ot_naam = Some "Zaak"; ot_supertype = None;
-      attributen =
-        [ ("peildatum", Some A.Datum_in_dagen); ("dagdatum", Some A.Datum_in_dagen);
-          ("bedrag", Some num0); ("omschrijving", Some A.Tekst); ("moment", Some A.Datum_tijd);
+  let num0 : A.datatype = Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = None } in
+  let case_data : A.object_type =
+    { ot_ident = Some "Zaak"; ot_supertype = None;
+      attributes =
+        [ ("peildatum", Some A.Date_in_days); ("dagdatum", Some A.Date_in_days);
+          ("bedrag", Some num0); ("omschrijving", Some A.Text_type); ("moment", Some A.Date_time_type);
           ("toeslag", Some num0); ("tarief", Some num0) ];
-      attribuut_meervoud = []; attribuut_dimensies = []; attribuut_granulariteit = [];
-      attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = [];
-      kenmerken = [ Some "spoedeisend"; Some "voorrang"; Some "hoofdzaak" ];
-      kenmerk_soorten = [ ("spoedeisend", Some A.Bijvoeglijk); ("voorrang", Some A.Bezittelijk) ];
-      kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = [];
-      bezield = false; meervoud = Some "Zaken" }
+      attribute_plural = []; attribute_dimensions = []; attribute_granularity = [];
+      attribute_timeline_count = []; attribute_timeline_names = [];
+      characteristics = [ Some "spoedeisend"; Some "voorrang"; Some "hoofdzaak" ];
+      characteristic_kinds = [ ("spoedeisend", Some A.Adjectival); ("voorrang", Some A.Possessive) ];
+      characteristic_granularity = []; characteristic_timeline_count = [];
+      animate = false; plural = Some "Zaken" }
   in
   let aref a : A.expr =
-    Attribuut_ref { attribuut = Some a; objecttype = Some "Zaak"; bron = Some a; navigatie_bindingen = None }
+    Attribute_reference { attribute_ref = Some a; object_type = Some "Zaak"; source_name = Some a; navigation_bindings = None }
   in
   let lit v t : A.expr =
-    Literal { variant = v; typ = Some t; bron = Some "proef" }
+    Literal { variant = v; typ = Some t; source_name = Some "proef" }
   in
-  let regel naam soort doel waarde cond : A.resolved_regel =
-    { rr_naam = Some naam; rr_soort = Some soort; doel = Some (aref doel); waarde = Some waarde;
-      rr_voorwaarde = cond; rr_geldigheid = None; rr_bron_annotaties = None; rr_pointer = "" }
+  let rule_def ident variety objective value_node cond : A.resolved_rule =
+    { rr_name = Some ident; rr_presentation = Some variety; objective = Some (aref objective); value_node = Some value_node;
+      rr_condition = cond; rr_validity = None; rr_source_annotations = None; rr_pointer = "" }
   in
-  let groter a n : A.conditie =
-    Vergelijking
-      { op = Groter; links = Some (aref a); rechts = Some (lit (Lv_number n) num0); periode = None;
-        bron = Some "groter" }
+  let greater a n : A.condition_expr =
+    Comparison
+      { op = Greater; left_side = Some (aref a); right_side = Some (lit (Lv_number n) num0); time_period = None;
+        source_name = Some "groter" }
   in
   (* the subject's own type as the host: the reading an absent host has *)
-  let spoedeisend : A.conditie =
-    Kenmerk_check
-      { kenmerk = Some "spoedeisend"; negatie = false; eigenaar = Some "Zaak"; periode = None;
-        bron = Some "zij is spoedeisend"; navigatie_binding = None }
+  let spoedeisend : A.condition_expr =
+    Characteristic_check
+      { characteristic = Some "spoedeisend"; negation = false; holder = Some "Zaak"; time_period = None;
+        source_name = Some "zij is spoedeisend"; navigation_binding = None }
   in
-  let jaar2026 : A.geldigheid = { geld_vanaf = Some "2026-01-01"; geld_tot = Some "2027-01-01" } in
-  let koppeling : A.feittype =
-    { ft_naam = Some "Zaakkoppeling"; wederkerig = false;
-      rollen =
-        [ { rol_naam = Some "moederzaak"; rol_objecttype_naam = Some "Zaak"; rol_meervoud = None;
-            rol_meervoudig = false };
-          { rol_naam = Some "deelzaak"; rol_objecttype_naam = Some "Zaak";
-            rol_meervoud = Some "deelzaken"; rol_meervoudig = true } ] }
+  let year_2026 : A.validity_window = { valid_from = Some "2026-01-01"; valid_to = Some "2027-01-01" } in
+  let link : A.fact_type_name =
+    { ft_name = Some "Zaakkoppeling"; reciprocal = false;
+      role_names =
+        [ { role_identifier = Some "moederzaak"; role_object_type_name = Some "Zaak"; role_plural = None;
+            role_many = false };
+          { role_identifier = Some "deelzaak"; role_object_type_name = Some "Zaak";
+            role_plural = Some "deelzaken"; role_many = true } ] }
   in
-  let tarief : A.prioritized_defaults =
-    { pd_naam = Some "tarief van een zaak"; pd_onderwerp = "Zaak"; pd_kenmerk = None;
-      pd_attribuut = Some "tarief";
+  let tariff : A.prioritized_defaults =
+    { pd_name = Some "tarief van een zaak"; pd_subject = "Zaak"; pd_characteristic = None;
+      pd_attribute = Some "tarief";
       defaults =
-        [ { default_besluit = None; default_voorwaarde = Some (groter "bedrag" "100");
-            default_consequentie = Some (lit (Lv_number "7") num0); default_initialisatie = false;
-            default_excepties = None; default_bron = Some "zeven bij een groot bedrag" };
-          { default_besluit = None; default_voorwaarde = None;
-            default_consequentie = Some (lit (Lv_number "0") num0); default_initialisatie = true;
-            default_excepties = None; default_bron = Some "anders nul, tenzij al gevuld" } ];
-      pd_ongeordend = false; pd_bron = Some "het tarief";
-      pd_geldigheid = Some { geld_vanaf = None; geld_tot = None } }
+        [ { default_decision = None; default_justification = Some (greater "bedrag" "100");
+            default_consequence = Some (lit (Lv_number "7") num0); default_initialisation = false;
+            default_exceptions = None; default_source = Some "zeven bij een groot bedrag" };
+          { default_decision = None; default_justification = None;
+            default_consequence = Some (lit (Lv_number "0") num0); default_initialisation = true;
+            default_exceptions = None; default_source = Some "anders nul, tenzij al gevuld" } ];
+      pd_unordered = false; pd_source = Some "het tarief";
+      pd_validity = Some { valid_from = None; valid_to = None } }
   in
-  let proef : A.document =
-    { objecttypen = [ ("Zaak", zaak) ]; domeinen = []; parameters = []; eenheidstelsels = [];
-      feittypen = [ ("Zaakkoppeling", koppeling) ]; dimensies = []; tijdlijnen = []; dagsoorten = [];
-      resolved_regels =
-        [ regel "peildatum van een zaak" Gelijkstelling "peildatum"
-            (Constante
-               { naam = Some Ir_v0.Spelling.evaluation_date; typ = Some A.Datum_in_dagen;
-                 bron = Some "de rekendatum" })
+  let trial : A.document =
+    { object_types = [ ("Zaak", case_data) ]; domain_specs = []; parameters = []; unit_systems = [];
+      fact_types = [ ("Zaakkoppeling", link) ]; dimensions = []; timelines = []; day_kinds = [];
+      resolved_rules =
+        [ rule_def "peildatum van een zaak" Equation "peildatum"
+            (Context_value
+               { ident = Some Ir_v0.Spelling.evaluation_date; typ = Some A.Date_in_days;
+                 source_name = Some "de rekendatum" })
             None;
-          regel "dagdatum van een zaak" Berekening "dagdatum"
-            (Bound_day { typ = Some A.Datum_in_dagen; bron = Some "de dag" }) None;
-          regel "bedrag van een zaak" Initialisatie "bedrag" (lit (Lv_number "5") num0) None;
-          regel "omschrijving van een zaak" Berekening "omschrijving" (lit (Lv_text "proef") A.Tekst)
-            (Some (groter "bedrag" "0"));
-          regel "moment van een zaak" Gelijkstelling "moment"
-            (lit (Lv_date_time "2026-03-15T12:00:00") A.Datum_tijd) None;
-          { (regel "toeslag van een zaak" Berekening "toeslag" (lit (Lv_number "3") num0)
+          rule_def "dagdatum van een zaak" Calculation "dagdatum"
+            (Bound_day { typ = Some A.Date_in_days; source_name = Some "de dag" }) None;
+          rule_def "bedrag van een zaak" Initialisation "bedrag" (lit (Lv_number "5") num0) None;
+          rule_def "omschrijving van een zaak" Calculation "omschrijving" (lit (Lv_text "proef") A.Text_type)
+            (Some (greater "bedrag" "0"));
+          rule_def "moment van een zaak" Equation "moment"
+            (lit (Lv_date_time "2026-03-15T12:00:00") A.Date_time_type) None;
+          { (rule_def "toeslag van een zaak" Calculation "toeslag" (lit (Lv_number "3") num0)
                (Some spoedeisend))
-            with rr_geldigheid = Some jaar2026 } ];
-      resolved_dagsoorten = []; object_creaties = []; verdelingen = []; consistenties = [];
-      uniciteiten = []; uniciteit_unies = []; feit_creaties = []; resolved_startpunten = [];
-      regel_groepen = []; diagnostics = []; prioritized_defaults = [ tarief ]; function_defs = [];
-      presentatie_annotaties = [] }
+            with rr_validity = Some year_2026 } ];
+      resolved_day_kind_definitions = []; object_creations = []; allocations = []; consistencies = [];
+      uniquenesses = []; uniqueness_unions = []; fact_creations = []; resolved_start_point_determinations = [];
+      rule_groups = []; diagnostics = []; prioritized_defaults = [ tariff ]; function_defs = [];
+      presentation_annotations = [] }
   in
   Printf.printf "[emit-proef] de vormen die geen Catala-bron bereikt\n%!";
-  let text = Catala_frontend_lib.Emit.to_string proef in
+  let text = Catala_frontend_lib.Emit.to_string trial in
   let out = Filename.temp_file "catfe-proef" ".ir.json" in
   let oc = open_out out in
   output_string oc text;
@@ -676,15 +676,15 @@ let () =
    | back ->
        check "emit-proef : loads for an executor" true "";
        let toeslag =
-         List.find (fun (r : A.resolved_regel) -> r.rr_naam = Some "toeslag van een zaak")
-           back.resolved_regels
+         List.find (fun (r : A.resolved_rule) -> r.rr_name = Some "toeslag van een zaak")
+           back.resolved_rules
        in
-       check "emit-proef : reads the host back" (toeslag.rr_voorwaarde = Some spoedeisend) text;
-       check "emit-proef : reads both validity bounds back" (toeslag.rr_geldigheid = Some jaar2026) text;
+       check "emit-proef : reads the host back" (toeslag.rr_condition = Some spoedeisend) text;
+       check "emit-proef : reads both validity bounds back" (toeslag.rr_validity = Some year_2026) text;
        check "emit-proef : reads the role plural back"
-         ((List.assoc "Zaakkoppeling" back.feittypen).rollen = koppeling.rollen) text;
+         ((List.assoc "Zaakkoppeling" back.fact_types).role_names = link.role_names) text;
        check "emit-proef : reads the initialisation default back"
-         (List.map (fun (d : A.default) -> (d.default_initialisatie, d.default_voorwaarde = None))
+         (List.map (fun (d : A.default) -> (d.default_initialisation, d.default_justification = None))
             (List.hd back.prioritized_defaults).defaults
           = [ (false, false); (true, true) ])
          text

@@ -114,7 +114,7 @@ mkdir -p "$DEST" || fail "cannot create $DEST"
 cp "$CAND/ir.json" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }
 # the optional parts of a golden (corpus/README.md, Layout): a frontend source
 # and the NOTE with the hand computation
-for f in bron.rgs bron.catala_en bron.flogic scenario.rgs NOTE.md; do
+for f in source_name.rgs source_name.catala_en source_name.flogic scenario.rgs NOTE.md; do
     if [ -f "$CAND/$f" ]; then cp "$CAND/$f" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }; fi
 done
 for case in $CASES; do cp "$case" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }; done

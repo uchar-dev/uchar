@@ -41,6 +41,7 @@ afgeleide	derived	plain
 afgerond	rounded	plain	the adjective	
 afgerond	rounding	wire	the v0 node Afgerond	`Rounding`
 afgeronde	rounded	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_afgeronde_deling)
+afhankelijk	dependent	plain		added by card rename-ocaml (EXPECTED_MIN_AFHANKELIJK of check-graaf.sh counts the dependencies compared)
 afhankelijkheden	dependencies	plain		added by card hernoem-drools-backend: in 2 identifiers (14 occurrences)
 afhankelijkheid	dependency	plain		added by card hernoem-drools-backend: in 2 identifiers (7 occurrences)
 afhankelijkheids	dependency	plain	the form in a compound: afhankelijkheidskring, dependency cycle	added by card hernoem-drools-backend: keeps 2 names outside backends/drools split right beside the rows the card added (AfhankelijkheidskringTest in frontends/regelspraak)
@@ -227,6 +228,9 @@ blok	block	plain
 blokkade	blockade	plain		added by card hernoem-drools-backend: 1 name in backends/drools (blokkade)
 blokkeert	blocks	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 blokken	blocks	plain		
+bloot	bare	plain	a test document without the extra clause	added by card rename-ocaml (ref/test/test_ref.ml)
+bodem	bottom	plain	the bottom of a fence: bodemzin	added by card rename-ocaml; CLAUDE.md gate 8 speaks of a BOTTOM SENTENCE
+bodemzin	bottomSentence	plain	the fall-through refusal sentence of ref or clingo that a pin may not cite (the flag ref --bodemzin)	added by card rename-ocaml; CLAUDE.md gate 8
 bomen	trees	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bomen)
 bonen	beans	plain	Java beans	added by card hernoem-drools-backend: in 6 identifiers (271 occurrences)
 boodschap	message	plain		added by card hernoem-drools-backend: 1 name in backends/drools (boodschap)
@@ -304,6 +308,7 @@ constante	constant	plain	a constant in general
 constante	contextValue	wire	the v0 node Constante for Rekendatum or Rekenjaar	
 constanten	constants	plain		added by card hernoem-drools-backend: 1 name in backends/drools (constanten)
 constructie	construction	plain		added by card hernoem-drools-backend: in 4 identifiers (51 occurrences)
+constructoren	constructors	wire		added by card rename-ocaml; `SumType.constructors`
 construeert	constructs	plain		added by card hernoem-drools-backend: 1 name in backends/drools (het_plan_van_een_creatie_construeert_voor_het_invoegen)
 consument	consumer	spec		RUNTIME-SEMANTICS §2.10
 contextwaarde	contextValue	wire		
@@ -640,6 +645,7 @@ gebruik	use	plain		added by card hernoem-drools-backend: 1 name in backends/droo
 gebruikt	used	plain		added by card hernoem-drools-backend: in 4 identifiers (5 occurrences)
 gebruikte	used	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_misvormd_datumlexeem_in_een_gebruikte_dagsoort_wordt_op_beide_takken_geweigerd)
 geciteerd	quoted	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_naam_met_tekens_van_de_regelopbouw_staat_geciteerd)
+gecoalesceerd	coalesced	spec		added by card rename-ocaml; RUNTIME-SEMANTICS §1.2
 gecompileerd	compiled	plain		added by card hernoem-drools-backend: in 2 identifiers (9 occurrences)
 geconsumeerd	consumed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geconsumeerd)
 gecreeerd	created	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gecreeerd)
@@ -722,6 +728,7 @@ geliste	listed	plain		added by card hernoem-drools-backend: 1 name in backends/d
 gemaakt	made	plain		
 gemaakte	made	plain		
 gemarkeerd	marked	plain		
+gematerialiseerd	materialised	plain		added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 gemaximeerd	capped	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gemaximeerd)
 gemeld	reported	plain		
 gemengd	mixed	plain		
@@ -754,6 +761,7 @@ geordende	ordered	wire
 gepakte	taken	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_tijdsduur_houdt_de_regel_van_de_gepakte_maand)
 geparste	parsed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gepasseerde	passed	plain		added by card hernoem-drools-backend: in 2 identifiers (3 occurrences)
+gepind	pinned	plain		added by card rename-ocaml (check-scenario.sh: the pinned case files)
 gepinde	pinned	plain		added by card hernoem-drools-backend: 1 name in backends/drools (alle_drie_de_casussen_spelen_met_de_gepinde_waarden)
 geproduceerd	produced	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geproduceerd)
 geraakt	touched	plain		added by card hernoem-drools-backend: in 2 identifiers (29 occurrences)
@@ -762,6 +770,7 @@ gereduceerde	reduced	plain		added by card rename-frontend (Haiku classification 
 gerefereerd	referenced	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_gerefereerd_object_dat_niet_is_opgegeven_weigert_voegIn_luid)
 gerenderd	rendered	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Gerenderd)
 gericht	directed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+geroteerd	rotated	plain	the designations ROTATED within each scope	added by card rename-ocaml; CLAUDE.md gate 13
 gesanctioneerde	sanctioned	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 geschaduwd	shadowed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geschaduwd)
 geschreven	written	plain		
@@ -777,6 +786,7 @@ gespeelde	played	plain		added by card hernoem-drools-backend: in 2 identifiers (
 gespiegeld	mirrored	plain		added by card hernoem-drools-backend: in 2 identifiers (8 occurrences)
 gespiegelde	mirrored	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 gesteld	set	plain		added by card hernoem-drools-backend: in 3 identifiers (40 occurrences)
+gestript	stripped	plain	the field STRIPPED from a document	added by card rename-ocaml; CLAUDE.md gate 13
 gesubstitueerd	substituted	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 getagd	tagged	plain		added by card hernoem-drools-backend: 1 name in backends/drools (getagd)
 getal	number	wire		
@@ -880,6 +890,7 @@ her	her	plain		added by card rename-frontend (the translation check of frontends
 herbonden	rebound	plain		added by card hernoem-drools-backend: in 2 identifiers (3 occurrences)
 herdeclaratie	redeclaration	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 herdoop	rename	plain		added by card hernoem-drools-backend: 1 name in backends/drools (herdoop)
+herhaal	repeat	plain	the verb stem	added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 herhaald	repeated	plain		
 herhaalde	repeated	plain		added by card hernoem-drools-backend: 1 name in backends/drools (het_herhaalde_paar_leest_in_beide_takken_een_echte_waarde)
 herhaalt	repeats	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
@@ -1144,6 +1155,7 @@ liegende	lying	plain		added by card hernoem-drools-backend: in 2 identifiers (24
 lig	lie	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ligRij)
 liggen	lie	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ligt	lies	plain		
+lijf	body	plain	the text of a rule body	added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 lijkt	resembles	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 lijst	list	wire		
 lijsten	lists	plain		added by card hernoemgereedschap: 3 names in the loader tests (de_v0_lijsten_onder_rules_zijn_onbekende_velden)
@@ -1309,6 +1321,7 @@ normaliseert	normalises	plain		added by card hernoem-drools-backend: 1 name in b
 nu	now	plain	function word	false friend
 nul	zero	wire		false friend
 nuldeler	zeroDivisor	plain		
+nullair	nullary	spec		added by card rename-ocaml; IR-SPEC §2.4
 numeriek	number	wire	the datatype	`Number`
 numeriek	numeric	plain	the adjective	
 numeriek met exact	exactDigits	wire		`Predicate.kind`
@@ -1450,6 +1463,7 @@ opake	opaque	plain		added by card hernoem-drools-backend: 1 name in backends/dro
 opbouw	structure	plain	the structure of a rule: de regelopbouw	added by card hernoem-drools-backend: 1 name in backends/drools (een_naam_met_tekens_van_de_regelopbouw_staat_geciteerd)
 opdracht	task	plain		added by card hernoem-drools-backend: 1 name in backends/drools (opdracht)
 opdrachten	tasks	plain		added by card hernoem-drools-backend: 1 name in backends/drools (opdrachten)
+opeen	consecutive	plain	one after the other, without a gap	added by card rename-ocaml (ref/test/test_ref.ml)
 opent	opens	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 operanden	operands	wire		
 operatoren	operators	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Operatoren)
@@ -1684,6 +1698,7 @@ rolnaam	roleName	wire
 rolteling	roleCount	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 rolvuller	roleFiller	spec		IR-SPEC §4.6
 rolvullers	roleFillers	spec		IR-SPEC §4.6; added by card hernoem-drools-backend: in 2 identifiers (4 occurrences)
+romp	body	plain	the body of a Let in a test sentence	added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 rond	around	plain	rond een vouw, around a fold	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 rondes	rounds	plain		false friend; added by card hernoem-drools-backend: in 3 identifiers (19 occurrences)
 rood	red	plain	the red corpus (`corpus/rood`)	false friend; CLAUDE.md, gate 8
@@ -1742,6 +1757,7 @@ setvouw	setFold	spec		IR-SPEC §4.3
 signatuur	signature	field	an F-logic signature, C[|a => T|]	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_rolsignatuur)
 sinds	since	plain	function word	false friend
 situatie	situation	plain	the given situation of a scenario	
+sjabloon	template	plain		added by card rename-ocaml (ref/test/test_ref.ml)
 skelet	skeleton	plain		added by card hernoem-drools-backend: 1 name in backends/drools (TmsSkeletWitnessTest)
 slaat	turns	plain	slaat om, turns over	added by card hernoem-drools-backend: 1 name in backends/drools (een_aantal_buiten_het_bereik_slaat_niet_om)
 slechts	only	plain	function word	
@@ -1761,6 +1777,7 @@ sonde	probe	plain		a figure of speech; card hernoemgereedschap asks a literal na
 soort	kind	wire	the kind of a node, a form, a fact, a fold or a day (NodeKind, Uitkomst.Soort; vouwsoort, fold kind; dagsoort, day kind)	context sharpened by card hernoem-drools-backend: the translator flagged it
 soort	presentation	wire	only the v0 field soort of a rule version (gelijkstelling, berekening)	`initialisation` for the v0 soort INITIALISATIE; context sharpened by card hernoem-drools-backend: the translator flagged it
 soorten	kinds	wire	the kinds of nodes, forms, facts, folds or days	context sharpened by card hernoem-drools-backend: the translator flagged it
+sorteer	sort	plain	the verb stem	added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 spatie	space	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 spaties	spaces	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_lid_met_spaties_en_een_component)
 specificatie	specification	plain		
@@ -1817,6 +1834,7 @@ stijgt	rises	plain		added by card hernoem-drools-backend: 1 name in backends/dro
 stil	silent	plain		
 stille	silent	plain		
 stilletjes	silently	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+stip	instant	plain	a point in time, a dateTime value	added by card rename-ocaml (backends/clingo/test/test_clingo.ml); IR-SPEC says instant
 stond	stood	plain	the past of staan	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 stopt	stops	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 strijdige	conflicting	plain	against: cardinaliteitsstrijdige, against the cardinality	added by card hernoem-drools-backend: 1 name in backends/drools (een_cardinaliteitsstrijdige_stap_wordt_geweigerd)
@@ -1840,8 +1858,10 @@ synthese	synthesis	plain		added by card rename-frontend (Haiku classification of
 synthetisch	synthetic	spec		IR-SPEC §2.2; added by card hernoemgereedschap: 1 name in the loader tests (synthetisch)
 systeem	system	plain	a type system; a unit system is a stelsel	added by card hernoemgereedschap: 1 name in the loader tests (TypesysteemWeigeringWitnessTest)
 taal	language	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+taalcode	languageCode	spec	a language code	added by card rename-ocaml; IR-SPEC §2.12 (WF-116)
 tabel	table	wire		`decisionTable`
 tabellen	tables	plain		added by card hernoem-drools-backend: 1 name in backends/drools (leeg_onder_gelijkheid_en_ordening_volgens_de_tabellen)
+tafel	table	spec	the vocabulary side table	added by card rename-ocaml; IR-SPEC §2.12
 tak	arm	field	the then or the else of an IfThenElse	Match `arms`; RUNTIME-SEMANTICS §10.6 says branch
 tak	branch	spec	a rendering of the Drools transpiler: exec model or DRL text	RUNTIME-SEMANTICS §3.12
 tak	branch	wire	a selection of an InstanceSetUnion	`InstanceSetBranch`
@@ -1936,6 +1956,7 @@ toetst	tests	wire
 toetsterm	testTerm	wire		added by card hernoem-drools-backend: 1 name in backends/drools (ToetstermWitnessTest)
 toeval	chance	plain		added by card hernoem-drools-backend: 1 name in backends/drools (toeval)
 toewijzing	assignment	spec		IR-SPEC §3.1
+toon	show	plain	the verb stem	false friend; added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 toone	toOne	field	a role with one filler	
 tot	to	wire		false friend
 tot de macht	power	wire		`Binary.op`
@@ -1943,6 +1964,7 @@ tot en met	up to and including	plain	the inclusive bound	added by card hernoem-d
 totaal	total	wire		
 totaan	upTo	plain	tot aan: up to	added by card hernoem-drools-backend: 1 name in backends/drools (totaan)
 totalen	totals	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_keten_van_tijdlijnschrijvers_en_de_totalen_erover_in_elke_volgorde_van_de_regels)
+totenmet	inclusive	plain	a window whose end day belongs to it (tot en met)	added by card rename-ocaml (ref/test/test_ref.ml)
 treffer	hit	plain	something found, with where it was found	added by card hernoemgereedschap: 1 name in the loader tests (Treffer)
 treffers	hits	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 treft	matches	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
@@ -2122,6 +2144,7 @@ versie	version	wire
 versies	versions	wire		
 versiestrip	versionStrip	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_versiestrip_is_die_van_de_verifier)
 verslag	report	plain		
+vertaal	translate	plain	the verb stem	added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 vervalst	falsified	plain		added by card hernoem-drools-backend: 1 name in backends/drools (vervalst)
 vervalt	lapses	plain		
 vervang	replace	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
@@ -2164,6 +2187,7 @@ voeg	insert	plain	voeg in: insert (voegIn, the insert of a session)	added by car
 voeg	merge	plain	voeg samen: merge (voegSamen)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 voegen	insert	plain	voegen X in, insert X	added by card hernoem-drools-backend: 1 name in backends/drools (een_besluit_en_een_conflict_voegen_elk_hun_eigen_feiten_in)
 voer	run	plain	the verb stem: voer uit, run	added by card hernoem-drools-backend: 1 name in backends/drools (voer)
+vol	full	plain	a test document with every clause	false friend; added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 voldoend	satisfying	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_voldoend_lid_maakt_de_geen_vouw_onwaar)
 voldoet	satisfies	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_lid_zonder_tijdlijn_voldoet_vacuum_en_keert_geen_om)
 volg	follow	plain		added by card hernoem-drools-backend: in 2 identifiers (26 occurrences)
@@ -2213,6 +2237,7 @@ vouwen	folds	wire
 vouwfilter	foldFilter	wire	the `filter` of a fold	
 vouwing	folding	plain		added by card hernoem-drools-backend: 1 name in backends/drools (naTijdvouwing)
 vouwt	folds	wire		
+vraag	question	plain	what a test document asks of the fold	added by card rename-ocaml (backends/clingo/test/test_clingo.ml)
 vraagt	requires	plain	vraagt een X: requires an X	added by card hernoemgereedschap: 1 name in the loader tests (een_eenheid_onder_de_dag_vraagt_een_datum_tijd)
 vragende	verb-trailing	plain	the register whose conditions end with the verb (niet aan de elfproef voldoet)	added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 vreemd	foreign	plain		
@@ -2307,6 +2332,7 @@ wissel	switch	plain	in a compound: focuswissel, focus switch	false friend; added
 wisselen	swap	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_takgarde_leest_haar_binder_doordat_de_twee_lets_wisselen)
 wissen	clear	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_rekenregels_op_een_doel_wissen_de_invoerwaarde_wel)
 wist	clears	plain	the verb wissen: wist, clears	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
+wit	whitespace	plain	short for witruimte	false friend; added by card rename-ocaml (spec/verifier/lib/checks.ml)
 woord	word	plain		
 woorden	words	plain		
 woordenschat	vocabulary	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_linkerkant_van_elke_vorm_is_een_plan_uit_de_gesloten_woordenschat)
@@ -2322,6 +2348,7 @@ zaak	case	spec	a case document in a test	RUNTIME-SEMANTICS §5.7a
 zaken	cases	spec	case documents in a test	RUNTIME-SEMANTICS §5.7a; added by card hernoem-drools-backend: in 2 identifiers (116 occurrences)
 zakt	sinks	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_negatielezer_van_het_kenmerkdoel_zakt_onder_de_groep)
 ze	they	plain	function word: the pronoun (she, they)	
+zeef	filter	plain	the sieve that builds a FilterList	added by card rename-ocaml (ref/test/test_ref.ml)
 zegt	says	plain		added by card hernoemgereedschap: 1 name in the loader tests (wat_een_benaming_zegt_weigert_de_lader_niet)
 zeldzaam	rare	plain		added by card hernoem-drools-backend: 1 name in backends/drools (zeldzaam)
 zelf	self	plain	function word: X zelf, X itself	

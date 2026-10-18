@@ -169,7 +169,7 @@ tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests succes
 #    moves a construct, the slices move by hand in the same card
 #    (toka/README.md), or the zone carries two spellings of one construct and
 #    this leg cannot see it.
-casus_n=0; frag_n=0
+case_n=0; frag_n=0
 while IFS= read -r dump; do
   d=$(dirname "$dump"); name=${d#"$TOKA"/}
   args=(); n=0
@@ -188,10 +188,10 @@ while IFS= read -r dump; do
     echo "DIFF: $name (re-emitted IR diverges from the pinned toolchain dump)" >&2
     rm -f "$out"; fail "$name: the frontend output diverges from the pinned dump"
   fi
-  rm -f "$out"; casus_n=$((casus_n + 1)); frag_n=$((frag_n + n))
+  rm -f "$out"; case_n=$((case_n + 1)); frag_n=$((frag_n + n))
 done < <(find "$TOKA" -name ir.json -not -path "$TOKA/cases/*" | sort)
 
-[ "$casus_n" -gt 0 ] || fail "no toka/**/ir.json parity dumps found (an empty fixture set is a failure)"
+[ "$case_n" -gt 0 ] || fail "no toka/**/ir.json parity dumps found (an empty fixture set is a failure)"
 [ "$frag_n" -ge "$EXPECTED_MIN_FRAGMENTS" ] \
   || fail "$frag_n .rgs fragment(s) re-emitted, but EXPECTED_MIN_FRAGMENTS pins at least $EXPECTED_MIN_FRAGMENTS — the parity coverage shrank (a deliberate removal, or a new holdout, lowers the floor in the same commit)"
 # stale-holdout guard: every reason-carrying holdout must still be present.
@@ -355,7 +355,7 @@ fi
 
 echo ""
 echo "check-toka-parity: PASS"
-echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical, floor $EXPECTED_MIN_FRAGMENTS (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests, floor $EXPECTED_MIN_TESTS"
+echo "  re-emission: $case_n casus dump(s), $frag_n .rgs re-emitted byte-identical, floor $EXPECTED_MIN_FRAGMENTS (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests, floor $EXPECTED_MIN_TESTS"
 echo "  schema: $slice_n replay slice(s) metaschema-valid + byte-round-trip (gate-2 discipline, explicit mode)"
 vh_list=$(printf '%s; ' ${VERIFIER_HOLDOUTS[@]+"${VERIFIER_HOLDOUTS[@]}"} | sed 's/; $//')
 echo "  well-formedness: $clean_n replay slice(s) verifier-clean, floor $EXPECTED_MIN_CLEAN (verifier holdouts: ${vh_list:-none}); the casus dump is outside this leg (the parity object, not a well-formed program)"

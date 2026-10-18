@@ -19,7 +19,7 @@ let run_clingo = Clingo_backend.Solve.run_clingo
 
 (* the viol/2 witnesses of an UNSAT program, diagnosed in the library so the
    backend's suite reads the very witnesses this report prints *)
-let diagnose = Clingo_backend.Solve.diagnose
+let diagnostic = Clingo_backend.Solve.diagnostic
 
 (* run clingo on [program]; [`Sat json] with the outf2 payload, or
    [`Unsat msg] with the diagnosed report the expectedFault fragment
@@ -32,7 +32,7 @@ let solve program =
       exit 2
   | _, Unix.WEXITED 20 ->
       let reason =
-        match diagnose program with
+        match diagnostic program with
         | [] -> "no viol/2 witness (the input is not stratified?)"
         | vs -> String.concat "; " vs
       in

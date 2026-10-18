@@ -46,56 +46,56 @@ let encode (f : 'a family) (c : 'a) : string =
   | Some (s, _) -> s
   | None -> invalid_arg ("Spelling.encode: the " ^ f.field ^ " family spells no such constructor")
 
-let sign : teken family =
+let sign : sign_char family =
   {
     field = "sign";
     values =
-      [ ("unspecified", Onbepaald); ("negative", Negatief); ("nonNegative", Niet_negatief);
-        ("positive", Positief) ];
+      [ ("unspecified", Unspecified); ("negative", Negative); ("nonNegative", Non_negative);
+        ("positive", Positive) ];
     refused = [];
   }
 
-let characteristic_kind : kenmerk_soort family =
+let characteristic_kind : characteristic_kind_type family =
   {
     field = "kind";
-    values = [ ("adjectival", Bijvoeglijk); ("possessive", Bezittelijk); ("nominal", Zelfstandig) ];
+    values = [ ("adjectival", Adjectival); ("possessive", Possessive); ("nominal", Nominal) ];
     refused = [];
   }
 
 (* One family at three positions: a timeline facet, a timeline, and a
    bucketing builtin (IR-SPEC ch. 2.2). *)
-let granularity : granulariteit family =
+let granularity : grain family =
   {
     field = "granularity";
     values =
-      [ ("day", Dag); ("week", Week); ("month", Maand); ("quarter", Kwartaal); ("year", Jaar) ];
+      [ ("day", Day); ("week", Week); ("month", Month); ("quarter", Quarter); ("year", Year) ];
     refused = [];
   }
 
 (* The presentation tag of a computing rule version (IR-SPEC ch. 3.1). The
    other two in-memory kinds are no tag, and [encode] refuses them. *)
-let presentation : regel_soort family =
+let presentation : rule_presentation family =
   {
     field = "presentation";
-    values = [ ("equation", Gelijkstelling); ("calculation", Berekening) ];
+    values = [ ("equation", Equation); ("calculation", Calculation) ];
     refused = [];
   }
 
-let method_ : methode family =
+let method_ : method_name family =
   {
     field = "method";
-    values = [ ("equalShares", Gelijke_delen); ("proportional", Naar_rato); ("ordered", Op_volgorde) ];
+    values = [ ("equalShares", Equal_shares); ("proportional", Proportional); ("ordered", Ordered) ];
     refused = [];
   }
 
-let comparison_op : vergelijk_op family =
+let comparison_op : compare_op family =
   {
     field = "op";
     values =
-      [ ("less", Kleiner); ("lessOrEqual", Kleiner_of_gelijk); ("greater", Groter);
-        ("greaterOrEqual", Groter_of_gelijk); ("equal", Gelijk); ("notEqual", Ongelijk);
-        ("earlier", Eerder); ("earlierOrEqual", Eerder_of_gelijk); ("later", Later);
-        ("laterOrEqual", Later_of_gelijk) ];
+      [ ("less", Less); ("lessOrEqual", Less_or_equal); ("greater", Greater);
+        ("greaterOrEqual", Greater_or_equal); ("equal", Equal); ("notEqual", Not_equal);
+        ("earlier", Earlier); ("earlierOrEqual", Earlier_or_equal); ("later", Later);
+        ("laterOrEqual", Later_or_equal) ];
     refused = [];
   }
 
@@ -103,69 +103,69 @@ let binary_op : bin_op family =
   {
     field = "op";
     values =
-      [ ("plus", Plus); ("minus", Min); ("reducedBy", Verminderd_met); ("times", Maal);
-        ("dividedBy", Gedeeld_door); ("dividedByAbs", Gedeeld_door_abs); ("power", Tot_de_macht);
-        ("percentageOf", Percentage_van) ];
+      [ ("plus", Plus); ("minus", Min); ("reducedBy", Reduced_by); ("times", Times);
+        ("dividedBy", Divided_by); ("dividedByAbs", Divided_by_abs); ("power", Power);
+        ("percentageOf", Percentage_of) ];
     refused = [];
   }
 
-let rounding_mode : afrond_modus family =
+let rounding_mode : rounding_mode_kind family =
   {
     field = "mode";
     values =
-      [ ("floor", Naar_beneden); ("ceiling", Naar_boven); ("halfAwayFromZero", Rekenkundig);
-        ("towardZero", Richting_nul); ("awayFromZero", Weg_van_nul) ];
+      [ ("floor", Floor); ("ceiling", Ceiling); ("halfAwayFromZero", Half_away_from_zero);
+        ("towardZero", Toward_zero); ("awayFromZero", Away_from_zero) ];
     refused = [];
   }
 
 (* The kind decides the node (delta B21): the eight folds are an
    Aggregation's, the seventeen other kinds a BuiltinCall's, so a kind of
    the other node is no value of this one. *)
-let aggregation_kind : functie_kind family =
+let aggregation_kind : function_kind family =
   {
     field = "kind";
     values =
-      [ ("sum", Som); ("total", Totaal); ("count", Aantal); ("minimum", Minimum);
-        ("maximum", Maximum); ("first", Eerste); ("last", Laatste); ("filledCount", Aantal_gevulde) ];
+      [ ("sum", Sum_function); ("total", Total); ("count", Count); ("minimum", Minimum);
+        ("maximum", Maximum); ("first", First); ("last", Last); ("filledCount", Filled_count) ];
     refused = [];
   }
 
-let builtin_kind : functie_kind family =
+let builtin_kind : function_kind family =
   {
     field = "kind";
     values =
-      [ ("squareRoot", Wortel); ("absoluteValue", Absolute_waarde);
-        ("concatenation", Concatenatie); ("duration", Tijdsduur);
-        ("absoluteDuration", Absolute_tijdsduur); ("easterSunday", Eerste_paasdag);
-        ("timeProportionalPart", Tijdsevenredig_deel); ("dayCount", Aantal_dagen_in);
-        ("yearOf", Jaar_uit); ("monthOf", Maand_uit); ("dayOf", Dag_uit); ("hourOf", Uur_uit);
-        ("minuteOf", Minuut_uit); ("secondOf", Seconde_uit); ("millisecondOf", Milliseconde_uit);
-        ("dateWith", Datum_met); ("dateTimeWith", Datumtijd_met) ];
+      [ ("squareRoot", Square_root); ("absoluteValue", Absolute_value);
+        ("concatenation", Concatenation); ("duration", Duration);
+        ("absoluteDuration", Absolute_duration); ("easterSunday", Easter_sunday);
+        ("timeProportionalPart", Time_proportional_part); ("dayCount", Day_count);
+        ("yearOf", Year_of); ("monthOf", Month_of); ("dayOf", Day_of); ("hourOf", Hour_of);
+        ("minuteOf", Minute_of); ("secondOf", Second_of); ("millisecondOf", Millisecond_of);
+        ("dateWith", Date_with); ("dateTimeWith", Date_time_with) ];
     refused = [];
   }
 
-let predicate_kind : predicaat_soort family =
+let predicate_kind : predicate_kind_type family =
   {
     field = "kind";
     values =
-      [ ("empty", Leeg); ("filled", Gevuld); ("elevenTest", Elfproef);
-        ("exactDigits", Numeriek_met_exact); ("dayKind", Dagsoort) ];
+      [ ("empty", Empty_predicate); ("filled", Filled); ("elevenTest", Eleven_test);
+        ("exactDigits", Exact_digits); ("dayKind", Day_kind_predicate) ];
     refused = [];
   }
 
 (* One family at two positions. `the` is an ordinary quantifier of a
    Compound and refused by name on a QuantifierFold (WF-108 (a)): the loader
    reads it at both positions, and an executor refuses it on the fold. *)
-let quantifier : kwantor family =
+let quantifier : quantifier_kind family =
   {
     field = "quantifier";
     values =
-      [ ("all", Alle); ("none", Geen); ("atLeast", Ten_minste); ("atMost", Ten_hoogste);
-        ("exactly", Precies) ];
-    refused = [ ("the", De) ];
+      [ ("all", All); ("none", None_of); ("atLeast", At_least); ("atMost", At_most);
+        ("exactly", Exactly) ];
+    refused = [ ("the", The) ];
   }
 
-(* The whole-period qualifier's granularity: the in-memory flag [gp_jaar],
+(* The whole-period qualifier's granularity: the in-memory flag [gp_granularity],
    the v0 boolean `jaar`. *)
 let whole_period_granularity : bool family =
   { field = "granularity"; values = [ ("year", true); ("month", false) ]; refused = [] }
@@ -185,7 +185,7 @@ let severity : severity family =
 let precision : datatype family =
   {
     field = "precision";
-    values = [ ("day", Datum_in_dagen); ("millisecond", Datum_tijd) ];
+    values = [ ("day", Date_in_days); ("millisecond", Date_time_type) ];
     refused = [];
   }
 
@@ -205,21 +205,21 @@ let context_value_names = [ evaluation_date; evaluation_year ]
 let expr_node (e : expr) : string =
   match e with
   | Literal _ -> "Literal"
-  | Tekst_reeks _ -> "TextComposition"
-  | Binair _ -> "Binary"
-  | Functie { kind; _ } ->
+  | Text_composition _ -> "TextComposition"
+  | Binary _ -> "Binary"
+  | Function_call { kind; _ } ->
       if List.exists (fun (_, k) -> k = kind) (pairs aggregation_kind) then "Aggregation"
       else "BuiltinCall"
   | Instance_set_union _ -> "InstanceSetUnion"
-  | Afgerond _ -> "Rounding"
-  | Begrensd _ -> "Clamp"
-  | Attribuut_ref _ -> "AttributeReference"
-  | Dimensie_cel _ -> "DimensionCellRead"
+  | Rounding _ -> "Rounding"
+  | Clamp _ -> "Clamp"
+  | Attribute_reference _ -> "AttributeReference"
+  | Dimension_cell_read _ -> "DimensionCellRead"
   | Parameter_ref _ -> "ParameterReference"
-  | Variabele_ref _ -> "VariableReference"
-  | Constante _ -> "ContextValue"
+  | Variable_reference _ -> "VariableReference"
+  | Context_value _ -> "ContextValue"
   | Bound_day _ -> "BoundDay"
-  | Expr_onopgelost _ -> "Unresolved"
+  | Expr_unresolved _ -> "Unresolved"
   | Temporal_read _ -> "TemporalRead"
   | Construct _ -> "Construct"
   | Match _ -> "Match"

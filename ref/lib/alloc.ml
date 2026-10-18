@@ -33,7 +33,7 @@ type outcome =
   | Nothing (* nothing written — also no rest *)
 
 let floor_d decimals q =
-  match decimals with None -> q | Some d -> Arith.round_q Naar_beneden d q
+  match decimals with None -> q | Some d -> Arith.round_q Floor d q
 
 (* cap, then floor (ch. 4.3: the cap applies before rounding) *)
 let cap_floor ~err ~decimals ~id raw cap =
@@ -56,12 +56,12 @@ let weight_q = function
   | Some Empty | None -> Q.zero
   | Some v -> fault "weight is not a number: %s" (to_string v)
 
-let allocate (methode : Ir_v0.Ast.methode) ~afnemend ~decimals ~pot ~err
+let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~err
     (recipients : recipient list) =
   if recipients = [] then Nothing (* zero recipients: nothing written, no error *)
   else
-    match methode with
-    | Gelijke_delen -> (
+    match method_name with
+    | Equal_shares -> (
         match pot with
         | Empty -> fault "empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)"
         | _ ->
@@ -74,7 +74,7 @@ let allocate (methode : Ir_v0.Ast.methode) ~afnemend ~decimals ~pot ~err
             in
             let total = List.fold_left (fun acc (_, s) -> match s with Assigned q -> Q.add acc q | Excluded -> acc) Q.zero shares in
             Distributed (shares, Q.sub a total))
-    | Naar_rato -> (
+    | Proportional -> (
         match pot with
         | Empty -> fault "empty source amount in proportional allocation (v0 mirror hole, ch. 4.4)"
         | _ ->
@@ -99,7 +99,7 @@ let allocate (methode : Ir_v0.Ast.methode) ~afnemend ~decimals ~pot ~err
               in
               let total = List.fold_left (fun acc (_, s) -> match s with Assigned q -> Q.add acc q | Excluded -> acc) Q.zero shares in
               Distributed (shares, Q.sub a total))
-    | Op_volgorde -> (
+    | Ordered -> (
         match pot with
         | Empty -> Nothing (* ordered: no distribution (§9.7.6 discipline) *)
         | _ ->
@@ -113,7 +113,7 @@ let allocate (methode : Ir_v0.Ast.methode) ~afnemend ~decimals ~pot ~err
               | _, Some Empty | _, None -> -1
               | Some ka, Some kb ->
                   let c = Arith.scalar_cmp ka kb in
-                  if afnemend then -c else c
+                  if descending then -c else c
             in
             let sorted = List.stable_sort cmp_key recipients in
             let rec take_group r = function

@@ -10,9 +10,9 @@ spec bug.
 
 ## Translation (spec/ASP-TRANSLATION.md's conventions, systematised)
 
-- Instances are constants; a characteristic is `heeft(Inst, "naam")`; an
+- Instances are constants; a characteristic is `has(Inst, "naam")`; an
   attribute value is `val(Inst, "naam", V)`; a role link is
-  `rol(Bron, "rolnaam", Doel)`; a parameter is `param("naam", V)`.
+  `role(Bron, "rolnaam", Doel)`; a parameter is `param("naam", V)`.
   Names are normalised on both sides. A scalar parameter the case does
   not bind has no fact, and binding is fail-fast (ch. 5.7): every read
   of it carries one `viol/2` guard in ref's own words, whose body is
@@ -160,9 +160,9 @@ spec bug.
   created instance as a deterministic function term `ocN(Subject)` —
   set semantics carries the per-(rule × subject) idempotence, exactly
   the reference interpreter's deterministic label. Member
-  initialisations are `val`/`heeft` heads on the term; the back-link
+  initialisations are `val`/`has_atom` heads on the term; the back-link
   relation (the explicit `verbindendeRol` binding, else the
-  uniquely-derivable pair) lands both `rol/3` ends; the
+  uniquely-derivable pair) lands both `role/3` ends; the
   1:1 linked-instance guard is `not inputrol/3` over the case links
   only (ch. 5.5's input-snapshot narrowing). An ambiguous connecting
   relation faults the translation, as in `ref/`.
@@ -268,9 +268,9 @@ spec bug.
   the case's date, carried a stratum higher, beside the cycle out of its
   reach, where it reads only what a creation writes, and where the date
   excludes "geef door".
-- Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
+- Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `role/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
-  join over `rol/3`, and the head lands the created relation's links —
+  join over `role/3`, and the head lands the created relation's links —
   both ends, the same two directions the reference interpreter's
   writer lands. Set semantics carries the ch. 5.5 idempotence: a
   target reached along two paths is one atom. A to-one end gets an
@@ -318,9 +318,9 @@ spec bug.
   absence of that input. The ch. 7.8 **standing targets** (a bare
   scalar computing rule as its target's only writer,
   `Ir_v0.Desugar.standing_targets`) take the same entry: the rule's
-  effectiveness atom (`standN_eff`) carries the full val-head body —
+  effectiveness atom (`stateN_eff`) carries the full val-head body —
   condition AND value bindings — so a leeg evaluation derives neither
-  and the input stands (`val :- inputval, not standN_eff`), matching
+  and the input stands (`val :- inputval, not stateN_eff`), matching
   ref/'s no-write-on-leeg. The temporal arm mirrors it
   (`standing_temporal_targets`): a standing pro-rata target's input
   timeline enters as `inputtl/5`, standing WHOLE unless the fold
@@ -335,7 +335,7 @@ spec bug.
   the target two values in one model wherever two of them apply to one
   subject and differ, where ref faults on its pass budget (ch. 5.1,
   5.7). Each such writer therefore also derives its value under its own
-  index (`wval/4`) and its firing (`wvuurt/3`); a writer that fires
+  index (`wval/4`) and its firing (`wfires/3`); a writer that fires
   without a value writes leeg, unless it is standing (ch. 7.8: on a
   type chain each writer is the only one of its own key, and a standing
   writer writes nothing on leeg). Every pair of writers that share a
@@ -397,7 +397,7 @@ Recorded limitations:
   the runner then reports `clingo killed`, loud but without a name.
   Measured 2026-10-09: `a("x…x")` aborts with a string of 1 017, 2 040,
   3 063, 5 109, 7 155 and 8 178 characters and with no other length from
-  1 to 8 999; `heeft(X,"k")` with X nested 201 levels of `oc0` around
+  1 to 8 999; `has(X,"k")` with X nested 201 levels of `oc0` around
   `"W1"` aborts, with 195 to 200 and 202 to 229 levels it prints, and
   `val(X,"a",1)` aborts at 202 levels only. An atom without a string, and
   the text output (`--outf=0`), abort at none of those lengths. A minted

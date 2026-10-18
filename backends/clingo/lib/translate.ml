@@ -41,7 +41,7 @@
      Rounding-over-division form computes the mode's integer rounding
      exactly (non-negative operands; the negative range is fenced by
      a viol/2 witness). The abs-division variant is the same path
-     collapsed at (Richting_nul, 5) — ch. 2.2's defined truncation
+     collapsed at (Toward_zero, 5) — ch. 2.2's defined truncation
      point, both signs. Tot-de-macht is gringo's ** on the scaled
      base at result scale sl^e, for a compile-time non-negative
      integer exponent only (an empty base propagates by the bare
@@ -76,19 +76,19 @@ let fault = Value.fault
    replays clean. Measured 2026-09-10 and inherited — WF-055 splits identically
    on the identical construction — and bounded by the verifier, which rejects
    any such document before a gate can compare the two. *)
-let rec clip_member_qualifications (c : conditie) =
+let rec clip_member_qualifications (c : condition_expr) =
   match c with
-  | Kenmerk_check { kenmerk; eigenaar; periode; _ } ->
-      let naam = Option.value kenmerk ~default:"?" in
-      if eigenaar <> None then
+  | Characteristic_check { characteristic; holder; time_period; _ } ->
+      let ident = Option.value characteristic ~default:"?" in
+      if holder <> None then
         fault
           "host on the gedurende clip member %S: the clip reads the subject's own \
-           characteristic timeline" naam;
-      if periode <> None then
+           characteristic timeline" ident;
+      if time_period <> None then
         fault
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
-           over the whole timeline" naam
-  | Samengesteld { onderdelen; _ } -> List.iter clip_member_qualifications onderdelen
+           over the whole timeline" ident
+  | Compound { components; _ } -> List.iter clip_member_qualifications components
   | _ -> ()
 (* a declared name or case label lands between double-quotes in the
    generated ASP. gringo's string syntax escapes an embedded
@@ -142,8 +142,8 @@ let pow10 n =
   go 1 n
 
 let decimals_of_datatype = function
-  | Some (Numeriek { decimalen; _ } | Percentage { decimalen; _ }) -> decimalen
-  | Some Datum_in_dagen -> 0
+  | Some (Number { decimal_places; _ } | Percentage { decimal_places; _ }) -> decimal_places
+  | Some Date_in_days -> 0
   | dt ->
       ignore dt;
       fault "unscalable datatype in the ASP translation"
@@ -207,7 +207,7 @@ let scaled_of_value ~decimals (v : Value.t) : int =
    that form's own words: "does not fit 0 decimals" would name a ceiling the
    declaration does not have. *)
 let unbounded_datatype = function
-  | Some (Numeriek { geheel = false; decimalen = 0; _ } | Percentage { geheel = false; decimalen = 0; _ })
+  | Some (Number { whole_part = false; decimal_places = 0; _ } | Percentage { whole_part = false; decimal_places = 0; _ })
     ->
       true
   | _ -> false
@@ -286,7 +286,7 @@ type part = { pt_id : int; pt_order : range_order; pt_parent : string; pt_member
 (* the pass before a creation, for the unbound-parameter guard ([with_pre]):
    the truth there of a composite or quantifier fold as translated once, [None]
    where it is the fixpoint's *)
-type pre_handle = { ph_node : conditie; ph_atoms : string list option Lazy.t }
+type pre_handle = { ph_node : condition_expr; ph_atoms : string list option Lazy.t }
 
 (* a short-circuit atom whose outcome can differ in the pass before a creation
    ([unbound_param_guard]): its form there, binding the atom's own variables so
@@ -454,8 +454,8 @@ let isa ctx sub super = Ir_v0.Checks.subtype_of ctx.doc ~sub ~super
    translator's own lexical scope. Every other node carries its annotation. *)
 let static_type ctx (e : expr) : datatype option =
   match e with
-  | Binder_ref { naam; _ } -> (
-      match List.assoc_opt (norm naam) ctx.binders with
+  | Binder_ref { ident; _ } -> (
+      match List.assoc_opt (norm ident) ctx.binders with
       | Some (_, _, _, t) -> t
       | None -> None)
   | _ ->
@@ -576,32 +576,32 @@ let fresh ctx prefix =
    non-canonical date silently (card ref-geldigheid-datumlezing,
    2026-09-23). Now a bound or asOfDate that is not a date refuses in
    both executors with one sentence. *)
-let applies ctx (g : geldigheid option) = Eval.window_admits ~as_of:ctx.case.as_of g
+let applies ctx (g : validity_window option) = Eval.window_admits ~as_of:ctx.case.as_of g
 
 (* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
    member maps closed over the supertype chain. Every declaration lookup in
    this translator funnels through here, so an inherited attribute carries
    its declaring type's decimals, unit and granularity wherever it is read. *)
-let objecttype ctx name =
+let object_type ctx name =
   match Ir_v0.Checks.effective_ot ctx.doc name with
   | Some ot -> ot
   | None -> fault "unknown object type %S" name
 
 
 let attr_decimals ctx ~otype ~attr =
-  let ot = objecttype ctx otype in
-  match Ir_v0.Checks.find_ci ot.attributen attr with
+  let ot = object_type ctx otype in
+  match Ir_v0.Checks.find_ci ot.attributes attr with
   | Some dt -> decimals_of_datatype dt
   | None -> fault "unknown attribute %S on %S" attr otype
 
 let attr_datatype ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
   | Some dt -> dt
   | None -> fault "unknown attribute %S on %S" attr otype
 
 let attr_unit ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
-  | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  | Some (Some (Number { measure_unit; _ } | Percentage { measure_unit; _ })) -> measure_unit
   | _ -> None
 
 (* THE TEMPORAL TOTAL IS ARITHMETIC: ch. 3.6 multiplies each segment value
@@ -613,15 +613,15 @@ let attr_unit ctx ~otype ~attr =
    where ref faults on the multiplication itself. The set-source sister arm
    declines the same class for the additive set fold (card
    datum-setbron-breuk); this is its timeline half.
-   [Datum_in_dagen] EXACTLY, for the same measured reason as there: a text,
+   [Date_in_days] EXACTLY, for the same measured reason as there: a text,
    enum, boolean or datum-tijd timeline never reaches a temporal-total arm
    (its target routes it through [symbolic_term]/[dt_term], which refuse
    it), and [decimals_of_datatype] hands every other non-numeric datatype no
    scale at all. Asked of the DECLARATION (§2.10), so the refusal is about
    the document and not about what a case supplies. *)
 let refuse_date_timeline_total ctx ~what ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
-  | Some (Some Datum_in_dagen) ->
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  | Some (Some Date_in_days) ->
       fault
         "%s of %S on %S multiplies DATE-valued timeline segments by their whole grid units: a \
          temporal total is arithmetic, a date is a calendar POSITION, and scaling one has no \
@@ -631,18 +631,18 @@ let refuse_date_timeline_total ctx ~what ~otype ~attr =
   | _ -> ()
 
 let attr_sum_typed ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
   | Some (Some (Sum_type _)) -> true
   | _ -> false
 
 let attr_struct_typed ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
   | Some (Some (Struct_type _)) -> true
   | _ -> false
 
 let attr_datetime_typed ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
-  | Some (Some Datum_tijd) -> true
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  | Some (Some Date_time_type) -> true
   | _ -> false
 
 (* THE TEMPORALITY ANCHOR of a fold operand (decision 2026-09-05).
@@ -655,8 +655,8 @@ let attr_datetime_typed ctx ~otype ~attr =
    Minimum/Maximum guards on [elementObjecttype]. On every frontend-emitted
    form the two coincide; on a MIXED annotation they do not, and the set
    fold then fell reasonlessly into the catch-all. One anchor, all arms. *)
-let fold_operand_otype ~element_objecttype ~ranged (ot : string option) =
-  if ranged then element_objecttype else ot
+let fold_operand_otype ~element_object_type ~ranged (ot : string option) =
+  if ranged then element_object_type else ot
 
 (* temporality WITHOUT [attr_temporal]'s fault: [eff_unit] below runs in
    pure ANALYSIS positions (comparisons, additive joins, the write fence)
@@ -685,44 +685,44 @@ let attr_temporal_decl ctx ~otype ~attr =
    composites slip the fence (a hunted silent split). Multiplicative
    operands are fenced unit-free at their own translation, so those
    nodes contribute None. *)
-let rec eff_unit ctx (e : expr) : eenheid option =
+let rec eff_unit ctx (e : expr) : measure_unit option =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
       attr_unit ctx ~otype:ot ~attr:a
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci ctx.doc.parameters p with
-      | Some { par_datatype = Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }); _ } ->
-          eenheid
+      | Some { par_datatype = Some (Number { measure_unit; _ } | Percentage { measure_unit; _ }); _ } ->
+          measure_unit
       | _ -> None)
-  | Literal { typ = Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }); _ } -> eenheid
-  | Binair { op = Plus | Min | Verminderd_met; links; rechts; _ } -> (
+  | Literal { typ = Some (Number { measure_unit; _ } | Percentage { measure_unit; _ }); _ } -> measure_unit
+  | Binary { op = Plus | Min | Reduced_by; left_side; right_side; _ } -> (
       (* additive results carry the left unit; a unitless side adopts
          the other (Arith.join_units) — a genuine mismatch faults when
          the join itself is translated *)
-      match Option.bind links (eff_unit ctx) with
+      match Option.bind left_side (eff_unit ctx) with
       | Some u -> Some u
-      | None -> Option.bind rechts (eff_unit ctx))
-  | Binair { op = Maal; links; rechts; _ } -> (
+      | None -> Option.bind right_side (eff_unit ctx))
+  | Binary { op = Times; left_side; right_side; _ } -> (
       (* the admitted factor-free product (ch. 2.6, Arith.mul): a unitless
          operand times a unit-carrying operand adopts THAT unit, value
          unchanged — so a restating position consuming the product sees the
          real unit and its own fence still fires on a genuine mismatch (the
          loud-witness). A two-unit product faults at its own translation
          (mul_units_ok), so reporting the left there is moot. *)
-      match Option.bind links (eff_unit ctx) with
+      match Option.bind left_side (eff_unit ctx) with
       | Some u -> Some u
-      | None -> Option.bind rechts (eff_unit ctx))
-  | Binair _ -> None
-  | Afgerond { basis; _ } | Begrensd { basis; _ } -> Option.bind basis (eff_unit ctx)
-  | Temporal_read { basis; _ } -> eff_unit ctx basis
-  | Functie
-      { kind = (Som | Totaal) as kind;
-        argumenten = (Attribuut_ref { attribuut = Some a; objecttype; _ } as arg) :: _;
-        element_objecttype; bron_rol; bron_pad; _ }
-    when (let ranged = bron_rol <> None || bron_pad <> None in
-          (kind = Totaal || ranged)
+      | None -> Option.bind right_side (eff_unit ctx))
+  | Binary _ -> None
+  | Rounding { base_expr; _ } | Clamp { base_expr; _ } -> Option.bind base_expr (eff_unit ctx)
+  | Temporal_read { base_expr; _ } -> eff_unit ctx base_expr
+  | Function_call
+      { kind = (Sum_function | Total) as kind;
+        call_arguments = (Attribute_reference { attribute_ref = Some a; object_type; _ } as arg) :: _;
+        element_object_type; source_role; source_path; _ }
+    when (let ranged = source_role <> None || source_path <> None in
+          (kind = Total || ranged)
           &&
-          match fold_operand_otype ~element_objecttype ~ranged objecttype with
+          match fold_operand_otype ~element_object_type ~ranged object_type with
           | Some ot -> attr_temporal_decl ctx ~otype:ot ~attr:a
           | None -> false) ->
       (* the §4.20 Tabel 30 noemer strip, as an EFFECTIVE unit. A TIME
@@ -736,7 +736,7 @@ let rec eff_unit ctx (e : expr) : eenheid option =
          unit-carrying time aggregation.
 
          The strip follows the INTEGRATION, not the operator: it fires
-         exactly where ref runs a Timeline.totaal — the own-subject
+         exactly where ref runs a Timeline.grand_total — the own-subject
          temporal totaal, and the §7.1 per-element fold under BOTH som
          and totaal (there the members' timelines collapse first, so a
          som over a temporal set strips just as hard). A NON-temporal
@@ -746,12 +746,12 @@ let rec eff_unit ctx (e : expr) : eenheid option =
          integer encoding is the translating arm's fence
          ([grid_strip_ok]), not this analysis's. *)
       Option.map
-        (fun (u : eenheid) -> { u with noemer = None })
+        (fun (u : measure_unit) -> { u with denominator = None })
         (eff_unit ctx arg)
-  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ }
+  | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = arg :: _; _ }
     ->
       eff_unit ctx arg
-  | Functie { kind = Aantal | Aantal_gevulde; _ } ->
+  | Function_call { kind = Count | Filled_count; _ } ->
       (* A CARDINALITY CARRIES NO UNIT, whatever the folded attribute measures
          (IR-SPEC ch. 4.3; RUNTIME-SEMANTICS ch. 3.4c). Named rather than left to
          the catch-all below, which cannot tell "proven unit-free" from "could not
@@ -769,7 +769,7 @@ let rec eff_unit ctx (e : expr) : eenheid option =
       None
   | _ -> None
 
-let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (objecttype ctx otype) attr
+let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (object_type ctx otype) attr
 
 (* the CHARACTERISTIC side of the same question, and this backend's own —
    deliberately not borrowed from `ref`. A characteristic target declares its
@@ -778,13 +778,13 @@ let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (objecttype ctx 
    a temporal target pass the ch. 3.10 clip test here (measured 2026-09-20:
    this backend PLAYED the scalar gate on a timeline while both Drools
    branches named the clip). The condition WALK the clip test uses is shared
-   with `ref` [Eval.bevat_periode]; this half is not, because a second shared
+   with `ref` [Eval.contains_time_window]; this half is not, because a second shared
    helper is a second place where agreement means "one implementation" rather
    than "two that agree". *)
-let kenmerk_temporal ctx ~otype ~kenmerk =
+let characteristic_temporal ctx ~otype ~characteristic =
   List.exists
-    (fun (k, _) -> Ir_v0.Checks.norm k = Ir_v0.Checks.norm kenmerk)
-    (objecttype ctx otype).kenmerk_granulariteit
+    (fun (k, _) -> Ir_v0.Checks.norm k = Ir_v0.Checks.norm characteristic)
+    (object_type ctx otype).characteristic_granularity
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
@@ -803,11 +803,11 @@ let kenmerk_temporal ctx ~otype ~kenmerk =
    phase, as the other ch. 3.10 refusals are. Since 2026-09-23 the position
    is WF-112 and the verifier refuses the document; this stays as the
    fail-fast belt on non-conforming input. *)
-let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
-  match kwantor with
-  | Alle | De -> ()
-  | Geen | Ten_minste | Ten_hoogste | Precies ->
-      if List.exists Eval.bevat_periode parts then
+let period_under_count_quantifier (quantifier_kind : quantifier_kind) (parts : condition_expr list) =
+  match quantifier_kind with
+  | All | The -> ()
+  | None_of | At_least | At_most | Exactly ->
+      if List.exists Eval.contains_time_window parts then
         fault
           "a period condition under none or a counting quantifier (atLeast / atMost / exactly) \
            is the position WF-112 refuses: the quantifier counts or complements the \
@@ -815,7 +815,7 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
            document is not well-formed. Declined in translation"
 
 let attr_granularity ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attribuut_granulariteit attr with
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attribute_granularity attr with
   | Some (Some g) -> g
   | _ -> fault "temporal attribute %S without granularity" attr
 
@@ -829,13 +829,13 @@ let req what = function Some x -> x | None -> fault "missing %s" what
    the wu join found no fact and the #sum went empty) *)
 let prorata_writes (doc : document) ~otype ~attr =
   List.exists
-    (fun (r : resolved_regel) ->
-      match (r.doel, r.waarde) with
-      | ( Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }),
-          Some (Functie { kind = Tijdsevenredig_deel; _ }) ) ->
+    (fun (r : resolved_rule) ->
+      match (r.objective, r.value_node) with
+      | ( Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }),
+          Some (Function_call { kind = Time_proportional_part; _ }) ) ->
           norm a = norm attr && norm ot = norm otype
       | _ -> false)
-    doc.resolved_regels
+    doc.resolved_rules
 
 (* does the case supply an input value or timeline for this attribute
    on any instance of the type? — ref (like v0) lets a computed target
@@ -872,26 +872,26 @@ let oc_nest = 190
    than the document has object creations *)
 let has_recursive_creation (doc : document) =
   List.exists
-    (fun (g : resolved_regel_groep) ->
-      g.recursief
+    (fun (g : resolved_rule_group) ->
+      g.recursive
       && List.exists
            (function
              | Some l ->
                  List.exists
-                   (fun (o : resolved_object_creatie) ->
-                     match o.oc_naam with
+                   (fun (o : resolved_object_creation) ->
+                     match o.oc_name with
                      | Some n ->
                          norm (Ir_v0.Checks.strip_version n)
                          = norm (Ir_v0.Checks.strip_version l)
                      | None -> false)
-                   doc.object_creaties
+                   doc.object_creations
              | None -> false)
-           g.leden)
-    doc.regel_groepen
+           g.member_list)
+    doc.rule_groups
 
 (* can a creation or a fact creation add a member to a fold's range at run
    time? Such a member has no normed place in the range (ch. 3.9a/5.7a) *)
-let doc_dynamic (doc : document) = doc.object_creaties <> [] || doc.feit_creaties <> []
+let doc_dynamic (doc : document) = doc.object_creations <> [] || doc.fact_creations <> []
 
 (* the predicates of a range order, written once:
    - roN_m(P,X): X is in the range of subject P;
@@ -923,7 +923,7 @@ let use_ro ctx (ro : range_order) =
       (String.concat ", " (Printf.sprintf "isa(%s,%s)" ro.ro_parent (str ro.ro_parent_ot) :: ro.ro_join ()));
     emit ctx "#defined %s_o/3." p;
     List.iter (fun (a, b, i) -> emit ctx "%s_o(%s,%s,%d)." p (str_raw a) (str_raw b) i) (Lazy.force ro.ro_facts);
-    if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.feit_creaties <> []) then
+    if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.fact_creations <> []) then
       emit ctx "%s_n(P,X,Y) :- %s_o(P,X,I), %s_o(P,Y,J), I < J." p p p
     else emit ctx "#defined %s_n/3." p;
     if ro.ro_dynamic then emit ctx "%s_q(P,X) :- %s_o(P,X,_)." p p
@@ -932,7 +932,7 @@ let use_ro ctx (ro : range_order) =
 
 (* [f] translates [node]; its handle for the pass before a creation, which
    [node]'s own translation registers ([register_pre]) *)
-let with_pre ctx (node : conditie) f =
+let with_pre ctx (node : condition_expr) f =
   let saved = ctx.pre_scope in
   ctx.pre_scope <- [];
   let r = f () in
@@ -944,7 +944,7 @@ let with_pre ctx (node : conditie) f =
   ctx.pre_scope <- saved;
   (r, h)
 
-let register_pre ctx (node : conditie) atoms =
+let register_pre ctx (node : condition_expr) atoms =
   if doc_dynamic ctx.doc then ctx.pre_scope <- { ph_node = node; ph_atoms = atoms } :: ctx.pre_scope
 
 (* the pass before a creation's entry of a short-circuit atom, if it has one *)
@@ -981,8 +981,8 @@ let pre_form ctx ~certain a =
    leeg, which is exactly what the absent lpres/1 fact says (ch. 10.5). *)
 let param_unbound ctx name =
   match Ir_v0.Checks.find_ci ctx.doc.parameters name with
-  | Some { par_granulariteit = None; par_datatype = Some (List_type _); _ } -> false
-  | Some { par_granulariteit = None; _ } ->
+  | Some { par_granularity = None; par_datatype = Some (List_type _); _ } -> false
+  | Some { par_granularity = None; _ } ->
       Eval.SMap.find_opt (norm name) ctx.case.params = None
   | _ -> false
 
@@ -1113,28 +1113,28 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
   let rec x (e : expr) =
     let opt = function Some y -> x y | None -> () in
     (match e with
-    | Binair { links; rechts; _ } ->
-        opt links;
-        opt rechts
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } ->
-        opt basis;
+    | Binary { left_side; right_side; _ } ->
+        opt left_side;
+        opt right_side
+    | Rounding { base_expr; _ } -> opt base_expr
+    | Clamp { base_expr; minimum; maximum; _ } ->
+        opt base_expr;
         opt minimum;
         opt maximum
-    | Functie { argumenten; leegwaarde; filter; _ } ->
+    | Function_call { call_arguments; empty_fallback; filter; _ } ->
         (match filter with Some c -> cond c | None -> ());
-        List.iter x argumenten;
-        opt leegwaarde
-    | Dimensie_cel { attribuut; _ } -> opt attribuut
-    | Temporal_read { basis; datum; _ } ->
-        x datum;
-        x basis
+        List.iter x call_arguments;
+        opt empty_fallback
+    | Dimension_cell_read { attribute_ref; _ } -> opt attribute_ref
+    | Temporal_read { base_expr; date_value; _ } ->
+        x date_value;
+        x base_expr
     | Construct { argument; _ } -> opt argument
     | Field_access { base; _ } -> x base
-    | Struct_literal { velden; _ } -> List.iter (fun (_, y) -> x y) velden
+    | Struct_literal { field_list; _ } -> List.iter (fun (_, y) -> x y) field_list
     | List_literal { elements; _ } -> List.iter x elements
-    | Tekst_reeks { delen; _ } ->
-        List.iter (function Ingevoegd { expr = Some y } -> x y | _ -> ()) delen
+    | Text_composition { pieces; _ } ->
+        List.iter (function Embedded_expression { expr = Some y } -> x y | _ -> ()) pieces
     | If_then_else { condition; then_; else_; _ } ->
         cond condition;
         x then_;
@@ -1150,26 +1150,26 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
         x list;
         x init
     | Map_list { list; _ } | Filter_list { list; _ } | List_length { list; _ } -> x list
-    | Lambda _ | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _
-    | Bound_day _ | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
+    | Lambda _ | Parameter_ref _ | Literal _ | Attribute_reference _ | Variable_reference _ | Context_value _
+    | Bound_day _ | Binder_ref _ | Expr_unresolved _ | Instance_set_union _ ->
         ());
     visit e
-  and cond (c : conditie) =
+  and cond (c : condition_expr) =
     let opt = function Some y -> x y | None -> () in
     match c with
-    | Vergelijking { links; rechts; _ } ->
-        opt links;
-        opt rechts
-    | Predicaat { operand; _ } -> opt operand
-    | Periode_conditie { vanaf; tot; _ } ->
-        opt vanaf;
-        opt tot
-    | Samengesteld { onderdelen; _ } -> List.iter cond onderdelen
-    | Kwantorvouw { kv_filter; kv_toets; _ } ->
+    | Comparison { left_side; right_side; _ } ->
+        opt left_side;
+        opt right_side
+    | Predicate { operand; _ } -> opt operand
+    | Time_window { starting_at; up_to; _ } ->
+        opt starting_at;
+        opt up_to
+    | Compound { components; _ } -> List.iter cond components
+    | Quantifier_fold { kv_filter; kv_test; _ } ->
         (match kv_filter with Some f -> cond f | None -> ());
-        (match kv_toets with Some t -> cond t | None -> ())
-    | Kenmerk_check _ | Role_membership _ | Regelversie _
-    | Conditie_onopgelost _ ->
+        (match kv_test with Some t -> cond t | None -> ())
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Condition_unresolved _ ->
         ()
   in
   (x, cond)
@@ -1498,48 +1498,48 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
     ||
     let opt = function Some y -> x y | None -> false in
     match e with
-    | Binair { links; rechts; _ } -> opt links || opt rechts
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
-    | Functie { argumenten; leegwaarde; filter; _ } ->
-        List.exists x argumenten || opt leegwaarde || (match filter with Some c -> co c | None -> false)
-    | Dimensie_cel { attribuut; _ } -> opt attribuut
-    | Temporal_read { basis; datum; _ } -> x basis || x datum
+    | Binary { left_side; right_side; _ } -> opt left_side || opt right_side
+    | Rounding { base_expr; _ } -> opt base_expr
+    | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
+    | Function_call { call_arguments; empty_fallback; filter; _ } ->
+        List.exists x call_arguments || opt empty_fallback || (match filter with Some c -> co c | None -> false)
+    | Dimension_cell_read { attribute_ref; _ } -> opt attribute_ref
+    | Temporal_read { base_expr; date_value; _ } -> x base_expr || x date_value
     | Construct { argument; _ } -> opt argument
     | Field_access { base; _ } -> x base
-    | Struct_literal { velden; _ } -> List.exists (fun (_, y) -> x y) velden
+    | Struct_literal { field_list; _ } -> List.exists (fun (_, y) -> x y) field_list
     | List_literal { elements; _ } -> List.exists x elements
-    | Tekst_reeks { delen; _ } ->
-        List.exists (function Ingevoegd { expr = Some y } -> x y | _ -> false) delen
+    | Text_composition { pieces; _ } ->
+        List.exists (function Embedded_expression { expr = Some y } -> x y | _ -> false) pieces
     | If_then_else { condition; then_; else_; _ } -> co condition || x then_ || x else_
     | Match { scrutinee; arms; _ } -> x scrutinee || List.exists (fun (_, _, b) -> x b) arms
     | Let { value; body; _ } -> x value || x body
     | Lambda { body; _ } -> x body
-    | Invoke { functie; arguments; _ } -> List.exists x arguments || named functie
-    | Fold { list; init; functie; _ } -> x list || x init || fn functie
-    | Map_list { list; functie; _ } -> x list || fn functie
+    | Invoke { function_name; arguments; _ } -> List.exists x arguments || named function_name
+    | Fold { list; init; function_name; _ } -> x list || x init || fn function_name
+    | Map_list { list; function_name; _ } -> x list || fn function_name
     | Filter_list { list; condition; _ } -> x list || co condition
     | List_length { list; _ } -> x list
-    | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _ | Bound_day _
-    | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
+    | Parameter_ref _ | Literal _ | Attribute_reference _ | Variable_reference _ | Context_value _ | Bound_day _
+    | Binder_ref _ | Expr_unresolved _ | Instance_set_union _ ->
         false
   and fn = function Fn_lambda { body; _ } -> x body | Fn_name n -> named n
   and named n =
-    match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm n) ctx.doc.function_defs with
+    match List.find_opt (fun (d : function_def) -> norm d.fd_name = norm n) ctx.doc.function_defs with
     | Some d -> x d.fd_body
     | None -> false
-  and co (c : conditie) =
+  and co (c : condition_expr) =
     let opt = function Some y -> x y | None -> false in
     match c with
-    | Vergelijking { links; rechts; _ } -> opt links || opt rechts
-    | Predicaat { operand; _ } -> opt operand
-    | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
-    | Samengesteld { onderdelen; _ } -> List.exists co onderdelen
-    | Kwantorvouw { kv_toets; kv_filter; _ } ->
-        (match kv_toets with Some t -> co t | None -> false)
+    | Comparison { left_side; right_side; _ } -> opt left_side || opt right_side
+    | Predicate { operand; _ } -> opt operand
+    | Time_window { starting_at; up_to; _ } -> opt starting_at || opt up_to
+    | Compound { components; _ } -> List.exists co components
+    | Quantifier_fold { kv_test; kv_filter; _ } ->
+        (match kv_test with Some t -> co t | None -> false)
         || (match kv_filter with Some f -> co f | None -> false)
-    | Kenmerk_check _ | Role_membership _ | Regelversie _
-    | Conditie_onopgelost _ ->
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Condition_unresolved _ ->
         false
   in
   x e
@@ -1563,29 +1563,29 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
    open prefix: an `all` prefix of monotone members is settled earlier there,
    not later, and one whose member holds on absence (a count against zero,
    ch. 6.1) is read at the fixpoint, README [S4]. *)
-let leaf_reads_role ctx (c : conditie) =
+let leaf_reads_role ctx (c : condition_expr) =
   let ranging (e : expr) =
     match e with
-    | Attribuut_ref { navigatie_bindingen = Some _; _ } | Instance_set_union _ -> true
+    | Attribute_reference { navigation_bindings = Some _; _ } | Instance_set_union _ -> true
     (* a fold reaches instances through its range alone (D8): without one it
        reads the subject's own value *)
-    | Functie { bron_rol; bron_pad; _ } -> bron_rol <> None || bron_pad <> None
+    | Function_call { source_role; source_path; _ } -> source_role <> None || source_path <> None
     | _ -> false
   in
   let opt = function Some e -> expr_reaches ctx ranging e | None -> false in
   match c with
-  | Vergelijking { links; rechts; _ } -> opt links || opt rechts
-  | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
-  | Kenmerk_check { navigatie_binding = Some _; _ } | Role_membership _ -> true
+  | Comparison { left_side; right_side; _ } -> opt left_side || opt right_side
+  | Time_window { starting_at; up_to; _ } -> opt starting_at || opt up_to
+  | Characteristic_check { navigation_binding = Some _; _ } | Role_membership _ -> true
   | _ -> false
 
-let rec pre_sensitive ctx (c : conditie) =
+let rec pre_sensitive ctx (c : condition_expr) =
   match c with
-  | Kwantorvouw { kv_kwantor = Ten_minste; _ } -> true
-  | Kwantorvouw { kv_kwantor = Alle; kv_toets = Some t; _ } -> pre_sensitive ctx t
-  | Samengesteld { kwantor = Alle | De | Ten_minste; onderdelen; _ } ->
-      List.exists (pre_sensitive ctx) onderdelen
-  | Kwantorvouw _ | Samengesteld _ -> false
+  | Quantifier_fold { kv_quantifier = At_least; _ } -> true
+  | Quantifier_fold { kv_quantifier = All; kv_test = Some t; _ } -> pre_sensitive ctx t
+  | Compound { quantifier_kind = All | The | At_least; components; _ } ->
+      List.exists (pre_sensitive ctx) components
+  | Quantifier_fold _ | Compound _ -> false
   | _ -> leaf_reads_role ctx c
 
 (* [f] on every predicate name in [s]: a lowercase identifier followed by an
@@ -1631,8 +1631,8 @@ let map_predicates f s =
    predicates are not written again. Returns its atoms under those names *)
 let pre_clone ctx segment atoms =
   let model =
-    [ "val"; "heeft"; "rol"; "isa"; "is_a"; "param"; "viol"; "inconsistent"; "tl"; "param_tl"; "ktl";
-      "inputval"; "inputtl"; "inputrol" ]
+    [ "val"; "has"; "role"; "isa"; "is_a"; "param"; "viol"; "inconsistent"; "tl"; "param_tl"; "ktl";
+      "inputval"; "inputtl"; "inputrole" ]
   in
   let is_id c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
   let head l =
@@ -1649,7 +1649,7 @@ let pre_clone ctx segment atoms =
   in
   ctx.fresh <- ctx.fresh + 1;
   let suffix = Printf.sprintf "_pre%d" ctx.fresh in
-  let rename id = if id = "rol" then "inputrol" else if List.mem id own then id ^ suffix else id in
+  let rename id = if id = "role" then "inputrole" else if List.mem id own then id ^ suffix else id in
   List.iter
     (fun l ->
       match head l with
@@ -1676,7 +1676,7 @@ let demand_form atom suffix =
 let demand_for ctx ~subject (value : expr) : (string * string) option =
   let hit = function
     | Parameter_ref { parameter = Some p; _ } -> param_unbound ctx p
-    | Binder_ref { naam; _ } -> List.mem_assoc (norm naam) ctx.demands
+    | Binder_ref { ident; _ } -> List.mem_assoc (norm ident) ctx.demands
     | _ -> false
   in
   if expr_reaches ctx hit value then Some (fresh ctx "dmd", subject) else None
@@ -1703,8 +1703,8 @@ let under_demand ctx demand (f : unit -> 'a) : 'a =
    add a fold member, the demand has its two forms ([bind_let]): the demand
    itself from the reach in its every-order form, [_o] from its some-order
    form *)
-let note_binder_read ctx ~subject ~subject_ot (node : expr) naam =
-  match List.assoc_opt (norm naam) ctx.binders with
+let note_binder_read ctx ~subject ~subject_ot (node : expr) ident =
+  match List.assoc_opt (norm ident) ctx.binders with
   | None -> ()
   | Some entry -> (
       match
@@ -1732,9 +1732,9 @@ let note_binder_read ctx ~subject ~subject_ot (node : expr) naam =
 
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
-let role_canonical (r : rol) =
-  match (r.rol_meervoud, r.rol_naam) with
-  | Some m, _ when r.rol_meervoudig -> m
+let role_canonical (r : role_ref) =
+  match (r.role_plural, r.role_identifier) with
+  | Some m, _ when r.role_many -> m
   | _, Some n -> n
   | Some m, None -> m
   | None, None -> fault "role without a name"
@@ -1772,12 +1772,12 @@ let role_canonical (r : rol) =
    every instance the role yields and the encoding is unchanged.
    Every fold body goes through here, the count source included, so
    there is one place the population is decided. *)
-let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
+let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
   let scope = [ Printf.sprintf "isa(%s,%s)" x (str el) ] in
-  match bron_pad with
+  match source_path with
   | None ->
       let rb =
-        match bron_rol with
+        match source_role with
         | Some rb -> rb
         | None ->
             fault
@@ -1787,24 +1787,24 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
       in
       ignore subject_ot;
       let role_name = role_canonical (Eval.bound_role env rb) in
-      (Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x :: scope)
-  | Some pad ->
-      let n = List.length pad in
+      (Printf.sprintf "role(%s,%s,%s)" subject (str role_name) x :: scope)
+  | Some trail ->
+      let n = List.length trail in
       if n < 2 then
         fault
           "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
            sourceRole"
           n;
-      if bron_rol <> None then
+      if source_role <> None then
         fault "sourcePath beside sourceRole: a fold carries one range, never two";
       let atoms, _ =
         List.fold_left
           (fun (atoms, cur) (i, rb) ->
             let target = if i = n - 1 then x else fresh ctx "M" in
             let role = role_canonical (Eval.bound_role env rb) in
-            (atoms @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str role) target ], target))
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str role) target ], target))
           ([], subject)
-          (List.mapi (fun i rb -> (i, rb)) pad)
+          (List.mapi (fun i rb -> (i, rb)) trail)
       in
       atoms @ scope
 
@@ -1828,7 +1828,7 @@ let with_member_reach ctx ~subject ~subject_ot ~join ?part f =
 
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
    of it for member variable [x] *)
-let range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join =
+let range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join =
   ctx.part_serial <- ctx.part_serial + 1;
   let doc = ctx.doc in
   { ro_id = ctx.part_serial; ro_parent = subject; ro_member = x; ro_parent_ot = subject_ot; ro_join = join;
@@ -1839,11 +1839,11 @@ let range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join =
              if isa ctx i.otype subject_ot then
                List.mapi
                  (fun k (mi : Uchar_ref.World.instance) -> (i.label, mi.label, k))
-                 (Eval.fold_members ?binding:bron_rol ?path:bron_pad env ctx.case.world i ~element:el)
+                 (Eval.fold_members ?binding:source_role ?path:source_path env ctx.case.world i ~element:el)
                @ acc
              else acc)
            ctx.case.world.instances []);
-    ro_one_step = bron_pad = None;
+    ro_one_step = source_path = None;
     ro_dynamic = doc_dynamic doc;
     ro_emitted = false }
 
@@ -1858,8 +1858,8 @@ let new_part ctx (ro : range_order) =
    and the Drools loader split it: a characteristic (WF-080), a role
    reachable from the fold subject (WF-093 (a)), any other name (WF-034) *)
 let set_source_attribute ctx ~subject_ot ~el a =
-  if Ir_v0.Checks.find_ci (objecttype ctx el).attributen a = None then
-    if Ir_v0.Checks.has_kenmerk (objecttype ctx el) a then
+  if Ir_v0.Checks.find_ci (object_type ctx el).attributes a = None then
+    if Ir_v0.Checks.has_characteristic (object_type ctx el) a then
       fault
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
          ill-formed in an aggregation source position"
@@ -1913,9 +1913,9 @@ let as_of_bucket_units ctx ~otype ~attr =
          value"
         attr
   | Some d ->
-      let grid = Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx otype) attr in
-      let van, tot = Uchar_ref.Timeline.grid_bucket grid (day_of_lexeme d) in
-      Uchar_ref.Timeline.whole_units grid.g_gran van tot
+      let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otype) attr in
+      let van, up_to = Uchar_ref.Timeline.grid_bucket grid (day_of_lexeme d) in
+      Uchar_ref.Timeline.whole_units grid.g_gran van up_to
 
 (* the §4.20 noemer strip, as ARITHMETIC. ref integrates a rate by
    multiplying the segment value by a duration stated in the GRID's own
@@ -1928,9 +1928,9 @@ let as_of_bucket_units ctx ~otype ~attr =
    declarations connect to nothing grid-sized is refused by ref too. Each
    is refused here by name, never rounded and never silently dropped.
    [what] names the fold site. *)
-let grid_strip_ok ctx ~what ~(gran : granulariteit) (u : eenheid option) =
+let grid_strip_ok ctx ~what ~(gran : grain) (u : measure_unit option) =
   match u with
-  | Some ({ noemer = Some n; _ } as rate) -> (
+  | Some ({ denominator = Some n; _ } as rate) -> (
       match Uchar_ref.Timeline.grid_unit ctx.doc gran with
       | Error why -> fault "the noemer strip of %s: %s" what why
       | Ok gu ->
@@ -1940,16 +1940,16 @@ let grid_strip_ok ctx ~what ~(gran : granulariteit) (u : eenheid option) =
                declarations connect no conversion between its denominator and the grid unit \
                (ch. 3.6); ref refuses the shape too"
               what
-              (Uchar_ref.Arith.show_eenheid rate)
-              (Uchar_ref.Arith.show_eenheid gu)
+              (Uchar_ref.Arith.display_unit rate)
+              (Uchar_ref.Arith.display_unit gu)
           else if not (Q.equal (Uchar_ref.Arith.conv_factor gu n) Q.one) then
             fault
               "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
                other than 1, which this integer encoding does not carry (ref applies the exact \
                factor); only a denominator identical to the grid unit cancels here"
               what
-              (Uchar_ref.Arith.show_eenheid rate)
-              (Uchar_ref.Arith.show_eenheid gu))
+              (Uchar_ref.Arith.display_unit rate)
+              (Uchar_ref.Arith.display_unit gu))
   | _ -> ()
 
 (* harmonise two scaled terms for comparison. Self-fenced: every caller
@@ -2018,21 +2018,21 @@ let dk_tables :
 
 (* the day kind a unit SPELLING names — its name or its plural (IR-SPEC
    ch. 2.9: the lookup is trimmed and case-insensitive) — or None *)
-let day_kind_spelt (doc : document) (u : eenheid) : string option =
-  match u.afkorting with
+let day_kind_spells (doc : document) (u : measure_unit) : string option =
+  match u.abbr_text with
   | None -> None
   | Some a ->
       List.find_map
-        (fun (d : dagsoort) ->
-          if String.trim d.dk_naam <> ""
-             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.dagsoort_spellingen d)
-          then Some d.dk_naam
+        (fun (d : day_kind) ->
+          if String.trim d.dk_name <> ""
+             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.day_kind_spellings d)
+          then Some d.dk_name
           else None)
-        doc.dagsoorten
+        doc.day_kinds
 
 (* is this unit SPELLING a day kind's? The document-level form, for the
    refusal sites that run before the translation context exists. *)
-let day_kind_of_unit_doc (doc : document) (u : eenheid) = day_kind_spelt doc u <> None
+let day_kind_of_unit_doc (doc : document) (u : measure_unit) = day_kind_spells doc u <> None
 
 (* The unit resolution behind [date_step_unit] and [duration_form] below:
    those speak every refusal of WF-035 and WF-038 in the verifier's sentence
@@ -2047,8 +2047,8 @@ let unit_unrefused ~what =
 (* the calendar unit over day-precision dates: never a sub-day unit *)
 let day_time_unit_of ~what (t : datatype option) =
   match t with
-  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
-      match Ir_v0.Checks.time_unit_of_eenheid u with
+  | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_unit u with
       | Some tu when not (Ir_v0.Checks.time_unit_sub_day tu) -> tu
       | _ -> unit_unrefused ~what)
   | _ -> unit_unrefused ~what
@@ -2056,8 +2056,8 @@ let day_time_unit_of ~what (t : datatype option) =
 (* WF-038's operand of a square root or an absolute value, read off its static
    type: the verifier's sentence, shared, ahead of this backend's own refusal
    of the two builtins *)
-let numeric_builtin_operand ctx kind (argumenten : expr list) =
-  match argumenten with
+let numeric_builtin_operand ctx kind (call_arguments : expr list) =
+  match call_arguments with
   | [ a ] -> (
       match Option.bind (static_type ctx a) (Ir_v0.Checks.numeric_builtin_operand_refusal kind) with
       | Some sentence -> fault "%s" sentence
@@ -2082,17 +2082,17 @@ let duration_form ~doc ~kind (typ : datatype option) (ta : datatype option)
   | _ -> ());
   match typ with
   | None -> fault "%s" (Ir_v0.Checks.duration_without_node_type kind)
-  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
-      match Ir_v0.Checks.time_unit_of_eenheid u with
+  | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_unit u with
       | Some tu ->
           if
             Ir_v0.Checks.time_unit_sub_day tu
-            && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
+            && (ta = Some Date_in_days || tb = Some Date_in_days)
           then fault "%s" (Ir_v0.Checks.duration_sub_day_on_day_dates kind)
       | None ->
           if not (day_kind_of_unit_doc doc u) then
             fault "%s"
-              (Ir_v0.Checks.duration_unknown_unit kind (Option.value u.afkorting ~default:"?")))
+              (Ir_v0.Checks.duration_unknown_unit kind (Option.value u.abbr_text ~default:"?")))
   | Some _ -> fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
 
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
@@ -2102,14 +2102,14 @@ let duration_form ~doc ~kind (typ : datatype option) (ta : datatype option)
    day kind away. *)
 let date_step_unit ~datetime (t : datatype option) =
   match t with
-  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
-      match Ir_v0.Checks.time_unit_of_eenheid u with
+  | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_unit u with
       | Some tu when (not datetime) && Ir_v0.Checks.time_unit_sub_day tu ->
           fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
       | Some _ -> ()
       | None ->
           fault "%s"
-            (Ir_v0.Checks.date_duration_unknown_unit (Option.value u.afkorting ~default:"?")))
+            (Ir_v0.Checks.date_duration_unknown_unit (Option.value u.abbr_text ~default:"?")))
   | Some d when not (Ir_v0.Checks.is_number_like d) ->
       fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
   | _ -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit
@@ -2121,8 +2121,8 @@ let date_step_unit ~datetime (t : datatype option) =
    time-of-day. *)
 let dt_time_unit_of ~doc ~what (t : datatype option) =
   match t with
-  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
-      match Ir_v0.Checks.time_unit_of_eenheid u with
+  | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_unit u with
       | Some tu -> tu
       | None ->
           if day_kind_of_unit_doc doc u then
@@ -2139,10 +2139,10 @@ let dt_time_unit_of ~doc ~what (t : datatype option) =
 (* the ms size of a sub-day unit, or None for a day-precision unit
    (day/week/month/quarter/year) — mirrors ref/'s Arith.sub_day_ms *)
 let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
-  | Tu_uur -> Some 3_600_000
-  | Tu_minuut -> Some 60_000
-  | Tu_seconde -> Some 1_000
-  | Tu_milliseconde -> Some 1
+  | Tu_hour -> Some 3_600_000
+  | Tu_minute -> Some 60_000
+  | Tu_second -> Some 1_000
+  | Tu_millisecond -> Some 1
   | _ -> None
 
 (* the era decomposition of a day-number term into binding atoms; returns
@@ -2241,12 +2241,12 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
   let v = fresh ctx "DP" in
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 1)
 
-let vergelijk_sym = function
-  | Groter_of_gelijk | Later_of_gelijk -> ">="
-  | Groter | Later -> ">"
-  | Kleiner | Eerder -> "<"
-  | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
-  | Gelijk | Ongelijk ->
+let compare_sym = function
+  | Greater_or_equal | Later_or_equal -> ">="
+  | Greater | Later -> ">"
+  | Less | Earlier -> "<"
+  | Less_or_equal | Earlier_or_equal -> "<="
+  | Equal | Not_equal ->
       (* scalar conditions take the eqN-helper route in cond_atoms (date
          gelijk-aan its positive join, which maps its own ==); what
          remains on this symbol path is the per-segment clip comparison,
@@ -2270,10 +2270,10 @@ let numeric_ok ctx e =
   match e with
   | Some e -> (
       match static_type ctx e with
-      | Some (Numeriek _ | Percentage _) -> ()
+      | Some (Number _ | Percentage _) -> ()
       | None -> (
           match e with
-          | Binair _ | Functie _ | Afgerond _ | Begrensd _ ->
+          | Binary _ | Function_call _ | Rounding _ | Clamp _ ->
               fault
                 "non-numeric arithmetic operand is not translated: its type is unknown, and an \
                  unknown type is never read as a number"
@@ -2361,7 +2361,7 @@ let unit_free_ok ctx e =
    verifier-clean document (ref and Drools both computed). [Normalise] owns the
    test, together with the restating that carries a factor≠1 pair here as one
    record. *)
-let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
+let units_identical_ok ~what (l : measure_unit option) (r : measure_unit option) =
   match (l, r) with
   | Some a, Some b when a <> b && not (Normalise.same_quantity a b) ->
       fault
@@ -2379,23 +2379,23 @@ let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
    (its unit is unknown, possibly a composite the frontend could not name). *)
 let rec provably_unitless ctx (e : expr) : bool =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
-      match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
-      | Some (Some (Numeriek { eenheid = None; _ })) -> true
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
+      match Ir_v0.Checks.find_ci (object_type ctx ot).attributes a with
+      | Some (Some (Number { measure_unit = None; _ })) -> true
       | _ -> false)
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci ctx.doc.parameters p with
-      | Some { par_datatype = Some (Numeriek { eenheid = None; _ }); _ }
+      | Some { par_datatype = Some (Number { measure_unit = None; _ }); _ }
         ->
           true
       | _ -> false)
-  | Literal { typ = Some (Numeriek { eenheid = None; _ }); _ } -> true
-  | Binair { op = Plus | Min | Verminderd_met | Maal; links = Some l; rechts = Some r; _ } ->
+  | Literal { typ = Some (Number { measure_unit = None; _ }); _ } -> true
+  | Binary { op = Plus | Min | Reduced_by | Times; left_side = Some l; right_side = Some r; _ } ->
       (* a sum/difference/product is unit-free only when BOTH operands are *)
       provably_unitless ctx l && provably_unitless ctx r
-  | Afgerond { basis = Some b; _ } | Begrensd { basis = Some b; _ } -> provably_unitless ctx b
-  | Temporal_read { basis; _ } -> provably_unitless ctx basis
-  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ } ->
+  | Rounding { base_expr = Some b; _ } | Clamp { base_expr = Some b; _ } -> provably_unitless ctx b
+  | Temporal_read { base_expr; _ } -> provably_unitless ctx base_expr
+  | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = arg :: _; _ } ->
       provably_unitless ctx arg
   | _ -> false
 
@@ -2403,9 +2403,9 @@ let rec provably_unitless ctx (e : expr) : bool =
    denominator — the one convertibility class %-space ever inhabits
    (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3). A hidden or unknown unit is never
    this; a rate (%/jr) or a factor≠1 spelling is not pure-% either. *)
-let is_pure_pct (u : eenheid) : bool =
-  u.afkorting = Some "%" && u.canoniek = Some "%" && u.noemer = None
-  && match u.factor_naar_canoniek with Some { num; den } -> num = den | None -> false
+let is_pure_pct (u : measure_unit) : bool =
+  u.abbr_text = Some "%" && u.canonical_form = Some "%" && u.denominator = None
+  && match u.factor_to_canonical with Some { num; den } -> num = den | None -> false
 
 (* PROVABLY pure-%: the effective unit is decidably the singleton %-unit.
    Mirrors provably_unitless's resolved leaf and unit-preserving forms but
@@ -2416,22 +2416,22 @@ let is_pure_pct (u : eenheid) : bool =
    no corpus operand is a composite. *)
 let rec provably_pure_pct ctx (e : expr) : bool =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
-      match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
-      | Some (Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })) ->
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
+      match Ir_v0.Checks.find_ci (object_type ctx ot).attributes a with
+      | Some (Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ })) ->
           is_pure_pct u
       | _ -> false)
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci ctx.doc.parameters p with
-      | Some { par_datatype = Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }); _ }
+      | Some { par_datatype = Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }); _ }
         ->
           is_pure_pct u
       | _ -> false)
-  | Literal { typ = Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }); _ } ->
+  | Literal { typ = Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }); _ } ->
       is_pure_pct u
-  | Afgerond { basis = Some b; _ } | Begrensd { basis = Some b; _ } -> provably_pure_pct ctx b
-  | Temporal_read { basis; _ } -> provably_pure_pct ctx basis
-  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ } ->
+  | Rounding { base_expr = Some b; _ } | Clamp { base_expr = Some b; _ } -> provably_pure_pct ctx b
+  | Temporal_read { base_expr; _ } -> provably_pure_pct ctx base_expr
+  | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = arg :: _; _ } ->
       provably_pure_pct ctx arg
   | _ -> false
 
@@ -2441,7 +2441,7 @@ let rec provably_pure_pct ctx (e : expr) : bool =
    Any other unit on the left, and any unit reasoning that cannot PROVE
    pure-%, keeps faulting loudly through unit_free_ok. The right operand rule
    is unchanged. *)
-let pct_van_left_ok ctx (e : expr option) =
+let pct_left_ok ctx (e : expr option) =
   match e with
   | Some ex when provably_pure_pct ctx ex -> ()
   | _ -> unit_free_ok ctx e
@@ -2574,7 +2574,7 @@ let decimals_of_scale s =
    the ordinary product path. *)
 let rec term_decimals ctx scope (e : expr) : int option =
   let numeric = function
-    | Some (Numeriek { decimalen; _ } | Percentage { decimalen; _ }) -> Some decimalen
+    | Some (Number { decimal_places; _ } | Percentage { decimal_places; _ }) -> Some decimal_places
     | _ -> None
   in
   let both f l r =
@@ -2583,38 +2583,38 @@ let rec term_decimals ctx scope (e : expr) : int option =
     | _ -> None
   in
   match e with
-  | Literal { variant; typ = Some (Numeriek _ | Percentage _) | None; _ } ->
+  | Literal { variant; typ = Some (Number _ | Percentage _) | None; _ } ->
       Some (lexeme_decimals (Ir_v0.Loader.literal_lexeme variant))
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
       match Ir_v0.Checks.effective_ot ctx.doc ot with
-      | Some o -> Option.bind (Ir_v0.Checks.find_ci o.attributen a) numeric
+      | Some o -> Option.bind (Ir_v0.Checks.find_ci o.attributes a) numeric
       | None -> None)
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci ctx.doc.parameters p with
       | Some par -> numeric par.par_datatype
       | None -> None)
-  | Binder_ref { naam; _ } -> (
-      match List.assoc_opt (norm naam) scope with
+  | Binder_ref { ident; _ } -> (
+      match List.assoc_opt (norm ident) scope with
       | Some d -> d
       | None -> (
-          match List.assoc_opt (norm naam) ctx.binders with
+          match List.assoc_opt (norm ident) ctx.binders with
           | Some (_, _, s, _) -> decimals_of_scale s
           | None -> None))
-  | Field_access { base; veld; _ } -> (
+  | Field_access { base; field_name; _ } -> (
       match static_type ctx base with
-      | Some (Struct_type { velden; _ }) -> (
-          match List.find_opt (fun (n, _) -> norm n = norm veld) velden with
+      | Some (Struct_type { field_list; _ }) -> (
+          match List.find_opt (fun (n, _) -> norm n = norm field_name) field_list with
           | Some (_, fdt) -> numeric (Some fdt)
           | None -> None)
       | _ -> None)
-  | Binair { op = Plus | Min | Verminderd_met; links; rechts; _ } -> both max links rechts
-  | Binair { op = Maal; links; rechts; _ } -> both ( + ) links rechts
-  | Binair { op = Percentage_van; links; rechts; _ } -> both (fun a b -> a + b + 2) links rechts
-  | Binair { op = Gedeeld_door; links; rechts; _ } ->
+  | Binary { op = Plus | Min | Reduced_by; left_side; right_side; _ } -> both max left_side right_side
+  | Binary { op = Times; left_side; right_side; _ } -> both ( + ) left_side right_side
+  | Binary { op = Percentage_of; left_side; right_side; _ } -> both (fun a b -> a + b + 2) left_side right_side
+  | Binary { op = Divided_by; left_side; right_side; _ } ->
       Option.bind (decimals_of_scale ctx.write_scale) (fun w ->
-          both (fun a b -> max (max a b) w) links rechts)
-  | Binair { op = Gedeeld_door_abs; _ } -> Some 5
-  | Afgerond { decimalen; _ } -> Some decimalen
+          both (fun a b -> max (max a b) w) left_side right_side)
+  | Binary { op = Divided_by_abs; _ } -> Some 5
+  | Rounding { decimal_places; _ } -> Some decimal_places
   | Let { binder; value; body; _ } ->
       term_decimals ctx ((norm binder, term_decimals ctx scope value) :: scope) body
   | _ -> None
@@ -2630,7 +2630,7 @@ let rec term_decimals ctx scope (e : expr) : int option =
    every sign, while the split refuses a negative operand (Catala's
    Mult_mon_int, ASP-TRANSLATION S19). With two money-like operands the left
    one is the money. *)
-let money_mult_roles ctx (basis : expr) : bool option =
+let money_mult_roles ctx (base_expr : expr) : bool option =
   let rate ~money d r =
     match d with
     | Some 4 -> true
@@ -2639,14 +2639,14 @@ let money_mult_roles ctx (basis : expr) : bool option =
   in
   let rec go scope = function
     | Let { binder; value; body; _ } -> go ((norm binder, term_decimals ctx scope value) :: scope) body
-    | Binair { op = Maal; links = Some l; rechts = Some r; _ } ->
+    | Binary { op = Times; left_side = Some l; right_side = Some r; _ } ->
         let dl = term_decimals ctx scope l and dr = term_decimals ctx scope r in
         if dl = Some 2 && rate ~money:l dr r then Some false
         else if dr = Some 2 && rate ~money:r dl l then Some true
         else None
     | _ -> None
   in
-  go [] basis
+  go [] base_expr
 
 (* --- sum types (RUNTIME-SEMANTICS ch. 9; ASP-TRANSLATION S14) ------------ *)
 
@@ -2673,11 +2673,11 @@ let ctor_functor tag =
    payload datatype of one constructor within it (the payload is scaled by
    its OWN declaration, never by any target attribute) *)
 let sum_constructors = function
-  | Some (Sum_type { constructoren; _ }) -> constructoren
+  | Some (Sum_type { constructor_list; _ }) -> constructor_list
   | _ -> fault "a sum-type node without its SumType annotation (the verifier should preclude this)"
 
-let ctor_payload_datatype constructoren tag =
-  match List.find_opt (fun (n, _) -> norm n = norm tag) constructoren with
+let ctor_payload_datatype constructor_list tag =
+  match List.find_opt (fun (n, _) -> norm n = norm tag) constructor_list with
   | Some (_, pdt) -> pdt
   | None -> fault "constructor %S is not declared in the sum type" tag
 
@@ -2706,19 +2706,19 @@ let is_struct_operand ctx = function
 let is_symbolic_operand ctx = function
   | Some e -> (
       match static_type ctx e with
-      | Some (Tekst | Booleaan | Enumeratie _) -> true
+      | Some (Text_type | Boolean | Enumeration _) -> true
       | _ -> false)
   | None -> false
 
 let is_date_operand ctx = function
   | Some e -> (
       match static_type ctx e with
-      | Some (Datum_in_dagen | Datum_tijd) -> true
+      | Some (Date_in_days | Date_time_type) -> true
       | _ -> false)
   | None -> false
 
 let is_datetime_operand ctx = function
-  | Some e -> ( match static_type ctx e with Some Datum_tijd -> true | _ -> false)
+  | Some e -> ( match static_type ctx e with Some Date_time_type -> true | _ -> false)
   | None -> false
 
 (* The form of date ± x (WF-035), decided on the date type of EITHER
@@ -2733,8 +2733,8 @@ let date_step_operands ctx ~minus le re =
   else fault "%s" (Ir_v0.Checks.duration_before_date_refusal ~minus)
 
 let attr_symbolic_datatype ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
-  | Some (Some ((Tekst | Booleaan | Enumeratie _) as dt)) -> Some dt
+  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  | Some (Some ((Text_type | Boolean | Enumeration _) as dt)) -> Some dt
   | _ -> None
 
 (* the ground term of a text/enum/boolean VALUE (case emission and the
@@ -2743,17 +2743,17 @@ let symbolic_value_term (v : Value.t) : string =
   match v with
   | Value.Text s -> quote s
   | Value.Enum s -> str s
-  | Value.Bool b -> if b then "waar" else "onwaar"
+  | Value.Bool b -> if b then "true" else "false"
   | v -> fault "not a text/enum/boolean scalar value %s" (Value.to_string v)
 
 let symbolic_literal_term (typ : datatype) lex =
   match typ with
-  | Tekst -> quote lex
-  | Enumeratie _ -> str lex
-  | Booleaan -> (
+  | Text_type -> quote lex
+  | Enumeration _ -> str lex
+  | Boolean -> (
       match norm lex with
-      | "waar" -> "waar"
-      | "onwaar" -> "onwaar"
+      | "waar" -> "true"
+      | "onwaar" -> "false"
       | _ -> fault "malformed boolean literal %S" lex)
   | _ -> fault "not a text/enum/boolean literal"
 
@@ -2788,8 +2788,8 @@ let sourceless_fold kind el ~list_literal =
    under a count is WF-110 (c)'s arm. *)
 let non_source kind (a : expr) =
   match a with
-  | Attribuut_ref _ | List_literal _ -> false
-  | Instance_set_union _ -> kind <> Aantal
+  | Attribute_reference _ | List_literal _ -> false
+  | Instance_set_union _ -> kind <> Count
   | _ -> true
 
 let non_source_fold kind el (a : expr) =
@@ -2807,10 +2807,10 @@ let non_source_fold kind el (a : expr) =
    scalar datatypes. *)
 let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   match e with
-  | Literal { variant; typ = Some ((Tekst | Booleaan | Enumeratie _) as t); _ } ->
+  | Literal { variant; typ = Some ((Text_type | Boolean | Enumeration _) as t); _ } ->
       ([], symbolic_literal_term t (Ir_v0.Loader.literal_lexeme variant))
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal text/enum/boolean carriage is a recorded flank; no corpus case";
@@ -2819,16 +2819,16 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   (* a characteristic named where a value is compared: it carries no value
      (WF-080), in the verifier's sentence and ref's, rather than the bottom
      sentence below, which describes the position and not this form *)
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }
-    when Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a = None
-         && Ir_v0.Checks.has_kenmerk (objecttype ctx ot) a ->
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }
+    when Ir_v0.Checks.find_ci (object_type ctx ot).attributes a = None
+         && Ir_v0.Checks.has_characteristic (object_type ctx ot) a ->
       fault
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
          ill-formed in a value position"
         a ot
-  | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
+  | Function_call { kind; call_arguments = []; element_object_type = Some el; _ } ->
       sourceless_fold kind el ~list_literal:false
-  | Functie { kind; argumenten = [ a ]; element_objecttype = Some el; _ } when non_source kind a ->
+  | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
   | _ ->
       fault
@@ -2839,11 +2839,11 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
    StructType annotation (WF-072 repeats it whole at every use site) *)
 let struct_type_of ctx (e : expr) : string * (string * datatype) list =
   match static_type ctx e with
-  | Some (Struct_type { domein; velden }) -> (domein, velden)
+  | Some (Struct_type { domain_spec; field_list }) -> (domain_spec, field_list)
   | _ -> fault "a struct node without its StructType annotation (the verifier should preclude this)"
 
 let struct_type_of_datatype = function
-  | Some (Struct_type { domein; velden }) -> (domein, velden)
+  | Some (Struct_type { domain_spec; field_list }) -> (domain_spec, field_list)
   | _ -> fault "a StructLiteral without its StructType annotation (the verifier should preclude this)"
 
 (* the ground term for a record VALUE (RUNTIME-SEMANTICS ch. 11.1): the
@@ -2856,14 +2856,14 @@ let struct_type_of_datatype = function
    keeps the depth statically bounded (S16). A sum- or list-typed field value
    still has no flat integer encoding here and no corpus case — it faults (S19),
    the nested-sum-payload fence's sibling. *)
-let rec struct_value_term (domein, velden) (fs : (string * Value.t) list) : string =
-  let f = ctor_functor domein in
+let rec struct_value_term (domain_spec, field_list) (fs : (string * Value.t) list) : string =
+  let f = ctor_functor domain_spec in
   let arg (fname, fdt) =
     match List.find_opt (fun (n, _) -> norm n = norm fname) fs with
     | None -> fault "record value is missing declared field %S" fname
     | Some (_, v) -> (
         match fdt with
-        | Struct_type { domein = d2; velden = v2 } -> (
+        | Struct_type { domain_spec = d2; field_list = v2 } -> (
             match v with
             | Value.Record fs2 -> struct_value_term (d2, v2) fs2
             | _ -> fault "a struct-typed field %S expects a record value" fname)
@@ -2873,13 +2873,13 @@ let rec struct_value_term (domein, velden) (fs : (string * Value.t) list) : stri
                corpus case)"
         | _ -> string_of_int (scaled_input ~what:("field " ^ fname) (Some fdt) v))
   in
-  Printf.sprintf "%s(%s)" f (String.concat "," (List.map arg velden))
+  Printf.sprintf "%s(%s)" f (String.concat "," (List.map arg field_list))
 
 (* the ground term for a constructor VALUE (case emission): payload scaled
    by the constructor's declared payload datatype *)
-let ctor_value_term constructoren (tag, (payload : Value.t option)) =
+let ctor_value_term constructor_list (tag, (payload : Value.t option)) =
   let f = ctor_functor tag in
-  match (ctor_payload_datatype constructoren tag, payload) with
+  match (ctor_payload_datatype constructor_list tag, payload) with
   | None, None -> f
   | Some d, Some v -> Printf.sprintf "%s(%d)" f (scaled_input ~what:("the payload of " ^ tag) (Some d) v)
   | Some _, None -> fault "unary constructor %S carries no payload value" tag
@@ -2891,8 +2891,8 @@ let ctor_value_term constructoren (tag, (payload : Value.t option)) =
    decimals, a sum element is a ground constructor term (scale 0 — it carries
    no numeric scale, exactly as a Construct value does in expr_term) *)
 let element_scale_of = function
-  | Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> pow10 decimalen
-  | Datum_in_dagen -> 1
+  | Number { decimal_places; _ } | Percentage { decimal_places; _ } -> pow10 decimal_places
+  | Date_in_days -> 1
   | Sum_type _ -> 0
   (* a struct element is a ground record term (RUNTIME-SEMANTICS ch. 11.1),
      carrying no numeric scale — the Sum_type sibling *)
@@ -2906,20 +2906,20 @@ let element_scale_of = function
    leeg (ch. 10.1), so `then` reads the positive builtin and `else` its
    mirror — no NAF over derived atoms (the S7 closed-body point) *)
 let cmp_sym = function
-  | Kleiner | Eerder -> "<"
-  | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
-  | Groter | Later -> ">"
-  | Groter_of_gelijk | Later_of_gelijk -> ">="
-  | Gelijk -> "=="
-  | Ongelijk -> "!="
+  | Less | Earlier -> "<"
+  | Less_or_equal | Earlier_or_equal -> "<="
+  | Greater | Later -> ">"
+  | Greater_or_equal | Later_or_equal -> ">="
+  | Equal -> "=="
+  | Not_equal -> "!="
 
 let cmp_complement = function
-  | Kleiner | Eerder -> ">="
-  | Kleiner_of_gelijk | Eerder_of_gelijk -> ">"
-  | Groter | Later -> "<="
-  | Groter_of_gelijk | Later_of_gelijk -> "<"
-  | Gelijk -> "!="
-  | Ongelijk -> "=="
+  | Less | Earlier -> ">="
+  | Less_or_equal | Earlier_or_equal -> ">"
+  | Greater | Later -> "<="
+  | Greater_or_equal | Later_or_equal -> "<"
+  | Equal -> "!="
+  | Not_equal -> "=="
 
 (* ch. 10.6 (call-by-need): does evaluating [e] READ the binder [b]? The
    answer decides both halves of the L semantics in this backend — whether the
@@ -2942,9 +2942,9 @@ let rec reads_binder b (e : expr) : bool =
   | If_then_else { condition; then_; else_; _ } ->
       Ir_v0.Checks.mentions_binder_cond b condition
       || reads_binder b then_ || reads_binder b else_
-  | Binair { links; rechts; _ } -> opt links || opt rechts
-  | Afgerond { basis; _ } -> opt basis
-  | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
+  | Binary { left_side; right_side; _ } -> opt left_side || opt right_side
+  | Rounding { base_expr; _ } -> opt base_expr
+  | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
   | _ -> Ir_v0.Checks.mentions_binder b e
 
 (* is the first node ref evaluates in [e] a read of the binder [b]? ref
@@ -2952,9 +2952,9 @@ let rec reads_binder b (e : expr) : bool =
    Clamp first (ch. 5.11); every other shape answers no *)
 let rec reads_first b (e : expr) : bool =
   match e with
-  | Binder_ref { naam; _ } -> norm naam = norm b
-  | Binair { links = Some l; _ } -> reads_first b l
-  | Afgerond { basis = Some x; _ } | Begrensd { basis = Some x; _ } -> reads_first b x
+  | Binder_ref { ident; _ } -> norm ident = norm b
+  | Binary { left_side = Some l; _ } -> reads_first b l
+  | Rounding { base_expr = Some x; _ } | Clamp { base_expr = Some x; _ } -> reads_first b x
   | _ -> false
 
 (* ch. 10.6 meets ch. 10.2, as a REWRITE rather than a guard. When the need
@@ -3068,12 +3068,12 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
      ride into both arms, which is what keeps the barrier's extent whole; the
      ones before the reading operand are kept with the node, since ref
      evaluates them before the condition *)
-  let one_of typ bron (operands : (expr option * (expr -> expr)) list) =
+  let one_of typ source_name (operands : (expr option * (expr -> expr)) list) =
     match List.filter (fun (o, _) -> opt_reads o) operands with
     | [ (Some o, rebuild) ] -> (
         match hoist_branch ctx binder o with
         | Some (If_then_else { condition; then_; else_; _ } as inner) ->
-            let n = If_then_else { typ; condition; then_ = rebuild then_; else_ = rebuild else_; bron } in
+            let n = If_then_else { typ; condition; then_ = rebuild then_; else_ = rebuild else_; source_name } in
             let rec before = function
               | (Some x, _) :: r when x != o -> x :: before r
               | (None, _) :: r -> before r
@@ -3089,13 +3089,13 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
     when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
          && reads then_ <> reads else_ ->
       Some e
-  | Let { binder = b2; value = v2; body = lbody; typ; bron }
+  | Let { binder = b2; value = v2; body = lbody; typ; source_name }
     when norm b2 <> norm binder && not (Ir_v0.Checks.mentions_binder binder v2) -> (
       match hoist_branch ctx binder lbody with
       | Some (If_then_else { condition; then_; else_; _ } as inner)
         when not (Ir_v0.Checks.mentions_binder_cond b2 condition) ->
-          let push arm = Let { typ; binder = b2; value = v2; body = arm; bron } in
-          let n = If_then_else { typ; condition; then_ = push then_; else_ = push else_; bron } in
+          let push arm = Let { typ; binder = b2; value = v2; body = arm; source_name } in
+          let n = If_then_else { typ; condition; then_ = push then_; else_ = push else_; source_name } in
           note_hoisted ctx n (hoisted_before ctx inner);
           Some n
       | Some (If_then_else _) ->
@@ -3136,10 +3136,10 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
      `TRANSLATION FAULT: unbound binder "k"`. A condition that does read the
      outer binder forces the need on every branch anyway, so declining is also
      the right answer. *)
-  | Let { binder = b2; value = v2; body = lbody; typ; bron }
+  | Let { binder = b2; value = v2; body = lbody; typ; source_name }
     when norm b2 <> norm binder && Ir_v0.Checks.mentions_binder binder v2 -> (
       let moved =
-        match let_into_arm ctx (Let { typ; binder = b2; value = v2; body = lbody; bron }) with
+        match let_into_arm ctx (Let { typ; binder = b2; value = v2; body = lbody; source_name }) with
         | Some _ as m -> m
         | None -> (
             (* THE VALUE ARM: the branch that reads the outer binder in one
@@ -3152,10 +3152,10 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
                the arm that does not read it, and [b2] went leeg there where
                ref's value is not (measured: ref 10,00, clingo leeg) *)
             match hoist_branch ctx binder v2 with
-            | Some (If_then_else { condition; then_; else_; bron = ite_bron; _ } as inner)
+            | Some (If_then_else { condition; then_; else_; source_name = ite_source; _ } as inner)
               when reads_first b2 lbody ->
-                let at v = Let { typ; binder = b2; value = v; body = lbody; bron } in
-                let n = If_then_else { typ; condition; then_ = at then_; else_ = at else_; bron = ite_bron } in
+                let at v = Let { typ; binder = b2; value = v; body = lbody; source_name } in
+                let n = If_then_else { typ; condition; then_ = at then_; else_ = at else_; source_name = ite_source } in
                 note_hoisted ctx n (hoisted_before ctx inner);
                 Some n
             | Some _ | None -> None)
@@ -3166,28 +3166,28 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
              && reads then_ <> reads else_ ->
           Some moved
       | Some _ | None -> None)
-  | Binair { op; links; rechts; typ; bron } ->
-      one_of typ bron
-        [ (links, fun x -> Binair { op; links = Some x; rechts; typ; bron });
-          (rechts, fun x -> Binair { op; links; rechts = Some x; typ; bron }) ]
-  | Afgerond { basis; modus; decimalen; typ; bron } ->
-      one_of typ bron
-        [ (basis, fun x -> Afgerond { basis = Some x; modus; decimalen; typ; bron }) ]
-  | Begrensd { basis; minimum; maximum; typ; bron } ->
-      one_of typ bron
-        [ (basis, fun x -> Begrensd { basis = Some x; minimum; maximum; typ; bron });
-          (minimum, fun x -> Begrensd { basis; minimum = Some x; maximum; typ; bron });
-          (maximum, fun x -> Begrensd { basis; minimum; maximum = Some x; typ; bron }) ]
-  | Tekst_reeks { delen; typ; bron } ->
+  | Binary { op; left_side; right_side; typ; source_name } ->
+      one_of typ source_name
+        [ (left_side, fun x -> Binary { op; left_side = Some x; right_side; typ; source_name });
+          (right_side, fun x -> Binary { op; left_side; right_side = Some x; typ; source_name }) ]
+  | Rounding { base_expr; mode_kind; decimal_places; typ; source_name } ->
+      one_of typ source_name
+        [ (base_expr, fun x -> Rounding { base_expr = Some x; mode_kind; decimal_places; typ; source_name }) ]
+  | Clamp { base_expr; minimum; maximum; typ; source_name } ->
+      one_of typ source_name
+        [ (base_expr, fun x -> Clamp { base_expr = Some x; minimum; maximum; typ; source_name });
+          (minimum, fun x -> Clamp { base_expr; minimum = Some x; maximum; typ; source_name });
+          (maximum, fun x -> Clamp { base_expr; minimum; maximum = Some x; typ; source_name }) ]
+  | Text_composition { pieces; typ; source_name } ->
       let at i x =
-        Tekst_reeks
-          { delen = List.mapi (fun j d -> if j = i then Ingevoegd { expr = Some x } else d) delen;
-            typ; bron }
+        Text_composition
+          { pieces = List.mapi (fun j d -> if j = i then Embedded_expression { expr = Some x } else d) pieces;
+            typ; source_name }
       in
-      one_of typ bron
+      one_of typ source_name
         (List.mapi
-           (fun i d -> ((match d with Ingevoegd { expr } -> expr | Letterlijk _ -> None), at i))
-           delen)
+           (fun i d -> ((match d with Embedded_expression { expr } -> expr | Literal_chunk _ -> None), at i))
+           pieces)
   | _ -> None
 
 (* The SWAP, and why it sits here rather than in [hoist_branch]. Two ADJACENT
@@ -3211,17 +3211,17 @@ let rec hoist_branch ctx binder (e : expr) : expr option =
    node, which is the loud refusal in [hoist_branch]. *)
 and let_into_arm ctx (e : expr) : expr option =
   match e with
-  | Let { binder; value; body; bron; typ } -> (
+  | Let { binder; value; body; source_name; typ } -> (
       let swapped =
         match body with
-        | Let { binder = b2; value = v2; body = lbody; bron = bron2; _ }
+        | Let { binder = b2; value = v2; body = lbody; source_name = source_2; _ }
           when norm b2 <> norm binder
                && (not (Ir_v0.Checks.mentions_binder binder v2))
                && not (Ir_v0.Checks.mentions_binder b2 value) -> (
             (* WF-076 keeps both node types equal to the body type, so the pair
                carries one type and the exchange needs no retyping *)
-            match let_into_arm ctx (Let { typ; binder; value; body = lbody; bron }) with
-            | Some inner -> Some (Let { typ; binder = b2; value = v2; body = inner; bron = bron2 })
+            match let_into_arm ctx (Let { typ; binder; value; body = lbody; source_name }) with
+            | Some inner -> Some (Let { typ; binder = b2; value = v2; body = inner; source_name = source_2 })
             | None -> None)
         | _ -> None
       in
@@ -3234,12 +3234,12 @@ and let_into_arm ctx (e : expr) : expr option =
              and wrapping only the inner read would leave the coalescing
              operator outside it, answering 0,00 where ref answers leeg. *)
           match hoist_branch ctx binder body with
-          | Some (If_then_else { typ; condition; then_; else_; bron = ite_bron } as inner) ->
-              let push arm = Let { typ; binder; value; body = arm; bron } in
+          | Some (If_then_else { typ; condition; then_; else_; source_name = ite_source } as inner) ->
+              let push arm = Let { typ; binder; value; body = arm; source_name } in
               let n =
                 if reads_binder binder then_ then
-                  If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
-                else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron }
+                  If_then_else { typ; condition; then_ = push then_; else_; source_name = ite_source }
+                else If_then_else { typ; condition; then_; else_ = push else_; source_name = ite_source }
               in
               note_hoisted ctx n (hoisted_before ctx inner);
               Some n
@@ -3348,7 +3348,7 @@ let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
    the fold's verdict does not change. *)
 let fixed_grid_span ctx (lo, hi) =
   List.fold_left
-    (fun (lo, hi) (_, (ot : objecttype)) ->
+    (fun (lo, hi) (_, (ot : object_type)) ->
       List.fold_left
         (fun (lo, hi) (a, g) ->
           match g with
@@ -3356,13 +3356,13 @@ let fixed_grid_span ctx (lo, hi) =
           | Some _ -> (
               match Uchar_ref.Timeline.attr_grid ctx.doc ot a with
               | { Uchar_ref.Timeline.g_count = 1;
-                  g_start = Uchar_ref.Timeline.Vast_datum _ | Uchar_ref.Timeline.Vast_dag_maand _;
+                  g_start = Uchar_ref.Timeline.Fixed_date _ | Uchar_ref.Timeline.Fixed_day_month _;
                   _ } as gr ->
                   ( min lo (fst (Uchar_ref.Timeline.grid_bucket gr lo)),
                     max hi (snd (Uchar_ref.Timeline.grid_bucket gr (hi - 1))) )
               | _ -> (lo, hi)))
-        (lo, hi) ot.attribuut_granulariteit)
-    (lo, hi) ctx.doc.objecttypen
+        (lo, hi) ot.attribute_granularity)
+    (lo, hi) ctx.doc.object_types
 
 (* the periods of a grid as data, one [p_b(start, next, days)] fact each,
    over the span [fixed_grid_span] gives (shared by the ch. 3.7 pro-rata
@@ -3382,7 +3382,7 @@ let emit_grid_buckets ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
           Eval.SMap.fold
             (fun _ (tl : Uchar_ref.Timeline.t) acc ->
               List.concat_map
-                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
+                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ])
                 tl
               @ acc)
             i.tls acc
@@ -3477,14 +3477,14 @@ let emit_value_days ctx ~p ~attr ~sat =
    A timeline with no segments derives no failure and passes, and so does a
    navigated operand whose hop reaches nothing: the hop is a positive
    literal in the helper that carries the failure over to the subject. *)
-let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~operand
-    ~(gp : geheel_periode) : string =
+let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation ~operand
+    ~(gp : entire_period) : string =
   let a, hops =
     match operand with
-    | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; navigatie_bindingen; _ })
+    | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ })
       when attr_temporal_decl ctx ~otype:ot ~attr:a ->
         let hops =
-          match navigatie_bindingen with
+          match navigation_bindings with
           | None ->
               if norm ot <> norm subject_ot then
                 fault
@@ -3500,10 +3500,10 @@ let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~ope
               in
               let roles = List.map (Eval.bound_role env) rbs in
               List.iter
-                (fun (r : rol) ->
-                  if r.rol_meervoudig then
+                (fun (r : role_ref) ->
+                  if r.role_many then
                     fault "navigation over the to-many role %S in a scalar slot is refused"
-                      (Option.value r.rol_naam ~default:"?"))
+                      (Option.value r.role_identifier ~default:"?"))
                 roles;
               roles
         in
@@ -3517,12 +3517,12 @@ let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~ope
         (* WF-043, in the verifier's sentence, as ref refuses it *)
         fault "wholePeriod qualifier on a non-time-dependent operand"
   in
-  let gevuld = (soort = Gevuld) <> negatie in
+  let populated = (variety = Filled) <> negation in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "gpl%d" ctx.fresh in
-  if gevuld then begin
+  if populated then begin
     (* the qualifier's OWN grid, never the attribute's declared granularity *)
-    let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
+    let g : grain = if gp.gp_granularity then Year else Month in
     emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
     emit_value_days ctx ~p ~attr:a ~sat:[];
     emit ctx
@@ -3536,9 +3536,9 @@ let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~ope
   | roles ->
       let atoms, target =
         List.fold_left
-          (fun (atoms, cur) (r : rol) ->
+          (fun (atoms, cur) (r : role_ref) ->
             let n = fresh ctx "N" in
-            (atoms @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
+            (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
           ([], subject) roles
       in
       let q = fresh ctx "gplnav" in
@@ -3577,7 +3577,7 @@ let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~ope
      least this prefix; N is the final contributor count, the largest.
    Stratified by construction: the helpers read the matrix and the range, and
    only the guards read them. *)
-let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwantor ~drempel
+let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quantifier_kind ~cutoff
     ~(ro : range_order) ~pre =
   let rp = use_ro ctx ro in
   let m = reach ^ "_m" and h = reach ^ "_h" and n = reach ^ "_n" and b = reach ^ "_b" in
@@ -3591,12 +3591,12 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwant
       name m m before h before
   in
   let still_open =
-    match kwantor with
-    | Alle | De -> "H == K"
-    | Geen -> "H == 0"
-    | Ten_minste -> Printf.sprintf "H < %d, H + N - K >= %d" drempel drempel
-    | Ten_hoogste -> Printf.sprintf "H <= %d, H + N - K > %d" drempel drempel
-    | Precies -> Printf.sprintf "H <= %d, H + N - K >= %d" drempel drempel
+    match quantifier_kind with
+    | All | The -> "H == K"
+    | None_of -> "H == 0"
+    | At_least -> Printf.sprintf "H < %d, H + N - K >= %d" cutoff cutoff
+    | At_most -> Printf.sprintf "H <= %d, H + N - K > %d" cutoff cutoff
+    | Exactly -> Printf.sprintf "H <= %d, H + N - K >= %d" cutoff cutoff
   in
   prefix b (Printf.sprintf "Y != X, not %s_n(S,X,Y)" rp);
   emit ctx "%s(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach b n still_open;
@@ -3634,7 +3634,7 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwant
 let closed_let_chain ctx (e : expr) =
   let rec chain acc (e : expr) =
     match e with
-    | Let { binder; value; body; typ; bron } -> chain ((binder, value, typ, bron) :: acc) body
+    | Let { binder; value; body; typ; source_name } -> chain ((binder, value, typ, source_name) :: acc) body
     | Match { scrutinee; arms; _ } when acc <> [] -> Some (List.rev acc, scrutinee, arms)
     | _ -> None
   in
@@ -3674,7 +3674,7 @@ let unshadow_payload (lets : (string * expr * datatype option * string option) l
        reference, which carries none (B13), and [b]'s type reaches the body
        through the binding of [c] ([static_type]) *)
     let typ = match List.rev lets with (_, _, t, _) :: _ -> t | [] -> None in
-    (c, Let { typ; binder = b; value = Binder_ref { naam = c; bron = None }; body; bron = None })
+    (c, Let { typ; binder = b; value = Binder_ref { ident = c; source_name = None }; body; source_name = None })
   end
   else (b, body)
 
@@ -3686,7 +3686,7 @@ let unshadow_payload (lets : (string * expr * datatype option * string option) l
    dropped; both the term translation and the day-kind evaluation ask. A
    bucketing builtin met as a term is refused by name, in ref's sentence,
    rather than by the fall-through. *)
-let bucketing = function Tijdsevenredig_deel | Aantal_dagen_in -> true | _ -> false
+let bucketing = function Time_proportional_part | Day_count -> true | _ -> false
 
 let foreign_granularity () = fault "granularity facet on a non-bucketing kind"
 
@@ -3695,19 +3695,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
   | None ->
   match e with
-  | Functie { kind; granulariteit = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
-  | Functie { kind = Tijdsevenredig_deel | Aantal_dagen_in; granulariteit = Some _; _ } ->
+  | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
+  | Function_call { kind = Time_proportional_part | Day_count; grain = Some _; _ } ->
       fault
         "a granularity-bucketed builtin call is executed only as the whole value of a rule on a \
          temporal target (ch. 3.7, 3.8)"
   | Literal { variant; typ; _ } -> (
       let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
-      | Some (Numeriek _ | Percentage _) | None ->
+      | Some (Number _ | Percentage _) | None ->
           let d = lexeme_decimals lex in
           let v = scaled_of_value ~decimals:d (Value.Num (Value.q_of_lexeme lex, Value.Unitless)) in
           ([], string_of_int v, pow10 d)
-      | Some Datum_in_dagen -> (
+      | Some Date_in_days -> (
           (* B2: a date literal in a term position is the civil day number,
              scale 1 — the SAME representation the evaluationDate context value, a date
              attribute read (val/3) and the point read use, so a date comparison
@@ -3719,7 +3719,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Parameter_ref { parameter; _ } ->
       let name = req "ParameterReference.parameter" parameter in
       (match Ir_v0.Checks.find_ci ctx.doc.parameters name with
-      | Some { par_granulariteit = Some _; _ } ->
+      | Some { par_granularity = Some _; _ } ->
           fault "granular parameter %S in a scalar slot is refused (ch. 3.3/8)" name
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
@@ -3749,13 +3749,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              end);
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
-  | Attribuut_ref { attribuut; objecttype = ot; navigatie_bindingen; _ } ->
-      let a = req "attribute" attribuut in
+  | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } ->
+      let a = req "attribute" attribute_ref in
       let ot = req "subjectType" ot in
       (* a value position reads a DECLARED attribute; a characteristic or a
          count source's role name has no value term here *)
-      if Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a = None then
-        if Ir_v0.Checks.has_kenmerk (objecttype ctx ot) a then
+      if Ir_v0.Checks.find_ci (object_type ctx ot).attributes a = None then
+        if Ir_v0.Checks.has_characteristic (object_type ctx ot) a then
           fault
             "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
              ill-formed in a value position"
@@ -3765,7 +3765,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             a ot;
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal attribute %S in a scalar slot is refused (ch. 3.3)" a;
-      (match navigatie_bindingen with
+      (match navigation_bindings with
       | None ->
         (* WF-053, IR-SPEC ch. 4.1a, ref's [own_read]: without bindings the
            read is the subject's own, so it names the subject type itself. A
@@ -3798,17 +3798,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         in
         let roles = List.map (Eval.bound_role env) rbs in
         List.iter
-          (fun (r : rol) ->
-            if r.rol_meervoudig then
+          (fun (r : role_ref) ->
+            if r.role_many then
               fault
                 "navigation over the to-many role %S in a scalar slot is refused"
-                (Option.value r.rol_naam ~default:"?"))
+                (Option.value r.role_identifier ~default:"?"))
           roles;
         let atoms, target =
           List.fold_left
-            (fun (atoms, cur) (r : rol) ->
+            (fun (atoms, cur) (r : role_ref) ->
               let n = fresh ctx "N" in
-              ( atoms @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str (role_canonical r)) n ],
+              ( atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ],
                 n ))
             ([], subject) roles
         in
@@ -3830,9 +3830,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      property — the condition would have to be one conjunction — and two
      aggregates added together would count the shared element twice, which is
      the sum of the parts this operation is defined against. *)
-  | Functie
-      { kind = Aantal; argumenten = [ Instance_set_union { branches; _ } ];
-        element_objecttype = None; bron_rol = None; bron_pad = None; filter = None; _ } ->
+  | Function_call
+      { kind = Count; call_arguments = [ Instance_set_union { branches; _ } ];
+        element_object_type = None; source_role = None; source_path = None; filter = None; _ } ->
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
           as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
@@ -3863,7 +3863,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   el0 el)
             rest);
       ctx.fresh <- ctx.fresh + 1;
-      let p = Printf.sprintf "unie%d" ctx.fresh in
+      let p = Printf.sprintf "union%d" ctx.fresh in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       List.iter
         (fun (b : instance_set_branch) ->
@@ -3878,7 +3878,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let rb = b.isb_source_role in
           let bx = fresh ctx "XU" in
           let join =
-            source_join ctx env ~subject ~subject_ot ~el ~bron_rol:(Some rb) ~bron_pad:None ~x:bx
+            source_join ctx env ~subject ~subject_ot ~el ~source_role:(Some rb) ~source_path:None ~x:bx
           in
           let fatoms =
             match b.isb_filter with
@@ -3897,15 +3897,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      rather than left to the bottom sentence below (which describes the
      position and identifies no construct). Both are ill-formed input: the
      first is clause (c), the second clause (a). *)
-  | Functie
-      { kind = Aantal; argumenten = [ Instance_set_union _ ]; element_objecttype; bron_rol;
-        bron_pad = None; filter; _ } ->
+  | Function_call
+      { kind = Count; call_arguments = [ Instance_set_union _ ]; element_object_type; source_role;
+        source_path = None; filter; _ } ->
       (* in the verifier's sentence and ref's, the fields it names in the verifier's order; a path
          beside the union is refused first as a count's path (WF-102 (c), the arm below), as ref
          and the Drools loader refuse it first *)
       let named =
-        (if element_objecttype <> None then [ "elementType" ] else [])
-        @ (if bron_rol <> None then [ "sourceRole" ] else [])
+        (if element_object_type <> None then [ "elementType" ] else [])
+        @ (if source_role <> None then [ "sourceRole" ] else [])
         @ if filter <> None then [ "filter" ] else []
       in
       fault
@@ -3922,12 +3922,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      source names a role, and a name that is a MEMBER of the element type —
      an attribute or a characteristic — reads a value per contributor, which
      a count does not fold, however its range is spelled *)
-  | Functie
-      { kind = Aantal; argumenten = [ Attribuut_ref { attribuut = Some a; navigatie_bindingen = None; _ } ];
-        element_objecttype = Some el; bron_rol; bron_pad; _ }
-    when (bron_rol <> None || bron_pad <> None)
-         && (Ir_v0.Checks.find_ci (objecttype ctx el).attributen a <> None
-            || Ir_v0.Checks.has_kenmerk (objecttype ctx el) a) ->
+  | Function_call
+      { kind = Count; call_arguments = [ Attribute_reference { attribute_ref = Some a; navigation_bindings = None; _ } ];
+        element_object_type = Some el; source_role; source_path; _ }
+    when (source_role <> None || source_path <> None)
+         && (Ir_v0.Checks.find_ci (object_type ctx el).attributes a <> None
+            || Ir_v0.Checks.has_characteristic (object_type ctx el) a) ->
       fault
         "the source of this count aggregation reads '%s', a member of the element type '%s': a \
          count folds INSTANCES, so its source is a count source naming the relation's role, never \
@@ -3937,11 +3937,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      of a single-argument VALUE fold's set source only. Anywhere else it would
      be dropped, and the fold would answer over the wrong population; a
      count's source names the one relation whose role it counts *)
-  | Functie { kind; argumenten; element_objecttype; bron_pad = Some _; _ }
-    when kind = Aantal
+  | Function_call { kind; call_arguments; element_object_type; source_path = Some _; _ }
+    when kind = Count
          || not
-              (match (element_objecttype, argumenten) with
-              | Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] -> true
+              (match (element_object_type, call_arguments) with
+              | Some _, [ Attribute_reference { navigation_bindings = None; _ } ] -> true
               | _ -> false) ->
       fault
         "a sourcePath is admissible only as the range of a single-argument VALUE fold's set source \
@@ -3949,9 +3949,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   (* WF-083 (c), the verifier's sentence and ref's check: a total without a
      range is the subject's own read, so the type it folds over is the
      subject type; a foreign type in the field otherwise moves no answer *)
-  | Functie
-      { kind = Totaal; argumenten = [ _ ]; element_objecttype = Some el; bron_rol = None;
-        bron_pad = None; _ }
+  | Function_call
+      { kind = Total; call_arguments = [ _ ]; element_object_type = Some el; source_role = None;
+        source_path = None; _ }
     when norm el <> norm subject_ot ->
       fault
         "the elementType '%s' of a total without a range is not the fold subject '%s': \
@@ -3960,15 +3960,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         el subject_ot
   (* WF-037, the verifier's two sentences and ref's arm ([sourceless_fold]):
      a fold that names its population and hands no source *)
-  | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
+  | Function_call { kind; call_arguments = []; element_object_type = Some el; _ } ->
       sourceless_fold kind el ~list_literal:false
-  | Functie
-      { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ List_literal _ ];
-        element_objecttype = Some el; _ } ->
+  | Function_call
+      { kind = (Count | Filled_count) as kind; call_arguments = [ List_literal _ ];
+        element_object_type = Some el; _ } ->
       sourceless_fold kind el ~list_literal:true
-  | Functie { kind; argumenten = [ a ]; element_objecttype = Some el; _ } when non_source kind a ->
+  | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
+  | Function_call { kind = Count; call_arguments = [ Attribute_reference { navigation_bindings = None; _ } ]; element_object_type = Some el; source_role = Some _ as source_role; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element
          type was refused above, WF-093 (b)): the single argument of a count that
          carries a range names the counted role, and the count folds the
@@ -3984,20 +3984,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
               ~part:
                 (new_part ctx
-                   (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x ~join))
+                   (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
-      let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
+      let join = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " (join @ fatoms)) ],
         v,
         1 )
   (* The set folds below carry deliberately
      NOT the temporal total's ci-control [norm aot = norm subject_ot], and
-     not its sister [norm aot = norm element_objecttype] either: they never
+     not its sister [norm aot = norm element_object_type] either: they never
      emit val(<subject>,…) — every read is anchored at the ELEMENT variable,
      with the attribute's declaration looked up on [el], exactly as ref
      anchors it (its set-source arm binds no objecttype either). The
@@ -4005,23 +4005,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      control on it could only refuse forms ref answers. Measured on
      jutterswet-vondsttelling's shape and on jutterswet-vondstpiek, twisting
      the operand's objecttype to a name-sharing sister type, with and
-     without the explicit bron_rol binding: ref and clingo both keep
+     without the explicit source_role binding: ref and clingo both keep
      answering the pinned value. What the twist CAN break — an
-     element_objecttype whose type does not declare the folded attribute —
+     element_object_type whose type does not declare the folded attribute —
      is already loud on both sides (a case-load error, or attr_decimals'
      "unknown attribute"), never a silent value. The Aantal arm above is the
      same story one field over: it binds no objecttype at all and mirrors
      ref's role-source arm field for field. *)
-  | Functie { kind = (Som | Totaal) as kind; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; bron_pad; filter; _ }
-    when bron_rol <> None || bron_pad <> None (* D8 (i)/(iii): the set source *) ->
+  | Function_call { kind = (Sum_function | Total) as kind; call_arguments = [ Attribute_reference { attribute_ref; navigation_bindings = None; _ } ]; element_object_type = Some el; empty_fallback; source_role; source_path; filter; _ }
+    when source_role <> None || source_path <> None (* D8 (i)/(iii): the set source *) ->
       (* ONE branch for the two set folds, because ref has one: its
          contributor gathering is shared and only the empty-set rule
-         differs (agg_som ~fallback vs agg_totaal). The set reading of
+         differs (agg_sum ~fallback vs agg_total). The set reading of
          "het totaal van" IS the som-alias — same operand, same result
          type on the wire (corpus/golden/jutterswet-tempototaal pins both
          rows of that table side by side) — so a mirrored pair of arms
          could only drift. *)
-      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
+      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribute_ref) in
       (* THE ADDITIVE FOLD IS ARITHMETIC, so its members must be amounts.
          A DATE is not: this encoding gives it a day number (the only
          non-numeric datatype [decimals_of_datatype] hands a scale at all),
@@ -4036,7 +4036,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          comes out — the ordering folds over a date source are well defined
          (ch. 1.2e) and ref = clingo carries them, witness
          `golden/jutterswet-vondstbereik`.
-         WHY [Datum_in_dagen] EXACTLY and not [is_date]. The DAY-typed date
+         WHY [Date_in_days] EXACTLY and not [is_date]. The DAY-typed date
          is the whole reach this position has, measured 2026-09-20 rather
          than assumed. A datum-tijd set source never arrives: its rule is
          routed through [dt_term] one node earlier (the target is
@@ -4050,14 +4050,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the document (WF-038).
          Asked of the DECLARATION on the element type (§2.10), never of the
          wire annotation, like every other read in this arm. *)
-      (match Ir_v0.Checks.find_ci (objecttype ctx el).attributen a with
-      | Some (Some Datum_in_dagen) ->
+      (match Ir_v0.Checks.find_ci (object_type ctx el).attributes a with
+      | Some (Some Date_in_days) ->
           fault
             "a %s fold over the set source %S adds DATE-valued members of %S: an additive fold is \
              arithmetic, a date is a calendar POSITION, and adding two of them has no meaning — \
              this translation would add their day numbers and answer a definite number no calendar \
              reads back. Declined in translation"
-            (match kind with Som -> "sum" | _ -> "total")
+            (match kind with Sum_function -> "sum" | _ -> "total")
             a el
       | _ -> ());
       (* THE TEMPORALITY ANCHOR: [el], the elementType (see
@@ -4066,20 +4066,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the type that decides whether the members carry timelines. *)
       let temporal = attr_temporal ctx ~otype:el ~attr:a in
       (* the empty set. `total` is 0 UNCONDITIONALLY (§4.20, ref
-         agg_totaal), which is exactly clingo's native #sum over no
+         agg_total), which is exactly clingo's native #sum over no
          tuples — so no presence guard, and an emptyFallback is ignored the
-         way ref ignores it (agg_totaal takes no fallback; the eager
+         way ref ignores it (agg_total takes no fallback; the eager
          `let fallback = … leegwaarde` evaluates and discards it, the
          same convention the min/max arm below carries). `sum` without a
-         fallback is ref's Empty (agg_som None), so it needs the presence
+         fallback is ref's Empty (agg_sum None), so it needs the presence
          guard that keeps the term underivable on the empty set; with a 0
          fallback the bare #sum is already right. A fallback other than 0
          stays loud — ref would add it, which no encoding here carries. *)
       let has_fallback =
         match kind with
-        | Totaal -> true
+        | Total -> true
         | _ -> (
-            match leegwaarde with
+            match empty_fallback with
             (* zero by VALUE, not by lexeme: a 2-decimal fold writes its
                fallback as "0.00", which is the same empty-set answer as
                "0" and the same bare #sum encoding *)
@@ -4102,14 +4102,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
-      let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+      let join = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
       let fatoms =
         match filter with
         | None -> []
         | Some c ->
             let join () = join in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
@@ -4172,25 +4172,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let derived_writer =
             if
               List.exists
-                (fun (r : resolved_regel) ->
-                  match r.doel with
-                  | Some (Attribuut_ref { attribuut = Some x; objecttype = Some o; _ }) ->
+                (fun (r : resolved_rule) ->
+                  match r.objective with
+                  | Some (Attribute_reference { attribute_ref = Some x; object_type = Some o; _ }) ->
                       norm x = norm a && norm o = norm el
                   | _ -> false)
-                ctx.doc.resolved_regels
+                ctx.doc.resolved_rules
             then Some "a rule"
             else if
               List.exists
-                (fun (v : resolved_verdeling) ->
-                  (match v.doel_attribuut with Some x -> norm x = norm a | None -> false)
-                  && match v.doel_type with Some o -> norm o = norm el | None -> false)
-                ctx.doc.verdelingen
+                (fun (v : resolved_allocation) ->
+                  (match v.target_attribute with Some x -> norm x = norm a | None -> false)
+                  && match v.objective_type_name with Some o -> norm o = norm el | None -> false)
+                ctx.doc.allocations
             then Some "an allocation (verdeling)"
             else if
               List.exists
                 (fun (l : prioritized_defaults) ->
-                  (match l.pd_attribuut with Some x -> norm x = norm a | None -> false)
-                  && norm l.pd_onderwerp = norm el)
+                  (match l.pd_attribute with Some x -> norm x = norm a | None -> false)
+                  && norm l.pd_subject = norm el)
                 ctx.doc.prioritized_defaults
             then Some "a defaults group"
             else None
@@ -4259,25 +4259,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let related o = isa ctx o el || isa ctx el o in
             if
               List.exists
-                (fun (r : resolved_regel) ->
-                  match r.doel with
-                  | Some (Attribuut_ref { attribuut = Some x; objecttype = Some o; _ }) ->
+                (fun (r : resolved_rule) ->
+                  match r.objective with
+                  | Some (Attribute_reference { attribute_ref = Some x; object_type = Some o; _ }) ->
                       norm x = norm name && related o
                   | _ -> false)
-                ctx.doc.resolved_regels
+                ctx.doc.resolved_rules
             then Some "a rule"
             else if
               List.exists
-                (fun (v : resolved_verdeling) ->
-                  (match v.doel_attribuut with Some x -> norm x = norm name | None -> false)
-                  && match v.doel_type with Some o -> related o | None -> false)
-                ctx.doc.verdelingen
+                (fun (v : resolved_allocation) ->
+                  (match v.target_attribute with Some x -> norm x = norm name | None -> false)
+                  && match v.objective_type_name with Some o -> related o | None -> false)
+                ctx.doc.allocations
             then Some "an allocation (verdeling)"
             else if
               List.exists
                 (fun (l : prioritized_defaults) ->
-                  (match l.pd_attribuut with Some x -> norm x = norm name | None -> false)
-                  && related l.pd_onderwerp)
+                  (match l.pd_attribute with Some x -> norm x = norm name | None -> false)
+                  && related l.pd_subject)
                 ctx.doc.prioritized_defaults
             then Some "a defaults group"
             else None
@@ -4287,28 +4287,28 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              share one namespace here on purpose: a kenmerktoekenning writes
              its characteristic through the same doel field a value rule
              writes an attribute through, so ONE scan covers both. *)
-          let rec filter_reads (c : conditie) : string list option =
+          let rec filter_reads (c : condition_expr) : string list option =
             let operand = function
               | None -> Some []
               | Some (Literal _) | Some (Parameter_ref _) -> Some []
               | Some
-                  (Attribuut_ref
-                    { attribuut = Some n; navigatie_bindingen = None; _ })
+                  (Attribute_reference
+                    { attribute_ref = Some n; navigation_bindings = None; _ })
                 ->
                   Some [ n ]
               | Some _ -> None
             in
             match c with
-            | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; eigenaar = None; _ } -> Some [ k ]
-            | Vergelijking { links; rechts; periode = None; _ } -> (
-                match (operand links, operand rechts) with
+            | Characteristic_check { characteristic = Some k; navigation_binding = None; holder = None; _ } -> Some [ k ]
+            | Comparison { left_side; right_side; time_period = None; _ } -> (
+                match (operand left_side, operand right_side) with
                 | Some l, Some r -> Some (l @ r)
                 | _ -> None)
-            | Samengesteld { onderdelen; _ } ->
+            | Compound { components; _ } ->
                 List.fold_left
                   (fun acc c ->
                     match (acc, filter_reads c) with Some a, Some b -> Some (a @ b) | _ -> None)
-                  (Some []) onderdelen
+                  (Some []) components
             | _ -> None
           in
           let suspects =
@@ -4323,7 +4323,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                         linked instance the element type does not cover is
                         not folded, so its missing timeline is not this
                         fold's business to fault on *)
-                     Eval.fold_members ?binding:bron_rol ?path:bron_pad env ctx.case.world self
+                     Eval.fold_members ?binding:source_role ?path:source_path env ctx.case.world self
                        ~element:el
                      @ acc)
                  ctx.case.world.instances [])
@@ -4389,7 +4389,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   | None -> acc
                   | Some tl ->
                       List.map
-                        (fun (s : Uchar_ref.Timeline.segment) -> (s.s_van, s.s_tot))
+                        (fun (s : Uchar_ref.Timeline.segment) -> (s.s_from, s.s_to))
                         tl
                       @ acc)
               ctx.case.world.instances []
@@ -4423,7 +4423,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              written. *)
           let total_units =
             List.fold_left
-              (fun acc (van, tot) -> acc + Uchar_ref.Timeline.whole_units gran van tot)
+              (fun acc (van, up_to) -> acc + Uchar_ref.Timeline.whole_units gran van up_to)
               0 spans
           in
           if total_units > 46340 then
@@ -4432,9 +4432,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                member timelines, beyond the guarded sum range"
               a total_units;
           List.iter
-            (fun (van, tot) ->
-              emit ctx "%s_wu(%d,%d,%d)." p van tot
-                (Uchar_ref.Timeline.whole_units gran van tot))
+            (fun (van, up_to) ->
+              emit ctx "%s_wu(%d,%d,%d)." p van up_to
+                (Uchar_ref.Timeline.whole_units gran van up_to))
             (List.sort_uniq compare spans);
           let n = fresh ctx "N" and vv = fresh ctx "V" and tt = fresh ctx "T" in
           let body =
@@ -4470,10 +4470,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
   (* element-anchored like the som arm above, and unnarrowed on the
      operand's objecttype for the reason measured there *)
-  | Functie { kind = (Minimum | Maximum | Eerste | Laatste) as kind; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
-    when bron_rol <> None || bron_pad <> None (* D8 (i)/(iii): the set source *) ->
+  | Function_call { kind = (Minimum | Maximum | First | Last) as kind; call_arguments = [ Attribute_reference { attribute_ref; navigation_bindings = None; _ } ]; element_object_type = Some el; source_role; source_path; filter; _ }
+    when source_role <> None || source_path <> None (* D8 (i)/(iii): the set source *) ->
       (* `maximum`/`minimum`/`first`/`last` over a set-typed AttributeReference
-         (RUNTIME-SEMANTICS ch. 1.2e, ref agg_max/agg_min/agg_eerste/agg_laatste
+         (RUNTIME-SEMANTICS ch. 1.2e, ref agg_max/agg_min/agg_first/agg_last
          = agg_extreme): the same contributor gathering as the som arm,
          aggregated with #max/#min at the element attribute's scale. Empty
          contributors contribute no tuple (the join is the skip, exactly as the
@@ -4502,15 +4502,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          #max. That reading is the normative one on both sides of the
          mirror: RUNTIME-SEMANTICS ch. 1.2e states it for the listed fold
          ("de eerste van 5 en 3 is 3"), and it is what ref computes here
-         (agg_eerste/agg_laatste are agg_extreme with the non-strict
-         comparison). The tie-break differs on paper — agg_eerste keeps the
+         (agg_first/agg_last are agg_extreme with the non-strict
+         comparison). The tie-break differs on paper — agg_first keeps the
          LATER equal operand where agg_min keeps the first-seen — and is
          unobservable, because a tie means value equality and this fold
          yields a value, never a member. Until this card the set spelling
          of these two kinds reached no arm at all and the backend refused
          the expression kind, while ref answered: a live one-answers-one-
          refuses gap under a verifier-clean, frontend-emitted document. *)
-      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
+      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribute_ref) in
       (* a TEMPORAL element attribute has no defined moment to rank at, so
          ref refuses the form outright (ch. 3.6: only sum and total carry
          the per-element timeline fold). This arm would rank the asOfDate
@@ -4537,20 +4537,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let contrib_body =
-        source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
+        source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "extp%d" ctx.fresh in
       emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
-      let agg = match kind with Minimum | Eerste -> "#min" | _ -> "#max" in
+      let agg = match kind with Minimum | First -> "#min" | _ -> "#max" in
       ( [ Printf.sprintf "%s(%s)" p subject;
           Printf.sprintf "%s = %s { %s : %s }" v agg g (String.concat ", " contrib_body) ],
         v,
@@ -4576,12 +4576,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      no tuples is exactly that 0. The som needs its guard because ITS empty
      answer is leeg. Scale 1: the result is a whole, unitless cardinality
      whatever unit the folded attribute carries. *)
-  | Functie
-      { kind = Aantal_gevulde;
-        argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ];
-        element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
-    when bron_rol <> None || bron_pad <> None (* D8 (iii): the set source *) ->
-      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
+  | Function_call
+      { kind = Filled_count;
+        call_arguments = [ Attribute_reference { attribute_ref; navigation_bindings = None; _ } ];
+        element_object_type = Some el; source_role; source_path; filter; _ }
+    when source_role <> None || source_path <> None (* D8 (iii): the set source *) ->
+      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribute_ref) in
       (* the ch. 3.4c exclusion, on the TEMPORAL axis rather than on a value
          type: a set read of a time-dependent attribute folds twice, and only
          som and totaal define the first collapse. ref refuses the form by
@@ -4604,17 +4604,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let contrib_body =
-        source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
+        source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " contrib_body) ], v, 1 )
-  | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ }
+  | Function_call { kind = (First | Last) as kind; call_arguments = (_ :: _ :: _ as args); filter; _ }
     ->
       (* the articulated eerste/laatste fold (RUNTIME-SEMANTICS ch. 1.2e):
          the ORDERING fold — #min/#max over the listed operand terms with
@@ -4642,7 +4642,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             fault "a text/boolean/enum operand under a first/last fold has no order \
                    (ref faults the unordered comparison)";
           match static_type ctx a with
-          | Some Datum_tijd ->
+          | Some Date_time_type ->
               fault "datum-tijd first/last is not translated (the pair term has no fold \
                      ordering; no corpus case)"
           | _ -> ())
@@ -4690,12 +4690,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       emit ctx "%s_def(%s) :- %s(%s,X)." pred subject pred subject;
       let v = fresh ctx "F" in
       let x = Printf.sprintf "X%s" v in
-      let agg = match kind with Eerste -> "#min" | _ -> "#max" in
+      let agg = match kind with First -> "#min" | _ -> "#max" in
       ( [ Printf.sprintf "%s_def(%s)" pred subject;
           Printf.sprintf "%s = %s { %s : %s(%s,%s) }" v agg x pred subject x ],
         v,
         m )
-  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ]; filter = Some c; bron_rol = None; bron_pad = None; _ }
+  | Function_call { kind = Total; call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ]; filter = Some c; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6, the gedurende clip: intersect the value timeline (tl/5)
          with the condition's true-periods, then total whole units per
@@ -4747,17 +4747,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let rec cond_fn c : string -> string -> string =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie; _ } ->
+        | Characteristic_check { characteristic = Some k; navigation_binding = None; negation; _ } ->
             if
               not
                 (List.exists
                    (fun (n, _) -> norm n = norm k)
-                   (objecttype ctx aot).kenmerk_granulariteit)
+                   (object_type ctx aot).characteristic_granularity)
             then
               (* mirror ref's fault, as the two sister folds already do
                  (pro rata WF-056, day count WF-058). "Temporal" is decided
                  exactly as ref decides it — KEY EXISTENCE in
-                 kenmerkGranulariteit (ref/lib/eval.ml, [kenmerk_temporal]) —
+                 kenmerkGranulariteit (ref/lib/eval.ml, [characteristic_temporal]) —
                  and WF-055 reads the same predicate, so the three walk in
                  step. ktl facts come from the case's characteristic
                  timelines alone, and a characteristic with no granularity
@@ -4772,7 +4772,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  key existence and value existence now coincide and this
                  predicate is exact again. *)
               fault "gedurende over %S, which is not a temporal characteristic" k;
-            if not negatie then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
+            if not negation then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
             else begin
               (* ch. 3.6, the NEGATED clip: the complement of the
                  characteristic's periods within the clip horizon. ref takes
@@ -4822,15 +4822,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 q (str a) q q q;
               fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
             end
-        | Vergelijking
-            { op; links = Some (Attribuut_ref
-                { attribuut = Some b; objecttype = Some botn; navigatie_bindingen = None; _ });
-              rechts = Some grens; periode = None; _ }
+        | Comparison
+            { op; left_side = Some (Attribute_reference
+                { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ });
+              right_side = Some boundary; time_period = None; _ }
           when norm botn = norm aot && attr_temporal ctx ~otype:botn ~attr:b ->
             units_identical_ok ~what:"a clip comparison"
               (attr_unit ctx ~otype:botn ~attr:b)
-              (eff_unit ctx grens);
-            let gb, gt, gs = expr_term ctx ~subject ~subject_ot grens in
+              (eff_unit ctx boundary);
+            let gb, gt, gs = expr_term ctx ~subject ~subject_ot boundary in
             let gs = numeric_scale ~what:"a gedurende clip comparison" gs in
             let bscale = pow10 (attr_decimals ctx ~otype:botn ~attr:b) in
             let m = max bscale gs in
@@ -4869,16 +4869,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (String.concat ", "
                  (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
                  :: gb
-                 @ [ Printf.sprintf "%s %s %s" wl (vergelijk_sym op) gl ]));
+                 @ [ Printf.sprintf "%s %s %s" wl (compare_sym op) gl ]));
             fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
-        | Samengesteld { kwantor = Alle; onderdelen = (_ :: _ as onderdelen); _ } ->
+        | Compound { quantifier_kind = All; components = (_ :: _ as components); _ } ->
             (* the FLAT composite only (WF-055): v0 partitions static
                comparison members out as value-side guards before its
                clip runs and markers nested bullets — v1 narrows
                composite members to characteristic checks *)
             let member_fn part =
               match part with
-              | Kenmerk_check _ -> cond_fn part
+              | Characteristic_check _ -> cond_fn part
               | _ ->
                   fault
                     "a composite gedurende member is an own temporal characteristic check (the static-guard and nested forms are recorded flanks)"
@@ -4890,8 +4890,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 let q = Printf.sprintf "cl%d_and" ctx.fresh in
                 emit_period_and q acc pf;
                 fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t)
-              (member_fn (List.hd onderdelen))
-              (List.tl onderdelen)
+              (member_fn (List.hd components))
+              (List.tl components)
         | _ ->
             fault
               "unsupported gedurende condition shape (an own temporal \
@@ -4917,7 +4917,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               Eval.SMap.fold
                 (fun _ (tl : Uchar_ref.Timeline.t) acc ->
                   List.concat_map
-                    (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
+                    (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ])
                     tl
                   @ acc)
                 i.tls acc
@@ -4939,8 +4939,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (if prorata_writes ctx.doc ~otype:aot ~attr:a then [ a ] else [])
         @
         match c with
-        | Vergelijking
-            { links = Some (Attribuut_ref { attribuut = Some b; objecttype = Some botn; _ }); _ }
+        | Comparison
+            { left_side = Some (Attribute_reference { attribute_ref = Some b; object_type = Some botn; _ }); _ }
           when norm botn = norm aot && prorata_writes ctx.doc ~otype:botn ~attr:b -> [ b ]
         | _ -> []
       in
@@ -5007,12 +5007,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (String.concat ", "
            (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
         p subject;
-      emit ctx "%s_tot(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
+      emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
         p q (str subject_ot) q p p;
-      ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],
+      ( [ Printf.sprintf "%s_total(%s,%s)" p subject q ],
         q,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
-  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ]; bron_rol = None; bron_pad = None; _ }
+  | Function_call { kind = Total; call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ]; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
          the one period of the member's grid); an absent timeline stays
@@ -5041,16 +5041,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
         term,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
-  | Functie
-      { kind = Totaal;
-        argumenten =
-          [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen; _ } ];
-        element_objecttype; bron_rol; bron_pad; _ }
-    when (let ranged = bron_rol <> None || bron_pad <> None in
-          match fold_operand_otype ~element_objecttype ~ranged (Some aot) with
+  | Function_call
+      { kind = Total;
+        call_arguments =
+          [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings; _ } ];
+        element_object_type; source_role; source_path; _ }
+    when (let ranged = source_role <> None || source_path <> None in
+          match fold_operand_otype ~element_object_type ~ranged (Some aot) with
           | Some ot -> attr_temporal ctx ~otype:ot ~attr:a
           | None -> false) ->
-      let set = bron_rol <> None || bron_pad <> None in
+      let set = source_role <> None || source_path <> None in
       (* every temporal totaal the arms above deliberately do not carry.
          Each of these used to fall INTO the own-subject arm and be
          answered off val(<SUBJECT>,…) — the wrong instance — so each is
@@ -5077,7 +5077,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            refuses a navigated fold source outright (an instance-fold source shape it does not \
            carry), so this arm must not answer either"
           a;
-      if navigatie_bindingen <> None then
+      if navigation_bindings <> None then
         fault
           "the temporal total of the NAVIGATED %S is not translated: the carried arm totals the \
            SUBJECT's own timeline, so it would read %S off the subject instead of off the \
@@ -5090,17 +5090,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          totals the SUBJECT's own timeline and would answer for the wrong object; ref refuses the \
          shape outright, so this arm must not answer either"
         a aot subject_ot
-  | Temporal_read { basis; datum; typ = _; bron = _ } -> (
+  | Temporal_read { base_expr; date_value; typ = _; source_name = _ } -> (
       (* ch. 3.3 read(tl, d): join the segment relation on containment.
          A gap or an empty date leaves the body underivable — leeg as
          absence, exactly ref/'s leeg-on-gap and empty-index rules. *)
-      let db, dt, ds = expr_term ctx ~subject ~subject_ot datum in
+      let db, dt, ds = expr_term ctx ~subject ~subject_ot date_value in
       if ds <> 1 then fault "temporal-read date operand must be an unscaled day term";
       let v = fresh ctx "R" in
       let f = fresh ctx "F" and t = fresh ctx "T" in
-      match basis with
-      | Attribuut_ref
-          { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+      match base_expr with
+      | Attribute_reference
+          { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
         when Ir_v0.Checks.norm otn = Ir_v0.Checks.norm subject_ot ->
           if not (attr_temporal ctx ~otype:otn ~attr:a) then
             fault "temporal read of %S, which is not a temporal attribute" a;
@@ -5112,7 +5112,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             pow10 (attr_decimals ctx ~otype:otn ~attr:a) )
       | Parameter_ref { parameter = Some p; _ } -> (
           match Ir_v0.Checks.find_ci ctx.doc.parameters p with
-          | Some { par_granulariteit = None; _ } ->
+          | Some { par_granularity = None; _ } ->
               fault "temporal read of parameter %S, which is not granular" p
           | Some pr ->
               if Eval.SMap.find_opt (Ir_v0.Checks.norm p) ctx.case.param_tls = None then
@@ -5124,7 +5124,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 pow10 (decimals_of_datatype pr.par_datatype) )
           | None -> fault "unknown parameter %S" p)
       | _ -> fault "unsupported temporal-read base shape")
-  | Functie { kind = (Tijdsduur | Absolute_tijdsduur) as kind; argumenten; filter; typ; _ }
+  | Function_call { kind = (Duration | Absolute_duration) as kind; call_arguments; filter; typ; _ }
     ->
       (* tijdsduur van A tot B (ch. 3.8): whole declared units between two
          day-precision dates, signed — the packed-month rule as a pure-ASP
@@ -5134,13 +5134,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          propagation for free, never 0. *)
       if filter <> None then fault "a filter on a duration has no v0 form";
       let a, b =
-        match argumenten with
+        match call_arguments with
         | [ a; b ] -> (a, b)
         | _ -> fault "duration expects two arguments"
       in
       duration_form ~doc:ctx.doc ~kind typ (static_type ctx a) (static_type ctx b);
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-      let wrap t = if kind = Absolute_tijdsduur then Printf.sprintf "|%s|" t else t in
+      let wrap t = if kind = Absolute_duration then Printf.sprintf "|%s|" t else t in
       if is_datetime_operand ctx (Some a) || is_datetime_operand ctx (Some b) then begin
         (* datum-tijd tijdsduur (ch. 3.8, the millisecond layer): both
            operands are pair terms (WF-038 forbids mixed precision). A sub-day
@@ -5184,10 +5184,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let dbp = fresh ctx "DBP" in
             let dbp_atom = Printf.sprintf "%s(%s,%s)" bp subject dbp in
             (match tu with
-            | Tu_dag -> (da_atoms @ db_atoms @ [ dbp_atom ], wrap (Printf.sprintf "((%s)-(%s))" dbp da), 1)
+            | Tu_day -> (da_atoms @ db_atoms @ [ dbp_atom ], wrap (Printf.sprintf "((%s)-(%s))" dbp da), 1)
             | Tu_week ->
                 (da_atoms @ db_atoms @ [ dbp_atom ], wrap (Printf.sprintf "(((%s)-(%s))/7)" dbp da), 1)
-            | Tu_maand | Tu_kwartaal | Tu_jaar ->
+            | Tu_month | Tu_quarter | Tu_year ->
                 pre_epoch_fence ctx ~subject ~body:gbody da;
                 pre_epoch_fence ctx ~subject ~body:(gbody @ [ dbp_atom ]) dbp;
                 let ca, pma, dda = civil_pm_day ctx da in
@@ -5195,13 +5195,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 let months = Printf.sprintf "((((%s*32)+%s)-((%s*32)+%s))/32)" pmb ddb pma dda in
                 let n =
                   match tu with
-                  | Tu_maand -> months
-                  | Tu_kwartaal -> Printf.sprintf "(%s/3)" months
-                  | Tu_jaar -> Printf.sprintf "(%s/12)" months
+                  | Tu_month -> months
+                  | Tu_quarter -> Printf.sprintf "(%s/3)" months
+                  | Tu_year -> Printf.sprintf "(%s/12)" months
                   | _ -> assert false
                 in
                 (da_atoms @ db_atoms @ [ dbp_atom ] @ ca @ cb, wrap n, 1)
-            | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde -> assert false)
+            | Tu_hour | Tu_minute | Tu_second | Tu_millisecond -> assert false)
       end
       else begin
         (* the day-precision family: the packed-month rule as a pure-ASP
@@ -5209,24 +5209,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            count on — [duration_form] refused it (WF-038). *)
         let operand_day e =
           match static_type ctx e with
-          | Some Datum_in_dagen -> ()
+          | Some Date_in_days -> ()
           | _ -> fault "duration operand is not statically a day-precision date"
         in
         operand_day a;
         operand_day b;
         match day_kind_unit_of ctx typ with
         | Some k ->
-            dk_tijdsduur ctx ~subject ~subject_ot ~kind:k
-              ~absolute:(kind = Absolute_tijdsduur) a b
+            dk_duration ctx ~subject ~subject_ot ~kind:k
+              ~absolute:(kind = Absolute_duration) a b
         | None ->
         let tu = day_time_unit_of ~what:"duration" typ in
         let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
         let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
         if sa <> 1 || sb <> 1 then fault "duration operands must be unscaled day terms";
         match tu with
-        | Tu_dag -> (ba @ bb, wrap (Printf.sprintf "((%s)-(%s))" tb ta), 1)
+        | Tu_day -> (ba @ bb, wrap (Printf.sprintf "((%s)-(%s))" tb ta), 1)
         | Tu_week -> (ba @ bb, wrap (Printf.sprintf "(((%s)-(%s))/7)" tb ta), 1)
-        | Tu_maand | Tu_kwartaal | Tu_jaar ->
+        | Tu_month | Tu_quarter | Tu_year ->
             pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ ba) ta;
             pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ bb) tb;
             let ca, pma, da = civil_pm_day ctx ta in
@@ -5234,17 +5234,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let months = Printf.sprintf "((((%s*32)+%s)-((%s*32)+%s))/32)" pmb db pma da in
             let n =
               match tu with
-              | Tu_maand -> months
-              | Tu_kwartaal -> Printf.sprintf "(%s/3)" months
-              | Tu_jaar -> Printf.sprintf "(%s/12)" months
+              | Tu_month -> months
+              | Tu_quarter -> Printf.sprintf "(%s/3)" months
+              | Tu_year -> Printf.sprintf "(%s/12)" months
               | _ -> assert false
             in
             (ba @ bb @ ca @ cb, wrap n, 1)
-        | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+        | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
             (* unreachable: day_time_unit_of faulted the sub-day units *)
             assert false
       end
-  | Functie { kind = (Jaar_uit | Maand_uit | Dag_uit) as kind; argumenten; filter; _ } ->
+  | Function_call { kind = (Year_of | Month_of | Day_of) as kind; call_arguments; filter; _ } ->
       (* the day-precision part extractors (ch. 3.8): the civil components
          of the operand's day number as unitless whole terms — the same
          era decomposition the packed-month rule rides (PM = 12·year +
@@ -5252,13 +5252,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          an unbound date leaves the chain unbound. *)
       if filter <> None then fault "a filter on a part extractor has no v0 form";
       let a =
-        match argumenten with
+        match call_arguments with
         | [ a ] -> a
         | _ -> fault "a part extractor expects one argument"
       in
       (match static_type ctx a with
-      | Some Datum_in_dagen -> ()
-      | Some Datum_tijd ->
+      | Some Date_in_days -> ()
+      | Some Date_time_type ->
           fault "datum-tijd part extraction is not translated (the sub-day extractors are not \
                  the ms layer's arithmetic; no corpus case)"
       | _ -> fault "part-extractor operand is not statically a day-precision date");
@@ -5269,13 +5269,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let catoms, pmv, dv = civil_pm_day ctx ta in
       let t =
         match kind with
-        | Jaar_uit -> Printf.sprintf "(%s/12)" pmv
-        | Maand_uit -> Printf.sprintf "((%s \\ 12)+1)" pmv
-        | Dag_uit -> dv
+        | Year_of -> Printf.sprintf "(%s/12)" pmv
+        | Month_of -> Printf.sprintf "((%s \\ 12)+1)" pmv
+        | Day_of -> dv
         | _ -> assert false
       in
       (ba @ catoms, t, 1)
-  | Functie { kind = Eerste_paasdag; argumenten; filter; _ } ->
+  | Function_call { kind = Easter_sunday; call_arguments; filter; _ } ->
       (* eerste paasdag van a whole unitless year (ch. 3.8): the
          Gauss/Anonymous chain, then days_from_civil with the March shift —
          the month is always 3 or 4, so the shift term is 0, written anyway
@@ -5285,12 +5285,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          bare join. *)
       if filter <> None then fault "a filter on easterSunday has no v0 form";
       let y =
-        match argumenten with
+        match call_arguments with
         | [ y ] -> y
         | _ -> fault "easterSunday expects one argument"
       in
       (match static_type ctx y with
-      | Some (Numeriek { geheel = true; eenheid = None; _ }) -> ()
+      | Some (Number { whole_part = true; measure_unit = None; _ }) -> ()
       | _ -> fault "easterSunday operand is not statically a whole unitless year");
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
       if sy <> 1 then fault "easterSunday year operand must be an unscaled whole term";
@@ -5333,13 +5333,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           Printf.sprintf "%s = ((%s*146097)+%s)-719468" zt e2 doe2 ]
       in
       (by @ chain, zt, 1)
-  | Binair { op = (Plus | Min) as op; links; rechts; _ }
+  | Binary { op = (Plus | Min) as op; left_side; right_side; _ }
     when List.exists
            (fun e ->
              match Option.bind e (static_type ctx) with
-             | Some (Datum_in_dagen | Datum_tijd) -> true
+             | Some (Date_in_days | Date_time_type) -> true
              | _ -> false)
-           [ links; rechts ] ->
+           [ left_side; right_side ] ->
       (* date ± duration (ch. 3.8), routed on the static date type — the
          ref mirror: the date stands on the LEFT of plus and min (v0's
          typing opens its date branch only for a date-left operand — no
@@ -5348,7 +5348,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the duration COALESCES (leeg counts 0, the date unchanged); a
          fractional count truncates toward zero through the scale
          division (gringo truncates toward zero on both signs). *)
-      let le = req "Binary.left" links and re = req "Binary.right" rechts in
+      let le = req "Binary.left" left_side and re = req "Binary.right" right_side in
       let minus = op = Min in
       let date_e, dur_e = date_step_operands ctx ~minus le re in
       let datetime = is_datetime_operand ctx (Some date_e) in
@@ -5383,21 +5383,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
       let n_term = if minus then Printf.sprintf "(-(%s))" n_term else n_term in
       (match tu with
-      | Tu_dag -> (bd @ bn, Printf.sprintf "((%s)+(%s))" td_ n_term, 1)
+      | Tu_day -> (bd @ bn, Printf.sprintf "((%s)+(%s))" td_ n_term, 1)
       | Tu_week -> (bd @ bn, Printf.sprintf "((%s)+(7*(%s)))" td_ n_term, 1)
-      | Tu_maand ->
+      | Tu_month ->
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
             ~date_term:td_ ~dur_atoms:bn ~count:n_term
-      | Tu_kwartaal ->
+      | Tu_quarter ->
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
             ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(3*(%s))" n_term)
-      | Tu_jaar ->
+      | Tu_year ->
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
             ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(12*(%s))" n_term)
-      | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+      | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
           (* unreachable: day_time_unit_of faulted the sub-day units *)
           assert false))
-  | Binair { op = (Plus | Min | Verminderd_met) as op; links; rechts; _ } ->
+  | Binary { op = (Plus | Min | Reduced_by) as op; left_side; right_side; _ } ->
       (* the additive family on harmonised scales. Numeric operands
          only: ref faults date arithmetic here, so a non-numeric static
          type must not silently sum as day numbers. Emptiness follows
@@ -5405,14 +5405,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          verminderd-met coalesces only the right — its left PROPAGATES,
          which the bare unbound join encodes for free (a leeg left
          leaves the rule underivable, exactly ref's Empty result). *)
-      numeric_ok ctx links;
-      numeric_ok ctx rechts;
+      numeric_ok ctx left_side;
+      numeric_ok ctx right_side;
       units_identical_ok ~what:"an additive join"
-        (Option.bind links (eff_unit ctx))
-        (Option.bind rechts (eff_unit ctx));
-      let l = expr_term ctx ~subject ~subject_ot (req "Binary.left" links) in
-      let r = expr_term ctx ~subject ~subject_ot (req "Binary.right" rechts) in
-      let l = if op = Verminderd_met then l else coalesce0 ctx ~subject ~subject_ot l in
+        (Option.bind left_side (eff_unit ctx))
+        (Option.bind right_side (eff_unit ctx));
+      let l = expr_term ctx ~subject ~subject_ot (req "Binary.left" left_side) in
+      let r = expr_term ctx ~subject ~subject_ot (req "Binary.right" right_side) in
+      let l = if op = Reduced_by then l else coalesce0 ctx ~subject ~subject_ot l in
       let r = coalesce0 ctx ~subject ~subject_ot r in
       let _, tl_raw, s1 = l and _, tr_raw, s2 = r in
       (* [numeric_ok] above read the wire `type`; the scale is the declaration's *)
@@ -5428,15 +5428,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let term = Printf.sprintf "(%s%s%s)" tl sym tr in
       ctx.signs <- (term, Sum { l = tl_raw; r = tr_raw; minus = op <> Plus; subject }) :: ctx.signs;
       (bindings, term, max s1 s2)
-  | Binair { op = (Maal | Percentage_van) as op; links; rechts; _ } ->
+  | Binary { op = (Times | Percentage_of) as op; left_side; right_side; _ } ->
       (* the multiplicative family (ch. 1.2a + §6.4/§6.8): BOTH operands
          coalesce leeg → 0. The product of two scaled integers is the
          scaled integer of the product at scale sl·sr — v0's static
          decimal count dl+dr. Percentage-van is (l/100)·r with the /100
          folded into the scale (sl·sr·100): no division anywhere, so no
          truncation can diverge from ref's exact rationals. *)
-      numeric_ok ctx links;
-      numeric_ok ctx rechts;
+      numeric_ok ctx left_side;
+      numeric_ok ctx right_side;
       (* Maal admits the factor-free unitless × unit-carrying product (the
          product adopts the unit, value unchanged); a two-unit product still
          faults. Percentage-van admits a pure-% left operand (its ÷100 is
@@ -5445,17 +5445,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          right-unit adoption has no eff_unit witness and no corpus case
          yet). *)
       (match op with
-      | Maal -> mul_units_ok ctx ~what:"a product" links rechts
+      | Times -> mul_units_ok ctx ~what:"a product" left_side right_side
       | _ ->
-          pct_van_left_ok ctx links;
-          unit_free_ok ctx rechts);
+          pct_left_ok ctx left_side;
+          unit_free_ok ctx right_side);
       let bl, tl, sl =
         coalesce0 ctx ~subject ~subject_ot
-          (expr_term ctx ~subject ~subject_ot (req "Binary.left" links))
+          (expr_term ctx ~subject ~subject_ot (req "Binary.left" left_side))
       in
       let br, tr, sr =
         coalesce0 ctx ~subject ~subject_ot
-          (expr_term ctx ~subject ~subject_ot (req "Binary.right" rechts))
+          (expr_term ctx ~subject ~subject_ot (req "Binary.right" right_side))
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       range_guard ctx ~subject
@@ -5463,40 +5463,40 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         [ (tl, 46340); (tr, 46340) ];
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
-      (bl @ br, term, sl * sr * (if op = Percentage_van then 100 else 1))
-  | Binair { op = Gedeeld_door; links; rechts; _ } ->
-      translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:None
-  | Binair { op = Gedeeld_door_abs; links; rechts; _ } ->
+      (bl @ br, term, sl * sr * (if op = Percentage_of then 100 else 1))
+  | Binary { op = Divided_by; left_side; right_side; _ } ->
+      translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding:None
+  | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
       (* the abs-division variant (ch. 2.2): the quotient truncated
          toward zero at 5 decimals — a defined collapse point, so the
-         rounded-division path with (Richting_nul, 5) IS the semantics
-         (arith.div_abs = div_gen collapsed through round_q Richting_nul
+         rounded-division path with (Toward_zero, 5) IS the semantics
+         (arith.div_abs = div_gen collapsed through round_q Toward_zero
          5), edges included: empty dividend → 0, empty divisor under a
          filled dividend → the §9.5 channel fact, numeric zero → a
          viol/2 witness. gringo's integer division truncates toward
          zero on both signs, so the negative range needs no fence. *)
-      translate_division ctx ~subject ~subject_ot ~links ~rechts
-        ~rounding:(Some (Richting_nul, 5))
-  | Binair { op = Tot_de_macht; links; rechts; _ } ->
-      translate_power ctx ~subject ~subject_ot ~links ~rechts
-  | Afgerond { basis = Some (Functie { kind = Wortel; argumenten; _ }); _ } ->
-      numeric_builtin_operand ctx Wortel argumenten;
+      translate_division ctx ~subject ~subject_ot ~left_side ~right_side
+        ~rounding:(Some (Toward_zero, 5))
+  | Binary { op = Power; left_side; right_side; _ } ->
+      translate_power ctx ~subject ~subject_ot ~left_side ~right_side
+  | Rounding { base_expr = Some (Function_call { kind = Square_root; call_arguments; _ }); _ } ->
+      numeric_builtin_operand ctx Square_root call_arguments;
       (* ref rounds the true irrational exactly (§13.4.17.13); that
          computation has no integer encoding here yet *)
       fault "rounded root is not translated (no corpus case)"
-  | Functie { kind = (Wortel | Absolute_waarde) as kind; argumenten; _ } ->
-      numeric_builtin_operand ctx kind argumenten;
+  | Function_call { kind = (Square_root | Absolute_value) as kind; call_arguments; _ } ->
+      numeric_builtin_operand ctx kind call_arguments;
       fault "%s is not translated (no corpus case)" (Ir_v0.Spelling.encode Ir_v0.Spelling.builtin_kind kind)
-  | Afgerond { basis = Some (Binair { op = Gedeeld_door; links; rechts; _ }); modus; decimalen; _ }
+  | Rounding { base_expr = Some (Binary { op = Divided_by; left_side; right_side; _ }); mode_kind; decimal_places; _ }
     ->
-      translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:(Some (modus, decimalen))
-  | Afgerond { basis = Some basis; modus = Rekenkundig; decimalen = 2; _ }
-    when money_mult_shape ctx basis ->
+      translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding:(Some (mode_kind, decimal_places))
+  | Rounding { base_expr = Some base_expr; mode_kind = Half_away_from_zero; decimal_places = 2; _ }
+    when money_mult_shape ctx base_expr ->
       (* the money × rate product Catala rounds to the cent (S-section (c)) —
          encoded SPLIT because the naive scale-6 product wraps int31 at
          tutorial magnitude *)
-      translate_money_mult ctx ~subject ~subject_ot ~basis
-  | Afgerond { basis; modus; decimalen; _ } -> (
+      translate_money_mult ctx ~subject ~subject_ot ~base_expr
+  | Rounding { base_expr; mode_kind; decimal_places; _ } -> (
       (* rounding a scaled term (ch. 2.5). ref propagates an empty base
          (round_v: Empty → Empty), which the bare body join encodes for
          free. A base whose scale already fits 10^d is returned
@@ -5506,11 +5506,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          terms, with a viol/2 witness fencing the untranslated negative
          range (richting-nul alone matches gringo's native truncation on
          both signs). *)
-      let b, t, s = expr_term ctx ~subject ~subject_ot (req "Rounding.base" basis) in
+      let b, t, s = expr_term ctx ~subject ~subject_ot (req "Rounding.base" base_expr) in
       (* [numeric_ok basis] read the operand's static type; the alignment tests below take
          [s] as a modulus, so an unscaled base divides by zero here too *)
       let s = numeric_scale ~what:"a rounding base" s in
-      let target = pow10 decimalen in
+      let target = pow10 decimal_places in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let gbody = (base :: ctx.rule_guard) @ b in
       if target >= s then
@@ -5525,14 +5525,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         let k = s / target in
         range_guard ctx ~subject ~body:gbody [ (t, 536870912) ];
         let rounded =
-          match modus with
-          | Richting_nul -> Printf.sprintf "((%s)/%d)" t k
-          | Naar_beneden -> Printf.sprintf "((%s)/%d)" t k
-          | Naar_boven | Weg_van_nul -> Printf.sprintf "(((%s)+%d)/%d)" t (k - 1) k
-          | Rekenkundig -> Printf.sprintf "((2*(%s)+%d)/%d)" t k (2 * k)
+          match mode_kind with
+          | Toward_zero -> Printf.sprintf "((%s)/%d)" t k
+          | Floor -> Printf.sprintf "((%s)/%d)" t k
+          | Ceiling | Away_from_zero -> Printf.sprintf "(((%s)+%d)/%d)" t (k - 1) k
+          | Half_away_from_zero -> Printf.sprintf "((2*(%s)+%d)/%d)" t k (2 * k)
         in
-        (match modus with
-        | Richting_nul -> ()
+        (match mode_kind with
+        | Toward_zero -> ()
         | _ ->
             (* the base's sign read without the product it may be ([sign_conds]) *)
             List.iter
@@ -5541,7 +5541,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   subject (String.concat ", " (gbody @ conds)))
               (sign_conds ctx ~neg:true t));
         (b, rounded, target))
-  | Begrensd { basis; minimum; maximum; _ } ->
+  | Clamp { base_expr; minimum; maximum; _ } ->
       (* the clamp (RUNTIME-SEMANTICS ch. 2.7, ref Arith.clamp): the minimum
          raises to at least the lower bound, THEN the maximum lowers to at most
          the upper bound, via the integer identities max(a,b) = (a+b+|a−b|)/2
@@ -5556,13 +5556,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          would instead read as underivable (a silent divergence), so only an
          atom-free ground literal/constant bound translates — a read that could
          be empty faults loudly. *)
-      let basis_e = req "Clamp.base" basis in
-      numeric_ok ctx basis;
-      let b_atoms, b_term, b_scale = expr_term ctx ~subject ~subject_ot basis_e in
+      let base_e = req "Clamp.base" base_expr in
+      numeric_ok ctx base_expr;
+      let b_atoms, b_term, b_scale = expr_term ctx ~subject ~subject_ot base_e in
       (* the numeric_ok ctx pair reads the wire `type`; the clamp harmonises base
          and bounds into the widest scale, dividing by each of the three *)
       let b_scale = numeric_scale ~what:"a Clamp base" b_scale in
-      let base_unit = eff_unit ctx basis_e in
+      let base_unit = eff_unit ctx base_e in
       let bound name = function
         | None -> None
         | Some e ->
@@ -5608,7 +5608,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
          evaluation it denotes nothing"
-  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
+  | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value is a program constant —
          the session's one evaluation date as a civil day number *)
       match ctx.case.as_of with
@@ -5617,7 +5617,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           fault
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
              null")
-  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
+  | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
       (* ch. 8.2: the execution year is a program constant too — the civil
          year of the session's one evaluation date, a whole unitless term,
          the value yearOf gives that date *)
@@ -5632,14 +5632,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   (* a name outside WF-098's closed set, spelled byte for byte (the bound
      day included, which is a BoundDay): refused at load for an executor, so
      only a node built by hand arrives, refused in the loader's own sentence *)
-  | Constante { naam = Some n; _ } when Ir_v0.Checks.context_value_refusal n <> None ->
+  | Context_value { ident = Some n; _ } when Ir_v0.Checks.context_value_refusal n <> None ->
       fault "%s" (Option.get (Ir_v0.Checks.context_value_refusal n))
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
       (* ch. 9.1: a constructor value is a ground term when its payload is
          ground — a nullary tag, or a literal payload scaled to the DECLARED
          payload datatype. *)
       ([], construct_ground_term ctx typ constructor_ argument, 0)
-  | Construct { typ; constructor_; argument = Some (Attribuut_ref _ as arg); _ } -> (
+  | Construct { typ; constructor_; argument = Some (Attribute_reference _ as arg); _ } -> (
       (* ch. 9.1: a bound payload (an own attribute read) rides the argument's
          own val atom, scaled to the DECLARED payload datatype; a leeg argument
          binds no atom, so the rule does not fire and the whole Construct is
@@ -5669,16 +5669,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          here, so the node lowers to its own helper predicate, arm-guarded —
          see [translate_ite] *)
       translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ ~before:(hoisted_before ctx e)
-  | Binder_ref { naam; _ } -> (
+  | Binder_ref { ident; _ } -> (
       (* ch. 9.2/10.2: the ASP variable the enclosing match arm's scrutinee
          pattern or the enclosing lambda/function parameter bound, at its
          declared scale; a Let binder additionally carries its self-contained
          helper atom (B3), so the value is bound wherever the read lands *)
-      match List.assoc_opt (norm naam) ctx.binders with
+      match List.assoc_opt (norm ident) ctx.binders with
       | Some (atoms, var, scale, _) ->
-          note_binder_read ctx ~subject ~subject_ot e naam;
+          note_binder_read ctx ~subject ~subject_ot e ident;
           (atoms, var, scale)
-      | None -> fault "unbound binder %S in the ASP translation (the verifier should preclude this)" naam)
+      | None -> fault "unbound binder %S in the ASP translation (the verifier should preclude this)" ident)
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an UNREAD binder evaluates nothing. The value is
          not translated at all — no atoms, no range fence, no §9.5 deposit —
@@ -5708,7 +5708,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ctx.let_needs <- saved_n;
       ctx.demands <- saved_d;
       (va @ ba, bt, bs)
-  | Fold { typ; list; functie; init; _ } ->
+  | Fold { typ; list; function_name; init; _ } ->
       (* ch. 10.2: index recursion over the reified list (S15). The result is
          the accumulator at the list length; a present-but-empty list yields
          the init (base case fires on lpres); an absent list derives no lpres,
@@ -5755,7 +5755,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          without a witness is exactly the drift this fence exists to stop. *)
       let rec init_is_subject_read e =
         match e with
-        | Attribuut_ref _ -> true
+        | Attribute_reference _ -> true
         | Construct { argument = Some a; _ } -> init_is_subject_read a
         | _ -> false
       in
@@ -5764,7 +5764,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          and would be safe, but nothing asks for it and a carried path without a
          corpus witness is a path that drifts unseen. The refusal below says so
          rather than claiming a collision that shape does not have. *)
-      let source_subject_keyed e = match e with Attribuut_ref _ -> true | _ -> false in
+      let source_subject_keyed e = match e with Attribute_reference _ -> true | _ -> false in
       let init_atoms, init_term, init_scale =
         if init_is_subject_read init then begin
           if not (source_subject_keyed list) then
@@ -5792,7 +5792,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       if init_scale <> out_scale then
         fault "fold init scale %d does not match the fold's declared scale %d" init_scale out_scale;
       let (accname, acct), (xname, xt), body =
-        match functie with
+        match function_name with
         | Fn_lambda { parameters = [ (a, at); (x, xt) ]; body; _ } -> ((a, at), (x, xt), body)
         | Fn_lambda _ -> fault "a fold lambda takes exactly two parameters"
         | Fn_name _ ->
@@ -5837,25 +5837,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       emit ctx "%s(%s,C) :- lpres(%s), C = #count { I : lelem(%s,I,_) }." p lterm lterm lterm;
       let v = fresh ctx "L" in
       ([ Printf.sprintf "%s(%s,%s)" p lterm v ], v, 1)
-  | Field_access { base; veld; _ } ->
+  | Field_access { base; field_name; _ } ->
       (* ch. 11.1: read one declared field of a struct-typed base by positional
          projection. The base binds its record term (an own attribute read via
          its val atom); a leeg base binds nothing, so the projection propagates
          leeg for free. *)
       let batoms, bterm = struct_base ctx ~subject ~subject_ot base in
-      let unif, fvar, fscale = project_field ctx ~base ~bterm ~veld in
+      let unif, fvar, fscale = project_field ctx ~base ~bterm ~field_name in
       (batoms @ [ unif ], fvar, fscale)
-  | Struct_literal { typ; velden; _ } ->
+  | Struct_literal { typ; field_list; _ } ->
       (* ch. 11.1: a computed record value — the domain functor over the field
          terms (declaration order), no numeric scale (0). A leeg field leaves
          the literal underivable (no-hole propagation, the Construct sibling). *)
-      let atoms, term = struct_literal_term ctx ~subject ~subject_ot ~typ ~velden in
+      let atoms, term = struct_literal_term ctx ~subject ~subject_ot ~typ ~field_list in
       (atoms, term, 0)
-  | Expr_onopgelost _ ->
+  | Expr_unresolved _ ->
       (* the unsolved-state guard: an Unresolved node never vanishes —
          the rule that carries it fails observably (WF-044) *)
       fault "Unresolved reached in translation: this rule fails observably"
-  | Functie { kind = Som; element_objecttype = None; dimensie_selectie = None; _ } ->
+  | Function_call { kind = Sum_function; element_object_type = None; dimension_selection = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
          source. ref carries it — its contributor arm reads the operand list
@@ -5916,7 +5916,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
    exactly the day-precision date rule. *)
 and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string =
   match e with
-  | Literal { variant; typ = Some Datum_tijd; _ } ->
+  | Literal { variant; typ = Some Date_time_type; _ } ->
       (* WF-095 (ch. 4.1): the lexeme reads through the SHARED datum-tijd
          reader — one grammar, one instant, no second opinion — and the
          instant enters as the GROUND pair term dt(D, MS), the very split
@@ -5928,14 +5928,14 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          so no fence is needed here at all. *)
       let d, msod = split_datetime (ms_of_lexeme (Ir_v0.Loader.literal_lexeme variant)) in
       ([], string_of_int d, string_of_int msod)
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "a temporal datum-tijd read has no v0 form (ch. 3.3)";
       let d = fresh ctx "DD" and ms = fresh ctx "DM" in
       ([ Printf.sprintf "val(%s,%s,dt(%s,%s))" subject (str a) d ms ], d, ms)
-  | Binair { op = (Plus | Min) as op; links; rechts; _ } ->
+  | Binary { op = (Plus | Min) as op; left_side; right_side; _ } ->
       (* datetime ± duration (ch. 3.8): the datum-tijd operand stands on the
          LEFT of plus and min (WF-035, fail-fast behind the verifier); the
          duration is a number carrying a time unit. Sub-day units are linear
@@ -5944,7 +5944,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          PROPAGATES empty by its bare join; the duration COALESCES (leeg
          counts 0, the datetime unchanged); a fractional count truncates
          toward zero through its scale division. *)
-      let le = req "Binary.left" links and re = req "Binary.right" rechts in
+      let le = req "Binary.left" left_side and re = req "Binary.right" right_side in
       let minus = op = Min in
       let date_e, dur_e = date_step_operands ctx ~minus le re in
       let datetime = is_datetime_operand ctx (Some date_e) in
@@ -5982,12 +5982,12 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       | None ->
           datetime_plus_calendar ctx ~subject ~subject_ot ~tu ~date_atoms:da ~dd ~dm
             ~dur_atoms:bn ~n:n_term))
-  | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ } ->
+  | Function_call { kind = (First | Last) as kind; call_arguments = (_ :: _ :: _ as args); filter; _ } ->
       (* the datum-tijd ordering fold (RUNTIME-SEMANTICS ch. 1.2e + ch. 3.8):
          `first`/`last` over >= 2 datum-tijd operands. ref orders the pair
          values totally — civil day first, ms-of-day as tie-break, one instant
          being one (D, MS) pair — and the fold returns VALUES, so a tie is
-         value-neutral (agg_eerste/agg_laatste over scalar_cmp). The pair term
+         value-neutral (agg_first/agg_last over scalar_cmp). The pair term
          cannot be linearised into one integer (D*86 400 000+MS overflows
          clingo's int range — the very reason dt(D, MS) exists), so the extreme
          is two-stage and lexicographic: the extreme over the civil day, then
@@ -6017,16 +6017,16 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
             (String.concat ", " (base :: atoms)))
         args;
       emit ctx "%s_def(%s) :- %s(%s,_,_)." pred subject pred subject;
-      let agg = match kind with Eerste -> "#min" | _ -> "#max" in
+      let agg = match kind with First -> "#min" | _ -> "#max" in
       let dd = fresh ctx "DFD" and dm = fresh ctx "DFM" in
       let ld = fresh ctx "DLD" and lm = fresh ctx "DLM" in
       ( [ Printf.sprintf "%s_def(%s)" pred subject;
           Printf.sprintf "%s = %s { %s : %s(%s,%s,_) }" dd agg ld pred subject ld;
           Printf.sprintf "%s = %s { %s : %s(%s,%s,%s) }" dm agg lm pred subject dd lm ],
         dd, dm )
-  | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
+  | Function_call { kind; call_arguments = []; element_object_type = Some el; _ } ->
       sourceless_fold kind el ~list_literal:false
-  | Functie { kind; argumenten = [ a ]; element_objecttype = Some el; _ } when non_source kind a ->
+  | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
   | _ ->
       (* The reason names BOTH sides, because a reader of this line needs to
@@ -6052,12 +6052,12 @@ and datetime_plus_subday ctx ~subject ~subject_ot ~date_atoms ~dd ~dm ~dur_atoms
   range_guard ctx ~subject
     ~body:((base :: ctx.rule_guard) @ date_atoms @ dur_atoms)
     [ (Printf.sprintf "(%s)" n, (max_int31 - ms_per_day) / u) ];
-  let tot = fresh ctx "TOT" and fm = fresh ctx "FMS" and nd = fresh ctx "ND" in
+  let up_to = fresh ctx "TOT" and fm = fresh ctx "FMS" and nd = fresh ctx "ND" in
   let atoms =
     date_atoms @ dur_atoms
-    @ [ Printf.sprintf "%s = (%s)+((%s)*%d)" tot dm n u;
-        Printf.sprintf "%s = ((%s \\ %d)+%d) \\ %d" fm tot ms_per_day ms_per_day ms_per_day;
-        Printf.sprintf "%s = (%s)+(((%s)-%s)/%d)" nd dd tot fm ms_per_day ]
+    @ [ Printf.sprintf "%s = (%s)+((%s)*%d)" up_to dm n u;
+        Printf.sprintf "%s = ((%s \\ %d)+%d) \\ %d" fm up_to ms_per_day ms_per_day ms_per_day;
+        Printf.sprintf "%s = (%s)+(((%s)-%s)/%d)" nd dd up_to fm ms_per_day ]
   in
   (atoms, nd, fm)
 
@@ -6068,44 +6068,44 @@ and datetime_plus_subday ctx ~subject ~subject_ot ~date_atoms ~dd ~dm ~dur_atoms
 and datetime_plus_calendar ctx ~subject ~subject_ot ~tu ~date_atoms ~dd ~dm ~dur_atoms ~n =
   let step_atoms, nd =
     match tu with
-    | Tu_dag ->
+    | Tu_day ->
         let v = fresh ctx "ND" in
         (dur_atoms @ [ Printf.sprintf "%s = (%s)+(%s)" v dd n ], v)
     | Tu_week ->
         let v = fresh ctx "ND" in
         (dur_atoms @ [ Printf.sprintf "%s = (%s)+(7*(%s))" v dd n ], v)
-    | Tu_maand ->
+    | Tu_month ->
         let a, v, _ =
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term:dd
             ~dur_atoms ~count:n
         in
         (a, v)
-    | Tu_kwartaal ->
+    | Tu_quarter ->
         let a, v, _ =
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term:dd
             ~dur_atoms ~count:(Printf.sprintf "(3*(%s))" n)
         in
         (a, v)
-    | Tu_jaar ->
+    | Tu_year ->
         let a, v, _ =
           translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term:dd
             ~dur_atoms ~count:(Printf.sprintf "(12*(%s))" n)
         in
         (a, v)
-    | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+    | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
         (* unreachable: sub_day_ms routed the sub-day units to the linear arm *)
         assert false
   in
   (date_atoms @ step_atoms, nd, dm)
 
-and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
-  let links = req "Binary.left" links and rechts = req "Binary.right" rechts in
-  numeric_ok ctx (Some links);
-  numeric_ok ctx (Some rechts);
-  unit_free_ok ctx (Some links);
-  unit_free_ok ctx (Some rechts);
-  let bl, tl, sl = expr_term ctx ~subject ~subject_ot links in
-  let br, tr, sr = expr_term ctx ~subject ~subject_ot rechts in
+and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding =
+  let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
+  numeric_ok ctx (Some left_side);
+  numeric_ok ctx (Some right_side);
+  unit_free_ok ctx (Some left_side);
+  unit_free_ok ctx (Some right_side);
+  let bl, tl, sl = expr_term ctx ~subject ~subject_ot left_side in
+  let br, tr, sr = expr_term ctx ~subject ~subject_ot right_side in
   (* the numeric_ok ctx pair reads the wire `type`; both scales become gcd
      operands and divisors below, where a 0 is the crash, not a fault *)
   let sl = numeric_scale ~what:"a division dividend" sl in
@@ -6180,16 +6180,16 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
         dent numt dent;
       emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0." (non_exact_division ctx) subject
         full tr numt dent
-  | Some (modus, _) ->
+  | Some (mode_kind, _) ->
       let value =
-        match modus with
-        | Richting_nul -> Printf.sprintf "%s/%s" numt dent
-        | Naar_beneden -> Printf.sprintf "%s/%s" numt dent
-        | Naar_boven | Weg_van_nul -> Printf.sprintf "(%s+%s-1)/%s" numt dent dent
-        | Rekenkundig -> Printf.sprintf "(2*%s+%s)/(2*%s)" numt dent dent
+        match mode_kind with
+        | Toward_zero -> Printf.sprintf "%s/%s" numt dent
+        | Floor -> Printf.sprintf "%s/%s" numt dent
+        | Ceiling | Away_from_zero -> Printf.sprintf "(%s+%s-1)/%s" numt dent dent
+        | Half_away_from_zero -> Printf.sprintf "(2*%s+%s)/(2*%s)" numt dent dent
       in
-      (match modus with
-      | Richting_nul -> ()
+      (match mode_kind with
+      | Toward_zero -> ()
       | _ ->
           (* the operands' own signs: numt and dent multiply them by positive
              constants, and past its range fence numt has wrapped *)
@@ -6203,8 +6203,8 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
                 (sign_conds ctx ~neg:true t))
             [ tl; tr ]);
       let guards =
-        match modus with
-        | Richting_nul -> Printf.sprintf "(%s) != 0" tr
+        match mode_kind with
+        | Toward_zero -> Printf.sprintf "(%s) != 0" tr
         | _ -> Printf.sprintf "%s >= 0, %s > 0" numt dent
       in
       emit ctx "%s(%s,V) :- %s, %s, V = %s." p subject full guards value);
@@ -6223,14 +6223,14 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
    translate unfenced; the operand itself is fenced at the largest
    base whose e-th power stays inside 2^31 (the wrap would happen
    during grounding, BEFORE any guard on the result could see it). *)
-and translate_power ctx ~subject ~subject_ot ~links ~rechts =
-  let links = req "Binary.left" links and rechts = req "Binary.right" rechts in
-  numeric_ok ctx (Some links);
-  numeric_ok ctx (Some rechts);
-  unit_free_ok ctx (Some links);
-  unit_free_ok ctx (Some rechts);
-  let e = const_pow_exponent rechts in
-  let b, t, s = expr_term ctx ~subject ~subject_ot links in
+and translate_power ctx ~subject ~subject_ot ~left_side ~right_side =
+  let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
+  numeric_ok ctx (Some left_side);
+  numeric_ok ctx (Some right_side);
+  unit_free_ok ctx (Some left_side);
+  unit_free_ok ctx (Some right_side);
+  let e = const_pow_exponent right_side in
+  let b, t, s = expr_term ctx ~subject ~subject_ot left_side in
   (* [numeric_ok links] read the operand's static type; the range test below divides by
      the declaration's scale *)
   let s = numeric_scale ~what:"a power base" s in
@@ -6280,7 +6280,7 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
    subject and the caller instantiates it. That is only sound while nothing
    inside the helper names the CALLER's subject variable — which is what the
    bound restriction below buys. *)
-and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel_periode) : string =
+and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp : entire_period) : string =
   (* a navigated timeline read is a different join than the one the
      helper makes (it reads the subject's OWN tl/5 facts), so it is refused
      by name rather than silently read off the wrong instance *)
@@ -6288,20 +6288,20 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
     (fun e ->
       match e with
       | Some
-          (Attribuut_ref
-            { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = Some _; _ })
+          (Attribute_reference
+            { attribute_ref = Some a; object_type = Some ot; navigation_bindings = Some _; _ })
         when attr_temporal_decl ctx ~otype:ot ~attr:a ->
           fault
             "a whole-period comparison over a NAVIGATED timeline read (%S on %S) is not \
              translated: the fold reads the subject's own tl/5 facts (no corpus case)"
             a ot
       | _ -> ())
-    [ links; rechts ];
+    [ left_side; right_side ];
   let temporal_own e =
     match e with
     | Some
-        (Attribuut_ref
-          { attribuut = Some a; navigatie_bindingen = None; _ })
+        (Attribute_reference
+          { attribute_ref = Some a; navigation_bindings = None; _ })
       when attr_temporal ctx ~otype:subject_ot ~attr:a ->
         Some a
     | _ -> None
@@ -6310,24 +6310,24 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
      REVERSED (the operands swap), never negated — `40 < de opbrengst` folds
      the same days as `de opbrengst > 40` *)
   let reverse = function
-    | Kleiner -> Groter
-    | Kleiner_of_gelijk -> Groter_of_gelijk
-    | Groter -> Kleiner
-    | Groter_of_gelijk -> Kleiner_of_gelijk
-    | Eerder -> Later
-    | Eerder_of_gelijk -> Later_of_gelijk
-    | Later -> Eerder
-    | Later_of_gelijk -> Eerder_of_gelijk
-    | (Gelijk | Ongelijk) as op -> op
+    | Less -> Greater
+    | Less_or_equal -> Greater_or_equal
+    | Greater -> Less
+    | Greater_or_equal -> Less_or_equal
+    | Earlier -> Later
+    | Earlier_or_equal -> Later_or_equal
+    | Later -> Earlier
+    | Later_or_equal -> Earlier_or_equal
+    | (Equal | Not_equal) as op -> op
   in
   let a, bound, op =
-    match (temporal_own links, temporal_own rechts) with
+    match (temporal_own left_side, temporal_own right_side) with
     | Some _, Some _ ->
         fault
           "a whole-period comparison between TWO timelines is not translated: ch. 3.9 folds one \
            timeline against a scalar bound (no corpus case)"
-    | Some a, None -> (a, req "Comparison.right" rechts, op)
-    | None, Some a -> (a, req "Comparison.left" links, reverse op)
+    | Some a, None -> (a, req "Comparison.right" right_side, op)
+    | None, Some a -> (a, req "Comparison.left" left_side, reverse op)
     | None, None ->
         (* WF-043 on this node. The verifier rejects the form, so no
            verifier-clean document arrives here; the executor still refuses
@@ -6338,8 +6338,8 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
           subject_ot
   in
   units_identical_ok ~what:"a whole-period comparison"
-    (Option.bind links (eff_unit ctx))
-    (Option.bind rechts (eff_unit ctx));
+    (Option.bind left_side (eff_unit ctx))
+    (Option.bind right_side (eff_unit ctx));
   (* THE BOUND. It rides inside the per-segment _g rule, whose only bound
      variables are the timeline's own S, its segment bounds and its value, so
      it may contribute a GROUND term or a subject-free join and nothing else.
@@ -6368,16 +6368,16 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
   let sa = pow10 (attr_decimals ctx ~otype:subject_ot ~attr:a) in
   let sym =
     match op with
-    | Gelijk -> "=="
-    | Ongelijk -> "!="
-    | Eerder | Eerder_of_gelijk | Later | Later_of_gelijk ->
+    | Equal -> "=="
+    | Not_equal -> "!="
+    | Earlier | Earlier_or_equal | Later | Later_or_equal ->
         (* a date-typed timeline: ref's ordering is the same integer
            comparison, but no corpus case folds one over a period, and the
            scale harmonisation below is the numeric one *)
         fault
           "a whole-period comparison with a DATE ordering is not translated (no corpus case \
            folds a date timeline over a period)"
-    | op -> vergelijk_sym op
+    | op -> compare_sym op
   in
   let sat_atoms, vt, bt = harmonised ([], "V", sa) (batoms, bterm, sb) in
   (* the wrap fence, at translation time because the helper carries no
@@ -6402,7 +6402,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
                       (abs
                          (scaled_of_value
                             ~decimals:(attr_decimals ctx ~otype:subject_ot ~attr:a)
-                            s.s_waarde)))
+                            s.s_value)))
                   acc tl)
         ctx.case.world.instances 0
     in
@@ -6414,7 +6414,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
   end;
   (* the qualifier's OWN grid, never the attribute's declared granularity
      (ch. 3.9) *)
-  let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
+  let g : grain = if gp.gp_granularity then Year else Month in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "gpv%d" ctx.fresh in
   emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
@@ -6458,23 +6458,23 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
    executors implement the semantics separately and the corpus differential
    is what says they agree. *)
 
-and day_kind_of_unit ctx (u : eenheid) : string option = day_kind_spelt ctx.doc u
+and day_kind_of_unit ctx (u : measure_unit) : string option = day_kind_spells ctx.doc u
 
 (* the day kind a duration position's static type names, if any: a spelling
    the shared calendar table does NOT know, spelt as a day kind *)
 and day_kind_unit_of ctx (t : datatype option) : string option =
   match t with
-  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
-    when Ir_v0.Checks.time_unit_of_eenheid u = None ->
+  | Some (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ })
+    when Ir_v0.Checks.time_unit_of_unit u = None ->
       day_kind_of_unit ctx u
   | _ -> None
 
-and day_kind_definition ctx (name : string) : resolved_dagsoort =
+and day_kind_definition ctx (name : string) : resolved_day_kind =
   match
     List.find_opt
-      (fun (d : resolved_dagsoort) ->
-        match d.rd_naam with Some n -> norm n = norm name | None -> false)
-      ctx.doc.resolved_dagsoorten
+      (fun (d : resolved_day_kind) ->
+        match d.rd_name with Some n -> norm n = norm name | None -> false)
+      ctx.doc.resolved_day_kind_definitions
   with
   | Some d -> d
   | None -> fault "day kind %S has no definition" name
@@ -6491,7 +6491,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
   in
   match e with
   | Bound_day _ -> Value.Date day
-  | Constante { naam = Some n; _ } ->
+  | Context_value { ident = Some n; _ } ->
       fault
         "day-kind condition reads the session value %S — a day-kind condition admits the bound \
          day (BoundDay) and no context value"
@@ -6499,15 +6499,15 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
   | Literal { variant; typ; _ } -> (
       let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
-      | Some Datum_in_dagen -> Value.date_of_iso lex
-      | Some (Numeriek _ | Percentage _) | None ->
+      | Some Date_in_days -> Value.date_of_iso lex
+      | Some (Number _ | Percentage _) | None ->
           Value.Num (Value.q_of_lexeme lex, Value.Unitless)
-      | Some Tekst -> Value.Text lex
+      | Some Text_type -> Value.Text lex
       | _ -> fault "a day-kind condition carries a literal this backend does not evaluate")
   | Parameter_ref { parameter; _ } -> (
       let nm = req "ParameterReference.parameter" parameter in
       match Ir_v0.Checks.find_ci ctx.doc.parameters nm with
-      | Some { par_granulariteit = Some _; _ } ->
+      | Some { par_granularity = Some _; _ } ->
           fault "granular parameter %S in a day-kind condition is refused (ch. 3.3/8)" nm
       | Some _ -> (
           match Eval.SMap.find_opt (norm nm) ctx.case.params with
@@ -6521,17 +6521,17 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
                  here, before any rule body exists that could carry a guard. *)
               fault "%s" (unbound_param_reason nm))
       | None -> fault "unknown parameter %S" nm)
-  | Functie { kind; granulariteit = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
-  | Functie { kind = (Jaar_uit | Maand_uit | Dag_uit) as k; argumenten; filter = None; _ } -> (
-      match dk_value ctx ~stack ~day (one "a date-part extractor" argumenten) with
+  | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
+  | Function_call { kind = (Year_of | Month_of | Day_of) as k; call_arguments; filter = None; _ } -> (
+      match dk_value ctx ~stack ~day (one "a date-part extractor" call_arguments) with
       | Value.Empty -> Value.Empty
       | Value.Date z ->
           let y, m, dd = Value.civil_from_days z in
           Value.Num
-            (Q.of_int (match k with Jaar_uit -> y | Maand_uit -> m | _ -> dd), Value.Unitless)
+            (Q.of_int (match k with Year_of -> y | Month_of -> m | _ -> dd), Value.Unitless)
       | v -> fault "a date-part extractor needs a day-precision date, got %s" (Value.to_string v))
-  | Functie { kind = Eerste_paasdag; argumenten; filter = None; _ } -> (
-      match dk_value ctx ~stack ~day (one "easterSunday" argumenten) with
+  | Function_call { kind = Easter_sunday; call_arguments; filter = None; _ } -> (
+      match dk_value ctx ~stack ~day (one "easterSunday" call_arguments) with
       | Value.Empty -> Value.Empty
       | Value.Num (q, Value.Unitless) when Q.den q = Z.one ->
           (* the Gauss/Anonymous chain, RUNTIME-SEMANTICS ch. 3.8 verbatim *)
@@ -6544,9 +6544,9 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
           let i = c / 4 and k = c mod 4 in
           let l = (32 + (2 * e) + (2 * i) - h - k) mod 7 in
           let m = (a + (11 * h) + (22 * l)) / 451 in
-          let maand = (h + l - (7 * m) + 114) / 31 in
-          let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
-          Value.Date (Value.days_from_civil ~y:j ~m:maand ~d:dag)
+          let month_kind = (h + l - (7 * m) + 114) / 31 in
+          let day_number = ((h + l - (7 * m) + 114) mod 31) + 1 in
+          Value.Date (Value.days_from_civil ~y:j ~m:month_kind ~d:day_number)
       | v -> fault "easterSunday needs a whole unitless year, got %s" (Value.to_string v))
   | _ -> fault "a day-kind condition carries an expression this backend does not evaluate"
 
@@ -6563,7 +6563,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
    so these arms are a MIRROR kept deliberately rather than a live path: the
    day this backend gains a fifth operand source, it agrees with ref by
    construction instead of by luck. *)
-and dk_compare (op : vergelijk_op) (l : Value.t) (r : Value.t) : bool =
+and dk_compare (op : compare_op) (l : Value.t) (r : Value.t) : bool =
   let empty = function Value.Empty -> true | _ -> false in
   let cmp () =
     match (l, r) with
@@ -6580,47 +6580,47 @@ and dk_compare (op : vergelijk_op) (l : Value.t) (r : Value.t) : bool =
     match (l, r) with Value.Text _, _ | _, Value.Text _ | Value.Bool _, _ | _, Value.Bool _ -> true | _ -> false
   in
   match op with
-  | Kleiner | Eerder | Kleiner_of_gelijk | Eerder_of_gelijk | Groter | Later | Groter_of_gelijk
-  | Later_of_gelijk ->
+  | Less | Earlier | Less_or_equal | Earlier_or_equal | Greater | Later | Greater_or_equal
+  | Later_or_equal ->
       if empty l || empty r then false
       else
         let c = cmp () in
         (match op with
-        | Kleiner | Eerder -> c < 0
-        | Kleiner_of_gelijk | Eerder_of_gelijk -> c <= 0
-        | Groter | Later -> c > 0
+        | Less | Earlier -> c < 0
+        | Less_or_equal | Earlier_or_equal -> c <= 0
+        | Greater | Later -> c > 0
         | _ -> c >= 0)
-  | Gelijk ->
+  | Equal ->
       if empty l && empty r then (not date_row) && not non_numeric
       else if empty l || empty r then false
       else cmp () = 0
-  | Ongelijk ->
+  | Not_equal ->
       if empty l && empty r then false
       else if empty l || empty r then not non_numeric
       else cmp () <> 0
 
-and dk_cond ctx ~stack ~day (c : conditie) : bool =
+and dk_cond ctx ~stack ~day (c : condition_expr) : bool =
   match c with
-  | Vergelijking { op; links; rechts; periode = None; _ } ->
+  | Comparison { op; left_side; right_side; time_period = None; _ } ->
       dk_compare op
-        (dk_value ctx ~stack ~day (req "Comparison.left" links))
-        (dk_value ctx ~stack ~day (req "Comparison.right" rechts))
-  | Samengesteld { kwantor; drempel; onderdelen; _ } -> (
-      let hits = List.length (List.filter (dk_cond ctx ~stack ~day) onderdelen) in
-      let n = List.length onderdelen in
-      match kwantor with
-      | De | Alle -> hits = n
-      | Geen -> hits = 0
-      | Ten_minste -> hits >= drempel
-      | Ten_hoogste -> hits <= drempel
-      | Precies -> hits = drempel)
-  | Predicaat { soort = Leeg; operand; negatie; periode = None; _ } ->
+        (dk_value ctx ~stack ~day (req "Comparison.left" left_side))
+        (dk_value ctx ~stack ~day (req "Comparison.right" right_side))
+  | Compound { quantifier_kind; cutoff; components; _ } -> (
+      let hits = List.length (List.filter (dk_cond ctx ~stack ~day) components) in
+      let n = List.length components in
+      match quantifier_kind with
+      | The | All -> hits = n
+      | None_of -> hits = 0
+      | At_least -> hits >= cutoff
+      | At_most -> hits <= cutoff
+      | Exactly -> hits = cutoff)
+  | Predicate { variety = Empty_predicate; operand; negation; time_period = None; _ } ->
       let v = dk_value ctx ~stack ~day (req "Predicate.operand" operand) in
-      if negatie then v <> Value.Empty else v = Value.Empty
-  | Predicaat { soort = Gevuld; operand; negatie; periode = None; _ } ->
+      if negation then v <> Value.Empty else v = Value.Empty
+  | Predicate { variety = Filled; operand; negation; time_period = None; _ } ->
       let v = dk_value ctx ~stack ~day (req "Predicate.operand" operand) in
-      if negatie then v = Value.Empty else v <> Value.Empty
-  | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; periode = None; _ } ->
+      if negation then v = Value.Empty else v <> Value.Empty
+  | Predicate { variety = Day_kind_predicate; day_kind; operand; negation; time_period = None; _ } ->
       (* the §9.8 composition, on the BOUND DAY only — a test on some other
          date is a recognised, unexecuted form in BOTH OCaml executors
          (2026-09-19, the narrow route) *)
@@ -6631,8 +6631,8 @@ and dk_cond ctx ~stack ~day (c : conditie) : bool =
           fault
             "a nested day-kind test on a date other than the bound day is a recognised, \
              unexecuted form (the \xc2\xa79.8 composition is carried on the bound day only)");
-      let hit = dk_holds ctx ~stack (req "Predicate.dayKind" dagsoort) day in
-      if negatie then not hit else hit
+      let hit = dk_holds ctx ~stack (req "Predicate.dayKind" day_kind) day in
+      if negation then not hit else hit
   | _ ->
       fault
         "a day-kind condition of this form is not evaluated (this translation evaluates \
@@ -6644,7 +6644,7 @@ and dk_holds ctx ~stack (name : string) (day : int) : bool =
       "day-kind reference cycle at %S: a day-kind definition that references itself has no \
        fixpoint"
       name;
-  match (day_kind_definition ctx name).rd_voorwaarde with
+  match (day_kind_definition ctx name).rd_condition with
   | None -> fault "day kind %S has a definition without a condition" name
   | Some c -> dk_cond ctx ~stack:(name :: stack) ~day c
 
@@ -6665,56 +6665,56 @@ and dk_seen_days ctx : int list =
   Eval.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       Eval.SMap.iter (fun _ v -> add_v v) i.attrs;
-      Eval.SMap.iter (fun _ tl -> List.iter (fun (s : Uchar_ref.Timeline.segment) -> add_v s.s_waarde) tl) i.tls)
+      Eval.SMap.iter (fun _ tl -> List.iter (fun (s : Uchar_ref.Timeline.segment) -> add_v s.s_value) tl) i.tls)
     ctx.case.world.instances;
   Eval.SMap.iter (fun _ v -> add_v v) ctx.case.params;
   (match ctx.case.as_of with Some d -> add_v (Value.date_of_iso d) | None -> ());
   let rec ex (e : expr) =
     let opt = function Some x -> ex x | None -> () in
     match e with
-    | Literal { variant = Lv_date lex; typ = Some Datum_in_dagen; _ } -> add_v (Value.date_of_iso lex)
-    | Literal { variant = Lv_date_time lex; typ = Some Datum_tijd; _ } ->
+    | Literal { variant = Lv_date lex; typ = Some Date_in_days; _ } -> add_v (Value.date_of_iso lex)
+    | Literal { variant = Lv_date_time lex; typ = Some Date_time_type; _ } ->
         add_v (Value.datetime_of_lexeme lex)
-    | Binair { links; rechts; _ } -> opt links; opt rechts
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
-    | Functie { argumenten; leegwaarde; filter; _ } ->
-        List.iter ex argumenten;
-        opt leegwaarde;
+    | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
+    | Rounding { base_expr; _ } -> opt base_expr
+    | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
+    | Function_call { call_arguments; empty_fallback; filter; _ } ->
+        List.iter ex call_arguments;
+        opt empty_fallback;
         (match filter with Some c -> co c | None -> ())
     | If_then_else { condition; then_; else_; _ } -> co condition; ex then_; ex else_
     | Let { value; body; _ } -> ex value; ex body
     | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
     | Construct { argument; _ } -> opt argument
     | Field_access { base; _ } -> ex base
-    | Struct_literal { velden; _ } -> List.iter (fun (_, x) -> ex x) velden
+    | Struct_literal { field_list; _ } -> List.iter (fun (_, x) -> ex x) field_list
     | List_literal { elements; _ } -> List.iter ex elements
-    | Temporal_read { basis; datum; _ } -> ex basis; ex datum
+    | Temporal_read { base_expr; date_value; _ } -> ex base_expr; ex date_value
     | Invoke { arguments; _ } -> List.iter ex arguments
-    | Tekst_reeks { delen; _ } ->
-        List.iter (function Ingevoegd { expr = Some x } -> ex x | _ -> ()) delen
+    | Text_composition { pieces; _ } ->
+        List.iter (function Embedded_expression { expr = Some x } -> ex x | _ -> ()) pieces
     | _ -> ()
-  and co (c : conditie) =
+  and co (c : condition_expr) =
     let opt = function Some x -> ex x | None -> () in
     match c with
-    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
-    | Predicaat { operand; _ } -> opt operand
-    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
-    | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
-    | Kwantorvouw { kv_toets; kv_filter; _ } ->
-        (match kv_toets with Some t -> co t | None -> ());
+    | Comparison { left_side; right_side; _ } -> opt left_side; opt right_side
+    | Predicate { operand; _ } -> opt operand
+    | Time_window { starting_at; up_to; _ } -> opt starting_at; opt up_to
+    | Compound { components; _ } -> List.iter co components
+    | Quantifier_fold { kv_test; kv_filter; _ } ->
+        (match kv_test with Some t -> co t | None -> ());
         (match kv_filter with Some f -> co f | None -> ())
     | _ -> ()
   in
   List.iter
-    (fun (r : resolved_regel) ->
-      (match r.waarde with Some e -> ex e | None -> ());
-      match r.rr_voorwaarde with Some c -> co c | None -> ())
-    ctx.doc.resolved_regels;
+    (fun (r : resolved_rule) ->
+      (match r.value_node with Some e -> ex e | None -> ());
+      match r.rr_condition with Some c -> co c | None -> ())
+    ctx.doc.resolved_rules;
   List.iter
-    (fun (d : resolved_dagsoort) ->
-      match d.rd_voorwaarde with Some c -> co c | None -> ())
-    ctx.doc.resolved_dagsoorten;
+    (fun (d : resolved_day_kind) ->
+      match d.rd_condition with Some c -> co c | None -> ())
+    ctx.doc.resolved_day_kind_definitions;
   !acc
 
 (* the day kind's extension, emitted once per document and shared by every
@@ -6800,7 +6800,7 @@ and dk_window_guard ctx ~subject ~body ~(win : int * int) (t : string) =
 (* §6.10: the days of the kind in (A, B], signed by operand order. The
    interval bounds the work, so this form has no reach fence of its own, and
    an unsatisfiable day kind counts 0 here exactly as in ref. *)
-and dk_tijdsduur ctx ~subject ~subject_ot ~kind ~absolute a b =
+and dk_duration ctx ~subject ~subject_ot ~kind ~absolute a b =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
   let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
@@ -6927,7 +6927,7 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
      back with the answer: the caller rebuilds dt(day, ms) around it *)
   (match ms with None -> [ atom ] | Some _ -> bd @ [ atom ]), v, ms
 
-and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
+and cond_atoms ctx ~subject ~subject_ot (c : condition_expr) : string list =
   if doc_dynamic ctx.doc && leaf_reads_role ctx c then begin
     let start = Buffer.length ctx.buf in
     let atoms = cond_atoms_raw ctx ~subject ~subject_ot c in
@@ -6937,7 +6937,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   end
   else cond_atoms_raw ctx ~subject ~subject_ot c
 
-and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
+and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   match c with
   (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
      (the fold itself is [whole_period_fails]). Every other Vergelijking arm
@@ -6947,23 +6947,23 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
      "Negation complements the folded result" (ch. 3.9): the qualifier's
      "niet gedurende …" reads the failure atom itself, the plain form reads
      its negation. *)
-  | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
-      let p = whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~gp in
-      [ (if gp.gp_niet then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
+  | Comparison { op; left_side; right_side; time_period = Some gp; _ } ->
+      let p = whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~gp in
+      [ (if gp.gp_negated then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
   (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier,
      executed here since 2026-09-26 (the fold is
-     [whole_period_leeg_gevuld_fails]); until then this arm refused the form
+     [whole_period_empty_filled_fails]); until then this arm refused the form
      by name. It stands before the plain leeg/gevuld arm, which takes the
      unqualified test only. "Negation complements the folded result": the
      qualifier's "niet gedurende …" reads the failure atom itself, the plain
      form reads its negation. *)
-  | Predicaat { soort = (Leeg | Gevuld) as soort; operand; negatie; periode = Some gp; _ } ->
+  | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; time_period = Some gp; _ } ->
       let fails =
-        whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~operand ~gp
+        whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation ~operand ~gp
       in
-      [ (if gp.gp_niet then "" else "not ") ^ fails ]
-  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
-    when is_struct_operand ctx links || is_struct_operand ctx rechts ->
+      [ (if gp.gp_negated then "" else "not ") ^ fails ]
+  | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
+    when is_struct_operand ctx left_side || is_struct_operand ctx right_side ->
       (* ch. 11.2: record equality is POSITIVE ground-term unification, the
          sum-type pattern (S14). Both operands bind their record term (an own
          attribute read via its val atom, a StructLiteral as its computed
@@ -6973,12 +6973,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          one empty → waar (case3 afwijkend now aanwezig), both empty → onwaar.
          Nominal identity is carried by the functor itself (= the declaring
          domain); WF-072 precludes a cross-domain comparison statically. *)
-      let ll, tl = struct_term ctx ~subject ~subject_ot (req "left" links) in
-      let rr, tr = struct_term ctx ~subject ~subject_ot (req "right" rechts) in
-      if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
+      let ll, tl = struct_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let rr, tr = struct_term ctx ~subject ~subject_ot (req "right" right_side) in
+      if op = Equal then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
-  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
-    when is_sum_operand ctx links || is_sum_operand ctx rechts ->
+  | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
+    when is_sum_operand ctx left_side || is_sum_operand ctx right_side ->
       (* ch. 9.3: sum-typed equality is POSITIVE ground-term unification.
          Both operand terms bind (an own attribute read via its val atom, a
          Construct as a bare ground term); Gelijk tests T1 == T2 — a leeg
@@ -6989,12 +6989,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          the eqN-negation route — a bare `not gelijk` positive join could not
          express it (S5's non-complement warning is why the numeric row already
          goes through eqN, and the inequality is now uniform with it). *)
-      let ll, tl = sum_term ctx ~subject ~subject_ot (req "left" links) in
-      let rr, tr = sum_term ctx ~subject ~subject_ot (req "right" rechts) in
-      if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
+      let ll, tl = sum_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let rr, tr = sum_term ctx ~subject ~subject_ot (req "right" right_side) in
+      if op = Equal then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
-  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
-    when is_symbolic_operand ctx links || is_symbolic_operand ctx rechts ->
+  | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
+    when is_symbolic_operand ctx left_side || is_symbolic_operand ctx right_side ->
       (* ch. 1.2d text/enum/boolean comparison. Gelijk is POSITIVE ground-term
          comparison — both operands bind (an own attribute read via its val
          atom, a literal as a ground term) and Gelijk tests ==; ANY empty
@@ -7005,12 +7005,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          ≠ 'zeevondst' fires omstreden), both empty → onwaar. It takes the
          eqN-negation route (neq_helper) because a positive != join cannot
          express the one-empty-true cell. *)
-      let ll, tl = symbolic_term ctx ~subject ~subject_ot (req "left" links) in
-      let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "right" rechts) in
-      if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
+      let ll, tl = symbolic_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "right" right_side) in
+      if op = Equal then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
-  | Vergelijking { op; links; rechts; periode = None; _ }
-    when is_datetime_operand ctx links || is_datetime_operand ctx rechts ->
+  | Comparison { op; left_side; right_side; time_period = None; _ }
+    when is_datetime_operand ctx left_side || is_datetime_operand ctx right_side ->
       (* THE DATUM-TIJD ORDERING (RUNTIME-SEMANTICS ch. 1.2e + ch. 3.8).
          Every other comparison arm below harmonises INTEGER SCALES; a
          datum-tijd has none — [decimals_of_datatype] refuses it, which is
@@ -7029,17 +7029,17 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          operands' own binding atoms, so an empty operand simply fails to
          bind and the comparison is false — the ch. 1.2d date row, for free,
          the same way the day-precision ordering below gets it. *)
-      let le = req "Comparison.left" links and re = req "Comparison.right" rechts in
+      let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
       if not (is_datetime_operand ctx (Some le) && is_datetime_operand ctx (Some re)) then
         fault
           "a datum-tijd comparison against a non-datum-tijd operand has no order here (one instant, one representation; ref faults the unordered comparison)";
       let day_sym, ms_sym =
         match op with
-        | Eerder | Kleiner -> ("<", "<")
-        | Eerder_of_gelijk | Kleiner_of_gelijk -> ("<", "<=")
-        | Later | Groter -> (">", ">")
-        | Later_of_gelijk | Groter_of_gelijk -> (">", ">=")
-        | Gelijk | Ongelijk ->
+        | Earlier | Less -> ("<", "<")
+        | Earlier_or_equal | Less_or_equal -> ("<", "<=")
+        | Later | Greater -> (">", ">")
+        | Later_or_equal | Greater_or_equal -> (">", ">=")
+        | Equal | Not_equal ->
             (* the equality row is a different shape, not a tighter one: the
                numeric arm's eqN helper harmonises scales the pair term does
                not have, and Tabel 44's one-empty-true cell needs the
@@ -7058,8 +7058,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       emit ctx "%s(%s) :- %s, %s %s %s." p subject body d1 day_sym d2;
       emit ctx "%s(%s) :- %s, %s == %s, %s %s %s." p subject body d1 d2 m1 ms_sym m2;
       [ Printf.sprintf "%s(%s)" p subject ]
-  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
-    when not (op = Gelijk && (is_date_operand ctx links || is_date_operand ctx rechts)) ->
+  | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
+    when not (op = Equal && (is_date_operand ctx left_side || is_date_operand ctx right_side)) ->
       (* the ch. 1.2d NUMERIC equality asymmetry (arith.compare_op):
          gelijk-aan is TRUE on two empty operands and FALSE on exactly
          one; ongelijk-aan is its exact complement. Encoded through a
@@ -7076,10 +7076,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          cells (exactly-one-empty waar, both-empty onwaar) are the date
          row's own. *)
       units_identical_ok ~what:"a comparison"
-        (Option.bind links (eff_unit ctx))
-        (Option.bind rechts (eff_unit ctx));
-      let l = expr_term ctx ~subject ~subject_ot (req "left" links) in
-      let r = expr_term ctx ~subject ~subject_ot (req "right" rechts) in
+        (Option.bind left_side (eff_unit ctx))
+        (Option.bind right_side (eff_unit ctx));
+      let l = expr_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let r = expr_term ctx ~subject ~subject_ot (req "right" right_side) in
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* the sum/struct/symbolic arms above route by the wire `type`; the scale
          is the declaration's, so it catches what an absent or lying annotation
@@ -7106,15 +7106,15 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
         (String.concat ", " (base :: bindings))
         tl tr;
       emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
-      [ (if op = Gelijk then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
-  | Vergelijking { op; links; rechts; periode = None; _ } ->
+      [ (if op = Equal then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
+  | Comparison { op; left_side; right_side; time_period = None; _ } ->
       (* the orderings, plus date-typed gelijk-aan (routed here by the
          when-guard above): bare positive joins, any empty operand false *)
       units_identical_ok ~what:"a comparison"
-        (Option.bind links (eff_unit ctx))
-        (Option.bind rechts (eff_unit ctx));
-      let l = expr_term ctx ~subject ~subject_ot (req "left" links) in
-      let r = expr_term ctx ~subject ~subject_ot (req "right" rechts) in
+        (Option.bind left_side (eff_unit ctx))
+        (Option.bind right_side (eff_unit ctx));
+      let l = expr_term ctx ~subject ~subject_ot (req "left" left_side) in
+      let r = expr_term ctx ~subject ~subject_ot (req "right" right_side) in
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* an ORDERING over a ground constructor term has no meaning: clingo's
          term order would answer where ref faults the unordered comparison.
@@ -7135,9 +7135,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
         ~body:((base :: ctx.rule_guard) @ b1 @ b2)
         [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
       let bindings, tl, tr = harmonised l r in
-      let sym = match op with Gelijk -> "==" | op -> vergelijk_sym op in
+      let sym = match op with Equal -> "==" | op -> compare_sym op in
       bindings @ [ Printf.sprintf "%s %s %s" tl sym tr ]
-  | Kenmerk_check { kenmerk; negatie; navigatie_binding; eigenaar; periode = Some gp; _ } ->
+  | Characteristic_check { characteristic; negation; navigation_binding; holder; time_period = Some gp; _ } ->
       (* ch. 3.9, the §8.2 whole-period qualifier over a characteristic —
          the second of ch. 3.3's two "dedicated collapses", and therefore
          NOT the scalar context ch. 3.3 refuses. Until 2026-09-11 both arms
@@ -7158,21 +7158,21 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          passes for free — a timeline with no segments derives no _d row and
          so no failure, and (on the navigated form) so does a hop that
          reaches nothing. *)
-      Eval.owner_hosts ctx.doc ~otype:subject_ot ~kenmerk eigenaar;
-      let k = req "characteristic" kenmerk in
+      Eval.owner_hosts ctx.doc ~otype:subject_ot ~characteristic holder;
+      let k = req "characteristic" characteristic in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
           as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       let hop =
-        match navigatie_binding with
+        match navigation_binding with
         | None -> None
         | Some rb ->
             let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
-            if role.rol_meervoudig then
+            if role.role_many then
               fault
                 "the navigated check reaches the to-many role %S in a scalar condition"
-                (Option.value role.rol_naam ~default:"?");
+                (Option.value role.role_identifier ~default:"?");
             Some role
       in
       (* the type the characteristic is DECLARED on: the reached type on a
@@ -7183,18 +7183,18 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let declared_on =
         match hop with
         | None -> subject_ot
-        | Some role -> Option.value role.rol_objecttype_naam ~default:""
+        | Some role -> Option.value role.role_object_type_name ~default:""
       in
       if
         not
           (List.exists
              (fun (n, _) -> norm n = norm k)
-             (objecttype ctx declared_on).kenmerk_granulariteit)
+             (object_type ctx declared_on).characteristic_granularity)
       then
         fault
           "whole-period qualifier on %S, which is not a time-dependent characteristic of %S"
           k declared_on;
-      let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
+      let g : grain = if gp.gp_granularity then Year else Month in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "gp%d" ctx.fresh in
       emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
@@ -7203,7 +7203,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          test, their complement inside the bucket for "gedurende … niet" —
          the INNER negation, which moves the satisfied days and leaves the
          touched buckets alone (the qualifier's own negation is below) *)
-      let satisfied = if negatie then "(Tot-TD)" else "TD" in
+      let satisfied = if negation then "(Tot-TD)" else "TD" in
       emit ctx
         "%s(S) :- %s_d(S,B,_,_,_), %s_b(B,_,Tot), TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }, %s \
          < Tot."
@@ -7218,38 +7218,38 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
                check, whose absent link answers false either way *)
             let q = fresh ctx "gpnav" in
             let n = fresh ctx "N" in
-            emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s), %s(%s)." q subject subject
+            emit ctx "%s(%s) :- isa(%s,%s), role(%s,%s,%s), %s(%s)." q subject subject
               (str subject_ot) subject (str (role_canonical role)) n p n;
             Printf.sprintf "%s(%s)" q subject
       in
       (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
          "niet gedurende …", on top of the verdict *)
-      [ (if gp.gp_niet then "" else "not ") ^ fails ]
-  | Kenmerk_check { kenmerk; navigatie_binding = None; negatie; eigenaar; _ } ->
-      Eval.owner_hosts ctx.doc ~otype:subject_ot ~kenmerk eigenaar;
-      let k = req "characteristic" kenmerk in
-      [ (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" subject (str k) ]
-  | Kenmerk_check { kenmerk; negatie; navigatie_binding = Some rb; eigenaar; _ } ->
+      [ (if gp.gp_negated then "" else "not ") ^ fails ]
+  | Characteristic_check { characteristic; navigation_binding = None; negation; holder; _ } ->
+      Eval.owner_hosts ctx.doc ~otype:subject_ot ~characteristic holder;
+      let k = req "characteristic" characteristic in
+      [ (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" subject (str k) ]
+  | Characteristic_check { characteristic; negation; navigation_binding = Some rb; holder; _ } ->
       (* the navigated check (ch. 5.8): the hop is a POSITIVE literal;
          only the characteristic sits under the negation. An absent link
          therefore fails the positive and the negated form alike — the
          deliberate v0 asymmetry, encoded for free. *)
       (* WF-100, keyed on the SUBJECT here too: the owner is a hosting
          statement about the pattern, not about the reached type *)
-      Eval.owner_hosts ctx.doc ~otype:subject_ot ~kenmerk eigenaar;
-      let k = req "characteristic" kenmerk in
+      Eval.owner_hosts ctx.doc ~otype:subject_ot ~characteristic holder;
+      let k = req "characteristic" characteristic in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
           as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
-      if role.rol_meervoudig then
+      if role.role_many then
         fault
           "the navigated check reaches the to-many role %S in a scalar condition"
-          (Option.value role.rol_naam ~default:"?");
+          (Option.value role.role_identifier ~default:"?");
       let n = fresh ctx "N" in
-      [ Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical role)) n;
-        (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" n (str k) ]
+      [ Printf.sprintf "role(%s,%s,%s)" subject (str (role_canonical role)) n;
+        (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" n (str k) ]
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
       (* the role check (RUNTIME-SEMANTICS ch. 5.8a, D11, U12): true iff a
          link of [fact_type] exists in which the subject fills [role] and the
@@ -7270,7 +7270,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          rol/3 alike. *)
       let own, other =
         match
-          Ir_v0.Checks.resolve_binding { doc = ctx.doc } { rb_feittype = fact_type; rb_rol = role }
+          Ir_v0.Checks.resolve_binding { doc = ctx.doc } { rb_fact_type = fact_type; rb_role = role }
         with
         | Ok (_, own, other) -> (own, other)
         | Error e -> fault "role check: %s" e
@@ -7278,7 +7278,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       if
         not
           (Ir_v0.Checks.subtype_of ctx.doc ~sub:subject_ot
-             ~super:(Option.value own.rol_objecttype_naam ~default:""))
+             ~super:(Option.value own.role_object_type_name ~default:""))
       then
         fault
           "role check: the subject %S does not fill the role %S of %S, so no link of it can hold \
@@ -7295,14 +7295,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
           if
             not
               (Ir_v0.Checks.subtype_of ctx.doc ~sub:ct
-                 ~super:(Option.value other.rol_objecttype_naam ~default:""))
+                 ~super:(Option.value other.role_object_type_name ~default:""))
           then
             fault
               "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
                declares"
               ct
-              (Option.value other.rol_objecttype_naam ~default:"?")
-              (Option.value other.rol_naam ~default:"?"));
+              (Option.value other.role_object_type_name ~default:"?")
+              (Option.value other.role_identifier ~default:"?"));
       let narrow n =
         match counterpart_type with
         | None -> []
@@ -7315,14 +7315,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
         emit ctx "%s(%s) :- %s." p subject
           (String.concat ", "
              ([ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
-                Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
+                Printf.sprintf "role(%s,%s,%s)" subject (str canonical) n ]
              @ narrow n));
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
       else
         let n = fresh ctx "N" in
-        Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n :: narrow n
-  | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
+        Printf.sprintf "role(%s,%s,%s)" subject (str canonical) n :: narrow n
+  | Compound { quantifier_kind = All | The; components; _ } ->
       (* the conjunctive short circuit (RUNTIME-SEMANTICS ch. 5.10): member i is
          read only where members 1..i-1 all held, so the accumulated PREFIX
          atoms are exactly the "outcome does not stand yet" guard. Threading
@@ -7339,7 +7339,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
             let a, pre = with_pre ctx c (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
             members := (a, pre) :: !members;
             prefix @ a)
-          [] onderdelen
+          [] components
       in
       ctx.rule_guard <- saved;
       (* in the pass before a creation: every member as it reads there *)
@@ -7349,10 +7349,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
            if List.for_all (fun (_, pre) -> Lazy.force pre = None) ms then None
            else Some (List.concat_map (fun (a, pre) -> Option.value (Lazy.force pre) ~default:a) ms)));
       atoms
-  | Samengesteld
-      { kwantor = (Geen | Ten_minste | Ten_hoogste | Precies) as kwantor; drempel; onderdelen; bron }
+  | Compound
+      { quantifier_kind = (None_of | At_least | At_most | Exactly) as quantifier_kind; cutoff; components; source_name }
     ->
-      periode_onder_telkwantor kwantor onderdelen;
+      period_under_count_quantifier quantifier_kind components;
       (* the counting quantifiers (ref eval_cond: hits over the member list —
          `none` hits = 0, `atLeast` hits >= d, `atMost` hits <= d, `exactly`
          hits = d; the decision-table desugar's disjunctive row is `atLeast`
@@ -7385,13 +7385,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          Soundness of the non-monotone quantifiers rides the verifier's
          conservative dependency edges (`none`/`atMost`/`exactly` members are
          negative in the WF-045/046 stratification walk). *)
-      if onderdelen = [] then
+      if components = [] then
         fault "a counting composite without members is not translated (no corpus case)";
       let self = c in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cq%d" ctx.fresh in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-      let n = List.length onderdelen in
+      let n = List.length components in
       let saved = ctx.rule_guard in
       emit ctx "%s_h0(%s,0) :- %s." p subject base;
       (* the pass before a creation ([pre_sensitive]): the same chain over each
@@ -7414,7 +7414,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
              emit ctx "%s_ph%d(%s,H0) :- %s_ph%d(%s,H0), not %s." p j subject p (j - 1) subject m)
       done;
       let desc =
-        match bron with
+        match source_name with
         | Some b -> Printf.sprintf "the composite condition %S" b
         | None -> "the composite condition"
       in
@@ -7434,12 +7434,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
               let h = hv in
               let left = n - i in
               let cmp =
-                match kwantor with
-                | Geen -> [ Printf.sprintf "%s == 0" h ]
-                | Ten_minste ->
-                    [ Printf.sprintf "%s < %d" h drempel;
-                      Printf.sprintf "%s >= %d" h (drempel - left) ]
-                | Ten_hoogste ->
+                match quantifier_kind with
+                | None_of -> [ Printf.sprintf "%s == 0" h ]
+                | At_least ->
+                    [ Printf.sprintf "%s < %d" h cutoff;
+                      Printf.sprintf "%s >= %d" h (cutoff - left) ]
+                | At_most ->
                     (* two-sided since the at-most TRUE trigger landed
                        (maintainer decision 2026-09-07): read member i only
                        while the outcome can still go BOTH ways — hits have not
@@ -7447,12 +7447,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
                        it. H + left > d is written H >= d - left + 1. At i = 0
                        with d >= n that second half already fails, so a
                        vacuously-true at-most reads nothing. *)
-                    [ Printf.sprintf "%s <= %d" h drempel;
-                      Printf.sprintf "%s >= %d" h (drempel - left + 1) ]
-                | Precies ->
-                    [ Printf.sprintf "%s <= %d" h drempel;
-                      Printf.sprintf "%s >= %d" h (drempel - left) ]
-                | Alle | De ->
+                    [ Printf.sprintf "%s <= %d" h cutoff;
+                      Printf.sprintf "%s >= %d" h (cutoff - left + 1) ]
+                | Exactly ->
+                    [ Printf.sprintf "%s <= %d" h cutoff;
+                      Printf.sprintf "%s >= %d" h (cutoff - left) ]
+                | All | The ->
                     fault "unreachable: a conjunctive quantifier in the counting branch"
               in
               Printf.sprintf "%s_h%d(%s,%s)" p i subject h :: cmp
@@ -7461,7 +7461,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
              prefix open too ([unbound_param_guard]); an `atLeast` prefix only,
              the other counting quantifiers read their members negatively *)
           (match unsettled with
-          | atom :: cmps when i >= 1 && kwantor = Ten_minste && doc_dynamic ctx.doc ->
+          | atom :: cmps when i >= 1 && quantifier_kind = At_least && doc_dynamic ctx.doc ->
               ctx.pre_reach <-
                 ( atom,
                   lazy
@@ -7485,30 +7485,30 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
             subject p (i + 1) subject;
           emit ctx "%s_h%d(%s,H0) :- %s_h%d(%s,H0), not %s_m%d(%s)." p (i + 1) subject p i subject
             p (i + 1) subject)
-        onderdelen;
+        components;
       ctx.rule_guard <- saved;
       register_pre ctx self
         (lazy
-          (if kwantor <> Ten_minste || Array.for_all (fun h -> Lazy.force h = None) handles then None
+          (if quantifier_kind <> At_least || Array.for_all (fun h -> Lazy.force h = None) handles then None
            else begin
              Lazy.force chain.(n);
              let hv = fresh ctx "H" in
-             Some [ Printf.sprintf "%s_ph%d(%s,%s)" p n subject hv; Printf.sprintf "%s >= %d" hv drempel ]
+             Some [ Printf.sprintf "%s_ph%d(%s,%s)" p n subject hv; Printf.sprintf "%s >= %d" hv cutoff ]
            end));
       let h = fresh ctx "H" in
       let compare =
-        match kwantor with
-        | Geen -> Printf.sprintf "%s == 0" h
-        | Ten_minste -> Printf.sprintf "%s >= %d" h drempel
-        | Ten_hoogste -> Printf.sprintf "%s <= %d" h drempel
-        | Precies -> Printf.sprintf "%s == %d" h drempel
-        | Alle | De -> fault "unreachable: a conjunctive quantifier in the counting branch"
+        match quantifier_kind with
+        | None_of -> Printf.sprintf "%s == 0" h
+        | At_least -> Printf.sprintf "%s >= %d" h cutoff
+        | At_most -> Printf.sprintf "%s <= %d" h cutoff
+        | Exactly -> Printf.sprintf "%s == %d" h cutoff
+        | All | The -> fault "unreachable: a conjunctive quantifier in the counting branch"
       in
       [ Printf.sprintf "%s_h%d(%s,%s)" p n subject h; compare ]
-  | Kwantorvouw
-      { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
-        kv_bron_pad; kv_bron; _ } ->
-      periode_onder_telkwantor kv_kwantor (List.filter_map Fun.id [ kv_filter; kv_toets ]);
+  | Quantifier_fold
+      { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source_role;
+        kv_source_path; kv_source; _ } ->
+      period_under_count_quantifier kv_quantifier (List.filter_map Fun.id [ kv_filter; kv_test ]);
       let self = c in
       (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "⟨kwantor⟩ ⟨elementen⟩
          ⟨matrix⟩", over the five quantifiers WF-108 admits. Its contributors are
@@ -7540,12 +7540,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          along two intermediate hops derives the same ground atom twice, and an
          atom holds or does not. No aggregate elects a term here, so unlike the
          value folds there is nothing to keep multiplicities out of. *)
-      let el = req "QuantifierFold.elementType" kv_element_objecttype in
+      let el = req "QuantifierFold.elementType" kv_element_object_type in
       (* the fold's shape in WF-108's sentences, ref's function: before
          [source_join], whose sentences name the aggregation's fields *)
-      let toets, drempel =
-        Eval.quantifier_fold_shape ~kwantor:kv_kwantor ~drempel:kv_drempel ~toets:kv_toets
-          ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
+      let test, cutoff =
+        Eval.quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
+          ~source_role:kv_source_role ~source_path:kv_source_path
       in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
@@ -7553,11 +7553,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       in
       let x = fresh ctx "X" in
       let join =
-        source_join ctx env ~subject ~subject_ot ~el ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
+        source_join ctx env ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path
           ~x
       in
       let ro =
-        range_order ctx env ~subject ~subject_ot ~el ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad ~x
+        range_order ctx env ~subject ~subject_ot ~el ~source_role:kv_source_role ~source_path:kv_source_path ~x
           ~join:(fun () -> join)
       in
       let member f =
@@ -7584,8 +7584,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          member's filter or matrix reads a created member positively
          ([pre_sensitive], [emit_kv_reach]) *)
       let pre_ext =
-        ro.ro_dynamic && kv_kwantor = Ten_minste
-        && (Option.fold ~none:false ~some:(pre_sensitive ctx) kv_filter || pre_sensitive ctx toets)
+        ro.ro_dynamic && kv_quantifier = At_least
+        && (Option.fold ~none:false ~some:(pre_sensitive ctx) kv_filter || pre_sensitive ctx test)
       in
       let pre () = if pre_ext then Some (fun () -> (Lazy.force !fpre, Lazy.force !mpre)) else None in
       let reached () =
@@ -7599,12 +7599,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
             (match !matrix with
             | Some atoms ->
                 emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms
-                  ~kwantor:kv_kwantor ~drempel ~ro ~pre:(pre ())
+                  ~quantifier_kind:kv_quantifier ~cutoff ~ro ~pre:(pre ())
             | None -> ());
             (if ro.ro_dynamic then
                let at suffix = Printf.sprintf "%s%s(%s,%s)" r suffix subject x in
                let fold =
-                 match kv_bron with
+                 match kv_source with
                  | Some b -> Printf.sprintf "the quantifier fold %S" b
                  | None -> Printf.sprintf "the quantifier fold over %s" el
                in
@@ -7624,7 +7624,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
           ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
           ~part:(new_part ctx ro)
           (fun () ->
-            let a, pre = with_pre ctx toets (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets) in
+            let a, pre = with_pre ctx test (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el test) in
             mpre := pre;
             a)
       in
@@ -7632,15 +7632,15 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       (match !reach with
       | None -> ()
       | Some r ->
-          emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwantor:kv_kwantor
-            ~drempel ~ro ~pre:(pre ()));
+          emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~quantifier_kind:kv_quantifier
+            ~cutoff ~ro ~pre:(pre ()));
       (* the fold's own verdict in the pass before a creation: an `atLeast`
          fold over the case links, with each one's filter and matrix as they
          read there; an `all` fold whose matrix reads otherwise there *)
       register_pre ctx self
         (lazy
-          (match kv_kwantor with
-          | Ten_minste ->
+          (match kv_quantifier with
+          | At_least ->
               let f = Option.value (Lazy.force !fpre) ~default:fatoms
               and m = Option.value (Lazy.force !mpre) ~default:atoms in
               ctx.fresh <- ctx.fresh + 1;
@@ -7650,8 +7650,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
                 (str subject_ot) h x
                 (String.concat ", " (join @ (Printf.sprintf "%s_q(%s,%s)" (use_ro ctx ro) subject x :: f) @ m));
               let hc = fresh ctx "H" in
-              Some [ Printf.sprintf "%s(%s,%s)" pp subject hc; Printf.sprintf "%s >= %d" hc drempel ]
-          | Alle -> (
+              Some [ Printf.sprintf "%s(%s,%s)" pp subject hc; Printf.sprintf "%s >= %d" hc cutoff ]
+          | All -> (
               match Lazy.force !mpre with
               | None -> None
               | Some m ->
@@ -7666,8 +7666,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
                        @ [ Printf.sprintf "not %s_s(%s)" pp x ]));
                   Some [ Printf.sprintf "not %s(%s)" pp subject ])
           | _ -> None));
-      (match kv_kwantor with
-      | Ten_minste | Ten_hoogste | Precies ->
+      (match kv_quantifier with
+      | At_least | At_most | Exactly ->
           (* the COUNTING quantifiers (ch. 3.9a): the verdict is a number,
              not a witness, so the negated-helper route above cannot serve
              them — what is needed is the SIZE of the satisfier set. That is
@@ -7705,14 +7705,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
             (String.concat ", " (join @ fatoms @ atoms));
           let hc = fresh ctx "H" in
           [ Printf.sprintf "%s(%s,%s)" p subject hc;
-            (match kv_kwantor with
-            | Ten_minste -> Printf.sprintf "%s >= %d" hc drempel
-            | Ten_hoogste -> Printf.sprintf "%s <= %d" hc drempel
-            | _ -> Printf.sprintf "%s == %d" hc drempel) ]
+            (match kv_quantifier with
+            | At_least -> Printf.sprintf "%s >= %d" hc cutoff
+            | At_most -> Printf.sprintf "%s <= %d" hc cutoff
+            | _ -> Printf.sprintf "%s == %d" hc cutoff) ]
       | _ ->
       let witness =
-        match kv_kwantor with
-        | Geen ->
+        match kv_quantifier with
+        | None_of ->
             (* the witness IS the matrix: whatever cond_atoms carries, `none`
                carries, because a satisfier is what it already derives *)
             atoms
@@ -7749,7 +7749,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
         (String.concat ", "
            ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join) @ fatoms @ witness));
       [ Printf.sprintf "not %s(%s)" p subject ])
-  | Predicaat { soort = (Leeg | Gevuld) as soort; operand; negatie; dagsoort = None; periode = None; _ }
+  | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; day_kind = None; time_period = None; _ }
     ->
       (* the leeg/gevuld tests (ch. 1.2; ref eval: leeg is `value = leeg`,
          gevuld its complement, `negated` the inner pointwise negation of
@@ -7798,7 +7798,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
           let atoms, _, _ = expr_term ctx ~subject ~subject_ot operand in
           atoms
       in
-      if (soort = Gevuld) <> negatie then atoms
+      if (variety = Filled) <> negation then atoms
       else begin
         if has_recursive_creation ctx.doc then
           fault
@@ -7812,9 +7812,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
           (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: atoms));
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
-  | Conditie_onopgelost _ ->
+  | Condition_unresolved _ ->
       (* the unsolved-state guard on the CONDITION position — the sibling of
-         [Expr_onopgelost] above, and the form the §13.4.7 creation guard takes
+         [Expr_unresolved] above, and the form the §13.4.7 creation guard takes
          when doel and anker are the same type. Without this arm the node fell
          through to the catch-all, whose sentence claims no corpus case
          exercises it: a red witness on this position would have made its own
@@ -7822,7 +7822,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          …`) so both executors name the same position, and the expression arm
          (`… in translation …`) so the phase stays this backend's own. *)
       fault "Unresolved condition reached in translation: this rule fails observably"
-  | Periode_conditie { vanaf; tot; tot_inclusief; _ } ->
+  | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10's evaluation-date gate, ref's arm read in this backend's
          phase. The date is a SESSION constant, so each bound becomes one
          ordinary comparison literal against it — no helper, no negation, and
@@ -7842,7 +7842,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          2026-09-23, so the verifier refuses the rest and the arm below is the
          fail-fast belt. Two executors that carried different bound forms would
          let the differential arbitrate a form only one of them reads. *)
-      let v, t = venster_grenzen ctx ~subject ~subject_ot vanaf tot in
+      let v, t = window_bounds ctx ~subject ~subject_ot starting_at up_to in
       (match ctx.case.as_of with
        | None ->
            (* "an unset evaluation date never matches" — a false body literal,
@@ -7855,7 +7855,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
              | None -> []
              | Some (atoms, term) -> atoms @ [ Printf.sprintf "%d %s %s" today sym term ]
            in
-           part ">=" v @ part (if tot_inclusief then "<=" else "<") t)
+           part ">=" v @ part (if to_inclusive then "<=" else "<") t)
   | _ -> fault "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
@@ -7866,17 +7866,17 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
    calling position has nowhere to put — the callers that can carry atoms
    ([expr_term], [closed_term]) lower such a payload themselves. *)
 (* ch. 3.10's two bounds for BOTH of the chapter's cases — the gate in
-   [cond_atoms] and the clip in [translate_regel] — as (body atoms, day
+   [cond_atoms] and the clip in [translate_rule] — as (body atoms, day
    term) pairs, [None] for an absent (open) bound. A leeg own attribute binds
    no val atom, so every body that carries the pair fails: the gate never
    matches, and the clip writes nothing. One reader for both cases, as in
    ref, so the two cannot disagree about what a bound may be. *)
-and venster_grenzen ctx ~subject ~subject_ot vanaf tot =
+and window_bounds ctx ~subject ~subject_ot starting_at up_to =
   let bound side e =
     (match e with
      | Literal _ -> ()
-     | Attribuut_ref
-         { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+     | Attribute_reference
+         { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
        when Ir_v0.Checks.norm otn = Ir_v0.Checks.norm subject_ot
             && not (attr_temporal ctx ~otype:otn ~attr:a) ->
          ()
@@ -7903,16 +7903,16 @@ and venster_grenzen ctx ~subject ~subject_ot vanaf tot =
       fault "the %s bound of a period condition carries no day-precision date term" side;
     (atoms, term)
   in
-  let v = match vanaf with Some e -> Some (bound "from" e) | None -> None in
-  let t = match tot with Some e -> Some (bound "to" e) | None -> None in
+  let v = match starting_at with Some e -> Some (bound "from" e) | None -> None in
+  let t = match up_to with Some e -> Some (bound "to" e) | None -> None in
   if v = None && t = None then
     fault "a period condition without any bound has no window to gate on";
   (v, t)
 
 and construct_ground_term ctx typ constructor_ argument =
-  let constructoren = sum_constructors typ in
+  let constructor_list = sum_constructors typ in
   let f = ctor_functor constructor_ in
-  match (ctor_payload_datatype constructoren constructor_, argument) with
+  match (ctor_payload_datatype constructor_list constructor_, argument) with
   | None, None -> f
   | None, Some _ -> fault "nullary constructor %S built with an argument" constructor_
   | Some _, None -> fault "unary constructor %S built without an argument" constructor_
@@ -7934,8 +7934,8 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   match e with
   | Construct { typ; constructor_; argument; _ } ->
       ([], construct_ground_term ctx typ constructor_ argument)
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal sum carriage is a recorded flank; no corpus case";
@@ -7952,18 +7952,18 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
    carrying a fresh variable and an anonymous variable elsewhere — [bterm] =
    dossier(W,_) binds W. Returns the unification atom, the field variable and
    the FIELD's declared scale (never the base's — a struct term is scale 0). *)
-and project_field ctx ~base ~bterm ~veld : string * string * int =
-  let domein, velden = struct_type_of ctx base in
+and project_field ctx ~base ~bterm ~field_name : string * string * int =
+  let domain_spec, field_list = struct_type_of ctx base in
   let idx, fdt =
     let rec find i = function
-      | [] -> fault "field %S is not a declared field of struct %S" veld domein
-      | (n, dt) :: tl -> if norm n = norm veld then (i, dt) else find (i + 1) tl
+      | [] -> fault "field %S is not a declared field of struct %S" field_name domain_spec
+      | (n, dt) :: tl -> if norm n = norm field_name then (i, dt) else find (i + 1) tl
     in
-    find 0 velden
+    find 0 field_list
   in
   let fvar = fresh ctx "W" in
-  let pat = List.mapi (fun i _ -> if i = idx then fvar else "_") velden in
-  ( Printf.sprintf "%s = %s(%s)" bterm (ctor_functor domein) (String.concat "," pat),
+  let pat = List.mapi (fun i _ -> if i = idx then fvar else "_") field_list in
+  ( Printf.sprintf "%s = %s(%s)" bterm (ctor_functor domain_spec) (String.concat "," pat),
     fvar,
     value_scale (Some fdt) )
 
@@ -7980,22 +7980,22 @@ and project_field ctx ~base ~bterm ~veld : string * string * int =
    projection is underivable — leeg propagation for free at every depth. *)
 and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
   match e with
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal struct carriage is a recorded flank; no corpus case";
       let v = fresh ctx "B" in
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
-  | Binder_ref { naam; _ } -> (
-      match List.assoc_opt (norm naam) ctx.binders with
+  | Binder_ref { ident; _ } -> (
+      match List.assoc_opt (norm ident) ctx.binders with
       | Some (atoms, var, _, _) ->
-          note_binder_read ctx ~subject ~subject_ot e naam;
+          note_binder_read ctx ~subject ~subject_ot e ident;
           (atoms, var)
-      | None -> fault "unbound binder %S in a struct field access (the verifier should preclude this)" naam)
-  | Field_access { base; veld; _ } ->
+      | None -> fault "unbound binder %S in a struct field access (the verifier should preclude this)" ident)
+  | Field_access { base; field_name; _ } ->
       let batoms, bterm = struct_base ctx ~subject ~subject_ot base in
-      let unif, fvar, _fscale = project_field ctx ~base ~bterm ~veld in
+      let unif, fvar, _fscale = project_field ctx ~base ~bterm ~field_name in
       (batoms @ [ unif ], fvar)
   | _ ->
       fault
@@ -8008,13 +8008,13 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
    field evaluating leeg binds no atom, so the whole literal is underivable —
    the no-hole propagation. Each field's static scale must equal its declared
    scale (WF-073 guarantees the shape; this pins the encoding). *)
-and struct_literal_term ctx ~subject ~subject_ot ~typ ~velden : string list * string =
-  let domein, decls = struct_type_of_datatype typ in
+and struct_literal_term ctx ~subject ~subject_ot ~typ ~field_list : string list * string =
+  let domain_spec, decls = struct_type_of_datatype typ in
   let atoms, terms =
     List.fold_left
       (fun (atoms, terms) (fname, fdt) ->
         let fexpr =
-          match List.find_opt (fun (n, _) -> norm n = norm fname) velden with
+          match List.find_opt (fun (n, _) -> norm n = norm fname) field_list with
           | Some (_, e) -> e
           | None -> fault "StructLiteral is missing declared field %S" fname
         in
@@ -8025,7 +8025,7 @@ and struct_literal_term ctx ~subject ~subject_ot ~typ ~velden : string list * st
         (atoms @ a, terms @ [ t ]))
       ([], []) decls
   in
-  (atoms, Printf.sprintf "%s(%s)" (ctor_functor domein) (String.concat "," terms))
+  (atoms, Printf.sprintf "%s(%s)" (ctor_functor domain_spec) (String.concat "," terms))
 
 (* a struct-typed comparison operand → (atoms binding its ground term, the
    term): an own-subject attribute read via its val atom, a StructLiteral as
@@ -8033,15 +8033,15 @@ and struct_literal_term ctx ~subject ~subject_ot ~typ ~velden : string list * st
    the join (Tabel 38 for free), the sum-type pattern. *)
 and struct_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   match e with
-  | Struct_literal { typ; velden; _ } -> struct_literal_term ctx ~subject ~subject_ot ~typ ~velden
+  | Struct_literal { typ; field_list; _ } -> struct_literal_term ctx ~subject ~subject_ot ~typ ~field_list
   | _ -> struct_base ctx ~subject ~subject_ot e
 
 (* the scrutinee as a pattern atom for one match arm: the val atom carries
    the constructor pattern; a unary arm's payload variable is bound by it *)
 and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
   match scrutinee with
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal sum carriage is a recorded flank; no corpus case";
@@ -8074,7 +8074,7 @@ and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
    route's expr_term fallback would carry it (S19; no corpus case). *)
 and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
   let scrut_typ = static_type ctx scrutinee in
-  let enum_scrutinee = match scrut_typ with Some (Enumeratie _) -> true | _ -> false in
+  let enum_scrutinee = match scrut_typ with Some (Enumeration _) -> true | _ -> false in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "match%d" ctx.fresh in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
@@ -8094,8 +8094,8 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
       fun pattern -> satoms @ [ Printf.sprintf "%s = %s" sterm pattern ])
     else
       match scrutinee with
-      | Attribuut_ref
-          { attribuut = Some _; objecttype = Some ot; navigatie_bindingen = None; _ }
+      | Attribute_reference
+          { attribute_ref = Some _; object_type = Some ot; navigation_bindings = None; _ }
         when norm ot = norm subject_ot ->
           fun pattern -> scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern
       | _ ->
@@ -8112,9 +8112,9 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
           | Some b -> fault "enumeration match arm %S carries a binder %S" ctor b
           | None -> (symbolic_literal_term (Option.get scrut_typ) ctor, None))
         else
-          let constructoren = sum_constructors scrut_typ in
+          let constructor_list = sum_constructors scrut_typ in
           let f = ctor_functor ctor in
-          match (ctor_payload_datatype constructoren ctor, binder) with
+          match (ctor_payload_datatype constructor_list ctor, binder) with
           | None, None -> (f, None)
           | Some d, Some b ->
               let pv = fresh ctx "P" in
@@ -8150,11 +8150,11 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
    derivation rules serve every subject at once. *)
 and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
   match e with
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
       let element =
-        match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
+        match Ir_v0.Checks.find_ci (object_type ctx ot).attributes a with
         | Some (Some (List_type { element })) -> element
         | _ -> fault "the fold source %S is not a list-typed own attribute (no corpus case)" a
       in
@@ -8165,7 +8165,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
           (Printf.sprintf "plist(%s)" (str p), element_scale_of element)
       | Some _ -> fault "the fold source parameter %S is not list-typed" p
       | None -> fault "unknown parameter %S" p)
-  | Map_list { typ; list; functie; _ } ->
+  | Map_list { typ; list; function_name; _ } ->
       let inner, inner_es = list_source ctx ~subject ~subject_ot list in
       let out_es =
         element_scale_of
@@ -8176,7 +8176,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       ctx.fresh <- ctx.fresh + 1;
       let mapid = Printf.sprintf "lm%d(%s)" ctx.fresh inner in
       let (pname, pt), body =
-        match functie with
+        match function_name with
         | Fn_lambda { parameters = [ (pn, pt) ]; body; _ } -> ((pn, pt), body)
         | Fn_lambda _ -> fault "a MapList lambda takes exactly one parameter"
         | Fn_name _ ->
@@ -8290,18 +8290,18 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
       let branches = body_branches ctx ~guard_body:(guard_body @ va) ~witness body in
       ctx.binders <- saved;
       List.map (fun (g, t, s) -> (va @ g, t, s)) branches
-  | Invoke { functie; arguments; _ } ->
+  | Invoke { function_name; arguments; _ } ->
       let fd =
         match
           List.find_opt
-            (fun (d : function_def) -> norm d.fd_naam = norm functie)
+            (fun (d : function_def) -> norm d.fd_name = norm function_name)
             ctx.doc.function_defs
         with
         | Some d -> d
-        | None -> fault "unknown function %S" functie
+        | None -> fault "unknown function %S" function_name
       in
       if List.length arguments <> List.length fd.fd_parameters then
-        fault "function %S invoked with the wrong arity" functie;
+        fault "function %S invoked with the wrong arity" function_name;
       let argbinds =
         List.map2
           (fun (pn, pdt) arg ->
@@ -8324,8 +8324,8 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
          [body_branches]; each branch wraps in the constructor functor. The
          constructor VALUE carries no numeric scale (0); its payload rides the
          declared payload scale. *)
-      let constructoren = sum_constructors typ in
-      (match ctor_payload_datatype constructoren constructor_ with
+      let constructor_list = sum_constructors typ in
+      (match ctor_payload_datatype constructor_list constructor_ with
       | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
           let pscale = pow10 (decimals_of_datatype (Some d)) in
@@ -8353,13 +8353,13 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
      the reason names the shape rather than [sum_operand]'s sum wording
      (S19; no corpus case). *)
   (match static_type ctx scrutinee with
-  | Some (Enumeratie _) ->
+  | Some (Enumeration _) ->
       fault
         "an enumeration match inside a closed lambda/function body is not translated (the \
          symbolic operand has no closed-body carrier; no corpus case)"
   | _ -> ());
   let sv = sum_operand ctx scrutinee in
-  let constructoren = sum_constructors (static_type ctx scrutinee) in
+  let constructor_list = sum_constructors (static_type ctx scrutinee) in
   List.concat_map
     (fun (ctor, binder, body) ->
       let f = ctor_functor ctor in
@@ -8371,7 +8371,7 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
         | _ -> (binder, body)
       in
       let pattern, binding =
-        match (ctor_payload_datatype constructoren ctor, binder) with
+        match (ctor_payload_datatype constructor_list ctor, binder) with
         | None, None -> (Printf.sprintf "%s = %s" sv f, None)
         | Some d, Some b ->
             let pv = fresh ctx "P" in
@@ -8390,7 +8390,7 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
             (* the whole chain around the arm: a Let the arm does not read drops
                out again in [body_branches]'s unread-binder arm *)
             List.fold_right
-              (fun (binder, value, typ, bron) acc -> Let { typ; binder; value; body = acc; bron })
+              (fun (binder, value, typ, source_name) acc -> Let { typ; binder; value; body = acc; source_name })
               lets body
       in
       let branches = body_branches ctx ~guard_body:arm_guard ~witness body in
@@ -8402,11 +8402,11 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
    builtin, complement builtin). Closed bodies read only bound terms, so the
    comparison is a builtin over harmonised scales and the else-branch is its
    exact mirror — no NAF over derived atoms (the S7 closed-body point). *)
-and body_condition ctx ~guard_body ~witness (c : conditie) : string list * string * string =
+and body_condition ctx ~guard_body ~witness (c : condition_expr) : string list * string * string =
   match c with
-  | Vergelijking { op; links; rechts; periode = None; _ } ->
-      let la, lt, ls = closed_term ctx ~guard_body ~witness (req "left" links) in
-      let ra, rt, rs = closed_term ctx ~guard_body ~witness (req "right" rechts) in
+  | Comparison { op; left_side; right_side; time_period = None; _ } ->
+      let la, lt, ls = closed_term ctx ~guard_body ~witness (req "left" left_side) in
+      let ra, rt, rs = closed_term ctx ~guard_body ~witness (req "right" right_side) in
       (* no numeric_ok ctx stands in front of this arm at all, and a Construct is a
          first-class closed-body term (scale 0): mixed, it divided by zero;
          both-symbolic, it silently ordered constructor terms *)
@@ -8431,8 +8431,8 @@ and body_condition ctx ~guard_body ~witness (c : conditie) : string list * strin
    list-id), so the running accumulator cannot wrap silently past 2^31. *)
 and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int =
   match e with
-  | Binder_ref { naam; _ } -> (
-      match List.assoc_opt (norm naam) ctx.binders with
+  | Binder_ref { ident; _ } -> (
+      match List.assoc_opt (norm ident) ctx.binders with
       (* a closed-body binder is either recurrence-bound (a lambda/fold parameter
          or a match payload) or bound by a Let INSIDE this body: both carry EMPTY
          atoms — the surrounding lelem/pattern join, or the Let's inlined value,
@@ -8449,12 +8449,12 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
             "the closed body reads binder %S bound by a Let OUTSIDE it; this reading is refused (a \
              closed-body read must be self-contained — the parallel verifier card makes it \
              WF-ill-formed)"
-            naam
-      | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" naam)
+            ident
+      | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" ident)
   | Literal { variant; typ; _ } -> (
       let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
-      | Some (Numeriek _ | Percentage _) | None ->
+      | Some (Number _ | Percentage _) | None ->
           let d = lexeme_decimals lex in
           let v = scaled_of_value ~decimals:d (Value.Num (Value.q_of_lexeme lex, Value.Unitless)) in
           ([], string_of_int v, pow10 d)
@@ -8462,7 +8462,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
   | Parameter_ref { parameter; _ } -> (
       let name = req "ParameterReference.parameter" parameter in
       match Ir_v0.Checks.find_ci ctx.doc.parameters name with
-      | Some { par_granulariteit = Some _; _ } ->
+      | Some { par_granularity = Some _; _ } ->
           fault "a granular parameter %S in a closed body is refused (ch. 3.3/8)" name
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
@@ -8470,11 +8470,11 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
           unbound_param_guard ctx ~witness ~guard:(fun () -> guard_body @ ctx.param_reach e) name;
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
-  | Binair { op = (Plus | Min) as op; links; rechts; _ } ->
-      numeric_ok ctx links;
-      numeric_ok ctx rechts;
-      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" links) in
-      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" rechts) in
+  | Binary { op = (Plus | Min) as op; left_side; right_side; _ } ->
+      numeric_ok ctx left_side;
+      numeric_ok ctx right_side;
+      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" left_side) in
+      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" right_side) in
       (* the numeric_ok ctx pair reads the wire `type` (and passes an unannotated
          binder); the scale is what the harmonisation actually divides by *)
       let sl = numeric_scale ~what:"a closed-body additive join" sl in
@@ -8510,23 +8510,23 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
                (rescaling a bound sum payload has no corpus case)"
               scale payload_scale;
           (atoms, Printf.sprintf "%s(%s)" (ctor_functor constructor_) term, 0))
-  | Field_access { base; veld; _ } ->
+  | Field_access { base; field_name; _ } ->
       (* ch. 11.1 inside a closed body (the MapList-over-struct-field lelem
-         route, λd. d.veld): the base is a bound struct binder; project its
+         route, λd. d.field_name): the base is a bound struct binder; project its
          field positionally by unification over the binder's ASP variable *)
       let bterm =
         match base with
-        | Binder_ref { naam; _ } -> (
-            match List.assoc_opt (norm naam) ctx.binders with
+        | Binder_ref { ident; _ } -> (
+            match List.assoc_opt (norm ident) ctx.binders with
             | Some (_, var, _, _) -> var
             | None ->
                 fault "unbound binder %S in a closed-body field access (the verifier should preclude this)"
-                  naam)
+                  ident)
         | _ -> fault "a closed-body field access reads a bound struct binder (no corpus case for more)"
       in
-      let unif, fvar, fscale = project_field ctx ~base ~bterm ~veld in
+      let unif, fvar, fscale = project_field ctx ~base ~bterm ~field_name in
       ([ unif ], fvar, fscale)
-  | Binair { op = (Maal | Percentage_van) as op; links; rechts; _ } ->
+  | Binary { op = (Times | Percentage_of) as op; left_side; right_side; _ } ->
       (* the multiplicative family in a closed body (§6.4/§6.8): the scaled
          product at scale sl·sr, both operands bound (a closed-body binder never
          goes leeg, so no coalesce — the additive-family posture of this
@@ -8534,38 +8534,38 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          scale (sl·sr·100): no division anywhere, the rule-level fold carried into
          the body context (one encoding). The rule-level product encoding and its
          46340 range fence, grounded by [guard_body] and keyed by [witness]. *)
-      numeric_ok ctx links;
-      numeric_ok ctx rechts;
+      numeric_ok ctx left_side;
+      numeric_ok ctx right_side;
       (match op with
-      | Percentage_van -> pct_van_left_ok ctx links
-      | _ -> unit_free_ok ctx links);
-      unit_free_ok ctx rechts;
-      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" links) in
-      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" rechts) in
+      | Percentage_of -> pct_left_ok ctx left_side
+      | _ -> unit_free_ok ctx left_side);
+      unit_free_ok ctx right_side;
+      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" left_side) in
+      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" right_side) in
       range_guard ctx ~subject:witness ~body:(guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
-      (bl @ br, term, sl * sr * (if op = Percentage_van then 100 else 1))
-  | Afgerond { basis = Some basis; modus = Rekenkundig; decimalen = 2; _ }
-    when money_mult_shape ctx basis ->
+      (bl @ br, term, sl * sr * (if op = Percentage_of then 100 else 1))
+  | Rounding { base_expr = Some base_expr; mode_kind = Half_away_from_zero; decimal_places = 2; _ }
+    when money_mult_shape ctx base_expr ->
       (* the money × rate product Catala rounds to the cent (§5/S18(c)) inside a
          closed body — the split encoding, shared with the rule level *)
-      closed_money_mult ctx ~guard_body ~witness ~basis
-  | Binair { op = Gedeeld_door; links; rechts; _ } ->
+      closed_money_mult ctx ~guard_body ~witness ~base_expr
+  | Binary { op = Divided_by; left_side; right_side; _ } ->
       (* a closed-body bare division (§6.5): a compile-time positive constant
          divisor rides the gcd-reduced form (the tutorial's decimal of n /
          2.0000); a RUNTIME divisor (a bound binder — a list element) rides the
          two-factor form with its numeric-zero fence, the empty-operand §9.5
          edges gone because a closed-body binder is never leeg. Divisor-side
          range fence and non-exact viol both in body context. *)
-      closed_division ctx ~guard_body ~witness ~rounding:None ~links ~rechts
-  | Binair { op = Gedeeld_door_abs; links; rechts; _ } ->
+      closed_division ctx ~guard_body ~witness ~rounding:None ~left_side ~right_side
+  | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
       (* the abs-division variant (ch. 2.2): the quotient truncated toward zero
          at 5 decimals — gringo's integer `/` IS that collapse on both signs, so
          the round_z-scale-5 form carried into the body context needs no
          exactness guard and no negative fence *)
-      closed_division ctx ~guard_body ~witness ~rounding:(Some (Richting_nul, 5)) ~links ~rechts
-  | Binair { op = Tot_de_macht; links; rechts; _ } ->
+      closed_division ctx ~guard_body ~witness ~rounding:(Some (Toward_zero, 5)) ~left_side ~right_side
+  | Binary { op = Power; left_side; right_side; _ } ->
       (* tot de macht in a closed body (ch. 2.2): a compile-time non-negative
          integer exponent unfolds to repeated Maal under the SAME 46340
          multiplicative fence — each partial product bounded so the running
@@ -8573,12 +8573,12 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          tighter than the rule-level base bound — but always loud, never a silent
          wrap). The base propagates leeg by the bare join (ref's pow_ on an empty
          base); a runtime, negative or fractional exponent faults. *)
-      numeric_ok ctx links;
-      numeric_ok ctx rechts;
-      unit_free_ok ctx links;
-      unit_free_ok ctx rechts;
-      let e = const_pow_exponent (req "Binary.right" rechts) in
-      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" links) in
+      numeric_ok ctx left_side;
+      numeric_ok ctx right_side;
+      unit_free_ok ctx left_side;
+      unit_free_ok ctx right_side;
+      let e = const_pow_exponent (req "Binary.right" right_side) in
+      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" left_side) in
       (* the range test below divides by the base scale; [numeric_ok links] only
          read the wire `type` *)
       let sl = numeric_scale ~what:"a closed-body power base" sl in
@@ -8616,7 +8616,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       let ba, bt, bs = closed_term ctx ~guard_body:(guard_body @ va) ~witness body in
       ctx.binders <- saved;
       (va @ ba, bt, bs)
-  | Attribuut_ref _ ->
+  | Attribute_reference _ ->
       (* the fourth refusing place of the S19 inventory, split out of the
          catch-all below so the reason names the SHAPE instead of listing forms
          (a Construct, a Let, a sum) that this position does carry — the read
@@ -8643,10 +8643,10 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
    so a comparison over them is builtin functor (in)equality (ch. 10.4). *)
 and sum_operand ctx (e : expr) : string =
   match e with
-  | Binder_ref { naam; _ } -> (
-      match List.assoc_opt (norm naam) ctx.binders with
+  | Binder_ref { ident; _ } -> (
+      match List.assoc_opt (norm ident) ctx.binders with
       | Some (_, var, _, _) -> var
-      | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" naam)
+      | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" ident)
   | Construct { typ; constructor_; argument; _ } -> construct_ground_term ctx typ constructor_ argument
   | _ ->
       fault
@@ -8658,13 +8658,13 @@ and sum_operand ctx (e : expr) : string =
    POSITIVE functor (in)equality over the bound element and a ground
    Construct — never `not gelijk` (the ch. 10.4/S14 non-complement rule);
    the element is always bound, so Tabel 38's leeg corner cannot arise. *)
-and filter_condition ctx (c : conditie) : string list =
+and filter_condition ctx (c : condition_expr) : string list =
   match c with
-  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
-    when is_sum_operand ctx links || is_sum_operand ctx rechts ->
-      let lt = sum_operand ctx (req "left" links) in
-      let rt = sum_operand ctx (req "right" rechts) in
-      [ Printf.sprintf "%s %s %s" lt (if op = Gelijk then "==" else "!=") rt ]
+  | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
+    when is_sum_operand ctx left_side || is_sum_operand ctx right_side ->
+      let lt = sum_operand ctx (req "left" left_side) in
+      let rt = sum_operand ctx (req "right" right_side) in
+      [ Printf.sprintf "%s %s %s" lt (if op = Equal then "==" else "!=") rt ]
   | _ ->
       fault
         "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
@@ -8679,7 +8679,7 @@ and filter_condition ctx (c : conditie) : string list =
    whatever the frontend's annotation says. The naive product wraps int31 at
    tutorial magnitude, so it takes the split encoding, which brings the rate
    to scale 10^4 first ([money_mult_rate]). *)
-and money_mult_shape ctx (basis : expr) : bool = money_mult_roles ctx basis <> None
+and money_mult_shape ctx (base_expr : expr) : bool = money_mult_roles ctx base_expr <> None
 
 (* the split money multiplication (S-section (c)): rounding a 2-decimal money
    M times a rate R, brought to scale 10^4 by [money_mult_rate], to the cent.
@@ -8694,12 +8694,12 @@ and money_mult_shape ctx (basis : expr) : bool = money_mult_roles ctx basis <> N
    (ch. 10.6): an UNREAD binder is dropped unevaluated (clause 3) and a read
    one is bound with its value's atoms riding [rule_guard], so the barrier sits
    at the READ (clause 2) — exactly as ref evaluates the Let body. *)
-and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
+and translate_money_mult ctx ~subject ~subject_ot ~base_expr : string list * string * int =
   let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
   let saved_d = ctx.demands in
   (* the money's side, read before the peel binds anything — as the guard read it *)
   let swapped =
-    match money_mult_roles ctx basis with
+    match money_mult_roles ctx base_expr with
     | Some s -> s
     | None -> fault "money multiplication base is not a money × rate product (money_mult_shape gated this)"
   in
@@ -8715,11 +8715,11 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
           (bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
                expr_term ctx ~subject ~subject_ot value));
         peel body
-    | Binair { op = Maal; links; rechts; _ } ->
-        (req "money multiplication left" links, req "money multiplication right" rechts)
+    | Binary { op = Times; left_side; right_side; _ } ->
+        (req "money multiplication left" left_side, req "money multiplication right" right_side)
     | _ -> fault "money multiplication base is not a times composite (money_mult_shape gated this)"
   in
-  let l, r = peel basis in
+  let l, r = peel base_expr in
   let m, r = if swapped then (r, l) else (l, r) in
   numeric_ok ctx (Some m);
   numeric_ok ctx (Some r);
@@ -8756,12 +8756,12 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
    over fresh variables rather than a subject-keyed helper predicate, so the fold
    recurrence that consumes them binds the per-element index directly. The four
    fences ride [witness] and [guard_body] — every fence moves to body context. *)
-and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * int =
+and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string * int =
   let m, r =
-    match basis with
-    | Binair { op = Maal; links; rechts; _ } -> (
-        let l = req "money multiplication left" links and r = req "money multiplication right" rechts in
-        match money_mult_roles ctx basis with
+    match base_expr with
+    | Binary { op = Times; left_side; right_side; _ } -> (
+        let l = req "money multiplication left" left_side and r = req "money multiplication right" right_side in
+        match money_mult_roles ctx base_expr with
         | Some swapped -> if swapped then (r, l) else (l, r)
         | None ->
             fault "money multiplication base is not a money × rate product (money_mult_shape gated this)")
@@ -8790,19 +8790,19 @@ and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * i
    grounded by [guard_body]. [rounding] None is the exact bare division (value
    guarded [numt \ dent == 0], a remainder derives a viol/2 and UNSAT — ref
    stays exact-rational, then its bounded write refuses; the differential holds
-   where it runs); [Some (Richting_nul, d)] is the abs-division truncation at d
+   where it runs); [Some (Toward_zero, d)] is the abs-division truncation at d
    decimals, which gringo's integer `/` computes on both signs, needing no
    exactness guard and no negative fence. The exactness test runs at the
    precision the fold/write will STORE ([ctx.write_scale] for the bare form, the
    collapse scale for abs), not merely at the operand scales. *)
-and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string list * string * int =
-  let links = req "Binary.left" links and rechts = req "Binary.right" rechts in
-  numeric_ok ctx (Some links);
-  numeric_ok ctx (Some rechts);
-  unit_free_ok ctx (Some links);
-  unit_free_ok ctx (Some rechts);
-  let bl, tl, sl = closed_term ctx ~guard_body ~witness links in
-  let br, tr, sr = closed_term ctx ~guard_body ~witness rechts in
+and closed_division ctx ~guard_body ~witness ~rounding ~left_side ~right_side : string list * string * int =
+  let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
+  numeric_ok ctx (Some left_side);
+  numeric_ok ctx (Some right_side);
+  unit_free_ok ctx (Some left_side);
+  unit_free_ok ctx (Some right_side);
+  let bl, tl, sl = closed_term ctx ~guard_body ~witness left_side in
+  let br, tr, sr = closed_term ctx ~guard_body ~witness right_side in
   (* both scales become gcd operands and divisors below — the
      [translate_division] fence, on the closed-body sibling *)
   let sl = numeric_scale ~what:"a closed-body division dividend" sl in
@@ -8853,10 +8853,10 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
       ( bl @ br @ nonzero @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
         out_scale )
-  | Some (Richting_nul, _) ->
+  | Some (Toward_zero, _) ->
       (bl @ br @ nonzero, Printf.sprintf "(%s/%s)" numt dent, out_scale)
-  | Some (modus, _) ->
-      ignore modus;
+  | Some (mode_kind, _) ->
+      ignore mode_kind;
       fault
         "a closed-body rounded division supports only the towardZero abs-division collapse (no \
          corpus case for another rounding mode)"
@@ -8873,7 +8873,7 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
    head split ([value_branches]) and the helper-predicate route
    ([translate_ite]) below. One reading of the condition, or the two routes
    could disagree about which arm is taken. *)
-and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * string * string =
+and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list * string * string =
   (* WF-077 admits arithmetic combinators (Binary/Rounding/Clamp/TextComposition)
      over binders, parameters and literals as condition operands — the READS are
      what stay total (never leeg), which is what keeps the else-branch the
@@ -8885,11 +8885,11 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
      [Ir_v0.Checks.bound_only_expr]. *)
   let rec bound_only = function
     | Binder_ref _ | Parameter_ref _ | Literal _ -> true
-    | Binair { links; rechts; _ } -> opt links && opt rechts
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } -> opt basis && opt minimum && opt maximum
-    | Tekst_reeks { delen; _ } ->
-        List.for_all (function Ingevoegd { expr = Some e } -> bound_only e | _ -> true) delen
+    | Binary { left_side; right_side; _ } -> opt left_side && opt right_side
+    | Rounding { base_expr; _ } -> opt base_expr
+    | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr && opt minimum && opt maximum
+    | Text_composition { pieces; _ } ->
+        List.for_all (function Embedded_expression { expr = Some e } -> bound_only e | _ -> true) pieces
     | _ -> false
   and opt = function Some e -> bound_only e | None -> true in
   let operand_ok o =
@@ -8899,11 +8899,11 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
          literals"
   in
   match c with
-  | Vergelijking { op; links; rechts; periode = None; _ } ->
-      operand_ok links;
-      operand_ok rechts;
-      let la, lt, ls = expr_term ctx ~subject ~subject_ot (req "Comparison.left" links) in
-      let ra, rt, rs = expr_term ctx ~subject ~subject_ot (req "Comparison.right" rechts) in
+  | Comparison { op; left_side; right_side; time_period = None; _ } ->
+      operand_ok left_side;
+      operand_ok right_side;
+      let la, lt, ls = expr_term ctx ~subject ~subject_ot (req "Comparison.left" left_side) in
+      let ra, rt, rs = expr_term ctx ~subject ~subject_ot (req "Comparison.right" right_side) in
       (* [operand_ok] admits a bare BinderRef, whose scale is the binder's own —
          0 for a sum/struct binder; the body_condition sibling *)
       let ls = numeric_scale ~what:"a value-position IfThenElse comparison" ls in
@@ -9132,11 +9132,11 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
    UNSAT on a non-exact bucket no one writes (lens finding 2026-09-23). A
    leeg own-attribute bound binds no val atom, so the fences stay silent
    exactly where nothing is written. *)
-let venster_overlap ctx ~subject ~ot clip =
+let window_overlap ctx ~subject ~ot clip =
   match clip with
   | None -> []
-  | Some (vanaf, tot, incl) ->
-      let v, t = venster_grenzen ctx ~subject ~subject_ot:ot vanaf tot in
+  | Some (starting_at, up_to, incl) ->
+      let v, t = window_bounds ctx ~subject ~subject_ot:ot starting_at up_to in
       (match v with None -> [] | Some (atoms, l) -> atoms @ [ Printf.sprintf "N > %s" l ])
       @
       match t with
@@ -9145,12 +9145,12 @@ let venster_overlap ctx ~subject ~ot clip =
           let h = if incl then Printf.sprintf "(%s+1)" h else h in
           atoms @ [ Printf.sprintf "B < %s" h ]
 
-let schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
+let write_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
   let heads =
     match clip with
     | None -> [ ("B", "N", body) ]
-    | Some (vanaf, tot, incl) ->
-        let v, t = venster_grenzen ctx ~subject ~subject_ot:ot vanaf tot in
+    | Some (starting_at, up_to, incl) ->
+        let v, t = window_bounds ctx ~subject ~subject_ot:ot starting_at up_to in
         let lo =
           match v with
           | None -> [ ("B", []) ]
@@ -9172,8 +9172,8 @@ let schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
           lo
   in
   List.iter
-    (fun (van, tot, b) ->
-      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,%s)" subject (str a) van tot value) b)
+    (fun (van, up_to, b) ->
+      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,%s)" subject (str a) van up_to value) b)
     heads;
   if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
     let eff = Printf.sprintf "%s_eff(%s)" p subject in
@@ -9194,7 +9194,7 @@ let schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
    remainder derives a viol/2 witness (ref computes the exact rational;
    v0 approximates a non-terminating fraction in DECIMAL64 — the
    recorded ch. 3.7 delta), fenced like every division. *)
-let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
+let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
     fault "pro-rata base %S is not a temporal attribute" b;
@@ -9203,8 +9203,8 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
      day number as an amount — measured 2026-09-23, base 2024-01-18 over one
      whole month answered 19740.00 where ref faults "pro-rata base is not
      numeric". Asked of the DECLARATION, like its sisters. *)
-  (match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen b with
-  | Some (Some Datum_in_dagen) ->
+  (match Ir_v0.Checks.find_ci (object_type ctx ot).attributes b with
+  | Some (Some Date_in_days) ->
       fault
         "the pro-rata part (timeProportionalPart) of the base %S on %S scales a DATE-valued base by \
          true days over bucket days: a pro-rata part is arithmetic, a date is a calendar POSITION, \
@@ -9220,13 +9220,13 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
     not
       (List.exists
          (fun (n, _) -> norm n = norm k)
-         (objecttype ctx ot).kenmerk_granulariteit)
+         (object_type ctx ot).characteristic_granularity)
   then
     (* mirror ref's fault — a non-temporal characteristic must never
        silently prorate to an empty timeline (a hunted gap) *)
     fault "gedurende over %S, which is not a temporal characteristic" k;
-  (match (Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a,
-          Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit b) with
+  (match (Ir_v0.Checks.find_ci (object_type ctx ot).attribute_granularity a,
+          Ir_v0.Checks.find_ci (object_type ctx ot).attribute_granularity b) with
   | Some (Some tg), Some (Some bg) ->
       if tg <> g then
         fault "pro-rata bucket granularity differs from the target's declared granularity";
@@ -9234,8 +9234,8 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
   | _ -> fault "pro-rata target and base carry declared granularities");
   (* ref's fence, in ref's sentence (RUNTIME-SEMANTICS ch. 3.2) *)
   if
-    (Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx ot) a).g_start <> Uchar_ref.Timeline.Kalender
-    || (Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx ot) b).g_start <> Uchar_ref.Timeline.Kalender
+    (Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a).g_start <> Uchar_ref.Timeline.Calendar
+    || (Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) b).g_start <> Uchar_ref.Timeline.Calendar
   then
     fault
       "pro-rata onto or from a grid that does not lie on the calendar is fenced (RUNTIME-SEMANTICS \
@@ -9257,7 +9257,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
         Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
         "TD > 0";
         Printf.sprintf "tl(S,%s,BV,BT,W), BV <= B, B < BT" (str b) ]
-    @ venster_overlap ctx ~subject ~ot clip
+    @ window_overlap ctx ~subject ~ot clip
   in
   (* the wrap fence: |W×TD×kn| ≤ 2^31 with TD ≤ 366 per bucket, and the
      #sum's contributors (D ≤ 366) count-bounded like every sum *)
@@ -9270,7 +9270,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
     (String.concat ", "
        ((base :: ctx.rule_guard) @ cond
-        @ (Printf.sprintf "%s_b(B,N,_)" p :: venster_overlap ctx ~subject ~ot clip)))
+        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ctx ~subject ~ot clip)))
     p;
   emit ctx
     "viol(\"non-exact pro-rata part (an explicit rounding is mandated before precision is \
@@ -9281,14 +9281,14 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
      decides only when it derives at least one bucket — the case's
      input timeline (entered as inputtl/5) stands whole by NAF
      otherwise, matching ref's no-write on an empty result *)
-  schrijf_segment ctx ~subject ~ot ~a ~clip ~p
+  write_segment ctx ~subject ~ot ~a ~clip ~p
     ~value:(Printf.sprintf "%s/%s" numt dent)
     ~body:(body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ])
 
 (* ch. 3.8 "aantal dagen in (de maand / het jaar)": per touched bucket
    one segment carrying the true-day count — the pro-rata numerator
    without the base join. WF-058 mirrors WF-056's facets. *)
-let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
+let translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : grain) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if attr_unit ctx ~otype:ot ~attr:a <> None then
     fault "day-count into a unit-carrying target is not translated (no corpus case)";
@@ -9296,9 +9296,9 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
     not
       (List.exists
          (fun (n, _) -> norm n = norm k)
-         (objecttype ctx ot).kenmerk_granulariteit)
+         (object_type ctx ot).characteristic_granularity)
   then fault "gedurende over %S, which is not a temporal characteristic" k;
-  (match Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a with
+  (match Ir_v0.Checks.find_ci (object_type ctx ot).attribute_granularity a with
   | Some (Some tg) ->
       if tg <> g then
         fault "day-count bucket granularity differs from the target's declared granularity"
@@ -9309,7 +9309,7 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "adg%d" ctx.fresh in
   (* the target's periods: the calendar's, or its fixed start point's (ch. 3.2) *)
-  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx ot) a);
+  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a);
   emit_true_days ctx ~p ~k;
   let vterm = if ta = 1 then "TD" else Printf.sprintf "(TD*%d)" ta in
   let body =
@@ -9318,20 +9318,20 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
     @ [ Printf.sprintf "%s_b(B,N,_)" p;
         Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
         "TD > 0" ]
-    @ venster_overlap ctx ~subject ~ot clip
+    @ window_overlap ctx ~subject ~ot clip
   in
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
     (String.concat ", "
        ((base :: ctx.rule_guard) @ cond
-        @ (Printf.sprintf "%s_b(B,N,_)" p :: venster_overlap ctx ~subject ~ot clip)))
+        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ctx ~subject ~ot clip)))
     p;
   (* the ch. 7.8 timeline arm, as for pro-rata *)
-  schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
+  write_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
 
 (* the writers of the attribute target (ot, a) beside a natively translated
-   initialisation (translate_regel's Initialisatie arm): the initialisations
+   initialisation (translate_rule's Initialisatie arm): the initialisations
    and the computing rules among the rules that apply on the case's date — an
    excluded version emits nothing and is no writer — and whether an
    allocation, a creation-time member or a defaults group of ot's own level
@@ -9352,7 +9352,7 @@ let native_types ctx ~ot ~a =
         && not (List.exists (fun x -> norm x = norm t) absorbed)
       then Some (norm t)
       else None)
-    ctx.doc.objecttypen
+    ctx.doc.object_types
 
 (* A rule and an initialisation co-write where some concrete type is written
    by both as a rule — not where a stack has folded either of them
@@ -9364,40 +9364,40 @@ let init_writers ctx ~ot ~a =
   let overlaps t = Ir_v0.Checks.populations_overlap ctx.doc ot t in
   let mine = native_types ctx ~ot ~a in
   let co_writes ot' = List.exists (fun t -> List.mem t mine) (native_types ctx ~ot:ot' ~a) in
-  let on_target (r : resolved_regel) =
-    r.rr_soort <> Some Kenmerktoekenning
-    && applies ctx r.rr_geldigheid
+  let on_target (r : resolved_rule) =
+    r.rr_presentation <> Some Characteristic_attribution
+    && applies ctx r.rr_validity
     &&
-    match r.doel with
-    | Some (Attribuut_ref { attribuut = Some a'; objecttype = Some ot'; _ }) ->
+    match r.objective with
+    | Some (Attribute_reference { attribute_ref = Some a'; object_type = Some ot'; _ }) ->
         norm a' = norm a && co_writes ot'
     | _ -> false
   in
   let inits, comps =
     List.partition
-      (fun (r : resolved_regel) -> r.rr_soort = Some Initialisatie)
-      (List.filter on_target ctx.doc.resolved_regels)
+      (fun (r : resolved_rule) -> r.rr_presentation = Some Initialisation)
+      (List.filter on_target ctx.doc.resolved_rules)
   in
   let other =
     List.exists
       (fun (l : prioritized_defaults) ->
-        norm l.pd_onderwerp = norm ot
-        && match l.pd_attribuut with Some la -> norm la = norm a | None -> false)
+        norm l.pd_subject = norm ot
+        && match l.pd_attribute with Some la -> norm la = norm a | None -> false)
       ctx.doc.prioritized_defaults
     || List.exists
-         (fun (v : resolved_verdeling) ->
-           (match v.doel_type with Some dt -> overlaps dt | None -> false)
-           && match v.doel_attribuut with Some da -> norm da = norm a | None -> false)
-         ctx.doc.verdelingen
+         (fun (v : resolved_allocation) ->
+           (match v.objective_type_name with Some dt -> overlaps dt | None -> false)
+           && match v.target_attribute with Some da -> norm da = norm a | None -> false)
+         ctx.doc.allocations
     || List.exists
-         (fun (o : resolved_object_creatie) ->
-           (match o.nieuw_type with Some nt -> overlaps nt | None -> false)
+         (fun (o : resolved_object_creation) ->
+           (match o.created_type with Some nt -> overlaps nt | None -> false)
            && List.exists
-                (fun (t : toekenning) ->
-                  (not t.toe_kenmerk)
-                  && match t.toe_attribuut with Some ta -> norm ta = norm a | None -> false)
-                o.toekenningen)
-         ctx.doc.object_creaties
+                (fun (t : assignment) ->
+                  (not t.to_characteristic)
+                  && match t.to_attribute with Some ta -> norm ta = norm a | None -> false)
+                o.assignments)
+         ctx.doc.object_creations
   in
   (inits, comps, other)
 
@@ -9414,15 +9414,15 @@ let init_writers ctx ~ot ~a =
    (ch. 7.8): a writer on its own type of a chain is the only one of its key,
    and a standing writer writes nothing on leeg. The index of a rule that is
    no such co-writer is None. *)
-let co_writer ctx (r : resolved_regel) ~ot ~a =
-  match r.rr_soort with
-  | Some (Berekening | Gelijkstelling) ->
+let co_writer ctx (r : resolved_rule) ~ot ~a =
+  match r.rr_presentation with
+  | Some (Calculation | Equation) ->
       let _, comps, _ = init_writers ctx ~ot ~a in
-      if List.length comps >= 2 then List.find_index (fun r' -> r' == r) ctx.doc.resolved_regels
+      if List.length comps >= 2 then List.find_index (fun r' -> r' == r) ctx.doc.resolved_rules
       else None
   | _ -> None
 
-let translate_regel ctx (r : resolved_regel) =
+let translate_rule ctx (r : resolved_rule) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
      is emitted, so its target's case input stands untouched as the plain
      val/3 fact. No inputval machinery waits on it: a windowed rule is in
@@ -9431,11 +9431,11 @@ let translate_regel ctx (r : resolved_regel) =
      keys on a windowed rule's target. An in-window rule translates as any
      version-free rule — including the ch. 6d fence when the case supplies
      its (never-standing) computed target. *)
-  if applies ctx r.rr_geldigheid then begin
-      let doel = req "RuleVersion.target" r.doel in
-      ctx.rule_name <- Option.value r.rr_naam ~default:"?";
-      (match doel with
-      | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
+  if applies ctx r.rr_validity then begin
+      let objective = req "RuleVersion.target" r.objective in
+      ctx.rule_name <- Option.value r.rr_name ~default:"?";
+      (match objective with
+      | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
           let subject = "S" in
           (* SUBTYPING §4.1 rules 1 and 4: on the concrete types where
              inheritance made this rule a defaults BASE, the stack writes it
@@ -9444,46 +9444,46 @@ let translate_regel ctx (r : resolved_regel) =
              relation, and not its closure. Empty on every target whose chain
              declares no group, which is every rule in a flat model, so the
              emitted program is unchanged there. *)
-          let behalve =
-            match r.rr_soort with
-            | Some Kenmerktoekenning -> []
+          let except =
+            match r.rr_presentation with
+            | Some Characteristic_attribution -> []
             | _ ->
                 List.map
                   (fun t -> Printf.sprintf "not is_a(%s,%s)" subject (str t))
                   (Ir_v0.Desugar.absorbed_on ctx.doc ~otype:ot ~attr:a)
           in
           let base =
-            String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str ot) :: behalve)
+            String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str ot) :: except)
           in
           (* ch. 3.10's case distinction is on the TARGET, which the condition
              cannot see — so it is settled here, before the window is
-             translated, and through the walk ref uses (Eval.bevat_periode)
+             translated, and through the walk ref uses (Eval.contains_time_window)
              rather than a second one that could drift from it. *)
-          let doel_tijdlijn =
-            match r.rr_soort with
-            | Some Kenmerktoekenning -> kenmerk_temporal ctx ~otype:ot ~kenmerk:a
+          let target_timeline =
+            match r.rr_presentation with
+            | Some Characteristic_attribution -> characteristic_temporal ctx ~otype:ot ~characteristic:a
             | _ -> attr_temporal ctx ~otype:ot ~attr:a
           in
           (* ch. 3.10's CLIP (built 2026-09-23): on a timeline target the
              window is taken off the condition position — it gates nothing —
-             and cuts the producer's segments instead ([schrijf_segment]).
+             and cuts the producer's segments instead ([write_segment]).
              Two positions stay refused by name, in ref's words up to the
              phase: a characteristic target, whose timeline neither OCaml
              executor writes (ch. 3.11), and the window as a composite
              MEMBER, where the chapter says nothing about the other members. *)
           let clip =
-            if doel_tijdlijn && Option.fold ~none:false ~some:Eval.bevat_periode r.rr_voorwaarde
+            if target_timeline && Option.fold ~none:false ~some:Eval.contains_time_window r.rr_condition
             then
-              match (r.rr_soort, r.rr_voorwaarde) with
-              | Some Kenmerktoekenning, _ ->
+              match (r.rr_presentation, r.rr_condition) with
+              | Some Characteristic_attribution, _ ->
                   fault
                     "a period condition on the temporal characteristic target %S is ch. 3.10's \
                      CLIP over a characteristic timeline, and no temporal characteristic is \
                      written here (ch. 3.11), so there is no timeline to cut. Declined in \
                      translation"
                     a
-              | _, Some (Periode_conditie { vanaf; tot; tot_inclusief; _ }) ->
-                  Some (vanaf, tot, tot_inclusief)
+              | _, Some (Time_window { starting_at; up_to; to_inclusive; _ }) ->
+                  Some (starting_at, up_to, to_inclusive)
               | _ ->
                   fault
                     "a period condition inside a composite on the temporal target %S: ch. 3.10 \
@@ -9494,7 +9494,7 @@ let translate_regel ctx (r : resolved_regel) =
             else None
           in
           let cond =
-            match (clip, r.rr_voorwaarde) with
+            match (clip, r.rr_condition) with
             | Some _, _ | None, None -> []
             | None, Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
           in
@@ -9508,24 +9508,24 @@ let translate_regel ctx (r : resolved_regel) =
             | None -> ()
           in
           (match writer with
-          | Some i when not doel_tijdlijn ->
-              head_body ctx (Printf.sprintf "wvuurt(%s,%s,%d)" subject (str a) i) (base :: cond)
+          | Some i when not target_timeline ->
+              head_body ctx (Printf.sprintf "wfires(%s,%s,%d)" subject (str a) i) (base :: cond)
           | _ -> ());
-          (match r.rr_soort with
-          | Some Kenmerktoekenning ->
+          (match r.rr_presentation with
+          | Some Characteristic_attribution ->
               (* ch. 3.11: a temporal characteristic's write is a TIMELINE of
                  true-periods, and heeft/2 is the scalar reading. Until
                  2026-09-23 this arm wrote heeft/2 on such a target anyway —
                  measured on the document of red case
                  periodevenster-tijdlijnkenmerk without its window: PASS
                  here, where ref refuses. Refused now, in ref's words. *)
-              if kenmerk_temporal ctx ~otype:ot ~kenmerk:a then
+              if characteristic_temporal ctx ~otype:ot ~characteristic:a then
                 fault "temporal characteristic %S: temporal writes are not implemented" a;
-              (match r.waarde with
+              (match r.value_node with
               | Some (Literal { variant = Lv_boolean true; _ }) -> ()
               | _ -> fault "characteristic attribution with a value other than the boolean constant true");
-              head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
-          | Some (Berekening | Gelijkstelling) when attr_sum_typed ctx ~otype:ot ~attr:a ->
+              head_body ctx (Printf.sprintf "has(%s,%s)" subject (str a)) (base :: cond)
+          | Some (Calculation | Equation) when attr_sum_typed ctx ~otype:ot ~attr:a ->
               (* ch. 9.1: a Construct write to a sum-typed target. A sum value
                  carries no numeric scale, no unit and no fit — the constructor
                  term rides straight into the val head. A leeg argument binds no
@@ -9539,10 +9539,10 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               write_head term ((base :: cond) @ bindings)
-          | Some (Berekening | Gelijkstelling) when attr_struct_typed ctx ~otype:ot ~attr:a ->
+          | Some (Calculation | Equation) when attr_struct_typed ctx ~otype:ot ~attr:a ->
               (* ch. 11.1: a StructLiteral write to a struct-typed target. The
                  record term rides straight into the val head — no numeric scale,
                  no unit, no fit (value_scale 0), the Construct-write sibling. A
@@ -9555,10 +9555,10 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               write_head term ((base :: cond) @ bindings)
-          | Some (Berekening | Gelijkstelling) when attr_datetime_typed ctx ~otype:ot ~attr:a ->
+          | Some (Calculation | Equation) when attr_datetime_typed ctx ~otype:ot ~attr:a ->
               (* ch. 3.8 the millisecond layer: a datum-tijd computed target
                  (datetime ± duration) rides the pair term dt(D, MS) straight
                  into the val head — no numeric scale, no unit, no fit (the
@@ -9572,12 +9572,12 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let atoms, dd, dm = dt_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              let atoms, dd, dm = dt_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               write_head (Printf.sprintf "dt(%s,%s)" dd dm) ((base :: cond) @ atoms)
-          | Some (Berekening | Gelijkstelling)
+          | Some (Calculation | Equation)
             when (match attr_symbolic_datatype ctx ~otype:ot ~attr:a with
-                 | Some (Tekst | Enumeratie _) -> true
+                 | Some (Text_type | Enumeration _) -> true
                  | _ -> false)
                  && not (attr_temporal ctx ~otype:ot ~attr:a) ->
               (* ch. 1.2d scalars in write position: a text/enum ground term
@@ -9593,21 +9593,21 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               write_head term ((base :: cond) @ bindings)
-          | Some (Berekening | Gelijkstelling)
-            when attr_symbolic_datatype ctx ~otype:ot ~attr:a = Some Booleaan ->
+          | Some (Calculation | Equation)
+            when attr_symbolic_datatype ctx ~otype:ot ~attr:a = Some Boolean ->
               (* a boolean is a characteristic in v0: rule forms READ it
                  closed-world through heeft/2 (bool_atoms, the WF-027 guard),
                  which a derived val/3 would not feed — the two encodings
                  would split. No corpus case computes a boolean attribute;
                  refuse loudly rather than encode half of it. *)
               fault
-                "a boolean computed target %S has no encoding here (the closed-world heeft/2 \
+                "a boolean computed target %S has no encoding here (the closed-world has/2 \
                  read and a derived val/3 would split; no corpus case)"
                 a
-          | Some (Berekening | Gelijkstelling) when attr_temporal ctx ~otype:ot ~attr:a -> (
+          | Some (Calculation | Equation) when attr_temporal ctx ~otype:ot ~attr:a -> (
               (* a timeline written by two rules has no wval/4 encoding: a
                  segment list is no single term to compare *)
               if writer <> None then
@@ -9623,37 +9623,37 @@ let translate_regel ctx (r : resolved_regel) =
                   "the case supplies input for computed target %S: ref (like v0) overwrites it, \
                    which has no monotone encoding here (no corpus case)"
                   a;
-              match r.waarde with
+              match r.value_node with
               | Some
-                  (Functie
-                     { kind = Tijdsevenredig_deel;
-                       argumenten =
-                         [ Attribuut_ref
-                             { attribuut = Some b; objecttype = Some bot; navigatie_bindingen = None; _ } ];
+                  (Function_call
+                     { kind = Time_proportional_part;
+                       call_arguments =
+                         [ Attribute_reference
+                             { attribute_ref = Some b; object_type = Some bot; navigation_bindings = None; _ } ];
                        filter =
                          Some
-                           (Kenmerk_check
-                              { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } as fc);
-                       granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ })
+                           (Characteristic_check
+                              { characteristic = Some k; navigation_binding = None; negation = false; _ } as fc);
+                       grain = Some g; empty_fallback = None; dimension_selection = None; _ })
                 when norm bot = norm ot ->
                   clip_member_qualifications fc;
                   translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~g
               | Some
-                  (Functie
-                     { kind = Aantal_dagen_in; argumenten = [];
+                  (Function_call
+                     { kind = Day_count; call_arguments = [];
                        filter =
                          Some
-                           (Kenmerk_check
-                              { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } as fc);
-                       granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }) ->
+                           (Characteristic_check
+                              { characteristic = Some k; navigation_binding = None; negation = false; _ } as fc);
+                       grain = Some g; empty_fallback = None; dimension_selection = None; _ }) ->
                   clip_member_qualifications fc;
-                  translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~g
+                  translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~g
               | _ ->
                   fault
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
                      shape (a gedurende condition over an own temporal characteristic); no \
                      corpus case for more")
-          | Some (Berekening | Gelijkstelling) ->
+          | Some (Calculation | Equation) ->
               let standing =
                 List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)
               in
@@ -9666,7 +9666,7 @@ let translate_regel ctx (r : resolved_regel) =
               units_identical_ok
                 ~what:(Printf.sprintf "the write to %S" a)
                 (attr_unit ctx ~otype:ot ~attr:a)
-                (Option.bind r.waarde (eff_unit ctx));
+                (Option.bind r.value_node (eff_unit ctx));
               let unbounded = unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) in
               ctx.rule_guard <- cond;
               ctx.write_scale <- target_scale;
@@ -9675,7 +9675,7 @@ let translate_regel ctx (r : resolved_regel) =
                  non-branching value is one branch, identical to the single-head
                  emission; a Let-nested IfThenElse is one val head per branch,
                  the shared Let value atoms in each branch's body *)
-              let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
               ctx.write_unbounded <- false;
@@ -9696,7 +9696,7 @@ let translate_regel ctx (r : resolved_regel) =
                     in
                     find 0 (Ir_v0.Desugar.standing_targets ctx.doc)
                   in
-                  Some (Printf.sprintf "stand%d_eff(%s)" sidx subject)
+                  Some (Printf.sprintf "state%d_eff(%s)" sidx subject)
                 end
                 else None
               in
@@ -9705,7 +9705,7 @@ let translate_regel ctx (r : resolved_regel) =
                  when it fires without deciding, the leeg evaluation v0 turns
                  into a divergence. The decision atom carries the val head's
                  body, as the standing effectiveness atom does *)
-              let naast_init =
+              let beside_init =
                 let inits, _, _ = init_writers ctx ~ot ~a in
                 inits <> []
               in
@@ -9714,13 +9714,13 @@ let translate_regel ctx (r : resolved_regel) =
                   let body = (base :: cond) @ bindings in
                   let term, fit_guards = fitted ~unbounded ctx ~subject ~what:a ~body term scale target_scale in
                   write_head term (body @ fit_guards);
-                  if naast_init then
+                  if beside_init then
                     head_body ctx
                       (Printf.sprintf "comp_decides(%s,%s)" subject (str a))
                       (body @ fit_guards);
                   match eff with Some e -> head_body ctx e (body @ fit_guards) | None -> ())
                 branches;
-              if naast_init then
+              if beside_init then
                 head_body ctx (Printf.sprintf "comp_fires(%s,%s)" subject (str a)) (base :: cond);
               (* the input stands where no writer of the subject decides: a
                  standing co-writer on another type of the chain (its own
@@ -9731,12 +9731,12 @@ let translate_regel ctx (r : resolved_regel) =
                 | Some _ ->
                     let _, comps, _ = init_writers ctx ~ot ~a in
                     List.filter_map
-                      (fun (r' : resolved_regel) ->
-                        match r'.doel with
-                        | Some (Attribuut_ref { attribuut = Some a'; objecttype = Some ot'; _ })
+                      (fun (r' : resolved_rule) ->
+                        match r'.objective with
+                        | Some (Attribute_reference { attribute_ref = Some a'; object_type = Some ot'; _ })
                           when r' != r ->
                             Option.map
-                              (fun k -> Printf.sprintf "not stand%d_eff(%s)" k subject)
+                              (fun k -> Printf.sprintf "not state%d_eff(%s)" k subject)
                               (List.find_index (( = ) (norm ot', norm a'))
                                  (Ir_v0.Desugar.standing_targets ctx.doc))
                         | _ -> None)
@@ -9748,7 +9748,7 @@ let translate_regel ctx (r : resolved_regel) =
                     (Printf.sprintf "val(%s,%s,V)" subject (str a))
                     ([ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ] @ co_eff)
               | None -> ())
-          | Some Initialisatie ->
+          | Some Initialisation ->
               (* RUNTIME-SEMANTICS ch. 5.4, natively: an initialisation
                  reaches this arm only outside the ch. 7.7 desugaring domain
                  (a conditional or a windowed one), where ref replays the v0
@@ -9790,43 +9790,43 @@ let translate_regel ctx (r : resolved_regel) =
                   a;
               if attr_temporal ctx ~otype:ot ~attr:a then
                 fault "temporal attribute %S as a target: temporal writes are not implemented" a;
-              (match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
-              | Some (Some (Numeriek _ | Percentage _ | Datum_in_dagen)) -> ()
+              (match Ir_v0.Checks.find_ci (object_type ctx ot).attributes a with
+              | Some (Some (Number _ | Percentage _ | Date_in_days)) -> ()
               | _ ->
                   fault
                     "the initialisation of %S writes a target that is neither a number nor a \
                      date, and only those are translated here (no corpus case)"
                     a);
-              let naast = comps <> [] in
+              let beside = comps <> [] in
               (* a STANDING computing rule (ch. 7.8; beside this arm only
                  when it is declared on another type of the chain) writes
                  nothing on a leeg evaluation, so ref's initialisation then
                  writes and nothing diverges *)
               let divergent =
                 match comps with
-                | [ { doel = Some (Attribuut_ref { objecttype = Some cot; _ }); _ } ] ->
+                | [ { objective = Some (Attribute_reference { object_type = Some cot; _ }); _ } ] ->
                     not (List.mem (norm cot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc))
                 | _ -> false
               in
               emit ctx "#defined inputfilled/2.";
-              if naast then emit ctx "#defined comp_decides/2. #defined comp_fires/2.";
+              if beside then emit ctx "#defined comp_decides/2. #defined comp_fires/2.";
               let guard =
                 Printf.sprintf "not inputfilled(%s,%s)" subject (str a)
-                :: (if naast then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ]
+                :: (if beside then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ]
                     else [])
               in
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
                 ~what:(Printf.sprintf "the write to %S" a)
                 (attr_unit ctx ~otype:ot ~attr:a)
-                (Option.bind r.waarde (eff_unit ctx));
+                (Option.bind r.value_node (eff_unit ctx));
               (* ref evaluates the value only where it would write, so the
                  fences its translation emits carry the write guard *)
               let unbounded = unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) in
               ctx.rule_guard <- cond @ guard;
               ctx.write_scale <- target_scale;
               ctx.write_unbounded <- unbounded;
-              let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
               ctx.write_unbounded <- false;
@@ -9860,10 +9860,10 @@ let translate_regel ctx (r : resolved_regel) =
 let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
   ignore ctx;
   match e with
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
+  | Attribute_reference
+      { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
-      [ Printf.sprintf "heeft(%s,%s)" subject (str a) ]
+      [ Printf.sprintf "has(%s,%s)" subject (str a) ]
   | _ ->
       fault
         "a characteristic-initialisation expression here is an own-subject boolean attribute read \
@@ -9918,14 +9918,14 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    A depth or nesting guard is part of every creation's body, so the
    grounding, which does not settle the conditions of the chain, stops
    there too. *)
-let translate_object_creatie ctx i (oc : resolved_object_creatie) =
+let translate_object_creation ctx i (oc : resolved_object_creation) =
   (* the ch. 8.2 validity gate: an excluded creation does not apply —
      nothing is minted, no back-link lands, no guard fires (ref skips the
      whole form). The index [i] stays the iteration index, so the other
      creations' oc%d terms are unchanged by a skipped neighbour. *)
-  if applies ctx oc.oc_geldigheid then begin
-  ctx.rule_name <- Option.value oc.oc_naam ~default:"?";
-  let nieuw = req "ObjectCreationVersion.createdType" oc.nieuw_type in
+  if applies ctx oc.oc_validity then begin
+  ctx.rule_name <- Option.value oc.oc_name ~default:"?";
+  let created = req "ObjectCreationVersion.createdType" oc.created_type in
   let subject_ot = req "ObjectCreationVersion.subject" oc.oc_subject in
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
@@ -9933,22 +9933,22 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
     { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
   in
   let pair =
-    match oc.oc_verbindende_rol with
+    match oc.oc_connecting_role with
     | Some rb -> (
         match Ir_v0.Checks.resolve_binding { doc = ctx.doc } rb with
-        | Ok (_, bound, other) -> Some (rb.rb_feittype, bound, other)
+        | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
         | Error e -> fault "%s" e)
-    | None -> Eval.connecting_pair env ~from_type:subject_ot ~to_type:nieuw
+    | None -> Eval.connecting_pair env ~from_type:subject_ot ~to_type:created
   in
   let cond =
-    match oc.oc_voorwaarde with
+    match oc.oc_condition with
     | Some c -> cond_atoms ctx ~subject ~subject_ot c
     | None -> []
   in
   let guard =
     match pair with
-    | Some (_, new_role, _) when not new_role.rol_meervoudig ->
-        [ Printf.sprintf "not inputrol(%s,%s,_)" subject (str (role_canonical new_role)) ]
+    | Some (_, new_role, _) when not new_role.role_many ->
+        [ Printf.sprintf "not inputrole(%s,%s,_)" subject (str (role_canonical new_role)) ]
     | _ -> []
   in
   let stratum =
@@ -9986,14 +9986,14 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
               ctx.rule_name k))
         subject subject (str subject_ot) subject k
   | None -> ());
-  head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str nieuw)) body;
+  head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str created)) body;
   List.iter
-    (fun (t : toekenning) ->
-      let m = req "MemberInit.member" t.toe_attribuut in
-      if t.toe_kenmerk then (
-        match t.toe_waarde with
+    (fun (t : assignment) ->
+      let m = req "MemberInit.member" t.to_attribute in
+      if t.to_characteristic then (
+        match t.to_value with
         | Some (Literal { variant = Lv_boolean true; _ }) ->
-            head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) body
+            head_body ctx (Printf.sprintf "has(%s,%s)" term (str m)) body
         | Some (Literal { variant = Lv_boolean false; _ }) -> ()
         | Some e ->
             (* WF-027 relaxation (besluit 1): a boolean-typed EXPRESSION guards
@@ -10003,31 +10003,31 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
                the guard fails and the mark stays unset (an absent init). The two
                boolean-constant arms above are the v0 form, byte-for-byte. *)
             let batoms = bool_atoms ctx ~subject ~subject_ot e in
-            head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) (body @ batoms)
+            head_body ctx (Printf.sprintf "has(%s,%s)" term (str m)) (body @ batoms)
         | None -> fault "characteristic initialisation of %S without a value" m)
-      else if attr_sum_typed ctx ~otype:nieuw ~attr:m || attr_struct_typed ctx ~otype:nieuw ~attr:m
+      else if attr_sum_typed ctx ~otype:created ~attr:m || attr_struct_typed ctx ~otype:created ~attr:m
       then begin
         (* a sum-/struct-typed initialisation (the tutorial passes an [Individual]
            struct as a subscope input): the record/constructor term carries no
            numeric scale, no unit and no fit — it rides straight into the val head,
-           the translate_regel struct/sum-target sibling (ch. 9.1/11.1). *)
+           the translate_rule struct/sum-target sibling (ch. 9.1/11.1). *)
         ctx.rule_guard <- cond @ guard @ depth_guard;
-        let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.toe_waarde) in
+        let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.to_value) in
         ctx.rule_guard <- [];
         head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (body @ bindings)
       end
       else begin
-        let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
+        let target_scale = pow10 (attr_decimals ctx ~otype:created ~attr:m) in
         units_identical_ok
           ~what:(Printf.sprintf "the initialisation of %S" m)
-          (attr_unit ctx ~otype:nieuw ~attr:m)
-          (Option.bind t.toe_waarde (eff_unit ctx));
-        let unbounded = unbounded_datatype (attr_datatype ctx ~otype:nieuw ~attr:m) in
+          (attr_unit ctx ~otype:created ~attr:m)
+          (Option.bind t.to_value (eff_unit ctx));
+        let unbounded = unbounded_datatype (attr_datatype ctx ~otype:created ~attr:m) in
         ctx.rule_guard <- cond @ guard @ depth_guard;
         ctx.write_scale <- target_scale;
         ctx.write_unbounded <- unbounded;
         let bindings, tm, scale =
-          expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.toe_waarde)
+          expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.to_value)
         in
         ctx.rule_guard <- [];
         ctx.write_scale <- 1;
@@ -10036,15 +10036,15 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         let tm, fit_guards = fitted ~unbounded ctx ~subject ~what:m ~body:wbody tm scale target_scale in
         head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (wbody @ fit_guards)
       end)
-    oc.toekenningen;
+    oc.assignments;
   (match pair with
   | None -> ()
   | Some (_, new_role, subj_role) ->
       head_body ctx
-        (Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical new_role)) term)
+        (Printf.sprintf "role(%s,%s,%s)" subject (str (role_canonical new_role)) term)
         body;
       head_body ctx
-        (Printf.sprintf "rol(%s,%s,%s)" term (str (role_canonical subj_role)) subject)
+        (Printf.sprintf "role(%s,%s,%s)" term (str (role_canonical subj_role)) subject)
         body)
   end
 
@@ -10055,19 +10055,19 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
    idempotence (a target reached along two paths is one atom). The
    symbolic form is the whole of the relational content; the wire
    requires it (B7). *)
-let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
+let translate_fact_creation ctx (fc : resolved_fact_creation) =
   (* the ch. 8.2 validity gate: an excluded fact creation does not apply —
      no rol/3 lands and its to-one guards stay unemitted (ref adds no
      link, so no second-filler fault can arise from this form) *)
-  if applies ctx fc.fc_geldigheid then begin
-  let ftn = fc.fc_feittype in
+  if applies ctx fc.fc_validity then begin
+  let ftn = fc.fc_fact_type in
   let env =
     { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
   in
   let role rname = Eval.created_role env ~fact_type:ftn ~role:rname in
-  let anker_rol = role fc.anker_rol in
-  let doel_rol = role fc.doel_rol in
-  let anker = req "FactCreationVersion.anchor" fc.anker in
+  let anchor_role = role fc.anchor_role in
+  let objective_role = role fc.objective_role in
+  let anchor_point = req "FactCreationVersion.anchor" fc.anchor_point in
   let subject = "S" in
   (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: the guard is the one
      condition position with two objects in scope, and the host field names
@@ -10079,48 +10079,48 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
      anker case emits its literals before the chain exactly as before, and the
      generated program for every document that predates the rule is unchanged
      down to its fresh-name numbering. *)
-  let on_doel = Eval.guard_on_doel ctx.doc fc in
-  let cond_anker =
-    match fc.fc_voorwaarde with
-    | Some c when not on_doel -> cond_atoms ctx ~subject ~subject_ot:anker c
+  let on_objective = Eval.guard_on_target ctx.doc fc in
+  let cond_anchor =
+    match fc.fc_condition with
+    | Some c when not on_objective -> cond_atoms ctx ~subject ~subject_ot:anchor_point c
     | _ -> []
   in
   let hop (atoms, cur) rb =
     let v = fresh ctx "H" in
     ( atoms
-      @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str (role_canonical (Eval.bound_role env rb))) v ],
+      @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical (Eval.bound_role env rb))) v ],
       v )
   in
   let mids =
     List.fold_left
-      (fun acc (t : tussenstap) -> hop acc t.ts_rol)
-      ([], subject) fc.tussenstappen
+      (fun acc (t : path_step) -> hop acc t.ts_role)
+      ([], subject) fc.intermediates
   in
-  let chain, target = hop mids fc.join_rol in
-  let cond_doel =
-    match fc.fc_voorwaarde with
-    | Some c when on_doel ->
-        cond_atoms ctx ~subject:target ~subject_ot:(req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_doel) c
+  let chain, target = hop mids fc.join_role in
+  let cond_target =
+    match fc.fc_condition with
+    | Some c when on_objective ->
+        cond_atoms ctx ~subject:target ~subject_ot:(req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target) c
     | _ -> []
   in
   let body =
-    (Printf.sprintf "isa(%s,%s)" subject (str anker) :: cond_anker) @ chain @ cond_doel
+    (Printf.sprintf "isa(%s,%s)" subject (str anchor_point) :: cond_anchor) @ chain @ cond_target
   in
-  head_body ctx (Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical doel_rol)) target) body;
-  head_body ctx (Printf.sprintf "rol(%s,%s,%s)" target (str (role_canonical anker_rol)) subject) body;
+  head_body ctx (Printf.sprintf "role(%s,%s,%s)" subject (str (role_canonical objective_role)) target) body;
+  head_body ctx (Printf.sprintf "role(%s,%s,%s)" target (str (role_canonical anchor_role)) subject) body;
   (* a second distinct filler on a to-one end faults in ref/
      (World.add_link, ch. 5.5); a viol/2 witness plus the global
      integrity constraint makes clingo fail identically (UNSAT) instead
      of silently holding both atoms — and the runner's UNSAT diagnosis
      re-run can name WHICH guard fired *)
-  let to_one_guard (r : rol) holder_type =
-    if not r.rol_meervoudig then
-      emit ctx "viol(\"to-one second filler on role %s\",X) :- isa(X,%s), 2 <= #count { Y : rol(X,%s,Y) }."
+  let to_one_guard (r : role_ref) holder_type =
+    if not r.role_many then
+      emit ctx "viol(\"to-one second filler on role %s\",X) :- isa(X,%s), 2 <= #count { Y : role(X,%s,Y) }."
         (norm (role_canonical r)) (str holder_type)
         (str (role_canonical r))
   in
-  to_one_guard doel_rol anker;
-  to_one_guard anker_rol (req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_doel)
+  to_one_guard objective_role anchor_point;
+  to_one_guard anchor_role (req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target)
   end
 
 (* the defaults group (RUNTIME-SEMANTICS ch. 7.1/7.2/7.9, IR-SPEC ch. 6.1;
@@ -10198,7 +10198,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
     atoms
   in
   let own_just ?(extra = []) n (r : default) =
-    if r.default_initialisatie then (
+    if r.default_initialisation then (
       if not root then
         fault "an initialisation default inside an exception group is ill-formed";
       match has_input with
@@ -10207,11 +10207,11 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
              justified where the input left the target empty AND that
              condition holds *)
           Printf.sprintf "not %s(%s)" hi subject
-          :: (match r.default_voorwaarde with
+          :: (match r.default_justification with
              | Some c -> condition_atoms ~extra n c
              | None -> [])
       | None -> fault "initialisation default on characteristic defaults")
-    else condition_atoms ~extra n (req "default justification" r.default_voorwaarde)
+    else condition_atoms ~extra n (req "default justification" r.default_justification)
   in
   (* a default's OWN decision (a plain default, an init default, or a form-a
      fall-back): on the attribute arm the consequence bindings sit in the
@@ -10220,7 +10220,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
      restricts a form-a fall-back to exception groups that decide nothing (ch. 7.9) *)
   let emit_own_dec n (r : default) ~extra =
     if is_char then
-      let b = if req "default decision" r.default_besluit then 1 else 0 in
+      let b = if req "default decision" r.default_decision then 1 else 0 in
       head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
         ((base :: own_just ~extra n r) @ extra)
     else
@@ -10232,7 +10232,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
       let saved_r = ctx.param_reach in
       ctx.param_reach <- (fun _ -> (base :: reached n) @ Lazy.force just @ extra);
       let bindings, term, scale =
-        expr_term ctx ~subject ~subject_ot:(ot_at n) (req "default consequence" r.default_consequentie)
+        expr_term ctx ~subject ~subject_ot:(ot_at n) (req "default consequence" r.default_consequence)
       in
       ctx.param_reach <- saved_r;
       if scale <> target_scale then
@@ -10242,7 +10242,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
   in
   List.iteri
     (fun n (r : default) ->
-      (match r.default_excepties with
+      (match r.default_exceptions with
       | None -> emit_own_dec n r ~extra:[]
       | Some egs ->
           (* the displacement wait threaded into the exception groups: every
@@ -10269,13 +10269,13 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
           head_body ctx (Printf.sprintf "%s(%s)" (conf n) subject)
             [ Printf.sprintf "%s(%s)" u_cfl subject ];
           let has_own =
-            if is_char then r.default_besluit <> None else r.default_consequentie <> None
+            if is_char then r.default_decision <> None else r.default_consequence <> None
           in
           if has_own then
             emit_own_dec n r ~extra:[ Printf.sprintf "not %s(%s)" u_any subject ]);
       head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
         [ Printf.sprintf "%s(%s,_)" (dec n) subject ];
-      if r.default_excepties <> None then
+      if r.default_exceptions <> None then
         head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
           [ Printf.sprintf "%s(%s)" (conf n) subject ])
     defaults;
@@ -10286,7 +10286,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
       let displaced = List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
       head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
         (Printf.sprintf "%s(%s,V)" (dec n) subject :: displaced);
-      if r.default_excepties <> None then
+      if r.default_exceptions <> None then
         head_body ctx (Printf.sprintf "%s(%s)" cfl subject)
           (Printf.sprintf "%s(%s)" (conf n) subject :: displaced))
     defaults;
@@ -10310,7 +10310,7 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
           ~origins:(List.map (fun _ -> subject_ot) eg.eg_defaults) ~base ~path:group_path
           ~root:false ~target_form ~target_scale ~has_input
           ~outer_displaced eg.eg_defaults)
-      egs.egs_leden
+      egs.egs_members
   in
   let no_member_cfl =
     List.map (fun (_, mc) -> Printf.sprintf "not %s(%s)" mc subject) members
@@ -10340,9 +10340,9 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
      suppressed by the conflict); [any] = decided-or-conflicted, the fall-back
      gate of a form-a parent default *)
   List.iter
-    (fun (om, _) ->
+    (fun (group_outcome, _) ->
       head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
-        [ Printf.sprintf "%s(%s,V)" om subject; Printf.sprintf "not %s(%s)" cfl subject ])
+        [ Printf.sprintf "%s(%s,V)" group_outcome subject; Printf.sprintf "not %s(%s)" cfl subject ])
     members;
   head_body ctx (Printf.sprintf "%s(%s)" any subject)
     [ Printf.sprintf "%s(%s,_)" out subject ];
@@ -10375,7 +10375,7 @@ let translate_defaults_group ctx gidx ~owner
   let l0, _ = List.hd members in
   let members =
     List.filter
-      (fun ((l, _) : prioritized_defaults * string list) -> applies ctx l.pd_geldigheid)
+      (fun ((l, _) : prioritized_defaults * string list) -> applies ctx l.pd_validity)
       members
   in
   if members = [] then (
@@ -10385,7 +10385,7 @@ let translate_defaults_group ctx gidx ~owner
        be emitted, unconditionally, or the standing input would silently
        vanish. A characteristic target has no defeasible entry; nothing
        remains to emit. *)
-    match l0.pd_attribuut with
+    match l0.pd_attribute with
     | Some a ->
         head_body ctx
           (Printf.sprintf "val(S,%s,V)" (str a))
@@ -10397,7 +10397,7 @@ let translate_defaults_group ctx gidx ~owner
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str owner) in
   let is_char, target_name =
-    match (l0.pd_kenmerk, l0.pd_attribuut) with
+    match (l0.pd_characteristic, l0.pd_attribute) with
     | Some k, None -> (true, k)
     | None, Some a -> (false, a)
     | _ ->
@@ -10408,7 +10408,7 @@ let translate_defaults_group ctx gidx ~owner
       (Ir_v0.Checks.declaring_type ctx.doc ~from:owner
          ~kind:(if is_char then `Characteristic else `Attribute)
          ~member:target_name)
-      ~default:l0.pd_onderwerp
+      ~default:l0.pd_subject
     ^ "." ^ target_name
   in
   (* the attribute arm's input scaffolding: the target scale, and the input
@@ -10430,7 +10430,7 @@ let translate_defaults_group ctx gidx ~owner
           translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
             ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.defaults
         in
-        (out, cfl, List.exists (fun (r : default) -> r.default_excepties <> None) l.defaults))
+        (out, cfl, List.exists (fun (r : default) -> r.default_exceptions <> None) l.defaults))
       members
   in
   (* the root group (ch. 7.2): differing member decisions and any propagated
@@ -10471,7 +10471,7 @@ let translate_defaults_group ctx gidx ~owner
   if is_char then
     List.iter
       (fun (out, _, _) ->
-        head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str target_name))
+        head_body ctx (Printf.sprintf "has(%s,%s)" subject (str target_name))
           ((Printf.sprintf "%s(%s,1)" out subject :: conflict_guard) @ [ base ]))
       member_info
   else begin
@@ -10501,18 +10501,18 @@ let translate_defaults_group ctx gidx ~owner
    rounding ref writes the EXACT rational share and faults a
    non-fitting write — here an exactness viol/2 at the target scale,
    never a silent floor (the aligned form used to floor silently). *)
-let translate_verdeling ctx i (v : resolved_verdeling) =
+let translate_allocation ctx i (v : resolved_allocation) =
   (* windows on the untranslated-window forms fault LOUDLY (they were
      silently ignored before the ch. 8.2 gate landed for rules, prioritized
      defaults and creations): an unwindowed translation of a windowed allocation
      would silently apply outside its window *)
-  (match v.vd_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+  (match v.vd_validity with
+  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
       fault "allocation validity windows are not translated (no corpus case)"
   | _ -> ());
-  let methode = req "AllocationVersion.method" v.vd_methode in
-  let bt = req "AllocationVersion.sourceType" v.bron_type and dt = req "AllocationVersion.targetType" v.doel_type in
-  let ba = req "AllocationVersion.sourceAttribute" v.bron_attribuut and da = req "AllocationVersion.targetAttribute" v.doel_attribuut in
+  let method_name = req "AllocationVersion.method" v.vd_method in
+  let bt = req "AllocationVersion.sourceType" v.source_type and dt = req "AllocationVersion.targetType" v.objective_type_name in
+  let ba = req "AllocationVersion.sourceAttribute" v.source_attribute and da = req "AllocationVersion.targetAttribute" v.target_attribute in
   (* case input on the allocation target: ref (like v0) OVERWRITES the
      target where the verdeling reaches an instance and the input stands
      where it does not (World.write_attr, ch. 4). The S10 defeasible-input
@@ -10561,23 +10561,23 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   end;
   (* WF-025 field-validity backstops, rejected before translation on
      verifier-clean input *)
-  (match (methode, v.rato_attribuut, v.maximum_attribuut) with
-  | Gelijke_delen, Some _, _ ->
+  (match (method_name, v.ratio_attribute, v.maximum_attribute) with
+  | Equal_shares, Some _, _ ->
       fault "an equal-shares allocation with a ratio attribute is ill-formed"
-  | (Gelijke_delen | Op_volgorde), None, Some _ ->
+  | (Equal_shares | Ordered), None, Some _ ->
       fault "an allocation maximum requires the weighted split"
   | _ -> ());
-  (match (methode, v.groepeer_attribuut) with
-  | (Gelijke_delen | Naar_rato), Some _ ->
+  (match (method_name, v.ordering_attribute) with
+  | (Equal_shares | Proportional), Some _ ->
       fault "an ordering key on a non-ordered allocation is ill-formed"
   | _ -> ());
-  let name = Option.value v.vd_naam ~default:"verdeling" in
+  let name = Option.value v.vd_name ~default:"verdeling" in
   (* the §9.5 channel key: a deposit out of the condition (a division
      edge inside the condition) rides the allocation's name, exactly as
      ref's cond_err does (S13) *)
   ctx.rule_name <- name;
   let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
-  let role = role_canonical (Eval.bound_role env v.verbindende_rol) (* required (B12) *) in
+  let role = role_canonical (Eval.bound_role env v.connecting_role) (* required (B12) *) in
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
      instance the connecting relation reaches — the role supplies the
@@ -10593,7 +10593,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      [translate]), so where the filler is doelType or below — every
      document written before the chain existed — this derives exactly the
      role's links and the encoding is unchanged. *)
-  emit ctx "%sontv(B,X) :- rol(B,%s,X), isa(X,%s)." p (str role) (str dt);
+  emit ctx "%sontv(B,X) :- role(B,%s,X), isa(X,%s)." p (str role) (str dt);
   let recip = Printf.sprintf "%sontv(B,X)" p in
   let recip_any = Printf.sprintf "%sontv(B,_)" p in
   (* the S10 pass-through: the case value stands on any target instance the
@@ -10608,7 +10608,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   (* --- the scale layer ------------------------------------------------ *)
   let pdec = attr_decimals ctx ~otype:bt ~attr:ba in
   let tdec = attr_decimals ctx ~otype:dt ~attr:da in
-  (match v.afronding_decimalen with
+  (match v.rounding_decimals with
   | Some d when d > tdec ->
       fault
         "allocation rounding at %d decimals is finer than its %d-decimal target (no corpus \
@@ -10619,8 +10619,8 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      share and faults a write that does not fit the target's decimals;
      the share division gets an exactness viol below, never a silent
      floor *)
-  let exact = v.afronding_decimalen = None in
-  let ddec = Option.value v.afronding_decimalen ~default:tdec in
+  let exact = v.rounding_decimals = None in
+  let ddec = Option.value v.rounding_decimals ~default:tdec in
   (* an unrounded (exact-share) allocation with a maximum: ref writes
      min(exact_share, cap) and faults a non-fitting write. Carried here for
      the proportional method with a cap no finer than its target:
@@ -10634,16 +10634,16 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      write might itself not fit, a silent floor) and the ordered method
      keep faulting: no witness pins that corner. Only a fence narrows here;
      the emitted allocation machinery is unchanged. *)
-  (match (exact, v.maximum_attribuut) with
-  | true, Some cap when methode = Naar_rato && attr_decimals ctx ~otype:dt ~attr:cap <= tdec -> ()
+  (match (exact, v.maximum_attribute) with
+  | true, Some cap when method_name = Proportional && attr_decimals ctx ~otype:dt ~attr:cap <= tdec -> ()
   | true, Some _ ->
       fault
         "an unrounded allocation with a maximum is not translated here (only the proportional \
          method with a cap no finer than its target is carried; otherwise whether the exact share \
          or the cap is the written minimum decides the exactness fault; no corpus case)"
   | _ -> ());
-  let cdec = Option.map (fun cap -> attr_decimals ctx ~otype:dt ~attr:cap) v.maximum_attribuut in
-  let rdec = Option.map (fun ra -> attr_decimals ctx ~otype:bt ~attr:ra) v.restant_attribuut in
+  let cdec = Option.map (fun cap -> attr_decimals ctx ~otype:dt ~attr:cap) v.maximum_attribute in
+  let rdec = Option.map (fun ra -> attr_decimals ctx ~otype:bt ~attr:ra) v.remainder_attribute in
   (match rdec with
   | Some r when r < pdec || r < ddec ->
       fault
@@ -10665,7 +10665,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
     (Printf.sprintf "%ssrc(B)" p)
     (Printf.sprintf "isa(B,%s)" (str bt)
     ::
-    (match v.vd_voorwaarde with
+    (match v.vd_condition with
     | None -> []
     | Some c -> cond_atoms ctx ~subject:"B" ~subject_ot:bt c));
   let src = Printf.sprintf "%ssrc(B)" p in
@@ -10689,21 +10689,21 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
      isa(B,%s), 46340 < #count { X : %s }."
     (str bt) recip;
-  (match v.rato_attribuut with
-  | Some rato ->
+  (match v.ratio_attribute with
+  | Some ratio ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
          %s, isa(B,%s), val(X,%s,W), |W| > %d."
-        recip (str bt) (str rato) (46340 / m_den)
+        recip (str bt) (str ratio) (46340 / m_den)
   | None -> ());
-  (match (v.maximum_attribuut, cdec) with
+  (match (v.maximum_attribute, cdec) with
   | Some cap, Some c when pow10 (max 0 (ddec - c)) > 1 ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
          %s, isa(B,%s), val(X,%s,C), |C| > %d."
         recip (str bt) (str cap) (46340 / pow10 (ddec - c))
   | _ -> ());
-  emit ctx "%sheeft_pot(B) :- isa(B,%s), val(B,%s,_)." p (str bt) (str ba);
+  emit ctx "%shas_pot(B) :- isa(B,%s), val(B,%s,_)." p (str bt) (str ba);
   (* the target write and the remainder, shared across the methods; the
      remainder guard carries each method's Nothing case (ch. 4.4: zero
      recipients, or an absent/zero weight sum, write NO rest) *)
@@ -10715,7 +10715,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
     if default_input then emit ctx "%seff(X) :- %s." p eff_atom
   in
   let emit_rest ~guard ~sum =
-    match (v.restant_attribuut, rdec) with
+    match (v.remainder_attribute, rdec) with
     | Some ra, Some r ->
         emit ctx "val(B,%s,%s-%s) :- %s, val(B,%s,A), %s, T = #sum { %s }." (str ra)
           (scaled "A" (pow10 (r - pdec)))
@@ -10729,7 +10729,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      method's raw atom with X free; the declared cap floors to the
      rounding scale (an upscale is exact, a downscale is the floor). *)
   let emit_cap_atoms ~raw_pat =
-    let cap = req "AllocationVersion.maximumAttribute" v.maximum_attribuut in
+    let cap = req "AllocationVersion.maximumAttribute" v.maximum_attribute in
     let c = match cdec with Some c -> c | None -> assert false in
     let capd =
       if ddec >= c then scaled "C" (pow10 (ddec - c))
@@ -10737,55 +10737,55 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
     in
     emit ctx "%scapd(X,%s) :- %s, val(X,%s,C), C >= 0." p capd raw_pat (str cap);
     emit ctx "inconsistent(%s,X) :- %s, val(X,%s,C), C < 0." (str name) raw_pat (str cap);
-    emit ctx "inconsistent(%s,X) :- %s, not %sheeft_cap(X)." (str name) raw_pat p;
-    emit ctx "%sheeft_cap(X) :- val(X,%s,C), C >= 0, %s." p (str cap) raw_pat
+    emit ctx "inconsistent(%s,X) :- %s, not %shas_cap(X)." (str name) raw_pat p;
+    emit ctx "%shas_cap(X) :- val(X,%s,C), C >= 0, %s." p (str cap) raw_pat
   in
   let exact_viol = "allocation: a share does not fit the target scale (an explicit rounding is mandated before precision is lost)" in
-  match methode with
-  | Naar_rato ->
-      let rato = req "AllocationVersion.ratioAttribute (proportional)" v.rato_attribuut in
+  match method_name with
+  | Proportional ->
+      let ratio = req "AllocationVersion.ratioAttribute (proportional)" v.ratio_attribute in
       (* fail-fast guards, mirrored on ref/'s faults and on floor
          semantics: integer division is floor only on non-negative
          operands, and an empty pot is the ch. 4.4 v0 hole ref/ faults
          on — viol/2 witnesses plus the global integrity constraint
          make clingo fail identically instead of silently diverging *)
       emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %sheeft_pot(B)." src
+      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %shas_pot(B)." src
         recip_any p;
       (* eligible recipients: filled weight; the weightless are excluded
          and surface on the channel (ch. 4.4) *)
-      emit ctx "%sgewicht(X,W) :- %s, %s, val(X,%s,W)." p recip src (str rato);
-      emit ctx "viol(\"allocation: negative weight\",X) :- %sgewicht(X,W), W < 0." p;
-      emit ctx "inconsistent(%s,X) :- %s, %s, not %sheeft_gewicht(X)." (str name)
+      emit ctx "%sweight(X,W) :- %s, %s, val(X,%s,W)." p recip src (str ratio);
+      emit ctx "viol(\"allocation: negative weight\",X) :- %sweight(X,W), W < 0." p;
+      emit ctx "inconsistent(%s,X) :- %s, %s, not %shas_weight(X)." (str name)
         recip src p;
-      emit ctx "%sheeft_gewicht(X) :- %sgewicht(X,_)." p p;
-      emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : %s, %sgewicht(X,W) }, S != 0." p
+      emit ctx "%shas_weight(X) :- %sweight(X,_)." p p;
+      emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : %s, %sweight(X,W) }, S != 0." p
         src recip p;
       let num = Printf.sprintf "%s*W" (scaled "A" m_num) in
       let den = divd "S" m_den in
       let raw_body =
-        Printf.sprintf "%s, %sgewicht(X,W), %swsum(B,S), val(B,%s,A)" recip p p
+        Printf.sprintf "%s, %sweight(X,W), %swsum(B,S), val(B,%s,A)" recip p p
           (str ba)
       in
       emit ctx "%sraw(X,(%s)/%s) :- %s." p num den raw_body;
       if exact then
         emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
-      (match v.maximum_attribuut with
+      (match v.maximum_attribute with
       | Some _ ->
           emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(X,_)" p);
           emit ctx "%sshare(X,R) :- %sraw(X,R), %scapd(X,C), R <= C." p p p;
           emit ctx "%sshare(X,C) :- %sraw(X,R), %scapd(X,C), R > C." p p p;
-          emit ctx "%sshare(X,R) :- %sraw(X,R), not %sheeft_cap(X)." p p p
+          emit ctx "%sshare(X,R) :- %sraw(X,R), not %shas_cap(X)." p p p
       | None -> emit ctx "%sshare(X,R) :- %sraw(X,R)." p p);
       emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%swsum(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
-  | Gelijke_delen ->
+  | Equal_shares ->
       (* one group, all recipients, unweighted (ch. 4.2); the negative
          and empty pot guards as in the proportional method (the empty
          pot is the same ch. 4.4 v0 mirror hole) *)
       emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %sheeft_pot(B)." src
+      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %shas_pot(B)." src
         recip_any p;
       emit ctx "%sn(B,N) :- %s, %s, N = #count { X : %s }." p src recip_any recip;
       let num = scaled "A" m_num in
@@ -10797,7 +10797,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
-  | Op_volgorde ->
+  | Ordered ->
       (* groups are the equal-key classes of the ordering attribute,
          ascending/descending as declared, an EMPTY key sorting last in
          both directions (ch. 4.2): a filled key's rank counts the
@@ -10812,9 +10812,9 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
          negative pot needs no viol here; an empty pot is Nothing (the
          §9.7.6 discipline), never the equal/proportional fault. *)
       let rolx = recip in
-      (match v.groepeer_attribuut with
+      (match v.ordering_attribute with
       | Some ga ->
-          let cmp = if v.afnemend then ">" else "<" in
+          let cmp = if v.descending then ">" else "<" in
           emit ctx "%skey(B,X,K) :- %s, %s, val(X,%s,K)." p rolx src (str ga);
           emit ctx "%shaskey(B,X) :- %skey(B,X,_)." p p;
           emit ctx "%snokey(B,X) :- %s, %s, not %shaskey(B,X)." p rolx src p;
@@ -10835,17 +10835,17 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
           emit ctx "%sranks(B,1) :- %s, %s." p src recip_any);
       emit ctx "%spot(B,0,%s) :- %s, val(B,%s,A), %s." p (scaled "A" m_num) src
         (str ba) recip_any;
-      (match v.rato_attribuut with
-      | Some rato ->
+      (match v.ratio_attribute with
+      | Some ratio ->
           (* the weighted tie-break (ch. 4.2/4.4): an empty weight is a
              real 0 + a §9.5 deposit, a negative one counts as 0
              silently; a tie group whose weights sum to 0 assigns 0 to
              every member (the recurrence's 0/0 case) *)
-          emit ctx "%shasw(X) :- val(X,%s,_)." p (str rato);
-          emit ctx "%stw(B,X,W) :- %smrank(B,X,_), val(X,%s,W), W >= 0." p p (str rato);
-          emit ctx "%stw(B,X,0) :- %smrank(B,X,_), val(X,%s,W), W < 0." p p (str rato);
+          emit ctx "%shasw(X) :- val(X,%s,_)." p (str ratio);
+          emit ctx "%stw(B,X,W) :- %smrank(B,X,_), val(X,%s,W), W >= 0." p p (str ratio);
+          emit ctx "%stw(B,X,0) :- %smrank(B,X,_), val(X,%s,W), W < 0." p p (str ratio);
           emit ctx "%stw(B,X,0) :- %smrank(B,X,_), not %shasw(X)." p p p;
-          emit ctx "inconsistent(%s,X) :- %smrank(B,X,_), %sheeft_pot(B), not %shasw(X)."
+          emit ctx "inconsistent(%s,X) :- %smrank(B,X,_), %shas_pot(B), not %shasw(X)."
             (str name) p p p;
           emit ctx
             "%sgwsum(B,R,S) :- %spot(B,R,_), %smrank(B,_,R), S = #sum { W,X : %smrank(B,X,R), \
@@ -10872,12 +10872,12 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
               "viol(\"%s\",X) :- %smrank(B,X,R), %spot(B,R,P), %sgsize(B,R,N), P > 0, \
                P \\ %s != 0."
               exact_viol p p p (divd "N" m_den));
-      (match v.maximum_attribuut with
+      (match v.maximum_attribute with
       | Some _ ->
           emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(_,X,_)" p);
           emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), %scapd(X,C), S <= C." p p p;
           emit ctx "%ssh0(B,X,C) :- %sraw(B,X,S), %scapd(X,C), S > C." p p p;
-          emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), not %sheeft_cap(X)." p p p
+          emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), not %shas_cap(X)." p p p
       | None -> emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S)." p p);
       (* the ordered-only max(0,·) clamps of ch. 4.2 *)
       emit ctx "%sshare(B,X,S) :- %ssh0(B,X,S), S >= 0." p p;
@@ -10894,20 +10894,20 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       emit_rest ~guard:recip_any
         ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
 
-let translate_consistentie ctx i (c : resolved_consistentie) =
+let translate_consistency ctx i (c : resolved_consistency) =
   (* the allocation-window sibling: loud, never silently unwindowed *)
-  (match c.cons_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+  (match c.cons_validity with
+  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
       fault "consistency-check validity windows are not translated (no corpus case)"
   | _ -> ());
-  let name = Option.value c.cons_naam ~default:(Printf.sprintf "consistentie%d" i) in
+  let name = Option.value c.cons_name ~default:(Printf.sprintf "consistentie%d" i) in
   (* a division inside the assertion deposits its channel fact under
      THIS name, like ref's err collector (the verify lens caught the
      stale rule_name of the last-translated rule leaking in) *)
   ctx.rule_name <- name;
   let subject_ot = req "ConsistencyVersion.subject" c.cons_subject in
   let ok = Printf.sprintf "cons%d_ok(S)" i in
-  let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "ConsistencyVersion.assertion" c.assertie) in
+  let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "ConsistencyVersion.assertion" c.assertion) in
   head_body ctx ok (Printf.sprintf "isa(S,%s)" (str subject_ot) :: atoms);
   emit ctx "inconsistent(%s,S) :- isa(S,%s), not cons%d_ok(S)." (str name) (str subject_ot) i
 
@@ -10946,15 +10946,15 @@ let uni_key_atom ctx ~otype ~label ~pos k =
   if attr_temporal ctx ~otype ~attr:k then Printf.sprintf "tl(%s,%s,_,_,K%d)" label (str k) pos
   else Printf.sprintf "val(%s,%s,K%d)" label (str k) pos
 
-let translate_uniciteit ctx (u : resolved_uniciteit) =
+let translate_uniqueness ctx (u : resolved_uniqueness) =
   (* the allocation-window sibling: loud, never silently unwindowed *)
-  (match u.uni_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+  (match u.uni_validity with
+  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
       fault "uniqueness validity windows are not translated (no corpus case)"
   | _ -> ());
-  let name = Option.value u.uni_naam ~default:"uniciteit" in
+  let name = Option.value u.uni_name ~default:"uniciteit" in
   let subject_ot = req "Source.objectType" u.uni_subject in
-  let keys = List.map (req "Source.keys entry") u.sleutels in
+  let keys = List.map (req "Source.keys entry") u.key_list in
   uni_key_guards ctx ~otype:subject_ot ~keys;
   let joins label =
     List.mapi (fun i k -> uni_key_atom ctx ~otype:subject_ot ~label ~pos:i k) keys
@@ -10964,7 +10964,7 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
      matches, the pinned runtime's narrowing for free *)
   let scope_atoms =
     (* D12: the scope is the binding; a uniqueness without it is unscoped *)
-    match u.scope_rol with
+    match u.scope_role with
     | None -> []
     | Some rb ->
         let env =
@@ -10972,8 +10972,8 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
             as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
         in
         let role = Eval.bound_role env rb in
-        [ Printf.sprintf "rol(S1,%s,P)" (str (role_canonical role));
-          Printf.sprintf "rol(S2,%s,P)" (str (role_canonical role)) ]
+        [ Printf.sprintf "role(S1,%s,P)" (str (role_canonical role));
+          Printf.sprintf "role(S2,%s,P)" (str (role_canonical role)) ]
   in
   emit ctx "inconsistent(%s,S1) :- isa(S1,%s), isa(S2,%s), S1 != S2, %s." (str name)
     (str subject_ot) (str subject_ot)
@@ -10983,25 +10983,25 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
    predicate — a duplicate may arise across two different source types.
    Key positions harmonise to the maximum declared scale across sources,
    so 5 and 5.00 collide exactly as the runtime's value equality does. *)
-let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
+let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
   (* the allocation-window sibling: loud, never silently unwindowed *)
-  (match u.uu_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+  (match u.uu_validity with
+  | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
       fault "uniqueness-union validity windows are not translated (no corpus case)"
   | _ -> ());
-  let name = Option.value u.uu_naam ~default:(Printf.sprintf "uniciteitsunie%d" i) in
+  let name = Option.value u.uu_name ~default:(Printf.sprintf "uniciteitsunie%d" i) in
   let arity =
-    match u.bronnen with
-    | b :: _ -> List.length b.uub_sleutels
+    match u.source_list with
+    | b :: _ -> List.length b.uub_keys
     | [] -> fault "a uniqueness union carries at least one source"
   in
   let max_scale pos =
     List.fold_left
-      (fun m (b : uniciteit_unie_bron) ->
+      (fun m (b : uniqueness_union_source) ->
         let t = req "Source.objectType" b.uub_type in
-        let k = req "Source.keys entry" (List.nth b.uub_sleutels pos) in
+        let k = req "Source.keys entry" (List.nth b.uub_keys pos) in
         max m (attr_decimals ctx ~otype:t ~attr:k))
-      0 u.bronnen
+      0 u.source_list
   in
   let scales = List.init arity max_scale in
   let pred = Printf.sprintf "uu%d_key" i in
@@ -11009,11 +11009,11 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
      so an instance contributing one tuple through two sources counts
      twice — #count over (instance, source) pairs is exactly that sum *)
   List.iteri
-    (fun j (b : uniciteit_unie_bron) ->
+    (fun j (b : uniqueness_union_source) ->
       let t = req "Source.objectType" b.uub_type in
       (* the shared ever-uniqueness guards and key atoms (ch. 5.9):
          one reading for the union and the single form alike *)
-      uni_key_guards ctx ~otype:t ~keys:(List.map (req "Source.keys entry") b.uub_sleutels);
+      uni_key_guards ctx ~otype:t ~keys:(List.map (req "Source.keys entry") b.uub_keys);
       let head_args =
         List.mapi
           (fun pos k ->
@@ -11021,13 +11021,13 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
             let d = attr_decimals ctx ~otype:t ~attr:k in
             let m = pow10 (List.nth scales pos - d) in
             if m = 1 then Printf.sprintf "K%d" pos else Printf.sprintf "(K%d*%d)" pos m)
-          b.uub_sleutels
+          b.uub_keys
       in
       let body =
         Printf.sprintf "isa(S,%s)" (str t)
         :: List.mapi
              (fun pos k -> uni_key_atom ctx ~otype:t ~label:"S" ~pos (req "Source.keys entry" k))
-             b.uub_sleutels
+             b.uub_keys
       in
       (* the per-position upscale is an emitted multiplication: fence
          the raw key against the compile-time factor *)
@@ -11042,10 +11042,10 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
                %s, |K%d| > %d."
               (String.concat ", " body)
               pos (max_int31 / m))
-        b.uub_sleutels;
+        b.uub_keys;
       emit ctx "%s(S,%d,%s) :- %s." pred j (String.concat "," head_args)
         (String.concat ", " body))
-    u.bronnen;
+    u.source_list;
   let vars = List.init arity (fun p -> Printf.sprintf "V%d" p) in
   emit ctx "inconsistent(%s,S) :- %s(S,_,%s), 2 <= #count { O,J : %s(O,J,%s) }." (str name)
     pred (String.concat "," vars) pred (String.concat "," vars)
@@ -11056,25 +11056,25 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
    ch. 10.1), and [lelem(L,I,V)] carries each element at its 1-based position,
    scaled by the ELEMENT datatype (numeric elements by their decimals, a sum
    element as its ground constructor term). Order is load-bearing and kept. *)
-let reify_list ctx ~lid ~element (xs : Value.t list) =
-  emit ctx "lpres(%s)." lid;
+let reify_list ctx ~one_member ~element (xs : Value.t list) =
+  emit ctx "lpres(%s)." one_member;
   List.iteri
     (fun n (v : Value.t) ->
       let term =
         match element with
-        | Sum_type { constructoren; _ } -> (
+        | Sum_type { constructor_list; _ } -> (
             match v with
-            | Value.Ctor (tag, payload) -> ctor_value_term constructoren (tag, payload)
+            | Value.Ctor (tag, payload) -> ctor_value_term constructor_list (tag, payload)
             | _ -> fault "a non-constructor value in a sum-typed list element")
-        | Struct_type { domein; velden } -> (
+        | Struct_type { domain_spec; field_list } -> (
             match v with
-            | Value.Record fs -> struct_value_term (domein, velden) fs
+            | Value.Record fs -> struct_value_term (domain_spec, field_list) fs
             | _ -> fault "a non-record value in a struct-typed list element")
         | _ ->
             string_of_int
-              (scaled_input ~what:(Printf.sprintf "%s element %d" lid (n + 1)) (Some element) v)
+              (scaled_input ~what:(Printf.sprintf "%s element %d" one_member (n + 1)) (Some element) v)
       in
-      emit ctx "lelem(%s,%d,%s)." lid (n + 1) term)
+      emit ctx "lelem(%s,%d,%s)." one_member (n + 1) term)
     xs
 
 (* --- case facts ---------------------------------------------------------- *)
@@ -11083,7 +11083,7 @@ let translate_case ctx (case : Case.t) =
   let doc = ctx.doc in
   (* attribute-defaults targets — the ch. 7.8 standing targets (the bare
      scalar computing rule) and the allocation targets (S12, the verdeling
-     whose fence translate_verdeling has already cleared) — take their
+     whose fence translate_allocation has already cleared) — take their
      input values defeasibly (inputval/3), standing unless the
      defaults/rule/verdeling decides *)
   let standing = Ir_v0.Desugar.standing_targets doc in
@@ -11096,29 +11096,29 @@ let translate_case ctx (case : Case.t) =
   let defaults_target otype aname =
     List.exists
       (fun (l : prioritized_defaults) ->
-        match l.pd_attribuut with
-        | Some a -> inherits otype l.pd_onderwerp && norm a = norm aname
+        match l.pd_attribute with
+        | Some a -> inherits otype l.pd_subject && norm a = norm aname
         | None -> false)
       doc.prioritized_defaults
     || List.exists (fun (t, a) -> a = norm aname && inherits otype t) standing
     || List.exists
-         (fun (v : resolved_verdeling) ->
-           (match v.doel_type with Some dt -> inherits otype dt | None -> false)
-           && match v.doel_attribuut with Some da -> norm da = norm aname | None -> false)
-         doc.verdelingen
+         (fun (v : resolved_allocation) ->
+           (match v.objective_type_name with Some dt -> inherits otype dt | None -> false)
+           && match v.target_attribute with Some da -> norm da = norm aname | None -> false)
+         doc.allocations
   in
-  (* the targets translate_regel's Initialisatie arm writes: their input
+  (* the targets translate_rule's Initialisatie arm writes: their input
      world's filledness is the guard that arm reads (inputfilled/2) *)
   let init_target otype aname =
     List.exists
-      (fun (r : resolved_regel) ->
-        r.rr_soort = Some Initialisatie
+      (fun (r : resolved_rule) ->
+        r.rr_presentation = Some Initialisation
         &&
-        match r.doel with
-        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
+        match r.objective with
+        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
             norm a = norm aname && inherits otype ot
         | _ -> false)
-      doc.resolved_regels
+      doc.resolved_rules
   in
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
@@ -11143,7 +11143,7 @@ let translate_case ctx (case : Case.t) =
                  cannot carry, so the value ALSO enters as val/3 with the
                  bare symbol waar/onwaar — false is a VALUE there, distinct
                  from absence (S2/S5). *)
-              if b then emit ctx "heeft(%s,%s)." (str_raw label) (str aname);
+              if b then emit ctx "has(%s,%s)." (str_raw label) (str aname);
               emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (symbolic_value_term v)
           | Value.Text _ | Value.Enum _ ->
               (* ch. 1.2d scalar carriage: a text value is its verbatim quoted
@@ -11155,40 +11155,40 @@ let translate_case ctx (case : Case.t) =
               (* ch. 9.4 case carriage: a sum-typed input value is a ground
                  constructor term, payload scaled by its declared payload
                  datatype. A sum-typed COMPUTED target is fenced against
-                 case-supplied input in translate_regel, so a sum value in the
+                 case-supplied input in translate_rule, so a sum value in the
                  input is input-only here and enters as a plain val/3. *)
-              let constructoren =
-                match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
-                | Some (Some (Sum_type { constructoren; _ })) -> constructoren
+              let constructor_list =
+                match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes aname with
+                | Some (Some (Sum_type { constructor_list; _ })) -> constructor_list
                 | _ -> fault "constructor value on non-sum-typed attribute %S" aname
               in
               emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
-                (ctor_value_term constructoren (tag, payload))
-          | Value.Lijst xs ->
+                (ctor_value_term constructor_list (tag, payload))
+          | Value.List_value xs ->
               (* ch. 10.5 case carriage: a list-typed input attribute reifies
                  as lpres/lelem keyed by [alist(label,attr)] — the same list-id
                  the fold family reads. A list-typed COMPUTED target has no
-                 monotone encoding here, fenced in translate_regel. *)
+                 monotone encoding here, fenced in translate_rule. *)
               let element =
-                match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
+                match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes aname with
                 | Some (Some (List_type { element })) -> element
                 | _ -> fault "list value on non-list-typed attribute %S" aname
               in
-              reify_list ctx ~lid:(Printf.sprintf "alist(%s,%s)" (str_raw label) (str aname))
+              reify_list ctx ~one_member:(Printf.sprintf "alist(%s,%s)" (str_raw label) (str aname))
                 ~element xs
           | Value.Record fs ->
               (* ch. 11.3 case carriage: a struct-typed input attribute is a
                  ground record term, fields scaled by their declared datatypes.
                  A struct-typed COMPUTED target is fenced against case-supplied
-                 input in translate_regel, so a struct value is input-only here
+                 input in translate_rule, so a struct value is input-only here
                  and enters as a plain val/3 (the Ctor sibling). *)
-              let domein, velden =
-                match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
-                | Some (Some (Struct_type { domein; velden })) -> (domein, velden)
+              let domain_spec, field_list =
+                match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes aname with
+                | Some (Some (Struct_type { domain_spec; field_list })) -> (domain_spec, field_list)
                 | _ -> fault "record value on non-struct-typed attribute %S" aname
               in
               emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
-                (struct_value_term (domein, velden) fs)
+                (struct_value_term (domain_spec, field_list) fs)
           | Value.Date_time t ->
               (* ch. 3.8 the millisecond layer: a datum-tijd input rides the
                  pair term dt(D, MS) — the civil day beside the ms-of-day — so
@@ -11200,13 +11200,13 @@ let translate_case ctx (case : Case.t) =
               emit ctx "%s(%s,%s,%d)." pred (str_raw label) (str aname)
                 (scaled_input ~what:(label ^ "." ^ aname) (attr_datatype ctx ~otype:i.otype ~attr:aname) v))
         i.attrs;
-      List.iter (fun k -> emit ctx "heeft(%s,%s)." (str_raw label) (str k)) i.chars;
+      List.iter (fun k -> emit ctx "has(%s,%s)." (str_raw label) (str k)) i.chars;
       Eval.SMap.iter
         (fun aname (tl : Uchar_ref.Timeline.t) ->
           (* ch. 9.4: sum-typed temporal carriage is a recorded flank — the
              value model admits it but no case exercises it, so the ASP case
              emission faults loudly rather than silently omitting segments *)
-          (match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
+          (match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes aname with
           | Some (Some (Sum_type _)) ->
               fault "temporal sum carriage is a recorded flank; no corpus case"
           | Some (Some (Struct_type _)) ->
@@ -11223,8 +11223,8 @@ let translate_case ctx (case : Case.t) =
           in
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
-              emit ctx "%s(%s,%s,%d,%d,%d)." pred (str_raw label) (str aname) s.s_van s.s_tot
-                (scaled_input ~what:(label ^ "." ^ aname) dt s.s_waarde))
+              emit ctx "%s(%s,%s,%d,%d,%d)." pred (str_raw label) (str aname) s.s_from s.s_to
+                (scaled_input ~what:(label ^ "." ^ aname) dt s.s_value))
             tl)
         i.tls;
       Eval.SMap.iter
@@ -11238,24 +11238,24 @@ let translate_case ctx (case : Case.t) =
           let canonical = role_canonical (Case.resolve_role doc ~otype:i.otype ~key) in
           List.iter
             (fun t ->
-              emit ctx "rol(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t);
+              emit ctx "role(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t);
               (* the 1:1 creation guard reads the input links only
                  (ch. 5.5's snapshot narrowing) — mirror them as
                  inputrol/3 when a creation could consult them *)
-              if doc.object_creaties <> [] then
-                emit ctx "inputrol(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t))
+              if doc.object_creations <> [] then
+                emit ctx "inputrole(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t))
             targets)
-        i.links)
+        i.left_side)
     case.world.instances;
   Eval.SMap.iter
     (fun pname v ->
       match Ir_v0.Checks.find_ci doc.parameters pname with
-      | Some { par_granulariteit = Some _; _ } -> () (* never read; ch. 8 *)
+      | Some { par_granularity = Some _; _ } -> () (* never read; ch. 8 *)
       | Some { par_datatype = Some (List_type { element }); _ } -> (
           (* ch. 10.5: a list-typed parameter reifies as lpres/lelem keyed by
              [plist(name)] — the same list-id the fold family reads *)
           match v with
-          | Value.Lijst xs -> reify_list ctx ~lid:(Printf.sprintf "plist(%s)" (str pname)) ~element xs
+          | Value.List_value xs -> reify_list ctx ~one_member:(Printf.sprintf "plist(%s)" (str pname)) ~element xs
           | _ -> fault "list-typed parameter %S carries a non-list value" pname)
       | Some p ->
           emit ctx "param(%s,%d)." (str pname)
@@ -11268,8 +11268,8 @@ let translate_case ctx (case : Case.t) =
       | Some p ->
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
-              emit ctx "param_tl(%s,%d,%d,%d)." (str pname) s.s_van s.s_tot
-                (scaled_input ~what:("parameter " ^ pname) p.par_datatype s.s_waarde))
+              emit ctx "param_tl(%s,%d,%d,%d)." (str pname) s.s_from s.s_to
+                (scaled_input ~what:("parameter " ^ pname) p.par_datatype s.s_value))
             tl
       | None -> fault "unknown parameter %S" pname)
     case.param_tls
@@ -11284,38 +11284,38 @@ let translate_case ctx (case : Case.t) =
 let writer_conflicts ctx =
   let writers =
     List.filter_map
-      (fun (i, (r : resolved_regel)) ->
-        match r.doel with
-        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ })
-          when applies ctx r.rr_geldigheid && co_writer ctx r ~ot ~a <> None ->
+      (fun (i, (r : resolved_rule)) ->
+        match r.objective with
+        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ })
+          when applies ctx r.rr_validity && co_writer ctx r ~ot ~a <> None ->
             Some (i, r, ot, a)
         | _ -> None)
-      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
+      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_rules)
   in
   if writers <> [] then begin
-    emit ctx "#defined wval/4. #defined wvuurt/3.";
+    emit ctx "#defined wval/4. #defined wfires/3.";
     List.iter
       (fun (i, _, ot, a) ->
-        emit ctx "wschrijft(S,%s,v(V),%d) :- wval(S,%s,V,%d)." (str a) i (str a) i;
+        emit ctx "wwrites(S,%s,v(V),%d) :- wval(S,%s,V,%d)." (str a) i (str a) i;
         (* a standing writer (ch. 7.8: the only computing rule of its own
            key, here a type of the chain) writes nothing where its value is
            leeg, in ref as here, so only a writer that is not standing
            writes leeg *)
         if not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)) then begin
-          emit ctx "wgevuld(S,%s,%d) :- wval(S,%s,_,%d)." (str a) i (str a) i;
-          emit ctx "wschrijft(S,%s,leeg,%d) :- wvuurt(S,%s,%d), not wgevuld(S,%s,%d)." (str a) i (str a) i
+          emit ctx "wfilled(S,%s,%d) :- wval(S,%s,_,%d)." (str a) i (str a) i;
+          emit ctx "wwrites(S,%s,empty,%d) :- wfires(S,%s,%d), not wfilled(S,%s,%d)." (str a) i (str a) i
             (str a) i
         end)
       writers;
     List.iter
-      (fun (i, (ri : resolved_regel), oti, a) ->
+      (fun (i, (ri : resolved_rule), oti, a) ->
         let _, comps, _ = init_writers ctx ~ot:oti ~a in
         List.iter
-          (fun (j, (rj : resolved_regel), otj, _) ->
+          (fun (j, (rj : resolved_rule), otj, _) ->
             if i < j && List.memq rj comps then begin
               let lower = if Ir_v0.Checks.subtype_of ctx.doc ~sub:otj ~super:oti then otj else oti in
-              let name (r : resolved_regel) = "\"" ^ Option.value r.rr_naam ~default:"<naamloos>" ^ "\"" in
-              emit ctx "viol(%s,S) :- wschrijft(S,%s,X,%d), wschrijft(S,%s,Y,%d), X != Y."
+              let name (r : resolved_rule) = "\"" ^ Option.value r.rr_name ~default:"<naamloos>" ^ "\"" in
+              emit ctx "viol(%s,S) :- wwrites(S,%s,X,%d), wwrites(S,%s,Y,%d), X != Y."
                 (quote
                    (Printf.sprintf
                       "two writers of one target disagree: rules %s and %s write different values to the \
@@ -11394,7 +11394,7 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    that makes the object, and a later generation may still change the value
    read; the initialised member does not follow it. This encoding has no
    moment of making. An initialisation is a val/heeft head on the minted
-   term ([translate_object_creatie]), so it reads the stable model, which
+   term ([translate_object_creation]), so it reads the stable model, which
    holds the end value. The two differ where a later generation of the
    creation's own stratum changes the value read. A later stratum does not:
    every writer of what the creation reads sits in its stratum or a lower
@@ -11460,7 +11460,7 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    over the document as loaded, which is the graph ref stratifies, and the
    strata are ref's ([form_strata]). A creation version that the case's
    date excludes makes nothing and is not translated
-   ([translate_object_creatie] and [translate_feit_creatie] skip it), so
+   ([translate_object_creation] and [translate_fact_creation] skip it), so
    it is not refused, and it does not count as a creation that reaches a
    writer either. The boundary between the two is deliberate: the test
    asks whether a later generation can change the value read, and the
@@ -11499,20 +11499,20 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
     in
     let at_of i = forms.(i).Ir_v0.Checks.df_at and name_of i = forms.(i).Ir_v0.Checks.df_name in
     let kinds =
-      List.map (fun (r : resolved_regel) -> (r.rr_pointer, ("rule", false))) doc.resolved_regels
-      @ List.map (fun (v : resolved_verdeling) -> (v.vd_pointer, ("allocation", false))) doc.verdelingen
+      List.map (fun (r : resolved_rule) -> (r.rr_pointer, ("rule", false))) doc.resolved_rules
+      @ List.map (fun (v : resolved_allocation) -> (v.vd_pointer, ("allocation", false))) doc.allocations
       @ List.mapi
           (fun i _ -> (Printf.sprintf "/prioritizedDefaults/%d" i, ("defaults group", false)))
           doc.prioritized_defaults
-      @ List.map (fun (c : resolved_consistentie) -> (c.cons_pointer, ("consistency", false))) doc.consistenties
-      @ List.map (fun (u : resolved_uniciteit) -> (u.uni_pointer, ("uniqueness", false))) doc.uniciteiten
+      @ List.map (fun (c : resolved_consistency) -> (c.cons_pointer, ("consistency", false))) doc.consistencies
+      @ List.map (fun (u : resolved_uniqueness) -> (u.uni_pointer, ("uniqueness", false))) doc.uniquenesses
       @ List.map
-          (fun (u : resolved_uniciteit_unie) -> (u.uu_pointer, ("uniqueness", false)))
-          doc.uniciteit_unies
-      @ List.map (fun (f : resolved_feit_creatie) -> (f.fc_pointer, ("fact creation", true))) doc.feit_creaties
+          (fun (u : resolved_uniqueness_union) -> (u.uu_pointer, ("uniqueness", false)))
+          doc.uniqueness_unions
+      @ List.map (fun (f : resolved_fact_creation) -> (f.fc_pointer, ("fact creation", true))) doc.fact_creations
       @ List.map
-          (fun (o : resolved_object_creatie) -> (o.oc_pointer, ("object creation", true)))
-          doc.object_creaties
+          (fun (o : resolved_object_creation) -> (o.oc_pointer, ("object creation", true)))
+          doc.object_creations
     in
     let kind_of i =
       match List.assoc_opt (at_of i) kinds with
@@ -11547,17 +11547,17 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
       Printf.sprintf "%s \"%s\"" kind (name_of p)
     in
     (* whether the backend translates the creation version at form [i] for
-       the case's date: [translate_object_creatie] and
-       [translate_feit_creatie] gate every version on [applies], which is
+       the case's date: [translate_object_creation] and
+       [translate_fact_creation] gate every version on [applies], which is
        [Eval.window_admits], the predicate below that leaves a creation
        version the date excludes unasked *)
     let translated i =
       let at = at_of i in
-      match List.find_opt (fun (o : resolved_object_creatie) -> o.oc_pointer = at) doc.object_creaties with
-      | Some o -> Eval.window_admits ~as_of o.oc_geldigheid
+      match List.find_opt (fun (o : resolved_object_creation) -> o.oc_pointer = at) doc.object_creations with
+      | Some o -> Eval.window_admits ~as_of o.oc_validity
       | None -> (
-          match List.find_opt (fun (f : resolved_feit_creatie) -> f.fc_pointer = at) doc.feit_creaties with
-          | Some f -> Eval.window_admits ~as_of f.fc_geldigheid
+          match List.find_opt (fun (f : resolved_fact_creation) -> f.fc_pointer = at) doc.fact_creations with
+          | Some f -> Eval.window_admits ~as_of f.fc_validity
           | None ->
               failwith
                 (Printf.sprintf
@@ -11580,17 +11580,17 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
     in
     let strata = lazy (form_strata forms) in
     List.iter
-      (fun (o : resolved_object_creatie) ->
+      (fun (o : resolved_object_creation) ->
         let c = index_of o.oc_pointer in
         let on_cycle = reached c in
         (* the nodes an initialisation reads, each with every writer that can
            change it after the making *)
-        let writers (t : toekenning) =
+        let writers (t : assignment) =
           let nodes =
             List.fold_left
               (fun acc (node, _) -> if List.mem node acc then acc else acc @ [ node ])
               []
-              (Ir_v0.Checks.dep_opt cctx ~subject:o.oc_subject [] t.toe_waarde)
+              (Ir_v0.Checks.dep_opt cctx ~subject:o.oc_subject [] t.to_value)
           in
           List.concat_map
             (fun node ->
@@ -11602,10 +11602,10 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
                 (List.init n Fun.id))
             nodes
         in
-        let on_the_cycle (t : toekenning) =
+        let on_the_cycle (t : assignment) =
           List.find_map (fun (node, p) -> if on_cycle.(p) then Some (t, node, p) else None) (writers t)
         in
-        let in_the_stratum (t : toekenning) =
+        let in_the_stratum (t : assignment) =
           List.find_map
             (fun (node, p) ->
               List.find_map
@@ -11616,9 +11616,9 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
                 cycle_creations)
             (writers t)
         in
-        let member (t : toekenning) = req "MemberInit.member" t.toe_attribuut in
-        match List.find_map on_the_cycle o.toekenningen with
-        | Some (t, node, p) when Eval.window_admits ~as_of o.oc_geldigheid ->
+        let member (t : assignment) = req "MemberInit.member" t.to_attribute in
+        match List.find_map on_the_cycle o.assignments with
+        | Some (t, node, p) when Eval.window_admits ~as_of o.oc_validity ->
             fault
               "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
                dependency cycle through the creation (admitted by WF-045 through a recursive group) \
@@ -11629,8 +11629,8 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
               (if p = c then "the creation itself" else describe p)
         | Some _ -> ()
         | None -> (
-            match List.find_map in_the_stratum o.toekenningen with
-            | Some (t, node, p, d) when Eval.window_admits ~as_of o.oc_geldigheid ->
+            match List.find_map in_the_stratum o.assignments with
+            | Some (t, node, p, d) when Eval.window_admits ~as_of o.oc_validity ->
                 fault
                   "object creation \"%s\": the initialisation of %s reads %s, which %s writes, and %s, \
                    on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
@@ -11641,13 +11641,13 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
                    (IR-SPEC ch. 5.5)"
                   (name_of c) (member t) node (describe p) (describe d)
             | _ -> ()))
-      doc.object_creaties
+      doc.object_creations
   end
 
 (* The stratum of every object creation, by its wire pointer, as ref/
    computes it ([form_strata]). The creation budget of ch. 5.5 counts the
    depth per stratum, so the depth this backend keeps for it
-   ([translate_object_creatie]) has to start again exactly where ref's
+   ([translate_object_creation]) has to start again exactly where ref's
    does; a stratification of its own could split a chain ref counts as
    one, or join two that ref counts apart. *)
 let object_creation_strata (doc : document) : (string * int) list =
@@ -11655,7 +11655,7 @@ let object_creation_strata (doc : document) : (string * int) list =
   let n = Array.length forms in
   let strata = form_strata forms in
   List.map
-    (fun (o : resolved_object_creatie) ->
+    (fun (o : resolved_object_creation) ->
       let rec find i =
         if i >= n then
           failwith
@@ -11667,13 +11667,13 @@ let object_creation_strata (doc : document) : (string * int) list =
         else find (i + 1)
       in
       find 0)
-    doc.object_creaties
+    doc.object_creations
 
 let translate (doc : document) (case : Case.t) : string =
   (* WF-007: a presentation tag inside a type annotation, listed by the
      loader, is refused in the verifier's sentence — the same refusal ref
      makes — before anything is translated *)
-  (match doc.presentatie_annotaties with
+  (match doc.presentation_annotations with
   | [] -> ()
   | at :: _ ->
       fault
@@ -11713,13 +11713,13 @@ let translate (doc : document) (case : Case.t) : string =
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
      program is emitted, mirroring ref/'s evaluation entry *)
-  Eval.parameterset_check
+  Eval.parameter_set_check
     { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
       locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None };
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
-  emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
+  emit ctx "#defined val/3. #defined has/2. #defined role/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";
-  emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrol/3.";
+  emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrole/3.";
   (* the fold family's reified lists (S15): declared so a case with an absent
      list source leaves lpres/lelem head-less without a grounding warning *)
   emit ctx "#defined lpres/1. #defined lelem/3.";
@@ -11735,20 +11735,20 @@ let translate (doc : document) (case : Case.t) : string =
      OCaml chain walk. The edge facts are emitted only where the document
      declares one, so a flat program is unchanged but for the identity
      rule. The edge's name is the list entry's key, the one name an M1
-     object type has; the node's [ot_naam] only copies it, and a [None]
+     object type has; the node's [ot_ident] only copies it, and a [None]
      there must not drop the edge. *)
   emit ctx "isa(X,T) :- is_a(X,T).";
   List.iter
-    (fun (n, (ot : objecttype)) ->
+    (fun (n, (ot : object_type)) ->
       match ot.ot_supertype with
       | Some s -> emit ctx "isa_sub(%s,%s)." (str n) (str s)
       | None -> ())
-    doc.objecttypen;
-  if List.exists (fun (_, (ot : objecttype)) -> ot.ot_supertype <> None) doc.objecttypen then
+    doc.object_types;
+  if List.exists (fun (_, (ot : object_type)) -> ot.ot_supertype <> None) doc.object_types then
     emit ctx "isa(X,S) :- isa(X,S0), isa_sub(S0,S).";
   if has_recursive_creation doc then begin
     (* ch. 5.5's creation budget, grounded per stratum
-       ([translate_object_creatie]): a mint at depth 101 in its stratum
+       ([translate_object_creation]): a mint at depth 101 in its stratum
        derives the viol/2 witness — UNSAT where ref/ faults, with the same
        words. An instance a lower stratum made is depth 0 in every higher
        stratum of a creation. hasdepth/2 serves the clamp each creation
@@ -11771,11 +11771,11 @@ let translate (doc : document) (case : Case.t) : string =
      UNSAT diagnosis re-runs without exactly this line to report which
      guard fired *)
   emit ctx ":- viol(_,_).";
-  List.iter (translate_regel ctx) doc.resolved_regels;
+  List.iter (translate_rule ctx) doc.resolved_rules;
   writer_conflicts ctx;
-  List.iter (translate_feit_creatie ctx) doc.feit_creaties;
-  List.iteri (translate_object_creatie ctx) doc.object_creaties;
-  List.iteri (translate_verdeling ctx) doc.verdelingen;
+  List.iter (translate_fact_creation ctx) doc.fact_creations;
+  List.iteri (translate_object_creation ctx) doc.object_creations;
+  List.iteri (translate_allocation ctx) doc.allocations;
   (* One stack per (CONCRETE type, target): the block order of ch. 7.10
      composed the inherited declarations into it, so what is translated here
      is already the effective stack. In a document without a supertype edge
@@ -11788,10 +11788,10 @@ let translate (doc : document) (case : Case.t) : string =
      (fun gidx (owner, _key, members, _contributors) ->
        translate_defaults_group ctx gidx ~owner members)
      groups);
-  List.iteri (translate_consistentie ctx) doc.consistenties;
-  List.iter (translate_uniciteit ctx) doc.uniciteiten;
-  List.iteri (translate_uniciteit_unie ctx) doc.uniciteit_unies;
+  List.iteri (translate_consistency ctx) doc.consistencies;
+  List.iter (translate_uniqueness ctx) doc.uniquenesses;
+  List.iteri (translate_uniqueness_union ctx) doc.uniqueness_unions;
   emit_barriers ctx;
   translate_case ctx case;
-  emit ctx "#show val/3. #show heeft/2. #show inconsistent/2. #show tl/5.";
+  emit ctx "#show val/3. #show has/2. #show inconsistent/2. #show tl/5.";
   Buffer.contents ctx.buf

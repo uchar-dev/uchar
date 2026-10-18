@@ -76,7 +76,7 @@ status=0
 # vanished wf###-case takes a MUST's failing witness with it (CLAUDE.md, Spec discipline) and no
 # other check would notice. NO floor on n_golden: that is byte-for-byte the file set gate 2 already
 # floors (both scan corpus/golden + corpus/rood for ir.json), and one quantity wants one floor.
-EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.json)
+EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.json)
 # The arm fragments (U1) are floored for the same reason and in the same regime: a vanished
 # expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
 # the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
@@ -230,8 +230,8 @@ fi
 # 0" branch placed first never lets the floor run. Measured 2026-09-10, before this order: both
 # zones aside gave PASS at 0. The floor also precedes the no-negatief check, so the zero case is
 # reported with BOTH numbers rather than by the weaker non-empty message.
-if [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIEF" ]; then
-    echo "FAIL: $n_neg negatief case(s) found, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIEF — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIVE" ]; then
+    echo "FAIL: $n_neg negatief case(s) found, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIVE — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 elif [ "$n_golden" -eq 0 ] && [ "$n_neg" -eq 0 ]; then
     # Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
@@ -247,6 +247,6 @@ if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIEF; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
+    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
 fi
 exit "$status"

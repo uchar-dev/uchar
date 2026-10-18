@@ -18,7 +18,7 @@
 #   3. an empty red set is a failure, never silently green;
 #   4. no pinned fragment cites a BOTTOM SENTENCE of ref or clingo — the
 #      refusal a node-kind match falls through to, which names no form
-#      (the bodemzin fence, 2026-09-19).
+#      (the bottom-sentence fence, 2026-09-19).
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -54,7 +54,7 @@ CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 # NO second floor on the Drools leg's fault count: its not-carried cases are each pinned by name in
 # the reason-carrying exclusion list below, so the leg's fault total is the case count minus a
 # name-pinned set, both of which are already held.
-EXPECTED_MIN_ROOD_CASES=26   # 2026-09-10: measured 26 (corpus/rood/**/case*.json)
+EXPECTED_MIN_RED_CASES=26   # 2026-09-10: measured 26 (corpus/rood/**/case*.json)
 
 status=0
 n_cases=0
@@ -83,12 +83,12 @@ if [ "$n_cases" -eq 0 ]; then
     echo 'FAIL: no case files under corpus/rood — the red fence is empty, never silently green' >&2
     exit 1
 fi
-if [ "$n_cases" -lt "$EXPECTED_MIN_ROOD_CASES" ]; then
-    echo "FAIL: $n_cases red case(s) replayed, but EXPECTED_MIN_ROOD_CASES pins at least $EXPECTED_MIN_ROOD_CASES — the red fence shrank (a deliberate removal lowers the floor in the same commit)" >&2
+if [ "$n_cases" -lt "$EXPECTED_MIN_RED_CASES" ]; then
+    echo "FAIL: $n_cases red case(s) replayed, but EXPECTED_MIN_ROOD_CASES pins at least $EXPECTED_MIN_RED_CASES — the red fence shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
-# --- the bodemzin fence: a pin may not cite a bottom sentence (2026-09-19) ---------------------
+# --- the bottom-sentence fence: a pin may not cite a bottom sentence (2026-09-19) ---------------------
 # Both executors match on node KIND and end those matches in a fall-through arm. A BOTTOM SENTENCE
 # is such an arm's refusal, and its defining property is that it is INVARIANT over everything the
 # arm catches: it describes the position and what the backend does carry there — "expression kind
@@ -137,7 +137,7 @@ fi
 # untruth of the same kind the fence exists to catch: it tells a reader that a residual arm is
 # waiting there when none is. ONE removal so far. 2026-09-20 (card ref-periodeconditie-arm):
 # `ref/lib/eval.ml eval_cond|condition kind not implemented in this card` left, because that match
-# is exhaustive over the condition constructors and its last catch, Periode_conditie, became the
+# is exhaustive over the condition constructors and its last catch, Time_window, became the
 # ch. 3.10 evaluation-date GATE (golden `jutterswet-premievenster`, six clauses, four executors),
 # with its own named refusals for the two halves ch. 3.10 defers. Its clingo sister `cond_atoms` is
 # a genuine wildcard and still catches the uncarried Predicaat kinds and Regelversie, so that entry
@@ -145,8 +145,8 @@ fi
 # source no longer contains fails the gate by itself.
 #
 # <source file> <function>|<bottom sentence, verbatim>|<what it delimits against instead of naming>
-bodem=$(mktemp) || exit 2
-cat > "$bodem" <<'EOF'
+bottom=$(mktemp) || exit 2
+cat > "$bottom" <<'EOF'
 ref/lib/eval.ml literal_value|literal of this datatype not implemented|the residual arm over declared datatypes: it says "this datatype" and interpolates the LEXEME, never which datatype has no reader
 ref/lib/eval.ml eval_expr|expression kind not implemented in this card|the residual arm over expr node kinds — it names the node CLASS, not the kind it rejected
 ref/lib/eval.ml eval_expr|unsupported temporal-read base shape|the wildcard arm under Temporal_read: it says "shape" and names none
@@ -184,7 +184,7 @@ backends/clingo/lib/translate.ml translate_regel|rule kind not translated|the wi
 backends/clingo/lib/translate.ml translate_regel|unsupported rule target|the wildcard arm over rule targets
 backends/clingo/lib/translate.ml bool_atoms|a characteristic-initialisation expression here is an own-subject boolean attribute read (no corpus case for more)|the wildcard arm over characteristic-initialisation expressions: "here is" the one carried read
 EOF
-n_bodem=$(grep -c '|' "$bodem")
+n_bottom=$(grep -c '|' "$bottom")
 
 # --- the CARRIER fence: a listed sentence must still exist in its named source (2026-09-20) -----
 # Until this fence the list shrank by hand and nothing checked it; a carrier-less entry waited for a
@@ -270,19 +270,19 @@ while IFS='|' read -r src sentence _reason; do
             "$sentence" "$src" >&2
         status=1
     }
-done < "$bodem"
+done < "$bottom"
 rm -f "$norm"
 
 # The fragments are DECODED, not scraped. A pinned fragment is a JSON string and may spell any
 # character as an escape; a shell-side text scrape compares the escape and misses the match, which
 # is the one failure mode a fence like this may not have. So the reading and the comparing happen
-# where the red path already does both: `ref --bodemzin` reads expectedFault with the same reader
+# where the red path already does both: `ref --bottom-sentence` reads expectedFault with the same reader
 # the runner above uses, and compares with Case.contains, the same substring matcher it runs a
 # fault report through — so the fence tests exactly the relation the pin has at replay. No new
 # build or install requirement: ref is already built and required by this gate, and the shell side
 # adds only POSIX text handling (a read loop, an awk line lookup).
 sent=$(mktemp) || exit 2
-while IFS='|' read -r _src sentence _reason; do printf '%s\n' "$sentence"; done < "$bodem" > "$sent"
+while IFS='|' read -r _src sentence _reason; do printf '%s\n' "$sentence"; done < "$bottom" > "$sent"
 
 # Standing proof that the DECODING path is the live one (the \u mutation, permanent). A synthetic
 # pin spells its first character as an escape and must still be caught; a text scrape cannot catch
@@ -292,10 +292,10 @@ probe_s=$(mktemp) || exit 2
 probe_c=$(mktemp) || exit 2
 printf 'expression kind not translated (no corpus case exercises it)\n' > "$probe_s"
 printf '{ "expectedFault": { "ref": "\\u0065xpression kind not translated", "clingo": "a pin that cites nothing" } }\n' > "$probe_c"
-probe_out=$("$REF" --bodemzin "$probe_s" "$probe_c" 2>&1)
+probe_out=$("$REF" --bottom-sentence "$probe_s" "$probe_c" 2>&1)
 probe_hits=$(printf '%s\n' "$probe_out" | grep -c '^HIT ')
 if [ "$probe_hits" != "1" ] || ! printf '%s\n' "$probe_out" | grep -q '^HIT ref '; then
-    printf 'FAIL: the bodemzin self-test did not catch an escaped citation (expected exactly one HIT on ref, got %s) — the fence is comparing escapes instead of the characters they stand for, so every pin it clears is cleared for the wrong reason:\n%s\n' \
+    printf 'FAIL: the bottom-sentence self-test did not catch an escaped citation (expected exactly one HIT on ref, got %s) — the fence is comparing escapes instead of the characters they stand for, so every pin it clears is cleared for the wrong reason:\n%s\n' \
         "$probe_hits" "$probe_out" >&2
     status=1
 fi
@@ -305,7 +305,7 @@ n_frag=0
 hits=$(mktemp) || exit 2
 while IFS= read -r case; do
     name=$(basename "$(dirname "$case")")
-    if ! out=$("$REF" --bodemzin "$sent" "$case" 2>&1); then
+    if ! out=$("$REF" --bottom-sentence "$sent" "$case" 2>&1); then
         printf 'FAIL: %s — the pinned fragments could not be read; the red contract pins both executors, and a pin this fence cannot read is a fence that holds nothing:\n%s\n' \
             "$name" "$out" >&2
         status=1
@@ -321,15 +321,15 @@ while IFS= read -r case; do
     n_frag=$((n_frag + pins))
     while read -r tok key line frag; do
         [ "$tok" = "HIT" ] || continue
-        entry=$(awk -v n="$line" 'NR == n' "$bodem")
+        entry=$(awk -v n="$line" 'NR == n' "$bottom")
         printf 'FAIL: %s pins expectedFault.%s = %s, which cites the bottom sentence on line %s of the list (%s). A bottom sentence is the same refusal for every form its arm catches, so the pin witnesses nothing of its own: give the form its own arm with its own sentence, then pin that.\n' \
             "$name" "$key" "$frag" "$line" "$entry" >&2
         status=1
     done < "$hits"
 done < "$list"
-rm -f "$bodem" "$sent" "$hits"
+rm -f "$bottom" "$sent" "$hits"
 if [ "$n_frag" -eq 0 ]; then
-    echo 'FAIL: the bodemzin fence read no fragment at all — an unmeasured fence is never silently green' >&2
+    echo 'FAIL: the bottom-sentence fence read no fragment at all — an unmeasured fence is never silently green' >&2
     status=1
 fi
 
@@ -520,6 +520,6 @@ fi
 
 if [ "$status" -eq 0 ]; then
     printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s; %s pinned fragments cite none of the %s listed bottom sentences)\n' \
-        "$n_cases" "$EXPECTED_MIN_ROOD_CASES" "$n_frag" "$n_bodem"
+        "$n_cases" "$EXPECTED_MIN_RED_CASES" "$n_frag" "$n_bottom"
 fi
 exit "$status"

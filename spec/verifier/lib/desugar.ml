@@ -17,29 +17,29 @@ open Ast
 
 let norm = Checks.norm
 
-let version_free (g : geldigheid option) =
-  match g with None | Some { geld_vanaf = None; geld_tot = None } -> true | _ -> false
+let version_free (g : validity_window option) =
+  match g with None | Some { valid_from = None; valid_to = None } -> true | _ -> false
 
 (* the vacuously true justification: all over zero parts *)
-let always_true : conditie =
-  Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = Some "altijd" }
+let always_true : condition_expr =
+  Compound { quantifier_kind = All; cutoff = 0; components = []; source_name = Some "altijd" }
 
-let target_of (r : resolved_regel) =
-  match r.doel with
-  | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) -> Some (ot, a)
+let target_of (r : resolved_rule) =
+  match r.objective with
+  | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) -> Some (ot, a)
   | _ -> None
 
 (* Is this rule inside the desugaring's domain for its target? *)
-let is_computing (r : resolved_regel) =
-  (match r.rr_soort with Some (Gelijkstelling | Berekening) -> true | _ -> false)
-  && version_free r.rr_geldigheid
-  && r.waarde <> None
+let is_computing (r : resolved_rule) =
+  (match r.rr_presentation with Some (Equation | Calculation) -> true | _ -> false)
+  && version_free r.rr_validity
+  && r.value_node <> None
 
-let is_plain_init (r : resolved_regel) =
-  r.rr_soort = Some Initialisatie
-  && r.rr_voorwaarde = None
-  && version_free r.rr_geldigheid
-  && r.waarde <> None
+let is_plain_init (r : resolved_rule) =
+  r.rr_presentation = Some Initialisation
+  && r.rr_condition = None
+  && version_free r.rr_validity
+  && r.value_node <> None
 
 let key (ot, a) = norm ot ^ ":" ^ norm a
 
@@ -51,16 +51,16 @@ let chosen_targets (doc : document) =
     List.fold_left
       (fun acc r ->
         match target_of r with
-        | Some t when r.rr_soort <> Some Kenmerktoekenning ->
+        | Some t when r.rr_presentation <> Some Characteristic_attribution ->
             let k = key t in
             if List.mem_assoc k acc then
               List.map (fun (k', (t', rs)) -> if k' = k then (k', (t', rs @ [ r ])) else (k', (t', rs))) acc
             else acc @ [ (k, (t, [ r ])) ]
         | _ -> acc)
-      [] doc.resolved_regels
+      [] doc.resolved_rules
   in
   let desugarable (_, (_, rs)) =
-    let inits = List.filter (fun r -> r.rr_soort = Some Initialisatie) rs in
+    let inits = List.filter (fun r -> r.rr_presentation = Some Initialisation) rs in
     let comps = List.filter is_computing rs in
     (* exactly one initialisation: the init default is what the desugaring
        exists for — the bare computation stays structurally outside the
@@ -99,13 +99,13 @@ let document (doc : document) : document =
             if is_computing r then
               Some
                 {
-                  default_besluit = None;
-                  default_voorwaarde =
-                    Some (Option.value r.rr_voorwaarde ~default:always_true);
-                  default_consequentie = Some (Option.get r.waarde);
-                  default_initialisatie = false;
-                  default_excepties = None;
-                  default_bron = r.rr_naam;
+                  default_decision = None;
+                  default_justification =
+                    Some (Option.value r.rr_condition ~default:always_true);
+                  default_consequence = Some (Option.get r.value_node);
+                  default_initialisation = false;
+                  default_exceptions = None;
+                  default_source = r.rr_name;
                 }
             else None)
           rs
@@ -113,33 +113,33 @@ let document (doc : document) : document =
       let init_defaults =
         List.filter_map
           (fun r ->
-            if r.rr_soort = Some Initialisatie then
+            if r.rr_presentation = Some Initialisation then
               Some
                 {
-                  default_besluit = None;
-                  default_voorwaarde = None;
-                  default_consequentie = Some (Option.get r.waarde);
-                  default_initialisatie = true;
-                  default_excepties = None;
-                  default_bron = r.rr_naam;
+                  default_decision = None;
+                  default_justification = None;
+                  default_consequence = Some (Option.get r.value_node);
+                  default_initialisation = true;
+                  default_exceptions = None;
+                  default_source = r.rr_name;
                 }
             else None)
           rs
       in
       {
-        pd_naam = Some ("desugared: " ^ a ^ " van " ^ ot);
-        pd_onderwerp = ot;
-        pd_kenmerk = None;
-        pd_attribuut = Some a;
+        pd_name = Some ("desugared: " ^ a ^ " van " ^ ot);
+        pd_subject = ot;
+        pd_characteristic = None;
+        pd_attribute = Some a;
         defaults = comp_defaults @ init_defaults;
-        pd_ongeordend = false;
-        pd_bron = Some "ch. 7.7 v0 desugaring";
-        pd_geldigheid = None;
+        pd_unordered = false;
+        pd_source = Some "ch. 7.7 v0 desugaring";
+        pd_validity = None;
       }
     in
     {
       doc with
-      resolved_regels = List.filter (fun r -> not (in_chosen r)) doc.resolved_regels;
+      resolved_rules = List.filter (fun r -> not (in_chosen r)) doc.resolved_rules;
       prioritized_defaults = doc.prioritized_defaults @ List.map defaults_of chosen;
     }
 
@@ -157,34 +157,34 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
     List.fold_left
       (fun acc r ->
         match target_of r with
-        | Some t when r.rr_soort <> Some Kenmerktoekenning -> key t :: acc
+        | Some t when r.rr_presentation <> Some Characteristic_attribution -> key t :: acc
         | _ -> acc)
-      [] doc.resolved_regels
+      [] doc.resolved_rules
   in
   let count k = List.length (List.filter (( = ) k) written_by_rules) in
   let other_writer (ot, a) =
     List.exists
       (fun (l : prioritized_defaults) ->
-        norm l.pd_onderwerp = norm ot
-        && match l.pd_attribuut with Some la -> norm la = norm a | None -> false)
+        norm l.pd_subject = norm ot
+        && match l.pd_attribute with Some la -> norm la = norm a | None -> false)
       doc.prioritized_defaults
     || List.exists
-         (fun (v : resolved_verdeling) ->
-           (match v.doel_type with Some dt -> norm dt = norm ot | None -> false)
-           && match v.doel_attribuut with Some da -> norm da = norm a | None -> false)
-         doc.verdelingen
+         (fun (v : resolved_allocation) ->
+           (match v.objective_type_name with Some dt -> norm dt = norm ot | None -> false)
+           && match v.target_attribute with Some da -> norm da = norm a | None -> false)
+         doc.allocations
     || List.exists
-         (fun (o : resolved_object_creatie) ->
-           (match o.nieuw_type with Some nt -> norm nt = norm ot | None -> false)
+         (fun (o : resolved_object_creation) ->
+           (match o.created_type with Some nt -> norm nt = norm ot | None -> false)
            && List.exists
-                (fun (t : toekenning) ->
-                  (not t.toe_kenmerk)
-                  && match t.toe_attribuut with Some ta -> norm ta = norm a | None -> false)
-                o.toekenningen)
-         doc.object_creaties
+                (fun (t : assignment) ->
+                  (not t.to_characteristic)
+                  && match t.to_attribute with Some ta -> norm ta = norm a | None -> false)
+                o.assignments)
+         doc.object_creations
   in
   let wanted_shape (ot, a) =
-    match List.find_opt (fun (n, _) -> norm n = norm ot) doc.objecttypen with
+    match List.find_opt (fun (n, _) -> norm n = norm ot) doc.object_types with
     | Some (_, decl) -> Checks.attr_temporal decl a = temporal
     | None -> false
   in
@@ -193,11 +193,11 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
      shape-agnostic domain would skip the backend's input fence for
      rules that then merely shape-fault — keep the fence in charge
      there instead *)
-  let executable (r : resolved_regel) =
+  let executable (r : resolved_rule) =
     (not temporal)
     ||
-    match r.waarde with
-    | Some (Functie { kind = Tijdsevenredig_deel | Aantal_dagen_in; _ }) -> true
+    match r.value_node with
+    | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> true
     | _ -> false
   in
   List.filter_map
@@ -211,7 +211,7 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
              && not (other_writer t) ->
           Some (key t)
       | _ -> None)
-    doc.resolved_regels
+    doc.resolved_rules
 
 let standing_targets = standing_targets_gen ~temporal:false
 
@@ -239,8 +239,8 @@ let standing_targets = standing_targets_gen ~temporal:false
    Shared by ref/ and the ASP backend, like the ch. 7.7 desugaring above, so
    the two executors cannot drift on the block order. *)
 
-let is_init (r : default) = r.default_initialisatie
-let default_has_content (r : default) = r.default_besluit <> None || r.default_consequentie <> None
+let is_init (r : default) = r.default_initialisation
+let default_has_content (r : default) = r.default_decision <> None || r.default_consequence <> None
 
 (* (exceptions, base, initialisation tail) of one member's ordered stack,
    each default paired with the subject type it was declared on.
@@ -252,7 +252,7 @@ let split_stack (l : prioritized_defaults) (origins : string list) =
   let pairs = List.combine l.defaults origins in
   let head = List.filter (fun (r, _) -> not (is_init r)) pairs in
   let tail = List.filter (fun (r, _) -> is_init r) pairs in
-  if l.pd_ongeordend then (head, None, tail)
+  if l.pd_unordered then (head, None, tail)
   else
     match List.rev head with
     | ((last, _) as b) :: rest when default_has_content last -> (List.rev rest, Some b, tail)
@@ -316,14 +316,14 @@ exception Unlowered of string
 let level_rules doc level key =
   List.concat
     (List.mapi
-       (fun i (r : resolved_regel) ->
-         match (r.rr_soort, r.doel) with
-         | ( Some ((Gelijkstelling | Berekening | Initialisatie) as soort),
-             Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) )
+       (fun i (r : resolved_rule) ->
+         match (r.rr_presentation, r.objective) with
+         | ( Some ((Equation | Calculation | Initialisation) as variety),
+             Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) )
            when norm ot = norm level && "A:" ^ norm a = key ->
-             [ (soort, r, i) ]
+             [ (variety, r, i) ]
          | _ -> [])
-       doc.resolved_regels)
+       doc.resolved_rules)
 
 (* [level]'s own contribution to [key] when it declares no defaults group:
    its rules, read as the ch. 7.7 shape — the computing rule as the base,
@@ -332,10 +332,10 @@ let level_rules doc level key =
    contributors are the rules' wire pointers. *)
 let rule_member doc level key : (prioritized_defaults * string list * string list) option =
   let rules = level_rules doc level key in
-  let comps = List.filter (fun (soort, _, _) -> soort <> Initialisatie) rules in
-  let inits = List.filter (fun (soort, _, _) -> soort = Initialisatie) rules in
+  let comps = List.filter (fun (variety, _, _) -> variety <> Initialisation) rules in
+  let inits = List.filter (fun (variety, _, _) -> variety = Initialisation) rules in
   if rules = [] then None
-  else if List.exists (fun (_, (r : resolved_regel), _) -> not (version_free r.rr_geldigheid)) rules
+  else if List.exists (fun (_, (r : resolved_rule), _) -> not (version_free r.rr_validity)) rules
   then
     (* NOT lowered, and deliberately: a base carrying a validity window would
        put a third time dimension into the stack semantics — version selection
@@ -350,7 +350,7 @@ let rule_member doc level key : (prioritized_defaults * string list * string lis
              ch. 7.4 keeps apart from defeasibility, and the block order has no reading for it \
              (RUNTIME-SEMANTICS ch. 7.10)"
             key level))
-  else if List.exists (fun (_, (r : resolved_regel), _) -> r.waarde = None) rules then
+  else if List.exists (fun (_, (r : resolved_rule), _) -> r.value_node = None) rules then
     raise
       (Unlowered
          (Printf.sprintf
@@ -365,16 +365,16 @@ let rule_member doc level key : (prioritized_defaults * string list * string lis
             "target %s on '%s' is written by %d computing and %d initialisation rule(s) beside an              inherited defaults stack: the v0 meaning of two writers on one target is agenda              order, which prioritized defaults exist to replace (RUNTIME-SEMANTICS ch. 7.10)"
             key level (List.length comps) (List.length inits)))
   else
-    let attribuut =
+    let attribute_ref =
       match key with k when String.length k > 2 -> String.sub k 2 (String.length k - 2) | k -> k
     in
     let a =
       match rules with
-      | (_, (r : resolved_regel), _) :: _ -> (
-          match r.doel with
-          | Some (Attribuut_ref { attribuut = Some a; _ }) -> a
-          | _ -> attribuut)
-      | [] -> attribuut
+      | (_, (r : resolved_rule), _) :: _ -> (
+          match r.objective with
+          | Some (Attribute_reference { attribute_ref = Some a; _ }) -> a
+          | _ -> attribute_ref)
+      | [] -> attribute_ref
     in
     (* An initialisation keeps its condition. The initialisation default is
        justified where the target is empty in the input facts (ch. 7.3); a
@@ -385,33 +385,33 @@ let rule_member doc level key : (prioritized_defaults * string list * string lis
        fold. An earlier revision dropped the condition: on a verifier-clean
        chain ref and the Drools exec branch then wrote the initialisation's
        value where its condition failed. *)
-    let d ~init (r : resolved_regel) =
+    let d ~init (r : resolved_rule) =
       {
-        default_besluit = None;
-        default_voorwaarde =
-          (if init then r.rr_voorwaarde
-           else Some (Option.value r.rr_voorwaarde ~default:always_true));
-        default_consequentie = Some (Option.get r.waarde);
-        default_initialisatie = init;
-        default_excepties = None;
-        default_bron = r.rr_naam;
+        default_decision = None;
+        default_justification =
+          (if init then r.rr_condition
+           else Some (Option.value r.rr_condition ~default:always_true));
+        default_consequence = Some (Option.get r.value_node);
+        default_initialisation = init;
+        default_exceptions = None;
+        default_source = r.rr_name;
       }
     in
     let defaults =
       List.map (fun (_, r, _) -> d ~init:false r) comps
       @ List.map (fun (_, r, _) -> d ~init:true r) inits
     in
-    let pointers = List.map (fun (_, (r : resolved_regel), _) -> r.rr_pointer) rules in
+    let pointers = List.map (fun (_, (r : resolved_rule), _) -> r.rr_pointer) rules in
     Some
       ( {
-          pd_naam = Some ("regel als basis: " ^ a ^ " van " ^ level);
-          pd_onderwerp = level;
-          pd_kenmerk = None;
-          pd_attribuut = Some a;
+          pd_name = Some ("regel als basis: " ^ a ^ " van " ^ level);
+          pd_subject = level;
+          pd_characteristic = None;
+          pd_attribute = Some a;
           defaults;
-          pd_ongeordend = false;
-          pd_bron = Some "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level";
-          pd_geldigheid = None;
+          pd_unordered = false;
+          pd_source = Some "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level";
+          pd_validity = None;
         },
         pointers,
         List.map (fun _ -> level) defaults )
@@ -432,10 +432,10 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
     List.concat
       (List.mapi
          (fun i (l : prioritized_defaults) ->
-           if norm l.pd_onderwerp = norm type_name then
+           if norm l.pd_subject = norm type_name then
              [ ( l,
                  [ Printf.sprintf "/prioritizedDefaults/%d" i ],
-                 List.map (fun _ -> l.pd_onderwerp) l.defaults ) ]
+                 List.map (fun _ -> l.pd_subject) l.defaults ) ]
            else [])
          doc.prioritized_defaults)
   in
@@ -451,7 +451,7 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
         absorb
   in
   let inherited =
-    match Checks.find_ci doc.objecttypen type_name with
+    match Checks.find_ci doc.object_types type_name with
     | Some ot -> (
         match ot.ot_supertype with
         | Some s when not (List.mem (norm s) visited) ->
@@ -542,7 +542,7 @@ let effective_defaults (doc : document) :
             Some
               (name, k, List.map (fun (m, _, o) -> (m, o)) ms, List.concat_map (fun (_, p, _) -> p) ms))
         (effective_stacks_of doc ~visited:[] ~absorb name))
-    doc.objecttypen
+    doc.object_types
 
 (* The concrete types on which an ordinary rule writing ([otype], [attr]) has
    been ABSORBED into an effective defaults stack as its base, and therefore

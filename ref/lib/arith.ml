@@ -13,25 +13,25 @@ open Value
 
 (* --- units (ch. 2.6) --------------------------------------------------- *)
 
-let unit_name (e : Ir_v0.Ast.eenheid) =
-  match e.afkorting with Some a -> a | None -> "?"
+let unit_name (e : Ir_v0.Ast.measure_unit) =
+  match e.abbr_text with Some a -> a | None -> "?"
 
 (* a rate prints its denominator: without it "€/mnd" and "€" both read
    "EUR", and every unit fault between them reads "EUR vs EUR" *)
-let rec show_eenheid (e : Ir_v0.Ast.eenheid) =
-  match e.noemer with Some n -> unit_name e ^ "/" ^ show_eenheid n | None -> unit_name e
+let rec display_unit (e : Ir_v0.Ast.measure_unit) =
+  match e.denominator with Some n -> unit_name e ^ "/" ^ display_unit n | None -> unit_name e
 
 let show_unit = function
   | Unitless -> "(unitless)"
-  | Unit e -> show_eenheid e
-  | Product (a, b) -> show_eenheid a ^ "*" ^ show_eenheid b
+  | Unit e -> display_unit e
+  | Product (a, b) -> display_unit a ^ "*" ^ display_unit b
 
 (* The wire carries the canonical factor as the exact rational {num, den}
    (IR-SPEC ch. 2.5; the loader hands it over as the pair), so it is read as
    that rational and nothing else: no binary double stands between the
    declaration and the arithmetic, and the one rounding a restatement takes
    is the one at the end (ch. 2.5, Restatement). *)
-let rational ({ num; den } : Ir_v0.Ast.rationaal) = Q.make (Z.of_int num) (Z.of_int den)
+let rational ({ num; den } : Ir_v0.Ast.rational) = Q.make (Z.of_int num) (Z.of_int den)
 
 (* A unit's conversion pair is ONE fact in two fields: the canonical unit
    it converts into and the factor that does the converting (WF-092).
@@ -61,27 +61,27 @@ let rational ({ num; den } : Ir_v0.Ast.rationaal) = Q.make (Z.of_int num) (Z.of_
    fault here, by name. This is the second line of defence behind the
    verifier, not a dead letter: an executor must never compute quietly on
    a shape the verifier rejects. *)
-let factor (e : Ir_v0.Ast.eenheid) =
-  match (e.factor_naar_canoniek, e.canoniek) with
+let factor (e : Ir_v0.Ast.measure_unit) =
+  match (e.factor_to_canonical, e.canonical_form) with
   | Some f, Some _ -> rational f
   | Some f, None ->
       fault "unit %s carries conversion factor %s but names no canonical unit to convert into"
-        (show_eenheid e) (Ir_v0.Checks.rationaal_render f)
+        (display_unit e) (Ir_v0.Checks.rational_render f)
   | None, None -> Q.one
   | None, Some c ->
       fault "unit %s names canonical unit %S but carries no conversion factor into it"
-        (show_eenheid e) c
+        (display_unit e) c
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
 
 (* multiplicative factor taking a quantity in unit [a] to unit [b];
    both must be convertible (same canonical chain, rates recursively) *)
-let rec conv_factor (a : Ir_v0.Ast.eenheid) (b : Ir_v0.Ast.eenheid) =
+let rec conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
   let base = Q.div (factor a) (factor b) in
-  match (a.noemer, b.noemer) with
+  match (a.denominator, b.denominator) with
   | None, None -> base
-  | Some na, Some nb -> Q.mul base (conv_factor nb na)
-  | _ -> fault "rate/plain unit mismatch: %s vs %s" (show_eenheid a) (show_eenheid b)
+  | Some denominator_a, Some nb -> Q.mul base (conv_factor nb denominator_a)
+  | _ -> fault "rate/plain unit mismatch: %s vs %s" (display_unit a) (display_unit b)
 
 (* restate a number in unit [ub] into unit [ua] (ch. 2.6: the right operand
    is restated into the left operand's unit, with exact factors) *)
@@ -121,7 +121,7 @@ let sub_min l r =
   Num (Q.sub lq (restate_into lu rq ru), join_units lu ru)
 
 (* verminderd met: left propagates, right coalesces (§6.3) *)
-let sub_verminderd l r =
+let sub_reduced l r =
   match l with
   | Empty -> Empty
   | _ ->
@@ -134,12 +134,12 @@ let mul l r =
   match (lu, ru) with
   | Unitless, u | u, Unitless -> Num (Q.mul lq rq, u)
   | Unit a, Unit b -> (
-      match (a.noemer, b.noemer) with
+      match (a.denominator, b.denominator) with
       | Some n, None when convertible n b ->
           (* a rate times its denominator unit cancels: €/jr × jr = € *)
-          Num (Q.mul lq (Q.mul rq (conv_factor b n)), Unit { a with noemer = None })
+          Num (Q.mul lq (Q.mul rq (conv_factor b n)), Unit { a with denominator = None })
       | None, Some n when convertible n a ->
-          Num (Q.mul rq (Q.mul lq (conv_factor a n)), Unit { b with noemer = None })
+          Num (Q.mul rq (Q.mul lq (conv_factor a n)), Unit { b with denominator = None })
       | None, None -> Num (Q.mul lq rq, Product (a, b))
       | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru))
   | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru)
@@ -170,8 +170,8 @@ let div_gen ~err ~collapse l r =
               | u, Unitless -> (Q.div lq rq, u)
               | Unit a, Unit b when convertible a b ->
                   (Q.div lq (Q.mul rq (conv_factor b a)), Unitless)
-              | Unit a, Unit b when a.noemer = None && b.noemer = None ->
-                  (Q.div lq rq, Unit { a with noemer = Some b })
+              | Unit a, Unit b when a.denominator = None && b.denominator = None ->
+                  (Q.div lq rq, Unit { a with denominator = Some b })
               | Unitless, Unit _ | _ ->
                   fault "unit quotient not modelled: %s / %s" (show_unit lu) (show_unit ru)
             in
@@ -181,15 +181,15 @@ let div_gen ~err ~collapse l r =
 
 let round_z mode (q : Q.t) =
   let num = Q.num q and den = Q.den q in
-  match (mode : Ir_v0.Ast.afrond_modus) with
-  | Naar_beneden -> Z.fdiv num den
-  | Naar_boven -> Z.cdiv num den
-  | Richting_nul -> Z.div num den
-  | Weg_van_nul -> if Z.sign num >= 0 then Z.cdiv num den else Z.fdiv num den
-  | Rekenkundig ->
+  match (mode : Ir_v0.Ast.rounding_mode_kind) with
+  | Floor -> Z.fdiv num den
+  | Ceiling -> Z.cdiv num den
+  | Toward_zero -> Z.div num den
+  | Away_from_zero -> if Z.sign num >= 0 then Z.cdiv num den else Z.fdiv num den
+  | Half_away_from_zero ->
       (* half away from zero on both signs: |x| -> floor(|x| + 1/2) *)
-      let mag = Z.fdiv (Z.add (Z.mul (Z.abs num) (Z.of_int 2)) den) (Z.mul den (Z.of_int 2)) in
-      if Z.sign num < 0 then Z.neg mag else mag
+      let magnitude = Z.fdiv (Z.add (Z.mul (Z.abs num) (Z.of_int 2)) den) (Z.mul den (Z.of_int 2)) in
+      if Z.sign num < 0 then Z.neg magnitude else magnitude
 
 let round_q mode decimals q =
   let s = Z.pow (Z.of_int 10) decimals in
@@ -204,7 +204,7 @@ let round_v mode decimals = function
 (* abs-division variant: quotient truncated toward zero at 5 decimals —
    a defined collapse point (ch. 2.2) *)
 let div_ ~err l r = div_gen ~err ~collapse:(fun q u -> Num (q, u)) l r
-let div_abs ~err l r = div_gen ~err ~collapse:(fun q u -> Num (round_q Richting_nul 5 q, u)) l r
+let div_abs ~err l r = div_gen ~err ~collapse:(fun q u -> Num (round_q Toward_zero 5 q, u)) l r
 
 (* --- roots and powers (ch. 2.2) ---------------------------------------- *)
 
@@ -259,10 +259,10 @@ let sqrt_rounded ~err mode decimals = function
         let k = if le k then k else Z.pred k in
         let exact = Q.equal (Q.of_bigint (Z.mul k k)) target in
         let chosen =
-          match (mode : Ir_v0.Ast.afrond_modus) with
-          | Naar_beneden | Richting_nul -> k
-          | Naar_boven | Weg_van_nul -> if exact then k else Z.succ k
-          | Rekenkundig ->
+          match (mode : Ir_v0.Ast.rounding_mode_kind) with
+          | Floor | Toward_zero -> k
+          | Ceiling | Away_from_zero -> if exact then k else Z.succ k
+          | Half_away_from_zero ->
               if exact then k
               else
                 (* compare √target with k + 1/2 via target vs (2k+1)²/4 *)
@@ -370,7 +370,7 @@ let rec equal a b =
           | _ -> false)
   (* ch. 10.1: list equality is elementwise and in order; a position is
      never leeg, so this agrees with the Tabel 38 reading below *)
-  | Lijst xs, Lijst ys -> List.length xs = List.length ys && List.for_all2 equal xs ys
+  | List_value xs, List_value ys -> List.length xs = List.length ys && List.for_all2 equal xs ys
   (* ch. 11.2: record equality is fieldwise and structural — positional over
      the shared declaration order, field names matched ci; a field is never
      leeg, so this agrees with the Tabel 38 reading below. WF-072 guarantees
@@ -378,8 +378,8 @@ let rec equal a b =
   | Record fa, Record fb ->
       List.length fa = List.length fb
       && List.for_all2
-           (fun (na, va) (nb, vb) ->
-             String.equal (Ir_v0.Checks.norm na) (Ir_v0.Checks.norm nb) && equal va vb)
+           (fun (denominator_a, va) (nb, vb) ->
+             String.equal (Ir_v0.Checks.norm denominator_a) (Ir_v0.Checks.norm nb) && equal va vb)
            fa fb
   | _ -> false
 
@@ -395,7 +395,7 @@ let eq_non_numeric l r =
   | Bool a, Bool b -> Bool.equal a b
   | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
   | (Ctor _ as a), (Ctor _ as b) -> equal a b
-  | (Lijst _ as a), (Lijst _ as b) -> equal a b
+  | (List_value _ as a), (List_value _ as b) -> equal a b
   (* ch. 11.2: record values are non-numeric; a leeg operand already fell to
      false above, else the fieldwise structural equality of [equal] *)
   | (Record _ as a), (Record _ as b) -> equal a b
@@ -410,7 +410,7 @@ let eq_non_numeric l r =
    (`cmp && !(l == null && r == null)`) makes a both-leeg gelijk-aan
    onwaar — never the numeric two-empties-equal cell — while ongelijk-aan
    keeps the numeric cells (both readings already agree there). *)
-let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.vergelijk_op) l r =
+let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.compare_op) l r =
   let ordering cmp =
     (* any empty operand → false *)
     match (l, r) with Empty, _ | _, Empty -> false | _ -> cmp (scalar_cmp l r) 0
@@ -421,11 +421,11 @@ let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.vergelijk_
     | None -> ( match (l, r) with Empty, Empty -> true | _ -> is_numeric_pair l r)
   in
   match op with
-  | Kleiner | Eerder -> ordering ( < )
-  | Kleiner_of_gelijk | Eerder_of_gelijk -> ordering ( <= )
-  | Groter | Later -> ordering ( > )
-  | Groter_of_gelijk | Later_of_gelijk -> ordering ( >= )
-  | Gelijk ->
+  | Less | Earlier -> ordering ( < )
+  | Less_or_equal | Earlier_or_equal -> ordering ( <= )
+  | Greater | Later -> ordering ( > )
+  | Greater_or_equal | Later_or_equal -> ordering ( >= )
+  | Equal ->
       if numeric then
         (* numeric equality: true iff both empty, else value equality —
            except the date row, where both-empty is onwaar (the v0 guard) *)
@@ -434,7 +434,7 @@ let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.vergelijk_
         | Empty, _ | _, Empty -> false
         | _ -> scalar_cmp l r = 0
       else eq_non_numeric l r
-  | Ongelijk ->
+  | Not_equal ->
       if numeric then
         (* true iff exactly one empty, else value inequality *)
         match (l, r) with
@@ -458,17 +458,17 @@ let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.vergelijk_
 (* empty contributors are skipped, never counted as 0 *)
 let filled vs = List.filter (fun v -> v <> Empty) vs
 
-let agg_som ~fallback vs =
+let agg_sum ~fallback vs =
   match filled vs with
   | [] -> ( match fallback with Some f -> f | None -> Empty)
   | first :: rest -> List.fold_left add first rest
 
-let agg_totaal vs =
+let agg_total vs =
   match filled vs with
   | [] -> Num (Q.zero, Unitless) (* 0 unconditionally, §4.20 *)
   | first :: rest -> List.fold_left add first rest
 
-let agg_aantal vs = Num (Q.of_int (List.length vs), Unitless)
+let agg_count vs = Num (Q.of_int (List.length vs), Unitless)
 
 let agg_extreme keep vs =
   match filled vs with
@@ -486,22 +486,22 @@ let agg_max vs = agg_extreme (fun c -> c > 0) vs
    take the LATER operand (v0's listed fold: `acc < x ? acc : x`) —
    value-equal, so unobservable today; agg_min/agg_max keep the strict
    compare (the instance-accumulate mirror, first-seen wins). *)
-let agg_eerste vs = agg_extreme (fun c -> c <= 0) vs
-let agg_laatste vs = agg_extreme (fun c -> c >= 0) vs
+let agg_first vs = agg_extreme (fun c -> c <= 0) vs
+let agg_last vs = agg_extreme (fun c -> c >= 0) vs
 
 (* --- date part extraction / date arithmetic (ch. 1.2b + ch. 3.8) ------- *)
 
-let jaar_uit = function
+let year_of = function
   | Empty -> Empty
   | Date z -> let y, _, _ = civil_from_days z in Num (Q.of_int y, Unitless)
   | v -> fault "yearOf: expected a date, got %s" (to_string v)
 
-let maand_uit = function
+let month_of = function
   | Empty -> Empty
   | Date z -> let _, m, _ = civil_from_days z in Num (Q.of_int m, Unitless)
   | v -> fault "monthOf: expected a date, got %s" (to_string v)
 
-let dag_uit = function
+let day_from = function
   | Empty -> Empty
   | Date z -> let _, _, d = civil_from_days z in Num (Q.of_int d, Unitless)
   | v -> fault "dayOf: expected a date, got %s" (to_string v)
@@ -511,7 +511,7 @@ let dag_uit = function
    unit-carrying year faults — the ratified delta: never a silent
    truncation to whole. OCaml (/) and (mod) truncate toward zero, exactly
    the ch. 3.8 quot/mod. *)
-let eerste_paasdag = function
+let easter_sunday = function
   | Empty -> Empty
   | Num (q, Unitless) when Z.equal (Q.den q) Z.one ->
       let j =
@@ -528,9 +528,9 @@ let eerste_paasdag = function
       let i = c / 4 and k = c mod 4 in
       let l = (32 + (2 * e) + (2 * i) - h - k) mod 7 in
       let m = (a + (11 * h) + (22 * l)) / 451 in
-      let maand = (h + l - (7 * m) + 114) / 31 in
-      let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
-      Date (days_from_civil ~y:j ~m:maand ~d:dag)
+      let month_kind = (h + l - (7 * m) + 114) / 31 in
+      let day_number = ((h + l - (7 * m) + 114) mod 31) + 1 in
+      Date (days_from_civil ~y:j ~m:month_kind ~d:day_number)
   | v -> fault "easterSunday: expected a whole unitless year, got %s" (to_string v)
 
 (* --- the calendar kernel (ch. 3.8): proleptic Gregorian, zoneless civil
@@ -567,22 +567,22 @@ let add_months n z =
    truncates toward zero, exactly the ch. 3.8 quot) *)
 let whole_units_between (tu : Ir_v0.Checks.time_unit) za zb =
   match tu with
-  | Tu_dag -> zb - za
+  | Tu_day -> zb - za
   | Tu_week -> (zb - za) / 7
-  | Tu_maand -> (packed zb - packed za) / 32
-  | Tu_kwartaal -> (packed zb - packed za) / 32 / 3
-  | Tu_jaar -> (packed zb - packed za) / 32 / 12
-  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+  | Tu_month -> (packed zb - packed za) / 32
+  | Tu_quarter -> (packed zb - packed za) / 32 / 3
+  | Tu_year -> (packed zb - packed za) / 32 / 12
+  | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
       fault "sub-day duration needs datum-tijd operands (day-precision values)"
 
 let add_units (tu : Ir_v0.Checks.time_unit) n z =
   match tu with
-  | Tu_dag -> z + n
+  | Tu_day -> z + n
   | Tu_week -> z + (7 * n)
-  | Tu_maand -> add_months n z
-  | Tu_kwartaal -> add_months (3 * n) z
-  | Tu_jaar -> add_months (12 * n) z
-  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+  | Tu_month -> add_months n z
+  | Tu_quarter -> add_months (3 * n) z
+  | Tu_year -> add_months (12 * n) z
+  | Tu_hour | Tu_minute | Tu_second | Tu_millisecond ->
       fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
 
 (* --- the datum-tijd millisecond layer (ch. 3.8): a datetime is its ms
@@ -598,10 +598,10 @@ let split_ms t =
   (d, t - (d * ms_per_day))
 
 let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
-  | Tu_uur -> Some 3_600_000
-  | Tu_minuut -> Some 60_000
-  | Tu_seconde -> Some 1_000
-  | Tu_milliseconde -> Some 1
+  | Tu_hour -> Some 3_600_000
+  | Tu_minute -> Some 60_000
+  | Tu_second -> Some 1_000
+  | Tu_millisecond -> Some 1
   | _ -> None
 
 (* datetime + n units: sub-day units are linear on the ms value; calendar
@@ -759,7 +759,7 @@ let date_plus_day_kind ?(minus = false) ~matches d dur =
    refusal that names the form, not the leeg rule of a form that is not
    carried; otherwise the same document answers leeg or faults depending on
    which operand the case fills. *)
-let tijdsduur_day_kind ?(absolute = false) ~matches ?(result_unit = Unitless) a b =
+let duration_day_kind ?(absolute = false) ~matches ?(result_unit = Unitless) a b =
   let datetime_flank () =
     fault
       "duration in a day kind over datum-tijd operands is a recognised, unexecuted form: \
@@ -804,7 +804,7 @@ let date_plus_duration ?(minus = false) ?unit_ d dur =
 (* tijdsduur van A tot B (ch. 3.8): whole declared units, signed; the
    absolute variant drops the sign; any empty operand propagates, never 0.
    The result carries the node's declared unit [result_unit]. *)
-let tijdsduur ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
+let duration ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
   match (a, b) with
   | Empty, _ | _, Empty -> Empty
   | Date za, Date zb -> (
@@ -837,7 +837,7 @@ let text_of = function
      silent stringification into a text join *)
   | Ctor _ as v -> fault "a constructor value has no text coercion: %s" (to_string v)
   (* a list value has no text coercion either — same fail-fast boundary *)
-  | Lijst _ as v -> fault "a list value has no text coercion: %s" (to_string v)
+  | List_value _ as v -> fault "a list value has no text coercion: %s" (to_string v)
   (* a record value has no text coercion either — same fail-fast boundary *)
   | Record _ as v -> fault "a record value has no text coercion: %s" (to_string v)
 

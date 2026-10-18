@@ -10,3 +10,4 @@ asp	answer set programming
 mvel	the expression language of Drools rules
 junit	JUnit, the Java test framework; a false hit (juni) of the sub-word search, card hernoem-drools-backend
 beangenerator	bean generator, the bean classes the fact model generates; a false hit (rato) of the sub-word search, card hernoem-drools-backend
+scopelang	Catala's scope language, a library module of the opam package catala; a false hit (lang) of the sub-word search, card rename-ocaml
