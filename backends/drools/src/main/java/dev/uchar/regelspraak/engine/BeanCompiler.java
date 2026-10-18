@@ -50,15 +50,15 @@ public final class BeanCompiler {
 
     /** Compile {@code bronnen} (simple class name → Java source) in memory; return a loader serving them.
      *  Identical {@code bronnen} within one JVM are compiled ONCE (content-keyed cache) and share the loader. */
-    public static ClassLoader compileer(Map<String, String> bronnen) {
-        return CACHE.computeIfAbsent(sleutel(bronnen), k -> compileerOngecached(bronnen));
+    public static ClassLoader compile(Map<String, String> sources) {
+        return CACHE.computeIfAbsent(sleutel(sources), k -> compileUncached(sources));
     }
 
     /** SHA-256 over the sorted (className → source) entries — the content key that decides cache identity. */
-    private static String sleutel(Map<String, String> bronnen) {
+    private static String sleutel(Map<String, String> sources) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            for (Map.Entry<String, String> e : new TreeMap<>(bronnen).entrySet()) {
+            for (Map.Entry<String, String> e : new TreeMap<>(sources).entrySet()) {
                 md.update(e.getKey().getBytes(StandardCharsets.UTF_8));
                 md.update((byte) 0);
                 md.update(e.getValue().getBytes(StandardCharsets.UTF_8));
@@ -72,34 +72,34 @@ public final class BeanCompiler {
         }
     }
 
-    private static ClassLoader compileerOngecached(Map<String, String> bronnen) {
+    private static ClassLoader compileUncached(Map<String, String> sources) {
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
         if (javac == null)
             throw new IllegalStateException("geen JDK-compiler beschikbaar (draai op een JDK, niet een JRE)");
-        Map<String, ByteArrayOutputStream> klassen = new HashMap<>();
-        List<JavaFileObject> eenheden = new ArrayList<>();
-        for (Map.Entry<String, String> e : bronnen.entrySet())
-            eenheden.add(new SimpleJavaFileObject(
+        Map<String, ByteArrayOutputStream> classes = new HashMap<>();
+        List<JavaFileObject> units = new ArrayList<>();
+        for (Map.Entry<String, String> e : sources.entrySet())
+            units.add(new SimpleJavaFileObject(
                     URI.create("string:///" + FactModelGenerator.PAKKET.replace('.', '/') + "/" + e.getKey() + ".java"),
                     JavaFileObject.Kind.SOURCE) {
                 @Override public CharSequence getCharContent(boolean ignore) { return e.getValue(); }
             });
         // try-with-resources: the file manager holds OS handles on the platform/classpath jars. The returned
-        // classloader keeps only the compiled BYTES (the `klassen` map), so closing the manager after the compile
+        // classloader keeps only the compiled BYTES (the `classes` map), so closing the manager after the compile
         // completes is safe — and REQUIRED, else a per-run compile (e.g. an orakel harness calling the runner ≥40×)
         // leaks a StandardJavaFileManager + its file descriptors on every invocation.
         StringBuilder diag = new StringBuilder();
         try (StandardJavaFileManager std = javac.getStandardFileManager(null, null, null);
              JavaFileManager fm = new ForwardingJavaFileManager<>(std) {
                  @Override public JavaFileObject getJavaFileForOutput(Location loc, String naam, JavaFileObject.Kind kind, FileObject bron) {
-                     ByteArrayOutputStream uit = new ByteArrayOutputStream();
-                     klassen.put(naam, uit);
+                     ByteArrayOutputStream out = new ByteArrayOutputStream();
+                     classes.put(naam, out);
                      return new SimpleJavaFileObject(URI.create("mem:///" + naam.replace('.', '/') + ".class"), kind) {
-                         @Override public OutputStream openOutputStream() { return uit; }
+                         @Override public OutputStream openOutputStream() { return out; }
                      };
                  }
              }) {
-            boolean ok = javac.getTask(null, fm, d -> diag.append(d).append('\n'), null, null, eenheden).call();
+            boolean ok = javac.getTask(null, fm, d -> diag.append(d).append('\n'), null, null, units).call();
             if (!ok)
                 throw new IllegalStateException("gegenereerde fact-beans compileren niet:\n" + diag);
         } catch (java.io.IOException e) {
@@ -109,14 +109,14 @@ public final class BeanCompiler {
             @Override protected Class<?> loadClass(String naam, boolean resolve) throws ClassNotFoundException {
                 synchronized (getClassLoadingLock(naam)) {
                     Class<?> c = findLoadedClass(naam);
-                    if (c == null && klassen.containsKey(naam)) c = findClass(naam);
+                    if (c == null && classes.containsKey(naam)) c = findClass(naam);
                     if (c == null) return super.loadClass(naam, resolve);
                     if (resolve) resolveClass(c);
                     return c;
                 }
             }
             @Override protected Class<?> findClass(String naam) throws ClassNotFoundException {
-                ByteArrayOutputStream b = klassen.get(naam);
+                ByteArrayOutputStream b = classes.get(naam);
                 if (b == null) throw new ClassNotFoundException(naam);
                 byte[] bytes = b.toByteArray();
                 return defineClass(naam, bytes, 0, bytes.length);

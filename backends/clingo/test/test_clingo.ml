@@ -15322,7 +15322,7 @@ let () =
    the frame is the slowest of the suite (its grounding lets every Wachter
    the chain could make seed a chain of Boeien, README).
 
-   Document L of the truth-maintenance witness (TmsCreatiestratumWitnessTest):
+   Document L of the truth-maintenance witness (TmsCreationStratumWitnessTest):
    Wachters to rang 52 (stratum 0) and, from B1 of the input, Boeien to
    nummer N (stratum 1, the wachterrang reads the rang of the Boei's
    wachter), beside "kopie van een boei" (kopie = nummer, the chain's

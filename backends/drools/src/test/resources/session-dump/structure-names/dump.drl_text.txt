@@ -1,0 +1,12 @@
+invoer bean "V1" Vondst(tariefVakOudNieuw=leeg, wrakXY=Boolean(false))
+vuringen 2 plafond 10000 geenFixpunt null
+fixpunt ja
+spoor-telling {"tarief"=1, "wrak"=1}
+spoor-volgorde ["tarief", "wrak"]
+lees kenmerk "V1" "wrak (x) = y"
+lees waarde "V1"."tarief = vak (oud).nieuw" = BigDecimal(1)
+feiten 4
+feit Fired(geenFixpunt=leeg)
+feit HasCharacteristic(onderwerp="V1", kenmerk="vondst"."wrak (x) = y" (kenmerk))
+feit Value(onderwerp="V1", attribuut="vondst"."tarief = vak (oud).nieuw", waarde=BigDecimal(1), writer=String("tarief"))
+feit bean "V1" Vondst(tariefVakOudNieuw=leeg, wrakXY=Boolean(false))

@@ -28,7 +28,7 @@ exactly one operand, an attribute reference read as the set source, over an
 attribute its object type declares no granularity for; since L2 the set source
 is the argument of a fold that carries a range, IR-SPEC ch. 4.3), because that
 reading is an alias of the sum and integrates over nothing. The ASP
-translator's `eff_unit` and the Drools backend's `EffectieveEenheid` strip in
+translator's `eff_unit` and the Drools backend's `EffectiveUnit` strip in
 neither reading: both hand the first operand's unit through whole. The
 verifier follows the source that states a `total` rule and mirrors its
 predicate rather than restating the strip — an unconditional strip is *not*

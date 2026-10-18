@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
@@ -131,7 +131,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         assertTrue(refuses(ir, BOUNDDAY + "/node").getMessage().endsWith(": unknown expr node \"Constante\""));
         // and the second list of uniquenesses, which the one list replaced
         ir = golden(PENNINGDREMPEL);
-        IrPad.rules(ir).putArray("uniciteitUnies");
+        IrPath.rules(ir).putArray("uniciteitUnies");
         assertTrue(refuses(ir, "/rules/uniciteitUnies").getMessage().contains("unknown field"));
     }
 
@@ -215,7 +215,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VALUE + "/value", form);
             IrLoader.Documentfout e = refuses(ir, VALUE + "/value");
-            assertTrue(e.getMessage().endsWith(": " + IrLoader.LITERAALWAARDE), form + ": " + e.getMessage());
+            assertTrue(e.getMessage().endsWith(": " + IrLoader.LITERAL_VALUE), form + ": " + e.getMessage());
         }
     }
 
@@ -399,11 +399,11 @@ class RuleAndExpressionLayerRefusalWitnessTest {
             ObjectNode c = contextValue("evaluationDate");
             c.set("name", JSON.readTree(name));
             set(ir, VALUE, c.toString());
-            assertTrue(refuses(ir, VALUE + "/name").getMessage().endsWith(": " + IrLoader.CONTEXTWAARDE_NAAM), name);
+            assertTrue(refuses(ir, VALUE + "/name").getMessage().endsWith(": " + IrLoader.CONTEXT_VALUE_NAME), name);
         }
         ObjectNode ir = golden(PREMIEVENSTER);
         set(ir, VALUE, contextValue("evaluationDate").putNull("type").toString());
-        assertTrue(refuses(ir, VALUE + "/type").getMessage().endsWith(": " + IrLoader.CONTEXTWAARDE_TYPE));
+        assertTrue(refuses(ir, VALUE + "/type").getMessage().endsWith(": " + IrLoader.CONTEXT_VALUE_TYPE));
         ir = golden(HAVENROOSTER);
         ((ObjectNode) ir.at(BOUNDDAY)).putNull("type");
         assertTrue(refuses(ir, BOUNDDAY + "/type").getMessage().endsWith(": " + IrLoader.BOUNDDAY_TYPE));
@@ -524,7 +524,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
             ((ObjectNode) v.get("target")).put("attribute", "toelage").put("subjectType", "Jutter");
             v.remove("condition");
             if (tag) v.put("presentation", "equation");
-            IrPad.rulesLijst(ir, "rules").add(rule);
+            IrPath.rulesList(ir, "rules").add(rule);
             assertTrue(refuses(ir, VERSION + "/target").getMessage().endsWith(": target 'toelage' names both an"
                     + " attribute and a characteristic of 'Jutter': which member a rule writes decides its kind, and"
                     + " this name decides nothing"), "tag " + tag);
@@ -632,10 +632,10 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         assertEquals(List.of(List.of("landcode"), List.of("zeecode")),
                 union.bronnen().stream().map(ResolvedUniciteitUnie.Bron::sleutels).toList());
         // the order of the one list carries no meaning: the unions first split the same
-        ArrayNode list = IrPad.rulesLijst(ir, "uniquenesses");
+        ArrayNode list = IrPath.rulesList(ir, "uniquenesses");
         ArrayNode reversed = JSON.createArrayNode();
         for (int i = list.size() - 1; i >= 0; i--) reversed.add(list.get(i));
-        IrPad.rules(ir).set("uniquenesses", reversed);
+        IrPath.rules(ir).set("uniquenesses", reversed);
         m = IrLoader.load(ir);
         assertEquals(List.of("eenmalige sectiecode", "eenmalig kaveletiket"),
                 m.uniciteiten.stream().map(ResolvedUniciteit::naam).toList());
@@ -692,7 +692,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         ObjectNode c = JSON.createObjectNode();
         c.put("node", "ContextValue").put("name", name);
         c.set("type", readJson(DAG));
-        c.set("source", IrPad.bronrecord("de " + name));
+        c.set("source", IrPath.sourceReference("de " + name));
         return c;
     }
 
@@ -720,7 +720,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
     private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 

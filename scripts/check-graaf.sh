@@ -9,7 +9,7 @@
 #
 # 1. THE SPEC LEG. Every corpus/golden/**/ir.json is read by the backend's LOADER (never a source file), and
 #    the graph of that model, with the defaults groups and the navigation bindings the loader returns beside
-#    it, is printed as its dependencies (GraafProjectie): one line per form -> member -> form path, a form
+#    it, is printed as its dependencies (GraphProjection): one line per form -> member -> form path, a form
 #    named by the document list it sits in and by its name. The verifier prints the ch. 5 edges of the same
 #    document (`verifier --dependency-edges`), and this script projects them onto what the graph draws: every
 #    edge over an attribute or characteristic node, whatever forms it joins, without the edge kind (positive,
@@ -27,8 +27,8 @@
 #
 # 2. THE ROUTE LEG. The graph must be the same whether a model comes from the wire or from the source: the
 #    backend's own suite cannot resolve a source (its build carries no parser), so the tests that need the
-#    frontend's resolver live under backends/drools/src/bronroute/ and are compiled here against the
-#    frontend's classes and the backend's jar. GraafBronrouteTest renders the graph of every golden with a
+#    frontend's resolver live under backends/drools/src/source-route/ and are compiled here against the
+#    frontend's classes and the backend's jar. GraphSourceRouteTest renders the graph of every golden with a
 #    bron.rgs along both routes and demands byte-identity; it must run exactly once per such golden. The
 #    other classes there are the graph's unit tests: the key over a subtype chain in both directions, the
 #    kind-aware key, the navigated read, the characteristic read in a fold filter, the fold source, and each
@@ -58,7 +58,7 @@ fail() { echo "check-graaf: FAIL — $*" >&2; exit 1; }
 EXPECTED_MIN_GOLDENS=234   # 2026-09-26 at the landing of the wave before the move: measured 234 (goldens the loader reads, compared with the verifier)
 EXPECTED_MIN_AFHANKELIJK=116   # 2026-09-26 at the landing of the wave before the move: measured 116 (dependencies compared, every form of the rule layer)
 EXPECTED_MIN_BRONROUTE=98   # 2026-09-26 at the landing of the wave before the move: measured 98 (goldens with a bron.rgs, bron route against wire route)
-EXPECTED_MIN_TESTS=23   # 2026-09-26 at the landing of the wave before the move: measured 23 (the graph's unit tests under backends/drools/src/bronroute)
+EXPECTED_MIN_TESTS=23   # 2026-09-26 at the landing of the wave before the move: measured 23 (the graph's unit tests under backends/drools/src/source-route)
 
 # --- the deliberate differences (reason-carrying; fails when stale) ------------------------------
 # One entry per projected dependency that only one of the two graphs draws:
@@ -98,7 +98,7 @@ n_goldens=$(grep -c . "$TMP/goldens")
 
 # the graph side: one JVM over every golden; a malformed document (a Documentfout) or any other error is a
 # failure here, since every golden is well-formed by gate 3
-if ! java -cp "$JAR" dev.uchar.regelspraak.graaf.GraafProjectie $(cat "$TMP/goldens") >"$TMP/graaf" 2>"$TMP/graaf.err"; then
+if ! java -cp "$JAR" dev.uchar.regelspraak.graaf.GraphProjection $(cat "$TMP/goldens") >"$TMP/graaf" 2>"$TMP/graaf.err"; then
     tail -20 "$TMP/graaf.err" >&2
     fail "GraafProjectie did not read every golden"
 fi
@@ -235,7 +235,7 @@ ANTLR=$(ls "$FE"/lib/antlr-*-complete.jar 2>/dev/null | head -1)
 JUNIT=$(ls "$FE"/lib/junit-platform-console-standalone-*.jar 2>/dev/null | head -1)
 [ -n "$ANTLR" ] && [ -n "$JUNIT" ] && [ -d "$FE/out" ] || fail "the frontend build left no classes or tool jars under $FE"
 
-SRC=$(find backends/drools/src/bronroute -name '*.java' | LC_ALL=C sort)
+SRC=$(find backends/drools/src/source-route -name '*.java' | LC_ALL=C sort)
 [ -n "$SRC" ] || fail "no route suite under backends/drools/src/bronroute (an empty suite is a failure)"
 # the frontend's classes first: they carry the resolver and the emitter, and the record types the jar carries
 # too, compiled from the same source tree
@@ -268,11 +268,11 @@ n_rgs=$(find corpus/golden -name bron.rgs | grep -c .)
 [ "$n_rgs" -gt 0 ] || fail "no corpus/golden/**/bron.rgs found (an empty route comparison is a failure)"
 [ "$n_rgs" -ge "$EXPECTED_MIN_BRONROUTE" ] \
     || fail "$n_rgs goldens carry a bron.rgs, but EXPECTED_MIN_BRONROUTE pins at least $EXPECTED_MIN_BRONROUTE — the route comparison shrank (a deliberate removal lowers the floor in the same commit)"
-routes=$(junit --select-class dev.uchar.regelspraak.graaf.GraafBronrouteTest) \
+routes=$(junit --select-class dev.uchar.regelspraak.graaf.GraphSourceRouteTest) \
     || fail "the route comparison is red: the graph of a golden's ir.json differs from the graph of its bron.rgs (above)"
 [ "$routes" -eq "$n_rgs" ] \
     || fail "the route comparison ran $routes goldens, but $n_rgs carry a bron.rgs — every one of them must be compared"
-tests=$(junit --scan-class-path "$TMP/klassen" --exclude-classname '.*GraafBronrouteTest') \
+tests=$(junit --scan-class-path "$TMP/klassen" --exclude-classname '.*GraphSourceRouteTest') \
     || fail "the graph's unit tests are red (above), or skipped one"
 [ "$tests" -gt 0 ] || fail "the graph's unit tests ran nothing (an empty suite is a failure)"
 [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \

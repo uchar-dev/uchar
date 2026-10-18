@@ -11,7 +11,7 @@ import dev.uchar.regelspraak.runtime.Breuk;
  * reaches (ch. 5.7), an
  * easterSunday of a year that is not whole or lies outside the years a date holds (ch. 3.8), a dateWith or a
  * dateTimeWith over parts that name no moment, and an irrational square root without a rounding (ch. 2.2). Its sentence
- * ({@link #zin}) is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches
+ * ({@link #sentence}) is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches
  * both.
  *
  * <p>Like a division by zero it never leaves the fire: the consequence that computes a value, or the fault rule of a
@@ -26,52 +26,52 @@ public final class Rekenfout extends RuntimeException {
 
     /** RUNTIME-SEMANTICS ch. 8.2: the evaluationDate context value in a session without an evaluation date, in the
      *  reference interpreter's words. */
-    public static final String REKENDATUM_ZONDER_DATUM =
+    public static final String EVALUATION_DATE_WITHOUT_DATE =
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate null";
 
     /** RUNTIME-SEMANTICS ch. 8.1: a version with a bounded validity in a session without an evaluation date, in the
      *  reference interpreter's words. */
-    public static final String GELDIGHEID_ZONDER_DATUM =
+    public static final String VALIDITY_WITHOUT_DATE =
             "a validity-bounded form needs an evaluation date; this session is time-free";
 
     /** RUNTIME-SEMANTICS ch. 8.2: the bound day of a day-kind definition read where no day-kind evaluation binds it, in
      *  the reference interpreter's words. */
-    public static final String DE_DAG_BUITEN_DAGSOORT = "a BoundDay is the bound day of a day-kind definition"
+    public static final String DAY_OUTSIDE_DAY_KIND = "a BoundDay is the bound day of a day-kind definition"
             + " (ch. 3.7); outside a day-kind evaluation it denotes nothing";
 
     /** RUNTIME-SEMANTICS ch. 5.7 and WF-044: an expression marker the evaluation reaches, in the reference interpreter's
      *  words. */
-    public static final String ONOPGELOST = "Unresolved reached in evaluation: this rule fails observably";
+    public static final String UNRESOLVED = "Unresolved reached in evaluation: this rule fails observably";
 
     /** The condition marker's sentence, in the reference interpreter's words. */
-    public static final String ONOPGELOSTE_VOORWAARDE = "Unresolved condition reached in evaluation";
+    public static final String UNRESOLVED_CONDITION = "Unresolved condition reached in evaluation";
 
-    private final String zin;
+    private final String sentence;
     private final String regel;
 
-    Rekenfout(String zin) {
-        this(zin, null, null);
+    Rekenfout(String sentence) {
+        this(sentence, null, null);
     }
 
-    Rekenfout(String zin, Throwable oorzaak) {
-        this(zin, null, oorzaak);
+    Rekenfout(String sentence, Throwable cause) {
+        this(sentence, null, cause);
     }
 
-    private Rekenfout(String zin, String regel, Throwable oorzaak) {
-        super(regel == null ? zin : "fout in de regel \"" + regel + "\": " + zin, oorzaak);
-        this.zin = zin;
+    private Rekenfout(String sentence, String regel, Throwable cause) {
+        super(regel == null ? sentence : "fout in de regel \"" + regel + "\": " + sentence, cause);
+        this.sentence = sentence;
         this.regel = regel;
     }
 
     /** The same fault named after the rule {@code regel} it ran in, with this one as its cause, as
      *  {@link Breuk.DelingDoorNul#inDeRegel} names a division. */
-    public Rekenfout inDeRegel(String regel) {
-        return new Rekenfout(zin, regel, this);
+    public Rekenfout inRule(String regel) {
+        return new Rekenfout(sentence, regel, this);
     }
 
     /** The sentence of the fault, without the rule. */
-    public String zin() {
-        return zin;
+    public String sentence() {
+        return sentence;
     }
 
     /** The rule a named fault ran in; null where nothing named it yet. */
@@ -82,15 +82,15 @@ public final class Rekenfout extends RuntimeException {
     /** Whether {@code t} is an evaluation fault this branch turns into a {@link Fout}: a division by a numeric zero, a
      *  fault of this class, or an input in the other convention of an attribute on a timeline ({@link Invoervormfout}).
      *  Every other exception is a broken contract or a bug and leaves the fire as it is. */
-    static boolean isEvaluatiefout(Throwable t) {
+    static boolean isEvaluationFault(Throwable t) {
         return t instanceof Breuk.DelingDoorNul || t instanceof Rekenfout || t instanceof Invoervormfout;
     }
 
     /** The evaluation fault {@code fout} named after the rule {@code regel} it ran in. */
-    static RuntimeException benoem(RuntimeException fout, String regel) {
-        if (fout instanceof Breuk.DelingDoorNul nul) return nul.inDeRegel(regel, nul);
-        if (fout instanceof Rekenfout r) return r.inDeRegel(regel);
-        if (fout instanceof Invoervormfout i) return i.inDeRegel(regel);
+    static RuntimeException designate(RuntimeException fout, String regel) {
+        if (fout instanceof Breuk.DelingDoorNul zero) return zero.inDeRegel(regel, zero);
+        if (fout instanceof Rekenfout r) return r.inRule(regel);
+        if (fout instanceof Invoervormfout i) return i.inRule(regel);
         throw new IllegalArgumentException("geen evaluatiefout: " + fout, fout);
     }
 }

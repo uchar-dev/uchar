@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -61,15 +61,15 @@ class SelfNameFallbackWitnessTest {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         JsonNode root = JSON.readTree(Files.readString(ir));
-        ArrayNode declarations = IrPad.modelLijst(root, list);
-        ObjectNode declaration = IrPad.lid(declarations, nameField, name);
+        ArrayNode declarations = IrPath.modelList(root, list);
+        ObjectNode declaration = IrPath.memberWith(declarations, nameField, name);
         int index = 0;
         while (declarations.get(index) != declaration) index++;
         declaration.putNull(nameField);
 
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 golden + ": a nameless declaration must be refused, not keyed on null");
-        assertEquals("/model/" + list + "/" + index + "/" + nameField, e.plek(), e.getMessage());
+        assertEquals("/model/" + list + "/" + index + "/" + nameField, e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("a declaration without a name"), e.getMessage());
     }
 }

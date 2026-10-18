@@ -35,7 +35,7 @@ dus het overgangsvenster is het eindantwoord.
 **Het gat was niet dat van de unie.** Dezelfde meting met een GEWONE
 eenbronsvouw met hetzelfde filter divergeert identiek, en deed dat al sinds
 dat filter landde. Eén wandeling sluit beide; de Drools-suite pint beide
-helften (`VouwfilterStratumWitnessTest`), deze golden de unie-helft onder de
+helften (`FoldFilterStratumWitnessTest`), deze golden de unie-helft onder de
 poorten 5, 6 en 12.
 
 ## De handberekening

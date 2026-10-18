@@ -1182,8 +1182,8 @@ design (2026-10-14, card `drl-teksttak-op-truth-maintenance`):** one analysis
 (`transpiler/tms/TmsTranspiler`) makes a plan per rule
 (`transpiler/tms/plan/`, together a `Modelplan`: the reads, the tests and
 values as a tree of calls, the consequence as a kind), and two renderings
-build a rule base from it, `PatternDslWeergave` for `Branch.EXEC_MODEL` and
-`DrlWeergave` for `Branch.DRL_TEXT`. A rendering decides nothing: what the
+build a rule base from it, `PatternDslRendering` for `Branch.EXEC_MODEL` and
+`DrlRendering` for `Branch.DRL_TEXT`. A rendering decides nothing: what the
 analysis refuses, both branches refuse in one sentence, and the DRL rendering
 refuses only what DRL text cannot express. In the DRL text every RegelSpraak
 test and calculation is a Java function with its RegelSpraak sentence above
@@ -1201,7 +1201,7 @@ advice (2026-10-13 and 2026-10-14): gate 12 is strict, so the DRL sweep must
 give the exec sweep's status line for every golden, with one list of
 non-players and one pin `EXPECTED_PLAYED` (255), and `EXPECTED_DRL_PLAYED` and
 `DRL_CHANNEL` lapse; the card's comparison harness enters the suite as
-`TakdumpsCorpusWitnessTest` (both branches per case of every played golden,
+`BranchDumpsCorpusWitnessTest` (both branches per case of every played golden,
 695 cases, and per red case, 50), and gate 12 fails when it did not run; the
 card's own documents with expectations became goldens
 (`jutterswet-verdeling-dubbelbezet`, `jutterswet-uniciteit-drie-bronnen`,
@@ -1210,7 +1210,7 @@ card's own documents with expectations became goldens
 `bron.rgs` because the frontend does not convert their filter), with the red
 case `jutterswet-uitsluiting-zonder-rekendatum`; and a non-terminating
 fraction at rest got a behaviour witness before the landing
-(`BreukInRustWitnessTest`: ref writes 1/3, clingo refuses by name, both Drools
+(`RationalAtRestWitnessTest`: ref writes 1/3, clingo refuses by name, both Drools
 branches write 0.3333333333333333, a recorded limit of the backend). On
 2026-10-14 the maintainer added `--fast` to gate 12, for a builder who changes
 a pin or a list: a fresh jar without the suite, the replay under every pin and

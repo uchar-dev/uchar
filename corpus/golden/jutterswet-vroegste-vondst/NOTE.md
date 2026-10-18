@@ -107,4 +107,4 @@ condition (the exec-model branch refuses it by name), and the minimum or
 maximum over a date set (the RegelSpraak frontend types that spelling out;
 `jutterswet-vondstbereik` carries it by hand, and the exec-model branch plays
 it since the same day). The first two are rows of
-`DatumvouwOverRolWitnessTest` in the Drools backend.
+`DateFoldOverRoleWitnessTest` in the Drools backend.

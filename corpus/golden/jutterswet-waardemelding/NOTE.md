@@ -43,7 +43,7 @@ branches did exactly that before the loader lowered the negation to the
 sister soort. The ASP backend, before it carried the leeg test and its
 negations in its shared condition translation, refused the document
 instead. The unnegated twin and the unbound written step are pinned in the
-backends' own suites (`LeegNegatieWitnessTest`, `test_clingo.ml`), not
+backends' own suites (`EmptyNegatedWitnessTest`, `test_clingo.ml`), not
 here, because a golden carries one expectation set. Under a whole-period
 qualifier the same negation is per day as well (`RUNTIME-SEMANTICS.md`
 ch. 3.9, decided 2026-09-26), and `corpus/golden/jutterswet-gehele-periode-leeg`

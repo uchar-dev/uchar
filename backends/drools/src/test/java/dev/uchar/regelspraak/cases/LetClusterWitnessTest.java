@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.6 + 10.2 — the <b>Let cluster</b> ({@code Let},
  * {@code BinderRef}, {@code IfThenElse}) as the Drools backend now lowers it, witnessed through
- * {@link CaseRunner#speelCase} over models authored HERE (no corpus file is read, moved or touched).
+ * {@link CaseRunner#playCase} over models authored HERE (no corpus file is read, moved or touched).
  *
  * <p><b>Every pinned value below was produced by {@code ref/} on this exact model+case first</b> — ref is
  * the arbiter, this backend the third executor. The corpus goldens that carry the cluster
@@ -46,100 +46,100 @@ class LetClusterWitnessTest {
 
     // ---------------- 1. the binding, and one binder read twice ----------------
 
-    @Test void een_let_bindt_zijn_waarde_en_de_body_rekent_ermee() throws Exception {
+    @Test void a_let_binds_its_value_and_the_body_computes_with_it() throws Exception {
         // ref on this model+case: basis = 1100.00 (Let ink = inkomen in ink plus 100,00, inkomen 1000.00).
-        assertNull(speel(rekenModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
+        assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
                 waarde("basis", "1100.00"))));
     }
 
-    @Test void dezelfde_binder_twee_keer_gelezen_levert_twee_keer_de_waarde() throws Exception {
+    @Test void the_same_binder_read_two_times_yields_two_times_the_value() throws Exception {
         // ref: dubbelop = 2000.00 (Let ink = inkomen in ink plus ink). A second read answering leeg would
         // coalesce to 0 inside plus and quietly write 1000.00 — this pin is what catches it.
-        assertNull(speel(rekenModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
+        assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
                 waarde("dubbelop", "2000.00"))));
     }
 
     // ---------------- 2. nested Lets: shadowing in, restoration out ----------------
 
-    @Test void een_binnenste_binder_schaduwt_en_de_buitenste_geldt_er_weer_buiten() throws Exception {
+    @Test void an_innermost_binder_shadows_and_the_outermost_applies_there_again_outside() throws Exception {
         // geschaduwd := Let x = inkomen in (Let y = (Let x = 5,00 in x) in y plus x).
         // ref: 1005.00 — the INNER x wins inside its own body (5,00), the OUTER x is intact again outside it
         // (1000,00). Reading the outer binder inside would give 2000.00; binding the inner x IN PLACE of the
         // outer — the in-place-mutation bug — leaves x = 5,00 for the trailing read and gives 10.00.
-        assertNull(speel(rekenModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
+        assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
                 waarde("geschaduwd", "1005.00"))));
     }
 
     // ---------------- 3. IfThenElse in a Let body — both branches ----------------
 
-    @Test void ifthenelse_in_een_letbody_kiest_de_danstak() throws Exception {
+    @Test void ifthenelse_in_a_letbody_chooses_the_then_arm() throws Exception {
         // tak := Let a = inkomen in Let b = kindertal maal 100,00 in (als b groter dan a dan 1,00 anders 2,00);
         // both condition operands are BINDERS (WF-077). inkomen 100.00, kindertal 7 -> b=700.00 > a=100.00.
         // ref: tak = 1.00.
-        assertNull(speel(rekenModel(), jutter("\"inkomen\": { \"number\": \"100.00\" }, \"kindertal\": { \"number\": \"7\" }",
+        assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"100.00\" }, \"kindertal\": { \"number\": \"7\" }",
                 waarde("tak", "1.00"))));
     }
 
-    @Test void ifthenelse_in_een_letbody_kiest_de_anderstak() throws Exception {
+    @Test void ifthenelse_in_a_letbody_chooses_the_else_arm() throws Exception {
         // the other side of the same guard: inkomen 1000.00 -> b=700.00 is NOT > a=1000.00. ref: tak = 2.00.
-        assertNull(speel(rekenModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
+        assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
                 waarde("tak", "2.00"))));
     }
 
     // ---------------- 4. the leeg-barrier, beside its contrast ----------------
 
-    @Test void een_lege_letwaarde_maakt_de_hele_let_leeg_terwijl_dezelfde_maal_zonder_let_nul_rekent() throws Exception {
+    @Test void an_empty_let_value_makes_the_whole_let_empty_while_the_same_times_without_let_computes_zero() throws Exception {
         // ch. 10.6's normative contrast, in ONE model over ONE case with `inkomen` ABSENT:
         //   metlet   := Let ink = inkomen in ink maal 0,21  -> the body DOES run (ch. 10.6 is call-by-need), but
         //               its read of `ink` forces the leeg need and raises the barrier AT THAT READ (clause 2):
         //               the whole Let is leeg, so on this standing scalar target nothing is written (ref: leeg).
         //   zonderlet := inkomen maal 0,21                  -> the bare maal COALESCES leeg to 0 (ref: 0.0000).
         // A Let lowered as plain substitution would write 0.0000 on BOTH.
-        assertNull(speel(barriereModel(), jutter("",
+        assertNull(play(barrierModel(), jutter("",
                 "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"metlet\" }, "
                         + waarde("zonderlet", "0.0000"))));
     }
 
-    @Test void de_barriere_is_geen_altijd_leeg_de_gevulde_invoer_rekent_wel() throws Exception {
+    @Test void the_barrier_is_not_always_empty_the_filled_input_does_compute() throws Exception {
         // the other side: with `inkomen` present BOTH compute, and to the same value — so the assertion above
         // is not passing on an arm that never writes a Let result at all. ref: 210.0000 each.
-        assertNull(speel(barriereModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
+        assertNull(play(barrierModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
                 waarde("metlet", "210.0000") + ", " + waarde("zonderlet", "210.0000"))));
     }
 
-    @Test void het_lege_doel_is_observeerbaar_afwezig_niet_slechts_ongeasserteerd() throws Exception {
+    @Test void the_empty_target_is_observable_and_absent_not_only_unasserted() throws Exception {
         // the comparator must SEE the absence: the same case with a value expectation on `metlet` must MISMATCH.
-        String fout = speel(barriereModel(), jutter("", waarde("metlet", "0.0000")));
+        String fout = play(barrierModel(), jutter("", waarde("metlet", "0.0000")));
         assertNotNull(fout, "de leeg-barriere moet observeerbaar zijn, niet slechts niet-geasserteerd");
         assertTrue(fout.contains("metlet"), "de mismatch noemt het doel: " + fout);
     }
 
     // ---------------- 5. a Let inside a prioritizedDefaults consequence ----------------
 
-    @Test void een_let_binnen_een_defaultswaarde_beslist() throws Exception {
+    @Test void a_let_within_a_defaults_value_decides() throws Exception {
         // the ch. 7 group's first default is justified (kindertal >= 2) and its CONSEQUENCE is a Let over an
         // attribute: Let g = grondslag in g plus 100,00. ref: toeslag = 300.00 at grondslag 200.00.
-        assertNull(speel(defaultsModel(), jutter("\"kindertal\": { \"number\": \"3\" }, \"grondslag\": { \"number\": \"200.00\" }",
+        assertNull(play(defaultsModel(), jutter("\"kindertal\": { \"number\": \"3\" }, \"grondslag\": { \"number\": \"200.00\" }",
                 waarde("toeslag", "300.00"))));
     }
 
-    @Test void een_ongerechtvaardigde_default_laat_de_letwaarde_ongemoeid() throws Exception {
+    @Test void an_unjustified_default_lets_the_let_value_untouched() throws Exception {
         // justification false (kindertal 1 < 2): the group falls through to the unconditional 0,00, so the Let
         // value is never the decision. ref: toeslag = 0.00.
-        assertNull(speel(defaultsModel(), jutter("\"kindertal\": { \"number\": \"1\" }, \"grondslag\": { \"number\": \"200.00\" }",
+        assertNull(play(defaultsModel(), jutter("\"kindertal\": { \"number\": \"1\" }, \"grondslag\": { \"number\": \"200.00\" }",
                 waarde("toeslag", "0.00"))));
     }
 
-    @Test void een_lege_letwaarde_in_een_default_valt_door_naar_de_volgende() throws Exception {
+    @Test void an_empty_let_value_in_a_default_falls_through_to_the_next() throws Exception {
         // justified, but `grondslag` is ABSENT so the Let is leeg (the barrier again) — ch. 7's leeg
         // fall-through hands the decision to the next default. ref: toeslag = 0.00.
-        assertNull(speel(defaultsModel(), jutter("\"kindertal\": { \"number\": \"3\" }",
+        assertNull(play(defaultsModel(), jutter("\"kindertal\": { \"number\": \"3\" }",
                 waarde("toeslag", "0.00"))));
     }
 
     // ---------------- 6. the reads a ch. 4.10 node hides: the freshness watch ----------------
 
-    @Test void een_letgewikkelde_lezing_houdt_de_regel_reactief_op_zijn_producent() throws Exception {
+    @Test void a_let_wrapped_read_keeps_the_rule_reactive_on_its_producer() throws Exception {
         // The freshness watch (the DRL @watch mirror) is a HAND-WRITTEN walk over concrete v0 node shapes: a
         // Let matches none of them, so without taking letKinderen it sees NO reads for
         // `gewogen := Let x = inkomen in x maal factor` — and a pattern without
@@ -150,24 +150,24 @@ class LetClusterWitnessTest {
         // exists, so §9.2 stratification gives it salience -1 and it fires AFTER this rule. ref on this exact
         // model+case: factor 3.0000, gewogen 3000.000000 (the fixpoint). Without the walk descending the Let
         // the replay writes 0.00 — verified by mutation.
-        assertNull(speel(reactiviteitModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
+        assertNull(play(reactivityModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
                 waarde("factor", "3.0000") + ", " + waarde("gewogen", "3000.000000"))));
     }
 
     // ---------------- helpers: replay ----------------
 
     /** One authored model + case through the FULL replay; the per-case failure line, null on a match. */
-    private static String speel(String ir, String caseJson) throws Exception {
+    private static String play(String ir, String caseJson) throws Exception {
         Path tmp = Files.createTempFile("let-cluster-witness", ".json");
         try {
             Files.writeString(tmp, ir);
-            return CaseRunner.speelCase(tmp, JSON.readTree(caseJson));
+            return CaseRunner.playCase(tmp, JSON.readTree(caseJson));
         } finally {
             Files.deleteIfExists(tmp);
         }
     }
 
-    private static String jutter(String attributen, String verwacht) {
+    private static String jutter(String attributes, String verwacht) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -176,37 +176,37 @@ class LetClusterWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s, { "kind": "consistent" } ] }
-                """.formatted(attributen, verwacht);
+                """.formatted(attributes, verwacht);
     }
 
-    private static String waarde(String attribuut, String getal) {
+    private static String waarde(String attribuut, String number) {
         return """
                 { "kind": "attributeValue", "label": "J1", "attribute": "%s", "value": { "number": "%s" } }"""
-                .formatted(attribuut, getal);
+                .formatted(attribuut, number);
     }
 
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10) ----------------
 
-    private static String num(int dec, boolean geheel, String teken) {
+    private static String num(int dec, boolean whole, String sign) {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
-                .formatted(geheel, dec, teken);
+                .formatted(whole, dec, sign);
     }
     private static String num(int dec) { return num(dec, false, "unspecified"); }
 
-    private static String attr(String naam, int dec, boolean geheel, String teken) {
+    private static String attr(String naam, int dec, boolean whole, String sign) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
 
-    private static String lit(String waarde, int dec, boolean geheel) {
-        return IrPad.literal(waarde, num(dec, geheel, "unspecified"), waarde);
+    private static String lit(String waarde, int dec, boolean whole) {
+        return IrPath.literal(waarde, num(dec, whole, "unspecified"), waarde);
     }
     private static String lit(String waarde, int dec) { return lit(waarde, dec, false); }
 
-    private static String binair(String op, String links, String rechts, int dec) {
+    private static String binary(String op, String left, String right, int dec) {
         return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
-                .formatted(op, links, rechts, num(dec), op.toLowerCase());
+                .formatted(op, left, right, num(dec), op.toLowerCase());
     }
 
     /** ch. 4.10 the value-level binding. Its {@code type} is the BODY's type (WF-076). */
@@ -220,27 +220,27 @@ class LetClusterWitnessTest {
         return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
     }
 
-    private static String ite(String conditie, String dan, String anders, int dec) {
+    private static String ite(String condition, String then, String otherwise, int dec) {
         return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
-                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(dec), conditie, dan, anders);
+                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(dec), condition, then, otherwise);
     }
 
-    private static String verg(String op, String links, String rechts) {
+    private static String verg(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
-                .formatted(op, links, rechts, op.toLowerCase());
+                .formatted(op, left, right, op.toLowerCase());
     }
 
     private static String regel(String naam, String doel, String waarde) {
         return regel(naam, "BEREKENING", doel, waarde, "null");
     }
     private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return IrPad.regel(naam, soort, doel, waarde, voorwaarde);
+        return IrPath.regel(naam, soort, doel, waarde, voorwaarde);
     }
 
     /** A one-objecttype document: the declared attributes and kenmerken, the rules, and an optional defaults
-     *  section. {@code attributen}/{@code kenmerken} are the bodies of the Jutter's two member lists (the
+     *  section. {@code attributes}/{@code kenmerken} are the bodies of the Jutter's two member lists (the
      *  kenmerken body is empty for a kenmerk-free model). */
-    private static String model(String attributen, String kenmerken, String[] regels, String prioritizedDefaults) {
+    private static String model(String attributes, String kenmerken, String[] rules, String prioritizedDefaults) {
         return ("{\"format\":\"uchar-ir-v1\","
                 + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
                 + "\"plural\":\"Jutters\",\"attributes\":[%s],\"characteristics\":[%s]}],"
@@ -250,7 +250,7 @@ class LetClusterWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]%s},\"diagnostics\":[]}")
-                .formatted(attributen, kenmerken, String.join(",", regels), prioritizedDefaults);
+                .formatted(attributes, kenmerken, String.join(",", rules), prioritizedDefaults);
     }
 
     /** One entry of the Jutter's attribute list. */
@@ -261,45 +261,45 @@ class LetClusterWitnessTest {
     // ---------------- the three models (each verifier-clean and ref-replayed before pinning) ----------------
 
     /** Binding, reuse, shadowing and the branch guard on one Jutter. */
-    private static String rekenModel() {
+    private static String computingModel() {
         String inkomen = attr("inkomen", 2, false, "nonNegative");
         String kindertal = attr("kindertal", 0, true, "nonNegative");
-        String basis = let("ink", inkomen, binair("plus", bref("ink", 2), lit("100.00", 2), 2), 2);
-        String dubbelop = let("ink", inkomen, binair("plus", bref("ink", 2), bref("ink", 2), 2), 2);
-        String geschaduwd = let("x", inkomen,
+        String base = let("ink", inkomen, binary("plus", bref("ink", 2), lit("100.00", 2), 2), 2);
+        String redundant = let("ink", inkomen, binary("plus", bref("ink", 2), bref("ink", 2), 2), 2);
+        String shadowed = let("x", inkomen,
                 let("y", let("x", lit("5.00", 2), bref("x", 2), 2),
-                        binair("plus", bref("y", 2), bref("x", 2), 2), 2), 2);
-        String tak = let("a", inkomen,
-                let("b", binair("times", kindertal, lit("100.00", 2), 2),
+                        binary("plus", bref("y", 2), bref("x", 2), 2), 2), 2);
+        String branch = let("a", inkomen,
+                let("b", binary("times", kindertal, lit("100.00", 2), 2),
                         ite(verg("greater", bref("b", 2), bref("a", 2)), lit("1.00", 2), lit("2.00", 2), 2), 2), 2);
         return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
                         attribuut("kindertal", num(0, true, "nonNegative")), attribuut("basis", num(2)),
                         attribuut("dubbelop", num(2)), attribuut("geschaduwd", num(2)), attribuut("tak", num(2))), "",
-                new String[]{regel("basis van een jutter", attr("basis", 2, false, "unspecified"), basis),
-                        regel("dubbelop van een jutter", attr("dubbelop", 2, false, "unspecified"), dubbelop),
-                        regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "unspecified"), geschaduwd),
-                        regel("tak van een jutter", attr("tak", 2, false, "unspecified"), tak)},
+                new String[]{regel("basis van een jutter", attr("basis", 2, false, "unspecified"), base),
+                        regel("dubbelop van een jutter", attr("dubbelop", 2, false, "unspecified"), redundant),
+                        regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "unspecified"), shadowed),
+                        regel("tak van een jutter", attr("tak", 2, false, "unspecified"), branch)},
                 "");
     }
 
     /** ch. 10.6's contrast: the same product with and without the Let binding, on one subject. */
-    private static String barriereModel() {
+    private static String barrierModel() {
         String inkomen = attr("inkomen", 2, false, "nonNegative");
         return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
                         attribuut("metlet", num(4)), attribuut("zonderlet", num(4))), "",
                 new String[]{
                         regel("met let van een jutter", attr("metlet", 4, false, "unspecified"),
-                                let("ink", inkomen, binair("times", bref("ink", 2), lit("0.21", 2), 4), 4)),
+                                let("ink", inkomen, binary("times", bref("ink", 2), lit("0.21", 2), 4), 4)),
                         regel("zonder let van een jutter", attr("zonderlet", 4, false, "unspecified"),
-                                binair("times", inkomen, lit("0.21", 2), 4))},
+                                binary("times", inkomen, lit("0.21", 2), 4))},
                 "");
     }
 
     /** A ch. 7 prioritizedDefaults group whose first default's CONSEQUENCE is a Let over an attribute. */
     private static String defaultsModel() {
         String consequentie = let("g", attr("grondslag", 2, false, "nonNegative"),
-                binair("plus", bref("g", 2), lit("100.00", 2), 2), 2);
-        String groep = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\","
+                binary("plus", bref("g", 2), lit("100.00", 2), 2), 2);
+        String group = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\","
                 + "\"subject\":\"Jutter\",\"attribute\":\"toeslag\",\"defaults\":["
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
                 + "{\"node\":\"Default\",\"justification\":"
@@ -310,31 +310,31 @@ class LetClusterWitnessTest {
                         consequentie, lit("0.00", 2));
         return model(String.join(",", attribuut("kindertal", num(0, true, "nonNegative")),
                         attribuut("grondslag", num(2, false, "nonNegative")), attribuut("toeslag", num(2))), "",
-                new String[]{}, groep);
+                new String[]{}, group);
     }
 
     /** A Let-wrapped read of an attribute whose producer is FORCED to fire later (§9.2 stratification: its
      *  rule reads a negated kenmerk that has a producer, so its salience is -1). Only a freshness watch that
      *  descends the Let keeps the consumer reactive on that producer's write. */
-    private static String reactiviteitModel() {
+    private static String reactivityModel() {
         String inkomen = attr("inkomen", 2, false, "nonNegative");
-        String vermistDoel = ("{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","
+        String vermistTarget = ("{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}");
-        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}";
-        String nietVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
+        String trueLiteral = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}";
+        String notVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String gewogen = let("x", inkomen,
-                binair("times", bref("x", 2), attr("factor", 4, false, "unspecified"), 6), 6);
+                binary("times", bref("x", 2), attr("factor", 4, false, "unspecified"), 6), 6);
         return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
                         attribuut("factor", num(4)), attribuut("gewogen", num(6))),
                 "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"adjectival\"}",
                 new String[]{
                         // never true for the case input — its only job is to BE a producer of `vermist`, which
                         // is what sinks the factor rule's stratum below this consumer's.
-                        regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistDoel, waar,
+                        regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
                                 verg("greater", inkomen, lit("999999.00", 2))),
                         regel("factor van een jutter", "BEREKENING", attr("factor", 4, false, "unspecified"),
-                                lit("3.0000", 4), nietVermist),
+                                lit("3.0000", 4), notVermist),
                         regel("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), gewogen)},
                 "");
     }

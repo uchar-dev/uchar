@@ -38,7 +38,7 @@ import java.util.Set;
  * ({@link ProducentConsument.Navigatie}).
  *
  * <p>The graph is a reading of the dependency graph of IR-SPEC ch. 5 over its attribute and characteristic nodes:
- * every path form → data → form is an edge producer → consumer there ({@link #afhankelijkheden}). The other nodes of
+ * every path form → data → form is an edge producer → consumer there ({@link #dependencies}). The other nodes of
  * ch. 5.1 (a population, a relation's link set, a channel) are not drawn, and neither are the edges that run over
  * them. Keying a member on its declaring type draws more than ch. 5.1 in two known places, where the verifier closes
  * a write over the instances it reaches: between two sibling subtypes that share an inherited member, and from an
@@ -62,87 +62,87 @@ public final class RegelGraaf {
     /** A directed dataflow edge from {@code van} to {@code naar} (both node ids). */
     public record Edge(String van, String naar) {}
 
-    /** One dependency the graph draws: form {@code producent}, of kind {@code producentVorm}, writes {@code element},
-     *  and form {@code consument}, of kind {@code consumentVorm}, reads it — a path producent → element → consument
+    /** One dependency the graph draws: form {@code producer}, of kind {@code producerForm}, writes {@code element},
+     *  and form {@code consumer}, of kind {@code consumerForm}, reads it — a path producent → element → consument
      *  over two of its edges. This is the reading IR-SPEC ch. 5.2 calls an edge (producer → consumer), over the
      *  nodes this graph draws: attributes and characteristics. */
-    public record Afhankelijkheid(Vormsoort producentVorm, String producent, ElementSleutel element,
-                                  Vormsoort consumentVorm, String consument) {}
+    public record Dependency(Vormsoort producerForm, String producer, ElementSleutel element,
+                                  Vormsoort consumerForm, String consumer) {}
 
     private final List<Node> nodes;
     private final List<Edge> edges;
     /** The element behind every element node, by node id: the key a node label only spells for a reader. */
-    private final Map<String, ElementSleutel> elementen;
+    private final Map<String, ElementSleutel> elements;
     /** The kind of form behind every form node, by node id. */
-    private final Map<String, Vormsoort> vormsoorten;
+    private final Map<String, Vormsoort> formKinds;
 
-    private RegelGraaf(List<Node> nodes, List<Edge> edges, Map<String, ElementSleutel> elementen,
-                       Map<String, Vormsoort> vormsoorten) {
+    private RegelGraaf(List<Node> nodes, List<Edge> edges, Map<String, ElementSleutel> elements,
+                       Map<String, Vormsoort> formKinds) {
         this.nodes = nodes;
         this.edges = edges;
-        this.elementen = elementen;
-        this.vormsoorten = vormsoorten;
+        this.elements = elements;
+        this.formKinds = formKinds;
     }
 
     public List<Node> nodes() { return nodes; }
     public List<Edge> edges() { return edges; }
 
-    /** Every {@link Afhankelijkheid} the graph draws, read off its own edges (never off the analysis behind
+    /** Every {@link Dependency} the graph draws, read off its own edges (never off the analysis behind
      *  them), so an edge the builder dropped or invented shows here as well: each producer edge into an element
      *  node paired with each consumer edge out of it. */
-    public List<Afhankelijkheid> afhankelijkheden() {
+    public List<Dependency> dependencies() {
         Map<String, String> label = new LinkedHashMap<>();
         for (Node n : nodes) label.put(n.id(), n.label());
         // the consumer edges run element -> form, so they leave an element node
-        Map<String, List<String>> lezers = new LinkedHashMap<>();
+        Map<String, List<String>> readers = new LinkedHashMap<>();
         for (Edge e : edges)
-            if (elementen.containsKey(e.van())) lezers.computeIfAbsent(e.van(), k -> new ArrayList<>()).add(e.naar());
-        List<Afhankelijkheid> uit = new ArrayList<>();
+            if (elements.containsKey(e.van())) readers.computeIfAbsent(e.van(), k -> new ArrayList<>()).add(e.naar());
+        List<Dependency> out = new ArrayList<>();
         for (Edge in : edges) {
-            ElementSleutel el = elementen.get(in.naar());
+            ElementSleutel el = elements.get(in.naar());
             if (el == null) continue;                           // not a producer edge
-            for (String lezer : lezers.getOrDefault(in.naar(), List.of()))
-                uit.add(new Afhankelijkheid(vormsoorten.get(in.van()), label.get(in.van()), el,
-                        vormsoorten.get(lezer), label.get(lezer)));
+            for (String reader : readers.getOrDefault(in.naar(), List.of()))
+                out.add(new Dependency(formKinds.get(in.van()), label.get(in.van()), el,
+                        formKinds.get(reader), label.get(reader)));
         }
-        return uit;
+        return out;
     }
 
     /** Build the graph of a resolved model: every form of the rule layer ({@link ProducentConsument#vormen}) and
      *  the attributes and characteristics it writes and reads. A data element is INVOER when no form writes it, and
      *  a written element is marked eind-output when no form reads it. {@code defaults} is the defaults-group list
      *  (a resolver's {@code model.prioritizedDefaults}, the loader's {@code Loaded.prioritizedDefaults()}), and
-     *  {@code navigatie} the route's answer to which type a navigated kenmerk check reaches (see
+     *  {@code navigation} the route's answer to which type a navigated kenmerk check reaches (see
      *  {@link Navigatie}). */
-    public static RegelGraaf bouw(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigatie) {
-        List<Vorm> vormen = ProducentConsument.vormen(model, defaults, navigatie);
+    public static RegelGraaf bouw(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigation) {
+        List<Vorm> vormen = ProducentConsument.vormen(model, defaults, navigation);
         // A form node is one form under its kind and base name, so the versions of a form are one node.
-        record VormSleutel(Vormsoort soort, String naam) {}
-        Map<ElementSleutel, Set<VormSleutel>> producenten = new LinkedHashMap<>();
+        record FormKey(Vormsoort soort, String naam) {}
+        Map<ElementSleutel, Set<FormKey>> producers = new LinkedHashMap<>();
         for (Vorm v : vormen)
-            for (ElementSleutel el : v.schrijft())
-                producenten.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new VormSleutel(v.soort(), v.naam()));
+            for (ElementSleutel el : v.writes())
+                producers.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new FormKey(v.soort(), v.naam()));
         // Every element that is consumed by at least one form, so we can tell producties zonder afnemer apart.
         Set<ElementSleutel> verbruikt = new LinkedHashSet<>();
         for (Vorm v : vormen) verbruikt.addAll(v.leest());
 
         // Stable id allocation. Form ids by kind and base name; element ids by sleutel.
-        Map<VormSleutel, String> vormId = new LinkedHashMap<>();
-        Map<String, Vormsoort> vormsoorten = new LinkedHashMap<>();
+        Map<FormKey, String> formId = new LinkedHashMap<>();
+        Map<String, Vormsoort> formKinds = new LinkedHashMap<>();
         Map<ElementSleutel, String> elemId = new LinkedHashMap<>();
         List<Node> nodes = new ArrayList<>();
         Set<Edge> edgeSet = new LinkedHashSet<>();
 
         // 1. element nodes: the union of everything produced and everything consumed.
-        Set<ElementSleutel> alleElementen = new LinkedHashSet<>();
-        alleElementen.addAll(producenten.keySet());
-        alleElementen.addAll(verbruikt);
-        for (ElementSleutel el : alleElementen) {
-            boolean geproduceerd = producenten.containsKey(el);
-            boolean geconsumeerd = verbruikt.contains(el);
-            NodeKind kind = !geproduceerd ? NodeKind.INVOER
+        Set<ElementSleutel> allElements = new LinkedHashSet<>();
+        allElements.addAll(producers.keySet());
+        allElements.addAll(verbruikt);
+        for (ElementSleutel el : allElements) {
+            boolean produced = producers.containsKey(el);
+            boolean consumed = verbruikt.contains(el);
+            NodeKind kind = !produced ? NodeKind.INVOER
                     : (el.kenmerk() ? NodeKind.KENMERK : NodeKind.ATTRIBUUT);
-            boolean eindOutput = geproduceerd && !geconsumeerd;
+            boolean eindOutput = produced && !consumed;
             String id = "e" + elemId.size();
             elemId.put(el, id);
             nodes.add(new Node(id, elementLabel(el), kind, eindOutput));
@@ -150,24 +150,24 @@ public final class RegelGraaf {
 
         // 2. form nodes: every form, whatever it writes or reads.
         for (Vorm v : vormen)
-            vormId.computeIfAbsent(new VormSleutel(v.soort(), v.naam()), s -> {
-                String id = "r" + vormId.size();
+            formId.computeIfAbsent(new FormKey(v.soort(), v.naam()), s -> {
+                String id = "r" + formId.size();
                 nodes.add(new Node(id, s.naam(), NodeKind.REGEL, false));
-                vormsoorten.put(id, s.soort());
+                formKinds.put(id, s.soort());
                 return id;
             });
 
         // 3. producer edges: form -> element it writes.
-        for (var e : producenten.entrySet())
-            for (VormSleutel s : e.getValue()) edgeSet.add(new Edge(vormId.get(s), elemId.get(e.getKey())));
+        for (var e : producers.entrySet())
+            for (FormKey s : e.getValue()) edgeSet.add(new Edge(formId.get(s), elemId.get(e.getKey())));
         // 4. consumer edges: element -> form that reads it.
         for (Vorm v : vormen) {
-            String to = vormId.get(new VormSleutel(v.soort(), v.naam()));
+            String to = formId.get(new FormKey(v.soort(), v.naam()));
             for (ElementSleutel el : v.leest()) edgeSet.add(new Edge(elemId.get(el), to));
         }
-        Map<String, ElementSleutel> elementen = new LinkedHashMap<>();
-        elemId.forEach((el, id) -> elementen.put(id, el));
-        return new RegelGraaf(nodes, new ArrayList<>(edgeSet), elementen, vormsoorten);
+        Map<String, ElementSleutel> elements = new LinkedHashMap<>();
+        elemId.forEach((el, id) -> elements.put(id, el));
+        return new RegelGraaf(nodes, new ArrayList<>(edgeSet), elements, formKinds);
     }
 
     /** The label of an element node: "attribuut van Objecttype" (or just the naam when the owner is unknown). */
@@ -206,14 +206,14 @@ public final class RegelGraaf {
         appendClass(b, "attribuut", NodeKind.ATTRIBUUT);
         appendClass(b, "kenmerk", NodeKind.KENMERK);
         appendClass(b, "invoer", NodeKind.INVOER);
-        List<String> eind = nodes.stream().filter(Node::eindOutput).map(Node::id).toList();
-        if (!eind.isEmpty()) b.append("  class ").append(String.join(",", eind)).append(" eindoutput;\n");
+        List<String> end = nodes.stream().filter(Node::eindOutput).map(Node::id).toList();
+        if (!end.isEmpty()) b.append("  class ").append(String.join(",", end)).append(" eindoutput;\n");
         return b.toString();
     }
 
-    private void appendClass(StringBuilder b, String klasse, NodeKind kind) {
+    private void appendClass(StringBuilder b, String javaClass, NodeKind kind) {
         List<String> ids = nodes.stream().filter(n -> n.kind() == kind).map(Node::id).toList();
-        if (!ids.isEmpty()) b.append("  class ").append(String.join(",", ids)).append(' ').append(klasse).append(";\n");
+        if (!ids.isEmpty()) b.append("  class ").append(String.join(",", ids)).append(' ').append(javaClass).append(";\n");
     }
 
     /** A self-contained HTML page embedding the Mermaid source and loading the Mermaid runtime from a CDN. Works
@@ -221,11 +221,11 @@ public final class RegelGraaf {
      *  companion is the offline artefact. The counts + a legend are rendered in plain HTML so the page is still
      *  informative if the script fails to load. */
     public String html() {
-        long nRegel = nodes.stream().filter(n -> n.kind() == NodeKind.REGEL).count();
+        long nRule = nodes.stream().filter(n -> n.kind() == NodeKind.REGEL).count();
         long nAttr  = nodes.stream().filter(n -> n.kind() == NodeKind.ATTRIBUUT).count();
         long nKenm  = nodes.stream().filter(n -> n.kind() == NodeKind.KENMERK).count();
-        long nInvoer = nodes.stream().filter(n -> n.kind() == NodeKind.INVOER).count();
-        long nEind  = nodes.stream().filter(Node::eindOutput).count();
+        long nInput = nodes.stream().filter(n -> n.kind() == NodeKind.INVOER).count();
+        long nEnd  = nodes.stream().filter(Node::eindOutput).count();
         String mmd = mermaid();
         return """
             <!DOCTYPE html>
@@ -274,11 +274,11 @@ public final class RegelGraaf {
             </body>
             </html>
             """
-            .replace("__NREGEL__", Long.toString(nRegel))
+            .replace("__NREGEL__", Long.toString(nRule))
             .replace("__NATTR__", Long.toString(nAttr))
             .replace("__NKENM__", Long.toString(nKenm))
-            .replace("__NINVOER__", Long.toString(nInvoer))
-            .replace("__NEIND__", Long.toString(nEind))
+            .replace("__NINVOER__", Long.toString(nInput))
+            .replace("__NEIND__", Long.toString(nEnd))
             .replace("__MERMAID__", mmd);
     }
 

@@ -136,7 +136,7 @@ class TypeSystemRefusalWitnessTest {
             ObjectNode ir = golden(PENNINGJAAR);
             ((ObjectNode) ir.at(UNIT)).set("factorToCanonical", JSON.readTree(form));
             IrLoader.Documentfout e = refuses(ir, FACTOR);
-            assertTrue(e.getMessage().endsWith(": " + IrLoader.FACTOR_VORM + form), form + ": " + e.getMessage());
+            assertTrue(e.getMessage().endsWith(": " + IrLoader.FACTOR_FORM + form), form + ": " + e.getMessage());
         }
         // the bound the sentence names is admitted itself: 2^62 - 1 loads, 2^62 (above) does not
         ObjectNode bound = golden(PENNINGJAAR);
@@ -200,17 +200,17 @@ class TypeSystemRefusalWitnessTest {
         // WF-007: the tag stands at a declaration, and a type annotation is none
         ir = golden(VONDSTTARIEF);
         ((ObjectNode) ir.at(ANNOTATION)).put("presentation", "percentage");
-        assertTrue(refuses(ir, ANNOTATION + "/presentation").getMessage().contains(IrLoader.TAG_OP_ANNOTATIE));
+        assertTrue(refuses(ir, ANNOTATION + "/presentation").getMessage().contains(IrLoader.TAG_ON_ANNOTATION));
 
         // the tag presents a percentage: on a number without the unit '%' it presents nothing
         ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(GETAL)).put("presentation", "percentage");
-        assertTrue(refuses(ir, GETAL + "/presentation").getMessage().contains(IrLoader.TAG_ZONDER_PROCENT));
+        assertTrue(refuses(ir, GETAL + "/presentation").getMessage().contains(IrLoader.TAG_WITHOUT_PERCENT));
 
         // a percentage is written unsigned: the record has no sign to hold a restriction
         ir = golden(VONDSTTARIEF);
         ((ObjectNode) ir.at(RATE)).put("sign", "positive");
-        assertTrue(refuses(ir, RATE + "/sign").getMessage().contains(IrLoader.PROCENT_MET_TEKEN));
+        assertTrue(refuses(ir, RATE + "/sign").getMessage().contains(IrLoader.PERCENT_WITH_SIGN));
     }
 
     // ---------------- the date ----------------
@@ -236,7 +236,7 @@ class TypeSystemRefusalWitnessTest {
         String euro = SYSTEM + "/units/0";
         ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(euro)).putArray("spellings");
-        assertTrue(refuses(ir, euro + "/spellings").getMessage().contains(IrLoader.SPELLINGEN_LEEG));
+        assertTrue(refuses(ir, euro + "/spellings").getMessage().contains(IrLoader.SPELLINGS_EMPTY));
 
         ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(euro)).putNull("spellings");
@@ -349,7 +349,7 @@ class TypeSystemRefusalWitnessTest {
     private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 

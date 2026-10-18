@@ -3396,7 +3396,7 @@ a source that is a decision table, which the table records as a form because
 the table is no element, is the kind `decisionTable` on the wire, so that a
 row's source never names a form (`Spelling.originKind`). The Drools IR
 loader reads the field back into the table, so a model read from the wire has
-the table the frontend's has (`HerkomstBronrouteTest`, over every rgs golden).
+the table the frontend's has (`OriginSourceRouteTest`, over every rgs golden).
 The attribute `berekende waarde` of `Vondst` in the golden
 `jutterswet-opgave-vormen` carries
 
@@ -3531,7 +3531,7 @@ Not covered: the names the Drools backend gives the rules inside a form
 the fixpoint that are no form (the key of a defaults conflict, `<type>.<member>`
 with `/<i>` per level below the root, and the relation named by a second
 filling). Witnesses: `GegenereerdUitTest` (frontend) and
-`GegenereerdeNamenWitnessTest` (backend); for the designations
+`GeneratedNamesWitnessTest` (backend); for the designations
 `GegenereerdeBenamingenTest` and `GegenereerdeNamenPerDeelTest` (frontend);
 for the wire `HerkomstOpDeDraadTest` (frontend), `OriginWitnessTest`
-(backend) and `HerkomstBronrouteTest` (the route suite of gate 15).
+(backend) and `OriginSourceRouteTest` (the route suite of gate 15).

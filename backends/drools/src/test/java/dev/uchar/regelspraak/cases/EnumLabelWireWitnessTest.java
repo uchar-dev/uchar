@@ -68,10 +68,10 @@ class EnumLabelWireWitnessTest {
 
     // ---------------- 1. both goldens, both branches, every case ----------------
 
-    @Test void beide_takken_spelen_de_twee_enumgoldens() throws Exception {
+    @Test void both_branches_play_the_two_enumgoldens() throws Exception {
         for (String naam : List.of(KEURSTAAT, VONDSTKLASSE)) {
             Path ir = CORPUS.resolve(naam).resolve("ir.json");
-            List<Path> cases = casesVan(CORPUS.resolve(naam));
+            List<Path> cases = casesOf(CORPUS.resolve(naam));
             assertFalse(cases.isEmpty(), naam + " hoort casebestanden te dragen");
 
             CaseRunner.Result exec = CaseRunner.viaExecModel(ir, cases);
@@ -79,7 +79,7 @@ class EnumLabelWireWitnessTest {
                     + exec.reason());
             assertEquals(cases.size(), exec.casesPlayed(), naam + ": elke casus hoort gespeeld te zijn");
 
-            CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, cases);
+            CaseRunner.Result drl = CaseRunner.viaDrlText(ir, cases);
             assertEquals("PLAYED", drl.status(), naam + " hoort door de DRL-tekst-tak even goed gespeeld te "
                     + "worden: " + drl.reason());
             assertEquals(cases.size(), drl.casesPlayed(), naam + ": elke casus hoort gespeeld te zijn");
@@ -91,14 +91,14 @@ class EnumLabelWireWitnessTest {
      * waarde van hetzelfde domein. Beide takken horen de mutant waarneembaar te verwerpen — pas dan zegt het
      * PLAYED hierboven dat het label geschreven is en niet alleen dat er niets stukging.
      */
-    @Test void een_gemuteerde_geschreven_enumwaarde_wordt_door_beide_takken_verworpen() throws Exception {
+    @Test void a_mutated_written_enum_value_is_rejected_by_both_branches() throws Exception {
         // keurstaat: `stempel` krijgt de literal 'gaaf' onder een kenmerkvoorwaarde (de VALUE-arm).
-        BeideTakken.rood(CORPUS.resolve(KEURSTAAT).resolve("ir.json"),
-                metEnumVerwachting(KEURSTAAT, "case1-gaaf.json", "stempel", "wrakhout"),
+        BothBranches.red(CORPUS.resolve(KEURSTAAT).resolve("ir.json"),
+                withEnumExpectation(KEURSTAAT, "case1-gaaf.json", "stempel", "wrakhout"),
                 "werkelijk gaaf", "de geschreven literal is 'gaaf' en geen andere waarde van het domein");
         // vondstklasse: `bestemming` krijgt 'wrakgoed' onder een enumgelijkheid (VALUE-arm + conditie-arm).
-        BeideTakken.rood(CORPUS.resolve(VONDSTKLASSE).resolve("ir.json"),
-                metEnumVerwachting(VONDSTKLASSE, "case1-drijfgoed.json", "bestemming", "strandgoed"),
+        BothBranches.red(CORPUS.resolve(VONDSTKLASSE).resolve("ir.json"),
+                withEnumExpectation(VONDSTKLASSE, "case1-drijfgoed.json", "bestemming", "strandgoed"),
                 "werkelijk wrakgoed", "de geschreven literal is 'wrakgoed'");
     }
 
@@ -112,20 +112,20 @@ class EnumLabelWireWitnessTest {
      * houdt exact dezelfde verwachtingen: R2 vuurt er niet (haar klasse IS drijfgoed), dus R1 schrijft
      * onvoorwaardelijk wat zij daar ook voorwaardelijk schreef.
      */
-    @Test void de_enumtoekenning_speelt_ook_zonder_haar_voorwaarde_in_beide_takken() throws Exception {
+    @Test void the_enum_assignment_also_plays_without_its_condition_in_both_branches() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(
                 Files.readString(CORPUS.resolve(VONDSTKLASSE).resolve("ir.json")));
-        boolean geraakt = false;
-        for (JsonNode r : IrPad.rulesLijst(ir, "rules"))
+        boolean touched = false;
+        for (JsonNode r : IrPath.rulesList(ir, "rules"))
             if ("bestemming van drijfgoed".equals(r.path("name").asText())) {
                 ((ObjectNode) r.get("versions").get(0)).remove("condition");
-                geraakt = true;
+                touched = true;
             }
-        assertTrue(geraakt, "de regel die de literal schrijft hoort in het document te staan");
-        Path zonderVoorwaarde = tmp.resolve("vondstklasse-zonder-voorwaarde.json");
-        Files.writeString(zonderVoorwaarde, ir.toPrettyString());
+        assertTrue(touched, "de regel die de literal schrijft hoort in het document te staan");
+        Path withoutCondition = tmp.resolve("vondstklasse-zonder-voorwaarde.json");
+        Files.writeString(withoutCondition, ir.toPrettyString());
 
-        BeideTakken.groen(zonderVoorwaarde, geval(VONDSTKLASSE, "case1-drijfgoed.json"),
+        BothBranches.green(withoutCondition, caseOf(VONDSTKLASSE, "case1-drijfgoed.json"),
                 "de geschreven enumliteral staat op zichzelf, in beide takken");
     }
 
@@ -142,11 +142,11 @@ class EnumLabelWireWitnessTest {
      * <p>De rij heeft twee kanten, want een norm-vergelijking die te ver gaat leest alles gelijk: de
      * hoofdlettervariant hoort te HALEN en een ANDERE waarde van hetzelfde domein hoort te FALEN.
      */
-    @Test void de_leesterug_van_een_enumwaarde_is_naamidentiteit_in_beide_takken() throws Exception {
+    @Test void the_read_back_of_an_enum_value_is_name_identity_in_both_branches() throws Exception {
         Path ir = CORPUS.resolve(KEURSTAAT).resolve("ir.json");
-        BeideTakken.groen(ir, metEnumVerwachting(KEURSTAAT, "case2-beschadigd.json", "oordeel", "BESCHADIGD"),
+        BothBranches.green(ir, withEnumExpectation(KEURSTAAT, "case2-beschadigd.json", "oordeel", "BESCHADIGD"),
                 "dezelfde naam in een derde spelling blijft dezelfde waarde");
-        BeideTakken.rood(ir, metEnumVerwachting(KEURSTAAT, "case2-beschadigd.json", "oordeel", "wrakhout"),
+        BothBranches.red(ir, withEnumExpectation(KEURSTAAT, "case2-beschadigd.json", "oordeel", "wrakhout"),
                 "werkelijk Beschadigd", "een ANDERE waarde van het domein hoort waarneembaar te falen");
     }
 
@@ -156,57 +156,57 @@ class EnumLabelWireWitnessTest {
      * in een andere hoofdletterspelling hoort daar juist te FALEN. De golden is de tekstzuster van
      * keurstaat.
      */
-    @Test void een_tekstwaarde_houdt_haar_exacte_gelijkheid() throws Exception {
+    @Test void a_text_value_keeps_its_exact_equality() throws Exception {
         String golden = "jutterswet-vondstetiket";
-        JsonNode origineel = geval(golden, "case1-zeevondst.json");
-        String tekst = tekstVerwachting(origineel);
-        BeideTakken.rood(CORPUS.resolve(golden).resolve("ir.json"),
-                metTekstVerwachting(origineel, tekst.toUpperCase(java.util.Locale.ROOT)),
-                "werkelijk " + tekst,
+        JsonNode original = caseOf(golden, "case1-zeevondst.json");
+        String text = textExpectation(original);
+        BothBranches.red(CORPUS.resolve(golden).resolve("ir.json"),
+                withTextExpectation(original, text.toUpperCase(java.util.Locale.ROOT)),
+                "werkelijk " + text,
                 "een Tekst vergelijkt byte-exact — de enumnormalisatie hoort daar niet te gelden");
     }
 
     // ---------------- fixtures ----------------
 
-    private static List<Path> casesVan(Path golden) throws Exception {
+    private static List<Path> casesOf(Path golden) throws Exception {
         try (java.util.stream.Stream<Path> s = Files.list(golden)) {
             return s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
         }
     }
 
-    private JsonNode geval(String naam, String caseNaam) throws Exception {
-        return JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve(caseNaam)));
+    private JsonNode caseOf(String naam, String caseName) throws Exception {
+        return JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve(caseName)));
     }
 
     /** De casus met ÉÉN enumverwachting vervangen — de populatie blijft onaangeroerd, zodat een verschil
      *  alleen van de geschreven of teruggelezen waarde kan komen. */
-    private JsonNode metEnumVerwachting(String naam, String caseNaam, String attribuut, String waarde)
+    private JsonNode withEnumExpectation(String naam, String caseName, String attribuut, String waarde)
             throws Exception {
-        ObjectNode c = (ObjectNode) geval(naam, caseNaam);
-        boolean geraakt = false;
+        ObjectNode c = (ObjectNode) caseOf(naam, caseName);
+        boolean touched = false;
         for (JsonNode e : c.withArray("expected"))
             if ("attributeValue".equals(e.path("kind").asText())
                     && attribuut.equals(e.path("attribute").asText())
                     && e.path("value").has("enumeration")) {
                 ((ObjectNode) e.get("value")).put("enumeration", waarde);
-                geraakt = true;
+                touched = true;
             }
-        assertTrue(geraakt, naam + "/" + caseNaam + " hoort een enumverwachting op '" + attribuut
+        assertTrue(touched, naam + "/" + caseName + " hoort een enumverwachting op '" + attribuut
                 + "' te dragen — anders muteert deze rij niets");
         return c;
     }
 
     /** De eerste tekstverwachting van een casus, en haar vervanger — de tekstzuster van de twee hulpjes
      *  hierboven, apart omdat het veld {@code text} heet en niet {@code enumeration}. */
-    private static String tekstVerwachting(JsonNode c) {
+    private static String textExpectation(JsonNode c) {
         for (JsonNode e : c.get("expected"))
             if ("attributeValue".equals(e.path("kind").asText()) && e.path("value").has("text"))
                 return e.get("value").get("text").asText();
         throw new IllegalStateException("de casus draagt geen tekstverwachting");
     }
 
-    private JsonNode metTekstVerwachting(JsonNode origineel, String waarde) {
-        ObjectNode c = origineel.deepCopy();
+    private JsonNode withTextExpectation(JsonNode original, String waarde) {
+        ObjectNode c = original.deepCopy();
         for (JsonNode e : c.withArray("expected"))
             if ("attributeValue".equals(e.path("kind").asText()) && e.path("value").has("text")) {
                 ((ObjectNode) e.get("value")).put("text", waarde);

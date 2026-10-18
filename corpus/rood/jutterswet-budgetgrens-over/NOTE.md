@@ -28,8 +28,8 @@ cut off at 100:
   `creation budget exhausted: objectcreatie "werf de lange keten" van
   stratum 0 zou een object maken op aanmaakdiepte 101, voor een Wachter op
   diepte 100 — …`. Pinned: the sentence up to `aanmaakdiepte 101`, as for
-  ref; `TmsCreatieWitnessTest`
-  (`het_creatiebudget_ligt_waar_het_corpus_het_pint`) pins it whole.
+  ref; `TmsCreationWitnessTest`
+  (`the_creation_budget_lies_where_the_corpus_pins_it`) pins it whole.
 
 Until the card's third step (2026-10-09) the fragments were `no fixpoint
 within` (ref, which counted 100 generations per stratum that mint or link)

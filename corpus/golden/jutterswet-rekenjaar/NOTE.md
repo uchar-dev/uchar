@@ -66,7 +66,7 @@ The absent date is not a golden: a session without `asOfDate` faults in
 every executor ("the evaluationYear context value needs an evaluation
 date; the case carries asOfDate null"), which `ref/test` (the ch. 8.2
 worked example), the ASP backend's own suite and the Drools backend's
-`RekenjaarWitnessTest` pin, and gate 8 for all three executors through the
+`EvaluationYearWitnessTest` pin, and gate 8 for all three executors through the
 red case `corpus/rood/rekenjaar-zonder-rekendatum` (this document with a
 dateless case).
 

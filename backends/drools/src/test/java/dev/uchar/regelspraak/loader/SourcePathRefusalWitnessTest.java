@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The MODEL-relative half of WF-102 (d) — a step that does not join, a landing beside the element type,
  * a hop §13.3.9 derives no bean field for — is not here: it needs the fold SUBJECT, which this node does
  * not carry. Those are per-form refusals in the two transpilers and are witnessed, dual-branch, in
- * {@code cases/BronpadKetenWitnessTest}.
+ * {@code cases/SourcePathChainWitnessTest}.
  *
  * <p>Until 2026-09-18 this file witnessed something else: that the loader refused EVERY multi-step range by
  * name. That refusal was correct for as long as the backend carried no walk — the alternative was the
@@ -55,8 +55,8 @@ class SourcePathRefusalWitnessTest {
      *  difference between this field and every other extension the loader carries. */
     @Test void the_whole_ordered_path_is_kept() throws Exception {
         IrLoader.Loaded l = IrLoader.loadAll(anchor());
-        assertEquals(1, l.bronPaden().size(), "één vouw in dit document draagt een pad");
-        List<RolBindingRef> path = l.bronPaden().values().iterator().next();
+        assertEquals(1, l.sourcePaths().size(), "één vouw in dit document draagt een pad");
+        List<RolBindingRef> path = l.sourcePaths().values().iterator().next();
         assertEquals(List.of(new RolBindingRef("bemanning", "gevoerde boot"),
                              new RolBindingRef("berging", "geborgen vondst")), path,
                 "onderwerp-uitwaarts, stap voor stap, precies zoals de wire hem schrijft");
@@ -68,7 +68,7 @@ class SourcePathRefusalWitnessTest {
         ((ObjectNode) fold(root)).putObject("sourceRole")
                 .put("node", "RoleBinding").put("factType", "berging").put("role", "geborgen vondst");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
-        assertTrue(e.plek().endsWith("/sourcePath") && e.getMessage().contains(IrLoader.BEREIK_TWEEMAAL),
+        assertTrue(e.site().endsWith("/sourcePath") && e.getMessage().contains(IrLoader.RANGE_TWICE),
                 "het eenstapsbereik HEET sourceRole, dus de twee velden sluiten elkaar uit: " + e.getMessage());
     }
 
@@ -97,7 +97,7 @@ class SourcePathRefusalWitnessTest {
                 .put("node", "RoleBinding").put("factType", "bemanning").put("role", "gevoerde boot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
-        assertEquals("/rules/rules/0/versions/0/value/sourcePath", e.plek(), e.getMessage());
+        assertEquals("/rules/rules/0/versions/0/value/sourcePath", e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
                 + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
     }
@@ -106,10 +106,10 @@ class SourcePathRefusalWitnessTest {
      *  document without one (IR-SPEC ch. 4.3): no reader derives it from the type pair. */
     @Test void without_the_field_the_fold_is_not_loaded() throws Exception {
         ObjectNode root = (ObjectNode) anchor();
-        for (JsonNode rule : IrPad.rulesLijst(root, "rules"))
+        for (JsonNode rule : IrPath.rulesList(root, "rules"))
             ((ObjectNode) rule.get("versions").get(0).get("value")).remove("sourcePath");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(root));
-        assertTrue(e.getMessage().contains(IrLoader.BEREIK_ONTBREEKT), e.getMessage());
+        assertTrue(e.getMessage().contains(IrLoader.RANGE_MISSING), e.getMessage());
     }
 
     private static String refusal(JsonNode root) {
@@ -122,7 +122,7 @@ class SourcePathRefusalWitnessTest {
 
     /** The one fold of the emitted witness that carries the field. */
     private static JsonNode fold(JsonNode root) {
-        return IrPad.versie(root, "rules", 0, 0).get("value");
+        return IrPath.version(root, "rules", 0, 0).get("value");
     }
 
     private static JsonNode anchor() throws Exception {

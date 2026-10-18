@@ -335,7 +335,7 @@ reviewer's duty on a machine that has catala. Current gates:
     described. The sweep runs as the gate's final block, so only an
     otherwise-green gate pays its cost (measured 2026-10-14 on a copy:
     220 s of 635 s). The gate also fails when the backend's suite did
-    not run `TakdumpsCorpusWitnessTest`, the case-by-case comparison of
+    not run `BranchDumpsCorpusWitnessTest`, the case-by-case comparison of
     the two branches over every golden and red case. An empty played
     set is a failure. For a builder who changes a pin or a list,
     `scripts/check-drools.sh --fast` rebuilds the jar without the JUnit
@@ -429,7 +429,7 @@ reviewer's duty on a machine that has catala. Current gates:
     the loader refuses cannot be compared and is reported with its form.
     ROUTE LEG: on every golden with a `bron.rgs` the graph from the source
     route equals the graph from the wire route byte for byte, and the
-    graph's own unit tests (under `backends/drools/src/bronroute`, compiled
+    graph's own unit tests (under `backends/drools/src/source-route`, compiled
     by the gate against the frontend and the backend jar) pass with a
     non-zero count. Floors in the script (measured 2026-09-26 at the wave's
     landing): `EXPECTED_MIN_GOLDENS=234`, `EXPECTED_MIN_AFHANKELIJK=116`,

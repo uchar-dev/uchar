@@ -8,3 +8,5 @@ drl	the Drools Rule Language
 tms	truth maintenance system
 asp	answer set programming
 mvel	the expression language of Drools rules
+junit	JUnit, the Java test framework; a false hit (juni) of the sub-word search, card hernoem-drools-backend
+beangenerator	bean generator, the bean classes the fact model generates; a false hit (rato) of the sub-word search, card hernoem-drools-backend

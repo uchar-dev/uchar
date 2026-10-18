@@ -27,15 +27,15 @@ import java.util.Objects;
 public final class Invoer {
 
     private final List<Object> beans = new ArrayList<>();
-    private final List<Emmer> emmers = new ArrayList<>();
-    private final List<Lijst> lijsten = new ArrayList<>();
+    private final List<Bucket> emmers = new ArrayList<>();
+    private final List<ToManyList> lists = new ArrayList<>();
 
     /** A bucket scalar: attribute {@code attribuut} of {@code bean}, named as the model declares it. */
-    record Emmer(Object bean, String attribuut) {}
+    record Bucket(Object bean, String attribuut) {}
 
     /** The members of a to-many list in their order: {@code leden}, each holding {@code houder} in its reference field
      *  {@code rol}. */
-    record Lijst(Object houder, String rol, List<Object> leden) {}
+    record ToManyList(Object houder, String rol, List<Object> members) {}
 
     /** Adds {@code bean}. */
     public Invoer bean(Object bean) {
@@ -52,18 +52,18 @@ public final class Invoer {
     /** States that the bean {@code bean} holds the input of attribute {@code attribuut}, an attribute on a timeline
      *  named as the model declares it, as the asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4). */
     public Invoer emmerscalair(Object bean, String attribuut) {
-        emmers.add(new Emmer(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribuut, "attribuut")));
+        emmers.add(new Bucket(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribuut, "attribuut")));
         return this;
     }
 
     /** States the order of a to-many list: {@code leden} are the members whose reference field {@code rol} holds
      *  {@code houder}, in this order. {@code rol} is the role the holder plays in the fact type, the name of that field;
      *  the list must name every bean of this input whose field holds the holder, and each once. */
-    public Invoer lijst(Object houder, String rol, List<?> leden) {
-        Objects.requireNonNull(leden, "leden");
+    public Invoer lijst(Object houder, String rol, List<?> members) {
+        Objects.requireNonNull(members, "leden");
         List<Object> l = new ArrayList<>();
-        for (Object lid : leden) l.add(Objects.requireNonNull(lid, "lid"));
-        lijsten.add(new Lijst(Objects.requireNonNull(houder, "houder"), Objects.requireNonNull(rol, "rol"), List.copyOf(l)));
+        for (Object member : members) l.add(Objects.requireNonNull(member, "lid"));
+        lists.add(new ToManyList(Objects.requireNonNull(houder, "houder"), Objects.requireNonNull(rol, "rol"), List.copyOf(l)));
         return this;
     }
 
@@ -71,11 +71,11 @@ public final class Invoer {
         return List.copyOf(beans);
     }
 
-    List<Emmer> emmers() {
+    List<Bucket> emmers() {
         return List.copyOf(emmers);
     }
 
-    List<Lijst> lijsten() {
-        return List.copyOf(lijsten);
+    List<ToManyList> lists() {
+        return List.copyOf(lists);
     }
 }

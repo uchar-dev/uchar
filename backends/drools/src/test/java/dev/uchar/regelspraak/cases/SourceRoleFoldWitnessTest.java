@@ -1,0 +1,397 @@
+package dev.uchar.regelspraak.cases;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import dev.uchar.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.transpiler.kern.Dekking;
+
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * The ch. 4.3 {@code sourceRole} witness for a VALUE fold — SOM / MINIMUM / MAXIMUM — over a type pair the
+ * by-pair search cannot resolve.
+ *
+ * <p>A count names its element role in the sentence ("het aantal liggers van de Haven"), so the emitter's
+ * written name disambiguates a repeated pair for it. A SOM's argument is an ATTRIBUTE name ("de romplengte
+ * van alle liggers"), which must never be matched against role names — so the only thing left is the wire's
+ * symbolic range. The exec branch has read it since 2026-08-30; the DRL-text branch had only the by-pair
+ * search, which on a repeated (or self-typed) pair is ambiguous by construction. The result was a BRANCH
+ * INEQUALITY on a form all three other executors carry.
+ *
+ * <p>RED FIRST, measured on the jar built from the commit before the fix, on the model below (three folds
+ * over three of the four feittypen relating Haven and Schuit, one case, expectations computed by hand):
+ * <pre>
+ *   verifier : PASS
+ *   ref      : oracle: PASS (9 expectations)
+ *   clingo   : clingo: PASS (9 expectations)
+ *   exec     : PLAYED 1
+ *   drl      : EXCLUDE drl-transpiler MARKER: regel: liggertal van een haven —
+ *              TODO aggregatie SOM: de som van de romplengte van alle liggers van de Haven
+ * </pre>
+ * and, one fold per document, the other two kinds said the same thing:
+ * <pre>
+ *   drl (MIN): TODO aggregatie MINIMUM: de minimale waarde van de romplengte van alle winterschuiten van de Haven
+ *   drl (MAX): TODO aggregatie MAXIMUM: de maximale waarde van de romplengte van alle keurschuiten van de Haven
+ * </pre>
+ * The same document with the three sister feittypen removed — one uniquely connected pair, everything else
+ * identical — played in all five. That mirror is row {@link #the_uniquely_connected_pair_stays_playing}: it is
+ * what says the split was about the RANGE derivation and nothing else.
+ *
+ * <p>Every model here is an in-memory variant of ONE corpus golden ({@code jutterswet-dubbelverbinding});
+ * the golden's own files are never touched, and it deliberately folds only counts — the value folds live
+ * here, where the branch inequality was.
+ */
+class SourceRoleFoldWitnessTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
+    private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
+
+    /** FOUR feittypen relate Haven to Schuit, so the by-pair search is ambiguous by construction while every
+     *  written role name — and every wire binding — is unique. */
+    private static final String DUBBELVERBINDING = "jutterswet-dubbelverbinding";
+
+    /** The hand-computed world, shared by every row below. Three havens; S1 is a ligger of H1, a winterschuit
+     *  of H2 AND a keurschuit of H1 — one instance in three roles of the same type pair, so a derivation that
+     *  collapsed the roles onto one field could not reproduce these nine cells. */
+    private static final String[][] WORLD = {
+        // label, romplengte, thuishaven, winterhaven, keurhaven
+        { "S1", "12", "H1", "H2", "H1" },
+        { "S2",  "7", "H1", "H2", null },
+        { "S3", "20", "H2", null, "H1" },
+        { "S4",  "5", null, null, null },
+    };
+
+    // ---------------- 1. the three value folds, each over its own written range ----------------
+
+    @Test void the_sum_over_a_written_source_role_plays_in_both_branches() throws Exception {
+        // SOM of romplengte over the LIGGERS: H1 gets S1 (12) + S2 (7) = 19, H2 gets S3 = 20, H3 has none.
+        // An empty SOM without a leegwaarde is LEEG (§5.8.2), not 0 — pinned on H3.
+        BothBranches.green(foldDocument("sum", "liggertal", "liggers", "thuisligging", "ligger"),
+                JSON.readTree(caseDocument("liggertal", "19", "20", null)),
+                "liggertal 19 / 20 / leeg");
+    }
+
+    @Test void the_minimal_value_over_a_source_role_plays_in_both_branches() throws Exception {
+        // MINIMUM over the WINTERSCHUITEN: only H2 has any (S1 12, S2 7) -> 7. H1 and H3 read leeg — the
+        // §5.8.3 empty MIN, the cell a bare min() accumulate cannot bind at all.
+        BothBranches.green(foldDocument("minimum", "wintertal", "winterschuiten", "winterberging", "winterschuit"),
+                JSON.readTree(caseDocument("wintertal", null, "7", null)),
+                "wintertal leeg / 7 / leeg");
+    }
+
+    @Test void the_maximal_value_over_a_source_role_plays_in_both_branches() throws Exception {
+        // MAXIMUM over the KEURSCHUITEN: only H1 has any (S1 12, S3 20) -> 20.
+        BothBranches.green(foldDocument("maximum", "keurtal", "keurschuiten", "keurberging", "keurschuit"),
+                JSON.readTree(caseDocument("keurtal", "20", null, null)),
+                "keurtal 20 / leeg / leeg");
+    }
+
+    @Test void the_three_folds_beside_each_other_each_choose_their_own_fact_type() throws Exception {
+        // All three in ONE document — the anti-collapse row. S1 sits in all three ranges but under three
+        // different roles, so any two roles sharing a field would move at least one of these nine cells.
+        BothBranches.green(threeFolds(), JSON.readTree(nineCells()),
+                "liggertal 19/20/leeg, wintertal leeg/7/leeg, keurtal 20/leeg/leeg");
+    }
+
+    @Test void the_empty_set_reads_the_empty_fallback_in_place_of_empty() throws Exception {
+        // §4.12 "of 0 als die er niet zijn": the empty fold reads the aggregation's own emptyFallback. The other
+        // half of the leegwaarde law the three rows above pin on their leeg cells.
+        ObjectNode ir = sumModel();
+        ((ObjectNode) foldOf(ir)).set("emptyFallback", literal("0"));
+        ((ObjectNode) foldOf(ir)).set("source", IrPath.sourceReference("de som van de romplengte van alle liggers van de Haven of 0 als die er niet zijn"));
+        BothBranches.green(temporary("bronrol-leegwaarde", ir), JSON.readTree(caseDocument("liggertal", "19", "20", "0")),
+                "the empty H3 fold reads its leegwaarde 0, not leeg");
+    }
+
+    // ---------------- 2. the mutation flank: the role choice must be observable ----------------
+
+    @Test void the_swapped_source_role_is_a_named_difference_and_no_silent_tie() throws Exception {
+        // The STANDING mutation probe. The sentence still says "alle liggers"; only the wire's range is moved
+        // to the sister feittype. Both branches must answer observably differently — H1 loses its liggers
+        // (S1 and S2 are no winterschuiten of H1) and H2 folds S1+S2 = 19 instead of S3 = 20. ref and clingo
+        // say the same on this document ("MISMATCH: H2.liggertal = 19, expected 20"), so the flank is the
+        // square's, not this backend's.
+        ObjectNode ir = sumModel();
+        ((ObjectNode) foldOf(ir)).set("sourceRole", roleBinding("winterberging", "winterschuit"));
+        String verdict = BothBranches.red(temporary("bronrol-verwisseld", ir),
+                JSON.readTree(caseDocument("liggertal", "19", "20", null)),
+                "liggertal", "reading the sister feittype's range must be observable");
+        assertTrue(verdict.contains("verwacht 20, werkelijk 19"), verdict);
+    }
+
+    // ---------------- 3. the regression mirror and what stays refused ----------------
+
+    @Test void the_uniquely_connected_pair_stays_playing() throws Exception {
+        // The SAME fold over a pair only ONE feittype connects: the by-pair search answers, the wire binding
+        // is never consulted, and both branches played this before the card as well. The row that says the
+        // fix reached only the arm it was meant to.
+        ObjectNode ir = sumModel();
+        ArrayNode fts = JSON.createArrayNode();
+        fts.add(IrPath.declaratie(ir, "factTypes", "thuisligging"));
+        IrPath.model(ir).set("factTypes", fts);
+        // the three sister relations are gone from the model, so the input may not spell them either.
+        BothBranches.green(temporary("bronrol-uniek", ir),
+                JSON.readTree(caseDocument("liggertal", "19", "20", null, "thuishaven")),
+                "one feittype over the pair: unchanged, and still green");
+    }
+
+    @Test void a_fold_without_source_role_loads_in_none_of_both_branches() throws Exception {
+        // THE GUARD AGAINST WIDENING THE FIX INTO A GUESS. Strip the range off the wire and nothing names the
+        // relation — four feittypen relate the pair — so no branch may pick one. Since L2 of the v1 wire migration
+        // the range is required on this fold (IR-SPEC ch. 4.3), so the document is refused at load, by name,
+        // before either branch could guess; the verifier, ref and clingo refuse it too.
+        ObjectNode ir = sumModel();
+        ((ObjectNode) foldOf(ir)).remove("sourceRole");
+        Path p = temporary("bronrol-geen-binding", ir);
+        JsonNode c = JSON.readTree(caseDocument("liggertal", "19", "20", null));
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                    () -> CaseRunner.playCase(p, c, viaDrl), "a fold without its range is no document");
+            assertTrue(e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
+        }
+    }
+
+    @Test void a_many_sister_role_yields_no_scalar_join_field() throws Exception {
+        // A resolved binding is not yet a bean field. With BOTH roles of thuisligging to-many the relation
+        // has no scalar reference at either end, so the sibling the binding names cannot be joined on and
+        // both branches refuse — the §13.3.9 storage-direction half, unchanged by this card. (The document
+        // itself is well-formed: verifier PASS, ref PASS, clingo PASS on the very same expectations.)
+        ObjectNode ir = sumModel();
+        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+            ((ObjectNode) r).put("many", true);
+        Path p = temporary("bronrol-beide-meervoudig", ir);
+        JsonNode c = JSON.readTree(caseDocument("liggertal", "19", "20", null));
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.playCase(p, c, viaDrl), (viaDrl ? "drl-tekst" : "exec-model") + " refuses");
+            assertTrue(e.getMessage().contains("liggertal van een haven"), e.getMessage());
+        }
+    }
+
+    @Test void the_many_sister_role_is_refused_in_both_branches_with_the_same_sentence() throws Exception {
+        // The row above says both branches refuse; THIS one says they refuse in the SAME WORDS. Until
+        // 2026-09-19 they did not: one fold-join cardinality failure had two generic names — the exec branch's
+        // "aggregatie buiten Phase-C scope" and the DRL-text branch's bare "TODO aggregatie SOM" — and neither
+        // named the cause. A producer reading the gate report should not have to know which branch answered.
+        // Since L2 of the v1 wire migration the binding is the fold's only range, so both branches read the role
+        // pair from it and ask the one join-field question; the sentence is the shared cardinality diagnosis,
+        // FactModelGenerator.noJoinFieldReason. No corpus golden reaches this arm (measured, whole corpus, both
+        // branches), which is exactly why the branches were free to drift here.
+        ObjectNode ir = sumModel();
+        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+            ((ObjectNode) r).put("many", true);
+        BothBranches.refused(temporary("bronrol-gedeelde-zin", ir),
+                JSON.readTree(caseDocument("liggertal", "19", "20", null)),
+                "de rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld aan de overzijde, en ook"
+                        + " daar leidt het beanmodel er geen af (beide zijden meervoudig)",
+                "one cardinality refusal, one sentence");
+    }
+
+    // ---------------- 4. the self-typed pair: the same gap, in the corpus ----------------
+
+    @Test void the_self_typed_range_lowers_in_both_branches() throws Exception {
+        // Two same-typed sibling roles of ONE feittype ("de som van de rang van alle opvolgers van de
+        // Wachter"): the by-pair search counts both and derives null, so this was the SECOND shape the
+        // DRL-text branch markered while exec played — and unlike the repeated pair it IS in the corpus.
+        // Measured before the card, on anchor/jutterswet-wachtersketen: exec PLAYED 2, DRL
+        // "MARKER: regel: opvolgerrang van een wachter — TODO aggregatie SOM". Since card
+        // drl-teksttak-op-truth-maintenance both branches render one analysis, whose manifest is the one asked here;
+        // the golden plays on both. The row of the DRL-text lowering of that day without the role bindings went
+        // with that lowering.
+        Path ir = ir("anchor/jutterswet-wachtersketen");
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            Dekking d = coverageOf(DroolsBackend.build(ir, branch).dekking(), "regel: opvolgerrang van een wachter");
+            assertTrue(d.lowered(), branch + ": the self-typed fold lowers: " + d.verdict() + " — " + d.reden());
+        }
+    }
+
+    // ---------------- fixtures ----------------
+
+    private static Dekking coverageOf(List<Dekking> dekking, String sleutel) {
+        for (Dekking d : dekking) if (sleutel.equals(d.sleutel())) return d;
+        throw new AssertionError("no manifest entry " + sleutel);
+    }
+
+    private static Path ir(String golden) {
+        Path p = CORPUS.resolve(golden).resolve("ir.json");
+        assertTrue(Files.exists(p), "golden ir.json present: " + p.toAbsolutePath());
+        return p;
+    }
+
+    private static ObjectNode lees() throws Exception {
+        return (ObjectNode) JSON.readTree(Files.readString(ir(DUBBELVERBINDING)));
+    }
+
+    /** The golden reduced to ONE rule whose value is a {@code kind} fold of romplengte over the range the
+     *  wire names, written into {@code targetAttribute}. No creations, no navigated reads: a supplied relation
+     *  is read exactly as supplied and no rule writes a role field. */
+    private static Path foldDocument(String kind, String targetAttribute, String plural, String feittype, String rol)
+            throws Exception {
+        ObjectNode ir = lees();
+        IrPath.rules(ir).putArray("factCreations");
+        String regel = ruleFor(targetAttribute);
+        keepRules(ir, regel);
+        IrPath.version(ir, "rules", 0, 0).set("value", fold(kind, plural, feittype, rol));
+        return temporary("bronrol-" + kind.toLowerCase(), ir);
+    }
+
+    /** All three folds in one document, each over its own feittype. */
+    private static Path threeFolds() throws Exception {
+        ObjectNode ir = lees();
+        IrPath.rules(ir).putArray("factCreations");
+        keepRules(ir, "liggertal van een haven", "wintertal van een haven", "keurtal van een haven");
+        for (JsonNode n : IrPath.rulesList(ir, "rules")) {
+            ObjectNode r = (ObjectNode) n.get("versions").get(0);
+            switch (n.get("name").asText()) {
+                case "liggertal van een haven" ->
+                        r.set("value", fold("sum", "liggers", "thuisligging", "ligger"));
+                case "wintertal van een haven" ->
+                        r.set("value", fold("minimum", "winterschuiten", "winterberging", "winterschuit"));
+                default -> r.set("value", fold("maximum", "keurschuiten", "keurberging", "keurschuit"));
+            }
+        }
+        return temporary("bronrol-drie", ir);
+    }
+
+    /** The single-SOM model every mutation row starts from. */
+    private static ObjectNode sumModel() throws Exception {
+        ObjectNode ir = lees();
+        IrPath.rules(ir).putArray("factCreations");
+        keepRules(ir, "liggertal van een haven");
+        IrPath.version(ir, "rules", 0, 0).set("value", fold("sum", "liggers", "thuisligging", "ligger"));
+        return ir;
+    }
+
+    private static JsonNode foldOf(ObjectNode ir) { return IrPath.version(ir, "rules", 0, 0).get("value"); }
+
+    private static String ruleFor(String targetAttribute) {
+        return switch (targetAttribute) {
+            case "liggertal" -> "liggertal van een haven";
+            case "wintertal" -> "wintertal van een haven";
+            default -> "keurtal van een haven";
+        };
+    }
+
+    /** The §5.8 instance fold: {@code kind} of the element's romplengte over the range the wire NAMES —
+     *  {@code elementType} plus one {@code sourceRole}, the ch. 4.3 one-step form. */
+    private static ObjectNode fold(String kind, String plural, String feittype, String rol) {
+        ObjectNode arg = JSON.createObjectNode();
+        arg.put("node", "AttributeReference").put("attribute", "romplengte").put("subjectType", "Schuit");
+        arg.set("source", IrPath.sourceReference("de romplengte van alle " + plural + " van de Haven"));
+        ObjectNode f = JSON.createObjectNode();
+        f.put("node", "Aggregation").put("kind", kind);
+        f.putArray("arguments").add(arg);
+        f.put("elementType", "Schuit");
+        f.set("sourceRole", roleBinding(feittype, rol));
+        f.set("type", number());
+        f.set("source", IrPath.sourceReference(sentence(kind) + " de romplengte van alle " + plural + " van de Haven"));
+        return f;
+    }
+
+    private static String sentence(String kind) {
+        return switch (kind) {
+            case "sum" -> "de som van";
+            case "minimum" -> "de minimale waarde van";
+            default -> "de maximale waarde van";
+        };
+    }
+
+    private static ObjectNode roleBinding(String feittype, String rol) {
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
+    }
+
+    private static ObjectNode literal(String waarde) {
+        ObjectNode l = JSON.createObjectNode().put("node", "Literal");
+        l.putObject("value").put("number", waarde);
+        l.set("type", number());
+        return l.set("source", IrPath.sourceReference(waarde));
+    }
+
+    private static ObjectNode number() {
+        return JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "nonNegative");
+    }
+
+    private static void keepRules(ObjectNode ir, String... names) {
+        List<String> keep = List.of(names);
+        ArrayNode out = JSON.createArrayNode();
+        for (JsonNode r : IrPath.rulesList(ir, "rules")) if (keep.contains(r.get("name").asText())) out.add(r);
+        IrPath.rules(ir).set("rules", out);
+    }
+
+    /** The shared world with ONE attribute pinned per haven; a null cell is an {@code attributeEmpty}.
+     *  {@code roleNames} is the subset of the three relation spellings the input supplies — all of them,
+     *  except where the model has been reduced to a single feittype and the others no longer exist. */
+    private static String caseDocument(String attribuut, String h1, String h2, String h3, String... roleNames) {
+        StringBuilder verwacht = new StringBuilder();
+        String[] labels = { "H1", "H2", "H3" }, waarden = { h1, h2, h3 };
+        for (int i = 0; i < 3; i++) {
+            if (i > 0) verwacht.append(",\n");
+            verwacht.append(cell(labels[i], attribuut, waarden[i]));
+        }
+        return world(verwacht.toString(), roleNames);
+    }
+
+    private static String nineCells() {
+        return world(String.join(",\n",
+                cell("H1", "liggertal", "19"), cell("H2", "liggertal", "20"), cell("H3", "liggertal", null),
+                cell("H1", "wintertal", null), cell("H2", "wintertal", "7"), cell("H3", "wintertal", null),
+                cell("H1", "keurtal", "20"), cell("H2", "keurtal", null), cell("H3", "keurtal", null)));
+    }
+
+    private static String cell(String label, String attribuut, String waarde) {
+        return waarde == null
+                ? "{ \"kind\": \"attributeEmpty\", \"label\": \"" + label + "\", \"attribute\": \"" + attribuut + "\" }"
+                : "{ \"kind\": \"attributeValue\", \"label\": \"" + label + "\", \"attribute\": \"" + attribuut
+                  + "\", \"value\": { \"number\": \"" + waarde + "\" } }";
+    }
+
+    /** Three havens and the four schuiten of {@link #WORLD}, each schuit in the roles its row names —
+     *  restricted to {@code allowed} when the model under test declares fewer feittypen (an empty list
+     *  means all three). */
+    private static String world(String verwacht, String... allowed) {
+        List<String> permitted = allowed.length == 0
+                ? List.of("thuishaven", "winterhaven", "keurhaven") : List.of(allowed);
+        StringBuilder in = new StringBuilder();
+        for (String[] h : new String[][] { { "H1", "40" }, { "H2", "25" }, { "H3", "50" } })
+            in.append("{ \"label\": \"").append(h[0]).append("\", \"objectType\": \"Haven\","
+                    + " \"attributes\": { \"kadegeld\": { \"number\": \"").append(h[1]).append("\" } },"
+                    + " \"roles\": {}, \"characteristics\": [] },\n");
+        for (int i = 0; i < WORLD.length; i++) {
+            String[] s = WORLD[i];
+            StringBuilder roles = new StringBuilder();
+            String[] roleNames = { "thuishaven", "winterhaven", "keurhaven" };
+            for (int j = 0; j < roleNames.length; j++)
+                if (s[2 + j] != null && permitted.contains(roleNames[j])) {
+                    if (roles.length() > 0) roles.append(", ");
+                    roles.append('"').append(roleNames[j]).append("\": [\"").append(s[2 + j]).append("\"]");
+                }
+            in.append("{ \"label\": \"").append(s[0]).append("\", \"objectType\": \"Schuit\","
+                    + " \"attributes\": { \"romplengte\": { \"number\": \"").append(s[1]).append("\" } },"
+                    + " \"roles\": { ").append(roles).append(" }, \"characteristics\": [] }")
+              .append(i == WORLD.length - 1 ? "\n" : ",\n");
+        }
+        return "{ \"format\": \"uchar-case-v0\", \"asOfDate\": null,\n"
+             + "  \"input\": { \"instances\": [\n" + in + "], \"parameters\": {} },\n"
+             + "  \"expected\": [\n" + verwacht + " ] }";
+    }
+
+    private static Path temporary(String naam, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(naam, ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir.toString());
+        return tmp;
+    }
+}

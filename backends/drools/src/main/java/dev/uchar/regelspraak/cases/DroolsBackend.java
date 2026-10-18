@@ -15,16 +15,16 @@ import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
-import dev.uchar.regelspraak.transpiler.tms.Bewaking;
-import dev.uchar.regelspraak.transpiler.tms.Creatiebudget;
-import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
-import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
+import dev.uchar.regelspraak.transpiler.tms.Watch;
+import dev.uchar.regelspraak.transpiler.tms.CreationBudget;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
 import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
 import dev.uchar.regelspraak.transpiler.tms.Fout;
-import dev.uchar.regelspraak.transpiler.tms.Gevuurd;
-import dev.uchar.regelspraak.transpiler.tms.Kringen;
-import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
-import dev.uchar.regelspraak.transpiler.tms.Teruggezet;
+import dev.uchar.regelspraak.transpiler.tms.Fired;
+import dev.uchar.regelspraak.transpiler.tms.Cycles;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.Reset;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import dev.uchar.regelspraak.runtime.Accessors;
@@ -133,9 +133,9 @@ public final class DroolsBackend {
         /** The §9.8 day-kind predicates the DRL text declares as globals (name -> predicate); a session must have
          *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas; on the
          *  DRL-text branch those of the analysis, whose rendering names their globals
-         *  ({@link TmsTranspiler#drlDagsoortGlobalen}). */
+         *  ({@link TmsTranspiler#drlDayKindGlobals}). */
         public Map<String, Predicate<LocalDate>> dagsoortGlobalen() {
-            return drl == null ? Map.of() : execModelTranspiler.drlDagsoortGlobalen();
+            return drl == null ? Map.of() : execModelTranspiler.drlDayKindGlobals();
         }
     }
 
@@ -154,14 +154,14 @@ public final class DroolsBackend {
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
      *      violation, a construct the analysis does not lower, a cycle of the dependency graph that WF-045 or WF-046
      *      forbids, two rules of one name, and on the DRL-text branch a kind its rendering does not carry
-     *      ({@link TmsTranspiler.DrlWeigering})
+     *      ({@link TmsTranspiler.DrlRefusal})
      *  @throws IllegalStateException on the DRL-text branch a DRL text the Drools compiler rejects: a fault of the
      *      rendering, never a form the branch does not carry */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
-        weigerBeannaambotsing(loaded);
+        refuseBeanNameCollision(loaded);
 
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
         // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
@@ -175,34 +175,34 @@ public final class DroolsBackend {
         //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
         //     an unclassified ERROR at best. Refuse the shape loudly instead (lens finding, 2026-08-30).
         for (Objecttype ot : model.objecttypen.values()) {
-            if (!FactModelGenerator.noemtWederkerig(model, ot)) continue;
-            String zelf = FactModelGenerator.zelfpaarRol(model, ot);
+            if (!FactModelGenerator.namesReciprocal(model, ot)) continue;
+            String selfRole = FactModelGenerator.selfPairRole(model, ot);
             //   the UNDERIVABLE half of the same shape — an ambiguous pair (two wederkerig feittypen on one
             //   objecttype) or a to-many reciprocal role: the transpilers navigate by the written role name
             //   toward a getter no bean carries, an unclassified fire-time ERROR (lens 2, 2026-08-30).
-            if (zelf == null)
+            if (selfRole == null)
                 throw new Excluded("wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
                         + "reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend");
-            if (!FactModelGenerator.heeftReferentieVeld(model, ot, zelf, ot))
-                throw new Excluded("wederkerig self-pair role '" + zelf + "' on " + ot.naam + " shares its name "
+            if (!FactModelGenerator.hasReferenceField(model, ot, selfRole, ot))
+                throw new Excluded("wederkerig self-pair role '" + selfRole + "' on " + ot.naam + " shares its name "
                         + "with a declared member — the bean cannot carry the self-typed reference field "
                         + "(name-sharing bean limit)");
         }
 
-        Map<String, String> bronnen = FactModelGenerator.genereer(model);
-        ClassLoader cl = BeanCompiler.compileer(bronnen);
-        List<String> schendingen = ContractValidator.valideer(model, cl);
-        if (!schendingen.isEmpty()) throw new Excluded("contract: " + schendingen.get(0));
+        Map<String, String> sources = FactModelGenerator.genereer(model);
+        ClassLoader cl = BeanCompiler.compile(sources);
+        List<String> violations = ContractValidator.valideer(model, cl);
+        if (!violations.isEmpty()) throw new Excluded("contract: " + violations.get(0));
 
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return switch (branch) {
-                case EXEC_MODEL -> execModelTak(loaded, cl);
-                case DRL_TEXT -> drlTak(loaded, cl);
+                case EXEC_MODEL -> execModelBranch(loaded, cl);
+                case DRL_TEXT -> drlBranch(loaded, cl);
             };
         } finally {
-            Thread.currentThread().setContextClassLoader(vorige);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
@@ -214,32 +214,32 @@ public final class DroolsBackend {
      *  that nothing uses is left alone: its field is simply absent, and a case that names it is refused by the case
      *  reader. Here and not in the loader, because the rule graph and every other reading of the loaded model keep
      *  the two names apart; only the bean model does not. */
-    private static void weigerBeannaambotsing(IrLoader.Loaded loaded) {
+    private static void refuseBeanNameCollision(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
-        String klasse = FactModelGenerator.klassebotsing(model);
-        if (klasse != null) throw new Excluded(klasse);
-        List<FactModelGenerator.Verdringing> verdringingen = FactModelGenerator.verdringingen(model);
-        if (verdringingen.isEmpty()) return;
-        String rol = FactModelGenerator.rolbotsing(verdringingen);
+        String javaClass = FactModelGenerator.classCollision(model);
+        if (javaClass != null) throw new Excluded(javaClass);
+        List<FactModelGenerator.Displacement> displacements = FactModelGenerator.displacements(model);
+        if (displacements.isEmpty()) return;
+        String rol = FactModelGenerator.roleCollision(displacements);
         if (rol != null) throw new Excluded(rol);
-        Map<ProducentConsument.ElementSleutel, String> gebruik = new java.util.HashMap<>();
+        Map<ProducentConsument.ElementSleutel, String> use = new java.util.HashMap<>();
         for (ProducentConsument.Vorm v : ProducentConsument.vormen(model, loaded.prioritizedDefaults(),
                 ProducentConsument.wireNavigatie(loaded))) {
-            String wie = v.soort().name().toLowerCase(java.util.Locale.ROOT) + " '" + v.naam() + "'";
-            for (ProducentConsument.ElementSleutel e : v.schrijft()) gebruik.putIfAbsent(e, wie);
-            for (ProducentConsument.ElementSleutel e : v.leest()) gebruik.putIfAbsent(e, wie);
+            String formName = v.soort().name().toLowerCase(java.util.Locale.ROOT) + " '" + v.naam() + "'";
+            for (ProducentConsument.ElementSleutel e : v.writes()) use.putIfAbsent(e, formName);
+            for (ProducentConsument.ElementSleutel e : v.leest()) use.putIfAbsent(e, formName);
         }
         for (ResolvedStartpunt sp : model.resolvedStartpunten)
-            gebruik.putIfAbsent(ProducentConsument.elementVan(model.objecttypeOpNaam(sp.objecttype()), sp.lid(), false),
+            use.putIfAbsent(ProducentConsument.elementVan(model.objecttypeOpNaam(sp.objecttype()), sp.lid(), false),
                     "de startpuntbepaling van tijdlijn '" + sp.tijdlijn() + "'");
-        for (FactModelGenerator.Verdringing v : verdringingen) {
-            FactModelGenerator.Herkomst h = v.verdrongen();
+        for (FactModelGenerator.Displacement v : displacements) {
+            FactModelGenerator.Origin h = v.displaced();
             // a role without a field of its own is refused where it is used, by the gate that asks the field's name
-            // and type (FactModelGenerator.heeftReferentieVeld); rolbotsing above took the one shape that gate passes
-            if (h.soort() == FactModelGenerator.Herkomst.Soort.ROL) continue;
-            String wie = gebruik.get(ProducentConsument.ElementSleutel.van(h.bron(), h.naam(),
-                    h.soort() == FactModelGenerator.Herkomst.Soort.KENMERK));
-            if (wie != null) throw new Excluded(FactModelGenerator.verdringingReden(v) + "; " + wie + " leest of schrijft het");
+            // and type (FactModelGenerator.hasReferenceField); rolbotsing above took the one shape that gate passes
+            if (h.soort() == FactModelGenerator.Origin.Kind.ROL) continue;
+            String formName = use.get(ProducentConsument.ElementSleutel.van(h.bron(), h.naam(),
+                    h.soort() == FactModelGenerator.Origin.Kind.KENMERK));
+            if (formName != null) throw new Excluded(FactModelGenerator.displacementReason(v) + "; " + formName + " leest of schrijft het");
         }
     }
 
@@ -248,11 +248,11 @@ public final class DroolsBackend {
      *  hand-written document can still carry). The analysis refuses it in the words Drools' DRL compiler uses,
      *  "Duplicate rule name", after the label of the analysis, before a KieBase of either branch is built. A rule
      *  without a name (a nameless form, WF-107) has no name to share and is not counted; the analysis refuses a
-     *  nameless creation from its manifest ({@code TakgelijkheidWitnessTest}). */
-    private static void weigerDubbeleRegelnaam(org.drools.model.Model model) {
-        java.util.Set<String> namen = new java.util.HashSet<>();
+     *  nameless creation from its manifest ({@code BranchEqualityWitnessTest}). */
+    private static void refuseDuplicateRuleName(org.drools.model.Model model) {
+        java.util.Set<String> names = new java.util.HashSet<>();
         for (org.drools.model.Rule r : model.getRules())
-            if (r.getName() != null && !namen.add(r.getFullName()))
+            if (r.getName() != null && !names.add(r.getFullName()))
                 throw new Excluded("exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
                         + "pakket " + r.getPackage() + "; de KieBase houdt één regel per naam, zodat de tweede de eerste "
                         + "zou vervangen (vormnamen zijn uniek, WF-020)");
@@ -266,7 +266,7 @@ public final class DroolsBackend {
      *  A form the transpiler does not lower is refused from its manifest, in the {@code transpiler SKIP:} sentence the
      *  toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is
      *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Kringen}). */
-    private static Build execModelTak(IrLoader.Loaded loaded, ClassLoader cl) {
+    private static Build execModelBranch(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = analyse(loaded, cl);
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
         return new Build(loaded.model(), cl, t, null, List.copyOf(t.dekking()), kieBase);
@@ -277,16 +277,16 @@ public final class DroolsBackend {
      *  sentence the toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids; and two rules of one
      *  name, after the label {@code exec-model:}, the name of the analysis. */
     private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl) {
-        TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.rolBindingen(),
-                loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
+        TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
+                loaded.lets(), loaded.sourcePaths(), loaded.path());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
         // past the manifest every form of the document is one this branch lowers, so the graph over all forms is the
         // graph over the forms it carries
-        String kring = Kringen.weigering(loaded);
-        if (kring != null) throw new Excluded(kring);
-        weigerDubbeleRegelnaam(t.model());
+        String cycle = Cycles.refusal(loaded);
+        if (cycle != null) throw new Excluded(cycle);
+        refuseDuplicateRuleName(t.model());
         return t;
     }
 
@@ -294,22 +294,22 @@ public final class DroolsBackend {
      *  ({@link TmsTranspiler#drl}) and compiled by the classic DRL build ({@code KieHelper}) in EQUALITY mode, as the
      *  executable model of the exec-model branch is. The text derives with truth maintenance over the same facts as the
      *  executable model, so every entry of a session treats the two branches alike. It refuses as well, loudly and with
-     *  the reason, a kind the rendering does not carry ({@link TmsTranspiler.DrlWeigering}), after the label
+     *  the reason, a kind the rendering does not carry ({@link TmsTranspiler.DrlRefusal}), after the label
      *  {@code drl:}, since the analysis does not refuse it. The predicates of the day kinds are globals of the text,
      *  which {@link Build#dagsoortGlobalen} gives from the analysis. A text the Drools compiler rejects is a fault of the
      *  rendering, not a form the branch does not carry: it fails with an {@link IllegalStateException}, which a caller
      *  that knows the document names. */
-    private static Build drlTak(IrLoader.Loaded loaded, ClassLoader cl) {
+    private static Build drlBranch(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = analyse(loaded, cl);
         String drl;
         try {
             drl = t.drl();
-        } catch (TmsTranspiler.DrlWeigering w) {
+        } catch (TmsTranspiler.DrlRefusal w) {
             throw new Excluded("drl: " + w.getMessage());
         }
         KieHelper helper = new KieHelper();
         helper.setClassLoader(cl);
-        // the folders of the path follow the package of the text, as DrlWeergave.PAD has them; the extension gives the type
+        // the folders of the path follow the package of the text, as DrlRendering.PATH has them; the extension gives the type
         helper.addContent(drl, TmsTranspiler.PKG.replace('.', '/') + "/regels.drl");
         KieBase kieBase;
         try {
@@ -328,9 +328,9 @@ public final class DroolsBackend {
      * Puts {@code invoer} into {@code sessie}, a fresh session of {@code build}: the fact beans, and what the branch
      * reads beside them and the bean model does not hold, as the branch's own facts, so that a consumer names it in
      * the words of the model and states none of them. That is an
-     * {@code Emmerinvoer} for every bucket scalar {@code invoer} names ({@link Invoer#emmerscalair}), without which the
+     * {@code BucketInput} for every bucket scalar {@code invoer} names ({@link Invoer#emmerscalair}), without which the
      * branch reads an input timeline as a full timeline (RUNTIME-SEMANTICS ch. 8.4); and where a rule of the model reads
-     * the order of a to-many list ({@code TmsTranspiler.lijstvelden}), a {@code Lijstplaats} for every member of every
+     * the order of a to-many list ({@code TmsTranspiler.listFields}), a {@code ListPlace} for every member of every
      * such list, in the order {@link Invoer#lijst} gives or else in the order of the beans.
      *
      * <p>It checks all of it before it inserts anything, and refuses by name: a session
@@ -358,7 +358,7 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(invoer, "invoer");
-        List<Object> bonen = invoer.beans();
+        List<Object> beans = invoer.beans();
         TmsTranspiler tms = build.execModelTranspiler();
         if (sessie.getFactCount() != 0)
             throw new IllegalStateException("voegIn vult een verse sessie, maar deze houdt al " + sessie.getFactCount()
@@ -367,107 +367,107 @@ public final class DroolsBackend {
                     + " sessie, en verander tussen twee fires hun waarden met update");
         Map<Object, Objecttype> typen = new IdentityHashMap<>();
         // a case of ten thousand objects has a handful of bean classes
-        Map<Class<?>, Objecttype> perKlasse = new HashMap<>();
-        for (Object boon : bonen)
-            if (typen.put(boon, perKlasse.computeIfAbsent(boon.getClass(), k -> objecttype(build, boon))) != null)
-                throw new IllegalArgumentException("voegIn: de bean " + naam(boon) + " staat twee keer in de invoer");
-        String buiten = doelBuitenDeInvoer("voegIn", build, bonen, typen, perKlasse);
-        if (buiten != null) throw new IllegalArgumentException(buiten);
-        List<Object> feiten = new ArrayList<>(bonen);
-        for (Invoer.Emmer e : invoer.emmers()) feiten.add(emmerinvoer(typen, e));
-        feiten.addAll(lijstplaatsen(build, tms.lijstvelden(), bonen, typen, invoer.lijsten()));
-        for (Object feit : feiten) sessie.insert(feit);
-        Bewaking.op(sessie, relatievelden(build, bonenklassen(build)), bonen, "DroolsBackend.voegIn");
+        Map<Class<?>, Objecttype> perClass = new HashMap<>();
+        for (Object beanObject : beans)
+            if (typen.put(beanObject, perClass.computeIfAbsent(beanObject.getClass(), k -> objecttype(build, beanObject))) != null)
+                throw new IllegalArgumentException("voegIn: de bean " + naam(beanObject) + " staat twee keer in de invoer");
+        String outsideSentence = targetOutsideInput("voegIn", build, beans, typen, perClass);
+        if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
+        List<Object> sessionFacts = new ArrayList<>(beans);
+        for (Invoer.Bucket e : invoer.emmers()) sessionFacts.add(bucketInput(typen, e));
+        sessionFacts.addAll(listPlaces(build, tms.listFields(), beans, typen, invoer.lists()));
+        for (Object fact : sessionFacts) sessie.insert(fact);
+        Watch.op(sessie, relationFields(build, beansClasses(build)), beans, "DroolsBackend.voegIn");
     }
 
-    /** The sentence that refuses a reference field of a bean of {@code bonen} that holds an object outside
-     *  {@code bonen}, with {@code wie} the call that refuses, or null where every such field holds one of them or none.
+    /** The sentence that refuses a reference field of a bean of {@code beans} that holds an object outside
+     *  {@code beans}, with {@code formName} the call that refuses, or null where every such field holds one of them or none.
      *  The branch derives only for the objects in the session, so every value of such an object, and every value read
      *  through the field, would stay empty without a word; and the link the field gives still counts, so a creation it
      *  blocks makes no object in its place. */
-    private static String doelBuitenDeInvoer(String wie, Build build, List<Object> bonen, Map<Object, Objecttype> typen,
-                                             Map<Class<?>, Objecttype> perKlasse) {
-        Map<Objecttype, List<String>> velden = new HashMap<>();
-        for (Object boon : bonen)
-            for (String veld : velden.computeIfAbsent(typen.get(boon), t -> referentievelden(build.model(), t))) {
-                Object doel = Accessors.leesEigenschap(boon, veld);
+    private static String targetOutsideInput(String formName, Build build, List<Object> beans, Map<Object, Objecttype> typen,
+                                             Map<Class<?>, Objecttype> perClass) {
+        Map<Objecttype, List<String>> fields = new HashMap<>();
+        for (Object beanObject : beans)
+            for (String veld : fields.computeIfAbsent(typen.get(beanObject), t -> referenceFields(build.model(), t))) {
+                Object doel = Accessors.leesEigenschap(beanObject, veld);
                 if (doel != null && !typen.containsKey(doel))
-                    return wie + ": het veld '" + veld + "' van " + naam(boon) + " wijst naar een "
-                            + perKlasse.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam + " ("
+                    return formName + ": het veld '" + veld + "' van " + naam(beanObject) + " wijst naar een "
+                            + perClass.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam + " ("
                             + naam(doel) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de"
                             + " objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op";
             }
         return null;
     }
 
-    /** {@link #doelBuitenDeInvoer} over the beans {@code sessie} holds, the check {@link #vuur} repeats before it fires:
+    /** {@link #targetOutsideInput} over the beans {@code sessie} holds, the check {@link #vuur} repeats before it fires:
      *  between two fires an update can set a reference field to an object outside the session. It asks the session per
      *  bean class, since Drools keeps the facts of a class apart and hands out only those for a
      *  {@link ClassObjectFilter}, where a filter of another kind walks every fact the session holds. */
-    private static String doelBuitenDeSessie(Build build, KieSession sessie, Map<Class<?>, Objecttype> klassen) {
-        List<Object> bonen = new ArrayList<>();
+    private static String targetOutsideSession(Build build, KieSession sessie, Map<Class<?>, Objecttype> classes) {
+        List<Object> beans = new ArrayList<>();
         Map<Object, Objecttype> typen = new IdentityHashMap<>();
-        for (Map.Entry<Class<?>, Objecttype> k : klassen.entrySet())
+        for (Map.Entry<Class<?>, Objecttype> k : classes.entrySet())
             for (Object o : sessie.getObjects(new ClassObjectFilter(k.getKey())))
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
-                if (o.getClass() == k.getKey() && typen.put(o, k.getValue()) == null) bonen.add(o);
-        return doelBuitenDeInvoer("vuur", build, bonen, typen, new HashMap<>(klassen));
+                if (o.getClass() == k.getKey() && typen.put(o, k.getValue()) == null) beans.add(o);
+        return targetOutsideInput("vuur", build, beans, typen, new HashMap<>(classes));
     }
 
     /** The bean class of every object type of the model of {@code build}, with that object type. */
-    private static Map<Class<?>, Objecttype> bonenklassen(Build build) {
-        Map<Class<?>, Objecttype> uit = new HashMap<>();
+    private static Map<Class<?>, Objecttype> beansClasses(Build build) {
+        Map<Class<?>, Objecttype> out = new HashMap<>();
         for (Objecttype ot : build.model().objecttypen.values())
             try {
-                uit.put(Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
+                out.put(Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
                         build.beanLoader()), ot);
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
             }
-        return uit;
+        return out;
     }
 
-    /** The relations of every bean class of {@code klassen}: its reference fields, each with its getter, which the
+    /** The relations of every bean class of {@code classes}: its reference fields, each with its getter, which the
      *  watch of the entry reads to tell an update of an attribute or a characteristic from one of a relation. */
-    private static Map<Class<?>, Bewaking.Relatievelden> relatievelden(Build build, Map<Class<?>, Objecttype> klassen) {
-        Map<Class<?>, Bewaking.Relatievelden> uit = new HashMap<>();
-        for (Map.Entry<Class<?>, Objecttype> k : klassen.entrySet()) {
-            List<String> velden = referentievelden(build.model(), k.getValue());
-            List<Function<Object, Object>> lezers = new ArrayList<>();
-            for (String veld : velden) lezers.add(Accessors.eigenschapGetter(k.getKey(), veld));
-            uit.put(k.getKey(), new Bewaking.Relatievelden(velden, lezers));
+    private static Map<Class<?>, Watch.RelationFields> relationFields(Build build, Map<Class<?>, Objecttype> classes) {
+        Map<Class<?>, Watch.RelationFields> out = new HashMap<>();
+        for (Map.Entry<Class<?>, Objecttype> k : classes.entrySet()) {
+            List<String> fields = referenceFields(build.model(), k.getValue());
+            List<Function<Object, Object>> readers = new ArrayList<>();
+            for (String veld : fields) readers.add(Accessors.eigenschapGetter(k.getKey(), veld));
+            out.put(k.getKey(), new Watch.RelationFields(fields, readers));
         }
-        return uit;
+        return out;
     }
 
-    /** The beans {@code sessie} holds, of the classes of {@code klassen}, asked per class. */
-    private static List<Object> bonenInDeSessie(KieSession sessie, Map<Class<?>, Objecttype> klassen) {
-        List<Object> uit = new ArrayList<>();
-        for (Class<?> k : klassen.keySet())
+    /** The beans {@code sessie} holds, of the classes of {@code classes}, asked per class. */
+    private static List<Object> beansInSession(KieSession sessie, Map<Class<?>, Objecttype> classes) {
+        List<Object> out = new ArrayList<>();
+        for (Class<?> k : classes.keySet())
             for (Object o : sessie.getObjects(new ClassObjectFilter(k)))
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
-                if (o.getClass() == k) uit.add(o);
-        return uit;
+                if (o.getClass() == k) out.add(o);
+        return out;
     }
 
-    /** The object type whose bean {@code boon} is, a bean of the build's bean model. */
-    private static Objecttype objecttype(Build build, Object boon) {
+    /** The object type whose bean {@code beanObject} is, a bean of the build's bean model. */
+    private static Objecttype objecttype(Build build, Object beanObject) {
         for (Objecttype ot : build.model().objecttypen.values()) {
-            if (!Namen.ident(ot.naam, true).equals(boon.getClass().getSimpleName())) continue;
+            if (!Namen.ident(ot.naam, true).equals(beanObject.getClass().getSimpleName())) continue;
             try {
                 if (Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
-                        build.beanLoader()) == boon.getClass()) return ot;
+                        build.beanLoader()) == beanObject.getClass()) return ot;
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
             }
         }
-        throw new IllegalArgumentException("voegIn: " + naam(boon) + " is geen bean van dit model: een bean is een"
+        throw new IllegalArgumentException("voegIn: " + naam(beanObject) + " is geen bean van dit model: een bean is een"
                 + " instantie van een klasse die Build.beanLoader() laadt");
     }
 
-    /** The {@code Emmerinvoer} of bucket scalar {@code e}, keyed as {@code ProducentConsument.elementVan} keys the
+    /** The {@code BucketInput} of bucket scalar {@code e}, keyed as {@code ProducentConsument.elementVan} keys the
      *  attribute, on the type that declares it. */
-    private static Emmerinvoer emmerinvoer(Map<Object, Objecttype> typen, Invoer.Emmer e) {
+    private static BucketInput bucketInput(Map<Object, Objecttype> typen, Invoer.Bucket e) {
         Objecttype ot = typen.get(e.bean());
         if (ot == null)
             throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
@@ -475,100 +475,100 @@ public final class DroolsBackend {
         if (ot.attribuut(e.attribuut()) == null)
             throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
                     + ", maar " + ot.naam + " heeft geen attribuut van die naam");
-        if (!Namen.bevatNaam(ot.granulariteitLeden(), e.attribuut()))
+        if (!Namen.containsName(ot.granulariteitLeden(), e.attribuut()))
             throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
                     + ", maar dat attribuut van " + ot.naam + " ligt niet op een tijdlijn; alleen de invoer van een"
                     + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
-        return new Emmerinvoer(e.bean(), ProducentConsument.elementVan(ot, e.attribuut(), false));
+        return new BucketInput(e.bean(), ProducentConsument.elementVan(ot, e.attribuut(), false));
     }
 
     /** One to-many list: the reference field {@code veld} its members hold toward {@code houder}, and the relation that
-     *  field stands for on the members' bean ({@link FactModelGenerator#herkomst}), since beans of two types can hold
+     *  field stands for on the members' bean ({@link FactModelGenerator#origin}), since beans of two types can hold
      *  fields of one name toward one holder over two fact types, and a fold reads the members of one relation. The
      *  holder is compared by identity, as the beans do not override {@code equals}. */
-    private record Lijstsleutel(String veld, Object houder, FactModelGenerator.Herkomst relatie) {}
+    private record ListKey(String veld, Object houder, FactModelGenerator.Origin relation) {}
 
     /**
-     * The places of the members of every to-many list a rule reads ({@code gelezen}, the fields the members hold toward
+     * The places of the members of every to-many list a rule reads ({@code read}, the fields the members hold toward
      * the holder): per field, holder and relation, the beans of the input whose field holds the holder, in the order of
      * the beans, or in the order of the list {@code opgegeven} gives for that holder. A given list is checked against the
      * beans whether or not a rule reads its field, and counts only where one does; split by the relations of its
      * members, the order kept, it must name every bean of the input whose field of that relation holds the holder.
      */
-    private static List<Lijstplaats> lijstplaatsen(Build build, Set<String> gelezen, List<Object> bonen,
-                                                   Map<Object, Objecttype> typen, List<Invoer.Lijst> opgegeven) {
+    private static List<ListPlace> listPlaces(Build build, Set<String> read, List<Object> beans,
+                                                   Map<Object, Objecttype> typen, List<Invoer.ToManyList> opgegeven) {
         RegelSpraakModel model = build.model();
-        Set<String> velden = new HashSet<>(gelezen);
-        for (Invoer.Lijst l : opgegeven) velden.add(Namen.ident(l.rol(), false));
-        Map<Objecttype, List<String>> referentievelden = new HashMap<>();
-        Map<Objecttype, Map<String, FactModelGenerator.Herkomst>> relaties = new HashMap<>();
-        Function<Object, Function<String, FactModelGenerator.Herkomst>> relatie = boon -> veld ->
-                relaties.computeIfAbsent(typen.get(boon), t -> new HashMap<>())
-                        .computeIfAbsent(veld, v -> FactModelGenerator.herkomst(model, typen.get(boon), v));
+        Set<String> fields = new HashSet<>(read);
+        for (Invoer.ToManyList l : opgegeven) fields.add(Namen.ident(l.rol(), false));
+        Map<Objecttype, List<String>> referenceFields = new HashMap<>();
+        Map<Objecttype, Map<String, FactModelGenerator.Origin>> relations = new HashMap<>();
+        Function<Object, Function<String, FactModelGenerator.Origin>> relation = beanObject -> veld ->
+                relations.computeIfAbsent(typen.get(beanObject), t -> new HashMap<>())
+                        .computeIfAbsent(veld, v -> FactModelGenerator.origin(model, typen.get(beanObject), v));
         // per list, the beans whose field holds the holder, in the order of the beans
-        Map<Lijstsleutel, List<Object>> werkelijk = new LinkedHashMap<>();
-        for (Object boon : bonen)
-            for (String veld : referentievelden.computeIfAbsent(typen.get(boon), t -> referentievelden(model, t))) {
-                if (!velden.contains(veld)) continue;
-                Object houder = Accessors.leesEigenschap(boon, veld);
+        Map<ListKey, List<Object>> werkelijk = new LinkedHashMap<>();
+        for (Object beanObject : beans)
+            for (String veld : referenceFields.computeIfAbsent(typen.get(beanObject), t -> referenceFields(model, t))) {
+                if (!fields.contains(veld)) continue;
+                Object houder = Accessors.leesEigenschap(beanObject, veld);
                 if (houder != null)
-                    werkelijk.computeIfAbsent(new Lijstsleutel(veld, houder, relatie.apply(boon).apply(veld)),
-                            k -> new ArrayList<>()).add(boon);
+                    werkelijk.computeIfAbsent(new ListKey(veld, houder, relation.apply(beanObject).apply(veld)),
+                            k -> new ArrayList<>()).add(beanObject);
             }
-        Map<Lijstsleutel, List<Object>> lijsten = new LinkedHashMap<>();
-        werkelijk.forEach((k, leden) -> { if (gelezen.contains(k.veld())) lijsten.put(k, leden); });
-        Set<Lijstsleutel> gegeven = new HashSet<>();
-        for (Invoer.Lijst l : opgegeven) {
+        Map<ListKey, List<Object>> lists = new LinkedHashMap<>();
+        werkelijk.forEach((k, members) -> { if (read.contains(k.veld())) lists.put(k, members); });
+        Set<ListKey> given = new HashSet<>();
+        for (Invoer.ToManyList l : opgegeven) {
             String veld = Namen.ident(l.rol(), false);
-            String wat = "voegIn: de lijst van " + naam(l.houder()) + " onder de rol '" + l.rol() + "'";
-            Map<Lijstsleutel, List<Object>> delen = new LinkedHashMap<>();
-            Set<Object> genoemd = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
-            for (Object lid : l.leden()) {
-                Objecttype ot = typen.get(lid);
-                if (ot == null) throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", dat geen bean van de invoer is");
-                if (!referentievelden.computeIfAbsent(ot, t -> referentievelden(model, t)).contains(veld))
-                    throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar een " + ot.naam
+            String description = "voegIn: de lijst van " + naam(l.houder()) + " onder de rol '" + l.rol() + "'";
+            Map<ListKey, List<Object>> parts = new LinkedHashMap<>();
+            Set<Object> named = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+            for (Object member : l.members()) {
+                Objecttype ot = typen.get(member);
+                if (ot == null) throw new IllegalArgumentException(description + " noemt " + naam(member) + ", dat geen bean van de invoer is");
+                if (!referenceFields.computeIfAbsent(ot, t -> referenceFields(model, t)).contains(veld))
+                    throw new IllegalArgumentException(description + " noemt " + naam(member) + ", maar een " + ot.naam
                             + " heeft geen referentieveld '" + veld + "'; de rol is die van de houder, de naam van het"
                             + " veld waarmee een lid naar de houder wijst");
-                Object houder = Accessors.leesEigenschap(lid, veld);
+                Object houder = Accessors.leesEigenschap(member, veld);
                 if (houder != l.houder())
-                    throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar diens veld '" + veld
+                    throw new IllegalArgumentException(description + " noemt " + naam(member) + ", maar diens veld '" + veld
                             + "' wijst " + (houder == null ? "nergens heen" : "naar " + naam(houder)));
-                if (!genoemd.add(lid)) throw new IllegalArgumentException(wat + " noemt " + naam(lid) + " twee keer");
-                delen.computeIfAbsent(new Lijstsleutel(veld, houder, relatie.apply(lid).apply(veld)),
-                        k -> new ArrayList<>()).add(lid);
+                if (!named.add(member)) throw new IllegalArgumentException(description + " noemt " + naam(member) + " twee keer");
+                parts.computeIfAbsent(new ListKey(veld, houder, relation.apply(member).apply(veld)),
+                        k -> new ArrayList<>()).add(member);
             }
-            if (delen.isEmpty())
-                for (Map.Entry<Lijstsleutel, List<Object>> e : werkelijk.entrySet())
+            if (parts.isEmpty())
+                for (Map.Entry<ListKey, List<Object>> e : werkelijk.entrySet())
                     if (e.getKey().veld().equals(veld) && e.getKey().houder() == l.houder())
-                        throw new IllegalArgumentException(wat + " is leeg gegeven, maar " + naam(e.getValue().get(0))
+                        throw new IllegalArgumentException(description + " is leeg gegeven, maar " + naam(e.getValue().get(0))
                                 + " wijst met zijn veld '" + veld + "' naar de houder");
-            for (Map.Entry<Lijstsleutel, List<Object>> deel : delen.entrySet()) {
-                if (!gegeven.add(deel.getKey())) throw new IllegalArgumentException(wat + " is twee keer gegeven");
-                for (Object lid : werkelijk.getOrDefault(deel.getKey(), List.of()))
-                    if (!genoemd.contains(lid))
-                        throw new IllegalArgumentException(wat + " mist " + naam(lid) + ", dat met zijn veld '" + veld
+            for (Map.Entry<ListKey, List<Object>> part : parts.entrySet()) {
+                if (!given.add(part.getKey())) throw new IllegalArgumentException(description + " is twee keer gegeven");
+                for (Object member : werkelijk.getOrDefault(part.getKey(), List.of()))
+                    if (!named.contains(member))
+                        throw new IllegalArgumentException(description + " mist " + naam(member) + ", dat met zijn veld '" + veld
                                 + "' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen plaats");
-                if (gelezen.contains(veld)) lijsten.put(deel.getKey(), deel.getValue());
+                if (read.contains(veld)) lists.put(part.getKey(), part.getValue());
             }
         }
-        List<Lijstplaats> uit = new ArrayList<>();
-        lijsten.forEach((k, leden) -> {
-            for (int i = 0; i < leden.size(); i++) uit.add(new Lijstplaats(leden.get(i), k.veld(), i));
+        List<ListPlace> out = new ArrayList<>();
+        lists.forEach((k, members) -> {
+            for (int i = 0; i < members.size(); i++) out.add(new ListPlace(members.get(i), k.veld(), i));
         });
-        return uit;
+        return out;
     }
 
     /** The reference fields of a bean of {@code ot}, its inherited ones among them: the members the bean model derives
-     *  whose type is the bean class of an object type (§13.3.9, {@link FactModelGenerator#leden}). */
-    private static List<String> referentievelden(RegelSpraakModel model, Objecttype ot) {
-        Set<String> klassen = new HashSet<>();
-        for (Objecttype t : model.objecttypen.values()) klassen.add(Namen.ident(t.naam, true));
-        List<String> uit = new ArrayList<>();
+     *  whose type is the bean class of an object type (§13.3.9, {@link FactModelGenerator#members}). */
+    private static List<String> referenceFields(RegelSpraakModel model, Objecttype ot) {
+        Set<String> classes = new HashSet<>();
+        for (Objecttype t : model.objecttypen.values()) classes.add(Namen.ident(t.naam, true));
+        List<String> out = new ArrayList<>();
         for (Objecttype t : ot.keten())
-            for (FactModelGenerator.Lid lid : FactModelGenerator.leden(model, t))
-                if (klassen.contains(lid.javaType())) uit.add(lid.eigenschap());
-        return uit;
+            for (FactModelGenerator.Member member : FactModelGenerator.members(model, t))
+                if (classes.contains(member.javaType())) out.add(member.property());
+        return out;
     }
 
     /** An object in a sentence of {@link #voegIn}: its type and its identity, as the facts of the branch print it. */
@@ -602,7 +602,7 @@ public final class DroolsBackend {
      *                                       changed; the sentence says which, and what to do
      */
     public static Fixpunt lees(Build build, KieSession sessie) {
-        return lezing(build, sessie, null);
+        return reading(build, sessie, null);
     }
 
     /** As {@link #lees(Build, KieSession)}, with {@code label} giving the case label of an input bean and null for an
@@ -613,10 +613,10 @@ public final class DroolsBackend {
      *  Function)} gives the faults it throws. */
     public static Fixpunt lees(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(label, "label");
-        return lezing(build, sessie, label);
+        return reading(build, sessie, label);
     }
 
-    private static Fixpunt lezing(Build build, KieSession sessie, Function<Object, String> label) {
+    private static Fixpunt reading(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         return build.execModelTranspiler().lees(sessie, label);
@@ -669,9 +669,9 @@ public final class DroolsBackend {
      * ({@code Kringen}), the renewals per rule and subject are bounded by the depth of the dependency graph, so a run
      * fires a number of times that grows with the rules and the facts. It is twice the largest ratio measured, rounded
      * up, and at least 4. Measured 2026-10-10 (card {@code tms-omschakeling}, step 4): over the 248 goldens the branch
-     * plays ({@code TmsMeting}), a case needs at most 1.167 firings per rule per fact the cap counts
+     * plays ({@code TmsMeasurement}), a case needs at most 1.167 firings per rule per fact the cap counts
      * ({@code anchor/jutterswet-maatschap}), counted per stretch of its run up to the start of the next creation phase;
-     * the scale model ({@code Schaalproef}) fires 0.563 times per rule per fact before its fire. Counted against the
+     * the scale model ({@code ScaleTrial}) fires 0.563 times per rule per fact before its fire. Counted against the
      * facts before the fire alone, a chain of creations from one input object reaches 48.7
      * ({@code synth2-budgetgrens-onder}) while it uses a fiftieth of its cap, since the cap counts what each phase made;
      * twice that ratio would loosen the cap of every model 24-fold, so it does not set the factor.
@@ -680,22 +680,22 @@ public final class DroolsBackend {
 
     /** The least fire cap: below it a small document would get a cap of a few hundred
      *  firings, which a fixpoint can need. */
-    static final int VLOER = 10_000;
+    static final int FLOOR = 10_000;
 
     /** What {@link #vuur} did: the firings of all its fires together; the cap it fired under, the cap of its last
      *  phase; and the sentence of a run that ends without a fixpoint, at the cap or at the
-     *  creation budget ({@code Creatiebudget}), and null at a fixpoint. A run that ends at the budget counts the firings
+     *  creation budget ({@code CreationBudget}), and null at a fixpoint. A run that ends at the budget counts the firings
      *  of its fires before the one in which the creation rule threw. */
-    public record Vuring(int vuringen, int plafond, String geenFixpunt) {}
+    public record Vuring(int vuringen, int cap, String geenFixpunt) {}
 
     /**
      * Fires {@code sessie} of {@code build} to its fixpoint under a cap on the firings of the run, of
-     * {@code max(}{@value #VLOER}{@code , FACTOR × R × N0)}, with {@code R} the rules of the session's KieBase and
+     * {@code max(}{@value #FLOOR}{@code , FACTOR × R × N0)}, with {@code R} the rules of the session's KieBase and
      * {@code N0} the facts the session holds just before it fires ({@link #FACTOR}): the cap is a safeguard against a
      * fault of the lowering, not a norm, so it grows with the input. The sentence at the cap names {@code R}, {@code N0}
      * and the cap. A run that reaches the cap or the creation budget has no fixpoint, and {@link Vuring#geenFixpunt}
      * says so. Every run leaves a stated mark of how it ended, at its fixpoint, without
-     * one, or with an exception out of the fire ({@code Gevuurd}), and keeps a watch on the session from then on
+     * one, or with an exception out of the fire ({@code Fired}), and keeps a watch on the session from then on
      * ({@code Bewaking}), a listener that it takes off while it fires itself; {@link #lees} and
      * {@link #zetAfgeleideWaarden} read a session only where the last run reached its fixpoint and the watch saw nothing
      * happen outside {@code vuur} since.
@@ -720,7 +720,7 @@ public final class DroolsBackend {
      *
      * <p>It fires a session of a model with a creation once, and refuses it at every
      * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
-     * and the fault of a failed initialisation it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Gevuurd}): after an input
+     * and the fault of a failed initialisation it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Fired}): after an input
      * change a second fire would keep them beside an input they no longer follow from, a state no fresh evaluation
      * gives. The sentence says so, and that the way is a fresh session per input.
      *
@@ -731,39 +731,39 @@ public final class DroolsBackend {
     public static Vuring vuur(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        return vuur(build, sessie, FACTOR, VLOER);
+        return vuur(build, sessie, FACTOR, FLOOR);
     }
 
     /**
-     * As {@link #vuur(Build, KieSession)}, with {@code waarnemer} recording what the session fires in this run. Its
+     * As {@link #vuur(Build, KieSession)}, with {@code observer} recording what the session fires in this run. Its
      * listener goes on the session when this starts and comes off when it ends, also where this refuses the session or
      * the fire throws, so it hears this run and nothing before or after it. The run itself is the same: the same cap,
      * the same refusals, the same {@link Vuring}.
      *
      * @throws IllegalArgumentException a waarnemer that observed another session ({@link Waarnemer})
      */
-    public static Vuring vuur(Build build, KieSession sessie, Waarnemer waarnemer) {
+    public static Vuring vuur(Build build, KieSession sessie, Waarnemer observer) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
-        Objects.requireNonNull(waarnemer, "waarnemer");
-        waarnemer.bind(sessie);
-        AgendaEventListener luisteraar = waarnemer.luisteraar(build.execModelTranspiler());
-        sessie.addEventListener(luisteraar);
+        Objects.requireNonNull(observer, "waarnemer");
+        observer.bind(sessie);
+        AgendaEventListener listener = observer.listener(build.execModelTranspiler());
+        sessie.addEventListener(listener);
         try {
-            return vuur(build, sessie, FACTOR, VLOER);
+            return vuur(build, sessie, FACTOR, FLOOR);
         } finally {
-            sessie.removeEventListener(luisteraar);
+            sessie.removeEventListener(listener);
         }
     }
 
     /**
      * What one session fired, as {@link #vuur(Build, KieSession, Waarnemer)} records it: per firing of a rule that
-     * belongs to a form of the document ({@link TmsTranspiler#vormVan}) the exact name of that form, version suffix
+     * belongs to a form of the document ({@link TmsTranspiler#formOf}) the exact name of that form, version suffix
      * included, and per form without its version suffix ({@link RegelSpraakModel#vormnaam}) how often its rules fired
      * and the labels of the input beans their matches bound. The rows are per form, not per rule: the rules of the
      * analysis are named "&lt;form&gt;: &lt;part&gt;", and the part alone puts rules of different forms in one row, as
      * on golden jutterswet-premiestaffel the defaults of three object types under "default 0"; a form's name may itself
-     * hold ": ", so only {@code vormVan} gives it whole. The versions of one rule share a row, and {@link #vormen()}
+     * hold ": ", so only {@code formOf} gives it whole. The versions of one rule share a row, and {@link #vormen()}
      * keeps them apart for the coverage ({@link DroolsBackend#dekking}). A rule of no form, a standing or another rule
      * the lowering keeps for every form alike ("kenmerkstand Jutter.uitgesloten: waar uit een afleiding"), is not
      * recorded: it is no rule of the document, and a consumer that names a row after a form of the document has none to
@@ -780,7 +780,7 @@ public final class DroolsBackend {
      */
     public static final class Waarnemer {
         private final Function<Object, String> label;
-        private final Map<String, Integer> telling = new LinkedHashMap<>();
+        private final Map<String, Integer> count = new LinkedHashMap<>();
         private final Map<String, List<String>> labels = new LinkedHashMap<>();
         private final Set<String> vormen = new LinkedHashSet<>();
         private KieSession sessie;
@@ -792,10 +792,10 @@ public final class DroolsBackend {
         /** The firings per form without its version suffix, in the order a rule of the form first fired, each with
          *  the labels its matches bound, in the order they were first bound, and how often its rules fired. */
         public List<ScenarioResultaat.Vuring> vuringen() {
-            List<ScenarioResultaat.Vuring> uit = new ArrayList<>();
-            for (Map.Entry<String, Integer> e : telling.entrySet())
-                uit.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(labels.get(e.getKey())), e.getValue()));
-            return List.copyOf(uit);
+            List<ScenarioResultaat.Vuring> out = new ArrayList<>();
+            for (Map.Entry<String, Integer> e : count.entrySet())
+                out.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(labels.get(e.getKey())), e.getValue()));
+            return List.copyOf(out);
         }
 
         /** The forms a rule of which fired, by the exact name the manifest gives them ({@link Build#dekking}), version
@@ -813,14 +813,14 @@ public final class DroolsBackend {
                         + " bij één sessie, dus geef elke sessie een eigen waarnemer");
         }
 
-        private AgendaEventListener luisteraar(TmsTranspiler tms) {
+        private AgendaEventListener listener(TmsTranspiler tms) {
             return new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                    String vorm = tms.vormVan(e.getMatch().getRule().getName());
+                    String vorm = tms.formOf(e.getMatch().getRule().getName());
                     if (vorm == null) return;
                     vormen.add(vorm);
                     String regel = RegelSpraakModel.vormnaam(vorm);
-                    telling.merge(regel, 1, Integer::sum);
+                    count.merge(regel, 1, Integer::sum);
                     List<String> ls = labels.computeIfAbsent(regel, k -> new ArrayList<>());
                     for (Object o : e.getMatch().getObjects()) {
                         String l = label.apply(o);
@@ -832,7 +832,7 @@ public final class DroolsBackend {
     }
 
     /**
-     * The coverage of {@code build} in a session that fired the forms {@code gevuurdeVormen}, by their exact names
+     * The coverage of {@code build} in a session that fired the forms {@code firedForms}, by their exact names
      * ({@link Waarnemer#vormen}): one row per entry of the manifest ({@link Build#dekking}), in its order, GEVUURD where
      * the entry's name is among them and NIET_GERAAKT where it is not. The name is compared exactly, so each version of
      * a rule has a verdict of its own: on golden anchor/jutterswet-jutheffing the second version of "jutheffing naar
@@ -841,20 +841,20 @@ public final class DroolsBackend {
      * @throws IllegalArgumentException a fired form that is no entry of the manifest, which no session of this build
      *                                  fires: the forms come from another build
      */
-    public static List<ScenarioResultaat.DekkingRegel> dekking(Build build, Set<String> gevuurdeVormen) {
+    public static List<ScenarioResultaat.DekkingRegel> dekking(Build build, Set<String> firedForms) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(gevuurdeVormen, "gevuurdeVormen");
+        Objects.requireNonNull(firedForms, "gevuurdeVormen");
         Set<String> posten = new HashSet<>();
         for (Dekking d : build.dekking()) posten.add(d.naam());
-        for (String vorm : gevuurdeVormen)
+        for (String vorm : firedForms)
             if (!posten.contains(vorm))
                 throw new IllegalArgumentException("de vorm '" + vorm + "' is geen post van het manifest van deze build,"
                         + " dus geen sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?");
-        List<ScenarioResultaat.DekkingRegel> uit = new ArrayList<>();
+        List<ScenarioResultaat.DekkingRegel> out = new ArrayList<>();
         for (Dekking d : build.dekking())
-            uit.add(new ScenarioResultaat.DekkingRegel(d.naam(), gevuurdeVormen.contains(d.naam())
+            out.add(new ScenarioResultaat.DekkingRegel(d.naam(), firedForms.contains(d.naam())
                     ? ScenarioResultaat.DekkingSoort.GEVUURD : ScenarioResultaat.DekkingSoort.NIET_GERAAKT));
-        return List.copyOf(uit);
+        return List.copyOf(out);
     }
 
     /**
@@ -919,32 +919,32 @@ public final class DroolsBackend {
                     + " evaluatiefout(en), de eerste van '" + fouten.get(0).regel() + "': " + fouten.get(0).melding()
                     + "; de regels geven op deze invoer geen antwoord, en zetAfgeleideWaarden werpt de fouten en zet niets"
                     + " terug, dus er is niets om met de verwachtingen te vergelijken");
-        if (sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
+        if (sessie.getObjects(new ClassObjectFilter(Reset.class)).isEmpty())
             throw new IllegalStateException("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
                     + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug");
         Map<String, Object> perLabel = new HashMap<>();
         Map<String, Objecttype> typen = new HashMap<>();
-        for (Map.Entry<Class<?>, Objecttype> k : bonenklassen(build).entrySet())
-            for (Object boon : sessie.getObjects(new ClassObjectFilter(k.getKey()))) {
+        for (Map.Entry<Class<?>, Objecttype> k : beansClasses(build).entrySet())
+            for (Object beanObject : sessie.getObjects(new ClassObjectFilter(k.getKey()))) {
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
-                if (boon.getClass() != k.getKey()) continue;
-                String l = label.apply(boon);
+                if (beanObject.getClass() != k.getKey()) continue;
+                String l = label.apply(beanObject);
                 if (l == null) continue;
-                Object ander = perLabel.putIfAbsent(l, boon);
-                if (ander != null)
+                Object earlierBean = perLabel.putIfAbsent(l, beanObject);
+                if (earlierBean != null)
                     throw new IllegalArgumentException("vergelijk: de labelfunctie geeft het label '" + l + "' aan "
-                            + naam(ander) + " en aan " + naam(boon) + ", dus een verwachting op '" + l + "' wijst geen"
+                            + naam(earlierBean) + " en aan " + naam(beanObject) + ", dus een verwachting op '" + l + "' wijst geen"
                             + " bean aan");
                 typen.put(l, k.getValue());
             }
-        return CaseRunner.vergelijking(build, sessie, perLabel, typen, verwachtingen);
+        return CaseRunner.comparison(build, sessie, perLabel, typen, verwachtingen);
     }
 
     /** As {@link #vuur(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded
      *  up: the seam a witness gives a small factor and floor to reach the cap, a factor below 1 among them. */
-    static Vuring vuur(Build build, KieSession sessie, double factor, int vloer) {
+    static Vuring vuur(Build build, KieSession sessie, double factor, int floor) {
         if (!(factor > 0)) throw new IllegalArgumentException("vuurfactor " + factor + " is niet groter dan 0");
-        return drijf(build, sessie, new Plafond(factor, vloer, regels(sessie)));
+        return drive(build, sessie, new Cap(factor, floor, rules(sessie)));
     }
 
     /**
@@ -959,7 +959,7 @@ public final class DroolsBackend {
      * in generations, here and not in the rules, so that the two renderings of the analysis share it. The creation
      * rules sit in agenda groups of their own ({@code TmsTranspiler.FEITCREATIE}, {@code TmsTranspiler.OBJECTCREATIE}),
      * so a fire without their focus takes the rule layer to rest and leaves them pending. A generation is one phase: it
-     * opens a new {@code Creatiefase}, puts both groups on the focus stack, the fact creations on top, and fires. That
+     * opens a new {@code CreationPhase}, puts both groups on the focus stack, the fact creations on top, and fires. That
      * fires the fact creations that hold at the fixpoint, then the object creations, and once both groups are empty it
      * takes the rule layer to rest again in the same fire. Between the two groups the rule layer does not fire, and
      * Drools evaluates a rule only when the agenda takes it from the group that has the focus, so every creation of a
@@ -973,7 +973,7 @@ public final class DroolsBackend {
      * gives 0.
      *
      * <p>The generations run per evaluation stratum of the reference interpreter, in ascending order
-     * ({@code TmsTranspiler.creatiestrata}): the phases of stratum k carry k, and a creation rule fires only in a phase
+     * ({@code TmsTranspiler.creationStrata}): the phases of stratum k carry k, and a creation rule fires only in a phase
      * of its own stratum or one above. A creation writes irrevocably, so it reads strictly and sits above the producers
      * of what it reads (RUNTIME-SEMANTICS ch. 6.1); the reference interpreter evaluates stratum k to its fixpoint before
      * a form of stratum k+1 fires (ch. 6.3). In one phase for all strata, a creation that reads what another creation
@@ -983,7 +983,7 @@ public final class DroolsBackend {
      *
      * <p>A stratum ends at its first generation that makes nothing. The creation budget (RUNTIME-SEMANTICS ch. 5.5) is
      * the depth of a chain of mints, not a count of generations: the creation rule computes the depth of what it makes
-     * from the mark of its subject and throws {@link Creatiebudget} at a mint past {@code TmsTranspiler.CREATIEBUDGET},
+     * from the mark of its subject and throws {@link CreationBudget} at a mint past {@code TmsTranspiler.CREATION_BUDGET},
      * and this ends the run there, with its sentence, as a run without a fixpoint. The generations need no bound of
      * their own: every generation but the last makes an object or lays a link, and under the budget a stratum makes
      * finitely many of both. The rule layer has no budget here either: truth maintenance takes it to rest within the
@@ -991,68 +991,68 @@ public final class DroolsBackend {
      * something, at most 100, as the reference interpreter did that day: a chain whose every mint waits a generation for
      * a link, and a fact creation that lays a closure of 102 hops, ended without a fixpoint at their 101st generation.
      */
-    static Vuring vuur(Build build, KieSession sessie, int plafond) {
-        return drijf(build, sessie, new Plafond(plafond));
+    static Vuring vuur(Build build, KieSession sessie, int cap) {
+        return drive(build, sessie, new Cap(cap));
     }
 
     /** The rules of the KieBase {@code sessie} fires: the {@code R} of the cap. */
-    private static long regels(KieSession sessie) {
+    private static long rules(KieSession sessie) {
         long n = 0;
         for (org.kie.api.definition.KiePackage p : sessie.getKieBase().getKiePackages()) n += p.getRules().size();
         return n;
     }
 
-    /** The cap of one run of {@link #drijf}: a fixed number of firings, or {@code max(vloer, factor × R × N)} over the
+    /** The cap of one run of {@link #drive}: a fixed number of firings, or {@code max(vloer, factor × R × N)} over the
      *  facts {@code N} at the start of a phase, rounded up and never lowered within the run. */
-    private static final class Plafond {
+    private static final class Cap {
         /** 0 for a fixed cap. */
         private final double factor;
-        private final int vloer;
-        private final long regels;
+        private final int floor;
+        private final long rules;
         private int waarde;
-        private long feiten = -1;
+        private long sessionFacts = -1;
 
         /** A fixed cap. */
-        Plafond(int vast) {
-            this(0, vast, 0);
+        Cap(int fixed) {
+            this(0, fixed, 0);
         }
 
-        Plafond(double factor, int vloer, long regels) {
+        Cap(double factor, int floor, long rules) {
             this.factor = factor;
-            this.vloer = vloer;
-            this.regels = regels;
-            this.waarde = vloer;
+            this.floor = floor;
+            this.rules = rules;
+            this.waarde = floor;
         }
 
         /** Computes the growing cap over the facts {@code sessie} holds now, where that raises it. */
-        void herreken(KieSession sessie) {
+        void recompute(KieSession sessie) {
             if (factor == 0) return;
             long n = sessie.getFactCount();
             // a double holds every product below 2^53 exactly, and a cap is an int
-            double nieuw = Math.min(Integer.MAX_VALUE, Math.max(vloer, Math.ceil(factor * regels * n)));
-            if (feiten < 0 || nieuw > waarde) {
-                waarde = (int) nieuw;
-                feiten = n;
+            double recomputed = Math.min(Integer.MAX_VALUE, Math.max(floor, Math.ceil(factor * rules * n)));
+            if (sessionFacts < 0 || recomputed > waarde) {
+                waarde = (int) recomputed;
+                sessionFacts = n;
             }
         }
 
         /** The sentence of a run that reached the cap. */
-        String zin() {
+        String sentence() {
             return factor == 0
                     ? "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt"
-                    : "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt, het grootste van " + vloer
+                    : "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt, het grootste van " + floor
                       + " en " + java.math.BigDecimal.valueOf(factor).stripTrailingZeros().toPlainString() + " × "
-                      + regels + " regels × " + feiten + " feiten vlak vóór het vuren; zonder kring vuurt de tak per"
+                      + rules + " regels × " + sessionFacts + " feiten vlak vóór het vuren; zonder kring vuurt de tak per"
                       + " regel en feit een begrensd aantal keren, dus dit is een fout van de verlaging";
         }
     }
 
     /** The driver of every {@code vuur}. It refuses a session of a model with a creation
-     *  that it fired before, and a session that was written back, and it marks how the run ended ({@link Gevuurd}),
+     *  that it fired before, and a session that was written back, and it marks how the run ended ({@link Fired}),
      *  which {@link #lees} and {@link #zetAfgeleideWaarden} read: the mark
      *  of the previous run goes before the fire, so none stands while the session fires, and a fire that throws leaves
      *  a mark with its exception, so that no reading follows a run that broke off. It runs with the watch of the session
-     *  off ({@link Bewaking}), so that its own inserts, deletes and firings count as none, and puts the watch back
+     *  off ({@link Watch}), so that its own inserts, deletes and firings count as none, and puts the watch back
      *  afterwards with nothing kept: the two readings see what happens after this run. A refusal leaves the watch as it
      *  was, so a reading after it still sees what happened before. It refuses as well what {@link #vuur(Build,
      *  KieSession)} lists: more than an update of an attribute or a characteristic of a bean of the input since
@@ -1060,139 +1060,139 @@ public final class DroolsBackend {
      *  reference field that holds an object outside the session, and a relation changed without an update. At the first
      *  run it puts the watch on where
      *  {@code voegIn} did not, with the beans the session holds as the input, and keeps the globals. */
-    private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
+    private static Vuring drive(Build build, KieSession sessie, Cap cap) {
         TmsTranspiler tms = build.execModelTranspiler();
         // per class: Drools keeps the facts of a class apart and hands out only those for a ClassObjectFilter, where a
         // filter of another kind walks every fact the session holds, at every vuur
-        List<FactHandle> merken = List.copyOf(sessie.<FactHandle>getFactHandles(new ClassObjectFilter(Gevuurd.class)));
+        List<FactHandle> marks = List.copyOf(sessie.<FactHandle>getFactHandles(new ClassObjectFilter(Fired.class)));
         // what a creation made is stated and does not lapse, so a later fire would keep it beside an input it no longer
         // follows from; checked first, since a written-back session of such a model cannot be read between fires either
-        if (!merken.isEmpty() && !tms.creatieregels().isEmpty())
+        if (!marks.isEmpty() && !tms.creationRules().isEmpty())
             throw new IllegalStateException("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.vuur"
                     + " gevuurd: wat een creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte"
                     + " initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou"
                     + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
                     + " verse sessie");
-        if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
+        if (!sessie.getObjects(new ClassObjectFilter(Reset.class)).isEmpty())
             throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar beans dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met beans die"
                     + " alleen invoer dragen");
-        Bewaking gezet = Bewaking.van(sessie);
+        Watch installedWatch = Watch.van(sessie);
         // voegIn puts the watch on, or the first run where there was no voegIn, and every run puts it back, so only a
         // consumer that took it off leaves a fired session without it, and what happened since is then not to be seen
-        if (gezet == null && !merken.isEmpty())
+        if (installedWatch == null && !marks.isEmpty())
             throw new IllegalStateException("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer"
                     + " op, dus wat er na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle beans"
                     + " in één Invoer");
-        if (gezet != null && gezet.erbijOfEraf() != null)
-            throw new IllegalStateException("sinds " + gezet.sinds() + " kwam er buiten voegIn om invoer bij of ging er"
-                    + " invoer weg (" + gezet.erbijOfEraf() + "): een afnemer geeft alle beans in één Invoer aan"
+        if (installedWatch != null && installedWatch.onOrOff() != null)
+            throw new IllegalStateException("sinds " + installedWatch.since() + " kwam er buiten voegIn om invoer bij of ging er"
+                    + " invoer weg (" + installedWatch.onOrOff() + "): een afnemer geeft alle beans in één Invoer aan"
                     + " voegIn en verandert daarna alleen hun attributen en kenmerken, met update, want voegIn legt de"
                     + " plaatsen van een lijst en de emmerscalairen vast over de beans van één invoer; een nieuw of"
                     + " verwijderd object vraagt een verse sessie");
-        String agenda = Bewaking.agenda(sessie);
-        String meer = gezet == null ? agenda : gezet.meerDanEenUpdate() != null ? gezet.meerDanEenUpdate() : agenda;
-        if (meer != null)
-            throw new IllegalStateException("sinds " + (gezet == null ? "het begin van deze sessie" : gezet.sinds())
-                    + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een bean (" + meer
+        String agenda = Watch.agenda(sessie);
+        String more = installedWatch == null ? agenda : installedWatch.moreThanOneUpdate() != null ? installedWatch.moreThanOneUpdate() : agenda;
+        if (more != null)
+            throw new IllegalStateException("sinds " + (installedWatch == null ? "het begin van deze sessie" : installedWatch.since())
+                    + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een bean (" + more
                     + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één Invoer");
-        String global = gezet == null ? null : gezet.veranderdeGlobal(sessie);
+        String global = installedWatch == null ? null : installedWatch.changedGlobal(sessie);
         if (global != null)
             throw new IllegalStateException(global + ": de tak leest een global één keer, in een regel die haar bij de"
                     + " eerste fire als feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals"
                     + " vóór de eerste vuur, en open voor een andere waarde een verse sessie");
-        Map<Class<?>, Objecttype> klassen = bonenklassen(build);
-        String buiten = doelBuitenDeSessie(build, sessie, klassen);
-        if (buiten != null) throw new IllegalStateException(buiten);
-        String relatie = gezet == null ? null : gezet.veranderdeRelatie();
-        if (relatie != null)
-            throw new IllegalStateException(relatie + ": Drools ziet een veld pas na een update, dus een fire zou de oude"
+        Map<Class<?>, Objecttype> classes = beansClasses(build);
+        String outsideSentence = targetOutsideSession(build, sessie, classes);
+        if (outsideSentence != null) throw new IllegalStateException(outsideSentence);
+        String relation = installedWatch == null ? null : installedWatch.changedRelation();
+        if (relation != null)
+            throw new IllegalStateException(relation + ": Drools ziet een veld pas na een update, dus een fire zou de oude"
                     + " relatie blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
                     + " voegIn legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse sessie"
                     + " met alle beans in één Invoer");
-        Bewaking bewaking = gezet != null ? gezet
-                : Bewaking.op(sessie, relatievelden(build, klassen), bonenInDeSessie(sessie, klassen),
+        Watch watch = installedWatch != null ? installedWatch
+                : Watch.op(sessie, relationFields(build, classes), beansInSession(sessie, classes),
                         "de eerste DroolsBackend.vuur van deze sessie");
-        bewaking.legGlobalenVast(sessie);
-        bewaking.vergeet("de laatste DroolsBackend.vuur van deze sessie");
-        return bewaking.zonder(sessie, () -> {
-            for (FactHandle merk : merken) sessie.delete(merk);
-            Vuring vuring;
+        watch.recordGlobals(sessie);
+        watch.forget("de laatste DroolsBackend.vuur van deze sessie");
+        return watch.without(sessie, () -> {
+            for (FactHandle mark : marks) sessie.delete(mark);
+            Vuring firing;
             try {
-                vuring = vuurOnderPlafond(build, sessie, plafond);
+                firing = fireUnderCap(build, sessie, cap);
             } catch (RuntimeException e) {
                 try {
-                    sessie.insert(new Gevuurd("de fire brak af met " + e.getClass().getSimpleName() + ": "
+                    sessie.insert(new Fired("de fire brak af met " + e.getClass().getSimpleName() + ": "
                             + e.getMessage()));
-                } catch (RuntimeException merkfout) {
-                    e.addSuppressed(merkfout);
+                } catch (RuntimeException markError) {
+                    e.addSuppressed(markError);
                 }
                 throw e;
             }
-            sessie.insert(new Gevuurd(vuring.geenFixpunt()));
-            return vuring;
+            sessie.insert(new Fired(firing.geenFixpunt()));
+            return firing;
         });
     }
 
     /** Fires {@code sessie} as {@link #vuur(Build, KieSession, int)} describes, under {@code plafond}: in one go, or for
      *  a model with a creation in generations per stratum. */
-    private static Vuring vuurOnderPlafond(Build build, KieSession sessie, Plafond plafond) {
+    private static Vuring fireUnderCap(Build build, KieSession sessie, Cap cap) {
         TmsTranspiler tms = build.execModelTranspiler();
-        Set<String> creaties = tms.creatieregels();
-        plafond.herreken(sessie);
-        if (creaties.isEmpty()) {
-            int gevuurd = sessie.fireAllRules(plafond.waarde);
-            return new Vuring(gevuurd, plafond.waarde, gevuurd >= plafond.waarde ? plafond.zin() : null);
+        Set<String> creations = tms.creationRules();
+        cap.recompute(sessie);
+        if (creations.isEmpty()) {
+            int fired = sessie.fireAllRules(cap.waarde);
+            return new Vuring(fired, cap.waarde, fired >= cap.waarde ? cap.sentence() : null);
         }
         // Drools makes a group on demand only in a KieBase that declares a group beside MAIN, which every creation
         // rule does; null means the KieBase lacks the creation rules the transpiler reports
         org.kie.api.runtime.rule.Agenda agenda = sessie.getAgenda();
-        for (String groep : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE))
-            if (agenda.getAgendaGroup(groep) == null)
-                throw new IllegalStateException("de KieBase kent de agendagroep " + groep + " niet, terwijl het model"
-                        + " creatieregels heeft: " + creaties);
-        int[] gemaakt = {0};
-        AgendaEventListener teller = new DefaultAgendaEventListener() {
+        for (String group : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE))
+            if (agenda.getAgendaGroup(group) == null)
+                throw new IllegalStateException("de KieBase kent de agendagroep " + group + " niet, terwijl het model"
+                        + " creatieregels heeft: " + creations);
+        int[] made = {0};
+        AgendaEventListener counter = new DefaultAgendaEventListener() {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                if (creaties.contains(e.getMatch().getRule().getName())) gemaakt[0]++;
+                if (creations.contains(e.getMatch().getRule().getName())) made[0]++;
             }
         };
-        sessie.addEventListener(teller);
+        sessie.addEventListener(counter);
         try {
-            int gevuurd = sessie.fireAllRules(plafond.waarde);
-            FactHandle fase = null;
-            int nummer = 0;
-            for (int stratum : tms.creatiestrata()) {
-                while (gevuurd < plafond.waarde) {
-                    gemaakt[0] = 0;
-                    if (fase != null) sessie.delete(fase);
-                    fase = sessie.insert(new Creatiefase(++nummer, stratum));
-                    plafond.herreken(sessie);
+            int fired = sessie.fireAllRules(cap.waarde);
+            FactHandle phase = null;
+            int number = 0;
+            for (int stratum : tms.creationStrata()) {
+                while (fired < cap.waarde) {
+                    made[0] = 0;
+                    if (phase != null) sessie.delete(phase);
+                    phase = sessie.insert(new CreationPhase(++number, stratum));
+                    cap.recompute(sessie);
                     // the focus is a stack: the group given the focus last fires first
                     agenda.getAgendaGroup(TmsTranspiler.OBJECTCREATIE).setFocus();
                     agenda.getAgendaGroup(TmsTranspiler.FEITCREATIE).setFocus();
                     try {
-                        gevuurd += sessie.fireAllRules(plafond.waarde - gevuurd);
+                        fired += sessie.fireAllRules(cap.waarde - fired);
                     } catch (ConsequenceException e) {
-                        Creatiebudget budget = creatiebudget(e);
+                        CreationBudget budget = creationBudget(e);
                         if (budget == null) throw e;
-                        return new Vuring(gevuurd, plafond.waarde, budget.getMessage());
+                        return new Vuring(fired, cap.waarde, budget.getMessage());
                     }
-                    if (gemaakt[0] == 0) break;
+                    if (made[0] == 0) break;
                 }
             }
-            return new Vuring(gevuurd, plafond.waarde, gevuurd >= plafond.waarde ? plafond.zin() : null);
+            return new Vuring(fired, cap.waarde, fired >= cap.waarde ? cap.sentence() : null);
         } finally {
-            sessie.removeEventListener(teller);
+            sessie.removeEventListener(counter);
         }
     }
 
-    /** The {@link Creatiebudget} a creation rule threw, which Drools' default handler hands on inside {@code e}, or null
+    /** The {@link CreationBudget} a creation rule threw, which Drools' default handler hands on inside {@code e}, or null
      *  where {@code e} carries another fault. */
-    private static Creatiebudget creatiebudget(ConsequenceException e) {
+    private static CreationBudget creationBudget(ConsequenceException e) {
         for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
-            if (t instanceof Creatiebudget budget) return budget;
+            if (t instanceof CreationBudget budget) return budget;
         return null;
     }
 
@@ -1209,9 +1209,9 @@ public final class DroolsBackend {
      *  name and instantiates it in every new session; where the kie API and this backend are loaded by different
      *  class loaders (the distribution's Quarkus test of its decision service) that instance does not cast to the kie
      *  interface, and every {@code newKieSession} there threw a {@code ClassCastException} (2026-10-02). */
-    public static RuntimeException benoem(ConsequenceException e) {
+    public static RuntimeException designate(ConsequenceException e) {
         for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
-            if (t instanceof Breuk.DelingDoorNul nul) return nul.inDeRegel(e.getRule().getName(), e.getCause());
+            if (t instanceof Breuk.DelingDoorNul zero) return zero.inDeRegel(e.getRule().getName(), e.getCause());
         return e;
     }
 }

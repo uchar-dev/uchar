@@ -13,21 +13,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuut;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.binair;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.binderlezing;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.consistent;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.getaltype;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.getalwaarde;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.inconsistent;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.instantieMet;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.keuze;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.let;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.lezing;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.literaal;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.rekenregel;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
+import static dev.uchar.regelspraak.cases.TmsDocuments.binderRead;
+import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
+import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
+import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
+import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
+import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
+import static dev.uchar.regelspraak.cases.TmsDocuments.keuze;
+import static dev.uchar.regelspraak.cases.TmsDocuments.let;
+import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
+import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
+import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
+import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,110 +66,110 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsLetWitnessTest {
 
-    private static final String TWEE = getaltype(false, 2, null);
+    private static final String TWO = numberType(false, 2, null);
 
-    static final String MODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Jutter", List.of(
-            attribuut("inkomen", TWEE), attribuut("grondslag", TWEE), attribuut("restpost", TWEE),
-            attribuut("heffing", TWEE)), List.of())), List.of());
+    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
+            attribuut("inkomen", TWO), attribuut("grondslag", TWO), attribuut("restpost", TWO),
+            attribuut("heffing", TWO)), List.of())), List.of());
 
-    static final String GRONDSLAG = rekenregel("grondslag van een jutter", "BEREKENING", "Jutter", "grondslag",
-            lezing("inkomen", "Jutter"), "null");
+    static final String BASE = computingRule("grondslag van een jutter", "BEREKENING", "Jutter", "grondslag",
+            reading("inkomen", "Jutter"), "null");
 
-    static final String HEFFING = rekenregel("heffing van een jutter", "BEREKENING", "Jutter", "heffing",
-            let("k", lezing("grondslag", "Jutter"), keuze(
-                    vergelijking("greater", binderlezing("k"), literaal("10.00", TWEE)),
-                    literaal("5.00", TWEE),
-                    binair("dividedBy", binderlezing("k"), lezing("restpost", "Jutter"), TWEE), TWEE), TWEE), "null");
+    static final String HEFFING = computingRule("heffing van een jutter", "BEREKENING", "Jutter", "heffing",
+            let("k", reading("grondslag", "Jutter"), keuze(
+                    comparison("greater", binderRead("k"), literal("10.00", TWO)),
+                    literal("5.00", TWO),
+                    binary("dividedBy", binderRead("k"), reading("restpost", "Jutter"), TWO), TWO), TWO), "null");
 
-    static final List<String> REGELS = List.of(GRONDSLAG, HEFFING);
+    static final List<String> RULES = List.of(BASE, HEFFING);
 
-    static JsonNode zaakA() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J1", "Jutter", Map.of("inkomen", getalwaarde("40.00"), "grondslag", getalwaarde("6.00")),
+    static JsonNode caseA() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J1", "Jutter", Map.of("inkomen", numberValue("40.00"), "grondslag", numberValue("6.00")),
                         List.of()),
-                instantieMet("J4", "Jutter", Map.of("inkomen", getalwaarde("6.00"), "restpost", getalwaarde("3.00")),
+                instanceWith("J4", "Jutter", Map.of("inkomen", numberValue("6.00"), "restpost", numberValue("3.00")),
                         List.of()),
-                instantieMet("J6", "Jutter", Map.of(), List.of())),
+                instanceWith("J6", "Jutter", Map.of(), List.of())),
                 List.of(waarde("J1", "heffing", "5.00"), waarde("J4", "heffing", "2.00"), waarde("J6", "heffing", null),
                         consistent()));
     }
 
-    static JsonNode zaakB() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J3", "Jutter", Map.of("inkomen", getalwaarde("6.00")), List.of())),
+    static JsonNode caseB() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J3", "Jutter", Map.of("inkomen", numberValue("6.00")), List.of())),
                 List.of(waarde("J3", "heffing", null), inconsistent("heffing van een jutter", "J3")));
     }
 
-    static JsonNode zaakC() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J2", "Jutter", Map.of("inkomen", getalwaarde("40.00"), "grondslag", getalwaarde("6.00"),
-                        "restpost", getalwaarde("0.00")), List.of())),
+    static JsonNode caseC() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J2", "Jutter", Map.of("inkomen", numberValue("40.00"), "grondslag", numberValue("6.00"),
+                        "restpost", numberValue("0.00")), List.of())),
                 List.of(waarde("J2", "heffing", "5.00"), consistent()));
     }
 
-    static JsonNode zaakD() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J5", "Jutter", Map.of("inkomen", getalwaarde("6.00"), "restpost", getalwaarde("0.00")),
+    static JsonNode caseD() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J5", "Jutter", Map.of("inkomen", numberValue("6.00"), "restpost", numberValue("0.00")),
                         List.of())),
                 List.of(consistent()));
     }
 
-    static final String J5_DOOR_NUL = "DelingDoorNul: deling door nul in de regel \"heffing van een jutter\": 6 gedeeld"
+    static final String J5_BY_ZERO = "DelingDoorNul: deling door nul in de regel \"heffing van een jutter\": 6 gedeeld"
             + " door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
-    @Test void de_genomen_tak_rekent_en_de_andere_niet_in_elke_volgorde() throws Exception {
-        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
-            List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            java.nio.file.Path ir = TmsDocumenten.document(MODEL, volgorde);
-            for (JsonNode zaak : List.of(zaakA(), zaakB(), zaakC()))
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaakD(), DroolsBackend.Branch.EXEC_MODEL));
-            for (int i = 0; i < 3; i++) verwacht.add(namen + " gespeeld");
-            verwacht.add(namen + " " + J5_DOOR_NUL);
+    @Test void the_taken_branch_computes_and_the_other_does_not_in_every_order() throws Exception {
+        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(RULES)) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            java.nio.file.Path ir = TmsDocuments.document(MODEL, order);
+            for (JsonNode caseDocument : List.of(caseA(), caseB(), caseC()))
+                outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
+            outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseD(), DroolsBackend.Branch.EXEC_MODEL));
+            for (int i = 0; i < 3; i++) verwacht.add(names + " gespeeld");
+            verwacht.add(names + " " + J5_BY_ZERO);
         }
-        assertEquals(verwacht, uitkomsten);
+        assertEquals(verwacht, outcomes);
     }
 
     // ---------------- clause 3 and the barrier of a nested Let ----------------
 
-    static final String MODEL_MET_TARIEF = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Jutter", List.of(
-            attribuut("inkomen", TWEE), attribuut("grondslag", TWEE), attribuut("restpost", TWEE),
-            attribuut("tarief", TWEE), attribuut("saldo", TWEE)), List.of())), List.of());
+    static final String MODEL_WITH_RATE = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
+            attribuut("inkomen", TWO), attribuut("grondslag", TWO), attribuut("restpost", TWO),
+            attribuut("tarief", TWO), attribuut("saldo", TWO)), List.of())), List.of());
 
     /** "Het tarief van een Jutter moet berekend worden als: q is zijn inkomen gedeeld door zijn restpost; k is zijn
      *  grondslag; als k groter is dan 10,00 dan 5,00, anders q". */
-    static final String TARIEF = rekenregel("tarief van een jutter", "BEREKENING", "Jutter", "tarief",
-            let("q", binair("dividedBy", lezing("inkomen", "Jutter"), lezing("restpost", "Jutter"), TWEE),
-                    let("k", lezing("grondslag", "Jutter"), keuze(
-                            vergelijking("greater", binderlezing("k"), literaal("10.00", TWEE)),
-                            literaal("5.00", TWEE), binderlezing("q"), TWEE), TWEE), TWEE), "null");
+    static final String RATE = computingRule("tarief van een jutter", "BEREKENING", "Jutter", "tarief",
+            let("q", binary("dividedBy", reading("inkomen", "Jutter"), reading("restpost", "Jutter"), TWO),
+                    let("k", reading("grondslag", "Jutter"), keuze(
+                            comparison("greater", binderRead("k"), literal("10.00", TWO)),
+                            literal("5.00", TWO), binderRead("q"), TWO), TWO), TWO), "null");
 
     /** "Het saldo van een Jutter moet berekend worden als: k is zijn grondslag; (x is zijn restpost; x) plus k". */
-    static final String SALDO = rekenregel("saldo van een jutter", "BEREKENING", "Jutter", "saldo",
-            let("k", lezing("grondslag", "Jutter"),
-                    binair("plus", let("x", lezing("restpost", "Jutter"), binderlezing("x"), TWEE), binderlezing("k"),
-                            TWEE), TWEE), "null");
+    static final String BALANCE = computingRule("saldo van een jutter", "BEREKENING", "Jutter", "saldo",
+            let("k", reading("grondslag", "Jutter"),
+                    binary("plus", let("x", reading("restpost", "Jutter"), binderRead("x"), TWO), binderRead("k"),
+                            TWO), TWO), "null");
 
-    static JsonNode zaakE() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J2", "Jutter", Map.of("inkomen", getalwaarde("40.00"), "grondslag", getalwaarde("6.00"),
-                        "restpost", getalwaarde("0.00")), List.of()),
-                instantieMet("J7", "Jutter", Map.of("inkomen", getalwaarde("40.00")), List.of())),
+    static JsonNode caseE() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J2", "Jutter", Map.of("inkomen", numberValue("40.00"), "grondslag", numberValue("6.00"),
+                        "restpost", numberValue("0.00")), List.of()),
+                instanceWith("J7", "Jutter", Map.of("inkomen", numberValue("40.00")), List.of())),
                 List.of(waarde("J2", "tarief", "5.00"), waarde("J2", "saldo", "40.00"), waarde("J7", "tarief", "5.00"),
                         waarde("J7", "saldo", "40.00"), consistent()));
     }
 
-    static JsonNode zaakF() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J8", "Jutter", Map.of("inkomen", getalwaarde("6.00")), List.of())),
+    static JsonNode caseF() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J8", "Jutter", Map.of("inkomen", numberValue("6.00")), List.of())),
                 List.of(waarde("J8", "tarief", null), waarde("J8", "saldo", "6.00"),
                         inconsistent("tarief van een jutter", "J8")));
     }
 
-    static JsonNode zaakG() throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("J5", "Jutter", Map.of("inkomen", getalwaarde("6.00"), "restpost", getalwaarde("0.00")),
+    static JsonNode caseG() throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("J5", "Jutter", Map.of("inkomen", numberValue("6.00"), "restpost", numberValue("0.00")),
                         List.of())),
                 List.of(consistent()));
     }
@@ -183,65 +183,65 @@ class TmsLetWitnessTest {
      *  holds a nested Let whose binder x reads the restpost: where it is leeg the read empties the nested Let alone,
      *  never the enclosing one (clause 2), and "plus" counts the leeg operand as 0 (ch. 1.2): J7 and J8 get their
      *  grondslag. */
-    @Test void een_ongelezen_binder_rekent_niet_en_een_geneste_barriere_blijft_binnen() throws Exception {
-        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (List<String> volgorde : TmsDocumenten.permutaties(List.of(GRONDSLAG, TARIEF, SALDO))) {
-            List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            java.nio.file.Path ir = TmsDocumenten.document(MODEL_MET_TARIEF, volgorde);
-            for (JsonNode zaak : List.of(zaakE(), zaakF())) {
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(namen + " gespeeld");
+    @Test void an_unread_binder_does_not_compute_and_a_nested_barrier_stays_within() throws Exception {
+        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(List.of(BASE, RATE, BALANCE))) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            java.nio.file.Path ir = TmsDocuments.document(MODEL_WITH_RATE, order);
+            for (JsonNode caseDocument : List.of(caseE(), caseF())) {
+                outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
+                verwacht.add(names + " gespeeld");
             }
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(namen + " DelingDoorNul: deling door nul in de regel \"tarief van een jutter\": 6 gedeeld door 0"
+            outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseG(), DroolsBackend.Branch.EXEC_MODEL));
+            verwacht.add(names + " DelingDoorNul: deling door nul in de regel \"tarief van een jutter\": 6 gedeeld door 0"
                     + " — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
         }
-        assertEquals(verwacht, uitkomsten);
+        assertEquals(verwacht, outcomes);
     }
 
     /** Every order of the generated rules, on the beans of case A's J1 and case C's J2: the fixpoint has no fault and no
      *  deposit, and in at least one order the heffing took the else branch on the transient grondslag, divided by a
      *  leeg restpost (a deposit that went again) and by a zero (a fault that went again). */
-    @Test void de_tussenstand_in_elke_volgorde_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS),
+    @Test void the_intermediate_state_in_every_order_of_the_generated_rules() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES),
                 DroolsBackend.Branch.EXEC_MODEL);
-        int volgordes = 0, deponering = 0, fout = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("inkomen", "40.00", "grondslag", "6.00"),
+        int orders = 0, deposit = 0, fout = 0;
+        for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
+            List<String> names = order.stream().map(Rule::getName).toList();
+            Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("inkomen", "40.00", "grondslag", "6.00"),
                     List.of());
-            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter",
+            Object j2 = TmsDocuments.beanObject(b.beanLoader(), "Jutter",
                     Map.of("inkomen", "40.00", "grondslag", "6.00", "restpost", "0.00"), List.of());
-            Feiten feiten = new Feiten();
-            assertNull(TmsDocumenten.fixpunt(b, volgorde, List.of(j1, j2), sessie -> sessie.addEventListener(feiten)),
-                    () -> "volgorde " + namen);
-            assertEquals(feiten.ingevoegd, feiten.ingetrokken, () -> "foutfeiten en deponeringen in volgorde " + namen);
-            TmsFoutWitnessTest.assertGetal("5.00", TmsDocumenten.lees(j1, "heffing"), "heffing van J1 in volgorde " + namen);
-            TmsFoutWitnessTest.assertGetal("5.00", TmsDocumenten.lees(j2, "heffing"), "heffing van J2 in volgorde " + namen);
-            if (feiten.deponeringen > 0) deponering++;
-            if (feiten.fouten > 0) fout++;
-            volgordes++;
+            Facts sessionFacts = new Facts();
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, j2), sessie -> sessie.addEventListener(sessionFacts)),
+                    () -> "volgorde " + names);
+            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten en deponeringen in volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.lees(j1, "heffing"), "heffing van J1 in volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.lees(j2, "heffing"), "heffing van J2 in volgorde " + names);
+            if (sessionFacts.depositCount > 0) deposit++;
+            if (sessionFacts.fouten > 0) fout++;
+            orders++;
         }
-        assertTrue(deponering > 0, "geen volgorde deponeerde op de tijdelijke grondslag");
+        assertTrue(deposit > 0, "geen volgorde deponeerde op de tijdelijke grondslag");
         assertTrue(fout > 0, "geen volgorde deelde door de tijdelijke nul");
-        assertEquals(24, volgordes);
+        assertEquals(24, orders);
     }
 
     /** Counts the fault facts and the §9.5 inconsistencies a session inserts and withdraws. */
-    static final class Feiten implements RuleRuntimeEventListener {
-        int ingevoegd, ingetrokken, fouten, deponeringen;
+    static final class Facts implements RuleRuntimeEventListener {
+        int inserted, withdrawn, fouten, depositCount;
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
             String soort = e.getObject().getClass().getSimpleName();
-            if (soort.equals("Fout")) { ingevoegd++; fouten++; }
-            if (soort.equals("Inconsistentie")) { ingevoegd++; deponeringen++; }
+            if (soort.equals("Fout")) { inserted++; fouten++; }
+            if (soort.equals("Inconsistentie")) { inserted++; depositCount++; }
         }
 
         @Override public void objectUpdated(ObjectUpdatedEvent e) {}
 
         @Override public void objectDeleted(ObjectDeletedEvent e) {
             String soort = e.getOldObject().getClass().getSimpleName();
-            if (soort.equals("Fout") || soort.equals("Inconsistentie")) ingetrokken++;
+            if (soort.equals("Fout") || soort.equals("Inconsistentie")) withdrawn++;
         }
     }
 }

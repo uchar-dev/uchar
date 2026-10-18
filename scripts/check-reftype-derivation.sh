@@ -61,7 +61,7 @@
 # Two twist classes, Rounding and Clamp, are for BOTH DROOLS legs a no-op by construction: their Java
 # IR records (in memory still Afgerond and Begrensd) DERIVE their type() from the basis and hold no
 # wire annotation at all, so the graft cannot reach either of them — it still probes ref and clingo,
-# which do read the wire there. The Drools side of those two rests on the EffectieveEenheidWitnessTest
+# which do read the wire there. The Drools side of those two rests on the EffectiveUnitWitnessTest
 # witnesses, which build the nodes directly. Said out loud so a green line is not read as coverage it
 # has not got. (Until L2 the parameter reference and the dimension-cell read were two more such
 # classes; since L2 they carry no annotation to twist.)
@@ -69,7 +69,7 @@
 # And the same honesty about HOW MUCH of the two Drools legs a green line covers. On the UNTOUCHED
 # corpus the derivation never disagreed with the annotation — WF-091 made the repetition faithful,
 # so effType(e) equalled e.type() at every call (measured 2026-09-04 with a StackWalker probe on
-# EffectieveEenheid.van, attributing each call to its transpiler frame: zero divergences over every
+# EffectiveUnit.van, attributing each call to its transpiler frame: zero divergences over every
 # replayable golden, in BOTH branches). Since L2 a reference carries no annotation, so there the
 # derivation has nothing to disagree with, and WF-091 holds the derived annotations that remain. On
 # the LYING copies the same probe showed the derivation overriding the annotation at a handful of
@@ -116,7 +116,7 @@
 # tms-omschakeling it also reached a golden the exec branch could not play at all
 # (jutterswet-vondsttarief, which the destructive exec transpiler SKIPped as "waarde buiten scope" while
 # the text branch lowers and plays it); the exec branch with truth maintenance plays it too. Measured
-# by mutation on 2026-09-04 — EffectieveEenheid.van() put back on the node's own annotation, the state
+# by mutation on 2026-09-04 — EffectiveUnit.van() put back on the node's own annotation, the state
 # before the derivation existed — the DRL leg alone goes red on NINE of the eleven twistable goldens,
 # including that one. The two that stay green under the mutant are the two the text branch markers (the ch. 4.10
 # Let: lichterloon, vondstrecht), which is the honest reading of a branch that does not lower them.

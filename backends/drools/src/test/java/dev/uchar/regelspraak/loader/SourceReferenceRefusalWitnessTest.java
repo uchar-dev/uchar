@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
@@ -104,7 +104,7 @@ class SourceReferenceRefusalWitnessTest {
             unknownField(ir, p + "/source/file", "");
             ir = (ObjectNode) JSON.readTree(Files.readString(e.getValue().ir()));
             ((ObjectNode) ir.at(p + "/source")).put("snippet", "");
-            assertTrue(refuses(ir, p + "/source/snippet").getMessage().endsWith(": " + IrLoader.SNIPPET_LEEG), kind);
+            assertTrue(refuses(ir, p + "/source/snippet").getMessage().endsWith(": " + IrLoader.SNIPPET_EMPTY), kind);
         }
     }
 
@@ -141,7 +141,7 @@ class SourceReferenceRefusalWitnessTest {
         ((ObjectNode) ir.at(GROUP)).put("line", 5);
         unknownField(ir, GROUP + "/line", " on RuleGroup");
         ir = golden(WACHTERSKETEN);
-        ((ObjectNode) ir.at(GROUP)).set("source", IrPad.bronrecord("berging").put("line", 5));
+        ((ObjectNode) ir.at(GROUP)).set("source", IrPath.sourceReference("berging").put("line", 5));
         ((ObjectNode) ir.at(GROUP)).put("line", 5);
         unknownField(ir, GROUP + "/line", " on RuleGroup");
     }
@@ -166,13 +166,13 @@ class SourceReferenceRefusalWitnessTest {
                     { "{\"snippet\": \"x\", \"node\": \"Source\"}", p + "/source/node", "unknown field" },
                     { "{\"snippet\": 5}", p + "/source/snippet", "expected a string, got 5" },
                     { "{\"snippet\": null}", p + "/source/snippet", "expected a string, got null" },
-                    { "{\"snippet\": \"\"}", p + "/source/snippet", IrLoader.SNIPPET_LEEG },
+                    { "{\"snippet\": \"\"}", p + "/source/snippet", IrLoader.SNIPPET_EMPTY },
                     { "{\"snippet\": \"x\", \"line\": \"3\"}", p + "/source/line", "expected an integer, got \"3\"" },
                     { "{\"snippet\": \"x\", \"line\": 1.5}", p + "/source/line", "expected an integer, got 1.5" },
                     { "{\"snippet\": \"x\", \"line\": null}", p + "/source/line",
                             "an optional field is written whole or not at all, and null is neither" },
-                    { "{\"snippet\": \"x\", \"line\": 0}", p + "/source/line", IrLoader.BRONREGEL_ONDER_1 },
-                    { "{\"snippet\": \"x\", \"line\": -1}", p + "/source/line", IrLoader.BRONREGEL_ONDER_1 } };
+                    { "{\"snippet\": \"x\", \"line\": 0}", p + "/source/line", IrLoader.SOURCE_LINE_UNDER_1 },
+                    { "{\"snippet\": \"x\", \"line\": -1}", p + "/source/line", IrLoader.SOURCE_LINE_UNDER_1 } };
             for (String[] row : rows) {
                 ObjectNode ir = golden(site[0]);
                 ((ObjectNode) ir.at(p)).set("source", JSON.readTree(row[0]));
@@ -198,20 +198,20 @@ class SourceReferenceRefusalWitnessTest {
             ObjectNode ir = golden(m[0]);
             set(ir, m[1], m[2]);
             IrLoader.Documentfout f = refuses(ir, m[1]);
-            assertTrue(f.getMessage().endsWith(": " + IrLoader.MARKER_ZONDER_BRON), m[2] + ": " + f.getMessage());
+            assertTrue(f.getMessage().endsWith(": " + IrLoader.MARKER_WITHOUT_SOURCE), m[2] + ": " + f.getMessage());
             for (String snippet : List.of("de onbekende vondstwaarde", " ")) {
                 ObjectNode with = (ObjectNode) JSON.readTree(m[2]);
-                with.set("source", IrPad.bronrecord(snippet));
+                with.set("source", IrPath.sourceReference(snippet));
                 ir = golden(m[0]);
                 set(ir, m[1], with.toString());
                 IrLoader.loadAll(ir);
             }
         }
         assertEquals("Unresolved marker without a source: no diagnostic message can contain it, so it cannot be"
-                + " accounted for", IrLoader.MARKER_ZONDER_BRON);
+                + " accounted for", IrLoader.MARKER_WITHOUT_SOURCE);
         assertEquals("a source snippet is never empty: a node without source text carries no source",
-                IrLoader.SNIPPET_LEEG);
-        assertEquals("a source line is at least 1", IrLoader.BRONREGEL_ONDER_1);
+                IrLoader.SNIPPET_EMPTY);
+        assertEquals("a source line is at least 1", IrLoader.SOURCE_LINE_UNDER_1);
         // the marker reads the snippet as any other node does
         ObjectNode ir = golden(PENNINGDREMPEL);
         set(ir, CONDITION, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"de onbekende vondstwaarde\"}}");
@@ -253,7 +253,7 @@ class SourceReferenceRefusalWitnessTest {
         assertEquals("", g.bron().snippet());
 
         ((ObjectNode) ir.at(CONSISTENCY + "/source")).remove("line");
-        ((ObjectNode) ir.at(GROUP)).set("source", IrPad.bronrecord("berging").put("line", 5));
+        ((ObjectNode) ir.at(GROUP)).set("source", IrPath.sourceReference("berging").put("line", 5));
         m = IrLoader.load(ir);
         assertEquals(0, m.consistenties.get(0).line(), "a record without a line: the records' 0");
         assertEquals(5, m.regelGroepen.get(0).line());
@@ -317,7 +317,7 @@ class SourceReferenceRefusalWitnessTest {
     private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 

@@ -84,7 +84,7 @@ class UnknownNodeWitnessTest {
         ObjectNode doc = golden();
         node(doc, W + "/type").put("node", "Decimal");
         IrLoader.Documentfout e = refuses(doc, "Decimal as a type annotation");
-        assertEquals(W + "/type/node", e.plek(), e.getMessage());
+        assertEquals(W + "/type/node", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown datatype node \"Decimal\""), e.getMessage());
     }
 
@@ -144,7 +144,7 @@ class UnknownNodeWitnessTest {
 
     private static void unknown(Union u, String name, ObjectNode doc) {
         IrLoader.Documentfout e = refuses(doc, u.def() + " " + name);
-        assertEquals(u.path() + "/node", e.plek(), name + ": " + e.getMessage());
+        assertEquals(u.path() + "/node", e.site(), name + ": " + e.getMessage());
         assertTrue(e.getMessage().endsWith(sentence(u, name)), name + ": " + e.getMessage());
     }
 

@@ -24,12 +24,12 @@ public final class DroolsBackendMain {
     private DroolsBackendMain() {}
 
     public static void main(String[] args) {
-        System.exit(voer(args, System.out));
+        System.exit(run(args, System.out));
     }
 
     /** The CLI without its exit: prints the status line on {@code uit} and returns the exit code. A witness runs the
      *  CLI through here inside the test JVM, which {@code System.exit} would end. */
-    static int voer(String[] args, PrintStream uit) {
+    static int run(String[] args, PrintStream out) {
         // --drl replays through the OTHER branch, the analysis rendered as DRL text and compiled here, instead of the
         // executable model. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12 path: the gate
         // sweeps every golden through it and, since card drl-teksttak-op-truth-maintenance, demands per golden the
@@ -44,14 +44,14 @@ public final class DroolsBackendMain {
         List<Path> cases = new ArrayList<>();
         for (int i = 1; i < args.length; i++) cases.add(Path.of(args[i]));
         try {
-            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases) : CaseRunner.runGolden(ir, cases);
+            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
-                case "PLAYED" -> { uit.println("PLAYED " + r.casesPlayed()); return 0; }
-                case "EXCLUDE" -> { uit.println("EXCLUDE " + r.reason()); return 2; }
-                default -> { uit.println("FAIL " + String.join(" | ", r.caseFailures())); return 1; }
+                case "PLAYED" -> { out.println("PLAYED " + r.casesPlayed()); return 0; }
+                case "EXCLUDE" -> { out.println("EXCLUDE " + r.reason()); return 2; }
+                default -> { out.println("FAIL " + String.join(" | ", r.caseFailures())); return 1; }
             }
         } catch (RuntimeException e) {
-            uit.println("ERROR " + e.getClass().getSimpleName() + ": " + melding(e));
+            out.println("ERROR " + e.getClass().getSimpleName() + ": " + melding(e));
             return 3;
         }
     }
@@ -62,15 +62,15 @@ public final class DroolsBackendMain {
      *  each whole, and the bound applies to their sentences only: a bound across the whole message would drop from the
      *  line every rule whose fault comes past it. */
     private static String melding(RuntimeException e) {
-        if (e instanceof Evaluatiefouten f) return plat(f.kop()) + ": " + begrensd(plat(f.zinnen()));
-        return begrensd(plat(String.valueOf(e.getMessage())));
+        if (e instanceof Evaluatiefouten f) return plat(f.head()) + ": " + clamped(plat(f.sentences()));
+        return clamped(plat(String.valueOf(e.getMessage())));
     }
 
     private static String plat(String s) {
         return s.replace('\n', ' ');
     }
 
-    private static String begrensd(String s) {
+    private static String clamped(String s) {
         return s.length() > 200 ? s.substring(0, 200) + "…" : s;
     }
 }

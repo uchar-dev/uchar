@@ -146,7 +146,7 @@ A chain of 50 creations, one creation in the stratum above it, and 50
 creations in the stratum above that, plays in every executor: the budget is
 per stratum. It is pinned in the ASP backend's suite (the frame `ch5.5
 creation budget, a chain over three strata (50 + 1 + 50)`, beside the
-reference interpreter) and in `TmsCreatiestratumWitnessTest`
-(`een_keten_over_drie_strata_telt_per_stratum`), not here: the ASP grounding
+reference interpreter) and in `TmsCreationStratumWitnessTest`
+(`a_chain_over_three_strata_counts_per_stratum`), not here: the ASP grounding
 of that document takes about 23 s and about 1.7 GB of rules (measured
 2026-10-09).

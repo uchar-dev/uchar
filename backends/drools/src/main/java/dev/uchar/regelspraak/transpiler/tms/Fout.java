@@ -41,6 +41,6 @@ public record Fout(Object onderwerp, String regel, RuntimeException fout) {
     }
 
     @Override public String toString() {
-        return "Fout(" + Feitnamen.object(onderwerp) + ", " + regel + ", " + melding() + ")";
+        return "Fout(" + FactNames.object(onderwerp) + ", " + regel + ", " + melding() + ")";
     }
 }

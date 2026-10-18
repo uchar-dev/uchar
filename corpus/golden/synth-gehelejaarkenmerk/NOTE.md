@@ -85,7 +85,7 @@ The key stays out of the committed IR all the same: this document is shaped
 like what the emitter produces, and a golden pins semantics rather than a
 backend's gate. That the same document with `"bedrijvig": 1` plays all four
 cases in BOTH branches is pinned in the backend's own suite
-(`MeerPeriodiekePoortWitnessTest`), which builds it in memory and never
+(`MorePeriodicGateWitnessTest`), which builds it in memory and never
 writes here.
 
 One direction is still live, and it is the other one: a count of **two or

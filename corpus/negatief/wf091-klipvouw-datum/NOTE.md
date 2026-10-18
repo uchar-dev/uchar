@@ -40,7 +40,7 @@ same question of the declaration since the card ref-klipvouw-nul and refuses
 the document in the same sentence. Before that its case loader refused a
 date-valued segment, and on the case without a value it crashed at fire
 (`ClassCastException: Cannot cast java.math.BigDecimal to
-java.time.LocalDate`, measured 2026-09-25); `TijdlijnKlipvouwWitnessTest`
+java.time.LocalDate`, measured 2026-09-25); `TimelineClipFoldWitnessTest`
 in the Drools backend pins both branches on both clip cases.
 
 Red first, measured on this document: the verifier of main 2f47d80e (md5

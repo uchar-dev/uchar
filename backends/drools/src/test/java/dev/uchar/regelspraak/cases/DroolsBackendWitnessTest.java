@@ -49,12 +49,12 @@ class DroolsBackendWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
-    private static final Path UITSLUITING = Path.of("..", "..", "corpus", "golden", "jutterswet-uitsluiting-rgs");
+    private static final Path EXCLUSION = Path.of("..", "..", "corpus", "golden", "jutterswet-uitsluiting-rgs");
 
     // ---------------- the entry: one rule and one defaults family ----------------
 
-    @Test void de_ingang_zet_de_regel_en_de_defaultsfamilie_in_de_kiebase() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
+    @Test void the_entry_sets_the_rule_and_the_defaults_family_in_the_kiebase() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(EXCLUSION.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
         assertEquals(DroolsBackend.Branch.EXEC_MODEL, b.branch());
         // the family lowers to the rules of its standings and its defaults beside the rule that reads it
         assertEquals(List.of("defaults K:Jutter.uitgesloten: default 0.0.0", "defaults K:Jutter.uitgesloten: default 1",
@@ -62,7 +62,7 @@ class DroolsBackendWitnessTest {
                 "defaults K:Jutter.uitgesloten: terugval 0", "kenmerkstand Jutter.uitgesloten: onwaar",
                 "kenmerkstand Jutter.uitgesloten: waar uit de invoer",
                 "kenmerkstand Jutter.uitgesloten: waar uit een afleiding", "penninggerechtigd tenzij uitgesloten"),
-                regels(b.kieBase()));
+                rules(b.kieBase()));
         assertEquals(List.of("defaults: defaults K:Jutter.uitgesloten", "regel: penninggerechtigd tenzij uitgesloten"),
                 b.dekking().stream().map(Dekking::sleutel).sorted().toList());
         assertTrue(b.dekking().stream().allMatch(Dekking::lowered), "every entry lowered: " + b.dekking());
@@ -72,21 +72,21 @@ class DroolsBackendWitnessTest {
     /** What the build without the side tables handed out: the same model through the same transpiler with the
      *  defaults withheld — explicitly now, since no build can leave them out. One rule, and a manifest in which
      *  everything lowered, so nothing in the result said the family was missing. */
-    @Test void zonder_de_defaults_mist_de_familie_en_zegt_het_manifest_niets() throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(UITSLUITING.resolve("ir.json"))));
-        ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(l.model()));
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+    @Test void without_the_defaults_the_family_misses_and_the_manifest_says_nothing() throws Exception {
+        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
+        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.genereer(l.model()));
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            TmsTranspiler et = TmsTranspiler.build(l.model(), cl, List.of(), l.rolBindingen(), l.lets(),
-                    l.bronPaden(), l.navigatieBindingen());
+            TmsTranspiler et = TmsTranspiler.build(l.model(), cl, List.of(), l.roleBindings(), l.lets(),
+                    l.sourcePaths(), l.path());
             assertEquals(List.of("penninggerechtigd tenzij uitgesloten"),
-                    regels(KieBaseBuilder.createKieBaseFromModel(et.model())));
+                    rules(KieBaseBuilder.createKieBaseFromModel(et.model())));
             assertEquals(List.of("regel: penninggerechtigd tenzij uitgesloten"),
                     et.dekking().stream().map(Dekking::sleutel).toList());
             assertTrue(et.dekking().stream().allMatch(Dekking::lowered), "the manifest says nothing: " + et.dekking());
         } finally {
-            Thread.currentThread().setContextClassLoader(vorige);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
@@ -96,24 +96,24 @@ class DroolsBackendWitnessTest {
      *  "drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering"; since then it renders the same
      *  analysis, and the entry hands out a KieBase of the text that plays the four cases as the exec-model branch
      *  does. */
-    @Test void de_drl_tak_speelt_wat_de_exec_model_tak_speelt() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT);
+    @Test void the_drl_branch_plays_what_the_exec_model_branch_plays() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(EXCLUSION.resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT);
         assertEquals(DroolsBackend.Branch.DRL_TEXT, b.branch());
         assertEquals(b.execModelTranspiler().drl(), b.drl());
-        CaseRunner.Result replay = CaseRunner.viaDrlTekst(UITSLUITING.resolve("ir.json"), zaken());
+        CaseRunner.Result replay = CaseRunner.viaDrlText(EXCLUSION.resolve("ir.json"), cases());
         assertEquals("PLAYED", replay.status(), "the DRL-text replay: " + replay);
         assertEquals(4, replay.casesPlayed());
-        CaseRunner.Result exec = CaseRunner.viaExecModel(UITSLUITING.resolve("ir.json"), zaken());
+        CaseRunner.Result exec = CaseRunner.viaExecModel(EXCLUSION.resolve("ir.json"), cases());
         assertEquals("PLAYED", exec.status(), "the exec-model replay of the same document: " + exec);
         assertEquals(4, exec.casesPlayed());
     }
 
     /** Every build carries the analysis of its document, on either branch: the record refuses one without it. The
-     *  scenario report reads the form of each fired rule off that analysis ({@code CaseRunner.luisteraar}); until step 6c
+     *  scenario report reads the form of each fired rule off that analysis ({@code CaseRunner.listener}); until step 6c
      *  of card drl-teksttak-op-truth-maintenance it guarded a missing analysis itself, in a sentence from the time when
      *  only the exec-model branch had one, a guard this record made unreachable (the end lens on the card). */
-    @Test void een_build_draagt_altijd_de_analyse_van_zijn_document() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
+    @Test void a_build_always_carries_the_analysis_of_its_document() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(EXCLUSION.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new DroolsBackend.Build(
                 b.model(), b.beanLoader(), null, null, b.dekking(), b.kieBase()));
         assertEquals("a Build carries the analysis of its document", e.getMessage());
@@ -127,60 +127,60 @@ class DroolsBackendWitnessTest {
      *  manifest). A side table the loader gains fails this row until the build takes it. Until card
      *  drl-teksttak-op-truth-maintenance the row held for the transpiler of the DRL-text branch as well, which that
      *  card removed. */
-    @Test void elke_publieke_ingang_die_een_model_neemt_neemt_elke_zijtafel() {
-        List<Type> geladen = Arrays.stream(IrLoader.Loaded.class.getRecordComponents())
+    @Test void every_public_entry_that_takes_a_model_takes_every_side_table() {
+        List<Type> loaded = Arrays.stream(IrLoader.Loaded.class.getRecordComponents())
                 .map(RecordComponent::getGenericType).toList();
         for (Class<?> t : List.of(TmsTranspiler.class)) {
             assertEquals(0, t.getConstructors().length, t.getSimpleName() + " has a public constructor");
-            List<Method> ingangen = modelIngangen(t);
-            for (Method m : ingangen) {
+            List<Method> entries = modelEntries(t);
+            for (Method m : entries) {
                 List<Type> parameters = new ArrayList<>(Arrays.asList(m.getGenericParameterTypes()));
-                for (Type zijtafel : geladen)
-                    assertTrue(parameters.remove(zijtafel), m + " does not take " + zijtafel.getTypeName());
+                for (Type sideTable : loaded)
+                    assertTrue(parameters.remove(sideTable), m + " does not take " + sideTable.getTypeName());
             }
-            assertEquals(List.of("build"), ingangen.stream().map(Method::getName).toList(),
+            assertEquals(List.of("build"), entries.stream().map(Method::getName).toList(),
                     t.getSimpleName() + ": the public static members that take a model");
         }
     }
 
     /** Each side table passed as null is refused before anything is lowered, in a sentence naming it; null used to
      *  stand for "empty", which is the silent omission again by another route. */
-    @Test void een_ontbrekende_zijtafel_wordt_luid_geweigerd() throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(UITSLUITING.resolve("ir.json"))));
+    @Test void a_missing_side_table_is_loudly_refused() throws Exception {
+        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
         for (Class<?> t : List.of(TmsTranspiler.class)) {
-            Method build = modelIngangen(t).get(0);
-            Class<?>[] soorten = build.getParameterTypes();
-            int getoetst = 0;
-            for (int i = 0; i < soorten.length; i++) {
-                if (soorten[i] != List.class && soorten[i] != java.util.Map.class) continue;
-                Object[] argumenten = argumenten(build, l);
-                argumenten[i] = null;
+            Method build = modelEntries(t).get(0);
+            Class<?>[] kinds = build.getParameterTypes();
+            int tested = 0;
+            for (int i = 0; i < kinds.length; i++) {
+                if (kinds[i] != List.class && kinds[i] != java.util.Map.class) continue;
+                Object[] arguments = arguments(build, l);
+                arguments[i] = null;
                 InvocationTargetException fout = assertThrows(InvocationTargetException.class,
-                        () -> build.invoke(null, argumenten));
+                        () -> build.invoke(null, arguments));
                 NullPointerException npe = assertInstanceOf(NullPointerException.class, fout.getCause());
                 assertTrue(npe.getMessage().startsWith("side table '") && npe.getMessage().endsWith("' is null — pass an "
-                        + (soorten[i] == List.class ? "empty list" : "empty map") + " for a document without one"),
+                        + (kinds[i] == List.class ? "empty list" : "empty map") + " for a document without one"),
                         t.getSimpleName() + " parameter " + i + ": " + npe.getMessage());
-                getoetst++;
+                tested++;
             }
-            assertEquals(5, getoetst, t.getSimpleName() + ": the five side tables");
+            assertEquals(5, tested, t.getSimpleName() + ": the five side tables");
         }
     }
 
     // ---------------- helpers ----------------
 
-    private static List<String> regels(KieBase kieBase) {
+    private static List<String> rules(KieBase kieBase) {
         return kieBase.getKiePackages().stream().flatMap(p -> p.getRules().stream()).map(Rule::getName).sorted()
                 .toList();
     }
 
-    private static List<Path> zaken() throws Exception {
-        try (Stream<Path> s = Files.list(UITSLUITING)) {
+    private static List<Path> cases() throws Exception {
+        try (Stream<Path> s = Files.list(EXCLUSION)) {
             return s.filter(f -> f.getFileName().toString().matches("case.*\\.json")).sorted().toList();
         }
     }
 
-    private static List<Method> modelIngangen(Class<?> t) {
+    private static List<Method> modelEntries(Class<?> t) {
         return Arrays.stream(t.getMethods())
                 .filter(m -> Modifier.isStatic(m.getModifiers()) && m.getDeclaringClass() == t)
                 .filter(m -> Arrays.asList(m.getParameterTypes()).contains(dev.uchar.regelspraak.model.RegelSpraakModel.class))
@@ -189,19 +189,19 @@ class DroolsBackendWitnessTest {
 
     /** The loader's own values for every parameter of {@code build}, matched by generic type in parameter order;
      *  the bean loader, which is no side table, is null (the transpiler then uses its own). */
-    private static Object[] argumenten(Method build, IrLoader.Loaded l) throws Exception {
-        List<RecordComponent> vrij = new ArrayList<>(Arrays.asList(IrLoader.Loaded.class.getRecordComponents()));
+    private static Object[] arguments(Method build, IrLoader.Loaded l) throws Exception {
+        List<RecordComponent> free = new ArrayList<>(Arrays.asList(IrLoader.Loaded.class.getRecordComponents()));
         Type[] typen = build.getGenericParameterTypes();
-        Object[] uit = new Object[typen.length];
+        Object[] out = new Object[typen.length];
         for (int i = 0; i < typen.length; i++) {
             if (typen[i] == ClassLoader.class) continue;
-            for (RecordComponent c : vrij) {
+            for (RecordComponent c : free) {
                 if (!c.getGenericType().equals(typen[i])) continue;
-                uit[i] = c.getAccessor().invoke(l);
-                vrij.remove(c);
+                out[i] = c.getAccessor().invoke(l);
+                free.remove(c);
                 break;
             }
         }
-        return uit;
+        return out;
     }
 }

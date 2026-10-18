@@ -86,8 +86,8 @@ public final class ProducentConsument {
                                                          boolean kenmerk) {
         if (naam == null) return houder;
         for (RegelSpraakModel.Objecttype t : houder.keten())
-            if (kenmerk ? t.kenmerken.stream().anyMatch(k -> zelfdeNaam(k, naam))
-                        : t.attributen.keySet().stream().anyMatch(a -> zelfdeNaam(a, naam)))
+            if (kenmerk ? t.kenmerken.stream().anyMatch(k -> sameName(k, naam))
+                        : t.attributen.keySet().stream().anyMatch(a -> sameName(a, naam)))
                 return t;
         return houder;
     }
@@ -100,10 +100,10 @@ public final class ProducentConsument {
      */
     public static Map<ElementSleutel, Set<String>> producentIndex(RegelSpraakModel model,
                                                                   List<PrioritizedDefaults> defaults) {
-        Map<ElementSleutel, Set<String>> uit = new LinkedHashMap<>();
+        Map<ElementSleutel, Set<String>> out = new LinkedHashMap<>();
         for (Vorm v : lees(model, defaults, null))
-            for (ElementSleutel el : v.schrijft()) uit.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(v.naam());
-        return uit;
+            for (ElementSleutel el : v.writes()) out.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(v.naam());
+        return out;
     }
 
     /** The kind of a form of the rule layer (IR-SPEC ch. 2, Rules), one per list the forms sit in: a rule (an
@@ -113,7 +113,7 @@ public final class ProducentConsument {
 
     /** One form as this analysis reads it: its kind, its base name ({@link #basisNaam}; a defaults group without a
      *  name is named by its pointer in the document), the elements it WRITES and the elements it READS. */
-    public record Vorm(Vormsoort soort, String naam, Set<ElementSleutel> schrijft, Set<ElementSleutel> leest) {}
+    public record Vorm(Vormsoort soort, String naam, Set<ElementSleutel> writes, Set<ElementSleutel> leest) {}
 
     /**
      * Every form of the rule layer with the attributes and characteristics it writes and reads, per IR-SPEC ch. 5.1
@@ -137,79 +137,79 @@ public final class ProducentConsument {
      * A population, a relation's link set and a channel are nodes of ch. 5.1 too; this analysis does not key them,
      * so a form's reads and writes of those are not here.
      */
-    public static List<Vorm> vormen(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigatie) {
-        return lees(model, defaults, java.util.Objects.requireNonNull(navigatie, "navigatie"));
+    public static List<Vorm> vormen(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigation) {
+        return lees(model, defaults, java.util.Objects.requireNonNull(navigation, "navigatie"));
     }
 
-    /** The reading behind {@link #vormen} and {@link #producentIndex}. Without {@code navigatie} every read set is
+    /** The reading behind {@link #vormen} and {@link #producentIndex}. Without {@code navigation} every read set is
      *  empty: the producer index asks what a form writes, and no write depends on where a check navigates. */
-    private static List<Vorm> lees(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigatie) {
+    private static List<Vorm> lees(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigation) {
         java.util.Objects.requireNonNull(defaults, "defaults");
-        List<Vorm> uit = new ArrayList<>();
+        List<Vorm> out = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) {
-            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
+            Set<ElementSleutel> writes = new LinkedHashSet<>();
             if (r.doel() instanceof Expr.AttribuutRef ref)
-                schrijft.add(elementVan(ref.objecttype(), ref.attribuut(),
+                writes.add(elementVan(ref.objecttype(), ref.attribuut(),
                         r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING));
-            uit.add(new Vorm(Vormsoort.REGEL, basisNaam(r.naam()), schrijft,
-                    navigatie == null ? Set.of() : verbruikt(r, navigatie)));
+            out.add(new Vorm(Vormsoort.REGEL, basisNaam(r.naam()), writes,
+                    navigation == null ? Set.of() : verbruikt(r, navigation)));
         }
         for (ResolvedObjectCreatie o : model.objectCreaties) {
-            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
+            Set<ElementSleutel> writes = new LinkedHashSet<>();
             for (ResolvedObjectCreatie.Toekenning t : o.toekenningen())
-                if (t.attribuut() != null) schrijft.add(elementVan(o.nieuwType(), t.attribuut(), t.kenmerk()));
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
-            l.conditie(o.voorwaarde(), o.subject());
+                if (t.attribuut() != null) writes.add(elementVan(o.nieuwType(), t.attribuut(), t.kenmerk()));
+            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            l.condition(o.voorwaarde(), o.subject());
             for (ResolvedObjectCreatie.Toekenning t : o.toekenningen()) l.expr(t.waarde(), o.subject());
-            uit.add(new Vorm(Vormsoort.OBJECTCREATIE, basisNaam(o.naam()), schrijft, l.uit()));
+            out.add(new Vorm(Vormsoort.OBJECTCREATIE, basisNaam(o.naam()), writes, l.out()));
         }
         for (ResolvedVerdeling v : model.verdelingen) {
-            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
-            if (v.doelAttribuut() != null) schrijft.add(elementVan(v.doelType(), v.doelAttribuut(), false));
-            if (v.restantAttribuut() != null) schrijft.add(elementVan(v.bronType(), v.restantAttribuut(), false));
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
-            l.lid(v.bronType(), v.bronAttribuut(), false);
+            Set<ElementSleutel> writes = new LinkedHashSet<>();
+            if (v.doelAttribuut() != null) writes.add(elementVan(v.doelType(), v.doelAttribuut(), false));
+            if (v.restantAttribuut() != null) writes.add(elementVan(v.bronType(), v.restantAttribuut(), false));
+            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            l.member(v.bronType(), v.bronAttribuut(), false);
             for (String a : new String[] { v.ratoAttribuut(), v.maximumAttribuut(), v.groepeerAttribuut() })
-                l.lid(v.doelType(), a, false);
-            l.conditie(v.voorwaarde(), v.bronType());
-            uit.add(new Vorm(Vormsoort.VERDELING, basisNaam(v.naam()), schrijft, l.uit()));
+                l.member(v.doelType(), a, false);
+            l.condition(v.voorwaarde(), v.bronType());
+            out.add(new Vorm(Vormsoort.VERDELING, basisNaam(v.naam()), writes, l.out()));
         }
         for (ResolvedConsistentie c : model.consistenties) {
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
-            l.conditie(c.assertie(), c.subject());
-            uit.add(new Vorm(Vormsoort.CONSISTENTIE, basisNaam(c.naam()), Set.of(), l.uit()));
+            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            l.condition(c.assertie(), c.subject());
+            out.add(new Vorm(Vormsoort.CONSISTENTIE, basisNaam(c.naam()), Set.of(), l.out()));
         }
         for (ResolvedUniciteit u : model.uniciteiten) {
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
-            for (String sleutel : u.sleutels()) l.lid(u.subject(), sleutel, false);
-            uit.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.uit()));
+            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            for (String sleutel : u.sleutels()) l.member(u.subject(), sleutel, false);
+            out.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.out()));
         }
         for (ResolvedUniciteitUnie u : model.uniciteitUnies) {
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>());
             for (ResolvedUniciteitUnie.Bron b : u.bronnen())
-                if (b.type() != null) for (String sleutel : b.sleutels()) l.lid(b.type(), sleutel, false);
-            uit.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.uit()));
+                if (b.type() != null) for (String sleutel : b.sleutels()) l.member(b.type(), sleutel, false);
+            out.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.out()));
         }
         for (ResolvedFeitCreatie f : model.feitCreaties) {
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
-            l.conditie(f.voorwaarde(), f.anker());
-            uit.add(new Vorm(Vormsoort.FEITCREATIE, basisNaam(f.naam()), Set.of(), l.uit()));
+            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            l.condition(f.voorwaarde(), f.anker());
+            out.add(new Vorm(Vormsoort.FEITCREATIE, basisNaam(f.naam()), Set.of(), l.out()));
         }
         for (int i = 0; i < defaults.size(); i++) {
             PrioritizedDefaults p = defaults.get(i);
             RegelSpraakModel.Objecttype onderwerp = model.objecttypeOpNaam(p.onderwerp());
-            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
-            if (p.doel() != null) schrijft.add(elementVan(onderwerp, p.doel(), p.isKenmerk()));
+            Set<ElementSleutel> writes = new LinkedHashSet<>();
+            if (p.doel() != null) writes.add(elementVan(onderwerp, p.doel(), p.isKenmerk()));
             // the group reads what its defaults read, so the per-default reading and this one cannot drift apart
             Set<ElementSleutel> leest = new LinkedHashSet<>();
-            for (DefaultLezing d : leesDefaults(model, p, navigatie)) {
+            for (DefaultLezing d : readDefaults(model, p, navigation)) {
                 leest.addAll(d.rechtvaardiging());
                 leest.addAll(d.consequentie());
             }
-            uit.add(new Vorm(Vormsoort.DEFAULTSGROEP,
-                    p.naam() != null ? basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i, schrijft, leest));
+            out.add(new Vorm(Vormsoort.DEFAULTSGROEP,
+                    p.naam() != null ? basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i, writes, leest));
         }
-        return uit;
+        return out;
     }
 
     /** What one default of a defaults group reads. {@code pad} is its place in the tree: [i] for the i-th default of
@@ -227,36 +227,36 @@ public final class ProducentConsument {
      * {@link Vorm#leest()}. A consumer that names the default where a read falls outside a scope reads the default's own
      * source text ({@code Default.bron()}, or that of its justification or consequence) beside the path.
      */
-    public static List<DefaultLezing> lezingen(RegelSpraakModel model, PrioritizedDefaults groep, Navigatie navigatie) {
-        return leesDefaults(model, groep, java.util.Objects.requireNonNull(navigatie, "navigatie"));
+    public static List<DefaultLezing> lezingen(RegelSpraakModel model, PrioritizedDefaults group, Navigatie navigation) {
+        return readDefaults(model, group, java.util.Objects.requireNonNull(navigation, "navigatie"));
     }
 
-    /** The reading behind {@link #lezingen}; without {@code navigatie} every set is empty, as in {@link #lees}. */
-    private static List<DefaultLezing> leesDefaults(RegelSpraakModel model, PrioritizedDefaults groep, Navigatie navigatie) {
-        RegelSpraakModel.Objecttype onderwerp = model.objecttypeOpNaam(groep.onderwerp());
-        List<DefaultLezing> uit = new ArrayList<>();
-        for (int i = 0; i < groep.defaults().size(); i++)
-            lezingen(groep.defaults().get(i), List.of(i), onderwerp, navigatie, uit);
-        return uit;
+    /** The reading behind {@link #lezingen}; without {@code navigation} every set is empty, as in {@link #lees}. */
+    private static List<DefaultLezing> readDefaults(RegelSpraakModel model, PrioritizedDefaults group, Navigatie navigation) {
+        RegelSpraakModel.Objecttype onderwerp = model.objecttypeOpNaam(group.onderwerp());
+        List<DefaultLezing> out = new ArrayList<>();
+        for (int i = 0; i < group.defaults().size(); i++)
+            lezingen(group.defaults().get(i), List.of(i), onderwerp, navigation, out);
+        return out;
     }
 
     private static void lezingen(Default d, List<Integer> pad, RegelSpraakModel.Objecttype onderwerp,
-                                 Navigatie navigatie, List<DefaultLezing> uit) {
-        Lezer rechtvaardiging = new Lezer(navigatie, new LinkedHashSet<>());
-        rechtvaardiging.conditie(d.voorwaarde(), onderwerp);
-        Lezer consequentie = new Lezer(navigatie, new LinkedHashSet<>());
+                                 Navigatie navigation, List<DefaultLezing> out) {
+        Reader rechtvaardiging = new Reader(navigation, new LinkedHashSet<>());
+        rechtvaardiging.condition(d.voorwaarde(), onderwerp);
+        Reader consequentie = new Reader(navigation, new LinkedHashSet<>());
         consequentie.expr(d.consequentie(), onderwerp);
-        uit.add(new DefaultLezing(pad, d, java.util.Collections.unmodifiableSet(rechtvaardiging.uit()),
-                java.util.Collections.unmodifiableSet(consequentie.uit())));
+        out.add(new DefaultLezing(pad, d, java.util.Collections.unmodifiableSet(rechtvaardiging.out()),
+                java.util.Collections.unmodifiableSet(consequentie.out())));
         if (d.excepties() == null) return;
-        List<ExceptionGroup> groepen = d.excepties().leden();
-        for (int g = 0; g < groepen.size(); g++) {
-            List<Default> leden = groepen.get(g).defaults();
-            for (int j = 0; j < leden.size(); j++) {
+        List<ExceptionGroup> groups = d.excepties().leden();
+        for (int g = 0; g < groups.size(); g++) {
+            List<Default> members = groups.get(g).defaults();
+            for (int j = 0; j < members.size(); j++) {
                 List<Integer> sub = new ArrayList<>(pad);
                 sub.add(g);
                 sub.add(j);
-                lezingen(leden.get(j), List.copyOf(sub), onderwerp, navigatie, uit);
+                lezingen(members.get(j), List.copyOf(sub), onderwerp, navigation, out);
             }
         }
     }
@@ -272,7 +272,7 @@ public final class ProducentConsument {
     @FunctionalInterface
     public interface Navigatie {
         /** The type {@code check}'s hop reaches from {@code onderwerp}, or null when the check does not navigate. */
-        RegelSpraakModel.Objecttype bereikt(Conditie.Kenmerk check, RegelSpraakModel.Objecttype onderwerp);
+        RegelSpraakModel.Objecttype reaches(Conditie.Kenmerk check, RegelSpraakModel.Objecttype onderwerp);
     }
 
     /** The answer of a resolver's model: the record names the role its hop walks, and the reached type is the
@@ -282,32 +282,32 @@ public final class ProducentConsument {
     public static Navigatie bronNavigatie(RegelSpraakModel model) {
         return (k, onderwerp) -> {
             if (k.navigatie() == null) return null;
-            RegelSpraakModel.Objecttype bereikt = model.rolDoeltypeNaarSubject(onderwerp, k.navigatie());
-            if (bereikt == null)
+            RegelSpraakModel.Objecttype reaches = model.rolDoeltypeNaarSubject(onderwerp, k.navigatie());
+            if (reaches == null)
                 throw new IllegalStateException("the characteristic check '" + k.kenmerk() + "' navigates by the role '"
                         + k.navigatie() + "', which reaches no unique object type from "
                         + (onderwerp == null ? "an unknown subject" : "'" + onderwerp.naam + "'"));
-            return bereikt;
+            return reaches;
         };
     }
 
-    /** The answer of a model the loader rebuilt: the hop rides beside the model ({@code navigatieBindingen}), and
+    /** The answer of a model the loader rebuilt: the hop rides beside the model ({@code path}), and
      *  its binding names the role the reached object plays, whose declared filler is the reached type. A binding
      *  that names no declared role with a declared filler fails loudly; the verifier refuses such a document
      *  (WF-053). */
-    public static Navigatie wireNavigatie(IrLoader.Loaded geladen) {
-        RegelSpraakModel model = geladen.model();
-        Map<Object, List<RegelSpraakModel.RolBindingRef>> hops = geladen.navigatieBindingen();
+    public static Navigatie wireNavigatie(IrLoader.Loaded loaded) {
+        RegelSpraakModel model = loaded.model();
+        Map<Object, List<RegelSpraakModel.RolBindingRef>> hops = loaded.path();
         return (k, onderwerp) -> {
             List<RegelSpraakModel.RolBindingRef> pad = hops.get(k);
             if (pad == null || pad.isEmpty()) return null;
             RegelSpraakModel.RolBindingRef hop = pad.get(pad.size() - 1);
             for (RegelSpraakModel.Feittype ft : model.feittypen.values())
-                if (zelfdeNaam(ft.naam, hop.feittype()))
+                if (sameName(ft.naam, hop.feittype()))
                     for (RegelSpraakModel.Rol rol : ft.rollen)
-                        if (rol.naam() != null && zelfdeNaam(rol.naam(), hop.rol())) {
-                            RegelSpraakModel.Objecttype bereikt = model.objecttypeOpNaam(rol.objecttypeNaam());
-                            if (bereikt != null) return bereikt;
+                        if (rol.naam() != null && sameName(rol.naam(), hop.rol())) {
+                            RegelSpraakModel.Objecttype reaches = model.objecttypeOpNaam(rol.objecttypeNaam());
+                            if (reaches != null) return reaches;
                         }
             throw new IllegalStateException("the characteristic check '" + k.kenmerk() + "' navigates by the role '"
                     + hop.rol() + "' of '" + hop.feittype() + "', which names no declared role with a declared filler");
@@ -322,32 +322,32 @@ public final class ProducentConsument {
      *  read of attributes and characteristics, node kind by node kind, and each switch below is exhaustive, so a
      *  node kind the IR records gain later fails to compile here until someone decides what it reads.
      *
-     *  <p>A navigated kenmerk check reads the kenmerk of the type its hop reaches, which is {@code navigatie}'s
+     *  <p>A navigated kenmerk check reads the kenmerk of the type its hop reaches, which is {@code navigation}'s
      *  answer (see {@link Navigatie}). */
-    public static Set<ElementSleutel> verbruikt(ResolvedRegel r, Navigatie navigatie) {
-        Set<ElementSleutel> uit = new LinkedHashSet<>();
-        Lezer lezer = new Lezer(java.util.Objects.requireNonNull(navigatie, "navigatie"), uit);
+    public static Set<ElementSleutel> verbruikt(ResolvedRegel r, Navigatie navigation) {
+        Set<ElementSleutel> out = new LinkedHashSet<>();
+        Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigatie"), out);
         RegelSpraakModel.Objecttype subject = r.doel() instanceof Expr.AttribuutRef ref ? ref.objecttype() : null;
-        lezer.conditie(r.voorwaarde(), subject);
-        lezer.expr(r.waarde(), subject);
-        return uit;
+        reader.condition(r.voorwaarde(), subject);
+        reader.expr(r.waarde(), subject);
+        return out;
     }
 
     /** The one walk behind {@link #verbruikt}, {@link #vormen} and {@link #lezingen}, over a condition or an
      *  expression with the subject a kenmerk check without an owner of its own is evaluated against, and from which a
      *  navigated check's hop starts. Only a kenmerk check asks for the subject; an attribuut read names its type
-     *  itself. Without a {@code navigatie} it reads nothing (see {@link #lees}). */
-    private record Lezer(Navigatie navigatie, Set<ElementSleutel> uit) {
+     *  itself. Without a {@code navigation} it reads nothing (see {@link #lees}). */
+    private record Reader(Navigatie navigation, Set<ElementSleutel> out) {
 
         /** A member a form names outright rather than through an expression: an allocation's source amount or
          *  recipient attribute, a key of a uniqueness. */
-        void lid(RegelSpraakModel.Objecttype houder, String naam, boolean kenmerk) {
-            if (navigatie == null || naam == null) return;
-            uit.add(elementVan(houder, naam, kenmerk));
+        void member(RegelSpraakModel.Objecttype houder, String naam, boolean kenmerk) {
+            if (navigation == null || naam == null) return;
+            out.add(elementVan(houder, naam, kenmerk));
         }
 
-        void conditie(Conditie c, RegelSpraakModel.Objecttype subject) {
-            if (c == null || navigatie == null) return;
+        void condition(Conditie c, RegelSpraakModel.Objecttype subject) {
+            if (c == null || navigation == null) return;
             switch (c) {
                 case Conditie.Vergelijking v -> { expr(v.links(), subject); expr(v.rechts(), subject); }
                 case Conditie.Predicaat p -> expr(p.operand(), subject);
@@ -355,17 +355,17 @@ public final class ProducentConsument {
                 // A navigated check lives on the object its hop reaches; any other check lives on its host, or on
                 // the subject when it names none.
                 case Conditie.Kenmerk k -> {
-                    RegelSpraakModel.Objecttype bereikt = navigatie.bereikt(k, subject);
-                    RegelSpraakModel.Objecttype drager =
-                            bereikt != null ? bereikt : k.eigenaar() != null ? k.eigenaar() : subject;
-                    uit.add(elementVan(drager, k.kenmerk(), true));
+                    RegelSpraakModel.Objecttype reaches = navigation.reaches(k, subject);
+                    RegelSpraakModel.Objecttype carrier =
+                            reaches != null ? reaches : k.eigenaar() != null ? k.eigenaar() : subject;
+                    out.add(elementVan(carrier, k.kenmerk(), true));
                 }
-                case Conditie.Samengesteld s -> { for (Conditie d : s.onderdelen()) conditie(d, subject); }
+                case Conditie.Samengesteld s -> { for (Conditie d : s.onderdelen()) condition(d, subject); }
                 // IR-SPEC ch. 4.5: a quantifier fold's filter and matrix are evaluated with the ELEMENT as subject
                 // (RUNTIME-SEMANTICS ch. 3.9a), hence the element type rather than the enclosing subject.
                 case Conditie.Kwantorvouw kv -> {
-                    conditie(kv.filter(), kv.elementObjecttype());
-                    conditie(kv.toets(), kv.elementObjecttype());
+                    condition(kv.filter(), kv.elementObjecttype());
+                    condition(kv.toets(), kv.elementObjecttype());
                 }
                 // A role check reads a relation's link set and a rule-version test a channel: nodes of IR-SPEC
                 // ch. 5.1 this graph does not draw, so neither contributes an element.
@@ -377,21 +377,21 @@ public final class ProducentConsument {
         }
 
         void expr(Expr e, RegelSpraakModel.Objecttype subject) {
-            if (e == null || navigatie == null) return;
+            if (e == null || navigation == null) return;
             switch (e) {
-                case Expr.AttribuutRef ref -> uit.add(elementVan(ref.objecttype(), ref.attribuut(), false));
+                case Expr.AttribuutRef ref -> out.add(elementVan(ref.objecttype(), ref.attribuut(), false));
                 case Expr.Binair b -> { expr(b.links(), subject); expr(b.rechts(), subject); }
                 case Expr.Functie f -> {
                     // A count's source names the relation's ROLE, never a member of the element type (the loader
                     // refuses a member there): it reads the link set, not an attribuut of each contributor.
-                    if (!isTelbron(f)) for (Expr a : f.argumenten()) expr(a, subject);
+                    if (!isCountSource(f)) for (Expr a : f.argumenten()) expr(a, subject);
                     expr(f.leegwaarde(), subject);
                     // the filter is evaluated per contributor, with the element as subject
-                    conditie(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : subject);
+                    condition(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : subject);
                 }
                 // each selection's filter is evaluated per contributor, as a fold's filter is
                 case Expr.InstanceSetUnion u -> {
-                    for (Expr.InstanceSetUnion.Tak t : u.takken()) conditie(t.filter(), t.elementType());
+                    for (Expr.InstanceSetUnion.Tak t : u.takken()) condition(t.filter(), t.elementType());
                 }
                 case Expr.Afgerond a -> expr(a.basis(), subject);
                 case Expr.Begrensd b -> { expr(b.basis(), subject); expr(b.minimum(), subject); expr(b.maximum(), subject); }
@@ -403,7 +403,7 @@ public final class ProducentConsument {
                 // Call-by-need does not narrow this: a value that is never evaluated is still a read the author
                 // wrote, and IR-SPEC ch. 5 draws the edge for it as well (a static over-approximation).
                 case Expr.Let l -> { expr(l.value(), subject); expr(l.body(), subject); }
-                case Expr.IfThenElse i -> { conditie(i.conditie(), subject); expr(i.dan(), subject); expr(i.anders(), subject); }
+                case Expr.IfThenElse i -> { condition(i.conditie(), subject); expr(i.dan(), subject); expr(i.anders(), subject); }
                 case Expr.Literal ignored -> { }
                 case Expr.ParameterRef ignored -> { }
                 case Expr.VariabeleRef ignored -> { }
@@ -416,14 +416,14 @@ public final class ProducentConsument {
 
     /** A count over one source whose argument names no member of the element type: the count source of IR-SPEC
      *  ch. 4.3, which names the relation's role. */
-    private static boolean isTelbron(Expr.Functie f) {
+    private static boolean isCountSource(Expr.Functie f) {
         return f.kind() == Expr.FunctieKind.AANTAL && f.elementObjecttype() != null && f.argumenten().size() == 1
                 && f.argumenten().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
                 && f.elementObjecttype().attribuut(bron.attribuut()) == null
                 && f.elementObjecttype().kenmerkNaam(bron.attribuut()) == null;
     }
 
-    private static boolean zelfdeNaam(String a, String b) {
+    private static boolean sameName(String a, String b) {
         return Namen.norm(a).equals(Namen.norm(b));
     }
 

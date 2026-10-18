@@ -25,7 +25,7 @@ in filter of toets van een kwantorvouw onder GEEN (WF-112): …". Measured
 with the time-free `case1-allen-ervaren.json` of
 `corpus/golden/jutterswet-schouwploeg`, which pins *bevoegd* present, the
 complement: before the card the DRL-text branch returned `PLAYED 1` on it.
-The backend's `VensterVouwWitnessTest` replays this document through both
+The backend's `WindowFoldWitnessTest` replays this document through both
 branches.
 
 Falsifiable: remove the `wf112_position` call from the `Kwantorvouw` arm

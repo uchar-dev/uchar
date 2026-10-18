@@ -8,18 +8,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static dev.uchar.regelspraak.cases.TmsDocumenten.GEHEEL;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuut;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.binair;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.consistent;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.instantie;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.kenmerkregel;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.lezing;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.parameterlezing;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.rekenregel;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
+import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
+import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
+import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
+import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.parameterRead;
+import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
+import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
+import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -51,58 +51,58 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class TmsParameterWitnessTest {
 
-    private static final List<String> REGELS = List.of(
-            kenmerkregel("zwaar bij drempel", "Vondst", "zwaar",
-                    vergelijking("greaterOrEqual", lezing("gewicht", "Vondst"), parameterlezing("drempel"))),
-            rekenregel("toeslag van een vondst", "BEREKENING", "Vondst", "toeslag",
-                    binair("plus", lezing("gewicht", "Vondst"), parameterlezing("tarief")), "null"),
-            kenmerkregel("goedkoop bij tarief", "Vondst", "goedkoop",
-                    vergelijking("less", parameterlezing("tarief"), parameterlezing("drempel"))),
-            rekenregel("korting van een vondst", "BEREKENING", "Vondst", "korting",
-                    binair("plus", parameterlezing("tarief"), parameterlezing("drempel")), "null"));
+    private static final List<String> RULES = List.of(
+            characteristicRule("zwaar bij drempel", "Vondst", "zwaar",
+                    comparison("greaterOrEqual", reading("gewicht", "Vondst"), parameterRead("drempel"))),
+            computingRule("toeslag van een vondst", "BEREKENING", "Vondst", "toeslag",
+                    binary("plus", reading("gewicht", "Vondst"), parameterRead("tarief")), "null"),
+            characteristicRule("goedkoop bij tarief", "Vondst", "goedkoop",
+                    comparison("less", parameterRead("tarief"), parameterRead("drempel"))),
+            computingRule("korting van een vondst", "BEREKENING", "Vondst", "korting",
+                    binary("plus", parameterRead("tarief"), parameterRead("drempel")), "null"));
 
-    private static final String MODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
-            List.of(attribuut("gewicht", GEHEEL), attribuut("toeslag", GEHEEL), attribuut("korting", GEHEEL)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
+            List.of(attribuut("gewicht", WHOLE), attribuut("toeslag", WHOLE), attribuut("korting", WHOLE)),
             List.of("zwaar", "goedkoop"))), List.of(), List.of("drempel", "tarief"));
 
-    @Test void elke_volgorde_van_de_regels_in_het_document() throws Exception {
-        int volgordes = 0;
-        for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
-            List<String> namen = namen(volgorde);
-            assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(true),
-                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
-            volgordes++;
+    @Test void every_order_of_the_rules_in_the_document() throws Exception {
+        int orders = 0;
+        for (List<String> order : TmsDocuments.permutations(RULES)) {
+            List<String> names = names(order);
+            assertNull(CaseRunner.playCase(TmsDocuments.document(MODEL, order), caseDocument(true),
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
+            orders++;
         }
-        assertEquals(24, volgordes);
+        assertEquals(24, orders);
     }
 
-    @Test void elke_volgorde_van_drie_regels_zonder_de_vergelijking_van_de_parameters() throws Exception {
-        List<String> drie = List.of(REGELS.get(0), REGELS.get(1), REGELS.get(3));
-        int volgordes = 0;
-        for (List<String> volgorde : TmsDocumenten.permutaties(drie)) {
-            List<String> namen = namen(volgorde);
-            assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(false),
-                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
-            volgordes++;
+    @Test void every_order_of_three_rules_without_the_comparison_of_the_parameters() throws Exception {
+        List<String> three = List.of(RULES.get(0), RULES.get(1), RULES.get(3));
+        int orders = 0;
+        for (List<String> order : TmsDocuments.permutations(three)) {
+            List<String> names = names(order);
+            assertNull(CaseRunner.playCase(TmsDocuments.document(MODEL, order), caseDocument(false),
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
+            orders++;
         }
-        assertEquals(6, volgordes);
+        assertEquals(6, orders);
     }
 
-    /** The case; {@code goedkoop} says whether the document carries the rule that compares the two parameters. */
-    private static JsonNode zaak(boolean goedkoop) throws Exception {
+    /** The case; {@code cheap} says whether the document carries the rule that compares the two parameters. */
+    private static JsonNode caseDocument(boolean cheap) throws Exception {
         List<String> verwachtingen = new ArrayList<>(List.of(verwacht("V1", "zwaar", true), waarde("V1", "toeslag", "15"),
                 waarde("V1", "korting", "13"), verwacht("V2", "zwaar", false), waarde("V2", "toeslag", "8"),
                 waarde("V2", "korting", "13"), consistent()));
-        if (goedkoop) verwachtingen.addAll(List.of(verwacht("V1", "goedkoop", true), verwacht("V2", "goedkoop", true)));
-        return TmsDocumenten.zaak(
-                List.of(instantie("V1", "Vondst", Map.of("gewicht", "12"), List.of(), Map.of()),
-                        instantie("V2", "Vondst", Map.of("gewicht", "5"), List.of(), Map.of())),
+        if (cheap) verwachtingen.addAll(List.of(verwacht("V1", "goedkoop", true), verwacht("V2", "goedkoop", true)));
+        return TmsDocuments.caseDocument(
+                List.of(instance("V1", "Vondst", Map.of("gewicht", "12"), List.of(), Map.of()),
+                        instance("V2", "Vondst", Map.of("gewicht", "5"), List.of(), Map.of())),
                 Map.of("drempel", "10", "tarief", "3"), verwachtingen);
     }
 
-    private static List<String> namen(List<String> regels) throws Exception {
-        List<String> uit = new ArrayList<>();
-        for (String r : regels) uit.add(TmsDocumenten.JSON.readTree(r).get("name").asText());
-        return uit;
+    private static List<String> names(List<String> rules) throws Exception {
+        List<String> out = new ArrayList<>();
+        for (String r : rules) out.add(TmsDocuments.JSON.readTree(r).get("name").asText());
+        return out;
     }
 }

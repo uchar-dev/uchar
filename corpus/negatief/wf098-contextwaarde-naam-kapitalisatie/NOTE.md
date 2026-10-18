@@ -34,7 +34,7 @@ The Drools backend did not: its constant reader was
 `Expr.isRekenConstante` on the exec-model branch), byte-exact, so it would not
 have recognised the name and would have degraded the operand rather than
 diagnosed it. The two readers of the SAME field disagreed, and the disagreement
-was case — a fourth reader, the day-kind one (`kern/Dagsoorten`), used
+was case — a fourth reader, the day-kind one (`kern/DayKinds`), used
 `equalsIgnoreCase` on `de dag`, so the split was inside one backend as well as
 across them.
 

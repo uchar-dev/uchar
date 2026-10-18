@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Expr;
 
 import org.junit.jupiter.api.Test;
@@ -28,9 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (WF-093, WF-080, WF-102 (c), WF-034), a {@code total} without a range over another type than its subject (WF-083 (c)),
  * and a characteristic read at a value position (WF-080). The fields of an
  * attribute read, a creation, a uniqueness and a characteristic check are pinned where their bindings are
- * ({@code NavigatiebindingWitnessTest}, {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection
- * without their range where those are ({@code TemporeleSetvouwBereikWitnessTest},
- * {@code KwantorvouwBereikWitnessTest}, {@code InstanceUnionWitnessTest}).
+ * ({@code NavigationWitnessTest}, {@code BeansFieldWitnessTest}); a fold, a quantifier fold and a selection
+ * without their range where those are ({@code TemporalSetFoldRangeWitnessTest},
+ * {@code QuantifierFoldRangeWitnessTest}, {@code InstanceUnionWitnessTest}).
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
  * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: these are not
@@ -66,7 +66,7 @@ class ReferenceLayerRefusalWitnessTest {
     // ---------------- the reference nodes carry no type ----------------
 
     @Test void a_type_on_a_reference_is_refused_by_name() throws Exception {
-        // the attribute read has its own row with its four other fields (NavigatiebindingWitnessTest)
+        // the attribute read has its own row with its four other fields (NavigationWitnessTest)
         ObjectNode ir = golden(PENNINGDREMPEL);
         Hit p = find(ir, "ParameterReference");
         p.node().set("type", JSON.readTree(NUMERIEK));
@@ -79,7 +79,7 @@ class ReferenceLayerRefusalWitnessTest {
 
         // no replaying golden reads a dimension cell or a variable, so each stands in for rule 0's value
         ir = golden(PENNINGDREMPEL);
-        ObjectNode rule = IrPad.versie(ir, "rules", 0, 0);
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         String value = "/rules/rules/0/versions/0/value";
         rule.set("value", JSON.readTree("{\"node\":\"DimensionCellRead\",\"attribute\":" + rule.get("target")
                 + ",\"labels\":[\"noord\"],\"source\":{\"snippet\":\"de cel noord\"},\"type\":" + NUMERIEK + "}"));
@@ -109,7 +109,7 @@ class ReferenceLayerRefusalWitnessTest {
         String vw = "/rules/rules/0/versions/0/condition";
         for (String field : new String[] { "factType", "role", "negated" }) {
             ObjectNode ir = golden(POSTBEZETTING);
-            ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition")).remove(field);
+            ((ObjectNode) IrPath.version(ir, "rules", 0, 0).get("condition")).remove(field);
             IrLoader.Documentfout e = refuses(ir, vw);
             assertTrue(e.getMessage().contains("missing field '" + field + "'"), e.getMessage());
         }
@@ -119,7 +119,7 @@ class ReferenceLayerRefusalWitnessTest {
         String vw = "/rules/rules/0/versions/0/condition";
         for (String field : new String[] { "rol", "anderTeFiller", "filler", "backref", "negatie" }) {
             ObjectNode ir = golden(POSTBEZETTING);
-            ObjectNode rm = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
+            ObjectNode rm = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("condition");
             if (field.equals("negatie")) rm.put(field, false); else rm.put(field, "Jutter");
             unknownField(ir, vw + "/" + field, "RoleMembership");
         }
@@ -129,7 +129,7 @@ class ReferenceLayerRefusalWitnessTest {
         // IR-SPEC ch. 4.5: absent means the other role's declared filler; written, it names a declared object type
         String vw = "/rules/rules/2/versions/0/condition";
         ObjectNode ir = golden(POSTBEZETTING);
-        ObjectNode rm = (ObjectNode) IrPad.versie(ir, "rules", 2, 0).get("condition");
+        ObjectNode rm = (ObjectNode) IrPath.version(ir, "rules", 2, 0).get("condition");
         assertEquals("Strandjutter", rm.get("counterpartType").asText(), "de golden vernauwt regel 2");
         rm.putNull("counterpartType");
         IrLoader.Documentfout e = refuses(ir, vw + "/counterpartType");
@@ -150,21 +150,21 @@ class ReferenceLayerRefusalWitnessTest {
     @Test void unknown_is_a_datatype_on_no_single_position() throws Exception {
         // a declaration (an M1 position; the refusal stands at the discriminator of the datatype the field holds)
         ObjectNode ir = golden(BAKENMEESTER);
-        String attr = "/model/objectTypes/" + index(IrPad.modelLijst(ir, "objectTypes"), "name", "Bakenmeester")
-                + "/attributes/" + index((ArrayNode) IrPad.objectType(ir, "Bakenmeester").get("attributes"), "name",
+        String attr = "/model/objectTypes/" + index(IrPath.modelList(ir, "objectTypes"), "name", "Bakenmeester")
+                + "/attributes/" + index((ArrayNode) IrPath.objectType(ir, "Bakenmeester").get("attributes"), "name",
                 "onderhoudstarief");
-        IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").set("datatype",
+        IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").set("datatype",
                 JSON.readTree(UNKNOWN));
         unknownDatatype(ir, attr + "/datatype");
 
         // a derived position: the fold's own annotation
         ir = golden(BAKENMEESTER);
-        ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value")).set("type", JSON.readTree(UNKNOWN));
+        ((ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value")).set("type", JSON.readTree(UNKNOWN));
         unknownDatatype(ir, "/rules/rules/0/versions/0/value/type");
 
         // a marker's type: absent is the unknown one (IR-SPEC ch. 4.4), so no spelling of it is admitted
         ir = golden(BAKENMEESTER);
-        IrPad.versie(ir, "rules", 0, 0).set("value",
+        IrPath.version(ir, "rules", 0, 0).set("value",
                 JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + UNKNOWN + ",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         unknownDatatype(ir, "/rules/rules/0/versions/0/value/type");
     }
@@ -172,7 +172,7 @@ class ReferenceLayerRefusalWitnessTest {
     @Test void a_marker_without_type_is_unknown_and_null_is_no_spelling() throws Exception {
         // rule 0 computes a value, so a marker may stand there (a characteristic assignment admits only waar)
         ObjectNode ir = golden(BAKENMEESTER);
-        ObjectNode rule = IrPad.versie(ir, "rules", 0, 0);
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde();
         assertTrue(w instanceof Expr.Onopgelost, String.valueOf(w));
@@ -275,7 +275,7 @@ class ReferenceLayerRefusalWitnessTest {
         // Vondst as its element type. No executor reads that field there, so before this check the twisted
         // document PLAYED in both branches here, as it passed in ref and clingo.
         ObjectNode ir = golden(TEMPOTOTAAL);
-        ObjectNode w = (ObjectNode) IrPad.versie(ir, "rules", 2, 0).get("value");
+        ObjectNode w = (ObjectNode) IrPath.version(ir, "rules", 2, 0).get("value");
         assertEquals("Jutter", w.get("elementType").asText(), "de golden totaliseert de eigen tijdlijn");
         w.put("elementType", "Vondst");
         IrLoader.Documentfout e = refuses(ir, "/rules/rules/2/versions/0/value/elementType");
@@ -286,7 +286,7 @@ class ReferenceLayerRefusalWitnessTest {
 
     @Test void a_characteristic_as_source_of_a_value_fold_is_refused() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
-        IrPad.objectType(ir, "Munt").withArray("characteristics").addObject().put("node", "Characteristic")
+        IrPath.objectType(ir, "Munt").withArray("characteristics").addObject().put("node", "Characteristic")
                 .put("name", "gangbaar").put("kind", "adjectival");
         source(ir, 1).put("attribute", "gangbaar");
         IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
@@ -298,7 +298,7 @@ class ReferenceLayerRefusalWitnessTest {
         // anchor/jutterswet-bootberging's rule 0 folds over the two-step path Jutter -> Boot -> Vondst; as a count over
         // the reached role it names a range of two steps where a count's range is one
         ObjectNode ir = golden(BOOTBERGING);
-        ObjectNode w = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value");
+        ObjectNode w = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value");
         w.put("kind", "count");
         source(ir, 0).put("attribute", "geborgen vondsten").put("subjectType", "Jutter");
         IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/sourcePath");
@@ -319,7 +319,7 @@ class ReferenceLayerRefusalWitnessTest {
         // "hij bemand gelijk is aan onwaar": the characteristic read as an operand. Measured on the L2 union before
         // the fix round: PLAYED in both branches, where the verifier refuses it.
         ObjectNode ir = golden(POSTBEZETTING);
-        IrPad.versie(ir, "rules", 1, 0).set("condition", JSON.readTree(
+        IrPath.version(ir, "rules", 1, 0).set("condition", JSON.readTree(
                 "{\"node\":\"Comparison\",\"op\":\"equal\",\"left\":{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"bemand\",\"subjectType\":\"Wachtpost\",\"source\":{\"snippet\":\"bemand\"}},\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"boolean\":false},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"onwaar\"}},"
@@ -332,12 +332,12 @@ class ReferenceLayerRefusalWitnessTest {
     // ---------------- fixtures ----------------
 
     private static ObjectNode roleCheck(ObjectNode ir, int rule) {
-        return (ObjectNode) IrPad.versie(ir, "rules", rule, 0).get("condition");
+        return (ObjectNode) IrPath.version(ir, "rules", rule, 0).get("condition");
     }
 
     /** The single argument of rule {@code rule}'s fold: its set source. */
     private static ObjectNode source(ObjectNode ir, int rule) {
-        return (ObjectNode) IrPad.versie(ir, "rules", rule, 0).get("value").get("arguments").get(0);
+        return (ObjectNode) IrPath.version(ir, "rules", rule, 0).get("value").get("arguments").get(0);
     }
 
     /** A node of the given kind and its JSON pointer. */
@@ -368,7 +368,7 @@ class ReferenceLayerRefusalWitnessTest {
     }
 
     private static void condition(ObjectNode ir, int rule, String json) throws Exception {
-        IrPad.versie(ir, "rules", rule, 0).set("condition", JSON.readTree(json));
+        IrPath.version(ir, "rules", rule, 0).set("condition", JSON.readTree(json));
     }
 
     private static int index(ArrayNode list, String nameField, String name) {
@@ -379,7 +379,7 @@ class ReferenceLayerRefusalWitnessTest {
     private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 

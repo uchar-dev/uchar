@@ -104,6 +104,6 @@ folds (the ASP backend does not translate a listed fold whose operands are
 folds over numbers, `TRANSLATION FAULT: expression kind not translated`, in
 an ordinary rule too), and a fold over a relation whose two roles are both
 plural (the exec-model branch refuses it by name, as it does in a rule's
-value). Both are rows of `DefaultsConsequentieVouwWitnessTest` in the Drools
+value). Both are rows of `DefaultsConsequenceFoldWitnessTest` in the Drools
 backend: the first with the values of `ref`, the second as a refusal that
 names the form.

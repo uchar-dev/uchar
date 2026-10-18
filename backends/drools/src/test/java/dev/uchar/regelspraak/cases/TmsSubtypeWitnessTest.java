@@ -8,8 +8,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dev.uchar.regelspraak.cases.TmsDocumenten.check;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.check;
+import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -30,36 +30,36 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class TmsSubtypeWitnessTest {
 
-    @Test void schrijver_op_het_supertype_lezer_op_het_subtype() throws Exception {
-        List<String> regels = List.of(regel("vergund indien erkend", "Jutter", "vergund", check("erkend", false)),
+    @Test void writer_on_the_supertype_reader_on_the_subtype() throws Exception {
+        List<String> rules = List.of(regel("vergund indien erkend", "Jutter", "vergund", check("erkend", false)),
                 regel("strandbevoegd indien niet vergund", "Strandjutter", "strandbevoegd", check("vergund", true)));
-        JsonNode zaak = TmsDocumenten.zaak(
-                List.of(instantie("S1", "Strandjutter", "erkend"), instantie("S2", "Strandjutter", null),
-                        instantie("J1", "Jutter", "erkend")),
+        JsonNode caseDocument = TmsDocuments.caseDocument(
+                List.of(instance("S1", "Strandjutter", "erkend"), instance("S2", "Strandjutter", null),
+                        instance("J1", "Jutter", "erkend")),
                 List.of(verwacht("S1", "vergund", true), verwacht("S1", "strandbevoegd", false),
                         verwacht("S2", "vergund", false), verwacht("S2", "strandbevoegd", true),
                         verwacht("J1", "vergund", true)));
-        elkeVolgorde(regels, zaak);
+        everyOrder(rules, caseDocument);
     }
 
-    @Test void schrijver_op_het_subtype_lezer_op_het_supertype() throws Exception {
-        List<String> regels = List.of(regel("vergund indien erkend", "Strandjutter", "vergund", check("erkend", false)),
+    @Test void writer_on_the_subtype_reader_on_the_supertype() throws Exception {
+        List<String> rules = List.of(regel("vergund indien erkend", "Strandjutter", "vergund", check("erkend", false)),
                 regel("onvergund indien niet vergund", "Jutter", "onvergund", check("vergund", true)));
-        JsonNode zaak = TmsDocumenten.zaak(
-                List.of(instantie("J1", "Jutter", "erkend"), instantie("S1", "Strandjutter", "erkend"),
-                        instantie("S2", "Strandjutter", null)),
+        JsonNode caseDocument = TmsDocuments.caseDocument(
+                List.of(instance("J1", "Jutter", "erkend"), instance("S1", "Strandjutter", "erkend"),
+                        instance("S2", "Strandjutter", null)),
                 List.of(verwacht("J1", "vergund", false), verwacht("J1", "onvergund", true),
                         verwacht("S1", "vergund", true), verwacht("S1", "onvergund", false),
                         verwacht("S2", "vergund", false), verwacht("S2", "onvergund", true)));
-        elkeVolgorde(regels, zaak);
+        everyOrder(rules, caseDocument);
     }
 
-    private static void elkeVolgorde(List<String> regels, JsonNode zaak) throws Exception {
-        for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
-            Path ir = TmsDocumenten.document(MODEL, volgorde);
-            List<String> namen = new ArrayList<>();
-            for (String r : volgorde) namen.add(TmsDocumenten.JSON.readTree(r).get("name").asText());
-            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
+    private static void everyOrder(List<String> rules, JsonNode caseDocument) throws Exception {
+        for (List<String> order : TmsDocuments.permutations(rules)) {
+            Path ir = TmsDocuments.document(MODEL, order);
+            List<String> names = new ArrayList<>();
+            for (String r : order) names.add(TmsDocuments.JSON.readTree(r).get("name").asText());
+            assertNull(CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
         }
     }
 
@@ -78,11 +78,11 @@ class TmsSubtypeWitnessTest {
     private static String regel(String naam, String type, String doel, String voorwaarde) {
         String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"Een " + type + " is " + doel + "\"}}";
-        return IrPad.regel(naam, "KENMERKTOEKENNING", target, IrPad.literal("waar", "{\"node\":\"Boolean\"}", "waar"),
+        return IrPath.regel(naam, "KENMERKTOEKENNING", target, IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"),
                 voorwaarde);
     }
 
-    private static String instantie(String label, String type, String kenmerk) {
+    private static String instance(String label, String type, String kenmerk) {
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{},\"roles\":{},"
                 + "\"characteristics\":[" + (kenmerk == null ? "" : "\"" + kenmerk + "\"") + "]}";
     }

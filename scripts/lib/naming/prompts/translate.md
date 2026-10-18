@@ -13,7 +13,9 @@ shell of ANTLR), of een bestands- of mapnaam. Velden: `id`; `name` (de naam zoal
 `file`, `dir` of `reference`); `file` en `line` (waar hij gedeclareerd is); `declaration` (die regel code); `doc`
 (de eerste zin van het commentaar erboven, soms leeg); `words` (een voorstel voor de splitsing in woorden,
 gescheiden door `|`); `dutch` (elk Nederlands woord met de Engelse woorden uit de woordenlijst, elk met zijn
-`context` als er meer zijn); `occurrences` en `files` (hoe vaak en in hoeveel bestanden).
+`context` als er meer zijn); `domain` (de domeinwoorden van de naam: woorden van een gedeclareerde naam van het
+corpus of van een RegelSpraak-bron of IR-document in de code, zoals `vondst`, `jutter`, `boei`); `occurrences` en
+`files` (hoe vaak en in hoeveel bestanden).
 
 De woordenlijst heeft de kolommen `dutch`, `english`, `source`, `context`, `note`. Een Nederlands woord met meer
 regels heeft meer betekenissen; `context` zegt welke wanneer geldt. `english` in lowerCamel (`emptyFallback`) is
@@ -32,13 +34,23 @@ Per invoerregel precies één antwoordregel, met hetzelfde `id`, in dezelfde vol
 - `new` is de Engelse naam:
   1. Vertaal elk Nederlands woord met een woord uit de woordenlijst. Kies bij meer regels de regel waarvan
      `context` past bij `declaration` en `doc`. Een woord dat al Engels is (`label`, `bean`, `json`), een getal en
-     een afkorting (`tms`, `drl`, `attr`) blijven zoals ze zijn.
+     een afkorting (`tms`, `drl`, `attr`) blijven zoals ze zijn. Een domeinwoord (`domain`) is domeininhoud en
+     blijft zoals het geschreven is, ook als je een Engels woord weet: `vondstWacht` wordt `vondstGuard`, niet
+     `findGuard`; markeer een naam niet omdat een domeinwoord niet in de woordenlijst staat.
   2. Zet de woorden in Engelse volgorde en laat Nederlandse functiewoorden weg waar het Engels ze niet nodig
      heeft: `labelVanBean` wordt `beanLabel`, niet `labelOfBean`. Een ontkenning (`niet`, `geen`, `zonder`,
-     `nooit`) blijft altijd staan.
-  3. Schrijf `new` zoals `old` geschreven is: hoofdletter of kleine letter vooraan zoals `old`, alles in
-     hoofdletters als `old` dat is (`VERSIE` wordt `VERSION`), `_` of `-` tussen de woorden als `old` die heeft,
-     camelCase als `old` camelCase is. Een bestandsnaam houdt de schrijfwijze van de bestanden ernaast.
+     `nooit`) blijft altijd staan. `van` aan het begin of het eind van een naam blijft, als `of` of `from`
+     (`indexVan` wordt `indexOf`, `vanObject` wordt `fromObject`, `rVan` wordt `rFrom`); `op` vertaal je met de
+     rij van de woordenlijst die bij de betekenis past (`rolOpNaam` wordt `roleByName`, `filterOpOnderwerp` wordt
+     `filterOnSubject`, `afgerondOp2` wordt `roundedTo2`).
+  3. Schrijf `new` volgens de conventie van zijn taal, elk Engels woord apart, ook als `old` één Nederlands woord
+     is: hoofdletter of kleine letter vooraan zoals `old`; `_` of `-` tussen de woorden als `old` die heeft,
+     camelCase als `old` camelCase is; verder in Java camelCase (`creatiediepte` wordt `creationDepth`,
+     `Sessiedump` wordt `SessionDump`), een constante in hoofdletters met `_` tussen de woorden (`WORTEL` wordt
+     `SQUARE_ROOT`, `MINSTENS` wordt `AT_LEAST`, `VERSIE` wordt `VERSION`), in OCaml en shell met `_` tussen de
+     woorden (`feittype` wordt `fact_type`), en een bestands- of mapnaam zoals de namen ernaast (`bronroute` wordt
+     `source-route`, naast `zoals-ref`). Schrijf nooit Engelse woorden aan elkaar (`creationdepth`, `SQUAREROOT`,
+     `sourceroute`): `merge` schrijft elk antwoord volgens deze regel en `check` weigert een andere schrijfwijze.
   4. Verzin niets: geen synoniem, geen nieuw beeld, geen betere naam. Dat doet een andere stap.
 - `flag` is leeg, of een korte zin die zegt waarom je de naam niet vertaalt. Markeer een naam (en laat `new`
   leeg) als:

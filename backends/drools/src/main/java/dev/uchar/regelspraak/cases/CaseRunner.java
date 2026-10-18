@@ -79,34 +79,34 @@ public final class CaseRunner {
     /** The build this runner fires: a branch puts its derivations on the beans only after a fire
      *  ({@link DroolsBackend#zetAfgeleideWaarden}), and that needs the analysis that made them. */
     private DroolsBackend.Build bouw;
-    /** The hash of the document this runner built, which names the files of the seam in {@link #vuurTotFixpunt}; null
-     *  without the property {@value Sessiedump#EIGENSCHAP}, and then the seam does nothing. */
+    /** The hash of the document this runner built, which names the files of the seam in {@link #fireToFixpoint}; null
+     *  without the property {@value SessionDump#PROPERTY}, and then the seam does nothing. */
     private String documenthash;
 
-    /** The members of the model without a bean field of their own ({@link FactModelGenerator#verdringingen}): a
+    /** The members of the model without a bean field of their own ({@link FactModelGenerator#displacements}): a
      *  case that sets or reads one is refused by name, since the replay would reach the field of the declaration
      *  that took the property. */
-    private final List<FactModelGenerator.Verdringing> verdringingen;
+    private final List<FactModelGenerator.Displacement> displacements;
 
     private CaseRunner(RegelSpraakModel model, KieBase kieBase, ClassLoader cl,
                        Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen) {
         this.model = model; this.kieBase = kieBase; this.cl = cl; this.dagsoortGlobalen = dagsoortGlobalen;
-        this.verdringingen = FactModelGenerator.verdringingen(model);
+        this.displacements = FactModelGenerator.displacements(model);
     }
 
     /** A runner of {@code build} that replays no case, whose readers of case values, dates, timelines and declared
      *  member names {@link CaseInvoer} shares with the comparison. */
-    static CaseRunner lezer(DroolsBackend.Build build) {
+    static CaseRunner reader(DroolsBackend.Build build) {
         CaseRunner runner = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dagsoortGlobalen());
         runner.bouw = build;
         return runner;
     }
 
-    /** Refuses a case that sets or reads ({@code handeling}) the attribute or, with {@code kenmerk}, the
+    /** Refuses a case that sets or reads ({@code action}) the attribute or, with {@code kenmerk}, the
      *  characteristic {@code naam} of an instance of {@code ot} when that member has no bean field of its own. */
-    void eigenVeld(Objecttype ot, String naam, boolean kenmerk, String handeling) {
-        String reden = ot == null ? null : FactModelGenerator.verdrongenLid(verdringingen, ot, naam, kenmerk);
-        if (reden != null) throw new Excluded(reden + "; de case " + handeling + " het");
+    void ownField(Objecttype ot, String naam, boolean kenmerk, String action) {
+        String reden = ot == null ? null : FactModelGenerator.displacedMember(displacements, ot, naam, kenmerk);
+        if (reden != null) throw new Excluded(reden + "; de case " + action + " het");
     }
 
     /** Load {@code irPath}, build the KieBase, and replay each of {@code casePaths}. Any {@link Excluded}
@@ -121,7 +121,7 @@ public final class CaseRunner {
      *  {@link DroolsBackendMain}); since card drl-teksttak-op-truth-maintenance, which made the text the second
      *  rendering of the analysis, the gate demands per golden the status line of the exec-model branch. Gate 13 has
      *  driven it since 2026-09-04. */
-    public static Result viaDrlTekst(Path irPath, List<Path> casePaths) {
+    public static Result viaDrlText(Path irPath, List<Path> casePaths) {
         return replay(irPath, casePaths, DroolsBackend.Branch.DRL_TEXT);
     }
 
@@ -137,9 +137,9 @@ public final class CaseRunner {
         return replay(irPath, casePaths, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    private static Result replay(Path irPath, List<Path> casePaths, DroolsBackend.Branch tak) {
+    private static Result replay(Path irPath, List<Path> casePaths, DroolsBackend.Branch branch) {
         try {
-            CaseRunner runner = build(irPath, tak);
+            CaseRunner runner = build(irPath, branch);
             List<String> failures = new ArrayList<>();
             int played = 0;
             for (Path cp : casePaths) {
@@ -168,60 +168,60 @@ public final class CaseRunner {
      *  exception, is FAIL with that exception as its reason, and the report goes on with the next case. A red-path
      *  case is no scenario and is skipped, as the replay skips it. */
     public static List<ScenarioResultaat> rapport(Path irPath, List<Path> casePaths) {
-        List<Path> paden = new ArrayList<>();
+        List<Path> paths = new ArrayList<>();
         List<JsonNode> cases = new ArrayList<>();
         for (Path cp : casePaths) {
             JsonNode c;
             try { c = JSON.readTree(Files.readString(cp)); }
             catch (java.io.IOException e) { throw new RuntimeException("could not read " + cp + ": " + e.getMessage(), e); }
             if (c.has("expectedFault")) continue;
-            paden.add(cp);
+            paths.add(cp);
             cases.add(c);
         }
-        List<ScenarioResultaat> uit = new ArrayList<>();
+        List<ScenarioResultaat> out = new ArrayList<>();
         CaseRunner runner;
         try {
             runner = build(irPath);
         } catch (Excluded e) {
-            for (Path p : paden) uit.add(marker(p, e.getMessage()));
-            return uit;
+            for (Path p : paths) out.add(marker(p, e.getMessage()));
+            return out;
         } catch (IrLoader.Refusal e) {
-            for (Path p : paden) uit.add(marker(p, "loader: " + e.getMessage()));
-            return uit;
+            for (Path p : paths) out.add(marker(p, "loader: " + e.getMessage()));
+            return out;
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
-        for (int i = 0; i < paden.size(); i++) {
-            String naam = paden.get(i).getFileName().toString();
-            Waarneming w = new Waarneming(new DroolsBackend.Waarnemer(runner::labelVanBean));
+        for (int i = 0; i < paths.size(); i++) {
+            String naam = paths.get(i).getFileName().toString();
+            Observation w = new Observation(new DroolsBackend.Waarnemer(runner::beanLabel));
             String fout;
             try {
                 fout = runner.runCase(naam, cases.get(i), w);
             } catch (Excluded e) {
-                uit.add(marker(paden.get(i), e.getMessage()));
+                out.add(marker(paths.get(i), e.getMessage()));
                 continue;
             } catch (RuntimeException e) {
                 // The replay calls this the golden's ERROR and stops; a report of several cases ends only this one,
                 // so the cases beside it keep their verdicts.
-                uit.add(onspeelbaar(paden.get(i), e));
+                out.add(unplayable(paths.get(i), e));
                 continue;
             }
-            uit.add(new ScenarioResultaat(naam, fout == null ? ScenarioResultaat.Status.PASS : ScenarioResultaat.Status.FAIL,
-                    List.copyOf(w.verwachtingen), new ScenarioResultaat.Trace(w.vuren.vuringen()),
-                    DroolsBackend.dekking(runner.bouw, w.vuren.vormen()), fout == null ? "" : fout));
+            out.add(new ScenarioResultaat(naam, fout == null ? ScenarioResultaat.Status.PASS : ScenarioResultaat.Status.FAIL,
+                    List.copyOf(w.verwachtingen), new ScenarioResultaat.Trace(w.fireObserver.vuringen()),
+                    DroolsBackend.dekking(runner.bouw, w.fireObserver.vormen()), fout == null ? "" : fout));
         }
-        return uit;
+        return out;
     }
 
-    private static ScenarioResultaat marker(Path casePad, String reden) {
-        return new ScenarioResultaat(casePad.getFileName().toString(), ScenarioResultaat.Status.MARKER, List.of(),
+    private static ScenarioResultaat marker(Path caseFilePath, String reden) {
+        return new ScenarioResultaat(caseFilePath.getFileName().toString(), ScenarioResultaat.Status.MARKER, List.of(),
                 new ScenarioResultaat.Trace(List.of()), List.of(), reden);
     }
 
     /** A case whose play raised {@code e}: FAIL, with the exception in the words of the replay's ERROR line
      *  ({@link DroolsBackendMain}) on one line, and no verdict, firing or coverage, because the case did not finish. */
-    private static ScenarioResultaat onspeelbaar(Path casePad, RuntimeException e) {
-        String naam = casePad.getFileName().toString();
+    private static ScenarioResultaat unplayable(Path caseFilePath, RuntimeException e) {
+        String naam = caseFilePath.getFileName().toString();
         String melding = String.valueOf(e.getMessage()).replace('\n', ' ');
         return new ScenarioResultaat(naam, ScenarioResultaat.Status.FAIL, List.of(),
                 new ScenarioResultaat.Trace(List.of()), List.of(),
@@ -230,12 +230,12 @@ public final class CaseRunner {
 
     /** What one case's replay reports beside its verdict: what the session fired, through the backend's entry as a
      *  consumer records it, with the case labels of this runner, and per expectation its verdict. */
-    private static final class Waarneming {
-        final DroolsBackend.Waarnemer vuren;
+    private static final class Observation {
+        final DroolsBackend.Waarnemer fireObserver;
         final List<ScenarioResultaat.VerwachtingResultaat> verwachtingen = new ArrayList<>();
 
-        Waarneming(DroolsBackend.Waarnemer vuren) {
-            this.vuren = vuren;
+        Observation(DroolsBackend.Waarnemer fireObserver) {
+            this.fireObserver = fireObserver;
         }
     }
 
@@ -247,7 +247,7 @@ public final class CaseRunner {
      *  own order (attributes, then roles), so the mirrored self-pair fill is assertable bean-by-bean. Globals
      *  stay out: they live on a {@link KieSession}, which is fire's concern, not this layer's. The beans are those of
      *  the backend's entry ({@link CaseInvoer}), which every replay reads its case through. */
-    static Map<String, Object> invoerBeans(Path irPath, JsonNode c) throws java.io.IOException {
+    static Map<String, Object> inputBeans(Path irPath, JsonNode c) throws java.io.IOException {
         return new LinkedHashMap<>(CaseInvoer.van(build(irPath).bouw, c).beans());
     }
 
@@ -255,31 +255,31 @@ public final class CaseRunner {
      *  {@code backends/drools/src/test}. A MINTED object carries no case label (ref mints into the reserved
      *  {@code "::"} namespace, which the case loader refuses as a label), so no expectation kind the case
      *  schema can express names it: every corpus observation of a creation is INDIRECT, through a fold or a
-     *  navigated read on a labelled input. Neither other seam reaches it either — {@link #invoerBeans} stops
-     *  before any rule fires, {@link #speelCase} returns only the comparator's verdict. So THAT the mint
+     *  navigated read on a labelled input. Neither other seam reaches it either — {@link #inputBeans} stops
+     *  before any rule fires, {@link #playCase} returns only the comparator's verdict. So THAT the mint
      *  exists, WHICH members its toekenningen filled, and that BOTH ends of its back-link were written have
      *  no other observable surface, while each could be wrong and still leave the pinned total right (a mint
      *  reachable one way only; a member written on the subject instead of the mint). */
-    record NaFire(Map<String, Object> invoer, List<Object> feiten) {}
+    record AfterFire(Map<String, Object> invoer, List<Object> sessionFacts) {}
 
-    static NaFire naFire(Path irPath, JsonNode c) throws java.io.IOException {
+    static AfterFire afterFire(Path irPath, JsonNode c) throws java.io.IOException {
         CaseRunner runner = build(irPath);
-        runner.rekendatum = asOfDatum(c);
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        runner.rekendatum = asOfDate(c);
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(runner.cl);
         KieSession sessie = runner.kieBase.newKieSession();
         try {
-            CaseInvoer invoer = runner.leesInvoer(c);
-            runner.zetGlobals(sessie, c);
+            CaseInvoer invoer = runner.readInput(c);
+            runner.setGlobals(sessie, c);
             DroolsBackend.voegIn(runner.bouw, sessie, invoer.invoer());
-            String geenFixpunt = runner.vuurTotFixpunt(sessie);
+            String geenFixpunt = runner.fireToFixpoint(sessie);
             // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
             // a run that never reached a fixpoint must not hand back a half-fired fact base as if it had settled.
             if (geenFixpunt != null) throw new IllegalStateException(geenFixpunt);
-            return new NaFire(new LinkedHashMap<>(runner.labelNaarBean), new ArrayList<>(sessie.getObjects()));
+            return new AfterFire(new LinkedHashMap<>(runner.labelToBean), new ArrayList<>(sessie.getObjects()));
         } finally {
             sessie.dispose();
-            Thread.currentThread().setContextClassLoader(vorige);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
@@ -288,7 +288,7 @@ public final class CaseRunner {
      *  read-back comparator has no other directly observable surface: gate 12 pins post-fire values on corpus
      *  cases whose pinned lists happen to match segment-for-segment, so a comparator that ignores waarde or
      *  order survives the whole gate set (lens 1 proved it by mutation) — its verdicts are asserted here. */
-    static String speelCase(Path irPath, JsonNode c) throws java.io.IOException {
+    static String playCase(Path irPath, JsonNode c) throws java.io.IOException {
         return build(irPath).runCase("case", c);
     }
 
@@ -297,28 +297,28 @@ public final class CaseRunner {
      *  a witness that wants both branches on ONE in-memory case would otherwise have to write the document to
      *  disk twice and read two {@link Result}s, which reports a whole golden's status where the row wants a
      *  single cell's verdict. Package-private, no production caller. */
-    static String speelCase(Path irPath, JsonNode c, boolean viaDrl) throws java.io.IOException {
+    static String playCase(Path irPath, JsonNode c, boolean viaDrl) throws java.io.IOException {
         return build(irPath, viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL).runCase("case", c);
     }
 
     /** The same comparator seam with the branch named by its value. Package-private, no production caller. */
-    static String speelCase(Path irPath, JsonNode c, DroolsBackend.Branch tak) throws java.io.IOException {
-        return build(irPath, tak).runCase("case", c);
+    static String playCase(Path irPath, JsonNode c, DroolsBackend.Branch branch) throws java.io.IOException {
+        return build(irPath, branch).runCase("case", c);
     }
 
     /** The measuring seam of the harnesses and witnesses in the test tree, first made for the trial of card
-     *  drools-logische-afleiding (acceptance (e)): a runner of {@code irPath} on {@code tak} whose KieBase is built
+     *  drools-logische-afleiding (acceptance (e)): a runner of {@code irPath} on {@code branch} whose KieBase is built
      *  once, so that a harness in the test tree can fire one case many times and time the fire alone. The replay
      *  entries cannot serve: they build per call and hand back a verdict, not the firings or the session.
      *  Package-private, no production caller, and no gate runs it. */
-    static CaseRunner voorMeting(Path irPath, DroolsBackend.Branch tak) throws java.io.IOException {
-        return build(irPath, tak);
+    static CaseRunner forMeasurement(Path irPath, DroolsBackend.Branch branch) throws java.io.IOException {
+        return build(irPath, branch);
     }
 
-    /** What a measuring harness does with one session that {@link #metSessie} set up: fire it and measure it as it
+    /** What a measuring harness does with one session that {@link #withSession} set up: fire it and measure it as it
      *  chooses. {@code labels} maps each case label to its input bean. */
     @FunctionalInterface
-    interface Sessiemeting<T> {
+    interface SessionMeasurement<T> {
         T meet(DroolsBackend.Build bouw, KieSession sessie, Map<String, Object> labels);
     }
 
@@ -328,21 +328,21 @@ public final class CaseRunner {
      *  corpus (point 7), which fire through {@link DroolsBackend#vuur} as a consumer does and time the fire and the
      *  write-back apart, where the replay's own fire times neither. Package-private, no production caller, and no gate
      *  runs it. */
-    <T> T metSessie(JsonNode c, Sessiemeting<T> meting) {
-        labelNaarBean.clear();
+    <T> T withSession(JsonNode c, SessionMeasurement<T> measurement) {
+        labelToBean.clear();
         labelType.clear();
-        rekendatum = asOfDatum(c);
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        rekendatum = asOfDate(c);
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
         try {
-            CaseInvoer invoer = leesInvoer(c);
-            zetGlobals(sessie, c);
+            CaseInvoer invoer = readInput(c);
+            setGlobals(sessie, c);
             DroolsBackend.voegIn(bouw, sessie, invoer.invoer());
-            return meting.meet(bouw, sessie, java.util.Collections.unmodifiableMap(labelNaarBean));
+            return measurement.meet(bouw, sessie, java.util.Collections.unmodifiableMap(labelToBean));
         } finally {
             sessie.dispose();
-            Thread.currentThread().setContextClassLoader(vorige);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
@@ -352,16 +352,16 @@ public final class CaseRunner {
         return build(irPath, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** As above, with {@code tak} choosing WHICH rendering of the analysis produces the KieBase: the executable
+    /** As above, with {@code branch} choosing WHICH rendering of the analysis produces the KieBase: the executable
      *  model, or the DRL text. The whole prelude — load,
      *  refuse, beans, contract, lowering with every side table, coverage check, KieBase — is
      *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
      *  the red probe and every witness seam build exactly as a consumer of the backend does. */
-    private static CaseRunner build(Path irPath, DroolsBackend.Branch tak) throws java.io.IOException {
-        DroolsBackend.Build b = DroolsBackend.build(irPath, tak);
+    private static CaseRunner build(Path irPath, DroolsBackend.Branch branch) throws java.io.IOException {
+        DroolsBackend.Build b = DroolsBackend.build(irPath, branch);
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
         runner.bouw = b;
-        if (Sessiedump.NAADMAP != null) runner.documenthash = Sessiedump.hash(irPath);
+        if (SessionDump.SEAM_DIRECTORY != null) runner.documenthash = SessionDump.hash(irPath);
         return runner;
     }
 
@@ -374,7 +374,7 @@ public final class CaseRunner {
      *  loader refusal, or an {@link Excluded} from the build or from the case reader — with the reason), or NOFAULT
      *  (the case ran to a model — the backend does not enforce this red-path constraint, so its form is not
      *  Drools-carried). */
-    public record RoodResult(String status, String detail) {}
+    public record RedResult(String status, String detail) {}
 
     /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
      *  TYPE, not by phase. A loader refusal, or an {@link Excluded} from the build or from a case-input form, is an
@@ -390,61 +390,61 @@ public final class CaseRunner {
      *  the write-back throws. Gate 8 therefore pins only
      *  this backend's own sentence, never platform text, since a pin on a JDK message would pin a crash; for a
      *  refusal while the case is read, that sentence names position and lexeme. The same red path on either branch is
-     *  {@link #runRood(Path, Path, DroolsBackend.Branch)}. */
-    public static RoodResult runRood(Path irPath, Path casePath) {
-        return runRood(irPath, casePath, DroolsBackend.Branch.EXEC_MODEL);
+     *  {@link #runRed(Path, Path, DroolsBackend.Branch)}. */
+    public static RedResult runRed(Path irPath, Path casePath) {
+        return runRed(irPath, casePath, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** {@link #runRood(Path, Path)} on the branch {@code tak}: the red path of either rendering of the analysis, so that
-     *  a witness can demand the same {@link RoodResult} of both branches on every red case (card
-     *  drl-teksttak-op-truth-maintenance, step 6b). Gate 8's Drools leg ({@code DroolsRoodMain}) drives the exec-model
+    /** {@link #runRed(Path, Path)} on the branch {@code branch}: the red path of either rendering of the analysis, so that
+     *  a witness can demand the same {@link RedResult} of both branches on every red case (card
+     *  drl-teksttak-op-truth-maintenance, step 6b). Gate 8's Drools leg ({@code DroolsRedMain}) drives the exec-model
      *  branch through the entry above. */
-    public static RoodResult runRood(Path irPath, Path casePath, DroolsBackend.Branch tak) {
+    public static RedResult runRed(Path irPath, Path casePath, DroolsBackend.Branch branch) {
         CaseRunner runner;
         try {
-            runner = build(irPath, tak);
+            runner = build(irPath, branch);
         } catch (Excluded e) {
-            return new RoodResult("EXCLUDE", e.getMessage());
+            return new RedResult("EXCLUDE", e.getMessage());
         } catch (IrLoader.Refusal e) {
-            return new RoodResult("EXCLUDE", "loader: " + e.getMessage());
+            return new RedResult("EXCLUDE", "loader: " + e.getMessage());
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
         try {
             JsonNode c = JSON.readTree(Files.readString(casePath));
-            String fault = runner.fireRood(c);
+            String fault = runner.fireRed(c);
             return fault == null
-                    ? new RoodResult("NOFAULT", "ran to a model without faulting")
-                    : new RoodResult("FAULT", fault);
+                    ? new RedResult("NOFAULT", "ran to a model without faulting")
+                    : new RedResult("FAULT", fault);
         } catch (Excluded e) {
-            return new RoodResult("EXCLUDE", e.getMessage());
+            return new RedResult("EXCLUDE", e.getMessage());
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + casePath + ": " + e.getMessage(), e);
         } catch (RuntimeException e) {
             // a fault raised while loading inputs or firing rules — a division by zero surfaces here, wrapped by
             // Drools; the whole cause chain is the report so the pinned fragment can match the deepest message.
-            return new RoodResult("FAULT", faultText(e));
+            return new RedResult("FAULT", faultText(e));
         }
     }
 
     /** Fire one red-path case: load its world, fire the rules, and return the fault text if the run does not
      *  reach a fixpoint. Returns {@code null} when the run completes cleanly (a NOFAULT — the backend produced a
      *  model where ref/clingo reject). A fault raised at fire propagates as an exception the caller renders. */
-    private String fireRood(JsonNode c) {
-        labelNaarBean.clear();
+    private String fireRed(JsonNode c) {
+        labelToBean.clear();
         labelType.clear();
-        rekendatum = asOfDatum(c);
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        rekendatum = asOfDate(c);
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
         try {
-            CaseInvoer invoer = leesInvoer(c);
-            zetGlobals(sessie, c);
+            CaseInvoer invoer = readInput(c);
+            setGlobals(sessie, c);
             DroolsBackend.voegIn(bouw, sessie, invoer.invoer());
-            return vuurTotFixpunt(sessie);
+            return fireToFixpoint(sessie);
         } finally {
             sessie.dispose();
-            Thread.currentThread().setContextClassLoader(vorige);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
@@ -468,9 +468,9 @@ public final class CaseRunner {
 
     /** The input beans of the case by label, and their object types, as {@link CaseInvoer} read them: the labels of the
      *  report, the seam and the write-back. */
-    private final Map<String, Object> labelNaarBean = new LinkedHashMap<>();
+    private final Map<String, Object> labelToBean = new LinkedHashMap<>();
     private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
-    /** The case's evaluation date, which {@link #zetGlobals} sets as the global {@code rekendatum}. */
+    /** The case's evaluation date, which {@link #setGlobals} sets as the global {@code rekendatum}. */
     private LocalDate rekendatum;
 
     private String runCase(String naam, JsonNode c) {
@@ -479,177 +479,177 @@ public final class CaseRunner {
 
     /** One case: its verdict line, null on a match. The expectations are compared through the backend's entry
      *  ({@link DroolsBackend#vergelijk}), with the case labels of this runner, as a consumer compares them. With a
-     *  {@link Waarneming} the replay also reports the firings and every expectation's verdict ({@link #rapport}); the
+     *  {@link Observation} the replay also reports the firings and every expectation's verdict ({@link #rapport}); the
      *  verdict itself does not depend on it. */
-    private String runCase(String naam, JsonNode c, Waarneming w) {
-        labelNaarBean.clear();
+    private String runCase(String naam, JsonNode c, Observation w) {
+        labelToBean.clear();
         labelType.clear();
-        rekendatum = asOfDatum(c);
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        rekendatum = asOfDate(c);
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
         try {
-            CaseInvoer invoer = leesInvoer(c);
-            zetGlobals(sessie, c);
+            CaseInvoer invoer = readInput(c);
+            setGlobals(sessie, c);
             DroolsBackend.voegIn(bouw, sessie, invoer.invoer());
-            String geenFixpunt = vuurTotFixpunt(sessie, w == null ? null : w.vuren);
+            String geenFixpunt = fireToFixpoint(sessie, w == null ? null : w.fireObserver);
             if (geenFixpunt != null) return naam + ": " + geenFixpunt;
-            DroolsBackend.Vergelijking vergelijking =
-                    DroolsBackend.vergelijk(bouw, sessie, this::labelVanBean, c.get("expected"));
-            if (w != null) w.verwachtingen.addAll(vergelijking.verwachtingen());
-            return vergelijking.pass() ? null : naam + ": " + vergelijking.diagnose();
+            DroolsBackend.Vergelijking comparison =
+                    DroolsBackend.vergelijk(bouw, sessie, this::beanLabel, c.get("expected"));
+            if (w != null) w.verwachtingen.addAll(comparison.verwachtingen());
+            return comparison.pass() ? null : naam + ": " + comparison.diagnose();
         } finally {
             sessie.dispose();
-            Thread.currentThread().setContextClassLoader(vorige);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
     /** Fires {@code sessie} through the backend's entry ({@link DroolsBackend#vuur}), under the cap a consumer gets, and
      *  returns null at a fixpoint. A run without one returns the sentence of {@code vuur}, which names the cap and what
      *  it was computed from, or that of the creation budget. A consequence that throws leaves the fire as
-     *  {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on either
+     *  {@link DroolsBackend#designate} names it; every replay, red path and report of this class fires here, on either
      *  branch. At a fixpoint the derivations go onto the beans before anything reads them, or the evaluation faults
      *  that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}); without a fixpoint nothing is written
      *  back, since the replay reports the sentence and reads no bean. With the property
-     *  {@value Sessiedump#EIGENSCHAP} a seam writes the dump of the session ({@link Sessiedump}) right after the fire,
+     *  {@value SessionDump#PROPERTY} a seam writes the dump of the session ({@link SessionDump}) right after the fire,
      *  before the write-back, also where the fire throws, on either branch. */
-    private String vuurTotFixpunt(KieSession sessie) {
-        return vuurTotFixpunt(sessie, null);
+    private String fireToFixpoint(KieSession sessie) {
+        return fireToFixpoint(sessie, null);
     }
 
-    /** As above, with {@code waarnemer} recording what the session fires ({@link DroolsBackend.Waarnemer}); null
+    /** As above, with {@code observer} recording what the session fires ({@link DroolsBackend.Waarnemer}); null
      *  records nothing. */
-    private String vuurTotFixpunt(KieSession sessie, DroolsBackend.Waarnemer waarnemer) {
-        Sessiedump spoor = documenthash == null ? null : Sessiedump.op(sessie, labelNaarBean);
-        DroolsBackend.Vuring vuring;
+    private String fireToFixpoint(KieSession sessie, DroolsBackend.Waarnemer observer) {
+        SessionDump trace = documenthash == null ? null : SessionDump.op(sessie, labelToBean);
+        DroolsBackend.Vuring firing;
         try {
-            vuring = waarnemer == null ? DroolsBackend.vuur(bouw, sessie) : DroolsBackend.vuur(bouw, sessie, waarnemer);
+            firing = observer == null ? DroolsBackend.vuur(bouw, sessie) : DroolsBackend.vuur(bouw, sessie, observer);
         } catch (RuntimeException e) {
-            if (spoor != null) spoor.naad(documenthash, bouw, e, labelNaarBean);
-            if (e instanceof ConsequenceException c) throw DroolsBackend.benoem(c);
+            if (trace != null) trace.seam(documenthash, bouw, e, labelToBean);
+            if (e instanceof ConsequenceException c) throw DroolsBackend.designate(c);
             throw e;
         }
-        if (spoor != null) spoor.naad(documenthash, bouw, vuring, labelNaarBean);
-        if (vuring.geenFixpunt() == null) {
-            DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
+        if (trace != null) trace.seam(documenthash, bouw, firing, labelToBean);
+        if (firing.geenFixpunt() == null) {
+            DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::beanLabel);
             return null;
         }
-        return vuring.geenFixpunt();
+        return firing.geenFixpunt();
     }
 
     /** Reads case {@code c} through the backend's entry ({@link CaseInvoer}), as a consumer reads it, and keeps its
      *  labels for this runner's report, seam and write-back. */
-    private CaseInvoer leesInvoer(JsonNode c) {
+    private CaseInvoer readInput(JsonNode c) {
         CaseInvoer invoer = CaseInvoer.van(bouw, c);
-        labelNaarBean.putAll(invoer.beans());
+        labelToBean.putAll(invoer.beans());
         labelType.putAll(invoer.typen());
         return invoer;
     }
 
     /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal bean member — a {@code List<Segment>} field,
      *  the shape {@link FactModelGenerator} derives from a declared attribuutGranulariteit. */
-    boolean temporeel(Objecttype ot, String attr) {
-        return Namen.bevatNaam(ot.granulariteitLeden(), attr);
+    boolean temporal(Objecttype ot, String attr) {
+        return Namen.containsName(ot.granulariteitLeden(), attr);
     }
 
     /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map<String, BigDecimal>}
-     *  field. Checked BEFORE {@link #temporeel}: the generator gives a dimensioned declaration the Map shape
+     *  field. Checked BEFORE {@link #temporal}: the generator gives a dimensioned declaration the Map shape
      *  even when a granularity is declared beside it. */
-    boolean gedimensioneerd(Objecttype ot, String attr) {
+    boolean dimensioned(Objecttype ot, String attr) {
         return !ot.dimensiesVan(attr).isEmpty();
     }
 
     /** The declared name of the attribute a case writes as {@code naam} on {@code ot} or one of its ancestors, under the
-     *  name equality of the reference interpreter ({@link Namen#gedeclareerdeNaam}); {@code naam} where {@code ot} is null
+     *  name equality of the reference interpreter ({@link Namen#declaredName}); {@code naam} where {@code ot} is null
      *  or declares none. The generator derives a member's getter and setter from its declared name, and a case may
      *  write the name in another capitalisation, "vondstNummer" for a declared "vondstnummer", which the reference
      *  interpreter reads as the same member: a method derived from the written name would be one the bean lacks. */
-    static String attribuutnaam(Objecttype ot, String naam) {
-        return ot == null ? naam : Namen.gedeclareerdeNaam(ot.attribuutLeden().keySet(), naam);
+    static String attributeName(Objecttype ot, String naam) {
+        return ot == null ? naam : Namen.declaredName(ot.attribuutLeden().keySet(), naam);
     }
 
-    /** {@link #attribuutnaam} for a characteristic. */
-    static String kenmerknaam(Objecttype ot, String naam) {
+    /** {@link #attributeName} for a characteristic. */
+    static String characteristicName(Objecttype ot, String naam) {
         if (ot == null) return naam;
-        List<String> gedeclareerd = new ArrayList<>();
-        for (Objecttype t : ot.keten()) gedeclareerd.addAll(t.kenmerken);
-        return Namen.gedeclareerdeNaam(gedeclareerd, naam);
+        List<String> declared = new ArrayList<>();
+        for (Objecttype t : ot.keten()) declared.addAll(t.kenmerken);
+        return Namen.declaredName(declared, naam);
     }
 
-    private void zetGlobals(KieSession sessie, JsonNode c) {
+    private void setGlobals(KieSession sessie, JsonNode c) {
         JsonNode params = c.get("input").get("parameters");
         if (params != null) for (Map.Entry<String, JsonNode> e : params.properties()) {
             if (e.getValue().has("timeline"))
                 throw new Excluded("granular (timeline) parameter '" + e.getKey() + "' is not carried by the v0 backend");
-            setGlobalVeilig(sessie, Namen.ident(e.getKey(), false), waardeNaarArg(e.getValue(), e.getKey()));
+            setGlobalSafe(sessie, Namen.ident(e.getKey(), false), valueToArg(e.getValue(), e.getKey()));
         }
-        if (rekendatum != null) setGlobalVeilig(sessie, "rekendatum", rekendatum);
+        if (rekendatum != null) setGlobalSafe(sessie, "rekendatum", rekendatum);
         // §9.8 the DRL-text branch reaches its dagsoort predicates through globals (the exec branch closes over
         // them); empty for the exec branch.
         for (Map.Entry<String, java.util.function.Predicate<LocalDate>> e : dagsoortGlobalen.entrySet())
-            setGlobalVeilig(sessie, e.getKey(), e.getValue());
+            setGlobalSafe(sessie, e.getKey(), e.getValue());
     }
 
     /** The case's {@code asOfDate}, or null when it carries none. */
-    static LocalDate asOfDatum(JsonNode c) {
+    static LocalDate asOfDate(JsonNode c) {
         JsonNode asOf = c.get("asOfDate");
-        return asOf == null || asOf.isNull() ? null : datumVanCaseWire(asOf.asText(), "asOfDate");
+        return asOf == null || asOf.isNull() ? null : caseWireDate(asOf.asText(), "asOfDate");
     }
 
-    private static void setGlobalVeilig(KieSession sessie, String naam, Object waarde) {
+    private static void setGlobalSafe(KieSession sessie, String naam, Object waarde) {
         try { sessie.setGlobal(naam, waarde); }
-        catch (RuntimeException onbekend) { /* global not declared: no rule reads it */ }
+        catch (RuntimeException unknown) { /* global not declared: no rule reads it */ }
     }
 
     // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------
 
     /** The segments of a timeline value, with ref's load-time validation mirrored: at least one segment (an
-     *  EXPECTATION may be empty — {@code leegToegestaan}), {@code from} before {@code to}, both boundaries on the
+     *  EXPECTATION may be empty — {@code emptyAllowed}), {@code from} before {@code to}, both boundaries on the
      *  declared granularity grid, and the list ordered and non-overlapping as written. A malformed timeline is a
      *  hard failure, never a silent acceptance: the case schema (gate 4) and ref (gate 5) reject it first, so
      *  reaching it here means the corpus and this reader disagree. A grid that carries no case timeline is a
-     *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code plek}
+     *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code site}
      *  ({@code J1.m2} for an input, {@code expected J1.m2} for an expectation): a grid of several units and a
      *  variable start before any segment is read, the calendar's day, week and quarter grid at the first segment. */
-    List<Object> tijdreeks(JsonNode segs, String veld, String plek, Rooster gran, boolean leegToegestaan) {
+    List<Object> timelineSegments(JsonNode segs, String veld, String site, Grid gran, boolean emptyAllowed) {
         if (segs == null || !segs.isArray())
             throw new IllegalArgumentException("misvormde tijdlijnwaarde op '" + veld + "'");
-        if (segs.isEmpty() && !leegToegestaan)
+        if (segs.isEmpty() && !emptyAllowed)
             throw new IllegalArgumentException("tijdlijnwaarde op '" + veld + "' draagt geen enkel segment");
         if (gran.aantal() != 1)
-            throw new Excluded(plek + ": the declared grid is " + gran.aantal() + " " + spelling(gran.gran())
+            throw new Excluded(site + ": the declared grid is " + gran.aantal() + " " + spelling(gran.gran())
                     + " units, a multi-period grid, which carries no operation, a case input included"
                     + " (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the"
                     + " case");
-        if (gran.variabel())
-            throw new Excluded(plek + ": the declared grid is laid per object from the anchor of a variable start,"
+        if (gran.variable())
+            throw new Excluded(site + ": the declared grid is laid per object from the anchor of a variable start,"
                     + " which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a"
                     + " defect of the case");
-        List<Object> uit = new ArrayList<>();
-        LocalDate vorigeTot = null;
+        List<Object> out = new ArrayList<>();
+        LocalDate previousTo = null;
         for (JsonNode sj : segs) {
-            LocalDate van = grensDatum(sj, "from", veld), tot = grensDatum(sj, "to", veld);
-            if (!van.isBefore(tot))
+            LocalDate van = boundDate(sj, "from", veld), to = boundDate(sj, "to", veld);
+            if (!van.isBefore(to))
                 throw new IllegalArgumentException("segment 'to' op '" + veld + "' ligt niet na 'from'");
-            if (gran.vast() == null) kalenderRoosterVoorInvoer(gran.gran(), plek);
-            if (!emmer(gran, van)[0].equals(van) || !emmer(gran, tot)[0].equals(tot))
+            if (gran.fixed() == null) calendarGridForInput(gran.gran(), site);
+            if (!bucket(gran, van)[0].equals(van) || !bucket(gran, to)[0].equals(to))
                 throw new IllegalArgumentException("segmentgrens op '" + veld + "' ligt niet op het "
-                        + gran.gran() + "-raster" + (gran.vast() == null ? "" : " vanaf " + gran.vast()));
-            if (vorigeTot != null && vorigeTot.isAfter(van))
+                        + gran.gran() + "-raster" + (gran.fixed() == null ? "" : " vanaf " + gran.fixed()));
+            if (previousTo != null && previousTo.isAfter(van))
                 throw new IllegalArgumentException("tijdlijnsegmenten op '" + veld + "' zijn ongeordend of overlappen");
-            vorigeTot = tot;
-            uit.add(segment(van, tot, segmentWaarde(sj.get("value"), veld)));
+            previousTo = to;
+            out.add(segment(van, to, segmentValue(sj.get("value"), veld)));
         }
-        return uit;
+        return out;
     }
 
     /** The grid a temporal member's case values sit on: its facet's granularity and count, its fixed start point,
      *  and whether it rides a timeline with a variable start (RUNTIME-SEMANTICS ch. 3.2). */
-    record Rooster(Granulariteit gran, int aantal, String vast, boolean variabel) {}
+    record Grid(Granulariteit gran, int aantal, String fixed, boolean variable) {}
 
-    Rooster rooster(Objecttype ot, String attr) {
-        Integer aantal = Namen.opNaam(ot.tijdlijnAantalLeden(), attr);
-        return new Rooster(Namen.opNaam(ot.granulariteitLeden(), attr), aantal == null ? 1 : aantal,
+    Grid grid(Objecttype ot, String attr) {
+        Integer aantal = Namen.byName(ot.tijdlijnAantalLeden(), attr);
+        return new Grid(Namen.byName(ot.granulariteitLeden(), attr), aantal == null ? 1 : aantal,
                 ot.vastStartpuntVan(attr), model.heeftVariabelStartpunt(ot, attr));
     }
 
@@ -659,15 +659,15 @@ public final class CaseRunner {
      *  not-carried, never a guessed grid, in the sentence of ref's grid function, which the ASP backend speaks as
      *  well: a grid of several units carries no operation, a variable start is laid per object from an anchor the
      *  case does not give, and the calendar lays no day, week or quarter bucket. For a case timeline
-     *  {@link #tijdreeks} refuses the same grids first, in the sentence of ref's case loader. */
-    static LocalDate[] emmer(Rooster r, LocalDate d) {
+     *  {@link #timelineSegments} refuses the same grids first, in the sentence of ref's case loader. */
+    static LocalDate[] bucket(Grid r, LocalDate d) {
         if (r.aantal() != 1)
             throw new Excluded("a multi-period grid (" + r.aantal() + " " + spelling(r.gran()) + " periods) carries"
                     + " no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12)");
-        if (r.variabel())
+        if (r.variable())
             throw new Excluded("a variable-start grid is laid per object from the anchor its start-point"
                     + " determination binds, which this interpreter does not execute (ch. 3.2)");
-        if (r.vast() != null) return VastStartpunt.periode(r.gran(), r.vast(), d);
+        if (r.fixed() != null) return VastStartpunt.periode(r.gran(), r.fixed(), d);
         switch (r.gran()) {
             case JAAR:
                 return new LocalDate[]{ LocalDate.of(d.getYear(), 1, 1), LocalDate.of(d.getYear() + 1, 1, 1) };
@@ -681,15 +681,15 @@ public final class CaseRunner {
 
     /** ref's loader checks a case timeline on the calendar grid through the calendar bucketing, which has month and
      *  year buckets only (ch. 3.2), and refuses the other three granularities as a v0 limit, each in its own
-     *  sentence; this is that refusal, at position {@code plek}. */
-    private static void kalenderRoosterVoorInvoer(Granulariteit gran, String plek) {
+     *  sentence; this is that refusal, at position {@code site}. */
+    private static void calendarGridForInput(Granulariteit gran, String site) {
         switch (gran) {
             case JAAR, MAAND -> { }
-            case DAG -> throw new Excluded(plek + ": the declared grid is day, which every day boundary sits on, yet"
+            case DAG -> throw new Excluded(site + ": the declared grid is day, which every day boundary sits on, yet"
                     + " this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets"
                     + " for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit,"
                     + " not as a defect of the case");
-            default -> throw new Excluded(plek + ": the declared grid is " + spelling(gran) + ", and v0 defines"
+            default -> throw new Excluded(site + ": the declared grid is " + spelling(gran) + ", and v0 defines"
                     + " calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so"
                     + " this loader has no " + spelling(gran) + " grid to check the segment boundaries against:"
                     + " refused as a v0 limit, not as a defect of the case");
@@ -703,28 +703,28 @@ public final class CaseRunner {
 
     /** The numeric value of one segment. The generated {@code Segment} holds a {@code BigDecimal} waarde, so a
      *  non-numeric timeline value has no bean representation — a reason-carrying not-carried, never a coercion. */
-    BigDecimal segmentWaarde(JsonNode w, String veld) {
-        Object v = waardeNaarArg(w, veld);
+    BigDecimal segmentValue(JsonNode w, String veld) {
+        Object v = valueToArg(w, veld);
         if (v == null || v instanceof BigDecimal) return (BigDecimal) v;
         throw new Excluded("non-numeric timeline value on '" + veld + "' is not carried by the v0 backend — "
                 + "the generated Segment holds a BigDecimal waarde");
     }
 
-    static LocalDate grensDatum(JsonNode seg, String veld, String waar) {
+    static LocalDate boundDate(JsonNode seg, String veld, String where) {
         JsonNode d = seg == null ? null : seg.get(veld);
         if (d == null || !d.isTextual())
-            throw new IllegalArgumentException("segment op '" + waar + "' mist een '" + veld + "'-datum");
+            throw new IllegalArgumentException("segment op '" + where + "' mist een '" + veld + "'-datum");
         // the field name carries BOTH coordinates: a case may hold many timelines and each holds two
         // boundaries, so "onderhoudstarief.from" is the only form a producer can act on
-        return datumVanCaseWire(d.asText(), waar + "." + veld);
+        return caseWireDate(d.asText(), where + "." + veld);
     }
 
     /** One {@code Segment} fact of the generated bean model, built through the runtime's own reflective
      *  constructor — the Segment class is a runtime objecttype, unknown at compile time. */
-    Object segment(LocalDate van, LocalDate tot, BigDecimal waarde) {
+    Object segment(LocalDate van, LocalDate to, BigDecimal waarde) {
         try {
             return RegelSpraakRuntime.newSegment(
-                    Class.forName(FactModelGenerator.PAKKET + ".Segment", true, cl), van, tot, waarde);
+                    Class.forName(FactModelGenerator.PAKKET + ".Segment", true, cl), van, to, waarde);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("de gegenereerde Segment-factklasse ontbreekt", e);
         }
@@ -735,23 +735,23 @@ public final class CaseRunner {
     /** The comparison behind {@link DroolsBackend#vergelijk}, on a runner of {@code build} that knows the beans of
      *  {@code sessie} by the labels of the caller: {@code perLabel} gives the bean of each label, {@code typen} its object
      *  type. The runner reads no case input, so a session the caller filled itself compares as one of the replay. */
-    static DroolsBackend.Vergelijking vergelijking(DroolsBackend.Build build, KieSession sessie,
+    static DroolsBackend.Vergelijking comparison(DroolsBackend.Build build, KieSession sessie,
                                                    Map<String, Object> perLabel, Map<String, Objecttype> typen,
                                                    JsonNode verwachtingen) {
         CaseRunner r = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dagsoortGlobalen());
-        r.labelNaarBean.putAll(perLabel);
+        r.labelToBean.putAll(perLabel);
         r.labelType.putAll(typen);
-        List<ScenarioResultaat.VerwachtingResultaat> uit = new ArrayList<>();
+        List<ScenarioResultaat.VerwachtingResultaat> out = new ArrayList<>();
         List<String> mis = new ArrayList<>();
         int positie = 0;
         for (JsonNode v : verwachtingen) {
             String m = r.vergelijk(v, sessie);
             if (m != null) mis.add(m);
             positie++;
-            uit.add(new ScenarioResultaat.VerwachtingResultaat(bron(v), r.verwacht(v), r.werkelijk(v, sessie), m == null,
+            out.add(new ScenarioResultaat.VerwachtingResultaat(bron(v), r.verwacht(v), r.werkelijk(v, sessie), m == null,
                     positie));
         }
-        return new DroolsBackend.Vergelijking(uit, String.join("; ", mis));
+        return new DroolsBackend.Vergelijking(out, String.join("; ", mis));
     }
 
     /** The object type of the bean that carries {@code label}, for expectation {@code v} on one of its members. A label
@@ -759,7 +759,7 @@ public final class CaseRunner {
      *  {@link DroolsBackend#vergelijk} let attributeEmpty and characteristicAbsent hold on a label that names nothing, as
      *  when a caller gives the case labels to a session it labelled with the ids of its request. ref refuses such a case
      *  at load ("expectation references unknown label"). */
-    private Objecttype typeVanLabel(JsonNode v, String label) {
+    private Objecttype typeOfLabel(JsonNode v, String label) {
         Objecttype ot = labelType.get(label);
         if (ot == null)
             throw new IllegalArgumentException(v.get("kind").asText() + "-verwachting op onbekend label '" + label
@@ -774,31 +774,31 @@ public final class CaseRunner {
             case "attributeEmpty" -> attribuut(v, true);
             case "characteristicPresent" -> kenmerk(v, true);
             case "characteristicAbsent" -> kenmerk(v, false);
-            case "consistent" -> consistentie(sessie, false, v);
-            case "inconsistent" -> consistentie(sessie, true, v);
-            case "attributeTimeline" -> tijdlijn(v);
+            case "consistent" -> consistency(sessie, false, v);
+            case "inconsistent" -> consistency(sessie, true, v);
+            case "attributeTimeline" -> timeline(v);
             default -> throw new Excluded("unknown expectation kind: " + kind);
         };
     }
 
-    private String attribuut(JsonNode v, boolean leegVerwacht) {
+    private String attribuut(JsonNode v, boolean emptyExpected) {
         String attr = v.get("attribute").asText();
         String label = v.get("label").asText();
-        Objecttype ot = typeVanLabel(v, label);
-        eigenVeld(ot, attr, false, "leest");
-        if (gedimensioneerd(ot, attr))
+        Objecttype ot = typeOfLabel(v, label);
+        ownField(ot, attr, false, "leest");
+        if (dimensioned(ot, attr))
             throw new Excluded("dimensioned attribute read-back '" + attr + "' (§3.6, a Map bean member) "
                     + "is not carried by the v0 backend");
         // a temporal attribute's bean member is the List<Segment> timeline itself: the scalar comparison below
         // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
-        if (temporeel(ot, attr))
+        if (temporal(ot, attr))
             throw new Excluded("scalar read-back of temporal attribute '" + attr + "' is not carried by the v0 "
                     + "backend — the bean holds a List<Segment>; use an attributeTimeline expectation");
-        Object werkelijk = lees(labelNaarBean.get(label), Namen.getter(attribuutnaam(ot, attr)));
-        if (leegVerwacht)
+        Object werkelijk = lees(labelToBean.get(label), Namen.getter(attributeName(ot, attr)));
+        if (emptyExpected)
             return werkelijk == null ? null : "verwacht leeg, werkelijk " + werkelijk;
-        Object verwacht = waardeNaarArg(v.get("value"), attr);
-        return gelijkeWaarde(v.get("value"), verwacht, werkelijk) ? null
+        Object verwacht = valueToArg(v.get("value"), attr);
+        return equalValue(v.get("value"), verwacht, werkelijk) ? null
                 : "attribuut " + attr + ": verwacht " + render(verwacht) + ", werkelijk " + render(werkelijk);
     }
 
@@ -808,7 +808,7 @@ public final class CaseRunner {
      *  list through the runtime's ordered writes), so an order-blind comparator has no observable witness —
      *  the claim stops at what is falsifiable. A never-written target (a null field) matches an explicitly
      *  empty expectation: both read leeg on every day (ch. 3.1), exactly as ref and clingo pin it. */
-    private String tijdlijn(JsonNode v) {
+    private String timeline(JsonNode v) {
         String attr = v.get("attribute").asText(), label = v.get("label").asText();
         Objecttype ot = labelType.get(label);
         // both are CASE defects, not uncarried forms — ref rejects the same shapes at load ("expected
@@ -816,51 +816,51 @@ public final class CaseRunner {
         // unknown-label arm would otherwise reach emmer() with a null granularity (an unnamed NPE).
         if (ot == null)
             throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
-        if (!temporeel(ot, attr))
+        if (!temporal(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
-        eigenVeld(ot, attr, false, "leest");
-        List<Object> verwacht = tijdreeks(v.get("timeline"), attr, "expected " + label + "." + attr, rooster(ot, attr),
+        ownField(ot, attr, false, "leest");
+        List<Object> verwacht = timelineSegments(v.get("timeline"), attr, "expected " + label + "." + attr, grid(ot, attr),
                 true);
-        Object gelezen = labelNaarBean.containsKey(label)
-                ? lees(labelNaarBean.get(label), Namen.getter(attribuutnaam(ot, attr))) : null;
-        if (gelezen == null)
+        Object read = labelToBean.containsKey(label)
+                ? lees(labelToBean.get(label), Namen.getter(attributeName(ot, attr))) : null;
+        if (read == null)
             return verwacht.isEmpty() ? null
                     : "attribuut " + attr + ": draagt geen tijdreeks, verwacht " + renderTl(verwacht);
-        List<?> werkelijk = (List<?>) gelezen;
-        boolean gelijk = werkelijk.size() == verwacht.size();
-        for (int k = 0; gelijk && k < verwacht.size(); k++)
-            gelijk = segGelijk(verwacht.get(k), werkelijk.get(k));
-        return gelijk ? null
+        List<?> werkelijk = (List<?>) read;
+        boolean equal = werkelijk.size() == verwacht.size();
+        for (int k = 0; equal && k < verwacht.size(); k++)
+            equal = segEqual(verwacht.get(k), werkelijk.get(k));
+        return equal ? null
                 : "attribuut " + attr + ": verwacht " + renderTl(verwacht) + ", werkelijk " + renderTl(werkelijk);
     }
 
-    private static boolean segGelijk(Object verw, Object werkelijk) {
-        return java.util.Objects.equals(segVeld(verw, "van"), segVeld(werkelijk, "van"))
-                && java.util.Objects.equals(segVeld(verw, "tot"), segVeld(werkelijk, "tot"))
-                && gelijk(segVeld(verw, "waarde"), segVeld(werkelijk, "waarde"));
+    private static boolean segEqual(Object verw, Object werkelijk) {
+        return java.util.Objects.equals(segField(verw, "van"), segField(werkelijk, "van"))
+                && java.util.Objects.equals(segField(verw, "tot"), segField(werkelijk, "tot"))
+                && equal(segField(verw, "waarde"), segField(werkelijk, "waarde"));
     }
 
     /** One field of a {@code Segment} fact, read through the runtime's property bridge (the class is a runtime
      *  objecttype — no compile-time type to cast to). */
-    private static Object segVeld(Object seg, String veld) { return RegelSpraakRuntime.get(seg, veld); }
+    private static Object segField(Object seg, String veld) { return RegelSpraakRuntime.get(seg, veld); }
 
     private static String renderTl(List<?> segs) {
         if (segs.isEmpty()) return "(leeg)";
-        List<String> uit = new ArrayList<>();
+        List<String> out = new ArrayList<>();
         for (Object s : segs)
-            uit.add("[" + segVeld(s, "van") + "," + segVeld(s, "tot") + ")=" + render(segVeld(s, "waarde")));
-        return String.join(" ", uit);
+            out.add("[" + segField(s, "van") + "," + segField(s, "tot") + ")=" + render(segField(s, "waarde")));
+        return String.join(" ", out);
     }
 
-    private String kenmerk(JsonNode v, boolean aanwezigVerwacht) {
-        Objecttype ot = typeVanLabel(v, v.get("label").asText());
-        eigenVeld(ot, v.get("characteristic").asText(), true, "leest");
-        Object gelezen = lees(labelNaarBean.get(v.get("label").asText()),
-                Namen.getter(kenmerknaam(ot, v.get("characteristic").asText())));
-        boolean aanwezig = Boolean.TRUE.equals(gelezen);
-        return aanwezig == aanwezigVerwacht ? null
+    private String kenmerk(JsonNode v, boolean aanwezigExpected) {
+        Objecttype ot = typeOfLabel(v, v.get("label").asText());
+        ownField(ot, v.get("characteristic").asText(), true, "leest");
+        Object read = lees(labelToBean.get(v.get("label").asText()),
+                Namen.getter(characteristicName(ot, v.get("characteristic").asText())));
+        boolean aanwezig = Boolean.TRUE.equals(read);
+        return aanwezig == aanwezigExpected ? null
                 : "kenmerk " + v.get("characteristic").asText() + ": verwacht "
-                + (aanwezigVerwacht ? "aanwezig" : "afwezig") + ", werkelijk " + (aanwezig ? "aanwezig" : "afwezig");
+                + (aanwezigExpected ? "aanwezig" : "afwezig") + ", werkelijk " + (aanwezig ? "aanwezig" : "afwezig");
     }
 
     /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistentie fact at all
@@ -872,20 +872,20 @@ public final class CaseRunner {
      *  fact from its rule, wherever it landed. That masked one real divergence: both transpilers laid the §9.5
      *  allocation error on the source instead of each recipient ({@code jutterswet-rangmaximering}), fixed in the same
      *  card. An expectation carrying no rule falls back to bare presence. */
-    private String consistentie(KieSession sessie, boolean inconsistentVerwacht, JsonNode v) {
+    private String consistency(KieSession sessie, boolean inconsistentExpected, JsonNode v) {
         List<Object> facts = inconsistenties(sessie);
-        if (!inconsistentVerwacht)
+        if (!inconsistentExpected)
             return facts.isEmpty() ? null : "verwacht consistent, werkelijk inconsistent (" + renderIncs(facts) + ")";
         String rule = v.has("rule") && !v.get("rule").isNull() ? v.get("rule").asText() : null;
         String label = v.has("label") && !v.get("label").isNull() ? v.get("label").asText() : null;
         if (facts.isEmpty())
-            return "verwacht inconsistent" + sleutelTekst(rule, label) + ", werkelijk consistent";
+            return "verwacht inconsistent" + keyText(rule, label) + ", werkelijk consistent";
         if (rule == null) return null;   // presence-only expectation, satisfied by any fact
         for (Object f : facts) {
-            if (!zelfdeRegel(rule, (String) lees(f, "getRegel"))) continue;
-            if (label == null || label.equals(labelVanBean(lees(f, "getSubject")))) return null;
+            if (!sameRule(rule, (String) lees(f, "getRegel"))) continue;
+            if (label == null || label.equals(beanLabel(lees(f, "getSubject")))) return null;
         }
-        return "verwacht inconsistent" + sleutelTekst(rule, label) + ", niet gevonden onder " + renderIncs(facts);
+        return "verwacht inconsistent" + keyText(rule, label) + ", niet gevonden onder " + renderIncs(facts);
     }
 
     /** Every §9.5 Inconsistentie fact the session holds. */
@@ -901,8 +901,8 @@ public final class CaseRunner {
     /** ref's rule-key identity on the §9.5 channel ({@code ref/lib/case.ml}, the {@code Inconsistent} arm):
      *  {@code norm (strip_version a) = norm (strip_version b)}. A rule is a declared name like any other, so a pin
      *  spelled differently from its declaration, or a pin on a version-flattened deposit, names the same rule. */
-    static boolean zelfdeRegel(String a, String b) {
-        return a != null && b != null && Namen.norm(zonderVersie(a)).equals(Namen.norm(zonderVersie(b)));
+    static boolean sameRule(String a, String b) {
+        return a != null && b != null && Namen.norm(withoutVersion(a)).equals(Namen.norm(withoutVersion(b)));
     }
 
     /** The verifier's {@code Checks.strip_version}, character for character: a trailing {@code " #<digits>"}
@@ -910,7 +910,7 @@ public final class CaseRunner {
      *  space before it; anything else stays. Stripped BEFORE norm, as ref does, so "X  #2" becomes "X " and then
      *  "x". Deliberately not {@code ProducentConsument.basisNaam}, which also strips a group prefix and a
      *  beslistabel suffix and would make this comparison wider than ref's. */
-    static String zonderVersie(String naam) {
+    static String withoutVersion(String naam) {
         int i = naam.lastIndexOf('#');
         if (i >= 2 && naam.charAt(i - 1) == ' ' && i + 1 < naam.length()
                 && naam.substring(i + 1).chars().allMatch(c -> c >= '0' && c <= '9'))
@@ -918,25 +918,25 @@ public final class CaseRunner {
         return naam;
     }
 
-    private static String sleutelTekst(String rule, String label) {
+    private static String keyText(String rule, String label) {
         return rule == null ? "" : " (" + rule + (label != null ? " @ " + label : "") + ")";
     }
 
-    /** The case label whose bean IS this fact's subject (identity) — the reverse of {@link #labelNaarBean},
+    /** The case label whose bean IS this fact's subject (identity) — the reverse of {@link #labelToBean},
      *  so the §9.5 fact's subject can be checked against the expectation's {@code label}. null if not an input bean. */
-    private String labelVanBean(Object bean) {
+    private String beanLabel(Object bean) {
         if (bean == null) return null;
-        for (Map.Entry<String, Object> e : labelNaarBean.entrySet()) if (e.getValue() == bean) return e.getKey();
+        for (Map.Entry<String, Object> e : labelToBean.entrySet()) if (e.getValue() == bean) return e.getKey();
         return null;
     }
 
     /** The §9.5 facts as "regel @ label", sorted: the session gives them in the order of its working memory, which
      *  differs between two renderings of one analysis, and a mismatch line must not. */
     private String renderIncs(List<Object> facts) {
-        List<String> uit = new ArrayList<>();
-        for (Object f : facts) uit.add(lees(f, "getRegel") + " @ " + labelVanBean(lees(f, "getSubject")));
-        uit.sort(Comparator.naturalOrder());
-        return String.join(", ", uit);
+        List<String> out = new ArrayList<>();
+        for (Object f : facts) out.add(lees(f, "getRegel") + " @ " + beanLabel(lees(f, "getSubject")));
+        out.sort(Comparator.naturalOrder());
+        return String.join(", ", out);
     }
 
     // ---------------- the report's renderings ----------------
@@ -945,7 +945,7 @@ public final class CaseRunner {
     private static String bron(JsonNode v) {
         String kind = v.get("kind").asText();
         if (kind.equals("inconsistent"))
-            return kind + sleutelTekst(v.hasNonNull("rule") ? v.get("rule").asText() : null,
+            return kind + keyText(v.hasNonNull("rule") ? v.get("rule").asText() : null,
                     v.hasNonNull("label") ? v.get("label").asText() : null);
         StringBuilder b = new StringBuilder(kind);
         for (String veld : new String[]{"label", "attribute", "characteristic"})
@@ -956,39 +956,39 @@ public final class CaseRunner {
     /** The expected side, rendered as {@link #werkelijk} renders the actual one. */
     private String verwacht(JsonNode v) {
         return switch (v.get("kind").asText()) {
-            case "attributeValue" -> render(waardeNaarArg(v.get("value"), v.get("attribute").asText()));
+            case "attributeValue" -> render(valueToArg(v.get("value"), v.get("attribute").asText()));
             case "attributeEmpty" -> "leeg";
             case "attributeTimeline" -> {
                 List<String> segs = new ArrayList<>();
                 for (JsonNode s : v.get("timeline"))
                     segs.add("[" + s.get("from").asText() + "," + s.get("to").asText() + ")="
-                            + render(waardeNaarArg(s.get("value"), v.get("attribute").asText())));
+                            + render(valueToArg(s.get("value"), v.get("attribute").asText())));
                 yield segs.isEmpty() ? "(leeg)" : String.join(" ", segs);
             }
             case "characteristicPresent" -> "aanwezig";
             case "characteristicAbsent" -> "afwezig";
             case "consistent" -> "consistent";
-            default -> "inconsistent" + sleutelTekst(v.hasNonNull("rule") ? v.get("rule").asText() : null,
+            default -> "inconsistent" + keyText(v.hasNonNull("rule") ? v.get("rule").asText() : null,
                     v.hasNonNull("label") ? v.get("label").asText() : null);
         };
     }
 
     /** The actual side after fire, read where the comparison reads it: a member through its declared name
-     *  ({@link #attribuutnaam}, {@link #kenmerknaam}), since a case may write it in another capitalisation. */
+     *  ({@link #attributeName}, {@link #characteristicName}), since a case may write it in another capitalisation. */
     private String werkelijk(JsonNode v, KieSession sessie) {
         String label = v.hasNonNull("label") ? v.get("label").asText() : null;
-        Object bean = label == null ? null : labelNaarBean.get(label);
+        Object bean = label == null ? null : labelToBean.get(label);
         Objecttype ot = label == null ? null : labelType.get(label);
         return switch (v.get("kind").asText()) {
             case "attributeValue", "attributeEmpty" -> render(bean == null ? null
-                    : lees(bean, Namen.getter(attribuutnaam(ot, v.get("attribute").asText()))));
+                    : lees(bean, Namen.getter(attributeName(ot, v.get("attribute").asText()))));
             case "attributeTimeline" -> {
-                Object gelezen = bean == null ? null
-                        : lees(bean, Namen.getter(attribuutnaam(ot, v.get("attribute").asText())));
-                yield gelezen == null ? "(leeg)" : renderTl((List<?>) gelezen);
+                Object read = bean == null ? null
+                        : lees(bean, Namen.getter(attributeName(ot, v.get("attribute").asText())));
+                yield read == null ? "(leeg)" : renderTl((List<?>) read);
             }
             case "characteristicPresent", "characteristicAbsent" -> bean != null && Boolean.TRUE.equals(
-                    lees(bean, Namen.getter(kenmerknaam(ot, v.get("characteristic").asText())))) ? "aanwezig" : "afwezig";
+                    lees(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))) ? "aanwezig" : "afwezig";
             default -> {
                 List<Object> facts = inconsistenties(sessie);
                 yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts) + ")";
@@ -998,13 +998,13 @@ public final class CaseRunner {
 
     // ---------------- value helpers ----------------
 
-    private static boolean gelijk(Object verw, Object werkelijk) {
+    private static boolean equal(Object verw, Object werkelijk) {
         if (verw == null) return werkelijk == null;
         if (verw instanceof BigDecimal b) return werkelijk instanceof BigDecimal w && b.compareTo(w) == 0;
         return verw.equals(werkelijk);
     }
 
-    /** {@link #gelijk} with the ONE value form whose identity is not byte equality: an ENUMERATION label is a
+    /** {@link #equal} with the ONE value form whose identity is not byte equality: an ENUMERATION label is a
      *  DECLARED NAME, and ref compares those up to {@code Checks.norm} ({@code arith.ml}: {@code Enum a, Enum b
      *  -> norm a = norm b}), while the ASP backend stores the normalised label outright. The bean holds the
      *  case's own spelling — ref keeps that too — so an input written in a capitalisation other than the
@@ -1014,25 +1014,25 @@ public final class CaseRunner {
      *  unreachable until the enumeration literal reader stopped refusing the whole document (card
      *  `drools-enumlabel-lezer`, 2026-09-20). The expectation NODE decides, not the Java type: a Tekst value
      *  arrives as the same String and keeps the exact equality §13.3.3.4 gives it. */
-    private static boolean gelijkeWaarde(JsonNode verwachtNode, Object verw, Object werkelijk) {
-        if (verwachtNode != null && verwachtNode.has("enumeration"))
+    private static boolean equalValue(JsonNode expectedNode, Object verw, Object werkelijk) {
+        if (expectedNode != null && expectedNode.has("enumeration"))
             return verw instanceof String a && werkelijk instanceof String b
                     && Namen.norm(a).equals(Namen.norm(b));
-        return gelijk(verw, werkelijk);
+        return equal(verw, werkelijk);
     }
 
     /** The Java value a uchar case value node denotes — the already-normalised scalar the bean setter /
      *  global takes. An input form the v0 backend does not carry (a list/struct/constructor value, a
      *  rational lexeme, a timeline) is a reason-carrying {@link Excluded}. */
-    Object waardeNaarArg(JsonNode w, String veld) {
+    Object valueToArg(JsonNode w, String veld) {
         if (w == null || w.isNull()) return null;
         if (w.has("number")) {
             String s = w.get("number").asText();
             if (s.contains("/")) throw new Excluded("rational value on '" + veld + "' is not carried by the v0 backend");
             return new BigDecimal(s);
         }
-        if (w.has("date")) return datumVanCaseWire(w.get("date").asText(), veld);
-        if (w.has("dateTime")) return datumTijdVanCaseWire(w.get("dateTime").asText(), veld);
+        if (w.has("date")) return caseWireDate(w.get("date").asText(), veld);
+        if (w.has("dateTime")) return caseWireDateTime(w.get("dateTime").asText(), veld);
         if (w.has("boolean")) return w.get("boolean").asBoolean();
         if (w.has("text")) return w.get("text").asText();
         if (w.has("enumeration")) return w.get("enumeration").asText();
@@ -1044,7 +1044,7 @@ public final class CaseRunner {
      * and no extended year. It is the schema's own pattern, held here as well, for the same reason as the
      * dateTime one below — gate 4 checks case FILES, this reader checks every case date that reaches the
      * backend by any route. */
-    private static final java.util.regex.Pattern CASE_DATUM =
+    private static final java.util.regex.Pattern CASE_DATE =
             java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
 
     /** The calendar day a case {@code date} names — or a loud refusal naming the FORM, never a guess.
@@ -1060,14 +1060,14 @@ public final class CaseRunner {
      *  sees files and not the values a generator or a hand run hands this backend directly. A malformed
      *  lexeme is a document defect, not a form this backend does not carry, so it is a hard error and never
      *  an {@link Excluded}. */
-    private static LocalDate datumVanCaseWire(String lexeem, String veld) {
-        if (!CASE_DATUM.matcher(lexeem).matches())
-            throw new IllegalArgumentException("malformed date '" + lexeem + "' on '" + veld
+    private static LocalDate caseWireDate(String lexeme, String veld) {
+        if (!CASE_DATE.matcher(lexeme).matches())
+            throw new IllegalArgumentException("malformed date '" + lexeme + "' on '" + veld
                     + "': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
                     + " no sign and no extended year");
-        try { return LocalDate.parse(lexeem); }
+        try { return LocalDate.parse(lexeme); }
         catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("malformed date '" + lexeem + "' on '" + veld
+            throw new IllegalArgumentException("malformed date '" + lexeme + "' on '" + veld
                     + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
         }
     }
@@ -1076,7 +1076,7 @@ public final class CaseRunner {
      * separator, the seconds field always written, a fraction that is optional but EXACTLY three digits
      * (whole milliseconds). It is the schema's own pattern, held here as well — gate 4 checks case FILES,
      * this reader checks every case value that reaches the backend by any route. */
-    private static final java.util.regex.Pattern CASE_DATUM_TIJD =
+    private static final java.util.regex.Pattern CASE_DATE_TIME =
             java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?");
 
     /** The instant a case {@code dateTime} names — or a loud refusal naming the FORM, never a guess.
@@ -1089,14 +1089,14 @@ public final class CaseRunner {
      *  itself, so a case reaching a reader by another route (a generator, a hand run, a second producer) is
      *  refused rather than answered three ways. A malformed lexeme is a document defect, not a form this
      *  backend does not carry, so it is a hard error and never an {@link Excluded}. */
-    private static LocalDateTime datumTijdVanCaseWire(String lexeem, String veld) {
-        if (!CASE_DATUM_TIJD.matcher(lexeem).matches())
-            throw new IllegalArgumentException("malformed dateTime '" + lexeem + "' on '" + veld
+    private static LocalDateTime caseWireDateTime(String lexeme, String veld) {
+        if (!CASE_DATE_TIME.matcher(lexeme).matches())
+            throw new IllegalArgumentException("malformed dateTime '" + lexeme + "' on '" + veld
                     + "': the uchar-case-v0 lexeme is yyyy-mm-ddThh:mm:ss[.fff] — fixed field widths, 'T',"
                     + " the seconds field written, no zone or offset, a fraction of exactly three digits");
-        try { return LocalDateTime.parse(lexeem); }
+        try { return LocalDateTime.parse(lexeme); }
         catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("malformed dateTime '" + lexeem + "' on '" + veld
+            throw new IllegalArgumentException("malformed dateTime '" + lexeme + "' on '" + veld
                     + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
         }
     }
@@ -1111,7 +1111,7 @@ public final class CaseRunner {
         return Object.class;
     }
 
-    static void roep(Object bean, String methode, Class<?> type, Object waarde) {
+    static void call(Object bean, String methode, Class<?> type, Object waarde) {
         try { bean.getClass().getMethod(methode, type).invoke(bean, waarde); }
         catch (ReflectiveOperationException e) {
             throw new RuntimeException("kon setter " + methode + "(" + type.getSimpleName() + ") niet aanroepen op "

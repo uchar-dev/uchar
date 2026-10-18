@@ -1,0 +1,76 @@
+package dev.uchar.regelspraak.cases;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.nio.file.Path;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * One case fired through both branches of the analysis of card drl-teksttak-op-truth-maintenance, the exec-model branch
+ * and the DRL-text branch, its rendering as DRL text: the same verdict, and the same dump of the session
+ * ({@link SessionDump}) in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint. The
+ * firings are left out of the comparison: in a document with a fold their order and number follow the agenda, which
+ * differs between the two renderings, while the fixpoint is the same. Made for {@link DrlTextFoldPathWitnessTest} (fix
+ * round 3a), and shared since a second witness compares dumps over the two branches (fix round 3b).
+ */
+final class BranchDumps {
+
+    private BranchDumps() {}
+
+    /** Fires {@code caseDocument} through both branches: the same verdict, and the same dump but for the firings. Returns the
+     *  dump of the exec-model branch without them; {@code which} names the case in a failure. */
+    static String equal(Path ir, JsonNode caseDocument, String which) throws Exception {
+        String exec = TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL);
+        assertEquals(exec, TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.DRL_TEXT), "het oordeel, " + which);
+        String out = withoutFirings(fixpunt(dump(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL), which));
+        assertEquals(out, withoutFirings(fixpunt(dump(ir, caseDocument, DroolsBackend.Branch.DRL_TEXT), which)),
+                "de dumps van de twee takken, " + which);
+        return out;
+    }
+
+    /** {@code dump}, of a session that reached its fixpoint: only there does it hold what {@code lees} gives. */
+    private static String fixpunt(String dump, String which) {
+        assertTrue(dump.lines().anyMatch(r -> r.startsWith("vuringen ") && r.endsWith(" geenFixpunt null")),
+                () -> "geen fixpunt, " + which + ":\n" + dump);
+        return dump;
+    }
+
+    /** The dump of the session of {@code caseDocument} on {@code branch}, fired as a consumer fires it. */
+    static String dump(Path ir, JsonNode caseDocument, DroolsBackend.Branch branch) throws Exception {
+        return CaseRunner.forMeasurement(ir, branch).withSession(caseDocument, (bouw, sessie, labels) -> {
+            SessionDump d = SessionDump.op(sessie, labels);
+            StringBuilder out = new StringBuilder();
+            d.write(out, bouw, DroolsBackend.vuur(bouw, sessie), labels);
+            return out.toString();
+        });
+    }
+
+    /** The dump of the session of {@code caseDocument} on the branch of {@code runner}, whose KieBase is built once, fired as a
+     *  consumer fires it; a fire that throws gives the dump of a session whose fire threw. Made for
+     *  {@link BranchDumpsCorpusWitnessTest}, which fires every case of a golden on one build per branch. */
+    static String dump(CaseRunner runner, JsonNode caseDocument) {
+        return runner.withSession(caseDocument, (bouw, sessie, labels) -> {
+            SessionDump d = SessionDump.op(sessie, labels);
+            StringBuilder out = new StringBuilder();
+            DroolsBackend.Vuring v;
+            try {
+                v = DroolsBackend.vuur(bouw, sessie);
+            } catch (RuntimeException e) {
+                d.write(out, e, labels);
+                return out.toString();
+            }
+            d.write(out, bouw, v, labels);
+            return out.toString();
+        });
+    }
+
+    /** {@code dump} without the lines of the firings. */
+    static String withoutFirings(String dump) {
+        return Stream.of(dump.split("\n")).filter(r -> !r.startsWith("vuringen ") && !r.startsWith("spoor-"))
+                .collect(Collectors.joining("\n"));
+    }
+}

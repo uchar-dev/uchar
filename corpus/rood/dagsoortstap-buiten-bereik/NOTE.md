@@ -61,7 +61,7 @@ day, so the sluittijdstip leaves the range.
   `IllegalStateException: datum-tijd arithmetic leaves the representable
   millisecond range`, from `RegelSpraakRuntime.rsDatumTijdPlusDagsoort`.
   Gate 8's Drools leg replays the exec-model branch; the JUnit witness
-  `DatumstapBereikTakkenWitnessTest` replays the DRL-text branch as well,
+  `DateStepRangeBranchesWitnessTest` replays the DRL-text branch as well,
   and pins the truth-maintenance branch's refusal of day kinds.
 
 ## Red first

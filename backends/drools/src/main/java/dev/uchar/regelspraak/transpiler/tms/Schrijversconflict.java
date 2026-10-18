@@ -15,7 +15,7 @@ import java.util.function.Function;
  * the object, as the reference interpreter names them and in the words the replay gave the writers of the DRL-text
  * branch at its fire cap until card drl-teksttak-op-truth-maintenance, so the fragment a red case pins for Drools
  * matches it. The
- * object is named by its case label where the write-back is given one ({@link #benoemd}), "een aangemaakte" type where
+ * object is named by its case label where the write-back is given one ({@link #named}), "een aangemaakte" type where
  * the object has none because a creation made it, and by type and identity where no labels are known, as for a consumer
  * that fires a KieBase itself.
  */
@@ -24,36 +24,36 @@ public final class Schrijversconflict extends IllegalStateException {
     private static final long serialVersionUID = 1L;
 
     /** One writer and the value it writes, null for leeg. */
-    public record Schrijfdaad(String schrijver, Object waarde) {}
+    public record WriteAct(String writer, Object waarde) {}
 
     private final transient Object onderwerp;
     private final String attribuut;
     private final String type;
-    private final List<Schrijfdaad> schrijvers;
+    private final List<WriteAct> writers;
 
-    /** {@code schrijvers} in the order of the document; {@code type} is the object's own type, {@code attribuut} the
-     *  attribute as declared. The object is named by type and identity until {@link #benoemd} gives it a label. */
-    Schrijversconflict(Object onderwerp, String attribuut, String type, List<Schrijfdaad> schrijvers) {
-        this(onderwerp, attribuut, type, schrijvers, "een " + type + " (" + Feitnamen.object(onderwerp) + ")");
+    /** {@code writers} in the order of the document; {@code type} is the object's own type, {@code attribuut} the
+     *  attribute as declared. The object is named by type and identity until {@link #named} gives it a label. */
+    Schrijversconflict(Object onderwerp, String attribuut, String type, List<WriteAct> writers) {
+        this(onderwerp, attribuut, type, writers, "een " + type + " (" + FactNames.object(onderwerp) + ")");
     }
 
     /** The conflict of the value facts {@code waarden} on attribute {@code attribuut} of {@code onderwerp}: the
-     *  writers as {@link #inDocumentvolgorde} ranks them over the document's rules {@code documentvolgorde}, and the
+     *  writers as {@link #inDocumentOrder} ranks them over the document's rules {@code documentOrder}, and the
      *  object's own type named by the type in {@code typen} whose bean class's simple name stands at the same place in
-     *  {@code typeklassen}, or by that simple name where none does. */
-    static Schrijversconflict van(Object onderwerp, String attribuut, List<Waarde> waarden, List<?> documentvolgorde,
-                                  List<?> typeklassen, List<?> typen) {
-        List<Waarde> geordend = new ArrayList<>(waarden);
-        geordend.sort(inDocumentvolgorde(documentvolgorde));
-        List<Schrijfdaad> daden = new ArrayList<>();
-        for (Waarde w : geordend) daden.add(new Schrijfdaad(w.schrijver(), w.waarde()));
-        String klasse = onderwerp.getClass().getSimpleName();
-        int t = typeklassen.indexOf(klasse);
-        return new Schrijversconflict(onderwerp, attribuut, t < 0 ? klasse : (String) typen.get(t), daden);
+     *  {@code typeClasses}, or by that simple name where none does. */
+    static Schrijversconflict van(Object onderwerp, String attribuut, List<Value> waarden, List<?> documentOrder,
+                                  List<?> typeClasses, List<?> typen) {
+        List<Value> ordered = new ArrayList<>(waarden);
+        ordered.sort(inDocumentOrder(documentOrder));
+        List<WriteAct> acts = new ArrayList<>();
+        for (Value w : ordered) acts.add(new WriteAct(w.writer(), w.waarde()));
+        String javaClass = onderwerp.getClass().getSimpleName();
+        int t = typeClasses.indexOf(javaClass);
+        return new Schrijversconflict(onderwerp, attribuut, t < 0 ? javaClass : (String) typen.get(t), acts);
     }
 
     /** The value facts of one target by their writers: the rules in the order of the document's rules
-     *  {@code documentvolgorde}, and after them, by name, a writer that is not among them, an effective defaults stack
+     *  {@code documentOrder}, and after them, by name, a writer that is not among them, an effective defaults stack
      *  or an allocation. This is the order in which a conflict names the writers, and the order in which the reader of
      *  the fixpoint takes the value of writers that agree.
      *
@@ -64,31 +64,31 @@ public final class Schrijversconflict extends IllegalStateException {
      *  group's chain into the stack (RUNTIME-SEMANTICS ch. 7.10). The declared-unordered groups on one target of a type
      *  are members of one stack, whose reconciliation writes, where they agree, the decision of the first deciding group
      *  in the document (ch. 7.2). */
-    static Comparator<Waarde> inDocumentvolgorde(List<?> documentvolgorde) {
-        return Comparator.comparing((Waarde w) -> plaats(documentvolgorde, w.schrijver())).thenComparing(Waarde::schrijver);
+    static Comparator<Value> inDocumentOrder(List<?> documentOrder) {
+        return Comparator.comparing((Value w) -> place(documentOrder, w.writer())).thenComparing(Value::writer);
     }
 
-    /** The place of the rule {@code schrijver} in {@code documentvolgorde}; after every rule where it is none. */
-    private static int plaats(List<?> documentvolgorde, String schrijver) {
-        int i = documentvolgorde.indexOf(schrijver);
+    /** The place of the rule {@code writer} in {@code documentOrder}; after every rule where it is none. */
+    private static int place(List<?> documentOrder, String writer) {
+        int i = documentOrder.indexOf(writer);
         return i < 0 ? Integer.MAX_VALUE : i;
     }
 
-    private Schrijversconflict(Object onderwerp, String attribuut, String type, List<Schrijfdaad> schrijvers,
+    private Schrijversconflict(Object onderwerp, String attribuut, String type, List<WriteAct> writers,
                                String object) {
-        super(zin(schrijvers, attribuut, object));
-        if (schrijvers.size() < 2) throw new IllegalArgumentException("een conflict heeft twee schrijvers: " + schrijvers);
+        super(sentence(writers, attribuut, object));
+        if (writers.size() < 2) throw new IllegalArgumentException("een conflict heeft twee schrijvers: " + writers);
         this.onderwerp = onderwerp;
         this.attribuut = attribuut;
         this.type = type;
-        this.schrijvers = List.copyOf(schrijvers);
+        this.writers = List.copyOf(writers);
     }
 
     /** The same conflict with the object named by {@code label}, which gives the case label of an input object and null
      *  for one a creation made. */
-    public Schrijversconflict benoemd(Function<Object, String> label) {
+    public Schrijversconflict named(Function<Object, String> label) {
         String l = label.apply(onderwerp);
-        return new Schrijversconflict(onderwerp, attribuut, type, schrijvers,
+        return new Schrijversconflict(onderwerp, attribuut, type, writers,
                 l == null ? "een aangemaakte " + type : l + ", een " + type);
     }
 
@@ -98,17 +98,17 @@ public final class Schrijversconflict extends IllegalStateException {
     }
 
     /** The writers with their values, in the order of the document. */
-    public List<Schrijfdaad> schrijvers() {
-        return schrijvers;
+    public List<WriteAct> writers() {
+        return writers;
     }
 
-    private static String zin(List<Schrijfdaad> schrijvers, String attribuut, String object) {
-        List<String> delen = new ArrayList<>();
-        for (Schrijfdaad d : schrijvers)
-            delen.add("de regel \"" + d.schrijver() + "\" schrijft " + (d.waarde() == null ? "leeg" : d.waarde()));
-        String opsomming = String.join(", ", delen.subList(0, delen.size() - 1)) + " en " + delen.get(delen.size() - 1);
-        return "geen fixpunt: " + aantal(schrijvers.size()) + " schrijvers van één doel geven verschillende waarden — "
-                + opsomming + " in het attribuut " + attribuut + " van " + object
+    private static String sentence(List<WriteAct> writers, String attribuut, String object) {
+        List<String> parts = new ArrayList<>();
+        for (WriteAct d : writers)
+            parts.add("de regel \"" + d.writer() + "\" schrijft " + (d.waarde() == null ? "leeg" : d.waarde()));
+        String enumeration = String.join(", ", parts.subList(0, parts.size() - 1)) + " en " + parts.get(parts.size() - 1);
+        return "geen fixpunt: " + aantal(writers.size()) + " schrijvers van één doel geven verschillende waarden — "
+                + enumeration + " in het attribuut " + attribuut + " van " + object
                 + "; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)";
     }
 

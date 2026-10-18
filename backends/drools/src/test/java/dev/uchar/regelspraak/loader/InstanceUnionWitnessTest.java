@@ -86,7 +86,7 @@ class InstanceUnionWitnessTest {
                 () -> countOf(doc(union(BRANCH_AANGEMELD,
                         "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":null,"
                                 + "\"filter\":null,\"source\":{\"snippet\":\"geborgen vondsten van de Jutter\"}}"))));
-        assertTrue(f.plek().endsWith("/branches/1/sourceRole"), f.plek());
+        assertTrue(f.site().endsWith("/branches/1/sourceRole"), f.site());
         assertTrue(f.getMessage().contains("expected a RoleBinding"), f.getMessage());
     }
 
@@ -159,7 +159,7 @@ class InstanceUnionWitnessTest {
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(jutter, vondst, ftVondstaanmelding, ftVondstberging,
-                        dev.uchar.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", target,
+                        dev.uchar.regelspraak.cases.IrPath.regel("aantal strandvondsten", "BEREKENING", target,
                                 value, "null"));
     }
 }

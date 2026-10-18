@@ -2,3 +2,4 @@ name	reason
 regel spraak	RegelSpraak, the rule language; also the package dev.uchar.regelspraak
 jutterswet	the Jutterswet, the casus of the corpus
 catala en	the Catala dialect with English keywords (.catala_en): en is the language tag, not the Dutch and
+java lang	java.lang, the package of the Java language; the glossary word lang (long) is no word of it, card hernoem-drools-backend

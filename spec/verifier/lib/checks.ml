@@ -848,7 +848,7 @@ let chain_group_keys doc t =
    skips such a level, so the suppression must skip it too — otherwise the
    rule would be silenced without ever becoming a base, and the writer would
    vanish. Measured: this is the shape the standing-norm witness
-   `StaandeScalaireNormWitnessTest` pins, and it caught the omission. *)
+   `StandingScalarNormWitnessTest` pins, and it caught the omission. *)
 let absorbing_types doc ~otype ~attr : string list =
   let key = "A:" ^ norm attr in
   if

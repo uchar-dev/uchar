@@ -45,7 +45,7 @@ class UnknownFieldWitnessTest {
 
     /** A golden with one rule whose value and condition the rows below replace. Both branches PLAYED. */
     private static final String PENNINGDREMPEL = "jutterswet-penningdrempel";
-    /** An object creation carrying its verbindendeRol. Both branches PLAYED. */
+    /** An object creation carrying its connectingRole. Both branches PLAYED. */
     private static final String WACHTERSKETEN = "anchor/jutterswet-wachtersketen";
 
     @Test void each_read_node_kind_refuses_an_unknown_field_by_name() throws Exception {
@@ -67,7 +67,7 @@ class UnknownFieldWitnessTest {
                 IrLoader.loadAll(doc);
                 admitted.add(e.getKey() + " (" + name(site.ir()) + " " + site.path() + ")");
             } catch (IrLoader.Documentfout f) {
-                assertEquals(site.path() + "/" + FOREIGN, f.plek(), e.getKey() + ": " + f.getMessage());
+                assertEquals(site.path() + "/" + FOREIGN, f.site(), e.getKey() + ": " + f.getMessage());
                 assertTrue(f.getMessage().contains("unknown field"), e.getKey() + ": " + f.getMessage());
             }
         }
@@ -108,7 +108,7 @@ class UnknownFieldWitnessTest {
             String parent = row[0].substring(0, slash), field = row[0].substring(slash + 1);
             ((ObjectNode) doc.at(parent)).set(field, JSON.readTree(row[1]));
             IrLoader.Documentfout f = refuses(doc, r.getKey());
-            assertEquals(row[2] + "/" + FOREIGN, f.plek(), r.getKey() + ": " + f.getMessage());
+            assertEquals(row[2] + "/" + FOREIGN, f.site(), r.getKey() + ": " + f.getMessage());
             assertTrue(f.getMessage().contains("unknown field"), r.getKey() + ": " + f.getMessage());
         }
     }
@@ -121,13 +121,13 @@ class UnknownFieldWitnessTest {
         ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("condition", JSON.readTree(
                 "{\"node\":\"Unresolved\",\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         IrLoader.Documentfout f = refuses(doc, "conditiemarker met type");
-        assertEquals("/rules/rules/0/versions/0/condition/type", f.plek(), f.getMessage());
+        assertEquals("/rules/rules/0/versions/0/condition/type", f.site(), f.getMessage());
         assertTrue(f.getMessage().contains("unknown field on Unresolved"), f.getMessage());
 
         doc = golden(WACHTERSKETEN);
         ((ObjectNode) doc.at("/rules/objectCreations/0/versions/0")).putNull("connectingRole");
         f = refuses(doc, "connectingRole null");
-        assertEquals("/rules/objectCreations/0/versions/0/connectingRole", f.plek(), f.getMessage());
+        assertEquals("/rules/objectCreations/0/versions/0/connectingRole", f.site(), f.getMessage());
         assertTrue(f.getMessage().contains("null is neither"), f.getMessage());
     }
 
@@ -150,7 +150,7 @@ class UnknownFieldWitnessTest {
             ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("value", JSON.readTree(r.getValue()));
             IrLoader.Documentfout f = refuses(doc, r.getKey());
             // the shared loader's sentence, at the discriminator
-            assertEquals(w + "/type/node", f.plek(), r.getKey() + ": " + f.getMessage());
+            assertEquals(w + "/type/node", f.site(), r.getKey() + ": " + f.getMessage());
             assertTrue(f.getMessage().endsWith(": unknown datatype node \"Onbekend\""),
                     r.getKey() + ": " + f.getMessage());
         }
@@ -168,7 +168,7 @@ class UnknownFieldWitnessTest {
             JsonNode doc = golden(PENNINGDREMPEL);
             ((ObjectNode) doc.at(row[0])).put(row[1], 1);
             IrLoader.Documentfout f = refuses(doc, row[1]);
-            assertEquals(row[2], f.plek(), row[1] + ": " + f.getMessage());
+            assertEquals(row[2], f.site(), row[1] + ": " + f.getMessage());
             assertTrue(f.getMessage().contains("expected a JSON object, got 1"), row[1] + ": " + f.getMessage());
         }
         // ...and an entry of a node list, at its index
@@ -176,7 +176,7 @@ class UnknownFieldWitnessTest {
         ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("value", JSON.readTree("{\"node\":\"Aggregation\","
                 + "\"kind\":\"sum\",\"arguments\":[1],\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
         IrLoader.Documentfout f = refuses(doc, "arguments");
-        assertEquals("/rules/rules/0/versions/0/value/arguments/0", f.plek(), f.getMessage());
+        assertEquals("/rules/rules/0/versions/0/value/arguments/0", f.site(), f.getMessage());
     }
 
     private static JsonNode golden(String name) throws Exception {

@@ -30,7 +30,7 @@ rules:
 ## The dependencies (IR-SPEC ch. 5)
 
 `verifier --dependency-edges` prints four positive edges, and the graph's
-projection (`GraafProjectie`) the same four dependencies:
+projection (`GraphProjection`) the same four dependencies:
 
     strandloon van een jutter      -> attr strandloon  -> jutterloon van een jutter
     strandloon van een jutter      -> attr strandloon  -> klipbonus van een klipjutter

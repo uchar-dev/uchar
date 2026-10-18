@@ -16,8 +16,8 @@ public final class RegelSpraakCompileException extends RuntimeException {
 
     /** the fact-model contract: the bean↔model contract violations, ALL of them at once (line 0 — a bean defect has no
      *  source line), so a consumer fixes the fact classes in one round trip. */
-    public static RegelSpraakCompileException contract(List<String> schendingen) {
-        return new RegelSpraakCompileException(schendingen.stream()
+    public static RegelSpraakCompileException contract(List<String> violations) {
+        return new RegelSpraakCompileException(violations.stream()
                 .map(s -> new Diagnostic(dev.uchar.regelspraak.model.RegelSpraakModel.Severity.ERROR,
                         "feitmodel-contract: " + s, 0)).toList());
     }

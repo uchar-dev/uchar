@@ -38,8 +38,8 @@
 #
 # SINCE 2026-09-19 the gate ALSO sweeps the backend's DRL-TEXT branch (card gate12-drl-takteller), behind
 # the runner's own `--drl` entry. Since card drl-teksttak-op-truth-maintenance that branch is the SECOND
-# RENDERING of the one analysis the exec-model branch fires (transpiler/tms/DrlWeergave beside
-# PatternDslWeergave): it derives with truth maintenance over the same facts, plays exactly the goldens
+# RENDERING of the one analysis the exec-model branch fires (transpiler/tms/DrlRendering beside
+# PatternDslRendering): it derives with truth maintenance over the same facts, plays exactly the goldens
 # the exec-model branch plays, and refuses in the same sentences. So it has NO list and NO pin of its
 # own: per golden its status line must be the exec-model branch's status line, verbatim (PLAYED n, or
 # EXCLUDE with the same sentence; "(no case file)" on both where there is no case). A different line
@@ -54,7 +54,7 @@
 #
 # The backend's own JUnit suite must ALSO pass with a NON-ZERO test count (maintainer decision
 # 2026-08-30, the gate-10 model): a zero-test or skipped suite is a failure, never silently green.
-# Since card drl-teksttak-op-truth-maintenance the build must also have run TakdumpsCorpusWitnessTest,
+# Since card drl-teksttak-op-truth-maintenance the build must also have run BranchDumpsCorpusWitnessTest,
 # both its rows by name: the suite's comparison of the two branches per case, which no count covers.
 #
 # The REPLAY runs JAR-ONLY (decision V2-B, the gate-10 pattern): the gate invokes `java -jar` per
@@ -138,15 +138,15 @@ if [ "$FAST" -eq 0 ]; then
   [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
     || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
   [ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
-  # TakdumpsCorpusWitnessTest is the comparison of the two branches per case, over every played golden and every
+  # BranchDumpsCorpusWitnessTest is the comparison of the two branches per case, over every played golden and every
   # red case, that card drl-teksttak-op-truth-maintenance put in the suite (the owner's decision on norm question 1
   # of its fourth Fable advice), where the sweep below compares status lines only; so this build must have run
   # both its rows, by name, as its surefire report written after the build began says.
-  takdumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.TakdumpsCorpusWitnessTest.xml
+  takdumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.BranchDumpsCorpusWitnessTest.xml
   [ -f "$takdumps" ] && [ "$takdumps" -nt "$suite_begin" ] \
     || fail "TakdumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $takdumps) — the suite's comparison of the two branches per case is required"
-  for rij in elke_case_van_elke_gespeelde_golden_heeft_op_beide_takken_dezelfde_dump \
-             elke_rode_case_geeft_op_beide_takken_hetzelfde_roodresultaat; do
+  for rij in every_case_of_every_played_golden_has_the_same_dump_on_both_branches \
+             every_red_case_gives_the_same_red_result_on_both_branches; do
     grep -q "<testcase name=\"$rij\"" "$takdumps" \
       || fail "TakdumpsCorpusWitnessTest ran without its row '$rij' — the comparison of the two branches per case is required whole"
   done
@@ -227,7 +227,7 @@ EXCLUDE_KNOWN=(
   # UNCHANGED pins; removing them is mandatory (a listed golden that plays trips the stale guard):
   #   (d') The ch. 7.8 SCALAR standing norm — ref's Desugar.standing_targets (~temporal:false) — plus the
   #       ch. 7.7 desugaring domain (Desugar.desugared_targets) that ref's scalar arm consults BESIDE it, both
-  #       ported into the SHARED transpiler/kern/StaandeDoelen — one derivation, read by BOTH Drools branches:
+  #       ported into the SHARED transpiler/kern/StandingTargets — one derivation, read by BOTH Drools branches:
   #       the exec-model branch at its scalar write boundary (werkBij) and the DRL-text branch at its emitted
   #       modify guard (card drl-staande-waarden, 2026-09-18, which built the DRL-text arm; the timeline
   #       emptiness test was a helper of RegelSpraakRuntime, likewise shared, which left the runtime at card
@@ -240,7 +240,7 @@ EXCLUDE_KNOWN=(
   #       oscillation is gone — so the ratified PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11 note is discharged by
   #       construction rather than by the CaseRunner-taxonomy revisit it was waiting for. Note the domain
   #       gate is what carries this: with a SECOND computing rule on the target the v0 erase is unretired and
-  #       a leeg source still wipes the input (ref agrees) — pinned by StaandeScalaireNormWitnessTest, dual-branch since 2026-09-18 (BeideTakken), with
+  #       a leeg source still wipes the input (ref agrees) — pinned by StandingScalarNormWitnessTest, dual-branch since 2026-09-18 (BothBranches), with
   #       the version flank beside it.
 )
 
@@ -289,7 +289,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-halfstokspelling|EXCLUDE|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
-  "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
+  "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-ketenkwantor|EXCLUDE|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. What stands behind it is INFERRED, not measured, since nothing past the loader runs while it refuses: the golden's middle relation 'berging' is many-to-many — the shared element it exists for needs a to-many reverse role on the last step — and that is the relation anchor/jutterswet-bootberging and jutterswet-muntketen are refused on one layer deeper, so lifting the loader alone would most likely move this refusal rather than make the golden play. Its flat-count pins are a ref = clingo pair"
@@ -300,7 +300,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-muntketen|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (BronpadKetenWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
+  "jutterswet-muntketen|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-pachtvenster|EXCLUDE|transpiler SKIP: regel 'jaarpacht van een strandpachter' — a period window in the condition of a rule with the temporal target 'jaarpacht': there the window clips the timeline (RUNTIME-SEMANTICS ch. 3.10), and the branch does not carry the form yet, as the DRL-text branch does not. The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren); the branch refuses the form by name, before the KieBase is built"
@@ -356,7 +356,7 @@ EXPECTED_CHANNEL=(
 # (Wachter -> Wachter) reaches no to-one reference field … neither direction of the type pair derives
 # a to-one role"), because a TO-MANY written role stores its links in the far end's field and the
 # by-pair search that used to name that field counts both same-typed siblings and derives null. The
-# case-input arm now resolves that sister role BY NAME (CaseRunner.zetRollen, the same two-authority
+# case-input arm now resolves that sister role BY NAME (CaseRunner.setRoles, the same two-authority
 # shape the forward write already used), so the field the bean model really carries is written and
 # all three spellings of the one relation replay with the same pinned values — ref = clingo = Drools
 # on a self-typed 1:N relation supplied from either end, which no golden could witness before.
@@ -365,7 +365,7 @@ EXPECTED_CHANNEL=(
 # ketenband is 1:N — one stored reference that necessarily serves both directions — this one is the
 # self-typed 1:1: two to-one roles, hence TWO bean fields, one per direction, so nothing in the
 # model forces a one-sided delivery to be visible from the far end. It arrived playing, on the
-# already-landed case-input arm: the loader materialises the reverse leg and CaseRunner.zetRollen
+# already-landed case-input arm: the loader materialises the reverse leg and CaseRunner.setRoles
 # writes the SECOND field (ch. 5.7a consequence 2), so all three spellings of one chain
 # (both legs; the zuidbuur legs only; the noordbuur legs only) replay with the same pinned
 # absolutes. Measured 2026-09-11 on this branch: PLAYED 3 in the exec-model branch and PLAYED 3
@@ -573,7 +573,7 @@ EXPECTED_CHANNEL=(
 # branch counts over the collectList accumulate of the contributors, and it is the one corpus document
 # that reaches the DRL-text branch's counting lowering at all (a `Number( intValue <op> N ) from
 # accumulate( … count(…) )` over the element pattern), measured in
-# NietTemporeleKwantorvouwWitnessTest. Nothing else moved: ALLE and GEEN keep the witness route in both
+# NonTemporalQuantifierFoldWitnessTest. Nothing else moved: ALLE and GEEN keep the witness route in both
 # branches, and every form outside the arm still refuses BY NAME, per form.
 # 2026-09-17 (card tellende-kwantoren, fixronde), 147 -> 148:
 # `jutterswet-sleepvloot` joins as a NEW PLAYER — the NIET prefix under a counting quantifier, which
@@ -710,7 +710,7 @@ EXPECTED_CHANNEL=(
 # asked that question by NAME IDENTITY and refused the whole creation by name, while the verifier,
 # ref and the ASP backend carried the document: measured 2026-09-19, one verifier-clean form with
 # two executors answering and two refusing. Both now ask it through the declared chain, from one
-# shared place (transpiler/kern/Gastheer), and both play. The golden is hand-written IR with no
+# shared place (transpiler/kern/Host), and both play. The golden is hand-written IR with no
 # bron.rgs: the frontend tags a guard with the doel's own type and never with an ancestor, so no
 # source produces this shape and gate 10 has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one
 # as well.
@@ -767,7 +767,7 @@ EXPECTED_CHANNEL=(
 # declared "beschadigd") ON PURPOSE, and an enumeration label is a DECLARED NAME — ref compares those
 # up to Checks.norm and the ASP backend stores the normalised label. The read-back comparator compared
 # bytes and reported a divergence neither other executor has; it now compares an enumeration
-# expectation by name identity (CaseRunner.gelijkeWaarde) while Tekst keeps the exact §13.3.3.4
+# expectation by name identity (CaseRunner.equalValue) while Tekst keeps the exact §13.3.3.4
 # equality. Both branches play both goldens, so EXPECTED_DRL_PLAYED moves by two as well.
 # NOT built, and measured rather than hidden: the RULE-level enum comparisons in both branches are
 # still byte equality where ref and clingo use that same normalisation. Nothing in the corpus reaches
@@ -814,7 +814,7 @@ EXPECTED_CHANNEL=(
 # (`verwacht afwezig, werkelijk aanwezig`) — two answers, two executors each, on a verifier-clean
 # document. The gap was NOT the union's: the ordinary single-source fold with the same filter diverged
 # identically and had since that filter landed, so one walk closes both and the suite pins both halves
-# (VouwfilterStratumWitnessTest). Hand-written golden, no bron.rgs: the frontend refuses "die niet
+# (FoldFilterStratumWitnessTest). Hand-written golden, no bron.rgs: the frontend refuses "die niet
 # gemerkt zijn" by name, so the form lives on the wire alone. EXPECTED_DRL_PLAYED moves by one as well.
 #
 # 176 -> 177 (2026-09-22, fix round 3): jutterswet-uniekwantor, the same order law along a different
@@ -854,14 +854,14 @@ EXPECTED_CHANNEL=(
 # Its verdeling runs over a REPEATED type pair (bergingsdeelname and bergingstoezicht both relate Berging
 # and Berger), where the type-pair derivation both branches used for the recipient join answers nothing,
 # so both refused it as an unresolved naar_rato. They now read the wire's verbindendeRol, as ref does
-# (FactModelGenerator.verdelingsjoin), and play it; measured over every golden and rood document in both
+# (FactModelGenerator.allocationJoin), and play it; measured over every golden and rood document in both
 # branches, no other document changed a byte of its runner output.
 # 180 -> 181 (2026-09-23, card clingo-leeg-negatie): jutterswet-waardemelding, the negated leeg/gevuld
 # test (LEEG and GEVULD with negatie: true, own attribute and one bound navigation step). Both branches
 # have carried it since card drools-leeg-negatie, where the loader lowers the negation to the sister
-# soort; the document lived as the fixture of LeegNegatieWitnessTest because the ASP backend faulted on
+# soort; the document lived as the fixture of EmptyNegatedWitnessTest because the ASP backend faulted on
 # it. That backend now carries the leeg test and both negations, so the fixture moved to the corpus.
-# No source file of this backend changed; its LeegNegatieWitnessTest now reads the golden instead of
+# No source file of this backend changed; its EmptyNegatedWitnessTest now reads the golden instead of
 # a resource copy.
 # 181 -> 182 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar, which card
 # drl-periode-zink added as a named refusal and whose NOTE said it would go stale here. Both branches
@@ -869,7 +869,7 @@ EXPECTED_CHANNEL=(
 # the granularity and the period count the same way, where the verifier, ref and clingo compare
 # declared names under Checks.norm. The guard's `Gehesen` therefore missed the anker's declared
 # `gehesen`, the anker attempt declined and the doel attempt was refused. Every one of those lookups
-# now goes through Namen.bevatNaam / Namen.opNaam; the anker attempt lowers and both branches play
+# now goes through Namen.containsName / Namen.byName; the anker attempt lowers and both branches play
 # 2 / 0 / 2, ref's and clingo's pins. Measured over every golden in both branches before and after:
 # only this golden moved. EXPECTED_DRL_PLAYED moves by one as well.
 # 182 -> 183 (2026-09-23, card drools-venster-vouwtoets): jutterswet-wachtvenster, written for this
@@ -1027,7 +1027,7 @@ EXPECTED_CHANNEL=(
 # new, from bron.rgs and hand-computed — a conditional initialisation on Vondst folded into the defaults
 # stack of Wrakvondst (RUNTIME-SEMANTICS ch. 7.10): leeg where its condition fails, its value where it
 # holds, the stack's base and exception above it, a case input standing, and the rule itself on a plain
-# Vondst. The exec branch needed two changes: regelLid keeps the initialisation's condition, and every
+# Vondst. The exec branch needed two changes: ruleMember keeps the initialisation's condition, and every
 # default of a composed stack is compiled on the level that declared it (before, the stack was refused
 # as a far-side consequence). It plays the four cases, PLAYED 4, with ref's and clingo's values. The
 # DRL-text branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so
@@ -1197,7 +1197,7 @@ EXPECTED_CHANNEL=(
 # ch. 1.2e), and the accumulate over a Comparable that the exec branch folds those with carries them; in a rule's value
 # the branch no longer asks the member-type refusal of kern.Vouwwaarde, and the bare numeric fold leaves such a fold to
 # the value's slots. The branch plays the golden's two cases, PLAYED 2, against the unchanged pins, and
-# DatumSetvouwWitnessTest expects that now. Outside a rule's value (a condition, a justification) the form stays refused
+# DateSetFoldWitnessTest expects that now. Outside a rule's value (a condition, a justification) the form stays refused
 # in the exec branch's own words. Measured before and after over ALL goldens in both branches: exactly the vondstbereik
 # line moves in the exec branch; in the DRL-text branch the same golden keeps its channel and its refusal now names that
 # branch as the one that does not carry the fold (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
@@ -1332,7 +1332,7 @@ EXPECTED_CHANNEL=(
 # channel; their reasons follow the new branch's sentence. The DRL-text branch did not move.
 # 248 -> 250 (2026-10-11, card objectcreatie-zonder-connectingrole-binding): the exec-model branch carries an object
 # creation without a connectingRole binding again, the form the frontend writes when the sentence names the type
-# instead of a role. The back-link is the one the shared decision (FactModelGenerator.creatiekoppeling) derives from
+# instead of a role. The back-link is the one the shared decision (FactModelGenerator.creationLink) derives from
 # the type pair, read and written as with a binding; an ambiguous pair stays refused at build. Two goldens move.
 # jutterswet-penningbesluit, new, from bron.rgs and hand-computed, plays its three cases, PLAYED 3, with ref's and
 # clingo's values. anchor/jutterswet-penninguitgifte, whose two creations have no binding, leaves EXPECTED_CHANNEL: its

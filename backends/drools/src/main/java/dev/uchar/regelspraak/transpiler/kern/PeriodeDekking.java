@@ -45,134 +45,134 @@ import java.util.Map;
  * parameter met alleen 2025-waarden levert dus TWEE open gaten: {@code [open t/m 2024-12-31]} en
  * {@code [2026-01-01 t/m open]}.
  *
- * <p><b>Idiomatiek.</b> Als {@link Dekking} is {@link #controleer} PUUR (het meldt niets) en is {@link #meld} de aparte
- * consumer-aangeroepen methode die deduplicerend een WARNING op het model zet — precies zoals {@code Dekking.meld}.
+ * <p><b>Idiomatiek.</b> Als {@link Dekking} is {@link #controleer} PUUR (het meldt niets) en is {@link #report} de aparte
+ * consumer-aangeroepen methode die deduplicerend een WARNING op het model zet — precies zoals {@code Dekking.report}.
  *
  * @param regel       de (mogelijk {@code #k}-versie-gesuffixte) regelnaam
  * @param parameter   de gerefereerde parameternaam zoals in de sets/pool
- * @param regelPeriode de {@link Geldigheid} van deze regelversie (de regelperiode)
- * @param ontbrekend  de deelperiodes van {@code regelPeriode} die niet door enig parameter-interval gedekt zijn
+ * @param rulePeriod de {@link Geldigheid} van deze regelversie (de regelperiode)
+ * @param ontbrekend  de deelperiodes van {@code rulePeriod} die niet door enig parameter-interval gedekt zijn
  *                    ({@link Geldigheid}-shape, {@code null} = open kant); nooit leeg voor een bestaande {@code PeriodeDekking}
  */
-public record PeriodeDekking(String regel, String parameter, Geldigheid regelPeriode, List<Geldigheid> ontbrekend) {
+public record PeriodeDekking(String regel, String parameter, Geldigheid rulePeriod, List<Geldigheid> missing) {
 
     /**
      * Puur: elke (regel-versie, parameter)-combinatie met minstens één gat tussen de regelperiode en de parameterdekking.
-     * Meldt niets — de consumer roept daarna {@link #meld} aan (Dekking-idiomatiek). Alleen parameters die in
+     * Meldt niets — de consumer roept daarna {@link #report} aan (Dekking-idiomatiek). Alleen parameters die in
      * {@code sets} voorkomen tellen (zie klasse-javadoc: het andere kanaal). Bij lege/afwezige sets is het resultaat
      * altijd leeg.
      */
     public static List<PeriodeDekking> controleer(RegelSpraakModel model, List<Parameterset> sets) {
-        List<PeriodeDekking> uit = new ArrayList<>();
-        if (model == null || sets == null || sets.isEmpty()) return uit;
+        List<PeriodeDekking> out = new ArrayList<>();
+        if (model == null || sets == null || sets.isEmpty()) return out;
         Map<String, List<WaardeInterval>> pool = Parameterset.pool(sets);
-        if (pool.isEmpty()) return uit;
+        if (pool.isEmpty()) return out;
 
         // Spiegelt ScenarioResolver.regelParameters: resolvedRegels (waarde + doel + voorwaarde) en consistenties (assertie).
         for (var r : model.resolvedRegels) {
             LinkedHashSet<String> params = new LinkedHashSet<>();
-            vangExpr(r.waarde(), params);
-            vangExpr(r.doel(), params);
-            vangConditie(r.voorwaarde(), params);
-            controleerConstruct(r.naam(), r.geldigheid(), params, pool, uit);
+            catchExpr(r.waarde(), params);
+            catchExpr(r.doel(), params);
+            catchCondition(r.voorwaarde(), params);
+            checkConstruct(r.naam(), r.geldigheid(), params, pool, out);
         }
         for (var c : model.consistenties) {
             LinkedHashSet<String> params = new LinkedHashSet<>();
-            vangConditie(c.assertie(), params);
-            controleerConstruct(c.naam(), c.geldigheid(), params, pool, uit);
+            catchCondition(c.assertie(), params);
+            checkConstruct(c.naam(), c.geldigheid(), params, pool, out);
         }
-        return uit;
+        return out;
     }
 
-    private static void controleerConstruct(String naam, Geldigheid regelPeriode, LinkedHashSet<String> params,
-                                            Map<String, List<WaardeInterval>> pool, List<PeriodeDekking> uit) {
-        Geldigheid periode = regelPeriode == null ? Geldigheid.ALTIJD : regelPeriode;
+    private static void checkConstruct(String naam, Geldigheid rulePeriod, LinkedHashSet<String> params,
+                                            Map<String, List<WaardeInterval>> pool, List<PeriodeDekking> out) {
+        Geldigheid period = rulePeriod == null ? Geldigheid.ALTIJD : rulePeriod;
         for (String param : params) {
-            List<WaardeInterval> intervallen = pool.get(param);
-            if (intervallen == null) continue;   // niet in de sets -> het andere kanaal, geen melding hier
-            List<Geldigheid> gaten = gaten(periode, intervallen);
-            if (!gaten.isEmpty()) uit.add(new PeriodeDekking(naam, param, periode, gaten));
+            List<WaardeInterval> intervals = pool.get(param);
+            if (intervals == null) continue;   // niet in de sets -> het andere kanaal, geen melding hier
+            List<Geldigheid> holes = holes(period, intervals);
+            if (!holes.isEmpty()) out.add(new PeriodeDekking(naam, param, period, holes));
         }
     }
 
     /** De ParameterRef-namen in een waarde/doel-Expr — dezelfde {@code Expr.bevat}-walk als {@code regelParameters}. */
-    private static void vangExpr(Expr e, LinkedHashSet<String> uit) {
-        Expr.bevat(e, x -> { if (x instanceof Expr.ParameterRef pr) uit.add(pr.parameter().naam()); return false; });
+    private static void catchExpr(Expr e, LinkedHashSet<String> out) {
+        Expr.bevat(e, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
     }
 
     /** De ParameterRef-namen in een voorwaarde/assertie — dezelfde {@code Conditie.bevatOperand}-walk. */
-    private static void vangConditie(Conditie c, LinkedHashSet<String> uit) {
-        Conditie.bevatOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) uit.add(pr.parameter().naam()); return false; });
+    private static void catchCondition(Conditie c, LinkedHashSet<String> out) {
+        Conditie.bevatOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
     }
 
     /**
-     * De deelperiodes van {@code regelPeriode} die door geen enkel {@code intervallen}-venster gedekt zijn: regelperiode
+     * De deelperiodes van {@code rulePeriod} die door geen enkel {@code intervals}-venster gedekt zijn: regelperiode
      * MINUS unie(intervallen). Sorteert de dekking op {@code vanaf} ({@code null} eerst = open begin), loopt de
      * regelperiode af met een cursor; inclusieve bounds ({@code null} = open kant): een gat begint op de dag NÁ de vorige
      * dekking-tot en eindigt op de dag VÓÓR de volgende dekking-vanaf. Overlappende/aangrenzende dekkingen worden gemerged
      * via de cursor. Leeg als de dekking de hele regelperiode omvat.
      */
-    static List<Geldigheid> gaten(Geldigheid regelPeriode, List<WaardeInterval> intervallen) {
-        List<Geldigheid> gaten = new ArrayList<>();
-        LocalDate rVan = regelPeriode.vanaf();   // null = open begin
-        LocalDate rTot = regelPeriode.tot();     // null = open eind
+    static List<Geldigheid> holes(Geldigheid rulePeriod, List<WaardeInterval> intervals) {
+        List<Geldigheid> holes = new ArrayList<>();
+        LocalDate rFrom = rulePeriod.vanaf();   // null = open begin
+        LocalDate rTo = rulePeriod.tot();     // null = open eind
 
         // Dekking op vanaf sorteren (null-vanaf = open begin, dus eerst). We werken met de sentinel MIN/MAX voor
         // open kanten zodat de sweep geen null hoeft af te vangen; aan het eind vertalen we MIN/MAX terug naar null.
         List<Geldigheid> dekking = new ArrayList<>();
-        for (WaardeInterval wi : intervallen) dekking.add(wi.geldigheid());
+        for (WaardeInterval wi : intervals) dekking.add(wi.geldigheid());
         dekking.sort(Comparator.comparing(g -> g.vanaf() == null ? LocalDate.MIN : g.vanaf()));
 
-        LocalDate lo = rVan == null ? LocalDate.MIN : rVan;   // ondergrens regelperiode
-        LocalDate hi = rTot == null ? LocalDate.MAX : rTot;   // bovengrens regelperiode
+        LocalDate lo = rFrom == null ? LocalDate.MIN : rFrom;   // ondergrens regelperiode
+        LocalDate hi = rTo == null ? LocalDate.MAX : rTo;   // bovengrens regelperiode
 
         // cursor = de eerste dag binnen [lo,hi] die nog niet als gedekt bewezen is.
         LocalDate cursor = lo;
         for (Geldigheid d : dekking) {
             if (cursor.isAfter(hi)) break;                     // regelperiode volledig gedekt
-            LocalDate dVan = d.vanaf() == null ? LocalDate.MIN : d.vanaf();
-            LocalDate dTot = d.tot()   == null ? LocalDate.MAX : d.tot();
-            if (dTot.isBefore(cursor)) continue;               // dekking ligt geheel vóór de cursor
-            if (dVan.isAfter(cursor)) {                         // gat tussen cursor en deze dekking
-                LocalDate g1 = min(dVan.minusDays(1), hi);
-                if (!cursor.isAfter(g1)) gaten.add(venster(cursor, g1));
+            LocalDate dFrom = d.vanaf() == null ? LocalDate.MIN : d.vanaf();
+            LocalDate dTo = d.tot()   == null ? LocalDate.MAX : d.tot();
+            if (dTo.isBefore(cursor)) continue;               // dekking ligt geheel vóór de cursor
+            if (dFrom.isAfter(cursor)) {                         // gat tussen cursor en deze dekking
+                LocalDate g1 = min(dFrom.minusDays(1), hi);
+                if (!cursor.isAfter(g1)) holes.add(window(cursor, g1));
             }
-            if (dTot.equals(LocalDate.MAX)) { cursor = null; break; }   // dekking loopt open door: niets meer ongedekt
-            LocalDate na = dTot.plusDays(1);
-            if (na.isAfter(cursor)) cursor = na;               // schuif voorbij de dekking (merge overlap/aangrenzend)
+            if (dTo.equals(LocalDate.MAX)) { cursor = null; break; }   // dekking loopt open door: niets meer ongedekt
+            LocalDate after = dTo.plusDays(1);
+            if (after.isAfter(cursor)) cursor = after;               // schuif voorbij de dekking (merge overlap/aangrenzend)
         }
         // Staart-gat: alles van cursor t/m hi dat nog niet gedekt is (cursor null = open-eind gedekt).
-        if (cursor != null && !cursor.isAfter(hi)) gaten.add(venster(cursor, hi));
-        return gaten;
+        if (cursor != null && !cursor.isAfter(hi)) holes.add(window(cursor, hi));
+        return holes;
     }
 
     /** Vertaal een [van,tot]-sweep-venster terug naar {@link Geldigheid}, met MIN/MAX -> open ({@code null}) kant. */
-    private static Geldigheid venster(LocalDate van, LocalDate tot) {
-        return new Geldigheid(van.equals(LocalDate.MIN) ? null : van, tot.equals(LocalDate.MAX) ? null : tot);
+    private static Geldigheid window(LocalDate van, LocalDate to) {
+        return new Geldigheid(van.equals(LocalDate.MIN) ? null : van, to.equals(LocalDate.MAX) ? null : to);
     }
 
     private static LocalDate min(LocalDate a, LocalDate b) { return a.isBefore(b) ? a : b; }
 
     /**
-     * Meld deze bevinding als één WARNING-diagnostic op {@code model}, gededupliceerd (zoals {@code Dekking.meld}): één
+     * Meld deze bevinding als één WARNING-diagnostic op {@code model}, gededupliceerd (zoals {@code Dekking.report}): één
      * regel tekst die BEIDE periodes citeert — de regelperiode en elk ontbrekend gat. Consumer-aangeroepen; de check
      * ({@link #controleer}) blijft puur.
      */
-    public void meld(RegelSpraakModel model) {
-        StringBuilder gaten = new StringBuilder();
-        for (int i = 0; i < ontbrekend.size(); i++) {
-            if (i > 0) gaten.append(", ");
-            gaten.append(toon(ontbrekend.get(i)));
+    public void report(RegelSpraakModel model) {
+        StringBuilder holes = new StringBuilder();
+        for (int i = 0; i < missing.size(); i++) {
+            if (i > 0) holes.append(", ");
+            holes.append(toon(missing.get(i)));
         }
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                "periodedekking: regel '" + regel + "' (geldig " + toon(regelPeriode) + ") verwijst naar parameter '"
-                        + parameter + "' zonder geldige waarde in " + gaten, 0);
+                "periodedekking: regel '" + regel + "' (geldig " + toon(rulePeriod) + ") verwijst naar parameter '"
+                        + parameter + "' zonder geldige waarde in " + holes, 0);
         if (!model.diagnostics.contains(w)) model.diagnostics.add(w);
     }
 
     /** Meld ALLE bevindingen op het model (deduplicerend). Consumer-gemak boven een handmatige lus. */
-    public static void meldAlle(List<PeriodeDekking> bevindingen, RegelSpraakModel model) {
-        for (PeriodeDekking pd : bevindingen) pd.meld(model);
+    public static void meldAlle(List<PeriodeDekking> findings, RegelSpraakModel model) {
+        for (PeriodeDekking pd : findings) pd.report(model);
     }
 
     /** {@code [vanaf t/m tot]} met "(open)" voor een null-kant — zelfde renderstijl als {@link Parameterset}. */

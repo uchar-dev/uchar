@@ -13,37 +13,37 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static dev.uchar.regelspraak.cases.TmsDocumenten.DATUM;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.DATUMTIJD;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.TEKST;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.afronding;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuut;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.binair;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.binderlezing;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.builtin;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.consistent;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.datumwaarde;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.eenheid;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.getaltype;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.getalwaarde;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.inconsistent;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.instantieMet;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.keuze;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.kenmerkregel;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.let;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.lezing;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.literaal;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.rekenregel;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.samengesteld;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.tekstdeel;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.tekstexpressie;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.tekstreeks;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.tekstwaarde;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.waardeJson;
-import static dev.uchar.regelspraak.cases.TmsRekenvormWitnessTest.assertElkeVolgorde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
+import static dev.uchar.regelspraak.cases.TmsDocuments.DATE_TIME;
+import static dev.uchar.regelspraak.cases.TmsDocuments.TEKST;
+import static dev.uchar.regelspraak.cases.TmsDocuments.rounding;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
+import static dev.uchar.regelspraak.cases.TmsDocuments.binderRead;
+import static dev.uchar.regelspraak.cases.TmsDocuments.builtin;
+import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
+import static dev.uchar.regelspraak.cases.TmsDocuments.dateValue;
+import static dev.uchar.regelspraak.cases.TmsDocuments.unit;
+import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
+import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
+import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
+import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
+import static dev.uchar.regelspraak.cases.TmsDocuments.keuze;
+import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
+import static dev.uchar.regelspraak.cases.TmsDocuments.let;
+import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
+import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
+import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
+import static dev.uchar.regelspraak.cases.TmsDocuments.textPart;
+import static dev.uchar.regelspraak.cases.TmsDocuments.textExpression;
+import static dev.uchar.regelspraak.cases.TmsDocuments.textComposition;
+import static dev.uchar.regelspraak.cases.TmsDocuments.textValue;
+import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
+import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.valueJson;
+import static dev.uchar.regelspraak.cases.TmsComputeFormWitnessTest.assertEveryOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,100 +92,100 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class TmsBuiltinWitnessTest {
 
-    private static final String GEHEEL = getaltype(true, 0, null), TWEE = getaltype(false, 2, null),
-            DRIE = getaltype(false, 3, null);
+    private static final String WHOLE = numberType(true, 0, null), TWO = numberType(false, 2, null),
+            THREE = numberType(false, 3, null);
 
     // ---------------- the date builtins ----------------
 
-    private static final String DATUMMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(
-            attribuut("vinddatum", DATUM), attribuut("peildatum", DATUM), attribuut("peiljaar", GEHEEL),
-            attribuut("peilmaand", GEHEEL), attribuut("peildag", GEHEEL),
-            attribuut("weken", getaltype(true, 0, eenheid("weken"))),
-            attribuut("dagen", getaltype(true, 0, eenheid("dagen"))), attribuut("paasdatum", DATUM)), List.of())), List.of());
+    private static final String DATE_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
+            attribuut("vinddatum", DATE), attribuut("peildatum", DATE), attribuut("peiljaar", WHOLE),
+            attribuut("peilmaand", WHOLE), attribuut("peildag", WHOLE),
+            attribuut("weken", numberType(true, 0, unit("weken"))),
+            attribuut("dagen", numberType(true, 0, unit("dagen"))), attribuut("paasdatum", DATE)), List.of())), List.of());
 
-    private static final String PEILDATUM = lezing("peildatum", "Vondst"), VINDDATUM = lezing("vinddatum", "Vondst");
+    private static final String AS_OF_DATE = reading("peildatum", "Vondst"), VINDDATUM = reading("vinddatum", "Vondst");
 
     /** "De peildatum van een Vondst moet berekend worden als zijn vinddatum plus 10 dagen". */
-    static final String PEIL = rekenregel("peildatum van een vondst", "BEREKENING", "Vondst", "peildatum",
-            binair("plus", VINDDATUM, literaal("10", getaltype(true, 0, eenheid("dagen"))), DATUM), "null");
+    static final String AS_OF = computingRule("peildatum van een vondst", "BEREKENING", "Vondst", "peildatum",
+            binary("plus", VINDDATUM, literal("10", numberType(true, 0, unit("dagen"))), DATE), "null");
 
-    static JsonNode datumzaak(String doel, String v1, String v2) throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V1", "Vondst", Map.of("vinddatum", datumwaarde("2026-03-25"),
-                        "peildatum", datumwaarde("2000-01-01")), List.of()),
-                instantieMet("V2", "Vondst", Map.of("vinddatum", datumwaarde("2024-12-28")), List.of()),
-                instantieMet("V3", "Vondst", Map.of(), List.of())),
-                List.of(waardeJson("V1", doel, v1), waardeJson("V2", doel, v2), waarde("V3", doel, null), consistent()));
+    static JsonNode dateCase(String doel, String v1, String v2) throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("vinddatum", dateValue("2026-03-25"),
+                        "peildatum", dateValue("2000-01-01")), List.of()),
+                instanceWith("V2", "Vondst", Map.of("vinddatum", dateValue("2024-12-28")), List.of()),
+                instanceWith("V3", "Vondst", Map.of(), List.of())),
+                List.of(valueJson("V1", doel, v1), valueJson("V2", doel, v2), waarde("V3", doel, null), consistent()));
     }
 
     private static String extractor(String naam, String kind, String doel) {
-        return rekenregel(naam, "BEREKENING", "Vondst", doel, builtin(kind, List.of(PEILDATUM), GEHEEL,
+        return computingRule(naam, "BEREKENING", "Vondst", doel, builtin(kind, List.of(AS_OF_DATE), WHOLE,
                 kind + " van zijn peildatum"), "null");
     }
 
-    @Test void jaar_maand_en_dag_uit_een_later_afgeleide_datum() throws Exception {
-        assertElkeVolgorde(DATUMMODEL, List.of(PEIL, extractor("peiljaar", "yearOf", "peiljaar")),
-                datumzaak("peiljaar", getalwaarde("2026"), getalwaarde("2025")));
-        assertElkeVolgorde(DATUMMODEL, List.of(PEIL, extractor("peilmaand", "monthOf", "peilmaand")),
-                datumzaak("peilmaand", getalwaarde("4"), getalwaarde("1")));
-        assertElkeVolgorde(DATUMMODEL, List.of(PEIL, extractor("peildag", "dayOf", "peildag")),
-                datumzaak("peildag", getalwaarde("4"), getalwaarde("7")));
+    @Test void year_month_and_day_of_a_later_derived_date() throws Exception {
+        assertEveryOrder(DATE_MODEL, List.of(AS_OF, extractor("peiljaar", "yearOf", "peiljaar")),
+                dateCase("peiljaar", numberValue("2026"), numberValue("2025")));
+        assertEveryOrder(DATE_MODEL, List.of(AS_OF, extractor("peilmaand", "monthOf", "peilmaand")),
+                dateCase("peilmaand", numberValue("4"), numberValue("1")));
+        assertEveryOrder(DATE_MODEL, List.of(AS_OF, extractor("peildag", "dayOf", "peildag")),
+                dateCase("peildag", numberValue("4"), numberValue("7")));
     }
 
-    @Test void de_tijdsduur_tot_een_later_afgeleide_datum() throws Exception {
-        String weken = rekenregel("weken van een vondst", "BEREKENING", "Vondst", "weken", builtin("duration",
-                List.of(VINDDATUM, PEILDATUM), getaltype(true, 0, eenheid("weken")),
+    @Test void the_duration_to_a_later_derived_date() throws Exception {
+        String weeks = computingRule("weken van een vondst", "BEREKENING", "Vondst", "weken", builtin("duration",
+                List.of(VINDDATUM, AS_OF_DATE), numberType(true, 0, unit("weken")),
                 "de tijdsduur van zijn vinddatum tot zijn peildatum in hele weken"), "null");
-        assertElkeVolgorde(DATUMMODEL, List.of(PEIL, weken), datumzaak("weken", getalwaarde("1"), getalwaarde("1")));
-        String dagen = rekenregel("dagen van een vondst", "BEREKENING", "Vondst", "dagen", builtin("absoluteDuration",
-                List.of(PEILDATUM, VINDDATUM), getaltype(true, 0, eenheid("dagen")),
+        assertEveryOrder(DATE_MODEL, List.of(AS_OF, weeks), dateCase("weken", numberValue("1"), numberValue("1")));
+        String days = computingRule("dagen van een vondst", "BEREKENING", "Vondst", "dagen", builtin("absoluteDuration",
+                List.of(AS_OF_DATE, VINDDATUM), numberType(true, 0, unit("dagen")),
                 "de absolute tijdsduur van zijn peildatum tot zijn vinddatum in hele dagen"), "null");
-        assertElkeVolgorde(DATUMMODEL, List.of(PEIL, dagen), datumzaak("dagen", getalwaarde("10"), getalwaarde("10")));
+        assertEveryOrder(DATE_MODEL, List.of(AS_OF, days), dateCase("dagen", numberValue("10"), numberValue("10")));
     }
 
-    @Test void de_eerste_paasdag_van_het_jaar_uit_een_later_afgeleide_datum() throws Exception {
-        String pasen = rekenregel("paasdatum van een vondst", "BEREKENING", "Vondst", "paasdatum", builtin("easterSunday",
-                List.of(builtin("yearOf", List.of(PEILDATUM), GEHEEL, "het jaar uit zijn peildatum")), DATUM,
+    @Test void the_easter_sunday_of_the_year_of_a_later_derived_date() throws Exception {
+        String pasen = computingRule("paasdatum van een vondst", "BEREKENING", "Vondst", "paasdatum", builtin("easterSunday",
+                List.of(builtin("yearOf", List.of(AS_OF_DATE), WHOLE, "het jaar uit zijn peildatum")), DATE,
                 "de eerste paasdag van het jaar uit zijn peildatum"), "null");
-        assertElkeVolgorde(DATUMMODEL, List.of(PEIL, pasen),
-                datumzaak("paasdatum", datumwaarde("2026-04-05"), datumwaarde("2025-04-20")));
+        assertEveryOrder(DATE_MODEL, List.of(AS_OF, pasen),
+                dateCase("paasdatum", dateValue("2026-04-05"), dateValue("2025-04-20")));
     }
 
     // ---------------- the absolute value and the square root ----------------
 
-    private static final String GETALMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(
-            attribuut("basis", TWEE), attribuut("saldo", TWEE), attribuut("afstand", TWEE), attribuut("oppervlak", TWEE),
-            attribuut("zijde", TWEE)), List.of())), List.of());
+    private static final String NUMBER_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
+            attribuut("basis", TWO), attribuut("saldo", TWO), attribuut("afstand", TWO), attribuut("oppervlak", TWO),
+            attribuut("zijde", TWO)), List.of())), List.of());
 
-    @Test void de_absolute_waarde_van_een_later_afgeleid_saldo() throws Exception {
-        String saldo = rekenregel("saldo van een vondst", "BEREKENING", "Vondst", "saldo",
-                binair("minus", lezing("basis", "Vondst"), literaal("50.00", TWEE), TWEE), "null");
-        String afstand = rekenregel("afstand van een vondst", "BEREKENING", "Vondst", "afstand",
-                builtin("absoluteValue", List.of(lezing("saldo", "Vondst")), TWEE, "de absolute waarde van zijn saldo"),
+    @Test void the_absolute_value_of_a_later_derived_balance() throws Exception {
+        String balance = computingRule("saldo van een vondst", "BEREKENING", "Vondst", "saldo",
+                binary("minus", reading("basis", "Vondst"), literal("50.00", TWO), TWO), "null");
+        String afstand = computingRule("afstand van een vondst", "BEREKENING", "Vondst", "afstand",
+                builtin("absoluteValue", List.of(reading("saldo", "Vondst")), TWO, "de absolute waarde van zijn saldo"),
                 "null");
-        assertElkeVolgorde(GETALMODEL, List.of(saldo, afstand), TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V1", "Vondst", Map.of("basis", getalwaarde("20.00"), "saldo", getalwaarde("7.00")), List.of()),
-                instantieMet("V2", "Vondst", Map.of("basis", getalwaarde("80.00")), List.of()),
-                instantieMet("V3", "Vondst", Map.of(), List.of())),
+        assertEveryOrder(NUMBER_MODEL, List.of(balance, afstand), TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("basis", numberValue("20.00"), "saldo", numberValue("7.00")), List.of()),
+                instanceWith("V2", "Vondst", Map.of("basis", numberValue("80.00")), List.of()),
+                instanceWith("V3", "Vondst", Map.of(), List.of())),
                 List.of(waarde("V1", "afstand", "30.00"), waarde("V2", "afstand", "30.00"),
                         waarde("V3", "afstand", "50.00"), consistent())));
     }
 
-    static final String OPPERVLAK = rekenregel("oppervlak van een vondst", "BEREKENING", "Vondst", "oppervlak",
-            binair("times", lezing("basis", "Vondst"), literaal("2", GEHEEL), TWEE), "null");
+    static final String OPPERVLAK = computingRule("oppervlak van een vondst", "BEREKENING", "Vondst", "oppervlak",
+            binary("times", reading("basis", "Vondst"), literal("2", WHOLE), TWO), "null");
 
-    static final String ZIJDE = rekenregel("zijde van een vondst", "BEREKENING", "Vondst", "zijde",
-            afronding(builtin("squareRoot", List.of(lezing("oppervlak", "Vondst")), TWEE, "de wortel van zijn oppervlak"),
-                    "halfAwayFromZero", 2, TWEE), "null");
+    static final String SIDE = computingRule("zijde van een vondst", "BEREKENING", "Vondst", "zijde",
+            rounding(builtin("squareRoot", List.of(reading("oppervlak", "Vondst")), TWO, "de wortel van zijn oppervlak"),
+                    "halfAwayFromZero", 2, TWO), "null");
 
-    @Test void de_wortel_van_een_later_afgeleid_oppervlak_onder_zijn_afronding() throws Exception {
-        assertElkeVolgorde(GETALMODEL, List.of(OPPERVLAK, ZIJDE), TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V1", "Vondst", Map.of("basis", getalwaarde("20.00"), "oppervlak", getalwaarde("-9.00")),
+    @Test void the_square_root_of_a_later_derived_oppervlak_under_its_rounding() throws Exception {
+        assertEveryOrder(NUMBER_MODEL, List.of(OPPERVLAK, SIDE), TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("basis", numberValue("20.00"), "oppervlak", numberValue("-9.00")),
                         List.of()),
-                instantieMet("V2", "Vondst", Map.of("basis", getalwaarde("8.00")), List.of())),
+                instanceWith("V2", "Vondst", Map.of("basis", numberValue("8.00")), List.of())),
                 List.of(waarde("V1", "zijde", "6.32"), waarde("V2", "zijde", "4.00"), consistent())));
-        assertElkeVolgorde(GETALMODEL, List.of(OPPERVLAK, ZIJDE), TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V3", "Vondst", Map.of("basis", getalwaarde("-2.00")), List.of())),
+        assertEveryOrder(NUMBER_MODEL, List.of(OPPERVLAK, SIDE), TmsDocuments.caseOn(null, List.of(
+                instanceWith("V3", "Vondst", Map.of("basis", numberValue("-2.00")), List.of())),
                 List.of(waarde("V3", "zijde", null), inconsistent("zijde van een vondst", "V3"))));
     }
 
@@ -201,69 +201,69 @@ class TmsBuiltinWitnessTest {
      *  interpreter faults. <b>Red</b> (2026-10-09) at the claim of the card, "een BuiltinCall in een waarde ('de wortel
      *  van zijn oppervlak'): buiten de proef van de truth-maintenance-tak", and in the first commit of the card, which
      *  refused it as "een squareRoot die niet de basis van een afronding is". */
-    @Test void een_wortel_zonder_afronding_is_exact_of_een_fout() throws Exception {
-        String zijde = rekenregel("zijde van een vondst", "BEREKENING", "Vondst", "zijde", builtin("squareRoot",
-                List.of(lezing("oppervlak", "Vondst")), TWEE, "de wortel van zijn oppervlak"), "null");
-        JsonNode exact = TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V1", "Vondst", Map.of("basis", getalwaarde("2.00"), "oppervlak", getalwaarde("2.00")),
+    @Test void a_square_root_without_rounding_is_exact_or_a_fault() throws Exception {
+        String side = computingRule("zijde van een vondst", "BEREKENING", "Vondst", "zijde", builtin("squareRoot",
+                List.of(reading("oppervlak", "Vondst")), TWO, "de wortel van zijn oppervlak"), "null");
+        JsonNode exact = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("basis", numberValue("2.00"), "oppervlak", numberValue("2.00")),
                         List.of()),
-                instantieMet("V2", "Vondst", Map.of("basis", getalwaarde("8.00")), List.of()),
-                instantieMet("V3", "Vondst", Map.of("basis", getalwaarde("0.08")), List.of())),
+                instanceWith("V2", "Vondst", Map.of("basis", numberValue("8.00")), List.of()),
+                instanceWith("V3", "Vondst", Map.of("basis", numberValue("0.08")), List.of())),
                 List.of(waarde("V1", "zijde", "2"), waarde("V2", "zijde", "4"), waarde("V3", "zijde", "0.4"),
                         consistent()));
-        JsonNode irrationaal = TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V4", "Vondst", Map.of("basis", getalwaarde("1.00")), List.of())), List.of(consistent()));
-        JsonNode negatief = TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V5", "Vondst", Map.of("basis", getalwaarde("-2.00")), List.of())),
+        JsonNode irrational = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V4", "Vondst", Map.of("basis", numberValue("1.00")), List.of())), List.of(consistent()));
+        JsonNode negative = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V5", "Vondst", Map.of("basis", numberValue("-2.00")), List.of())),
                 List.of(waarde("V5", "zijde", null), inconsistent("zijde van een vondst", "V5")));
-        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (List<String> volgorde : TmsDocumenten.permutaties(List.of(OPPERVLAK, zijde))) {
-            List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            java.nio.file.Path ir = TmsDocumenten.document(GETALMODEL, volgorde);
-            for (JsonNode zaak : List.of(exact, irrationaal, negatief))
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(namen + " gespeeld");
-            verwacht.add(namen + " Rekenfout: fout in de regel \"zijde van een vondst\": irrational square root of 2"
+        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(List.of(OPPERVLAK, side))) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            java.nio.file.Path ir = TmsDocuments.document(NUMBER_MODEL, order);
+            for (JsonNode caseDocument : List.of(exact, irrational, negative))
+                outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
+            verwacht.add(names + " gespeeld");
+            verwacht.add(names + " Rekenfout: fout in de regel \"zijde van een vondst\": irrational square root of 2"
                     + " reached without an explicit rounding (§13.4.17.13 mandates one)");
-            verwacht.add(namen + " gespeeld");
+            verwacht.add(names + " gespeeld");
         }
-        assertEquals(verwacht, uitkomsten);
+        assertEquals(verwacht, outcomes);
     }
 
     // ---------------- text ----------------
 
-    private static final String TEKSTMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(
+    private static final String TEXT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
             attribuut("naam", TEKST), attribuut("titel", TEKST), attribuut("omschrijving", TEKST), attribuut("code", TEKST),
-            attribuut("basis", TWEE)), List.of())), List.of());
+            attribuut("basis", TWO)), List.of())), List.of());
 
-    static final String TITEL = rekenregel("titel van een vondst", "BEREKENING", "Vondst", "titel",
-            lezing("naam", "Vondst"), "null");
+    static final String TITLE = computingRule("titel van een vondst", "BEREKENING", "Vondst", "titel",
+            reading("naam", "Vondst"), "null");
 
-    static JsonNode tekstzaak(String doel, String v1, String v2) throws Exception {
-        return TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V1", "Vondst", Map.of("naam", tekstwaarde("anker"), "titel", tekstwaarde("oud")), List.of()),
-                instantieMet("V2", "Vondst", Map.of(), List.of())),
-                List.of(waardeJson("V1", doel, tekstwaarde(v1)), waardeJson("V2", doel, tekstwaarde(v2)), consistent()));
+    static JsonNode textCase(String doel, String v1, String v2) throws Exception {
+        return TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("naam", textValue("anker"), "titel", textValue("oud")), List.of()),
+                instanceWith("V2", "Vondst", Map.of(), List.of())),
+                List.of(valueJson("V1", doel, textValue(v1)), valueJson("V2", doel, textValue(v2)), consistent()));
     }
 
-    @Test void een_tekstreeks_en_een_concatenatie_over_een_later_afgeleide_titel() throws Exception {
-        String omschrijving = rekenregel("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
-                tekstreeks(List.of(tekstdeel("Vondst: "), tekstexpressie(lezing("titel", "Vondst")))), "null");
-        assertElkeVolgorde(TEKSTMODEL, List.of(TITEL, omschrijving), tekstzaak("omschrijving", "Vondst: anker", "Vondst: "));
-        String code = rekenregel("code van een vondst", "BEREKENING", "Vondst", "code", builtin("concatenation",
-                List.of(lezing("titel", "Vondst"), lezing("naam", "Vondst")), TEKST, "de concatenatie van zijn titel en"
+    @Test void a_text_sequence_and_a_concatenation_over_a_later_derived_title() throws Exception {
+        String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
+                textComposition(List.of(textPart("Vondst: "), textExpression(reading("titel", "Vondst")))), "null");
+        assertEveryOrder(TEXT_MODEL, List.of(TITLE, description), textCase("omschrijving", "Vondst: anker", "Vondst: "));
+        String code = computingRule("code van een vondst", "BEREKENING", "Vondst", "code", builtin("concatenation",
+                List.of(reading("titel", "Vondst"), reading("naam", "Vondst")), TEKST, "de concatenatie van zijn titel en"
                         + " zijn naam"), "null");
-        assertElkeVolgorde(TEKSTMODEL, List.of(TITEL, code), tekstzaak("code", "ankeranker", ""));
+        assertEveryOrder(TEXT_MODEL, List.of(TITLE, code), textCase("code", "ankeranker", ""));
     }
 
     /** The text of a number is not decided by RUNTIME-SEMANTICS ch. 1.2, which says only that a leeg part reads "",
      *  and the reference interpreter (5,50 as "5.5", waar as "waar") and the runtime's {@code rsTekst} (5.50, true)
      *  answer it differently: the branch refuses such a part by name. */
-    @Test void een_tekstreeks_met_een_getal_wordt_geweigerd() throws Exception {
-        String omschrijving = rekenregel("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
-                tekstreeks(List.of(tekstdeel("Bedrag: "), tekstexpressie(lezing("basis", "Vondst")))), "null");
+    @Test void a_text_composition_with_a_number_is_refused() throws Exception {
+        String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
+                textComposition(List.of(textPart("Bedrag: "), textExpression(reading("basis", "Vondst")))), "null");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(TEKSTMODEL, List.of(omschrijving)), DroolsBackend.Branch.EXEC_MODEL));
+                TmsDocuments.document(TEXT_MODEL, List.of(description)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeriek in een"
                 + " TextComposition ('zijn basis'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest;"
                 + " de tekst van een getal, een waarheidswaarde of een datum beslist de spec niet, en de"
@@ -272,47 +272,47 @@ class TmsBuiltinWitnessTest {
 
     // ---------------- the eleven test and the exact digits ----------------
 
-    private static final String PROEFMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(
-            attribuut("grondnummer", GEHEEL), attribuut("nummer", GEHEEL), attribuut("grondcode", TEKST),
+    private static final String TRIAL_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
+            attribuut("grondnummer", WHOLE), attribuut("nummer", WHOLE), attribuut("grondcode", TEKST),
             attribuut("postcode", TEKST)), List.of("geldig", "viercijferig"))), List.of());
 
-    private static String proef(String kind, String operand, int cijfers) {
+    private static String trial(String kind, String operand, int digits) {
         return "{\"node\":\"Predicate\",\"kind\":\"" + kind + "\",\"operand\":" + operand + ",\"negated\":false,\"digits\":"
-                + cijfers + ",\"source\":{\"snippet\":\"" + kind + "\"}}";
+                + digits + ",\"source\":{\"snippet\":\"" + kind + "\"}}";
     }
 
-    @Test void de_elfproef_en_exact_vier_cijfers_over_een_later_afgeleide_waarde() throws Exception {
-        String nummer = rekenregel("nummer van een vondst", "BEREKENING", "Vondst", "nummer",
-                lezing("grondnummer", "Vondst"), "null");
-        String geldig = kenmerkregel("geldig bij elfproef", "Vondst", "geldig",
-                proef("elevenTest", lezing("nummer", "Vondst"), 0));
-        String postcode = rekenregel("postcode van een vondst", "BEREKENING", "Vondst", "postcode",
-                lezing("grondcode", "Vondst"), "null");
-        String vier = kenmerkregel("viercijferig bij postcode", "Vondst", "viercijferig",
-                proef("exactDigits", lezing("postcode", "Vondst"), 4));
-        JsonNode zaak = TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V1", "Vondst", Map.of("grondnummer", getalwaarde("123456782"), "nummer",
-                        getalwaarde("111111111"), "grondcode", tekstwaarde("1234"), "postcode", tekstwaarde("abcd")),
+    @Test void the_eleven_test_and_exact_four_digits_over_a_later_derived_value() throws Exception {
+        String number = computingRule("nummer van een vondst", "BEREKENING", "Vondst", "nummer",
+                reading("grondnummer", "Vondst"), "null");
+        String valid = characteristicRule("geldig bij elfproef", "Vondst", "geldig",
+                trial("elevenTest", reading("nummer", "Vondst"), 0));
+        String postcode = computingRule("postcode van een vondst", "BEREKENING", "Vondst", "postcode",
+                reading("grondcode", "Vondst"), "null");
+        String four = characteristicRule("viercijferig bij postcode", "Vondst", "viercijferig",
+                trial("exactDigits", reading("postcode", "Vondst"), 4));
+        JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V1", "Vondst", Map.of("grondnummer", numberValue("123456782"), "nummer",
+                        numberValue("111111111"), "grondcode", textValue("1234"), "postcode", textValue("abcd")),
                         List.of()),
-                instantieMet("V2", "Vondst", Map.of("grondnummer", getalwaarde("111111111"), "grondcode",
-                        tekstwaarde("12a4")), List.of())),
+                instanceWith("V2", "Vondst", Map.of("grondnummer", numberValue("111111111"), "grondcode",
+                        textValue("12a4")), List.of())),
                 List.of(verwacht("V1", "geldig", true), verwacht("V2", "geldig", false), verwacht("V1", "viercijferig", true),
                         verwacht("V2", "viercijferig", false), consistent()));
-        assertElkeVolgorde(PROEFMODEL, List.of(nummer, geldig, postcode, vier), zaak);
+        assertEveryOrder(TRIAL_MODEL, List.of(number, valid, postcode, four), caseDocument);
     }
 
     /** "Een Vondst is geldig indien het nummer van zijn vinder aan de elfproef voldoet": the eleven test over a path of
      *  one role. The branch reads the operand as any value, in which an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8,
      *  rule 1), so it cannot tell an absent link from a leeg nummer; it refuses the form by name. */
-    @Test void de_elfproef_over_een_pad_weigert_met_naam() throws Exception {
-        String model = TmsDocumenten.model(List.of(
-                TmsDocumenten.objecttype("Jutter", List.of(attribuut("nummer", GEHEEL)), List.of()),
-                TmsDocumenten.objecttype("Vondst", List.of(), List.of("geldig"))),
-                List.of(TmsDocumenten.feittypeEenNaarVeel("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten")));
-        String geldig = kenmerkregel("geldig bij elfproef", "Vondst", "geldig",
-                proef("elevenTest", TmsDocumenten.padlezing("nummer", "Jutter", "vinding", "vinder"), 0));
+    @Test void the_eleven_test_over_a_path_is_refused_by_name() throws Exception {
+        String model = TmsDocuments.model(List.of(
+                TmsDocuments.objecttype("Jutter", List.of(attribuut("nummer", WHOLE)), List.of()),
+                TmsDocuments.objecttype("Vondst", List.of(), List.of("geldig"))),
+                List.of(TmsDocuments.factTypeOneToMany("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten")));
+        String valid = characteristicRule("geldig bij elfproef", "Vondst", "geldig",
+                trial("elevenTest", TmsDocuments.pathRead("nummer", "Jutter", "vinding", "vinder"), 0));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(model, List.of(geldig)), DroolsBackend.Branch.EXEC_MODEL));
+                TmsDocuments.document(model, List.of(valid)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: geldig bij elfproef — een Predicate elevenTest over een pad"
                 + " ('elevenTest'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
                 + " (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege waarde"
@@ -321,112 +321,112 @@ class TmsBuiltinWitnessTest {
 
     // ---------------- the sub-day extractors, dateWith and dateTimeWith ----------------
 
-    private static final String GETIJMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Getij", List.of(
-            attribuut("vertrek", DATUMTIJD), attribuut("aankomst", DATUMTIJD), attribuut("uur", GEHEEL),
-            attribuut("minuut", GEHEEL), attribuut("seconde", GEHEEL), attribuut("milliseconde", GEHEEL),
-            attribuut("einddatum", DATUM), attribuut("eindtijd", DATUMTIJD)), List.of())), List.of());
+    private static final String GETIJMODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Getij", List.of(
+            attribuut("vertrek", DATE_TIME), attribuut("aankomst", DATE_TIME), attribuut("uur", WHOLE),
+            attribuut("minuut", WHOLE), attribuut("seconde", WHOLE), attribuut("milliseconde", WHOLE),
+            attribuut("einddatum", DATE), attribuut("eindtijd", DATE_TIME)), List.of())), List.of());
 
-    private static final String AANKOMST = lezing("aankomst", "Getij");
+    private static final String AANKOMST = reading("aankomst", "Getij");
 
-    @Test void tijddelen_en_datumconstructie_uit_een_later_afgeleide_aankomst() throws Exception {
-        String aankomst = rekenregel("aankomst van een getij", "BEREKENING", "Getij", "aankomst",
-                binair("plus", lezing("vertrek", "Getij"), literaal("2", getaltype(true, 0, eenheid("uur"))), DATUMTIJD),
+    @Test void time_parts_and_date_construction_of_a_later_derived_aankomst() throws Exception {
+        String aankomst = computingRule("aankomst van een getij", "BEREKENING", "Getij", "aankomst",
+                binary("plus", reading("vertrek", "Getij"), literal("2", numberType(true, 0, unit("uur"))), DATE_TIME),
                 "null");
-        String jaar = builtin("yearOf", List.of(AANKOMST), GEHEEL, "het jaar uit zijn aankomst");
-        List<String> regels = List.of(aankomst,
-                rekenregel("uur", "BEREKENING", "Getij", "uur", builtin("hourOf", List.of(AANKOMST), GEHEEL, "uur"), "null"),
-                rekenregel("minuut", "BEREKENING", "Getij", "minuut", builtin("minuteOf", List.of(AANKOMST), GEHEEL,
+        String year = builtin("yearOf", List.of(AANKOMST), WHOLE, "het jaar uit zijn aankomst");
+        List<String> rules = List.of(aankomst,
+                computingRule("uur", "BEREKENING", "Getij", "uur", builtin("hourOf", List.of(AANKOMST), WHOLE, "uur"), "null"),
+                computingRule("minuut", "BEREKENING", "Getij", "minuut", builtin("minuteOf", List.of(AANKOMST), WHOLE,
                         "minuut"), "null"),
-                rekenregel("seconde", "BEREKENING", "Getij", "seconde", builtin("secondOf", List.of(AANKOMST), GEHEEL,
+                computingRule("seconde", "BEREKENING", "Getij", "seconde", builtin("secondOf", List.of(AANKOMST), WHOLE,
                         "seconde"), "null"),
-                rekenregel("milliseconde", "BEREKENING", "Getij", "milliseconde", builtin("millisecondOf",
-                        List.of(AANKOMST), GEHEEL, "milliseconde"), "null"),
-                rekenregel("einddatum", "BEREKENING", "Getij", "einddatum", builtin("dateWith", List.of(jaar,
-                        literaal("12", GEHEEL), literaal("31", GEHEEL)), DATUM, "de datum met …"), "null"),
-                rekenregel("eindtijd", "BEREKENING", "Getij", "eindtijd", builtin("dateTimeWith", List.of(jaar,
-                        literaal("12", GEHEEL), literaal("31", GEHEEL), literaal("23", GEHEEL), literaal("59", GEHEEL),
-                        literaal("59", GEHEEL), literaal("999", GEHEEL)), DATUMTIJD, "de datum-tijd met …"), "null"));
-        JsonNode zaak = TmsDocumenten.zaakOp(null, List.of(instantieMet("G1", "Getij", Map.of(
+                computingRule("milliseconde", "BEREKENING", "Getij", "milliseconde", builtin("millisecondOf",
+                        List.of(AANKOMST), WHOLE, "milliseconde"), "null"),
+                computingRule("einddatum", "BEREKENING", "Getij", "einddatum", builtin("dateWith", List.of(year,
+                        literal("12", WHOLE), literal("31", WHOLE)), DATE, "de datum met …"), "null"),
+                computingRule("eindtijd", "BEREKENING", "Getij", "eindtijd", builtin("dateTimeWith", List.of(year,
+                        literal("12", WHOLE), literal("31", WHOLE), literal("23", WHOLE), literal("59", WHOLE),
+                        literal("59", WHOLE), literal("999", WHOLE)), DATE_TIME, "de datum-tijd met …"), "null"));
+        JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(instanceWith("G1", "Getij", Map.of(
                 "vertrek", "{\"dateTime\":\"2026-03-01T22:30:15.250\"}",
                 "aankomst", "{\"dateTime\":\"2000-01-01T00:00:00.000\"}"), List.of())),
                 List.of(waarde("G1", "uur", "0"), waarde("G1", "minuut", "30"), waarde("G1", "seconde", "15"),
-                        waarde("G1", "milliseconde", "250"), waardeJson("G1", "einddatum", datumwaarde("2026-12-31")),
-                        waardeJson("G1", "eindtijd", "{\"dateTime\":\"2026-12-31T23:59:59.999\"}"), consistent()));
-        for (int i = 1; i < regels.size(); i++)
-            assertElkeVolgorde(GETIJMODEL, List.of(regels.get(0), regels.get(i)), zaak(zaak, i));
+                        waarde("G1", "milliseconde", "250"), valueJson("G1", "einddatum", dateValue("2026-12-31")),
+                        valueJson("G1", "eindtijd", "{\"dateTime\":\"2026-12-31T23:59:59.999\"}"), consistent()));
+        for (int i = 1; i < rules.size(); i++)
+            assertEveryOrder(GETIJMODEL, List.of(rules.get(0), rules.get(i)), caseDocument(caseDocument, i));
     }
 
-    /** {@code zaak} with only the expectation of reader {@code i} (1-based: uur first) and the channel. */
-    private static JsonNode zaak(JsonNode zaak, int i) {
-        JsonNode kopie = zaak.deepCopy();
+    /** {@code caseDocument} with only the expectation of reader {@code i} (1-based: uur first) and the channel. */
+    private static JsonNode caseDocument(JsonNode caseDocument, int i) {
+        JsonNode copy = caseDocument.deepCopy();
         com.fasterxml.jackson.databind.node.ArrayNode verwacht = (com.fasterxml.jackson.databind.node.ArrayNode)
-                kopie.get("expected");
-        JsonNode eigen = verwacht.get(i - 1), kanaal = verwacht.get(verwacht.size() - 1);
+                copy.get("expected");
+        JsonNode own = verwacht.get(i - 1), channel = verwacht.get(verwacht.size() - 1);
         verwacht.removeAll();
-        verwacht.add(eigen);
-        verwacht.add(kanaal);
-        return kopie;
+        verwacht.add(own);
+        verwacht.add(channel);
+        return copy;
     }
 
     // ---------------- an Unresolved node ----------------
 
-    private static final String ONOPGELOSTMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
-            List.of(attribuut("basis", TWEE), attribuut("waarde", DRIE), attribuut("heffing", TWEE)), List.of("duur"))),
+    private static final String UNRESOLVED_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
+            List.of(attribuut("basis", TWO), attribuut("waarde", THREE), attribuut("heffing", TWO)), List.of("duur"))),
             List.of());
 
-    private static final String WAARDE = rekenregel("waarde van een vondst", "BEREKENING", "Vondst", "waarde",
-            binair("times", lezing("basis", "Vondst"), literaal("1.5", getaltype(false, 1, null)), DRIE), "null");
+    private static final String VALUE = computingRule("waarde van een vondst", "BEREKENING", "Vondst", "waarde",
+            binary("times", reading("basis", "Vondst"), literal("1.5", numberType(false, 1, null)), THREE), "null");
 
-    static final String ONOPGELOSTE_WAARDE = "{\"node\":\"Unresolved\",\"type\":" + TWEE + ",\"source\":{\"snippet\":"
+    static final String UNRESOLVED_VALUE = "{\"node\":\"Unresolved\",\"type\":" + TWO + ",\"source\":{\"snippet\":"
             + "\"een onopgeloste heffing\"}}";
-    static final String ONOPGELOSTE_VOORWAARDE = "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"een onopgeloste"
+    static final String UNRESOLVED_CONDITION = "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"een onopgeloste"
             + " voorwaarde\"}}";
 
-    @Test void een_onopgelost_merkteken_faalt_alleen_waar_de_evaluatie_het_bereikt() throws Exception {
-        String heffing = rekenregel("heffing van een vondst", "BEREKENING", "Vondst", "heffing", let("k",
-                lezing("waarde", "Vondst"), keuze(vergelijking("greater", binderlezing("k"), literaal("10", GEHEEL)),
-                        literaal("5.00", TWEE), ONOPGELOSTE_WAARDE, TWEE), TWEE), "null");
-        String duur = kenmerkregel("duur bij waarde", "Vondst", "duur", samengesteld("all", 0, List.of(
-                vergelijking("greater", lezing("waarde", "Vondst"), literaal("100", GEHEEL)), ONOPGELOSTE_VOORWAARDE)));
+    @Test void an_unresolved_marker_fails_only_where_the_evaluation_reaches_it() throws Exception {
+        String heffing = computingRule("heffing van een vondst", "BEREKENING", "Vondst", "heffing", let("k",
+                reading("waarde", "Vondst"), keuze(comparison("greater", binderRead("k"), literal("10", WHOLE)),
+                        literal("5.00", TWO), UNRESOLVED_VALUE, TWO), TWO), "null");
+        String duration = characteristicRule("duur bij waarde", "Vondst", "duur", compound("all", 0, List.of(
+                comparison("greater", reading("waarde", "Vondst"), literal("100", WHOLE)), UNRESOLVED_CONDITION)));
         // the input waarde 3 sends the heffing to the marker on the way, 500 sends the condition to it
-        for (String tussenstand : List.of("3", "500"))
-            assertElkeVolgorde(ONOPGELOSTMODEL, List.of(WAARDE, heffing, duur), TmsDocumenten.zaakOp(null, List.of(
-                    instantieMet("V1", "Vondst", Map.of("basis", getalwaarde("12.34"), "waarde", getalwaarde(tussenstand)),
+        for (String intermediateState : List.of("3", "500"))
+            assertEveryOrder(UNRESOLVED_MODEL, List.of(VALUE, heffing, duration), TmsDocuments.caseOn(null, List.of(
+                    instanceWith("V1", "Vondst", Map.of("basis", numberValue("12.34"), "waarde", numberValue(intermediateState)),
                             List.of())),
                     List.of(waarde("V1", "heffing", "5.00"), verwacht("V1", "duur", false), consistent())));
-        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
-        JsonNode laag = TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V2", "Vondst", Map.of("basis", getalwaarde("4.00")), List.of())), List.of(consistent()));
-        JsonNode hoog = TmsDocumenten.zaakOp(null, List.of(
-                instantieMet("V3", "Vondst", Map.of("basis", getalwaarde("100.00")), List.of())), List.of(consistent()));
-        for (List<String> volgorde : TmsDocumenten.permutaties(List.of(WAARDE, heffing))) {
-            List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(TmsDocumenten.document(ONOPGELOSTMODEL, volgorde), laag,
+        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        JsonNode lowLink = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V2", "Vondst", Map.of("basis", numberValue("4.00")), List.of())), List.of(consistent()));
+        JsonNode high = TmsDocuments.caseOn(null, List.of(
+                instanceWith("V3", "Vondst", Map.of("basis", numberValue("100.00")), List.of())), List.of(consistent()));
+        for (List<String> order : TmsDocuments.permutations(List.of(VALUE, heffing))) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(UNRESOLVED_MODEL, order), lowLink,
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(namen + " Rekenfout: fout in de regel \"heffing van een vondst\": Unresolved reached in"
+            verwacht.add(names + " Rekenfout: fout in de regel \"heffing van een vondst\": Unresolved reached in"
                     + " evaluation: this rule fails observably");
         }
-        for (List<String> volgorde : TmsDocumenten.permutaties(List.of(WAARDE, duur))) {
-            List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(TmsDocumenten.document(ONOPGELOSTMODEL, volgorde), hoog,
+        for (List<String> order : TmsDocuments.permutations(List.of(VALUE, duration))) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(UNRESOLVED_MODEL, order), high,
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(namen + " Rekenfout: fout in de regel \"duur bij waarde\": Unresolved condition reached in"
+            verwacht.add(names + " Rekenfout: fout in de regel \"duur bij waarde\": Unresolved condition reached in"
                     + " evaluation");
         }
-        assertEquals(verwacht, uitkomsten);
+        assertEquals(verwacht, outcomes);
     }
 
     // ---------------- a dimension cell and a fold over a dimension selection ----------------
 
-    private static final String DIMENSIEMODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\","
+    private static final String DIMENSION_MODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\","
             + "\"animate\":true,\"plural\":\"Jutters\",\"attributes\":[{\"node\":\"Attribute\",\"name\":\"omzet\","
-            + "\"datatype\":" + TWEE + ",\"dimensions\":[\"kwartaal\"]}," + attribuut("grondtoeslag", TWEE) + ","
-            + attribuut("toeslag", TWEE) + "," + attribuut("tweede kwartaal", TWEE) + "," + attribuut("jaaromzet", TWEE)
+            + "\"datatype\":" + TWO + ",\"dimensions\":[\"kwartaal\"]}," + attribuut("grondtoeslag", TWO) + ","
+            + attribuut("toeslag", TWO) + "," + attribuut("tweede kwartaal", TWO) + "," + attribuut("jaaromzet", TWO)
             + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],"
             + "\"dimensions\":[{\"node\":\"Dimension\",\"name\":\"kwartaal\",\"plural\":\"kwartalen\",\"preposition\":"
             + "\"in\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static final String OMZET = lezing("omzet", "Jutter");
+    private static final String OMZET = reading("omzet", "Jutter");
 
     /** The case reader does not carry dimensioned input (§3.6, a Map bean member), on any branch, so the beans are
      *  set here; "Het tweede kwartaal … als zijn omzet in k2 plus zijn toeslag" and "De jaaromzet … als de som van zijn
@@ -435,49 +435,49 @@ class TmsBuiltinWitnessTest {
      *  21, jaaromzet 36. */
     /** "Het tweede kwartaal … als zijn omzet in k2 in noord": a cell over two dimensions, which the branch refuses by
      *  name, since it reads a cell of one dimension (the row below). */
-    @Test void een_cel_over_twee_dimensies_weigert_met_naam() throws Exception {
-        String model = DIMENSIEMODEL.replace("\"dimensions\":[\"kwartaal\"]", "\"dimensions\":[\"kwartaal\",\"regio\"]")
+    @Test void a_cell_over_two_dimensions_is_refused_by_name() throws Exception {
+        String model = DIMENSION_MODEL.replace("\"dimensions\":[\"kwartaal\"]", "\"dimensions\":[\"kwartaal\",\"regio\"]")
                 .replace("\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}]", "\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
                         + "{\"node\":\"Dimension\",\"name\":\"regio\",\"plural\":\"regio's\",\"preposition\":\"in\","
                         + "\"labels\":[\"noord\",\"zuid\"]}]");
-        String cel = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\",\"noord\"],"
+        String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\",\"noord\"],"
                 + "\"source\":{\"snippet\":\"zijn omzet in k2 in noord\"}}";
-        String tweede = rekenregel("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal", cel, "null");
+        String tweede = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal", cell, "null");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(model, List.of(tweede)), DroolsBackend.Branch.EXEC_MODEL));
+                TmsDocuments.document(model, List.of(tweede)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: tweede kwartaal van een jutter — een DimensionCellRead over 2 dimensies"
                 + " ('zijn omzet in k2 in noord'): deze tak leest alleen een cel van één dimensie", e.getMessage());
     }
 
-    @Test void een_dimensiecel_en_een_dimensievouw_naast_een_later_afgeleide_toeslag() throws Exception {
-        String toeslag = rekenregel("toeslag van een jutter", "BEREKENING", "Jutter", "toeslag",
-                lezing("grondtoeslag", "Jutter"), "null");
-        String cel = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\"],\"source\":"
+    @Test void a_dimension_cell_and_a_dimension_fold_beside_a_later_derived_toeslag() throws Exception {
+        String toeslag = computingRule("toeslag van een jutter", "BEREKENING", "Jutter", "toeslag",
+                reading("grondtoeslag", "Jutter"), "null");
+        String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\"],\"source\":"
                 + "{\"snippet\":\"zijn omzet in k2\"}}";
-        String tweede = rekenregel("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal",
-                binair("plus", cel, lezing("toeslag", "Jutter"), TWEE), "null");
-        String vouw = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + OMZET + "],\"dimensionSelection\":"
+        String tweede = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal",
+                binary("plus", cell, reading("toeslag", "Jutter"), TWO), "null");
+        String fold = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + OMZET + "],\"dimensionSelection\":"
                 + "{\"node\":\"DimensionSelection\",\"dimension\":\"kwartaal\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
-                + "\"type\":" + TWEE + ",\"source\":{\"snippet\":\"de som van zijn omzet over alle kwartalen\"}}";
-        String jaar = rekenregel("jaaromzet van een jutter", "BEREKENING", "Jutter", "jaaromzet",
-                binair("plus", vouw, lezing("toeslag", "Jutter"), TWEE), "null");
-        DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(DIMENSIEMODEL, List.of(toeslag, tweede, jaar)),
+                + "\"type\":" + TWO + ",\"source\":{\"snippet\":\"de som van zijn omzet over alle kwartalen\"}}";
+        String year = computingRule("jaaromzet van een jutter", "BEREKENING", "Jutter", "jaaromzet",
+                binary("plus", fold, reading("toeslag", "Jutter"), TWO), "null");
+        DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(DIMENSION_MODEL, List.of(toeslag, tweede, year)),
                 DroolsBackend.Branch.EXEC_MODEL);
-        int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("grondtoeslag", "1", "toeslag", "99"),
+        int orders = 0;
+        for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
+            List<String> names = order.stream().map(Rule::getName).toList();
+            Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("grondtoeslag", "1", "toeslag", "99"),
                     List.of());
             Map<String, BigDecimal> omzet = new LinkedHashMap<>();
             omzet.put("k1", new BigDecimal("10"));
             omzet.put("k2", new BigDecimal("20"));
             omzet.put("k4", new BigDecimal("5"));
             j1.getClass().getMethod(Namen.setter("omzet"), Map.class).invoke(j1, omzet);
-            assertNull(TmsDocumenten.fixpunt(b, volgorde, List.of(j1), sessie -> { }), () -> "volgorde " + namen);
-            TmsFoutWitnessTest.assertGetal("21", TmsDocumenten.lees(j1, "tweede kwartaal"), "tweede kwartaal, " + namen);
-            TmsFoutWitnessTest.assertGetal("36", TmsDocumenten.lees(j1, "jaaromzet"), "jaaromzet, " + namen);
-            volgordes++;
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1), sessie -> { }), () -> "volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("21", TmsDocuments.lees(j1, "tweede kwartaal"), "tweede kwartaal, " + names);
+            TmsFaultWitnessTest.assertNumber("36", TmsDocuments.lees(j1, "jaaromzet"), "jaaromzet, " + names);
+            orders++;
         }
-        assertEquals(120, volgordes);
+        assertEquals(120, orders);
     }
 }

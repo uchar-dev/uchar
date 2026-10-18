@@ -165,7 +165,7 @@ class RenamingRefusalWitnessTest {
                         : part.contains(v0) ? "unknown TextCompositionPart node \"" + v0 + "\""
                         : "expected \"" + l5 + "\", got \"" + v0 + "\"";
                 IrLoader.Documentfout e = refuses(doc, v0);
-                assertEquals(p.path() + "/node", e.plek(), v0 + ": " + e.getMessage());
+                assertEquals(p.path() + "/node", e.site(), v0 + ": " + e.getMessage());
                 assertTrue(e.getMessage().endsWith(": " + sentence), v0 + ": " + e.getMessage());
                 rows++;
             }
@@ -184,7 +184,7 @@ class RenamingRefusalWitnessTest {
                 ObjectNode doc = p.document();
                 node(doc, p.path()).put(key, 1);
                 IrLoader.Documentfout e = refuses(doc, kind + "." + key);
-                assertEquals(p.path() + "/" + key, e.plek(), kind + "." + key + ": " + e.getMessage());
+                assertEquals(p.path() + "/" + key, e.site(), kind + "." + key + ": " + e.getMessage());
                 String sentence = kind.equals(UITZONDERINGEN) ? ": unknown field" : ": unknown field on " + kind;
                 assertTrue(e.getMessage().endsWith(sentence), kind + "." + key + ": " + e.getMessage());
                 rows++;
@@ -211,7 +211,7 @@ class RenamingRefusalWitnessTest {
             rules.properties().forEach(e -> renamed.set(e.getKey().equals(l[0]) ? l[1] : e.getKey(), e.getValue()));
             doc.set("rules", renamed);
             IrLoader.Documentfout e = refuses(doc, l[1]);
-            assertEquals("/rules/" + l[1], e.plek(), e.getMessage());
+            assertEquals("/rules/" + l[1], e.site(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": unknown field"), e.getMessage());
         }
     }
@@ -240,7 +240,7 @@ class RenamingRefusalWitnessTest {
                             : TextNode.valueOf(k instanceof Enum<?> e ? e.name() : k.toString());
                     node(doc, p.path()).set(field, value);
                     IrLoader.Documentfout e = refuses(doc, place + " " + value);
-                    assertEquals(p.path() + "/" + field, e.plek(), place + " " + value + ": " + e.getMessage());
+                    assertEquals(p.path() + "/" + field, e.site(), place + " " + value + ": " + e.getMessage());
                     String sentence = place.equals("ContextValue.name")
                             ? "context value '" + k + "' is not one of the two admissible names evaluationDate,"
                                     + " evaluationYear: the context-value name is a closed set, spelled byte for byte"
@@ -266,7 +266,7 @@ class RenamingRefusalWitnessTest {
             ObjectNode doc = p.document();
             node(doc, p.path()).putNull(field);
             IrLoader.Documentfout e = refuses(doc, place);
-            assertEquals(p.path() + "/" + field, e.plek(), place + ": " + e.getMessage());
+            assertEquals(p.path() + "/" + field, e.site(), place + ": " + e.getMessage());
             assertTrue(e.getMessage().endsWith(": " + NULL_SENTENCE), place + ": " + e.getMessage());
         }
     }
@@ -281,7 +281,7 @@ class RenamingRefusalWitnessTest {
         ObjectNode doc = fold.document();
         node(doc, fold.path()).put("quantifier", "the");
         IrLoader.Documentfout e = refuses(doc, "the");
-        assertEquals(fold.path() + "/quantifier", e.plek(), e.getMessage());
+        assertEquals(fold.path() + "/quantifier", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": quantifier fold with quantifier the: the bare definite is a description of"
                 + " ONE member, not a quantification over the set — a fold over it has no reading"), e.getMessage());
 
@@ -297,7 +297,7 @@ class RenamingRefusalWitnessTest {
             if (r[0] == null) node(doc, diagnostic.path()).putNull("severity");
             else node(doc, diagnostic.path()).put("severity", r[0]);
             e = refuses(doc, String.valueOf(r[0]));
-            assertEquals(diagnostic.path() + "/severity", e.plek(), e.getMessage());
+            assertEquals(diagnostic.path() + "/severity", e.site(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": " + r[1]), e.getMessage());
         }
 
@@ -320,7 +320,7 @@ class RenamingRefusalWitnessTest {
         assertEquals("regelversie penningdrempel is inconsistent", rv.bron().snippet());
         node(doc, V).put("rule", "penningdrempel");
         IrLoader.Documentfout e = refuses(doc, "Regelversie.rule");
-        assertEquals(V + "/rule", e.plek(), e.getMessage());
+        assertEquals(V + "/rule", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown field on Regelversie"), e.getMessage());
     }
 
@@ -356,7 +356,7 @@ class RenamingRefusalWitnessTest {
         assertEquals("Jutter", k.eigenaar().naam);
         assertFalse(k.periode().jaar(), "month is the record's jaar false");
         assertTrue(k.periode().niet());
-        assertEquals(List.of(new RolBindingRef("f", "r")), l.navigatieBindingen().get(k));
+        assertEquals(List.of(new RolBindingRef("f", "r")), l.path().get(k));
         // absent host and qualifier: the subject, no qualifier — the v0 null of the record
         ObjectNode bare = golden(PENNINGDREMPEL);
         set(bare, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"
@@ -403,8 +403,8 @@ class RenamingRefusalWitnessTest {
         set(doc, W, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
         ObjectNode varDoc = doc;
         IrLoader.Documentfout vr = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(varDoc));
-        assertEquals(W, vr.plek(), vr.getMessage());
-        assertTrue(vr.getMessage().endsWith(": " + IrLoader.variabeleVerwijzingWeigering("x")), vr.getMessage());
+        assertEquals(W, vr.site(), vr.getMessage());
+        assertTrue(vr.getMessage().endsWith(": " + IrLoader.variableReferenceRefusal("x")), vr.getMessage());
     }
 
     /** The condition nodes of the renaming, each with every field written. */

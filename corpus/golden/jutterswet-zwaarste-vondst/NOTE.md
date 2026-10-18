@@ -92,5 +92,5 @@ fired (the zwaarste late gewicht is such a comparison, but in this document
 the order alone already plays it, measured); a case input on the folded
 target; a characteristic granted on the fold's result; the quantifier alle
 over a subselection that fills later; an aggregation comparison over a
-subselection. Each is a row of `VouwfilterLatereAfleidingWitnessTest` in the
+subselection. Each is a row of `FoldFilterLaterDerivationWitnessTest` in the
 Drools backend.

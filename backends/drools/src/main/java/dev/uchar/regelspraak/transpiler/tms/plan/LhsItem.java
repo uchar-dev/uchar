@@ -5,4 +5,4 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
  * Drools' executable model or into DRL text without deciding anything itself: the subject pattern, a pattern over a fact
  * class, a negated or existential pattern, an accumulate, and the test of the rule's condition.
  */
-public sealed interface LhsItem permits Onderwerp, Patroon, Niet, Bestaat, Accumulatie, Toetsitem {}
+public sealed interface LhsItem permits Subject, FactPattern, Not, Exists, Accumulation, TestItem {}

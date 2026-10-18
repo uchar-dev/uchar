@@ -42,7 +42,7 @@ reading open until a source states what such a test means
 | clingo | translation | same, verbatim |
 
 The Drools backend does not reach fire: its day-kind predicate compiler
-(`transpiler/kern/Dagsoorten`) now leaves the composition **uncompiled** when
+(`transpiler/kern/DayKinds`) now leaves the composition **uncompiled** when
 the operand is not the bound day, so the reaching rule is a transpiler SKIP.
 That is listed with its reason in gate 8's Drools exclusion list rather than
 pinned here — the agreement is real, and only the two executors that can carry

@@ -52,6 +52,6 @@ baken": a BoundDay is the bound day of a day-kind definition (ch. 3.7);
 outside a day-kind evaluation it denotes nothing`, pinned up to `day-kind
 definition`. Until that card the red run drove the destructive lowering,
 whose transpiler SKIPped the rule ("waarde buiten scope") because the v0
-constant reader carried no `de dag` outside `kern.Dagsoorten`, its
+constant reader carried no `de dag` outside `kern.DayKinds`, its
 day-kind predicate compiler; gate 8 listed the case with that reason in
 its Drools exclusion list.

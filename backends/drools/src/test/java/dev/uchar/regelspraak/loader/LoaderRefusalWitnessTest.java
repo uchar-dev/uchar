@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.CaseRunner;
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import org.junit.jupiter.api.Test;
@@ -67,7 +67,7 @@ class LoaderRefusalWitnessTest {
     @Test void a_node_with_the_v0_spelling_of_its_kind_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
-        IrPad.objectType(ir, "Bakenmeester").put("node", "Objecttype");
+        IrPath.objectType(ir, "Bakenmeester").put("node", "Objecttype");
         IrLoader.Documentfout e = refuses(ir, ot + "/node");
         assertTrue(e.getMessage().contains("\"Objecttype\""), e.getMessage());
     }
@@ -75,7 +75,7 @@ class LoaderRefusalWitnessTest {
     @Test void a_member_node_without_a_node_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
         String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-        IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").remove("node");
+        IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").remove("node");
         missing(ir, attr, "node");
     }
 
@@ -84,7 +84,7 @@ class LoaderRefusalWitnessTest {
         // duplicates decided alone. A side map that DISAGREED with the member nodes went unread just as quietly.
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
-        IrPad.objectType(ir, "Bakenmeester").putObject("attribuutGranulariteit").put("onderhoudstarief", "DAG");
+        IrPath.objectType(ir, "Bakenmeester").putObject("attribuutGranulariteit").put("onderhoudstarief", "DAG");
         IrLoader.Documentfout e = refuses(ir, ot + "/attribuutGranulariteit");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
@@ -92,22 +92,22 @@ class LoaderRefusalWitnessTest {
     @Test void an_unknown_field_on_a_m1_node_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
-        IrPad.objectType(ir, "Bakenmeester").put("naam", "Bakenmeester");
+        IrPath.objectType(ir, "Bakenmeester").put("naam", "Bakenmeester");
         refuses(ir, ot + "/naam");
 
         ir = golden(BAKENMEESTER);
         String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-        IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").put("granulariteit", "JAAR");
+        IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").put("granulariteit", "JAAR");
         refuses(ir, attr + "/granulariteit");
 
         ir = golden(BAKENMEESTER);
-        ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+        ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                 .put("aantal", 1);
         refuses(ir, attr + "/timeline/aantal");
 
         ir = golden(BAKENMEESTER);
         String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
-        IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("soort", "BIJVOEGLIJK");
+        IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").put("soort", "BIJVOEGLIJK");
         refuses(ir, characteristic + "/soort");
     }
 
@@ -117,26 +117,26 @@ class LoaderRefusalWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
         String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-        IrPad.objectType(ir, "Bakenmeester").putNull("plural");
+        IrPath.objectType(ir, "Bakenmeester").putNull("plural");
         refuses(ir, ot + "/plural");
 
         ir = golden(BAKENMEESTER);
-        IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").putNull("plural");
+        IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").putNull("plural");
         refuses(ir, attr + "/plural");
 
         ir = golden(BAKENMEESTER);
-        IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").putNull("dimensions");
+        IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").putNull("dimensions");
         refuses(ir, attr + "/dimensions");
 
         ir = golden(BAKENMEESTER);
-        ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+        ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                 .putNull("timelineName");
         refuses(ir, attr + "/timeline/timelineName");
 
         // a null supertype made Klipjutter a root type without a word
         ir = golden(ERFWACHT);
         String clip = objectTypePath(ir, "Klipjutter");
-        IrPad.objectType(ir, "Klipjutter").putNull("supertype");
+        IrPath.objectType(ir, "Klipjutter").putNull("supertype");
         refuses(ir, clip + "/supertype");
     }
 
@@ -148,12 +148,12 @@ class LoaderRefusalWitnessTest {
         assertTrue(e.getMessage().contains(" at <root>: "), e.getMessage());
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).remove("dayKinds");
+        IrPath.model(ir).remove("dayKinds");
         missing(ir, "/model", "dayKinds");
 
         ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
-        IrPad.objectType(ir, "Bakenmeester").remove("characteristics");
+        IrPath.objectType(ir, "Bakenmeester").remove("characteristics");
         missing(ir, ot, "characteristics");
     }
 
@@ -166,16 +166,16 @@ class LoaderRefusalWitnessTest {
         // animate "true" read as true, and objectTypes {} as a document with no object types at all
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
-        IrPad.objectType(ir, "Bakenmeester").put("animate", "true");
+        IrPath.objectType(ir, "Bakenmeester").put("animate", "true");
         refuses(ir, ot + "/animate");
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putObject("objectTypes");
+        IrPath.model(ir).putObject("objectTypes");
         refuses(ir, "/model/objectTypes");
 
         ir = golden(BAKENMEESTER);
         String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
-        IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("name", 5);
+        IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").put("name", 5);
         refuses(ir, characteristic + "/name");
     }
 
@@ -184,7 +184,7 @@ class LoaderRefusalWitnessTest {
         for (JsonNode count : List.of(JSON.getNodeFactory().textNode("2"), JSON.getNodeFactory().numberNode(2.0))) {
             ObjectNode ir = golden(BAKENMEESTER);
             String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-            ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+            ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                     .set("count", count);
             IrLoader.Documentfout e = refuses(ir, attr + "/timeline/count");
             assertTrue(e.getMessage().contains("integer"), e.getMessage());
@@ -199,7 +199,7 @@ class LoaderRefusalWitnessTest {
         for (long count : new long[] { 2_147_483_648L, 3_000_000_000L }) {
             ObjectNode ir = golden(BAKENMEESTER);
             String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-            ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+            ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                     .put("count", count);
             IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir), "count " + count);
             assertEquals("TimelineFacet.count", r.form(), r.getMessage());
@@ -209,7 +209,7 @@ class LoaderRefusalWitnessTest {
     }
 
     @Test void a_timeline_facet_without_granularity_is_refused_on_loading() throws Exception {
-        // Until 2026-09-23 this was OverervingWeigeringWitnessTest's "de gedegenereerde variabele tijdlijn is het
+        // Until 2026-09-23 this was InheritanceRefusalWitnessTest's "de gedegenereerde variabele tijdlijn is het
         // gat dat werkelijk stil was": under v0 a tijdlijn declaration could carry `granulariteit: null`
         // (schema-legal), WF-005 then compared None with None, and an attribute riding that named tijdlijn needed
         // NO granularity entry — the silent §9.9 hole the narrowed inheritance guard closed (measured then, probe
@@ -219,9 +219,9 @@ class LoaderRefusalWitnessTest {
         // The old fixture's startpuntbepaling is gone: the facet is refused while the object types are read,
         // before any rule is.
         ObjectNode ir = golden(CHAIN);
-        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Timeline").put("name", "boekjaar")
+        IrPath.modelList(ir, "timelines").add(JSON.createObjectNode().put("node", "Timeline").put("name", "boekjaar")
                 .put("variableStart", true).putNull("granularity").put("count", 1));
-        ObjectNode timelineAttribute = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde",
+        ObjectNode timelineAttribute = IrPath.addAttribute(IrPath.objectType(ir, "Strandrecht"), "peilwaarde",
                 JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
                         .put("sign", "nonNegative"));
         timelineAttribute.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
@@ -232,7 +232,7 @@ class LoaderRefusalWitnessTest {
         // the characteristic's facet, the second of the two places a facet is read
         ObjectNode ir = golden(BAKENMEESTER);
         String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
-        ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
+        ((ObjectNode) IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
                 .remove("count");
         missing(ir, characteristic + "/timeline", "count");
     }
@@ -243,7 +243,7 @@ class LoaderRefusalWitnessTest {
         // dropped without a word; the OCaml loader refuses it as an unknown field, and so does this one.
         ObjectNode ir = golden(BAKENMEESTER);
         String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
-        ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
+        ((ObjectNode) IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
                 .put("timelineName", "boekjaar");
         IrLoader.Documentfout e = refuses(ir, characteristic + "/timeline/timelineName");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
@@ -252,14 +252,14 @@ class LoaderRefusalWitnessTest {
     @Test void a_characteristic_without_a_kind_or_with_an_unknown_kind_is_refused() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
         String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
-        IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").remove("kind");
+        IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").remove("kind");
         missing(ir, characteristic, "kind");
 
         // the v0 spelling of the value is no member since L5, and neither is a word outside the family: both are
         // refused in the shared loader's sentence
         for (String kind : List.of("BIJVOEGLIJK", "bijvoeglijk", "Adjectival")) {
             ir = golden(BAKENMEESTER);
-            IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", kind);
+            IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", kind);
             IrLoader.Documentfout e = refuses(ir, characteristic + "/kind");
             assertTrue(e.getMessage().endsWith(": unknown kind value \"" + kind + "\""), e.getMessage());
         }
@@ -273,11 +273,11 @@ class LoaderRefusalWitnessTest {
         refuses(ir, "/regels");
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putObject("objecttypen");
+        IrPath.model(ir).putObject("objecttypen");
         refuses(ir, "/model/objecttypen");
 
         ir = golden(BAKENMEESTER);
-        IrPad.rules(ir).putArray("prioritizedDefault");
+        IrPath.rules(ir).putArray("prioritizedDefault");
         refuses(ir, "/rules/prioritizedDefault");
 
         // The boundary: functionDefs is an extension the schema admits and this backend does not carry — a
@@ -296,17 +296,17 @@ class LoaderRefusalWitnessTest {
         // too, each with its JSON pointer (the rule side named only the kind until then)
         ObjectNode ir = golden(BAKENMEESTER);
         String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-        ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("datatype"))
+        ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("datatype"))
                 .remove("node");
         missing(ir, attr + "/datatype", "node");
 
         ir = golden(VONDSTKLASSE);
-        String domain = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
-        ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).remove("node");
+        String domain = "/model/domains/" + index(IrPath.modelList(ir, "domains"), "name", "Vondstklasse");
+        ((ObjectNode) IrPath.domain(ir, "Vondstklasse").get("datatype")).remove("node");
         missing(ir, domain + "/datatype", "node");
 
         ir = golden(BAKENMEESTER);
-        ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value").get("type")).remove("node");
+        ((ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value").get("type")).remove("node");
         IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/type");
         assertTrue(e.getMessage().contains("missing field 'node'"), e.getMessage());
     }
@@ -315,7 +315,7 @@ class LoaderRefusalWitnessTest {
         // the key check the Enumeration, SumType and StructType arms already had, for the kinds without an arm;
         // no golden declares a number domain, so one is added: clean it loads, with a stray field it is refused
         ObjectNode ir = golden(BAKENMEESTER);
-        ArrayNode domains = IrPad.modelLijst(ir, "domains");
+        ArrayNode domains = IrPath.modelList(ir, "domains");
         ObjectNode number = domains.addObject().put("node", "Domain").put("name", "Bedrag").putObject("datatype")
                 .put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "unspecified");
         IrLoader.loadAll(ir);
@@ -344,7 +344,7 @@ class LoaderRefusalWitnessTest {
             ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).putNull(field);
             refuses(twist, d + "/" + field);
         }
-        diagnostic.set("source", IrPad.bronrecord("een melding"));
+        diagnostic.set("source", IrPath.sourceReference("een melding"));
         IrLoader.Documentfout e = refuses(ir, d + "/source");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
@@ -353,28 +353,28 @@ class LoaderRefusalWitnessTest {
         // IR-SPEC ch. 2.9: an entry is a DayKind node; a bare name is its L2 form, and the registry beside the list
         // is gone with it. A name is a string and required, a plural written whole or not at all.
         ObjectNode ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putArray("dayKinds").add("springtijdag");
+        IrPath.model(ir).putArray("dayKinds").add("springtijdag");
         IrLoader.Documentfout e = refuses(ir, "/model/dayKinds/0");
         assertTrue(e.getMessage().contains("(DayKind)"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putObject("dagsoortPerEenheid");
+        IrPath.model(ir).putObject("dagsoortPerEenheid");
         e = refuses(ir, "/model/dagsoortPerEenheid");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", 5);
+        IrPath.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", 5);
         refuses(ir, "/model/dayKinds/0/name");
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "springtijdag")
+        IrPath.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "springtijdag")
                 .putNull("plural");
         e = refuses(ir, "/model/dayKinds/0/plural");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
 
         // read, the name and the plural are the day kind's spellings as a duration unit
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "Springtijdag")
+        IrPath.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "Springtijdag")
                 .put("plural", "springtijdagen");
         RegelSpraakModel m = IrLoader.load(ir);
         assertEquals(List.of("Springtijdag"), m.dagsoorten);
@@ -398,7 +398,7 @@ class LoaderRefusalWitnessTest {
         assertEquals("format", r.form(), r.getMessage());
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putObject("functionDefs");
+        IrPath.model(ir).putObject("functionDefs");
         IrLoader.Documentfout e = refuses(ir, "/model/functionDefs");
         assertTrue(e.getMessage().contains("expected an array"), e.getMessage());
     }
@@ -408,7 +408,7 @@ class LoaderRefusalWitnessTest {
     @Test void an_exact_duplicate_characteristic_is_refused() throws Exception {
         // WF-002. Read leniently, the second declaration's kind won and the first one's timeline stayed.
         ObjectNode ir = golden(BAKENMEESTER);
-        ObjectNode ot = IrPad.objectType(ir, "Bakenmeester");
+        ObjectNode ot = IrPath.objectType(ir, "Bakenmeester");
         ArrayNode characteristics = (ArrayNode) ot.get("characteristics");
         characteristics.addObject().put("node", "Characteristic").put("name", "dienstdoend").put("kind", "possessive");
         IrLoader.Documentfout e = refuses(ir, objectTypePath(ir, "Bakenmeester") + "/characteristics/"
@@ -420,8 +420,8 @@ class LoaderRefusalWitnessTest {
         // WF-001 compares case-insensitively; the model's tables are keyed on the exact string and its
         // lookup falls back to a case-insensitive search, which would pick one of the two.
         ObjectNode ir = golden(BAKENMEESTER);
-        ArrayNode list = IrPad.modelLijst(ir, "objectTypes");
-        ObjectNode copy = IrPad.objectType(ir, "Bakenmeester").deepCopy().put("name", "bakenmeester");
+        ArrayNode list = IrPath.modelList(ir, "objectTypes");
+        ObjectNode copy = IrPath.objectType(ir, "Bakenmeester").deepCopy().put("name", "bakenmeester");
         list.add(copy);
         IrLoader.Documentfout e = refuses(ir, "/model/objectTypes/" + (list.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'Bakenmeester'"), "de melding noemt de eerste spelling: " + e.getMessage());
@@ -431,8 +431,8 @@ class LoaderRefusalWitnessTest {
         // WF-001 on the parameter list: a difference in case makes no second name (checks.ml
         // norm), and the exact-key table would have kept both
         ObjectNode ir = golden(PENNINGDREMPEL);
-        ArrayNode parameters = IrPad.modelLijst(ir, "parameters");
-        parameters.add(IrPad.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
+        ArrayNode parameters = IrPath.modelList(ir, "parameters");
+        parameters.add(IrPath.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
         IrLoader.Documentfout e = refuses(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
         assertTrue(e.getMessage().endsWith(": the name 'Vondstdrempel' collides with the earlier 'vondstdrempel'"
                 + " (names are compared case-insensitively)"), e.getMessage());
@@ -440,9 +440,9 @@ class LoaderRefusalWitnessTest {
         // WF-002 on attributes, which the loader compared exactly before: neither case nor a run of spaces makes
         // a second name
         ir = golden(ERFWACHT);
-        ObjectNode ot = IrPad.objectType(ir, "Jutter");
+        ObjectNode ot = IrPath.objectType(ir, "Jutter");
         ArrayNode attributes = (ArrayNode) ot.get("attributes");
-        attributes.add(IrPad.attribute(ot, "wachtvergoeding per maand").deepCopy()
+        attributes.add(IrPath.attribute(ot, "wachtvergoeding per maand").deepCopy()
                 .put("name", "Wachtvergoeding  per maand"));
         e = refuses(ir, objectTypePath(ir, "Jutter") + "/attributes/" + (attributes.size() - 1) + "/name");
         assertTrue(e.getMessage().endsWith(": the name 'Wachtvergoeding  per maand' collides with the earlier"
@@ -457,8 +457,8 @@ class LoaderRefusalWitnessTest {
         // key, which is no key of the node since L5.
         for (String key : List.of("domain", "domein")) {
             ObjectNode ir = golden(VONDSTKLASSE);
-            String domain = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
-            ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).put(key, "Vondstklasse");
+            String domain = "/model/domains/" + index(IrPath.modelList(ir, "domains"), "name", "Vondstklasse");
+            ((ObjectNode) IrPath.domain(ir, "Vondstklasse").get("datatype")).put(key, "Vondstklasse");
             refuses(ir, domain + "/datatype/" + key);
         }
     }
@@ -473,7 +473,7 @@ class LoaderRefusalWitnessTest {
         for (String value : List.of("jaar", "JAAR")) {
             ObjectNode ir = golden(BAKENMEESTER);
             String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-            ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+            ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                     .put("granularity", value);
             IrLoader.Documentfout e = refuses(ir, attr + "/timeline/granularity");
             assertTrue(e.getMessage().endsWith(": unknown granularity value \"" + value + "\""), e.getMessage());
@@ -487,13 +487,13 @@ class LoaderRefusalWitnessTest {
         // through, which the CLI prints as ERROR. Both replay branches and the red path build through this
         // loader first; the DRL branch and the red path are the ones reachable from this package.
         ObjectNode ir = golden(BAKENMEESTER);
-        IrPad.objectType(ir, "Bakenmeester").put("node", "Objecttype");
+        IrPath.objectType(ir, "Bakenmeester").put("node", "Objecttype");
         Path tmp = Files.createTempFile("documentfout", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         List<Path> cases = cases(BAKENMEESTER);
-        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.viaDrlTekst(tmp, cases));
-        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.runRood(tmp, cases.get(0)));
+        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.viaDrlText(tmp, cases));
+        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.runRed(tmp, cases.get(0)));
     }
 
     // ---------------- helpers ----------------
@@ -502,7 +502,7 @@ class LoaderRefusalWitnessTest {
     private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 
@@ -531,12 +531,12 @@ class LoaderRefusalWitnessTest {
     }
 
     private static String objectTypePath(JsonNode ir, String objectType) {
-        return "/model/objectTypes/" + index(IrPad.modelLijst(ir, "objectTypes"), "name", objectType);
+        return "/model/objectTypes/" + index(IrPath.modelList(ir, "objectTypes"), "name", objectType);
     }
 
     private static String memberPath(JsonNode ir, String objectType, String members, String member) {
         return objectTypePath(ir, objectType) + "/" + members + "/"
-                + index((ArrayNode) IrPad.objectType(ir, objectType).get(members), "name", member);
+                + index((ArrayNode) IrPath.objectType(ir, objectType).get(members), "name", member);
     }
 
     private static int index(ArrayNode list, String nameField, String name) {

@@ -29,35 +29,35 @@ import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Bronpad;
-import dev.uchar.regelspraak.transpiler.kern.Dagsoorten;
+import dev.uchar.regelspraak.transpiler.kern.SourcePath;
+import dev.uchar.regelspraak.transpiler.kern.DayKinds;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid;
-import dev.uchar.regelspraak.transpiler.kern.Eenheidsconflict;
-import dev.uchar.regelspraak.transpiler.kern.Gastheer;
+import dev.uchar.regelspraak.transpiler.kern.EffectiveUnit;
+import dev.uchar.regelspraak.transpiler.kern.UnitConflict;
+import dev.uchar.regelspraak.transpiler.kern.Host;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
-import dev.uchar.regelspraak.transpiler.kern.Operatoren;
-import dev.uchar.regelspraak.transpiler.kern.StaandeDoelen;
-import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
-import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
-import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
-import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
-import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
-import dev.uchar.regelspraak.transpiler.tms.plan.Betatoets;
+import dev.uchar.regelspraak.transpiler.kern.Operators;
+import dev.uchar.regelspraak.transpiler.kern.StandingTargets;
+import dev.uchar.regelspraak.transpiler.kern.Timelines;
+import dev.uchar.regelspraak.transpiler.kern.WindowPosition;
+import dev.uchar.regelspraak.transpiler.tms.plan.Accumulation;
+import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
+import dev.uchar.regelspraak.transpiler.tms.plan.Exists;
+import dev.uchar.regelspraak.transpiler.tms.plan.BetaTest;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
-import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
-import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
+import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
-import dev.uchar.regelspraak.transpiler.tms.plan.Leessoort;
-import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
+import dev.uchar.regelspraak.transpiler.tms.plan.ReadKind;
+import dev.uchar.regelspraak.transpiler.tms.plan.ReadTable;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Modelplan;
-import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
-import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
-import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
-import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
+import dev.uchar.regelspraak.transpiler.tms.plan.Not;
+import dev.uchar.regelspraak.transpiler.tms.plan.Subject;
+import dev.uchar.regelspraak.transpiler.tms.plan.FactPattern;
+import dev.uchar.regelspraak.transpiler.tms.plan.RulePlan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
-import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
+import dev.uchar.regelspraak.transpiler.tms.plan.TestItem;
 
 import org.drools.model.Model;
 import org.kie.api.runtime.ClassObjectFilter;
@@ -88,8 +88,8 @@ import java.util.function.Supplier;
 
 /**
  * The analysis that both branches of the backend render: a uchar IR document to the plan of its rules, which the
- * exec-model branch renders as a Drools executable model ({@link PatternDslWeergave}) and the DRL-text branch as DRL text
- * ({@code DrlWeergave}), each deriving with {@code drools.logicalInsert}. A derived fact stands exactly as long as the
+ * exec-model branch renders as a Drools executable model ({@link PatternDslRendering}) and the DRL-text branch as DRL text
+ * ({@code DrlRendering}), each deriving with {@code drools.logicalInsert}. A derived fact stands exactly as long as the
  * condition of a rule that inserted it holds, and goes, with everything that rested on it, when that condition stops
  * holding. The outcome of an acyclic
  * rule set then does not depend on which rule the agenda fires first, which a lowering that writes the beans secures
@@ -104,29 +104,29 @@ import java.util.function.Supplier;
  * that value changes. Every read a derived value depends on is therefore a bound pattern here, and a consequence
  * computes only with bound variables. A member no form writes is input, stable during a session, and is bound off the
  * bean pattern, over the reference fields where the read navigates; a derived member is read through its total
- * standing ({@link KenmerkStand}, {@link Stand}), over a path through {@link PadStand}, a positive pattern whatever
- * polarity a check tests; the §9.5 channel of a form through {@link KanaalStand}; a parameter through its
- * {@link ParameterStand}. The case input stays stated on the beans and the branch never writes a bean while it fires,
+ * standing ({@link CharacteristicState}, {@link State}), over a path through {@link PathState}, a positive pattern whatever
+ * polarity a check tests; the §9.5 channel of a form through {@link ChannelState}; a parameter through its
+ * {@link ParameterState}. The case input stays stated on the beans and the branch never writes a bean while it fires,
  * so an initialisation's guard reads the input of its derived target off the bean as well; {@link #zetAfgeleideWaarden}
  * writes the derivations onto the beans afterwards.
  *
  * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject, which
  * writes nothing for a computed leeg on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
  * initialisation, the desugaring domain of ch. 7.7) and writes the leeg elsewhere (ch. 1.2g), any number of them on one
- * target, two that stand on one object with different values being the fault of ch. 5.7 ({@link #verschilregel}); an
+ * target, two that stand on one object with different values being the fault of ch. 5.7 ({@link #differenceRule}); an
  * initialisation (ch. 5.4), the only one on its target per concrete type; a
  * consistency, whose violation is a logical §9.5 inconsistency; a uniqueness, over one source or more, whose
- * duplicates are as well ({@link #uniciteitsregels}); a prioritized-defaults group, as the effective
- * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
+ * duplicates are as well ({@link #unionUniquenessRules}); a prioritized-defaults group, as the effective
+ * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link ControlFact}) and into which an
  * ordinary rule on an ancestor's level folds, so that it does not fire on that type; an allocation, as a computation
- * over the recipients its left-hand side binds ({@link #verdeling}); and an object creation, over its
+ * over the recipients its left-hand side binds ({@link #allocation}); and an object creation, over its
  * {@code connectingRole} binding or else over the relation its type pair derives, and a fact creation, each over a
  * relation of two roles. Each always valid or gated on the
  * evaluation date by its validity window (RUNTIME-SEMANTICS ch. 8.2), with the §6.5 deposit of a division by leeg and
  * the one of a square root of a negative number where the evaluation reaches them (a default carries no division and no
  * root at all), whose condition, assertion or justification is built from characteristic checks (own or over a path,
  * negated or not), comparisons, leeg, gevuld, eleven and exact-digit tests, time windows, role checks
- * ({@link #rolcontrole}), quantifier folds over a linked set ({@link #kwantorvouw}), tests of the channel of a
+ * ({@link #roleCheck}), quantifier folds over a linked set ({@link #quantifierFold}), tests of the channel of a
  * consistency, a uniqueness or a rule that deposits, and {@code Compound}s of those under any quantifier, and whose
  * value is a
  * literal, a read of an attribute (own or over a path of roles, or a dimension cell), a parameter, a context value, an
@@ -137,12 +137,12 @@ import java.util.function.Supplier;
  * document on the first such entry.
  *
  * <p>An aggregation over a set source is an accumulate in the left-hand side of the rule that reads it, over the
- * {@link Bijdrage} facts its contribution rules insert logically, one per member of its range ({@link #vouw}); a
+ * {@link Contribution} facts its contribution rules insert logically, one per member of its range ({@link #fold}); a
  * contribution rule binds the member's value and the reads of the fold's filter in its own left-hand side, so a member
  * whose value or filter reading changes takes its contribution along. A listed fold is computed from its operands'
- * bound values ({@link #gelijsteVouw}). A quantifier fold has the same contributions, each carrying its member's
+ * bound values ({@link #listedFold}). A quantifier fold has the same contributions, each carrying its member's
  * verdict on the matrix, and where the matrix can fault or deposit also the member's place, so the rule that reads the
- * fold replays the short circuit of RUNTIME-SEMANTICS ch. 5.10 over them ({@link #kwantorvouw}).
+ * fold replays the short circuit of RUNTIME-SEMANTICS ch. 5.10 over them ({@link #quantifierFold}).
  *
  * <p>An evaluation fault in a value or a condition — a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4),
  * or one of the faults of {@link Rekenfout}: a date step or a duration count outside the range of ch. 3.8, a context
@@ -151,17 +151,17 @@ import java.util.function.Supplier;
  * reference interpreter does not see, and a fault thrown there could not be withdrawn when the state passes. The
  * consequence that computes a value inserts the fault instead of the value. A condition is tested in the left-hand
  * side, where Drools cannot take an exception as a fact, so its test answers that it does not hold where it faults,
- * and a rule of the form's own inserts the fault ({@link #voorwaardefoutregel}). A fold's filter that faults for a
- * member inserts no fault but a {@link Filterfout}: the form that reads the fold faults where its own evaluation reaches
+ * and a rule of the form's own inserts the fault ({@link #conditionFaultRule}). A fold's filter that faults for a
+ * member inserts no fault but a {@link FilterError}: the form that reads the fold faults where its own evaluation reaches
  * the fold, as the reference interpreter evaluates the filter only there, with the fault of the first member in fold
- * order whose filter faults, a place the case input states per to-many list ({@link Lijstplaats}) ({@link #vouw}). Only
+ * order whose filter faults, a place the case input states per to-many list ({@link ListPlace}) ({@link #fold}). Only
  * the faults that stand at
  * the fixpoint count: {@link #zetAfgeleideWaarden} reports them before it writes anything back. A division of a filled
  * dividend by a leeg divisor, and a square root of a negative number, deposit the §9.5 inconsistency of ch. 1.2 under
  * the form whose evaluation reaches them, on its subject: the consequence that computes a value through a probe in its
- * value array ({@link Sonde}), a condition through a rule of the form's own ({@link #deponeerregel}), and a fold's
- * filter through a {@link Filterdeponering} of the member, which the form that reads the fold hears where its own
- * evaluation reaches the fold ({@link #gelezenVouw}).
+ * value array ({@link DepositFlag}), a condition through a rule of the form's own ({@link #depositRule}), and a fold's
+ * filter through a {@link FilterDeposit} of the member, which the form that reads the fold hears where its own
+ * evaluation reaches the fold ({@link #readFold}).
  *
  * <p>A creation is the one form whose output is stated, not logical (RUNTIME-SEMANTICS ch. 5.5): a creation fires only
  * at a fixpoint of the rule layer, and what it makes stands, as in the reference interpreter, which keeps a minted
@@ -170,24 +170,24 @@ import java.util.function.Supplier;
  * is made. Its rules sit in agenda groups of their own ({@link #FEITCREATIE}, {@link #OBJECTCREATIE}) and the driver
  * fires them in generations ({@code DroolsBackend.vuur}): the rule layer to rest, then the fact creations once and the
  * object creations once, both on that one fixpoint, then the rule layer to rest again, and so on, until a generation
- * makes nothing; an object creation records the creation depth of what it makes ({@link Gemaakt}), and a mint at depth
- * {@link #CREATIEBUDGET} + 1 is the fault ({@link Creatiebudget}). The driver runs the generations per evaluation
+ * makes nothing; an object creation records the creation depth of what it makes ({@link CreationStamp}), and a mint at depth
+ * {@link #CREATION_BUDGET} + 1 is the fault ({@link CreationBudget}). The driver runs the generations per evaluation
  * stratum of the reference interpreter, in
- * ascending order ({@link #creatiestrata}): a creation reads strictly, so it fires only once the creations whose output
+ * ascending order ({@link #creationStrata}): a creation reads strictly, so it fires only once the creations whose output
  * it reads have reached their fixpoint, as the reference interpreter evaluates stratum k to its fixpoint before a form
  * of stratum k+1 fires (RUNTIME-SEMANTICS ch. 6.1, 6.3); an initialisation evaluated earlier would be fixed on a value
  * that grows. An object creation inserts
- * the new bean, a {@link Gemaakt} mark per creation and subject, the {@link Koppeling} of its connecting relation and
- * its initialisations as {@link Waarde} and {@link HeeftKenmerk}, computed from what its rule binds
- * ({@link #objectCreatie}); a fact creation inserts the {@link Koppeling} it makes ({@link #feitCreatie}). Every relation
- * a form creates is read through {@link Koppeling} facts, its input links included ({@link #koppelingregels}), since a
+ * the new bean, a {@link CreationStamp} mark per creation and subject, the {@link RelationLink} of its connecting relation and
+ * its initialisations as {@link Value} and {@link HasCharacteristic}, computed from what its rule binds
+ * ({@link #objectCreation}); a fact creation inserts the {@link RelationLink} it makes ({@link #factCreation}). Every relation
+ * a form creates is read through {@link RelationLink} facts, its input links included ({@link #linkRules}), since a
  * created link is in no bean field, and a second distinct filler of a to-one role is a {@link Fout} at the fixpoint.
  * The rule layer stays under truth maintenance throughout: it reads what a creation made as it reads input.
  *
  * <p>This class is the analysis: it decides per rule what is read, how, in which order, and what a firing inserts, as
- * a {@link Regelplan}, and delivers every plan with the globals of the model as one {@link Modelplan}. It builds no part
- * of the executable model itself; {@link PatternDslWeergave#model} renders the outcome into it ({@link #model}), and
- * {@code DrlWeergave} into DRL text ({@link #drl}).
+ * a {@link RulePlan}, and delivers every plan with the globals of the model as one {@link Modelplan}. It builds no part
+ * of the executable model itself; {@link PatternDslRendering#model} renders the outcome into it ({@link #model}), and
+ * {@code DrlRendering} into DRL text ({@link #drl}).
  */
 public final class TmsTranspiler {
 
@@ -218,122 +218,122 @@ public final class TmsTranspiler {
      *  ({@code oc_budget}); a fact creation makes no object and has no budget. The depth follows the chain of makings,
      *  so a creation whose condition waits generations for a link or a value keeps its subject's depth, and the driver
      *  needs no bound on the generations: under this budget a stratum makes finitely many objects and links. */
-    public static final int CREATIEBUDGET = 100;
+    public static final int CREATION_BUDGET = 100;
 
     /** The most values one condition of this branch reads at once: the DSL's standalone test takes at most thirteen
-     *  bound variables. A consequence has no such ceiling ({@link Gevolg}). */
-    static final int MAX_LEZINGEN = 13;
+     *  bound variables. A consequence has no such ceiling ({@link Consequence}). */
+    static final int MAX_READS = 13;
 
-    private static final String NOG_NIET = "deze tak draagt deze vorm nog niet";
-    static final String INCONSISTENTIE = FactModelGenerator.PAKKET + ".Inconsistentie";
+    private static final String STILL_NOT = "deze tak draagt deze vorm nog niet";
+    static final String INCONSISTENCY = FactModelGenerator.PAKKET + ".Inconsistentie";
 
     private final RegelSpraakModel model;
     private final ClassLoader beanLoader;
     private final List<PrioritizedDefaults> defaults;
-    private final Map<Object, List<RolBindingRef>> navigatieBindingen;
+    private final Map<Object, List<RolBindingRef>> path;
     /** The one-step range of a fold ({@code sourceRole}), by node. */
-    private final Map<Object, RolBindingRef> rolBindingen;
+    private final Map<Object, RolBindingRef> roleBindings;
     /** The multi-step range of a fold ({@code sourcePath}), by node. */
-    private final Map<Object, List<RolBindingRef>> bronPaden;
+    private final Map<Object, List<RolBindingRef>> sourcePaths;
     /** The folds lowered so far, per node and fold subject: a node read again, by a rule's fault rule or by a default
      *  that two effective stacks share, reads the contributions already made for it. */
-    private final Map<Object, Map<Objecttype, Vouw>> vouwen = new IdentityHashMap<>();
+    private final Map<Object, Map<Objecttype, Fold>> folds = new IdentityHashMap<>();
     /** The contribution rules of the folds the lowered forms read, by the fold's key. */
-    private final Map<String, List<Regelplan>> bijdrageregels = new LinkedHashMap<>();
-    private int vouwteller;
-    /** While the rules of a fold are built ({@link #vouwVoor}), the binders in scope at the fold, by normalised name:
-     *  the rule that reads the fold binds them, its contribution rules do not ({@link Lezingen#buiten}). */
-    private Set<String> vouwbinders = Set.of();
+    private final Map<String, List<RulePlan>> contributionRules = new LinkedHashMap<>();
+    private int foldCounter;
+    /** While the rules of a fold are built ({@link #foldFor}), the binders in scope at the fold, by normalised name:
+     *  the rule that reads the fold binds them, its contribution rules do not ({@link Reads#outside}). */
+    private Set<String> foldBinders = Set.of();
     /** The name of the form being lowered, as the manifest shows it: the key of its folds starts with it, and a fault in
      *  a fold's filter is named after it. */
     private String vorm;
     /** The datatype and unit of an expression as the other branches derive them (RUNTIME-SEMANTICS ch. 2.10). */
-    private final EffectieveEenheid eff;
+    private final EffectiveUnit eff;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
-    private Map<ElementSleutel, Set<String>> schrijvers = Map.of();
+    private Map<ElementSleutel, Set<String>> writers = Map.of();
     /** Per attribute, the assignments and computations of the document that write it. */
-    private final Map<ElementSleutel, List<ResolvedRegel>> rekenregels = new LinkedHashMap<>();
+    private final Map<ElementSleutel, List<ResolvedRegel>> computeRules = new LinkedHashMap<>();
     /** Per attribute, the initialisations of the document that write it. */
-    private final Map<ElementSleutel, List<ResolvedRegel>> initialisaties = new LinkedHashMap<>();
+    private final Map<ElementSleutel, List<ResolvedRegel>> initialisations = new LinkedHashMap<>();
     /** The members a defaults group writes, on their declaring type. */
-    private final Set<ElementSleutel> defaultsdoelen = new LinkedHashSet<>();
+    private final Set<ElementSleutel> defaultsTargets = new LinkedHashSet<>();
     /** The effective stacks of RUNTIME-SEMANTICS ch. 7.10 and the fold of ordinary rules into them. */
     private Stapels stapels;
     /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified by the class
      *  both branches share. */
-    private StaandeDoelen staandeDoelen;
+    private StandingTargets standingTargets;
     /** The names of the document's rules in its order, each once: the sentence of two writers that disagree names them
      *  in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7), and the reader of the
-     *  fixpoint takes, of writers that agree, the value of the first ({@link Schrijversconflict#inDocumentvolgorde}). A
+     *  fixpoint takes, of writers that agree, the value of the first ({@link Schrijversconflict#inDocumentOrder}). A
      *  list, so that a plan carries the order itself and a DRL text can spell it. */
-    private final List<String> documentvolgorde = new ArrayList<>();
+    private final List<String> documentOrder = new ArrayList<>();
     /** The object types of the document in its order ({@link #typen}), and at the same place the simple name of each
-     *  one's bean class (the one {@link #bonenklasse} loads): a sentence names an object by its own type. By name, so
+     *  one's bean class (the one {@link #beanClass} loads): a sentence names an object by its own type. By name, so
      *  that building it loads no class. */
-    private final List<String> typeklassen = new ArrayList<>(), typen = new ArrayList<>();
+    private final List<String> typeClasses = new ArrayList<>(), typen = new ArrayList<>();
     private final List<Dekking> dekking = new ArrayList<>();
-    /** The form each rule of the model belongs to, by the rule's name ({@link #vormVan}). */
-    private final Map<String, String> vormVanRegel = new HashMap<>();
-    /** The rules of the model that belong to no form of the document ({@link #vormVan}). */
-    private final Set<String> regelsZonderVorm = new LinkedHashSet<>();
-    private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
+    /** The form each rule of the model belongs to, by the rule's name ({@link #formOf}). */
+    private final Map<String, String> formOfRule = new HashMap<>();
+    /** The rules of the model that belong to no form of the document ({@link #formOf}). */
+    private final Set<String> rulesWithoutForm = new LinkedHashSet<>();
+    private final List<DefaultsGroup> defaultsGroups = new ArrayList<>();
     /** The manifest names that name no declaration, with the element each comes from ({@link #gegenereerd}). */
     private final Map<String, RegelSpraakModel.GegenereerdUit> gegenereerd = new LinkedHashMap<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
-    private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
+    private final Map<ElementSleutel, Member> derived = new LinkedHashMap<>();
     /** The members a lowered rule reads through their standing, on its subject or at the end of a path: the derived
-     *  ones, and every attribute on a timeline ({@link Lezingen#tijdlijn}). Each gets its standing rules. */
-    private final Map<ElementSleutel, Lid> gelezen = new LinkedHashMap<>();
+     *  ones, and every attribute on a timeline ({@link Reads#timeline}). Each gets its standing rules. */
+    private final Map<ElementSleutel, Member> read = new LinkedHashMap<>();
     /** The reads of a derived member over a path: each gets its two path-standing rules. */
-    private final Map<String, Padlezing> padlezingen = new LinkedHashMap<>();
+    private final Map<String, PathRead> pathReads = new LinkedHashMap<>();
     /** The producers whose §9.5 channel a lowered condition reads, by the name the channel test spells: each gets the
-     *  two rules of its {@link KanaalStand}. */
-    private final Set<String> kanalen = new LinkedHashSet<>();
+     *  two rules of its {@link ChannelState}. */
+    private final Set<String> channels = new LinkedHashSet<>();
     /** The parameters a lowered rule reads, as the globals the case runner sets by name: the Java class of each, by
      *  name, in the order they were first read. */
     private final Map<String, Class<?>> globals = new LinkedHashMap<>();
     /** Whether the model declares the global the case runner sets from the case's {@code asOfDate}, the session's
-     *  evaluation date (RUNTIME-SEMANTICS ch. 8.1), read through the {@link Rekendatum} fact: false until a lowered
+     *  evaluation date (RUNTIME-SEMANTICS ch. 8.1), read through the {@link EvaluationDate} fact: false until a lowered
      *  form needs the date, so a model whose forms are all always valid and read no context value declares none. */
-    private boolean rekendatumGlobal;
+    private boolean evaluationDateGlobal;
     /** The name of that global, the one the case runner sets for every branch. */
     static final String REKENDATUM = "rekendatum";
     /** The relations a form of the document creates, by normalised fact type name: the connecting relation of an
-     *  object creation and the relation of a fact creation. Their links are {@link Koppeling} facts, and every form
-     *  that reads such a relation joins over those ({@link #koppelingshop}, {@link #koppelingsbereik}). */
-    private final Set<String> gecreeerdeRelaties = new LinkedHashSet<>();
+     *  object creation and the relation of a fact creation. Their links are {@link RelationLink} facts, and every form
+     *  that reads such a relation joins over those ({@link #linkHop}, {@link #linkRange}). */
+    private final Set<String> createdRelations = new LinkedHashSet<>();
     /** The names of the lowered creation rules, those of {@link #FEITCREATIE} and of {@link #OBJECTCREATIE}: the driver
      *  counts their firings to tell a generation that created something from one that did not. */
-    private final Set<String> creatieregels = new LinkedHashSet<>();
-    /** The evaluation stratum of every form of a document with a creation, by its node ({@link Kringen#strata}). */
+    private final Set<String> creationRules = new LinkedHashSet<>();
+    /** The evaluation stratum of every form of a document with a creation, by its node ({@link Cycles#strata}). */
     private Map<Object, Integer> strata = Map.of();
-    /** The strata of the lowered creation rules ({@link #creatiestrata}). */
-    private final Set<Integer> creatiestrata = new TreeSet<>();
-    /** The reference fields under which a rule reads a {@link Lijstplaats} ({@link #plaats}; see {@link #lijstvelden}). */
-    private final Set<String> lijstvelden = new LinkedHashSet<>();
+    /** The strata of the lowered creation rules ({@link #creationStrata}). */
+    private final Set<Integer> creationStrata = new TreeSet<>();
+    /** The reference fields under which a rule reads a {@link ListPlace} ({@link #place}; see {@link #listFields}). */
+    private final Set<String> listFields = new LinkedHashSet<>();
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
      *  two different tests under one id would collapse into the first. */
     private int idSeq;
-    /** The outcome of the analysis, which {@link PatternDslWeergave#model} renders into {@link #model}. */
+    /** The outcome of the analysis, which {@link PatternDslRendering#model} renders into {@link #model}. */
     private Modelplan modelplan;
     private Model model0;
     /** The day-kind definitions of the document, each compiled to its predicate over a calendar day where a form first
-     *  steps or counts in its day kind ({@link #dagsoortpredikaat}). A definition reads nothing of working memory
+     *  steps or counts in its day kind ({@link #dayKindPredicate}). A definition reads nothing of working memory
      *  (WF-031), so its predicate is a constant of the document and no rule binds anything for it. */
-    private final Dagsoorten dagsoorten;
+    private final DayKinds dayKinds;
 
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-                          Map<Object, List<RolBindingRef>> navigatieBindingen, Map<Object, RolBindingRef> rolBindingen,
-                          Map<Object, List<RolBindingRef>> bronPaden, EffectieveEenheid eff) {
+                          Map<Object, List<RolBindingRef>> path, Map<Object, RolBindingRef> roleBindings,
+                          Map<Object, List<RolBindingRef>> sourcePaths, EffectiveUnit eff) {
         this.model = model;
         this.beanLoader = beanLoader != null ? beanLoader : TmsTranspiler.class.getClassLoader();
         this.defaults = defaults;
-        this.navigatieBindingen = navigatieBindingen;
-        this.rolBindingen = rolBindingen;
-        this.bronPaden = bronPaden;
+        this.path = path;
+        this.roleBindings = roleBindings;
+        this.sourcePaths = sourcePaths;
         this.eff = eff;
-        this.dagsoorten = new Dagsoorten(model);
+        this.dayKinds = new DayKinds(model);
     }
 
     /** Build the model and its coverage manifest from the loaded model and every side table the loader returns. Each
@@ -341,20 +341,20 @@ public final class TmsTranspiler {
      *  form that needs it as if the document carried none. Fact beans resolve against {@code beanLoader}; null routes
      *  to this transpiler's own loader. */
     public static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets,
-            Map<Object, List<RolBindingRef>> bronPaden,
-            Map<Object, List<RolBindingRef>> navigatieBindingen) {
+            Map<Object, RolBindingRef> roleBindings, List<Expr.Let> lets,
+            Map<Object, List<RolBindingRef>> sourcePaths,
+            Map<Object, List<RolBindingRef>> path) {
         Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
-        Objects.requireNonNull(rolBindingen, "side table 'rolBindingen' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(roleBindings, "side table 'rolBindingen' is null — pass an empty map for a document without one");
         Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
-        Objects.requireNonNull(bronPaden, "side table 'bronPaden' is null — pass an empty map for a document without one");
-        Objects.requireNonNull(navigatieBindingen, "side table 'navigatieBindingen' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(sourcePaths, "side table 'bronPaden' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(path, "side table 'navigatieBindingen' is null — pass an empty map for a document without one");
         // copied by identity: the loader keys its tables on the nodes, which are records with value equality
-        Map<Object, List<RolBindingRef>> nav = new IdentityHashMap<>(navigatieBindingen);
-        TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(rolBindingen),
-                new IdentityHashMap<>(bronPaden), new EffectieveEenheid(lets));
+        Map<Object, List<RolBindingRef>> nav = new IdentityHashMap<>(path);
+        TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(roleBindings),
+                new IdentityHashMap<>(sourcePaths), new EffectiveUnit(lets));
         t.modelplan = t.run();
-        t.model0 = PatternDslWeergave.model(t.modelplan);
+        t.model0 = PatternDslRendering.model(t.modelplan);
         return t;
     }
 
@@ -375,7 +375,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The form of the document that rule {@code regelnaam} of the model belongs to, by the name the manifest gives it
+     * The form of the document that rule {@code ruleName} of the model belongs to, by the name the manifest gives it
      * ({@link #dekking}): the form whose lowering built the rule, with every rule that lowering adds beside the form's
      * own (its fault and deposit rules, the keys of a uniqueness, the recipients of an allocation, the chains and
      * agreements of an effective defaults stack), and for the contribution rules of a fold the form that first
@@ -384,57 +384,57 @@ public final class TmsTranspiler {
      * evaluation date, a link of the input over a created relation and its second filler, and the comparison of the
      * writers of one target. A name of no rule of the model is refused.
      */
-    public String vormVan(String regelnaam) {
-        String vorm = vormVanRegel.get(regelnaam);
-        if (vorm != null || regelsZonderVorm.contains(regelnaam)) return vorm;
-        throw new IllegalArgumentException("geen regel van dit model: '" + regelnaam + "'");
+    public String formOf(String ruleName) {
+        String vorm = formOfRule.get(ruleName);
+        if (vorm != null || rulesWithoutForm.contains(ruleName)) return vorm;
+        throw new IllegalArgumentException("geen regel van dit model: '" + ruleName + "'");
     }
 
     /** The names of the creation rules of the model, in the agenda groups {@link #FEITCREATIE} and
      *  {@link #OBJECTCREATIE}; empty for a document without a lowered creation, which the driver fires in one go. */
-    public Set<String> creatieregels() { return Set.copyOf(creatieregels); }
+    public Set<String> creationRules() { return Set.copyOf(creationRules); }
 
     /** The evaluation strata of the creation rules of the model, ascending, as the reference interpreter computes them
      *  over the verifier's dependency graph (RUNTIME-SEMANTICS ch. 6.3): the driver runs the generations of each in
      *  turn, and a creation rule fires in the phases of its own stratum and of every stratum above it
-     *  ({@link Creatiefase}). Empty where {@link #creatieregels} is. */
-    public List<Integer> creatiestrata() { return List.copyOf(creatiestrata); }
+     *  ({@link CreationPhase}). Empty where {@link #creationRules} is. */
+    public List<Integer> creationStrata() { return List.copyOf(creationStrata); }
 
-    /** Whether a rule of the model reads a {@link Lijstplaats}: the filter fault rule of a fold whose filter can fault,
+    /** Whether a rule of the model reads a {@link ListPlace}: the filter fault rule of a fold whose filter can fault,
      *  the member fault rule of a per-element fold over a timeline, or the contribution rule of a quantifier fold whose
      *  matrix can fault or deposit, each over a range with a to-many step. Only then does the case input state the
      *  places of its to-many lists, and {@code DroolsBackend.voegIn} states them for a consumer. */
-    public boolean leestLijstplaatsen() { return !lijstvelden.isEmpty(); }
+    public boolean readsListPlaces() { return !listFields.isEmpty(); }
 
-    /** The reference fields under which a rule of the model reads a {@link Lijstplaats}: each the field a member of a
+    /** The reference fields under which a rule of the model reads a {@link ListPlace}: each the field a member of a
      *  to-many list holds toward the list's holder, named after the holder's role as the bean property is
-     *  ({@link Lijstplaats#veld}). Empty where {@link #leestLijstplaatsen} is false. */
-    public Set<String> lijstvelden() { return Set.copyOf(lijstvelden); }
+     *  ({@link ListPlace#veld}). Empty where {@link #readsListPlaces} is false. */
+    public Set<String> listFields() { return Set.copyOf(listFields); }
 
     /**
      * The size of the lowering of one effective defaults stack, counted when it is built: {@code naam} as the manifest
      * and the control facts name it, whether it took the general form (exception groups, or more than one group at the
      * root) or the simple one, the number of Drools rules it consists of, and the kinds of control fact those rules
-     * insert ({@link Stuurfeit}). The standing rules of the target are shared with every other reader and not counted.
+     * insert ({@link ControlFact}). The standing rules of the target are shared with every other reader and not counted.
      */
-    public record Defaultsgroep(String naam, boolean algemeen, int regels, List<String> stuurfeiten) {}
+    public record DefaultsGroup(String naam, boolean general, int rules, List<String> controlFacts) {}
 
     /** One entry per effective stack the branch lowered, in the order of the model. */
-    public List<Defaultsgroep> defaultsgroepen() { return List.copyOf(defaultsgroepen); }
+    public List<DefaultsGroup> defaultsGroups() { return List.copyOf(defaultsGroups); }
 
     /** The outcome of the analysis ({@link Modelplan}): the globals the model declares and the plan of every rule of
-     *  the model, in the order of the model, which {@link PatternDslWeergave#model} renders. No consumer reads a plan,
+     *  the model, in the order of the model, which {@link PatternDslRendering#model} renders. No consumer reads a plan,
      *  so it is no public entry. */
     Modelplan modelplan() { return modelplan; }
 
     /** A kind of the plan that the rendering into DRL text does not carry yet ({@link #drl}), refused loudly by its
      *  kind, never left out of the text: a consequence the rendering does not spell yet, by its simple name, or a member
      *  of a bean that Drools reads as something else where a pattern spells it. */
-    public static final class DrlWeigering extends RuntimeException {
+    public static final class DrlRefusal extends RuntimeException {
         private final String soort;
 
-        DrlWeigering(String soort, String melding, Throwable oorzaak) {
-            super(melding, oorzaak);
+        DrlRefusal(String soort, String melding, Throwable cause) {
+            super(melding, cause);
             this.soort = soort;
         }
 
@@ -445,36 +445,36 @@ public final class TmsTranspiler {
     /** The outcome of the one rendering into DRL text ({@link #drl}): the text with the predicates of its day-kind
      *  globals, or the refusal of the rendering; both null until the first call. */
     private String drl;
-    private Map<String, java.util.function.Predicate<LocalDate>> drlDagsoorten;
-    private DrlWeergave.Weigering drlGeweigerd;
+    private Map<String, java.util.function.Predicate<LocalDate>> drlDayKinds;
+    private DrlRendering.Refusal drlRefused;
 
     /**
      * The DRL text of the outcome of the analysis, the second rendering of the plan beside the executable model
      * ({@link #model}): the rules of the plan in its order, under their names, deriving with truth maintenance over the
      * same facts. Rendered once, at the first call. A kind the rendering does not carry yet is refused at every call with
-     * {@link DrlWeigering}, never left out of the text.
+     * {@link DrlRefusal}, never left out of the text.
      */
     public synchronized String drl() {
-        if (drl == null && drlGeweigerd == null) {
+        if (drl == null && drlRefused == null) {
             try {
-                DrlWeergave.Gerenderd g = DrlWeergave.render(modelplan);
-                drl = g.tekst();
-                drlDagsoorten = g.dagsoorten();
-            } catch (DrlWeergave.Weigering w) {
-                drlGeweigerd = w;
+                DrlRendering.Rendered g = DrlRendering.render(modelplan);
+                drl = g.text();
+                drlDayKinds = g.dayKinds();
+            } catch (DrlRendering.Refusal w) {
+                drlRefused = w;
             }
         }
-        if (drlGeweigerd != null)
-            throw new DrlWeigering(drlGeweigerd.soort(), drlGeweigerd.getMessage(), drlGeweigerd);
+        if (drlRefused != null)
+            throw new DrlRefusal(drlRefused.soort(), drlRefused.getMessage(), drlRefused);
         return drl;
     }
 
     /** The §9.8 day-kind predicates of the DRL text ({@link #drl}), by the name of the global the text declares for
      *  each, as the analysis compiled them into its plan; a session of the text has each set before it fires. Refused
      *  as {@link #drl} refuses. */
-    public synchronized Map<String, java.util.function.Predicate<LocalDate>> drlDagsoortGlobalen() {
+    public synchronized Map<String, java.util.function.Predicate<LocalDate>> drlDayKindGlobals() {
         drl();
-        return drlDagsoorten;
+        return drlDayKinds;
     }
 
     /**
@@ -484,23 +484,23 @@ public final class TmsTranspiler {
      * {@link #zetAfgeleideWaarden(KieSession, Function)} does; null names an object by type and identity.
      *
      * <p>Two different values on one attribute of one object have no common fixpoint (RUNTIME-SEMANTICS ch. 5.7). The
-     * rule of {@link #verschilregel} makes that a {@link Fout} of the fixpoint where two writers can disagree; where no
+     * rule of {@link #differenceRule} makes that a {@link Fout} of the fixpoint where two writers can disagree; where no
      * such rule stood, as in a session filled by hand, this reads the same {@link Schrijversconflict} as a fault and gives
      * the attribute no value: it does not choose. Equal values are no conflict.
      *
      * <p>It reads only a session whose last run through the driver ({@code DroolsBackend.vuur}) reached its fixpoint,
-     * as the driver's mark says ({@link Gevuurd}), and refuses any other with a sentence that says what is missing: a
+     * as the driver's mark says ({@link Fired}), and refuses any other with a sentence that says what is missing: a
      * session fired with a plain {@code fireAllRules} or not at all holds no fixpoint it can tell, and on a model with a
      * creation the creation rules never had the focus, so it holds no created object or link; a run that ended at the
      * cap, at the creation budget or with an exception holds a state on the way to the fixpoint. It refuses as well a
      * session in which something happened outside the driver after its last run, a fact inserted, updated or deleted or
-     * a rule that fired ({@link Bewaking}), naming what happened and what to do: fire again through the driver, or open
+     * a rule that fired ({@link Watch}), naming what happened and what to do: fire again through the driver, or open
      * a fresh session where the driver refuses a further fire; and one in which a global or, without an update, a
      * relation changed, which the driver refuses. What this gives is thus always a fixpoint, that of the input as the
      * session knows it: an attribute or a characteristic set without an update is not seen.
      */
     public Fixpunt lees(KieSession sessie, Function<Object, String> label) {
-        return lezing(sessie, label).fixpunt();
+        return reading(sessie, label).fixpunt();
     }
 
     /**
@@ -508,7 +508,7 @@ public final class TmsTranspiler {
      * same code: {@code setX(true)} for each derived characteristic, the value of each derived attribute through the
      * setter of the declared attribute, a timeline as the bean model's segments, and each link a creation laid on the
      * reference field of every to-one end the bean model gives a field, the field the input of such a link is read from
-     * ({@link #koppelingregels}). Input on a characteristic stays, since nothing writes {@code false}; input on an
+     * ({@link #linkRules}). Input on a characteristic stays, since nothing writes {@code false}; input on an
      * attribute stays where no rule derived a value for it.
      *
      * <p>An evaluation fault that stands at the fixpoint ({@link Fout}) means the session has no answer, so before it
@@ -519,8 +519,8 @@ public final class TmsTranspiler {
      * anything.
      *
      * <p>The engine is not told of the writes, and a bean then holds derived values beside its input, which a further
-     * fire would read as input. So after the writes this states a {@link Teruggezet} mark, and the driver refuses to fire
-     * the session again ({@code DroolsBackend.vuur}). It states the mark with the {@link Bewaking} off, as its own work,
+     * fire would read as input. So after the writes this states a {@link Reset} mark, and the driver refuses to fire
+     * the session again ({@code DroolsBackend.vuur}). It states the mark with the {@link Watch} off, as its own work,
      * and has the watch record the relations after the links it wrote: {@link #lees} reads the session after the
      * write-back as before it.
      */
@@ -535,170 +535,170 @@ public final class TmsTranspiler {
      * that label. Null names an object by type and identity.
      */
     public void zetAfgeleideWaarden(KieSession sessie, Function<Object, String> label) {
-        Lezing lezing = lezing(sessie, label);
-        List<Fout> fouten = lezing.fixpunt().fouten();
+        Read reading = reading(sessie, label);
+        List<Fout> fouten = reading.fixpunt().fouten();
         if (fouten.size() == 1) throw fouten.get(0).fout();
         if (!fouten.isEmpty()) throw new Evaluatiefouten(fouten);
-        lezing.schrijfdaden().forEach(Runnable::run);
+        reading.writeActs().forEach(Runnable::run);
         // the entry's own insert and links: the session is read after them as before them
-        Bewaking bewaking = Bewaking.van(sessie);
-        bewaking.zonder(sessie, () -> sessie.insert(new Teruggezet()));
-        bewaking.legRelatiesVast();
+        Watch watch = Watch.van(sessie);
+        watch.without(sessie, () -> sessie.insert(new Reset()));
+        watch.recordRelations();
     }
 
     /** What {@link #lees} reads, with beside it the writes that put it on the beans, made from the same facts in the
      *  same pass so that the reading and the write-back cannot differ. */
-    private record Lezing(Fixpunt fixpunt, List<Runnable> schrijfdaden) {}
+    private record Read(Fixpunt fixpunt, List<Runnable> writeActs) {}
 
-    /** What a consumer does where something happened outside the driver after its last run ({@link Bewaking}): fire
+    /** What a consumer does where something happened outside the driver after its last run ({@link Watch}): fire
      *  again, or open a fresh session where the driver refuses a further fire ({@code DroolsBackend.vuur}). */
-    private String vuurWeg(KieSession sessie, Bewaking bewaking, String agenda) {
-        if (!creatieregels.isEmpty())
+    private String fireAway(KieSession sessie, Watch watch, String agenda) {
+        if (!creationRules.isEmpty())
             return "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede fire: open een verse sessie";
-        if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
+        if (!sessie.getObjects(new ClassObjectFilter(Reset.class)).isEmpty())
             return "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een verse sessie met beans die"
                     + " alleen invoer dragen";
-        if (bewaking.erbijOfEraf() != null)
+        if (watch.onOrOff() != null)
             return "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse sessie, dus"
                     + " DroolsBackend.vuur weigert haar: open een verse sessie met alle beans in één Invoer";
-        if (bewaking.meerDanEenUpdate() != null || agenda != null)
+        if (watch.moreThanOneUpdate() != null || agenda != null)
             return "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde dan een update van een"
                     + " attribuut of kenmerk van een bean: open een verse sessie met alle beans in één Invoer";
-        if (bewaking.veranderdeGlobal(sessie) != null)
+        if (watch.changedGlobal(sessie) != null)
             return "DroolsBackend.vuur weigert een sessie waarvan een global na de eerste vuur veranderde: open een verse"
                     + " sessie";
         return "vuur haar eerst opnieuw met DroolsBackend.vuur";
     }
 
-    private Lezing lezing(KieSession sessie, Function<Object, String> label) {
+    private Read reading(KieSession sessie, Function<Object, String> label) {
         // per class, as the driver asks for it: a filter of another kind walks every fact the session holds
-        List<Object> merken = new ArrayList<>(sessie.getObjects(new ClassObjectFilter(Gevuurd.class)));
-        if (merken.isEmpty())
+        List<Object> marks = new ArrayList<>(sessie.getObjects(new ClassObjectFilter(Fired.class)));
+        if (marks.isEmpty())
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: deze sessie is niet via"
                     + " DroolsBackend.vuur gevuurd, dat tot het fixpunt vuurt"
-                    + (creatieregels.isEmpty() ? "" : " en de creaties van dit model in generaties laat vuren"));
-        if (merken.size() > 1)
-            throw new IllegalStateException("de sessie houdt " + merken.size() + " merken van DroolsBackend.vuur, waar"
-                    + " de driver er na elke run één laat: " + merken);
-        String geenFixpunt = ((Gevuurd) merken.get(0)).geenFixpunt();
+                    + (creationRules.isEmpty() ? "" : " en de creaties van dit model in generaties laat vuren"));
+        if (marks.size() > 1)
+            throw new IllegalStateException("de sessie houdt " + marks.size() + " merken van DroolsBackend.vuur, waar"
+                    + " de driver er na elke run één laat: " + marks);
+        String geenFixpunt = ((Fired) marks.get(0)).geenFixpunt();
         if (geenFixpunt != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur"
                     + " van deze sessie bereikte er geen — " + geenFixpunt);
-        Bewaking bewaking = Bewaking.van(sessie);
+        Watch watch = Watch.van(sessie);
         // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it,
         // and the driver refuses such a session
-        if (bewaking == null)
+        if (watch == null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de bewaking die"
                     + " DroolsBackend.vuur op deze sessie zet, staat er niet meer op, dus wat er na de laatste vuur"
                     + " gebeurde, is niet te zien; DroolsBackend.vuur weigert haar ook: open een verse sessie met alle"
                     + " beans in één Invoer");
-        String agenda = Bewaking.agenda(sessie);
-        String buitenom = bewaking.buitenom();
-        String wat = buitenom == null ? agenda : agenda == null ? buitenom : buitenom + " en " + agenda;
-        if (wat != null)
+        String agenda = Watch.agenda(sessie);
+        String outsideClause = watch.outsideClause();
+        String description = outsideClause == null ? agenda : agenda == null ? outsideClause : outsideClause + " en " + agenda;
+        if (description != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: sinds de laatste"
                     + " DroolsBackend.vuur van deze sessie gebeurde er iets buiten vuur om, wat het fixpunt van die vuur"
-                    + " kan veranderen (" + wat + "); " + vuurWeg(sessie, bewaking, agenda));
-        String global = bewaking.veranderdeGlobal(sessie);
+                    + " kan veranderen (" + description + "); " + fireAway(sessie, watch, agenda));
+        String global = watch.changedGlobal(sessie);
         if (global != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + global + ", en het fixpunt"
                     + " hoort bij de oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie");
-        String relatie = bewaking.veranderdeRelatie();
-        if (relatie != null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + relatie + ", en het fixpunt"
+        String relation = watch.changedRelation();
+        if (relation != null)
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + relation + ", en het fixpunt"
                     + " hoort bij de oude relatie; DroolsBackend.vuur weigert de sessie, dus open een verse sessie met"
                     + " alle beans in één Invoer");
-        List<Runnable> daden = new ArrayList<>();
+        List<Runnable> acts = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
         Set<Fout> fouten = new LinkedHashSet<>();
         for (Object f : sessie.getObjects(o -> o instanceof Fout)) {
             Fout fout = (Fout) f;
             fouten.add(label != null && fout.fout() instanceof Schrijversconflict c
-                    ? new Fout(fout.onderwerp(), fout.regel(), c.benoemd(label))
+                    ? new Fout(fout.onderwerp(), fout.regel(), c.named(label))
                     : label != null && fout.fout() instanceof Invoervormfout i
-                    ? new Fout(fout.onderwerp(), fout.regel(), i.benoemd(label)) : fout);
+                    ? new Fout(fout.onderwerp(), fout.regel(), i.named(label)) : fout);
         }
         List<Fixpunt.AfgeleidKenmerk> kenmerken = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o instanceof HeeftKenmerk)) {
-            HeeftKenmerk h = (HeeftKenmerk) f;
-            Lid lid = lidVan(h, h.kenmerk());
-            kenmerken.add(new Fixpunt.AfgeleidKenmerk(h.onderwerp(), lid.naam()));
-            BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(lid.klasse(), Namen.eigenschap(lid.naam()));
-            daden.add(() -> zetter.accept(h.onderwerp(), Boolean.TRUE));
+        for (Object f : sessie.getObjects(o -> o instanceof HasCharacteristic)) {
+            HasCharacteristic h = (HasCharacteristic) f;
+            Member member = memberOf(h, h.kenmerk());
+            kenmerken.add(new Fixpunt.AfgeleidKenmerk(h.onderwerp(), member.naam()));
+            BiConsumer<Object, Object> setter = Accessors.eigenschapSetter(member.javaClass(), Namen.property(member.naam()));
+            acts.add(() -> setter.accept(h.onderwerp(), Boolean.TRUE));
         }
-        Map<Object, Map<ElementSleutel, List<Waarde>>> perDoel = new IdentityHashMap<>();
-        for (Object f : sessie.getObjects(o -> o instanceof Waarde)) {
-            Waarde w = (Waarde) f;
-            perDoel.computeIfAbsent(w.onderwerp(), o -> new LinkedHashMap<>())
+        Map<Object, Map<ElementSleutel, List<Value>>> perTarget = new IdentityHashMap<>();
+        for (Object f : sessie.getObjects(o -> o instanceof Value)) {
+            Value w = (Value) f;
+            perTarget.computeIfAbsent(w.onderwerp(), o -> new LinkedHashMap<>())
                     .computeIfAbsent(w.attribuut(), a -> new ArrayList<>()).add(w);
         }
         List<Fixpunt.AfgeleideWaarde> waarden = new ArrayList<>();
-        for (Map<ElementSleutel, List<Waarde>> perLid : perDoel.values())
-            for (List<Waarde> geschreven : perLid.values()) {
-                // the writers as Schrijversconflict.inDocumentvolgorde ranks them, the rules in the order of the
+        for (Map<ElementSleutel, List<Value>> perMember : perTarget.values())
+            for (List<Value> written : perMember.values()) {
+                // the writers as Schrijversconflict.inDocumentOrder ranks them, the rules in the order of the
                 // document, and the values of one writer by their text: of values that agree up to their scale, 5,00
                 // and 5, the bean gets that of the rule that comes first, on either branch and in every run, where the
                 // working memory gives them in an order that the firings and the hash of the facts decide
-                geschreven.sort(Schrijversconflict.inDocumentvolgorde(documentvolgorde)
+                written.sort(Schrijversconflict.inDocumentOrder(documentOrder)
                         .thenComparing(w -> String.valueOf(w.waarde())));
-                Waarde eerste = geschreven.get(0);
-                if (geschreven.stream().anyMatch(w -> !gelijkeWaarde(eerste.waarde(), w.waarde()))) {
-                    Schrijversconflict c = conflict(eerste.onderwerp(), eerste.attribuut(), geschreven);
-                    fouten.add(new Fout(eerste.onderwerp(), c.schrijvers().get(0).schrijver(),
-                            label == null ? c : c.benoemd(label)));
+                Value eerste = written.get(0);
+                if (written.stream().anyMatch(w -> !equalValue(eerste.waarde(), w.waarde()))) {
+                    Schrijversconflict c = conflict(eerste.onderwerp(), eerste.attribuut(), written);
+                    fouten.add(new Fout(eerste.onderwerp(), c.writers().get(0).writer(),
+                            label == null ? c : c.named(label)));
                     continue;
                 }
-                Lid lid = lidVan(eerste, eerste.attribuut());
+                Member member = memberOf(eerste, eerste.attribuut());
                 // a timeline goes onto the bean as the bean model's segments, which carry no value equality
                 @SuppressWarnings("unchecked")
-                Object v = lid.tijd() == null ? eerste.waarde()
-                        : Tijdvak.beans((List<Tijdvak>) eerste.waarde(), segmentklasse());
-                waarden.add(new Fixpunt.AfgeleideWaarde(eerste.onderwerp(), lid.naam(), v));
-                BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(lid.klasse(),
-                        Namen.eigenschap(lid.naam()));
-                daden.add(() -> zetter.accept(eerste.onderwerp(), v));
+                Object v = member.time() == null ? eerste.waarde()
+                        : Period.beans((List<Period>) eerste.waarde(), segmentClass());
+                waarden.add(new Fixpunt.AfgeleideWaarde(eerste.onderwerp(), member.naam(), v));
+                BiConsumer<Object, Object> setter = Accessors.eigenschapSetter(member.javaClass(),
+                        Namen.property(member.naam()));
+                acts.add(() -> setter.accept(eerste.onderwerp(), v));
             }
         List<Fixpunt.GemaaktObject> objecten = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o instanceof Gemaakt)) {
-            Gemaakt g = (Gemaakt) f;
+        for (Object f : sessie.getObjects(o -> o instanceof CreationStamp)) {
+            CreationStamp g = (CreationStamp) f;
             objecten.add(new Fixpunt.GemaaktObject(g.object(), g.regel(), g.onderwerp()));
         }
         List<Fixpunt.GemaakteKoppeling> koppelingen = new ArrayList<>();
         // a link of the input carries phase 0 and is in the bean fields already
-        for (Object f : sessie.getObjects(o -> o instanceof Koppeling k && k.fase() > 0))
-            koppelingen.add(gemaakteKoppeling((Koppeling) f, daden));
-        List<Fout> geordend = new ArrayList<>(fouten);
-        geordend.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
-        List<Object> inconsistenties = new ArrayList<>(sessie.getObjects(o -> o.getClass().getName().equals(INCONSISTENTIE)));
-        return new Lezing(new Fixpunt(waarden, kenmerken, objecten, koppelingen, geordend, inconsistenties), daden);
+        for (Object f : sessie.getObjects(o -> o instanceof RelationLink k && k.phase() > 0))
+            koppelingen.add(madeLink((RelationLink) f, acts));
+        List<Fout> ordered = new ArrayList<>(fouten);
+        ordered.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
+        List<Object> inconsistenties = new ArrayList<>(sessie.getObjects(o -> o.getClass().getName().equals(INCONSISTENCY)));
+        return new Read(new Fixpunt(waarden, kenmerken, objecten, koppelingen, ordered, inconsistenties), acts);
     }
 
-    /** The created link {@code k} as {@link Fixpunt} gives it, with into {@code daden} the write of each of its to-one
+    /** The created link {@code k} as {@link Fixpunt} gives it, with into {@code acts} the write of each of its to-one
      *  ends that the bean model gives a reference field: the field on the filler of the other role, named after the
-     *  to-one role, holds the filler of that role (§13.3.9), as {@link #koppelingregels} reads the input of the relation
+     *  to-one role, holds the filler of that role (§13.3.9), as {@link #linkRules} reads the input of the relation
      *  back from it. A to-many end has no field of its own; where both ends are to-many no bean holds the link, and it
      *  is in {@link Fixpunt#koppelingen} only. */
-    private Fixpunt.GemaakteKoppeling gemaakteKoppeling(Koppeling k, List<Runnable> daden) {
-        RegelSpraakModel.Feittype ft = feittype(k.relatie());
+    private Fixpunt.GemaakteKoppeling madeLink(RelationLink k, List<Runnable> acts) {
+        RegelSpraakModel.Feittype ft = feittype(k.relation());
         if (ft == null || ft.rollen.size() != 2)
             throw new IllegalStateException(k + " in de sessie, maar het model kent geen feittype van twee rollen '"
-                    + k.relatie() + "'");
+                    + k.relation() + "'");
         RegelSpraakModel.Rol r0 = ft.rollen.get(0), r1 = ft.rollen.get(1);
         Objecttype t0 = model.objecttypeOpNaam(r0.objecttypeNaam()), t1 = model.objecttypeOpNaam(r1.objecttypeNaam());
-        if (!r1.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t0, r1.naam(), t1)) {
-            BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(bonenklasse(t0), Namen.eigenschap(r1.naam()));
-            daden.add(() -> zetter.accept(k.eerste(), k.tweede()));
+        if (!r1.meervoudig() && FactModelGenerator.hasReferenceField(model, t0, r1.naam(), t1)) {
+            BiConsumer<Object, Object> setter = Accessors.eigenschapSetter(beanClass(t0), Namen.property(r1.naam()));
+            acts.add(() -> setter.accept(k.eerste(), k.tweede()));
         }
-        if (!r0.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t1, r0.naam(), t0)) {
-            BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(bonenklasse(t1), Namen.eigenschap(r0.naam()));
-            daden.add(() -> zetter.accept(k.tweede(), k.eerste()));
+        if (!r0.meervoudig() && FactModelGenerator.hasReferenceField(model, t1, r0.naam(), t0)) {
+            BiConsumer<Object, Object> setter = Accessors.eigenschapSetter(beanClass(t1), Namen.property(r0.naam()));
+            acts.add(() -> setter.accept(k.tweede(), k.eerste()));
         }
         return new Fixpunt.GemaakteKoppeling(ft.naam, r0.naam(), k.eerste(), r1.naam(), k.tweede());
     }
 
     /** The bean model's {@code Segment}, the class of a timeline's segments on a bean. */
-    private Class<?> segmentklasse() {
+    private Class<?> segmentClass() {
         try {
             return Class.forName(FactModelGenerator.PAKKET + ".Segment", true, beanLoader);
         } catch (ClassNotFoundException e) {
@@ -706,104 +706,104 @@ public final class TmsTranspiler {
         }
     }
 
-    private Lid lidVan(Object feit, ElementSleutel sleutel) {
-        Lid lid = afgeleid.get(sleutel);
-        if (lid == null)
-            throw new IllegalStateException(feit + " in de sessie, maar geen regel van dit model leidt "
-                    + Feitnamen.lid(sleutel) + " af");
-        return lid;
+    private Member memberOf(Object fact, ElementSleutel sleutel) {
+        Member member = derived.get(sleutel);
+        if (member == null)
+            throw new IllegalStateException(fact + " in de sessie, maar geen regel van dit model leidt "
+                    + FactNames.member(sleutel) + " af");
+        return member;
     }
 
     /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code sleutel} of
-     *  {@code onderwerp}: the writers as {@link Schrijversconflict#inDocumentvolgorde} ranks them over the document's
-     *  rules {@link #documentvolgorde}, the attribute as declared, and the object's own type. */
-    private Schrijversconflict conflict(Object onderwerp, ElementSleutel sleutel, List<Waarde> waarden) {
-        return Schrijversconflict.van(onderwerp, lidVan(onderwerp, sleutel).naam(), waarden, documentvolgorde, typeklassen,
+     *  {@code onderwerp}: the writers as {@link Schrijversconflict#inDocumentOrder} ranks them over the document's
+     *  rules {@link #documentOrder}, the attribute as declared, and the object's own type. */
+    private Schrijversconflict conflict(Object onderwerp, ElementSleutel sleutel, List<Value> waarden) {
+        return Schrijversconflict.van(onderwerp, memberOf(onderwerp, sleutel).naam(), waarden, documentOrder, typeClasses,
                 typen);
     }
 
     /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
-    private static boolean gelijkeWaarde(Object a, Object b) {
-        return Rekenhulpen.gelijkeWaarde(a, b);
+    private static boolean equalValue(Object a, Object b) {
+        return ComputeHelpers.equalValue(a, b);
     }
 
     // ---------------- the model ----------------
 
     private Modelplan run() {
-        schrijvers = ProducentConsument.producentIndex(model, defaults);
-        staandeDoelen = StaandeDoelen.van(model, defaults);
+        writers = ProducentConsument.producentIndex(model, defaults);
+        standingTargets = StandingTargets.van(model, defaults);
         for (ResolvedRegel r : model.resolvedRegels)
-            if (r.naam() != null && !documentvolgorde.contains(r.naam())) documentvolgorde.add(r.naam());
+            if (r.naam() != null && !documentOrder.contains(r.naam())) documentOrder.add(r.naam());
         for (Objecttype t : model.objecttypen.values()) {
-            String klasse = Namen.ident(t.naam, true);
-            int i = typeklassen.indexOf(klasse);
+            String javaClass = Namen.ident(t.naam, true);
+            int i = typeClasses.indexOf(javaClass);
             if (i < 0) {
-                typeklassen.add(klasse);
+                typeClasses.add(javaClass);
                 typen.add(t.naam);
             } else {
                 typen.set(i, t.naam);
             }
         }
         if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty())
-            strata = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
+            strata = Cycles.strata(model, defaults, path, roleBindings, sourcePaths);
         // before any form lowers: a form that reads a created relation must know it while it lowers
         for (ResolvedObjectCreatie o : model.objectCreaties) {
-            RolBindingRef vr = rolBindingen.get(o);
-            if (vr != null && vr.feittype() != null) gecreeerdeRelaties.add(Namen.norm(vr.feittype()));
+            RolBindingRef vr = roleBindings.get(o);
+            if (vr != null && vr.feittype() != null) createdRelations.add(Namen.norm(vr.feittype()));
             if (vr == null) {
-                RegelSpraakModel.Feittype ft = typenpaarrelatie(o);
-                if (ft != null) gecreeerdeRelaties.add(Namen.norm(ft.naam));
+                RegelSpraakModel.Feittype ft = typePairRelation(o);
+                if (ft != null) createdRelations.add(Namen.norm(ft.naam));
             }
         }
         for (ResolvedFeitCreatie f : model.feitCreaties)
-            if (f.feittype() != null) gecreeerdeRelaties.add(Namen.norm(f.feittype()));
+            if (f.feittype() != null) createdRelations.add(Namen.norm(f.feittype()));
         // computing rules and initialisations are counted apart: one of each on a target is a pair the branch carries
         // (the initialisation falls through below the rule), two of either kind is not
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef d) || d.objecttype() == null || d.attribuut() == null) continue;
             Map<ElementSleutel, List<ResolvedRegel>> per =
                     r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING
-                            ? rekenregels
-                            : r.soort() == ResolvedRegel.Soort.INITIALISATIE ? initialisaties : null;
+                            ? computeRules
+                            : r.soort() == ResolvedRegel.Soort.INITIALISATIE ? initialisations : null;
             if (per != null)
                 per.computeIfAbsent(ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false),
                         k -> new ArrayList<>()).add(r);
         }
         for (PrioritizedDefaults p : defaults)
             if (p.doel() != null)
-                defaultsdoelen.add(ProducentConsument.elementVan(model.objecttypeOpNaam(p.onderwerp()), p.doel(),
+                defaultsTargets.add(ProducentConsument.elementVan(model.objecttypeOpNaam(p.onderwerp()), p.doel(),
                         p.isKenmerk()));
         // composed before the rules, since a rule the fold takes into a stack must not fire on the stack's type
         stapels = new Stapels(model, defaults);
-        List<Stapels.Stapel> effectief;
-        String samenstelling = null;
+        List<Stapels.Stack> effective;
+        String composition = null;
         try {
-            effectief = stapels.stapels();
-        } catch (Stapels.Onsamenstelbaar o) {
-            effectief = List.of();
-            samenstelling = o.getMessage();
+            effective = stapels.stapels();
+        } catch (Stapels.Uncomposable o) {
+            effective = List.of();
+            composition = o.getMessage();
         }
-        List<Regelplan> regels = new ArrayList<>();
-        for (ResolvedRegel r : model.resolvedRegels) regels.addAll(meet("regel", naamOf(r.naam()), () -> regel(r)));
+        List<RulePlan> rules = new ArrayList<>();
+        for (ResolvedRegel r : model.resolvedRegels) rules.addAll(meet("regel", nameOf(r.naam()), () -> regel(r)));
         for (ResolvedConsistentie c : model.consistenties)
-            regels.addAll(meet("consistentie", naamOf(c.naam()), () -> consistentieRegels(c)));
+            rules.addAll(meet("consistentie", nameOf(c.naam()), () -> consistencyRules(c)));
         for (ResolvedUniciteit u : model.uniciteiten)
-            regels.addAll(meet("uniciteit", naamOf(u.naam()), () -> uniciteitRegels(u)));
+            rules.addAll(meet("uniciteit", nameOf(u.naam()), () -> uniquenessRules(u)));
         for (ResolvedVerdeling v : model.verdelingen)
-            regels.addAll(meet("verdeling", naamOf(v.naam()), () -> verdeling(v)));
+            rules.addAll(meet("verdeling", nameOf(v.naam()), () -> allocation(v)));
         for (ResolvedObjectCreatie o : model.objectCreaties)
-            regels.addAll(meet("objectcreatie", naamOf(o.naam()), () -> objectCreatie(o)));
+            rules.addAll(meet("objectcreatie", nameOf(o.naam()), () -> objectCreation(o)));
         for (ResolvedFeitCreatie f : model.feitCreaties)
-            regels.addAll(meet("feitcreatie", naamOf(f.naam()), () -> feitCreatie(f)));
+            rules.addAll(meet("feitcreatie", nameOf(f.naam()), () -> factCreation(f)));
         for (ResolvedUniciteitUnie u : model.uniciteitUnies)
-            regels.addAll(meet("uniciteit-unie", naamOf(u.naam()), () -> uniciteitUnieRegels(u)));
-        if (samenstelling != null) weiger("defaults", "effectieve stapels", samenstelling);
-        for (Stapels.Stapel st : effectief) {
-            gegenereerd.put(stapelnaam(st), new RegelSpraakModel.GegenereerdUit(stapeldoel(st),
+            rules.addAll(meet("uniciteit-unie", nameOf(u.naam()), () -> uniquenessUnionRules(u)));
+        if (composition != null) refuse("defaults", "effectieve stapels", composition);
+        for (Stapels.Stack st : effective) {
+            gegenereerd.put(stackName(st), new RegelSpraakModel.GegenereerdUit(stackTarget(st),
                     RegelSpraakModel.Herkomstvorm.DEFAULTSSTAPEL));
-            regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
+            rules.addAll(meet("defaults", stackName(st), () -> stackRules(st)));
         }
-        regels.addAll(verschilregels());
+        rules.addAll(differenceRules());
         // a StartPointDetermination is a declaration that fires nothing: it says which member anchors a grid with a
         // variable start (RUNTIME-SEMANTICS ch. 3.2), and the reference interpreter faults only where a bucket of such
         // a grid is laid. Its anchor member is an ordinary date attribute that ordinary rules write, so a document that
@@ -812,205 +812,205 @@ public final class TmsTranspiler {
         // a day-kind definition is no form that fires: the forms that step or count in its day kind compile it where
         // they lower (dagsoortpredikaat), so a definition no form uses is never compiled and refuses nothing
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here
-        for (List<Regelplan> rs : bijdrageregels.values()) regels.addAll(rs);
-        for (String relatie : gecreeerdeRelaties) regels.addAll(koppelingregels(relatie));
+        for (List<RulePlan> rs : contributionRules.values()) rules.addAll(rs);
+        for (String relation : createdRelations) rules.addAll(linkRules(relation));
         // a standing is built once per member, for every rule that reads it, and only for one a lowered rule reads: a
         // standing nothing reads would only add firings
-        List<Regelplan> standen = new ArrayList<>();
-        for (Padlezing p : padlezingen.values())
-            standen.addAll(p.pad().gecreeerd() ? koppelingpadstandregels(p) : padstandregels(p));
-        for (Lid lid : gelezen.values()) standen.addAll(lid.kenmerk() ? kenmerkstandregels(lid) : attribuutstandregels(lid));
-        for (String producent : kanalen) standen.addAll(kanaalstandregels(producent));
-        for (String parameter : globals.keySet()) standen.add(parameterstandregel(parameter));
-        List<Modelplan.Globaal> declaraties = new ArrayList<>();
-        if (rekendatumGlobal) {
+        List<RulePlan> states = new ArrayList<>();
+        for (PathRead p : pathReads.values())
+            states.addAll(p.pad().created() ? linkPathStateRules(p) : pathStateRules(p));
+        for (Member member : read.values()) states.addAll(member.kenmerk() ? characteristicStateRules(member) : attributeStateRules(member));
+        for (String producer : channels) states.addAll(channelStateRules(producer));
+        for (String parameter : globals.keySet()) states.add(parameterStateRule(parameter));
+        List<Modelplan.Global> declarations = new ArrayList<>();
+        if (evaluationDateGlobal) {
             // the case runner sets the evaluation date under this name after the parameters, so a parameter of the same
             // Java name would read the date, or the date the parameter
             if (globals.containsKey(REKENDATUM))
-                weiger("parameter", REKENDATUM, "een parameter met de Java-naam '" + REKENDATUM + "' naast een vorm die"
+                refuse("parameter", REKENDATUM, "een parameter met de Java-naam '" + REKENDATUM + "' naast een vorm die"
                         + " de rekendatum leest: de caserunner zet de rekendatum onder die naam, zodat de twee één global"
                         + " delen");
             else {
-                declaraties.add(new Modelplan.Globaal(REKENDATUM, LocalDate.class));
-                standen.add(rekendatumstandregel());
+                declarations.add(new Modelplan.Global(REKENDATUM, LocalDate.class));
+                states.add(evaluationDateStateRule());
             }
         }
-        globals.forEach((naam, klasse) -> declaraties.add(new Modelplan.Globaal(naam, klasse)));
-        for (Regelplan r : regels) if (!vormVanRegel.containsKey(r.naam())) regelsZonderVorm.add(r.naam());
-        for (Regelplan r : standen) regelsZonderVorm.add(r.naam());
-        List<Regelplan> plannen = new ArrayList<>(regels);
-        plannen.addAll(standen);
-        return new Modelplan(declaraties, plannen);
+        globals.forEach((naam, javaClass) -> declarations.add(new Modelplan.Global(naam, javaClass)));
+        for (RulePlan r : rules) if (!formOfRule.containsKey(r.naam())) rulesWithoutForm.add(r.naam());
+        for (RulePlan r : states) rulesWithoutForm.add(r.naam());
+        List<RulePlan> plans = new ArrayList<>(rules);
+        plans.addAll(states);
+        return new Modelplan(declarations, plans);
     }
 
     /** A form's name as the manifest shows it; a nameless form (WF-107 refuses it) still gets an entry. */
-    private static String naamOf(String naam) {
+    private static String nameOf(String naam) {
         return naam != null ? naam : "(zonder naam)";
     }
 
-    /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
-    private List<Regelplan> meet(String soort, String naam, Supplier<List<Regelplan>> bouw) {
+    /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Refusal} carries. */
+    private List<RulePlan> meet(String soort, String naam, Supplier<List<RulePlan>> bouw) {
         vorm = naam;
-        String eigen = RegelSpraakModel.vormnaam(naam);
-        if (!eigen.equals(naam))
-            gegenereerd.put(naam, new RegelSpraakModel.GegenereerdUit(RegelSpraakModel.Benoembaar.vorm(eigen),
+        String own = RegelSpraakModel.vormnaam(naam);
+        if (!own.equals(naam))
+            gegenereerd.put(naam, new RegelSpraakModel.GegenereerdUit(RegelSpraakModel.Benoembaar.vorm(own),
                     RegelSpraakModel.Herkomstvorm.VERSIE));
         try {
-            List<Regelplan> regels = bouw.get();
+            List<RulePlan> rules = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
-            for (Regelplan r : regels) vormVanRegel.put(r.naam(), naam);
-            return regels;
-        } catch (Weigering w) {
-            weiger(soort, naam, w.getMessage());
+            for (RulePlan r : rules) formOfRule.put(r.naam(), naam);
+            return rules;
+        } catch (Refusal w) {
+            refuse(soort, naam, w.getMessage());
             return List.of();
         }
     }
 
-    private void weiger(String soort, String naam, String reden) {
+    private void refuse(String soort, String naam, String reden) {
         Dekking d = Dekking.skip(soort, naam, reden);
         dekking.add(d);
-        d.meld(model);
+        d.report(model);
     }
 
     /** A form, or a part of one, this branch does not lower; the message is the manifest's reason. */
-    private static final class Weigering extends RuntimeException {
-        Weigering(String reden) { super(reden); }
+    private static final class Refusal extends RuntimeException {
+        Refusal(String reden) { super(reden); }
     }
 
     // ---------------- a rule ----------------
 
-    private List<Regelplan> regel(ResolvedRegel r) {
+    private List<RulePlan> regel(ResolvedRegel r) {
         // the rule of a form is named by the form, and a KieBase keeps one rule per name
-        if (r.naam() == null) throw new Weigering("een regel zonder naam (WF-107)");
+        if (r.naam() == null) throw new Refusal("een regel zonder naam (WF-107)");
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null || doel.attribuut() == null)
-            throw new Weigering("een regel zonder opgelost doel");
-        if (navigatieBindingen.containsKey(doel)) throw new Weigering("een regel op een genavigeerd doel");
+            throw new Refusal("een regel zonder opgelost doel");
+        if (path.containsKey(doel)) throw new Refusal("een regel op een genavigeerd doel");
         // a version with a bounded validity gates on the evaluation date: its rules bind the date where the window
-        // admits it (Lezingen.geldig), and beside them a rule faults the session that carries no date
-        List<Regelplan> uit = new ArrayList<>(switch (r.soort()) {
-            case KENMERKTOEKENNING -> kenmerkRegel(r, doel);
-            case GELIJKSTELLING, BEREKENING -> rekenRegel(r, doel);
-            case INITIALISATIE -> initialisatieRegel(r, doel);
+        // admits it (Reads.valid), and beside them a rule faults the session that carries no date
+        List<RulePlan> out = new ArrayList<>(switch (r.soort()) {
+            case KENMERKTOEKENNING -> characteristicRule(r, doel);
+            case GELIJKSTELLING, BEREKENING -> computeRule(r, doel);
+            case INITIALISATIE -> initialisationRule(r, doel);
         });
-        Regelplan zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(r.naam()), r.naam(), r.geldigheid());
-        if (zonderDatum != null) uit.add(zonderDatum);
-        return uit;
+        RulePlan withoutDate = validityFault(model.geëmitteerdeRegelNaam(r.naam()), r.naam(), r.geldigheid());
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
     }
 
     /**
-     * The rule beside a form with a bounded validity, {@code vorm}, whose Drools rule is {@code regelnaam}, that faults
+     * The rule beside a form with a bounded validity, {@code vorm}, whose Drools rule is {@code ruleName}, that faults
      * a session without an evaluation date: such a form needs the date (RUNTIME-SEMANTICS ch. 8.1), and the reference
      * interpreter faults the session as soon as it evaluates the form, whether or not the form has a subject, in the
-     * sentence {@link Rekenfout#GELDIGHEID_ZONDER_DATUM}. The fault is on the session's {@link Rekendatum}, the one fact
+     * sentence {@link Rekenfout#VALIDITY_WITHOUT_DATE}. The fault is on the session's {@link EvaluationDate}, the one fact
      * the date is, and like every evaluation fault it counts where it stands at the fixpoint. Null for a form that is
      * always valid, which needs no date.
      */
-    private Regelplan geldigheidsfout(String regelnaam, String vorm, Geldigheid g) {
+    private RulePlan validityFault(String ruleName, String vorm, Geldigheid g) {
         if (g == null || g.altijd()) return null;
-        rekendatumNodig();
-        Alfa zonderDatum = new Alfa(id("geen-rekendatum"),
-                List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.LEEG, null)));
-        return new Regelplan(regelnaam + ": geen rekendatum", this.vorm, null, new Leestabel(List.of()),
-                List.of(new Patroon(Rekendatum.class, "$rekendatum", List.of(zonderDatum), List.of(), List.of())),
-                new Gevolg.Fout("$rekendatum", Rekenfout.GELDIGHEID_ZONDER_DATUM, new Gevolg.Foutnaam(vorm, regelnaam),
-                        Gevolg.Invoeging.LOGISCH));
+        evaluationDateNeeded();
+        Alpha withoutDate = new Alpha(id("geen-rekendatum"),
+                List.of(new Alpha.FieldTest("date", Alpha.Comparator.LEEG, null)));
+        return new RulePlan(ruleName + ": geen rekendatum", this.vorm, null, new ReadTable(List.of()),
+                List.of(new FactPattern(EvaluationDate.class, "$rekendatum", List.of(withoutDate), List.of(), List.of())),
+                new Consequence.Fout("$rekendatum", Rekenfout.VALIDITY_WITHOUT_DATE, new Consequence.FaultName(vorm, ruleName),
+                        Consequence.Insertion.LOGICAL));
     }
 
     /** Declares the global of the evaluation date, the first time a lowered form needs the date. */
-    private void rekendatumNodig() {
-        rekendatumGlobal = true;
+    private void evaluationDateNeeded() {
+        evaluationDateGlobal = true;
     }
 
-    /** The rule that puts the session's {@link Rekendatum} in working memory, from the global the case runner sets
+    /** The rule that puts the session's {@link EvaluationDate} in working memory, from the global the case runner sets
      *  where the case carries an {@code asOfDate} and leaves unset, null, where it carries none. Like a parameter's
-     *  standing ({@link #parameterstandregel}) it matches no fact and fires once per session; the global does not
+     *  standing ({@link #parameterStateRule}) it matches no fact and fires once per session; the global does not
      *  change while the session fires. */
-    private Regelplan rekendatumstandregel() {
-        return new Regelplan("rekendatumstand", null, null, new Leestabel(List.of()), List.of(),
-                new Gevolg.Rekendatumstand(REKENDATUM, Gevolg.Invoeging.LOGISCH));
+    private RulePlan evaluationDateStateRule() {
+        return new RulePlan("rekendatumstand", null, null, new ReadTable(List.of()), List.of(),
+                new Consequence.EvaluationDateState(REKENDATUM, Consequence.Insertion.LOGICAL));
     }
 
     /**
      * A characteristic attribution: the subject pattern with the reads its condition binds there, the standing patterns
      * of what it reads elsewhere, one test over every value its condition reads, and a consequence that inserts the
-     * {@link HeeftKenmerk} logically. Its justification is the whole match, so a standing the condition read that is
+     * {@link HasCharacteristic} logically. Its justification is the whole match, so a standing the condition read that is
      * later retracted takes the characteristic with it, also when the condition read it negated. Beside it, where the
-     * condition can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
+     * condition can fault, the rule that inserts its fault ({@link #conditionFaultRule}).
      */
-    private List<Regelplan> kenmerkRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<RulePlan> characteristicRule(ResolvedRegel r, Expr.AttribuutRef doel) {
         // the loader refuses any other value (WF-022); asked again because this rule writes true whatever it says
         if (!(r.waarde() instanceof Expr.Literal l && "waar".equals(l.waarde()) && l.type() instanceof Datatype.Booleaan))
-            throw new Weigering("een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
-        Lid tijd = gedeclareerd(doel.objecttype(), doel.attribuut(), true);
-        if (tijd.tijd() != null)
-            throw new Weigering("het tijdsafhankelijke kenmerk '" + tijd.naam() + "' van " + tijd.declarant().naam
-                    + " als doel: " + NOG_NIET + "; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)");
-        Lid lid = lid(doel.objecttype(), doel.attribuut(), true);
-        Supplier<Lezingen> nieuw = () -> new Lezingen(doel.objecttype()).geldig(r.geldigheid());
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
-        boolean kanFalen = lez.kanFalen();
+            throw new Refusal("een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
+        Member time = declared(doel.objecttype(), doel.attribuut(), true);
+        if (time.time() != null)
+            throw new Refusal("het tijdsafhankelijke kenmerk '" + time.naam() + "' van " + time.declarant().naam
+                    + " als doel: " + STILL_NOT + "; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)");
+        Member member = member(doel.objecttype(), doel.attribuut(), true);
+        Supplier<Reads> recomputed = () -> new Reads(doel.objecttype()).valid(r.geldigheid());
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
+        boolean canFail = lez.canFail();
         lez.stop();
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, r.voorwaarde());
-        ElementSleutel sleutel = lid.sleutel();
-        afgeleid.put(sleutel, lid);
-        lez.vastleggen();
-        String regelnaam = model.geëmitteerdeRegelNaam(r.naam());
-        List<Regelplan> uit = new ArrayList<>();
-        uit.add(lez.regelplan(regelnaam, items,
-                new Gevolg.Kenmerk(ONDERWERP, sleutel, Gevolg.Invoeging.LOGISCH)));
-        if (kanFalen) uit.add(voorwaardefoutregel(r.naam(), regelnaam, nieuw, r.voorwaarde(), null));
-        Regelplan deponering = deponeerregel(r.naam(), regelnaam, nieuw, r.voorwaarde(), null);
-        if (deponering != null) uit.add(deponering);
-        return uit;
+        List<LhsItem> items = lez.plan(conditionRole(canFail), testTerm, read, r.voorwaarde());
+        ElementSleutel sleutel = member.sleutel();
+        derived.put(sleutel, member);
+        lez.recorder();
+        String ruleName = model.geëmitteerdeRegelNaam(r.naam());
+        List<RulePlan> out = new ArrayList<>();
+        out.add(lez.rulePlan(ruleName, items,
+                new Consequence.Characteristic(SUBJECT, sleutel, Consequence.Insertion.LOGICAL)));
+        if (canFail) out.add(conditionFaultRule(r.naam(), ruleName, recomputed, r.voorwaarde(), null));
+        RulePlan deposit = depositRule(r.naam(), ruleName, recomputed, r.voorwaarde(), null);
+        if (deposit != null) out.add(deposit);
+        return out;
     }
 
     /**
      * An assignment or a computation of an attribute of the subject: the left-hand side of a characteristic attribution,
-     * and a consequence that computes the value from the values it binds and inserts a {@link Waarde} logically. A
+     * and a consequence that computes the value from the values it binds and inserts a {@link Value} logically. A
      * computed leeg writes nothing on a standing target, so the input on the target stands, or the initialisation beside
      * the rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is
      * its target's only computing writer, beside at most one unconditional initialisation). Outside that domain a
-     * computed leeg is a write (ch. 1.2g): the {@link Waarde} carries leeg, which takes the target's input standing away
+     * computed leeg is a write (ch. 1.2g): the {@link Value} carries leeg, which takes the target's input standing away
      * and is a value another writer can disagree with. A target may have more computing rules: each is an equation, and
-     * where two of them stand at the fixpoint on one object with different values the rule of {@link #verschilregel}
+     * where two of them stand at the fixpoint on one object with different values the rule of {@link #differenceRule}
      * makes that the fault of ch. 5.7; where at most one condition holds, or they write the same value, the document
      * plays. They are keyed per object, so writers on sister subtypes never meet (WF-079 and ch. 7.10 read per concrete
      * type). An evaluation fault, a division by a numeric zero or a {@link Rekenfout}, is inserted logically by the
      * consequence as a {@link Fout} in place of the value, named after the rule. A division of a filled dividend by a
      * leeg divisor, and a square root of a negative number, insert the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2
      * from the same consequence, under the rule's name, where the evaluation reaches them: the probe the consequence puts
-     * in its value array hears exactly the places that run ({@link Sonde}), so a place in a branch of an
+     * in its value array hears exactly the places that run ({@link DepositFlag}), so a place in a branch of an
      * {@code IfThenElse} that is not taken, or in the value of a {@code Let} binder no read forces, deposits nothing
      * (ch. 10.2, 10.6). Every division and every root is such a place, as in the reference interpreter. The condition of
-     * the rule holds there by construction; a deposit in the condition itself is the {@link #deponeerregel}'s.
+     * the rule holds there by construction; a deposit in the condition itself is the {@link #depositRule}'s.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
      * ch. 6.1, "Recorded residuals"), this branch withdraws it; recorded as an observation.
      *
-     * <p>A member an object creation sets is the input of the object it makes ({@link #objectCreatie}), so a rule on it
+     * <p>A member an object creation sets is the input of the object it makes ({@link #objectCreation}), so a rule on it
      * displaces that value as it displaces case input, and outside the standing domain a computed leeg erases it, as in
      * the reference interpreter, which overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
      */
-    private List<Regelplan> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
-        if (gedeclareerd(doel.objecttype(), doel.attribuut(), false).tijd() != null) return tijdlijnregel(r, doel);
-        Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
-        Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
-        boolean schrijftLeeg = !staandeDoelen.staandScalair(r);
-        return schrijfregel(r, doel.objecttype(), lid, null, geabsorbeerd, schrijftLeeg);
+    private List<RulePlan> computeRule(ResolvedRegel r, Expr.AttribuutRef doel) {
+        if (declared(doel.objecttype(), doel.attribuut(), false).time() != null) return timelineRule(r, doel);
+        Member member = member(doel.objecttype(), doel.attribuut(), false);
+        Set<Class<?>> absorbed = absorbed(doel, member);
+        boolean writesEmpty = !standingTargets.standingScalar(r);
+        return writeRule(r, doel.objecttype(), member, null, absorbed, writesEmpty);
     }
 
     /**
      * A computation of an attribute on a timeline of the subject (RUNTIME-SEMANTICS ch. 3.11): the rule writes a whole
      * timeline at once, which a pro-rata part (ch. 3.7) or a day count (ch. 3.8) over the subject's own characteristic
-     * produces ({@link #tijdlijnwaarde}), and inserts it as the {@link Waarde} of the target, an immutable
-     * {@code List<Tijdvak>}. On a standing temporal target ({@link StaandeDoelen#staandTemporeel}: the target's one
+     * produces ({@link #timelineValue}), and inserts it as the {@link Value} of the target, an immutable
+     * {@code List<Period>}. On a standing temporal target ({@link StandingTargets#standingTemporal}: the target's one
      * version-free writer, ch. 7.8) an empty result is the temporal leeg and writes nothing, so the input timeline of the
      * target stands whole, and a result with a segment replaces it whole; elsewhere the rule writes the empty timeline
      * as well (ch. 1.2g). The versions of one rule are one writer; a version that applies writes as such a rule does,
-     * and two that stand with different timelines are the fault of ch. 5.7 ({@link #verschilregel}).
+     * and two that stand with different timelines are the fault of ch. 5.7 ({@link #differenceRule}).
      *
      * <p>Refused by name, each with no golden that has cases: any other writer of the target, a rule, an
      * initialisation, a defaults group or an allocation, since ch. 7.8 keeps a target with more writers fenced and
@@ -1020,34 +1020,34 @@ public final class TmsTranspiler {
      * gating the rule on the evaluation date (ch. 3.10), as the destructive DRL-text lowering refused it as well until
      * card drl-teksttak-op-truth-maintenance; golden {@code jutterswet-pachtvenster} has it.
      */
-    private List<Regelplan> tijdlijnregel(ResolvedRegel r, Expr.AttribuutRef doel) {
-        Lid lid = tijdlid(doel.objecttype(), doel.attribuut(), false, "een tijdsafhankelijk doel");
-        List<String> anderen = andereSchrijvers(r, doel.objecttype(), lid.sleutel());
-        if (!anderen.isEmpty())
-            throw new Weigering("een tijdsafhankelijk doel met een tweede schrijver ('" + lid.naam() + "' van "
-                    + lid.declarant().naam + " wordt ook geschreven door "
-                    + String.join(", ", anderen.stream().map(x -> "\"" + x + "\"").toList()) + "): " + NOG_NIET
+    private List<RulePlan> timelineRule(ResolvedRegel r, Expr.AttribuutRef doel) {
+        Member member = timeMember(doel.objecttype(), doel.attribuut(), false, "een tijdsafhankelijk doel");
+        List<String> others = otherWriters(r, doel.objecttype(), member.sleutel());
+        if (!others.isEmpty())
+            throw new Refusal("een tijdsafhankelijk doel met een tweede schrijver ('" + member.naam() + "' van "
+                    + member.declarant().naam + " wordt ook geschreven door "
+                    + String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList()) + "): " + STILL_NOT
                     + "; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen golden met"
                     + " cases heeft er een");
         if (Conditie.bevatPeriode(r.voorwaarde()))
-            throw new Weigering("een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '"
-                    + lid.naam() + "' van " + lid.declarant().naam + ": daar knipt het venster de tijdlijn"
-                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + NOG_NIET);
+            throw new Refusal("een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '"
+                    + member.naam() + "' van " + member.declarant().naam + ": daar knipt het venster de tijdlijn"
+                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + STILL_NOT);
         if (!(r.waarde() instanceof Expr.Functie f && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN)))
-            throw new Weigering("een waarde van het tijdsafhankelijke doel '" + lid.naam() + "' van "
-                    + lid.declarant().naam + " die geen tijdsevenredig deel en geen dagentelling is ('"
-                    + (r.waarde() == null ? "zonder waarde" : snippet(r.waarde().bron())) + "'): " + NOG_NIET
+            throw new Refusal("een waarde van het tijdsafhankelijke doel '" + member.naam() + "' van "
+                    + member.declarant().naam + " die geen tijdsevenredig deel en geen dagentelling is ('"
+                    + (r.waarde() == null ? "zonder waarde" : snippet(r.waarde().bron())) + "'): " + STILL_NOT
                     + " (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een");
-        return schrijfregel(r, doel.objecttype(), lid, null, Set.of(), !staandeDoelen.staandTemporeel(doel));
+        return writeRule(r, doel.objecttype(), member, null, Set.of(), !standingTargets.standingTemporal(doel));
     }
 
     /**
      * The timeline that the pro-rata part or the day count {@code f} produces for the target {@code doel} of
      * {@code subject} (RUNTIME-SEMANTICS ch. 3.7, 3.8), as a function of the values the rule binds: the true periods of
      * the subject's own characteristic in its gedurende clause and, for the pro-rata part, the timeline of the base, an
-     * own attribute, each bound in the left-hand side ({@link Lezingen#tijdlijn}), so a base that a rule derives later
-     * takes the result along. The runtime's helpers compute them, with {@link Tijdvak} as their
+     * own attribute, each bound in the left-hand side ({@link Reads#timeline}), so a base that a rule derives later
+     * takes the result along. The runtime's helpers compute them, with {@link Period} as their
      * segment class: {@code rsTijdsevenredig} per bucket of the target's grid, the base's
      * value at the bucket's start times the share of true days, a base that is leeg there or absent giving no segment,
      * and {@code rsAantalDagenIn} the true days per touched bucket, on the calendar or from the anchor of the target's
@@ -1060,121 +1060,121 @@ public final class TmsTranspiler {
      * granularity (WF-056, WF-058); a clause that is not a check of an own characteristic on a timeline, or is negated
      * or navigated; a base that is not an own attribute on a timeline, is finer than the bucket or carries a unit, whose
      * rate the reference interpreter does not restate (ch. 3.7, fenced); and a pro-rata part onto or from a fixed start
-     * point ({@link Tijdlijnen#proRataVastRaster}).
+     * point ({@link Timelines#proRataFixedGrid}).
      */
-    private Term tijdlijnwaarde(Expr.Functie f, Lid doel, Objecttype subject, Lezingen lez) {
-        boolean deel = f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL;
-        String wat = (deel ? "een tijdsevenredig deel" : "een dagentelling") + " ('" + snippet(f.bron()) + "')";
-        if (f.granulariteit() != doel.tijd())
-            throw new Weigering(wat + " per " + f.granulariteit() + " naar het doel '" + doel.naam() + "' met de"
-                    + " granulariteit " + doel.tijd() + ": de emmer is die van het doel (" + (deel ? "WF-056" : "WF-058")
+    private Term timelineValue(Expr.Functie f, Member doel, Objecttype subject, Reads lez) {
+        boolean part = f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL;
+        String description = (part ? "een tijdsevenredig deel" : "een dagentelling") + " ('" + snippet(f.bron()) + "')";
+        if (f.granulariteit() != doel.time())
+            throw new Refusal(description + " per " + f.granulariteit() + " naar het doel '" + doel.naam() + "' met de"
+                    + " granulariteit " + doel.time() + ": de emmer is die van het doel (" + (part ? "WF-056" : "WF-058")
                     + ")");
-        if (doel.tijd() != RegelSpraakModel.Granulariteit.MAAND && doel.tijd() != RegelSpraakModel.Granulariteit.JAAR)
-            throw new Weigering(wat + " per " + doel.tijd() + ": alleen een maand en een jaar zijn emmers"
+        if (doel.time() != RegelSpraakModel.Granulariteit.MAAND && doel.time() != RegelSpraakModel.Granulariteit.JAAR)
+            throw new Refusal(description + " per " + doel.time() + ": alleen een maand en een jaar zijn emmers"
                     + " (RUNTIME-SEMANTICS ch. 3.2)");
         if (f.leegwaarde() != null || f.dimensieSelectie() != null)
-            throw new Weigering(wat + " met een terugvalwaarde of een dimensieselectie: " + NOG_NIET);
-        int conditie = kniptijdlijn(f.filter(), subject, lez, wat);
-        String gran = doel.tijd().name();
-        if (!deel) {
+            throw new Refusal(description + " met een terugvalwaarde of een dimensieselectie: " + STILL_NOT);
+        int condition = clipTimeline(f.filter(), subject, lez, description);
+        String gran = doel.time().name();
+        if (!part) {
             if (!f.argumenten().isEmpty())
-                throw new Weigering(wat + " met " + f.argumenten().size() + " argumenten: een dagentelling neemt er"
+                throw new Refusal(description + " met " + f.argumenten().size() + " argumenten: een dagentelling neemt er"
                         + " geen (WF-058)");
             // RUNTIME-SEMANTICS ch. 3.2: a target on a fixed start point buckets from the constant anchor its walls are
             // computed from
-            LocalDate anker = model.vastStartpuntAnker(doel.declarant(), doel.naam());
-            Term perioden = new Term.Lees(conditie, bron(f.filter().bron()));
-            Term dagen = anker == null
-                    ? new Term.Aanroep(Functie.RS_AANTAL_DAGEN_IN, List.of(perioden, constante(gran),
-                            constante(Tijdvak.class)), null)
-                    : new Term.Aanroep(Functie.RS_AANTAL_DAGEN_IN_VANAF, List.of(perioden, constante(gran),
-                            constante(anker), constante(Tijdvak.class)), null);
-            return new Term.Aanroep(Functie.TIJDVAK_LIJST, List.of(dagen), bron(f.bron()));
+            LocalDate anchor = model.vastStartpuntAnker(doel.declarant(), doel.naam());
+            Term periods = new Term.SlotValue(condition, bron(f.filter().bron()));
+            Term days = anchor == null
+                    ? new Term.Call(Aggregation.RS_DAY_COUNT, List.of(periods, constant(gran),
+                            constant(Period.class)), null)
+                    : new Term.Call(Aggregation.RS_DAY_COUNT_FROM, List.of(periods, constant(gran),
+                            constant(anchor), constant(Period.class)), null);
+            return new Term.Call(Aggregation.PERIOD_LIST, List.of(days), bron(f.bron()));
         }
         if (f.argumenten().size() != 1 || !(f.argumenten().get(0) instanceof Expr.AttribuutRef b)
-                || b.attribuut() == null || b.objecttype() != subject || navigatieBindingen.containsKey(b))
-            throw new Weigering(wat + " over een basis die geen eigen tijdsafhankelijk attribuut is: " + NOG_NIET
+                || b.attribuut() == null || b.objecttype() != subject || path.containsKey(b))
+            throw new Refusal(description + " over een basis die geen eigen tijdsafhankelijk attribuut is: " + STILL_NOT
                     + "; de referentie-interpreter neemt alleen een eigen attribuut als basis (RUNTIME-SEMANTICS ch. 3.7)");
-        Lid basis = tijdlid(subject, b.attribuut(), false, wat);
-        if (!basis.datatype().isNumeriek())
-            throw new Weigering(wat + " over de basis '" + basis.naam() + "', die geen getal is (WF-091)");
-        if (basis.datatype().eenheidOf() != null)
-            throw new Weigering(wat + " over de basis '" + basis.naam() + "' met de eenheid "
-                    + basis.datatype().eenheidOf().weergave() + ": de herrekening van een tarief is omheind in de"
+        Member base = timeMember(subject, b.attribuut(), false, description);
+        if (!base.datatype().isNumeriek())
+            throw new Refusal(description + " over de basis '" + base.naam() + "', die geen getal is (WF-091)");
+        if (base.datatype().eenheidOf() != null)
+            throw new Refusal(description + " over de basis '" + base.naam() + "' met de eenheid "
+                    + base.datatype().eenheidOf().weergave() + ": de herrekening van een tarief is omheind in de"
                     + " referentie-interpreter en deze tak (RUNTIME-SEMANTICS ch. 3.7); geen golden");
-        if (basis.tijd().ordinal() < doel.tijd().ordinal())
-            throw new Weigering(wat + " over de basis '" + basis.naam() + "' met de granulariteit " + basis.tijd()
-                    + ", fijner dan de emmer " + doel.tijd() + ": de basis staat niet vast over een emmer (RUNTIME-SEMANTICS"
+        if (base.time().ordinal() < doel.time().ordinal())
+            throw new Refusal(description + " over de basis '" + base.naam() + "' met de granulariteit " + base.time()
+                    + ", fijner dan de emmer " + doel.time() + ": de basis staat niet vast over een emmer (RUNTIME-SEMANTICS"
                     + " ch. 3.7)");
-        String vast = Tijdlijnen.proRataVastRaster(subject, doel.naam(), f);
-        if (vast != null) throw new Weigering(wat + ": " + vast);
-        int basiswaarde = lez.tijdlijn(basis);
-        int onderwerp = lez.lid();
-        lez.markeerFalen();
-        String basisnaam = basis.naam();
-        Term evenredig = new Term.Aanroep(Functie.RS_TIJDSEVENREDIG, List.of(
-                new Term.Lees(conditie, bron(f.filter().bron())),
-                volledig(basiswaarde, "the pro-rata base \"" + basisnaam + "\" needs the full timeline; ", onderwerp,
+        String fixed = Timelines.proRataFixedGrid(subject, doel.naam(), f);
+        if (fixed != null) throw new Refusal(description + ": " + fixed);
+        int baseValue = lez.timeline(base);
+        int onderwerp = lez.member();
+        lez.markFail();
+        String baseName = base.naam();
+        Term proportional = new Term.Call(Aggregation.RS_TIME_PROPORTIONAL, List.of(
+                new Term.SlotValue(condition, bron(f.filter().bron())),
+                complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", onderwerp,
                         " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", bron(b.bron())),
-                constante(gran), constante(Tijdvak.class)), null);
-        return new Term.Aanroep(Functie.TIJDVAK_LIJST, List.of(evenredig), bron(f.bron()));
+                constant(gran), constant(Period.class)), null);
+        return new Term.Call(Aggregation.PERIOD_LIST, List.of(proportional), bron(f.bron()));
     }
 
     /**
      * The true periods of the gedurende clause {@code c} of a pro-rata part or a day count on {@code subject}, bound as a
-     * timeline ({@link Lezingen#tijdlijn}): a check of the subject's own characteristic on a timeline, as the reference
+     * timeline ({@link Reads#timeline}): a check of the subject's own characteristic on a timeline, as the reference
      * interpreter reads that clause (RUNTIME-SEMANTICS ch. 3.7, 3.8). Refused by name: no clause, another condition, a
      * negated or navigated check, and an owner or a whole-period qualifier on the check (WF-097).
      */
-    private int kniptijdlijn(Conditie c, Objecttype subject, Lezingen lez, String wat) {
+    private int clipTimeline(Conditie c, Objecttype subject, Reads lez, String description) {
         if (!(c instanceof Conditie.Kenmerk k))
-            throw new Weigering(wat + " met een voorwaarde die geen kenmerk van het onderwerp is"
-                    + (c == null ? " (geen voorwaarde)" : " ('" + snippet(c) + "')") + ": " + NOG_NIET
+            throw new Refusal(description + " met een voorwaarde die geen kenmerk van het onderwerp is"
+                    + (c == null ? " (geen voorwaarde)" : " ('" + snippet(c) + "')") + ": " + STILL_NOT
                     + "; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk (RUNTIME-SEMANTICS"
                     + " ch. 3.7, 3.8)");
         if (k.eigenaar() != null || k.periode() != null)
-            throw new Weigering(wat + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
+            throw new Refusal(description + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
                     + snippet(k) + "', WF-097)");
-        if (k.negatie() || k.navigatie() != null || navigatieBindingen.containsKey(k))
-            throw new Weigering(wat + " met een ontkend of genavigeerd kenmerk ('" + snippet(k) + "'): " + NOG_NIET
+        if (k.negatie() || k.navigatie() != null || path.containsKey(k))
+            throw new Refusal(description + " met een ontkend of genavigeerd kenmerk ('" + snippet(k) + "'): " + STILL_NOT
                     + "; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk, niet ontkend"
                     + " (RUNTIME-SEMANTICS ch. 3.7, 3.8)");
-        return lez.tijdlijn(tijdlid(subject, k.kenmerk(), true, wat));
+        return lez.timeline(timeMember(subject, k.kenmerk(), true, description));
     }
 
     /**
      * The forms other than the initialisation {@code r} on {@code type} that write the attribute {@code sleutel} on an
      * instance {@code r} writes too, by the names the producer index gives them, in its order: a rule, an allocation or
-     * a defaults group on {@code type}, an ancestor or a descendant of it ({@link #verwant}), read per concrete type as
+     * a defaults group on {@code type}, an ancestor or a descendant of it ({@link #related}), read per concrete type as
      * WF-079 reads the single-writer rule; forms on sister subtypes never write one instance. An object creation is no
-     * writer here: the member values it sets are the input of the object it makes ({@link #objectCreatie}), which the
+     * writer here: the member values it sets are the input of the object it makes ({@link #objectCreation}), which the
      * initialisation finds filled there.
      */
-    private List<String> andereSchrijvers(ResolvedRegel r, Objecttype type, ElementSleutel sleutel) {
-        Set<String> uit = new LinkedHashSet<>();
+    private List<String> otherWriters(ResolvedRegel r, Objecttype type, ElementSleutel sleutel) {
+        Set<String> out = new LinkedHashSet<>();
         for (ResolvedRegel x : model.resolvedRegels)
             if (x != r && x.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && x.doel() instanceof Expr.AttribuutRef d
-                    && d.objecttype() != null && d.attribuut() != null && verwant(d.objecttype(), type)
+                    && d.objecttype() != null && d.attribuut() != null && related(d.objecttype(), type)
                     && ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false).equals(sleutel))
-                uit.add(ProducentConsument.basisNaam(x.naam()));
+                out.add(ProducentConsument.basisNaam(x.naam()));
         for (ResolvedVerdeling v : model.verdelingen)
-            if (v.doelType() != null && v.doelAttribuut() != null && verwant(v.doelType(), type)
+            if (v.doelType() != null && v.doelAttribuut() != null && related(v.doelType(), type)
                     && ProducentConsument.elementVan(v.doelType(), v.doelAttribuut(), false).equals(sleutel))
-                uit.add(ProducentConsument.basisNaam(v.naam()));
+                out.add(ProducentConsument.basisNaam(v.naam()));
         for (int i = 0; i < defaults.size(); i++) {
             PrioritizedDefaults p = defaults.get(i);
             Objecttype t = model.objecttypeOpNaam(p.onderwerp());
-            if (t != null && p.doel() != null && !p.isKenmerk() && verwant(t, type)
+            if (t != null && p.doel() != null && !p.isKenmerk() && related(t, type)
                     && ProducentConsument.elementVan(t, p.doel(), false).equals(sleutel))
-                uit.add(p.naam() != null ? ProducentConsument.basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i);
+                out.add(p.naam() != null ? ProducentConsument.basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i);
         }
-        uit.remove(ProducentConsument.basisNaam(r.naam()));
-        return List.copyOf(uit);
+        out.remove(ProducentConsument.basisNaam(r.naam()));
+        return List.copyOf(out);
     }
 
     /** Whether one of the two types is the other or an ancestor of it: a form on the one then writes instances of the
      *  other, where two forms on sister types never meet on one instance (IR-SPEC ch. 2.2, WF-079). */
-    private static boolean verwant(Objecttype a, Objecttype b) {
+    private static boolean related(Objecttype a, Objecttype b) {
         return a.keten().contains(b) || b.keten().contains(a);
     }
 
@@ -1185,41 +1185,41 @@ public final class TmsTranspiler {
      * group writes. A rule beside a group its own type declares on the same target is no fold but two writers of one
      * target (WF-050), which this branch refuses by name: the fold leaves such a rule alone, and both would write.
      */
-    private Set<Class<?>> geabsorbeerd(Expr.AttribuutRef doel, Lid lid) {
-        if (!defaultsdoelen.contains(lid.sleutel())) return Set.of();
-        if (stapels.eigenGroep(doel.objecttype(), doel.attribuut()))
-            throw new Weigering("een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel ('" + lid.naam()
+    private Set<Class<?>> absorbed(Expr.AttribuutRef doel, Member member) {
+        if (!defaultsTargets.contains(member.sleutel())) return Set.of();
+        if (stapels.ownGroup(doel.objecttype(), doel.attribuut()))
+            throw new Refusal("een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel ('" + member.naam()
                     + "' van " + doel.objecttype().naam + "): een doel heeft één schrijver, de groep of de regel (WF-050)");
-        Set<Class<?>> uit = new LinkedHashSet<>();
-        for (Objecttype t : stapels.geabsorbeerdOp(doel.objecttype(), doel.attribuut())) uit.add(bonenklasse(t));
-        return uit;
+        Set<Class<?>> out = new LinkedHashSet<>();
+        for (Objecttype t : stapels.absorbedOn(doel.objecttype(), doel.attribuut())) out.add(beanClass(t));
+        return out;
     }
 
     /**
      * An initialisation (RUNTIME-SEMANTICS ch. 5.4): the left-hand side and the consequence of a computing rule, under a
      * guard that reads the input and the other writers' values, never its own write. The target must be empty on the
-     * bean, which holds the case input and is not written while the session fires, and no {@link Waarde} of another
+     * bean, which holds the case input and is not written while the session fires, and no {@link Value} of another
      * writer may stand on it, so a computed value displaces the initialisation whichever fires first, and a
      * computation that is leeg writes nothing and lets the initialisation fill the target (ch. 7.3). Its own
-     * {@link Waarde} carries its name as the writer and does not match the guard: the value is an equation like any
+     * {@link Value} carries its name as the writer and does not match the guard: the value is an equation like any
      * attribute write, withdrawn and computed again when a value it reads changes. A guard that counted the own write
      * blocked the initialisation the moment it wrote and truth maintenance withdrew the value: on one object the target
      * ended leeg without a message (A5 of the trial of card drools-logische-afleiding, and the first case of
      * {@code jutterswet-initialisatievolgorde} on this branch), on several the session reached the fire cap (measured
-     * 2026-10-08, {@code TmsInitialisatieWitnessTest}).
+     * 2026-10-08, {@code TmsInitialisationWitnessTest}).
      *
      * <p>A computing rule beside it that is outside the standing domain writes a computed leeg (ch. 1.2g). The guard
      * then reads the target as the other writers leave it, as the reference interpreter's guard reads the running fact
      * base: a value another writer places switches it off, and a leeg another writer writes leaves the target empty,
      * input or not, so the initialisation fills it and the two writers demand different values, the fault of ch. 5.7
-     * ({@link #verschilregel}).
+     * ({@link #differenceRule}).
      *
      * <p>Two initialisations on one target are ill-formed, conditional or not (IR-SPEC WF-079): where both apply,
      * nothing ranks them. The backend runs no verifier, so this refuses the pair by name, read per concrete type as
      * WF-079 reads it: two initialisations on one type, or on a type and its ancestor, write one instance, and two on
      * sister subtypes never do (ch. 7.10).
      *
-     * <p>Beside another writer of its target on an instance it writes ({@link #andereSchrijvers}: per concrete type, so
+     * <p>Beside another writer of its target on an instance it writes ({@link #otherWriters}: per concrete type, so
      * not a writer on a sister subtype) an initialisation is the lowest default (ch. 7.7), and only the default
      * that decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other
      * writer displaces it later. A division by zero there is a fault on an intermediate state: this branch inserts it as
@@ -1227,238 +1227,238 @@ public final class TmsTranspiler {
      * value, where the reference interpreter faults or answers the value depending on the order of the rules. Whether
      * such a fault counts waits on a decision of the norm, so a division in the condition or the value of an
      * initialisation beside another writer stays refused, with the predicate of a division in a default
-     * ({@code TmsInitialisatieWitnessTest}). Without another writer nothing displaces it and the division stays carried.
+     * ({@code TmsInitialisationWitnessTest}). Without another writer nothing displaces it and the division stays carried.
      */
-    private List<Regelplan> initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
-        Lid tijd = gedeclareerd(doel.objecttype(), doel.attribuut(), false);
-        if (tijd.tijd() != null)
-            throw new Weigering("een initialisatie van het tijdsafhankelijke attribuut '" + tijd.naam() + "' van "
-                    + tijd.declarant().naam + ": " + NOG_NIET + "; geen golden met cases heeft er een");
-        Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
-        ElementSleutel sleutel = lid.sleutel();
-        Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
-        List<ResolvedRegel> schrijvend = initialisaties.get(sleutel).stream()
-                .filter(x -> verwant(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype())).toList();
-        if (schrijvend.size() > 1)
-            throw new Weigering("twee of meer initialisaties op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
-                    + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList())
+    private List<RulePlan> initialisationRule(ResolvedRegel r, Expr.AttribuutRef doel) {
+        Member time = declared(doel.objecttype(), doel.attribuut(), false);
+        if (time.time() != null)
+            throw new Refusal("een initialisatie van het tijdsafhankelijke attribuut '" + time.naam() + "' van "
+                    + time.declarant().naam + ": " + STILL_NOT + "; geen golden met cases heeft er een");
+        Member member = member(doel.objecttype(), doel.attribuut(), false);
+        ElementSleutel sleutel = member.sleutel();
+        Set<Class<?>> absorbed = absorbed(doel, member);
+        List<ResolvedRegel> writing = initialisations.get(sleutel).stream()
+                .filter(x -> related(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype())).toList();
+        if (writing.size() > 1)
+            throw new Refusal("twee of meer initialisaties op één doel ('" + member.naam() + "' van " + member.declarant().naam
+                    + ": " + String.join(", ", writing.stream().map(x -> "\"" + x.naam() + "\"").toList())
                     + "), voorwaardelijk of niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de"
                     + " waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)");
         // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
-        boolean leegNaast = rekenregels.getOrDefault(sleutel, List.of()).stream().anyMatch(x ->
-                !staandeDoelen.staandScalair(x) && verwant(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype()));
-        List<String> anderen = andereSchrijvers(r, doel.objecttype(), sleutel);
-        String deling = deling(r.voorwaarde(), r.waarde());
-        if (deling != null && !anderen.isEmpty())
-            throw new Weigering("een deling in een initialisatie waarvan het doel nog een schrijver heeft ('" + deling
-                    + "'; '" + lid.naam() + "' van " + lid.declarant().naam + " wordt ook geschreven door "
-                    + String.join(", ", anderen.stream().map(x -> "\"" + x + "\"").toList()) + "): naast een andere"
+        boolean emptyBeside = computeRules.getOrDefault(sleutel, List.of()).stream().anyMatch(x ->
+                !standingTargets.standingScalar(x) && related(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype()));
+        List<String> others = otherWriters(r, doel.objecttype(), sleutel);
+        String division = division(r.voorwaarde(), r.waarde());
+        if (division != null && !others.isEmpty())
+            throw new Refusal("een deling in een initialisatie waarvan het doel nog een schrijver heeft ('" + division
+                    + "'; '" + member.naam() + "' van " + member.declarant().naam + " wordt ook geschreven door "
+                    + String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList()) + "): naast een andere"
                     + " schrijver is een initialisatie de laagste default (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak"
                     + " rekent haar uit zodra wat zij leest staat, ook waar de andere schrijver haar later verdringt; een"
                     + " deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de andere"
                     + " schrijver beslist, waar de referentie afhankelijk van de volgorde van de regels een fout of de"
                     + " waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)");
         String naam = r.naam();
-        Alfa.Veldtoets vanDoel = new Alfa.Veldtoets("attribuut", Alfa.Vergelijker.GELIJK, sleutel);
-        Alfa.Veldtoets vanAnder = new Alfa.Veldtoets("schrijver", Alfa.Vergelijker.NIET_GELIJK, naam);
-        if (!leegNaast)
-            return schrijfregel(r, doel.objecttype(), lid, lez -> {
-                lez.onderwerpAlfa(new Alfa(id("doel-leeg-in-de-invoer"),
-                        List.of(new Alfa.Veldtoets(lid.naam(), Alfa.Vergelijker.LEEG, null))));
-                Alfa ander = new Alfa(id("andere-schrijver"), List.of(vanDoel, vanAnder));
-                return List.of(new Niet(new Patroon(Waarde.class, "$andere_schrijver", List.of(ander),
-                        List.of(new Join(id("andere-schrijver-onderwerp"), "onderwerp", ONDERWERP)), List.of())));
-            }, geabsorbeerd, false);
-        return schrijfregel(r, doel.objecttype(), lid, lez -> {
-            Alfa ander = new Alfa(id("andere-schrijver"),
-                    List.of(vanDoel, vanAnder, new Alfa.Veldtoets("waarde", Alfa.Vergelijker.GEVULD, null)));
-            Join anderOpOnderwerp = new Join(id("andere-schrijver-onderwerp"), "onderwerp", ONDERWERP);
-            Alfa leeg = new Alfa(id("lege-schrijver"),
-                    List.of(vanDoel, vanAnder, new Alfa.Veldtoets("waarde", Alfa.Vergelijker.LEEG, null)));
-            Join leegOpOnderwerp = new Join(id("lege-schrijver-onderwerp"), "onderwerp", ONDERWERP);
-            int legen = lez.legeSchrijvers();
-            int onderwerp = lez.lid();
+        Alpha.FieldTest ofTarget = new Alpha.FieldTest("attribuut", Alpha.Comparator.GELIJK, sleutel);
+        Alpha.FieldTest ofOther = new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, naam);
+        if (!emptyBeside)
+            return writeRule(r, doel.objecttype(), member, lez -> {
+                lez.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"),
+                        List.of(new Alpha.FieldTest(member.naam(), Alpha.Comparator.LEEG, null))));
+                Alpha earlierBean = new Alpha(id("andere-schrijver"), List.of(ofTarget, ofOther));
+                return List.of(new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(earlierBean),
+                        List.of(new Join(id("andere-schrijver-onderwerp"), "onderwerp", SUBJECT)), List.of())));
+            }, absorbed, false);
+        return writeRule(r, doel.objecttype(), member, lez -> {
+            Alpha earlierBean = new Alpha(id("andere-schrijver"),
+                    List.of(ofTarget, ofOther, new Alpha.FieldTest("waarde", Alpha.Comparator.GEVULD, null)));
+            Join otherOnSubject = new Join(id("andere-schrijver-onderwerp"), "onderwerp", SUBJECT);
+            Alpha empty = new Alpha(id("lege-schrijver"),
+                    List.of(ofTarget, ofOther, new Alpha.FieldTest("waarde", Alpha.Comparator.LEEG, null)));
+            Join emptyOnSubject = new Join(id("lege-schrijver-onderwerp"), "onderwerp", SUBJECT);
+            int emptyWriterCount = lez.emptyWriters();
+            int onderwerp = lez.member();
             // the target's input on the subject's bean, as it is, which the guard tests for leeg as the first variant's
             // constraint does; read in the test, so the executable model binds no value of it
-            Term invoer = new Term.Invoer(new Term.Lees(onderwerp, null), new Binding.Veld(lid.klasse(), lid.naam()),
-                    Binding.Leesvorm.WAARDE, null);
-            Term doelLeeg = new Term.Aanroep(Functie.DOEL_LEEG, List.of(new Term.Lees(legen, null), invoer), null);
+            Term invoer = new Term.Invoer(new Term.SlotValue(onderwerp, null), new Binding.Field(member.javaClass(), member.naam()),
+                    Binding.ReadForm.VALUE, null);
+            Term targetEmpty = new Term.Call(Aggregation.TARGET_EMPTY, List.of(new Term.SlotValue(emptyWriterCount, null), invoer), null);
             return List.of(
-                    new Niet(new Patroon(Waarde.class, "$andere_schrijver", List.of(ander), List.of(anderOpOnderwerp),
+                    new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(earlierBean), List.of(otherOnSubject),
                             List.of())),
-                    new Accumulatie(new Patroon(Waarde.class, "$lege_schrijver", List.of(leeg), List.of(leegOpOnderwerp),
-                            List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, "$lege_schrijvers"))),
-                    new Toetsitem(id("doel-leeg"), Toetsitem.Rol.VORM, doelLeeg, -1, List.of(legen, onderwerp),
-                            lez.grootte()));
-        }, geabsorbeerd, false);
+                    new Accumulation(new FactPattern(Value.class, "$lege_schrijver", List.of(empty), List.of(emptyOnSubject),
+                            List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$lege_schrijvers"))),
+                    new TestItem(id("doel-leeg"), TestItem.Role.VORM, targetEmpty, -1, List.of(emptyWriterCount, onderwerp),
+                            lez.size()));
+        }, absorbed, false);
     }
 
     /**
      * The rule of a form that writes an attribute of its subject: the subject pattern with the reads its condition and
      * its value bind there, the standing patterns of what it reads elsewhere, one test over every value the condition
-     * reads, the {@code blokkade} the form adds (null for none), and a consequence that computes the value from the
-     * values it binds and inserts a {@link Waarde} logically, with the form's name as the writer, when the value is
-     * gevuld, or also when it is leeg where {@code schrijftLeeg} (a computing rule outside the standing domain, ch.
-     * 1.2g), beside the §6.5 deposit {@link #rekenRegel} describes. Where the value faults, the consequence inserts the
-     * {@link Fout} instead, and neither the value nor a deposit. Objects of a class in {@code geabsorbeerd} do not
-     * match: an effective stack writes the target there ({@link #geabsorbeerd}). Beside it, where the condition can
-     * fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
+     * reads, the {@code blockade} the form adds (null for none), and a consequence that computes the value from the
+     * values it binds and inserts a {@link Value} logically, with the form's name as the writer, when the value is
+     * gevuld, or also when it is leeg where {@code writesEmpty} (a computing rule outside the standing domain, ch.
+     * 1.2g), beside the §6.5 deposit {@link #computeRule} describes. Where the value faults, the consequence inserts the
+     * {@link Fout} instead, and neither the value nor a deposit. Objects of a class in {@code absorbed} do not
+     * match: an effective stack writes the target there ({@link #absorbed}). Beside it, where the condition can
+     * fault, the rule that inserts its fault ({@link #conditionFaultRule}).
      */
-    private List<Regelplan> schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
-                                         Function<Lezingen, List<LhsItem>> blokkade, Set<Class<?>> geabsorbeerd,
-                                         boolean schrijftLeeg) {
-        ElementSleutel sleutel = lid.sleutel();
-        Supplier<Lezingen> nieuw = () -> lezingen(subject, geabsorbeerd).geldig(r.geldigheid());
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
-        boolean kanFalen = lez.kanFalen();
+    private List<RulePlan> writeRule(ResolvedRegel r, Objecttype subject, Member member,
+                                         Function<Reads, List<LhsItem>> blockade, Set<Class<?>> absorbed,
+                                         boolean writesEmpty) {
+        ElementSleutel sleutel = member.sleutel();
+        Supplier<Reads> recomputed = () -> lezingen(subject, absorbed).valid(r.geldigheid());
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
+        boolean canFail = lez.canFail();
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
+        Set<Integer> use = lez.follow();
         // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6); a
         // timeline is written as its producer computes it, as in the reference interpreter (ch. 3.7)
-        Term waarde = lid.tijd() != null
-                ? tijdlijnwaarde((Expr.Functie) r.waarde(), lid, subject, lez)
-                : herschaald(waarde(r.waarde(), lez), eff.eenheidVan(r.waarde()), lid.datatype().eenheidOf(),
+        Term waarde = member.time() != null
+                ? timelineValue((Expr.Functie) r.waarde(), member, subject, lez)
+                : rescaled(waarde(r.waarde(), lez), eff.unitOf(r.waarde()), member.datatype().eenheidOf(),
                         "een §4 schrijfgrens naar het doel");
         lez.stop();
-        int sonde = lez.sondeplaats();
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, r.voorwaarde());
-        if (blokkade != null) items.addAll(blokkade.apply(lez));
+        int depositFlag = lez.depositFlagSlot();
+        List<LhsItem> items = lez.plan(conditionRole(canFail), testTerm, read, r.voorwaarde());
+        if (blockade != null) items.addAll(blockade.apply(lez));
         String naam = r.naam();
-        String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        Gevolg gevolg = new Gevolg.Waarde(ONDERWERP, sleutel, naam, waarde, List.copyOf(gebruik), lez.grootte(), true,
-                schrijftLeeg, sonde < 0 ? null : new Gevolg.Deponering(sonde, naam), new Gevolg.Foutnaam(naam, regelnaam),
-                Gevolg.Invoeging.LOGISCH);
-        afgeleid.put(sleutel, lid);
-        lez.vastleggen();
-        List<Regelplan> uit = new ArrayList<>();
-        uit.add(lez.regelplan(regelnaam, items, gevolg));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade));
-        Regelplan deponering = deponeerregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade);
-        if (deponering != null) uit.add(deponering);
-        return uit;
+        String ruleName = model.geëmitteerdeRegelNaam(naam);
+        Consequence consequence = new Consequence.Value(SUBJECT, sleutel, naam, waarde, List.copyOf(use), lez.size(), true,
+                writesEmpty, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, naam), new Consequence.FaultName(naam, ruleName),
+                Consequence.Insertion.LOGICAL);
+        derived.put(sleutel, member);
+        lez.recorder();
+        List<RulePlan> out = new ArrayList<>();
+        out.add(lez.rulePlan(ruleName, items, consequence));
+        if (canFail) out.add(conditionFaultRule(naam, ruleName, recomputed, r.voorwaarde(), blockade));
+        RulePlan deposit = depositRule(naam, ruleName, recomputed, r.voorwaarde(), blockade);
+        if (deposit != null) out.add(deposit);
+        return out;
     }
 
     /** The reads of a rule on {@code subject}, whose subject pattern leaves out the objects of a class in
-     *  {@code geabsorbeerd}: an effective stack writes the target there ({@link #geabsorbeerd}). The plan carries the
-     *  classes in the order of the document's types, as {@code geabsorbeerd} lists them: an immutable copy by
+     *  {@code absorbed}: an effective stack writes the target there ({@link #absorbed}). The plan carries the
+     *  classes in the order of the document's types, as {@code absorbed} lists them: an immutable copy by
      *  {@code Set.copyOf} iterates in an order that differs per run, and a rendering into text must be the same in
      *  every run. */
-    private Lezingen lezingen(Objecttype subject, Set<Class<?>> geabsorbeerd) {
-        Lezingen lez = new Lezingen(subject);
-        if (!geabsorbeerd.isEmpty())
-            lez.onderwerpAlfa(new Alfa(id("niet-in-een-stapel"), List.of(new Alfa.Veldtoets(null,
-                    Alfa.Vergelijker.KLASSE_NIET_IN, Collections.unmodifiableSet(new LinkedHashSet<>(geabsorbeerd))))));
+    private Reads lezingen(Objecttype subject, Set<Class<?>> absorbed) {
+        Reads lez = new Reads(subject);
+        if (!absorbed.isEmpty())
+            lez.addSubjectAlpha(new Alpha(id("niet-in-een-stapel"), List.of(new Alpha.FieldTest(null,
+                    Alpha.Comparator.CLASS_NOT_IN, Collections.unmodifiableSet(new LinkedHashSet<>(absorbed))))));
         return lez;
     }
 
     // ---------------- two writers of one target ----------------
 
     /**
-     * The rules of {@link #verschilregel}, one per attribute on which two writers can stand at the fixpoint on one
+     * The rules of {@link #differenceRule}, one per attribute on which two writers can stand at the fixpoint on one
      * object: two or more computing rules, or a computing rule outside the standing domain beside an initialisation,
      * whose guard a written leeg leaves open (ch. 5.4). An initialisation beside a standing rule needs none: its guard
      * keeps it from standing beside the rule's value, and the rule writes nothing for a computed leeg.
      */
-    private List<Regelplan> verschilregels() {
-        List<Regelplan> uit = new ArrayList<>();
-        for (Map.Entry<ElementSleutel, List<ResolvedRegel>> e : rekenregels.entrySet()) {
-            Lid lid = afgeleid.get(e.getKey());
+    private List<RulePlan> differenceRules() {
+        List<RulePlan> out = new ArrayList<>();
+        for (Map.Entry<ElementSleutel, List<ResolvedRegel>> e : computeRules.entrySet()) {
+            Member member = derived.get(e.getKey());
             // no writer of the attribute was lowered: the manifest names the refused forms, and the build fails on them
-            if (lid == null) continue;
-            boolean leegNaastInitialisatie = e.getValue().stream().anyMatch(r -> !staandeDoelen.staandScalair(r))
-                    && !initialisaties.getOrDefault(e.getKey(), List.of()).isEmpty();
-            if (e.getValue().size() > 1 || leegNaastInitialisatie) uit.add(verschilregel(lid));
+            if (member == null) continue;
+            boolean emptyBesideInitialisation = e.getValue().stream().anyMatch(r -> !standingTargets.standingScalar(r))
+                    && !initialisations.getOrDefault(e.getKey(), List.of()).isEmpty();
+            if (e.getValue().size() > 1 || emptyBesideInitialisation) out.add(differenceRule(member));
         }
-        return uit;
+        return out;
     }
 
     /**
      * The fault of RUNTIME-SEMANTICS ch. 5.7 as a logical fact: per object of the declaring type of {@code lid}, an
-     * accumulate over the {@link Waarde} facts on that object's attribute, and where they hold different values a
+     * accumulate over the {@link Value} facts on that object's attribute, and where they hold different values a
      * {@link Fout} with the {@link Schrijversconflict} that names the writers in the order of the document, under the
      * first of them. The fault rests on the values that stand, so a difference that exists on an intermediate state only
      * goes again when a writer's condition or value changes, and the session reports the differences that stand at its
      * fixpoint, as it reports every evaluation fault ({@link #zetAfgeleideWaarden}).
      */
-    private Regelplan verschilregel(Lid lid) {
-        ElementSleutel sleutel = lid.sleutel();
-        Alfa vanDoel = gelijk(id("waarde"), "attribuut", sleutel);
-        Join opOnderwerp = new Join(id("waarde-onderwerp"), "onderwerp", ONDERWERP);
-        Toetsitem verschil = new Toetsitem(id("verschil"), Toetsitem.Rol.VORM,
-                new Term.Aanroep(Functie.VERSCHILLEN, List.of(new Term.Lees(0, null)), null), -1, List.of(0), 1);
-        return new Regelplan("schrijvers " + lid.declarant().naam + "." + lid.naam() + ": verschil", null, null,
-                new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, Leessoort.WAARDEN,
+    private RulePlan differenceRule(Member member) {
+        ElementSleutel sleutel = member.sleutel();
+        Alpha ofTarget = equal(id("waarde"), "attribuut", sleutel);
+        Join onSubject = new Join(id("waarde-onderwerp"), "onderwerp", SUBJECT);
+        TestItem difference = new TestItem(id("verschil"), TestItem.Role.VORM,
+                new Term.Call(Aggregation.DIFFER, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
+        return new RulePlan("schrijvers " + member.declarant().naam + "." + member.naam() + ": verschil", null, null,
+                new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.VALUES,
                         "waarden", "$waarden"))),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()),
-                        new Accumulatie(new Patroon(Waarde.class, "$waarde", List.of(vanDoel), List.of(opOnderwerp),
-                                List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, "$waarden"))),
-                        verschil),
-                new Gevolg.Schrijversconflict(ONDERWERP, 0, sleutel, lid.naam(), documentvolgorde, typeklassen, typen,
-                        Gevolg.Invoeging.LOGISCH));
+                List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()),
+                        new Accumulation(new FactPattern(Value.class, "$waarde", List.of(ofTarget), List.of(onSubject),
+                                List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$waarden"))),
+                        difference),
+                new Consequence.Schrijversconflict(SUBJECT, 0, sleutel, member.naam(), documentOrder, typeClasses, typen,
+                        Consequence.Insertion.LOGICAL));
     }
 
     // ---------------- an evaluation fault in a condition ----------------
 
     /**
-     * The rule that inserts the fault of a condition that can fault, beside the rule {@code regelnaam} of the form
+     * The rule that inserts the fault of a condition that can fault, beside the rule {@code ruleName} of the form
      * {@code vorm} that tests the condition. A condition is tested in the left-hand side, and an exception there leaves
      * the fire, where truth maintenance cannot withdraw it when the reads it rested on change; the form's own rule
-     * therefore tests the condition with the role {@link Toetsitem.Rol#ZONDER_FOUT}, which does not hold where it
+     * therefore tests the condition with the role {@link TestItem.Role#ZONDER_FOUT}, which does not hold where it
      * faults, and this rule, whose left-hand side is that rule's own built again over fresh declarations ({@code nieuw}
-     * sets up the subject pattern and what precedes it), with the same {@code blokkade} after the test and the test of
-     * the role {@link Toetsitem.Rol#FOUT}, that the condition faults, inserts the named {@link Fout} logically, on the
+     * sets up the subject pattern and what precedes it), with the same {@code blockade} after the test and the test of
+     * the role {@link TestItem.Role#FOUT}, that the condition faults, inserts the named {@link Fout} logically, on the
      * subject of the form. It fires exactly where the form's rule tests the condition and the test faults, and the
      * fault goes when a read it rested on changes. The sentence
      * names the form's rule. A condition faults also where it
-     * reaches a fold whose filter faulted for a member ({@link #vouw}); the filter itself inserts no fault
-     * ({@link #filterfoutregel}).
+     * reaches a fold whose filter faulted for a member ({@link #fold}); the filter itself inserts no fault
+     * ({@link #filterErrorRule}).
      */
-    private Regelplan voorwaardefoutregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                                          Function<Lezingen, List<LhsItem>> blokkade) {
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = voorwaarde(c, lez);
+    private RulePlan conditionFaultRule(String vorm, String ruleName, Supplier<Reads> recomputed, Conditie c,
+                                          Function<Reads, List<LhsItem>> blockade) {
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = voorwaarde(c, lez);
         lez.stop();
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.FOUT, toets, gelezen, c);
-        if (blokkade != null) items.addAll(blokkade.apply(lez));
-        Gevolg fout = new Gevolg.Toetsfout(ONDERWERP, toets, Toetsitem.Rol.FOUT, List.copyOf(gelezen), lez.grootte(),
-                new Gevolg.Foutnaam(vorm, model.geëmitteerdeRegelNaam(vorm)), Gevolg.Invoeging.LOGISCH);
-        lez.vastleggen();
-        return lez.regelplan(regelnaam + ": fout in de voorwaarde", items, fout);
+        List<LhsItem> items = lez.plan(TestItem.Role.FAULT, testTerm, read, c);
+        if (blockade != null) items.addAll(blockade.apply(lez));
+        Consequence fout = new Consequence.TestFault(SUBJECT, testTerm, TestItem.Role.FAULT, List.copyOf(read), lez.size(),
+                new Consequence.FaultName(vorm, model.geëmitteerdeRegelNaam(vorm)), Consequence.Insertion.LOGICAL);
+        lez.recorder();
+        return lez.rulePlan(ruleName + ": fout in de voorwaarde", items, fout);
     }
 
     /** The role of the test of a condition in the rule of its form: where the condition can fault it is tested without
-     *  its fault, which the fault rule takes ({@link #voorwaardefoutregel}). */
-    private static Toetsitem.Rol voorwaarderol(boolean kanFalen) {
-        return kanFalen ? Toetsitem.Rol.ZONDER_FOUT : Toetsitem.Rol.VOORWAARDE;
+     *  its fault, which the fault rule takes ({@link #conditionFaultRule}). */
+    private static TestItem.Role conditionRole(boolean canFail) {
+        return canFail ? TestItem.Role.WITHOUT_FAULT : TestItem.Role.CONDITION;
     }
 
     /**
      * The rule that deposits the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 for the condition {@code c} of
-     * {@code vorm}, whose rule is {@code regelnaam}: the reference interpreter deposits wherever its evaluation of a
+     * {@code vorm}, whose rule is {@code ruleName}: the reference interpreter deposits wherever its evaluation of a
      * condition divides a filled dividend by a leeg divisor or takes the root of a negative number, whether the condition
      * then holds or not (ch. 5.6), and only at the places that evaluation reaches (ch. 5.10). A condition is tested in the
      * left-hand side, where Drools inserts nothing, so a rule of the form's own, with the same left-hand side
-     * ({@code blokkade} included) and the test that evaluating the condition reaches such a place ({@link Sonde}),
+     * ({@code blockade} included) and the test that evaluating the condition reaches such a place ({@link DepositFlag}),
      * inserts the deposit logically under the form and the subject; it goes when a read it rested on changes. Null where
      * {@code c} holds no division and no root.
      */
-    private Regelplan deponeerregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                                    Function<Lezingen, List<LhsItem>> blokkade) {
-        if (!deponeert(c)) return null;
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = voorwaarde(c, lez);
+    private RulePlan depositRule(String vorm, String ruleName, Supplier<Reads> recomputed, Conditie c,
+                                    Function<Reads, List<LhsItem>> blockade) {
+        if (!deposits(c)) return null;
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = voorwaarde(c, lez);
         lez.stop();
-        int sonde = lez.sondeplaats();
-        if (sonde < 0) throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" deelt, maar kreeg geen sonde");
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.DEPONERING, toets, gelezen, c);
-        if (blokkade != null) items.addAll(blokkade.apply(lez));
-        lez.vastleggen();
-        return lez.regelplan(regelnaam + ": deponering in de voorwaarde", items,
-                new Gevolg.Inconsistentie(ONDERWERP, vorm, Gevolg.Invoeging.LOGISCH));
+        int depositFlag = lez.depositFlagSlot();
+        if (depositFlag < 0) throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" deelt, maar kreeg geen sonde");
+        List<LhsItem> items = lez.plan(TestItem.Role.DEPOSIT, testTerm, read, c);
+        if (blockade != null) items.addAll(blockade.apply(lez));
+        lez.recorder();
+        return lez.rulePlan(ruleName + ": deponering in de voorwaarde", items,
+                new Consequence.Inconsistency(SUBJECT, vorm, Consequence.Insertion.LOGICAL));
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -1474,169 +1474,169 @@ public final class TmsTranspiler {
      * against a second firing. A violation found against a transient value goes when that value changes; the
      * destructive lowering, until card tms-omschakeling, ordered the consistency after the writers of what it reads
      * instead and never withdrew one, which reaches the same fixpoint. An assertion that faults is no violation: beside
-     * the rule, where the assertion can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
+     * the rule, where the assertion can fault, the rule that inserts its fault ({@link #conditionFaultRule}).
      */
-    private List<Regelplan> consistentieRegels(ResolvedConsistentie c) {
+    private List<RulePlan> consistencyRules(ResolvedConsistentie c) {
         // the rule is named by the form, and the channel test reads the error facts by that name
-        if (c.naam() == null) throw new Weigering("een consistentie zonder naam (WF-107)");
-        if (c.subject() == null || c.assertie() == null) throw new Weigering("een consistentie zonder subject of assertie");
-        Supplier<Lezingen> nieuw = () -> new Lezingen(c.subject()).geldig(c.geldigheid());
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term houdt = voorwaarde(c.assertie(), lez);
-        boolean kanFalen = lez.kanFalen();
+        if (c.naam() == null) throw new Refusal("een consistentie zonder naam (WF-107)");
+        if (c.subject() == null || c.assertie() == null) throw new Refusal("een consistentie zonder subject of assertie");
+        Supplier<Reads> recomputed = () -> new Reads(c.subject()).valid(c.geldigheid());
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term holds = voorwaarde(c.assertie(), lez);
+        boolean canFail = lez.canFail();
         lez.stop();
-        Term geschonden = new Term.Aanroep(Functie.NIET, List.of(houdt), bron(c.assertie().bron()));
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), geschonden, gelezen, c.assertie());
+        Term geschonden = new Term.Call(Aggregation.NIET, List.of(holds), bron(c.assertie().bron()));
+        List<LhsItem> items = lez.plan(conditionRole(canFail), geschonden, read, c.assertie());
         String naam = c.naam();
-        lez.vastleggen();
-        List<Regelplan> uit = new ArrayList<>();
-        uit.add(lez.regelplan(model.geëmitteerdeRegelNaam(naam), items,
-                new Gevolg.Inconsistentie(ONDERWERP, naam, Gevolg.Invoeging.LOGISCH)));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null));
-        Regelplan deponering = deponeerregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null);
-        if (deponering != null) uit.add(deponering);
-        Regelplan zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(naam), naam, c.geldigheid());
-        if (zonderDatum != null) uit.add(zonderDatum);
-        return uit;
+        lez.recorder();
+        List<RulePlan> out = new ArrayList<>();
+        out.add(lez.rulePlan(model.geëmitteerdeRegelNaam(naam), items,
+                new Consequence.Inconsistency(SUBJECT, naam, Consequence.Insertion.LOGICAL)));
+        if (canFail) out.add(conditionFaultRule(naam, model.geëmitteerdeRegelNaam(naam), recomputed, c.assertie(), null));
+        RulePlan deposit = depositRule(naam, model.geëmitteerdeRegelNaam(naam), recomputed, c.assertie(), null);
+        if (deposit != null) out.add(deposit);
+        RulePlan withoutDate = validityFault(model.geëmitteerdeRegelNaam(naam), naam, c.geldigheid());
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
     }
 
-    /** A uniqueness over one source (RUNTIME-SEMANTICS ch. 5.9), unscoped or scoped by a parent ({@link #uniciteitsregels}). */
-    private List<Regelplan> uniciteitRegels(ResolvedUniciteit u) {
-        if (u.subject() == null || u.sleutels().isEmpty()) throw new Weigering("een Uniqueness zonder bron of sleutel");
-        return uniciteitsregels(u.naam(), List.of(new ResolvedUniciteitUnie.Bron(u.subject(), u.sleutels())),
+    /** A uniqueness over one source (RUNTIME-SEMANTICS ch. 5.9), unscoped or scoped by a parent ({@link #unionUniquenessRules}). */
+    private List<RulePlan> uniquenessRules(ResolvedUniciteit u) {
+        if (u.subject() == null || u.sleutels().isEmpty()) throw new Refusal("een Uniqueness zonder bron of sleutel");
+        return unionUniquenessRules(u.naam(), List.of(new ResolvedUniciteitUnie.Bron(u.subject(), u.sleutels())),
                 u.scopeRol(), u.geldigheid());
     }
 
     /** A uniqueness over two or more sources, the union of ch. 5.9, rule 1: one key domain, compared position by
      *  position, so every source carries as many keys (WF-030); a union has no scope (rule 3). */
-    private List<Regelplan> uniciteitUnieRegels(ResolvedUniciteitUnie u) {
+    private List<RulePlan> uniquenessUnionRules(ResolvedUniciteitUnie u) {
         if (u.bronnen().size() < 2)
-            throw new Weigering("een Uniqueness over meer bronnen met " + u.bronnen().size() + " bron: een unie draagt er"
+            throw new Refusal("een Uniqueness over meer bronnen met " + u.bronnen().size() + " bron: een unie draagt er"
                     + " ten minste twee (WF-030)");
         int ariteit = u.bronnen().get(0).sleutels().size();
         for (ResolvedUniciteitUnie.Bron b : u.bronnen())
             if (b.type() == null || b.sleutels().size() != ariteit)
-                throw new Weigering("een Uniqueness over meer bronnen met sleutels van ongelijke ariteit of een bron zonder"
+                throw new Refusal("een Uniqueness over meer bronnen met sleutels van ongelijke ariteit of een bron zonder"
                         + " type: de sleutels worden positie voor positie vergeleken (WF-030)");
-        return uniciteitsregels(u.naam(), u.bronnen(), null, u.geldigheid());
+        return unionUniquenessRules(u.naam(), u.bronnen(), null, u.geldigheid());
     }
 
     /**
      * A uniqueness (RUNTIME-SEMANTICS ch. 5.6, 5.9): a key that more than one row carries marks every instance that
      * carries it on the §9.5 channel, under the form's name. A key rule per source, over the instances of the source's
      * type, binds the key components (a derived one through its standing) and, for a scoped form, the parent, and
-     * inserts the instance's {@link Uniciteitssleutel} logically where every component is gevuld and the parent is
+     * inserts the instance's {@link UniquenessKey} logically where every component is gevuld and the parent is
      * there: an empty component never collides, and an instance without a parent takes no part (rule 2). The violation
      * rule binds each key and counts the keys that collide with it, itself included, with an accumulate; where more
-     * than one does it inserts the instance's {@link Uniciteitsschending}, which the channel rule turns into the §9.5
+     * than one does it inserts the instance's {@link UniquenessViolation}, which the channel rule turns into the §9.5
      * inconsistency, one per instance, also where two sources of a union reach it. A key belongs to its source, so an
      * instance that two sources reach with an equal key duplicates against itself (rule 1). Every fact is logical, so a
      * duplicate that arises on an intermediate state goes when the keys move on, and the channel holds what stands at
      * the fixpoint, where the reference interpreter evaluates the form (ch. 5.9). A key on a timeline reads
-     * ever-uniqueness: one key per value its timeline ever carries ({@link #sleutelregel}), so two instances collide
+     * ever-uniqueness: one key per value its timeline ever carries ({@link #keyRule}), so two instances collide
      * where they ever carried one value, and an instance whose key the case gives as the asOfDate-bucket scalar faults
-     * ({@link #sleutelvormregel}, ch. 8.4). A scope over a relation a form creates is refused.
+     * ({@link #keyFormRule}, ch. 8.4). A scope over a relation a form creates is refused.
      */
-    private List<Regelplan> uniciteitsregels(String naam, List<ResolvedUniciteitUnie.Bron> bronnen,
-                                             RolBindingRef scopeRol, Geldigheid geldigheid) {
+    private List<RulePlan> unionUniquenessRules(String naam, List<ResolvedUniciteitUnie.Bron> sources,
+                                             RolBindingRef scopeRole, Geldigheid validity) {
         // the rules are named by the form, and the channel test reads the error facts by that name
-        if (naam == null) throw new Weigering("een Uniqueness zonder naam (WF-107)");
-        String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        List<Regelplan> uit = new ArrayList<>();
-        for (int b = 0; b < bronnen.size(); b++) {
-            uit.add(sleutelregel(naam, regelnaam, b, bronnen.get(b), scopeRol, geldigheid));
-            Regelplan vorm = sleutelvormregel(naam, regelnaam, b, bronnen.get(b), geldigheid);
-            if (vorm != null) uit.add(vorm);
+        if (naam == null) throw new Refusal("een Uniqueness zonder naam (WF-107)");
+        String ruleName = model.geëmitteerdeRegelNaam(naam);
+        List<RulePlan> out = new ArrayList<>();
+        for (int b = 0; b < sources.size(); b++) {
+            out.add(keyRule(naam, ruleName, b, sources.get(b), scopeRole, validity));
+            RulePlan vorm = keyFormRule(naam, ruleName, b, sources.get(b), validity);
+            if (vorm != null) out.add(vorm);
         }
-        Patroon sleutel = new Patroon(Uniciteitssleutel.class, "$sleutel", List.of(gelijk(id("uniciteit"), "uniciteit",
-                naam)), List.of(), List.of(Binding.van("$element", Uniciteitssleutel.class, "element")));
-        Alfa vanUniciteit = gelijk(id("uniciteit"), "uniciteit", naam);
-        Betatoets botsing = new Betatoets(id("botsing"), Functie.BOTST_MET, "$sleutel");
-        Accumulatie botsingen = new Accumulatie(new Patroon(Uniciteitssleutel.class, "$ander", List.of(vanUniciteit),
-                List.of(), List.of(botsing), List.of()),
-                List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, "$botsingen")));
-        Leestabel tabel = new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0,
-                Leessoort.BOTSINGEN, "botsingen", "$botsingen")));
-        Toetsitem dubbel = new Toetsitem(id("dubbel"), Toetsitem.Rol.VORM,
-                new Term.Aanroep(Functie.DUBBEL, List.of(new Term.Lees(0, null)), null), -1, List.of(0), 1);
-        uit.add(new Regelplan(regelnaam, vorm, null, tabel, List.of(sleutel, botsingen, dubbel),
-                new Gevolg.Uniciteitsschending("$element", naam, Gevolg.Invoeging.LOGISCH)));
-        Patroon schending = new Patroon(Uniciteitsschending.class, "$schending", List.of(gelijk(id("schending"),
-                "uniciteit", naam)), List.of(), List.of(Binding.van("$subject", Uniciteitsschending.class, "element")));
-        uit.add(new Regelplan(regelnaam + ": kanaal", vorm, null, new Leestabel(List.of()),
-                List.of(schending), new Gevolg.Inconsistentie("$subject", naam, Gevolg.Invoeging.LOGISCH)));
-        Regelplan zonderDatum = geldigheidsfout(regelnaam, naam, geldigheid);
-        if (zonderDatum != null) uit.add(zonderDatum);
-        return uit;
+        FactPattern sleutel = new FactPattern(UniquenessKey.class, "$sleutel", List.of(equal(id("uniciteit"), "uniqueness",
+                naam)), List.of(), List.of(Binding.van("$element", UniquenessKey.class, "element")));
+        Alpha ofUniqueness = equal(id("uniciteit"), "uniqueness", naam);
+        BetaTest collision = new BetaTest(id("botsing"), Aggregation.COLLIDES_WITH, "$sleutel");
+        Accumulation collisions = new Accumulation(new FactPattern(UniquenessKey.class, "$ander", List.of(ofUniqueness),
+                List.of(), List.of(collision), List.of()),
+                List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$botsingen")));
+        ReadTable table = new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
+                ReadKind.COLLISIONS, "botsingen", "$botsingen")));
+        TestItem duplicate = new TestItem(id("dubbel"), TestItem.Role.VORM,
+                new Term.Call(Aggregation.DUPLICATE, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
+        out.add(new RulePlan(ruleName, vorm, null, table, List.of(sleutel, collisions, duplicate),
+                new Consequence.UniquenessViolation("$element", naam, Consequence.Insertion.LOGICAL)));
+        FactPattern violation = new FactPattern(UniquenessViolation.class, "$schending", List.of(equal(id("schending"),
+                "uniqueness", naam)), List.of(), List.of(Binding.van("$subject", UniquenessViolation.class, "element")));
+        out.add(new RulePlan(ruleName + ": kanaal", vorm, null, new ReadTable(List.of()),
+                List.of(violation), new Consequence.Inconsistency("$subject", naam, Consequence.Insertion.LOGICAL)));
+        RulePlan withoutDate = validityFault(ruleName, naam, validity);
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
     }
 
     /** The key rule of source {@code b} of the uniqueness {@code naam}: over the instances of the source's type, gated
      *  on the evaluation date by the form's validity, the key components and the parent bound, and the instance's
-     *  {@link Uniciteitssleutel} inserted logically where it takes part ({@link #uniciteitsregels}). An enumeration
+     *  {@link UniquenessKey} inserted logically where it takes part ({@link #unionUniquenessRules}). An enumeration
      *  component is compared as the declared name it is, up to normalisation (ch. 5.6).
      *
      *  <p>A component on a timeline reads ever-uniqueness (RUNTIME-SEMANTICS ch. 5.9, decided 2026-08-20): it claims
      *  every value its timeline ever carries, so the rule inserts one key per such value, beside the other components,
      *  and none where the timeline is absent or carries no value. The timeline is bound like any read
-     *  ({@link Lezingen#tijdlijn}), so a key a rule derives later takes its keys along. The values are taken by the
+     *  ({@link Reads#timeline}), so a key a rule derives later takes its keys along. The values are taken by the
      *  runtime's {@code rsOoitWaarden}: without trailing zeros and once each, so an instance whose timeline carries one
      *  value in two segments claims it once and does not duplicate against itself. A key has at most one component on a
      *  timeline, as the reference interpreter refuses more: the same-moment join of two has no corpus case. */
-    private Regelplan sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron,
-                                   RolBindingRef scopeRol, Geldigheid geldigheid) {
+    private RulePlan keyRule(String naam, String ruleName, int b, ResolvedUniciteitUnie.Bron bron,
+                                   RolBindingRef scopeRole, Geldigheid validity) {
         Objecttype type = bron.type();
-        Lezingen lez = new Lezingen(type).geldig(geldigheid);
-        Set<Integer> gelezen = lez.volg();
-        List<Integer> sleutels = new ArrayList<>();
-        List<Boolean> enumeratie = new ArrayList<>();
-        int ooit = -1;
+        Reads lez = new Reads(type).valid(validity);
+        Set<Integer> read = lez.follow();
+        List<Integer> keyNames = new ArrayList<>();
+        List<Boolean> enumeration = new ArrayList<>();
+        int ever = -1;
         for (String sleutel : bron.sleutels()) {
-            if (gedeclareerd(type, sleutel, false).tijd() != null) {
-                String wat = "een uniciteitssleutel '" + sleutel + "' van " + type.naam + " op een tijdlijn";
-                if (ooit >= 0)
-                    throw new Weigering(wat + " naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel,"
+            if (declared(type, sleutel, false).time() != null) {
+                String description = "een uniciteitssleutel '" + sleutel + "' van " + type.naam + " op een tijdlijn";
+                if (ever >= 0)
+                    throw new Refusal(description + " naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel,"
                             + " de gelijktijdige koppeling van twee heeft geen corpuscase (RUNTIME-SEMANTICS ch. 5.9); "
-                            + NOG_NIET);
-                Lid lid = tijdlid(type, sleutel, false, wat);
-                if (!lid.datatype().isNumeriek())
-                    throw new Weigering(wat + " die geen getal is: " + NOG_NIET);
-                ooit = sleutels.size();
-                sleutels.add(lez.tijdlijn(lid));
-                enumeratie.add(false);
+                            + STILL_NOT);
+                Member member = timeMember(type, sleutel, false, description);
+                if (!member.datatype().isNumeriek())
+                    throw new Refusal(description + " die geen getal is: " + STILL_NOT);
+                ever = keyNames.size();
+                keyNames.add(lez.timeline(member));
+                enumeration.add(false);
                 continue;
             }
-            Lid lid = lid(type, sleutel, false);
-            sleutels.add(lez.eigen(lid));
-            enumeratie.add(lid.datatype() instanceof Datatype.Enumeratie);
+            Member member = member(type, sleutel, false);
+            keyNames.add(lez.own(member));
+            enumeration.add(member.datatype() instanceof Datatype.Enumeratie);
         }
-        int scope = scopeRol == null ? -1 : lez.scopelezing(scopeRol);
+        int scope = scopeRole == null ? -1 : lez.scopeRead(scopeRole);
         lez.stop();
-        int tijdlijn = ooit;
+        int timeline = ever;
         // the key takes part where every component off the timeline is gevuld and the parent is set
-        List<Term> deelname = new ArrayList<>();
-        for (int i = 0; i < sleutels.size(); i++) if (i != tijdlijn) deelname.add(gevuld(sleutels.get(i)));
+        List<Term> participation = new ArrayList<>();
+        for (int i = 0; i < keyNames.size(); i++) if (i != timeline) participation.add(filled(keyNames.get(i)));
         // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
-        if (tijdlijn >= 0) deelname.add(emmerscalair(sleutels.get(tijdlijn), false));
-        if (scope >= 0) deelname.add(gevuld(scope));
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(deelname), gelezen, null);
-        List<Term> componenten = new ArrayList<>();
-        for (int i = 0; i < sleutels.size(); i++) {
-            Term component = new Term.Lees(sleutels.get(i), null);
-            componenten.add(enumeratie.get(i) ? new Term.Aanroep(Functie.RS_ENUM_NAAM, List.of(component), null)
+        if (timeline >= 0) participation.add(emmerscalair(keyNames.get(timeline), false));
+        if (scope >= 0) participation.add(filled(scope));
+        List<LhsItem> items = lez.plan(TestItem.Role.VORM, all(participation), read, null);
+        List<Term> components = new ArrayList<>();
+        for (int i = 0; i < keyNames.size(); i++) {
+            Term component = new Term.SlotValue(keyNames.get(i), null);
+            components.add(enumeration.get(i) ? new Term.Call(Aggregation.RS_ENUM_NAME, List.of(component), null)
                     : component);
         }
-        lez.vastleggen();
-        return lez.regelplan(regelnaam + ": sleutel van " + type.naam + " " + (b + 1), items,
-                new Gevolg.Uniciteitssleutel(ONDERWERP, naam, b, componenten, tijdlijn, scope, List.copyOf(gelezen),
-                        lez.grootte(), Gevolg.Invoeging.LOGISCH));
+        lez.recorder();
+        return lez.rulePlan(ruleName + ": sleutel van " + type.naam + " " + (b + 1), items,
+                new Consequence.UniquenessKey(SUBJECT, naam, b, components, timeline, scope, List.copyOf(read),
+                        lez.size(), Consequence.Insertion.LOGICAL));
     }
 
     /**
      * The rule beside the key rule of source {@code b} of the uniqueness {@code naam} where its key has a component on a
      * timeline: over the instances of the source's type, gated by the form's validity, the components up to that one
      * bound as the key rule binds them, the test that every component before it is gevuld and that the case gives the
-     * timeline as the asOfDate-bucket scalar ({@link Emmerscalair}), and a consequence that inserts the fault of
+     * timeline as the asOfDate-bucket scalar ({@link BucketScalar}), and a consequence that inserts the fault of
      * RUNTIME-SEMANTICS ch. 5.9 logically as a {@link Fout} of the instance ({@link Invoervormfout}), in the reference
      * interpreter's words: ever-uniqueness reads every value the timeline ever carries, and a scalar would miss values.
      * The key's form is checked on every instance of the type, before the scope narrows the rows ("this form error
@@ -1644,100 +1644,100 @@ public final class TmsTranspiler {
      * interpreter builds a row's tuples component by component and stops at an empty one, so an empty component before
      * the timeline leaves the timeline unread. Null for a key without a component on a timeline.
      */
-    private Regelplan sleutelvormregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron,
-                                       Geldigheid geldigheid) {
+    private RulePlan keyFormRule(String naam, String ruleName, int b, ResolvedUniciteitUnie.Bron bron,
+                                       Geldigheid validity) {
         Objecttype type = bron.type();
         int positie = -1;
         for (int i = 0; i < bron.sleutels().size() && positie < 0; i++)
-            if (gedeclareerd(type, bron.sleutels().get(i), false).tijd() != null) positie = i;
+            if (declared(type, bron.sleutels().get(i), false).time() != null) positie = i;
         if (positie < 0) return null;
-        Lezingen lez = new Lezingen(type).geldig(geldigheid);
-        Set<Integer> gelezen = lez.volg();
-        List<Integer> ervoor = new ArrayList<>();
-        for (int i = 0; i < positie; i++) ervoor.add(lez.eigen(lid(type, bron.sleutels().get(i), false)));
-        Lid tijdlid = tijdlid(type, bron.sleutels().get(positie), false, "een uniciteitssleutel '"
+        Reads lez = new Reads(type).valid(validity);
+        Set<Integer> read = lez.follow();
+        List<Integer> preceding = new ArrayList<>();
+        for (int i = 0; i < positie; i++) preceding.add(lez.own(member(type, bron.sleutels().get(i), false)));
+        Member timeMember = timeMember(type, bron.sleutels().get(positie), false, "een uniciteitssleutel '"
                 + bron.sleutels().get(positie) + "' van " + type.naam + " op een tijdlijn");
-        int tijdlijn = lez.tijdlijn(tijdlid);
+        int timeline = lez.timeline(timeMember);
         lez.stop();
-        List<Term> emmer = new ArrayList<>();
-        for (int i : ervoor) emmer.add(gevuld(i));
-        emmer.add(emmerscalair(tijdlijn, true));
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(emmer), gelezen, null);
-        lez.vastleggen();
-        return lez.regelplan(regelnaam + ": sleutelvorm van " + type.naam + " " + (b + 1), items,
-                new Gevolg.Invoervormfout(ONDERWERP, "the ever-unique key \"" + tijdlid.naam()
+        List<Term> bucket = new ArrayList<>();
+        for (int i : preceding) bucket.add(filled(i));
+        bucket.add(emmerscalair(timeline, true));
+        List<LhsItem> items = lez.plan(TestItem.Role.VORM, all(bucket), read, null);
+        lez.recorder();
+        return lez.rulePlan(ruleName + ": sleutelvorm van " + type.naam + " " + (b + 1), items,
+                new Consequence.Invoervormfout(SUBJECT, "the ever-unique key \"" + timeMember.naam()
                         + "\" needs the full timeline; ", " supplies only a scalar (ch. 5.9)",
-                        new Gevolg.Foutnaam(naam, regelnaam), Gevolg.Invoeging.LOGISCH));
+                        new Consequence.FaultName(naam, ruleName), Consequence.Insertion.LOGICAL));
     }
 
     /**
      * A test of the §9.5 channel, "regelversie X is inconsistent" (RUNTIME-SEMANTICS ch. 5.6): an existential over the
-     * error facts of the form X, with no subject of its own, read through X's {@link KanaalStand}. The producers this
+     * error facts of the form X, with no subject of its own, read through X's {@link ChannelState}. The producers this
      * branch carries are a consistency, a uniqueness, and a rule whose condition or value can deposit a §6.5 or §6.6
-     * inconsistency ({@link #schrijfregel}, {@link #deponeerregel}); any other name is refused, since a test of a
+     * inconsistency ({@link #writeRule}, {@link #depositRule}); any other name is refused, since a test of a
      * channel nothing fills would never hold and say nothing. "is gevuurd" reads no channel; it is no construct of the
      * core, and is refused with that reason.
      */
-    private Term kanaallezing(Conditie.Regelversie rv, Lezingen lez) {
+    private Term channelRead(Conditie.Regelversie rv, Reads lez) {
         // decided as a predicate of the dialect over the fixpoint, never a construct of the core: the reference
         // interpreter faults on it ("not implemented") and the ASP backend does not translate it
         if (!rv.inconsistent())
-            throw nietGelezen("Regelversie 'is gevuurd'", rv, "geen vorm van de kern maar een predicaat van het"
+            throw notRead("Regelversie 'is gevuurd'", rv, "geen vorm van de kern maar een predicaat van het"
                     + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
                     + " referentie-interpreter en de ASP-backend niet evalueren");
-        String producent = rv.regel();
-        if (!kanaalproducent(producent))
-            throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
+        String producer = rv.regel();
+        if (!channelProducer(producer))
+            throw new Refusal("een Regelversie 'is inconsistent' over \"" + producer + "\" in de voorwaarde ('"
                     + snippet(rv) + "'): deze tak draagt als producent van het §9.5-kanaal alleen een"
                     + " Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar"
                     + " waarde (§6.5, §6.6)");
-        int i = lez.kanaal(producent);
-        return new Term.Aanroep(Functie.KANAAL, List.of(new Term.Lees(i, null)), bron(rv.bron()));
+        int i = lez.channel(producer);
+        return new Term.Call(Aggregation.CHANNEL, List.of(new Term.SlotValue(i, null)), bron(rv.bron()));
     }
 
     /** Whether the form named {@code naam}, spelled as the error facts carry it, fills a channel this branch lowers. */
-    private boolean kanaalproducent(String naam) {
+    private boolean channelProducer(String naam) {
         if (naam == null) return false;
         for (ResolvedConsistentie c : model.consistenties) if (naam.equals(c.naam())) return true;
         for (ResolvedUniciteit u : model.uniciteiten) if (naam.equals(u.naam())) return true;
         for (ResolvedUniciteitUnie u : model.uniciteitUnies) if (naam.equals(u.naam())) return true;
         for (ResolvedRegel r : model.resolvedRegels)
-            if (naam.equals(r.naam()) && (deponeert(r.voorwaarde())
-                    || r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && deponeert(r.waarde())))
+            if (naam.equals(r.naam()) && (deposits(r.voorwaarde())
+                    || r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && deposits(r.waarde())))
                 return true;
         return false;
     }
 
-    /** Whether a value holds a place the §6.5 or §6.6 deposit of {@link #schrijfregel} covers ({@link #deponeerplek}),
+    /** Whether a value holds a place the §6.5 or §6.6 deposit of {@link #writeRule} covers ({@link #depositSite}),
      *  where the rule's own evaluation of the value can reach it: through every form {@link #waarde} evaluates in the
      *  rule itself, and into the filter of a fold over a set source and of each selection of an instance-set union,
      *  which a filter deposit rule evaluates and the reading rule hears where it reaches the fold
-     *  ({@link #filterdeponeerregel}, {@link #gelezenVouw}). The argument of such a fold is a read of the member's
+     *  ({@link #filterDepositRule}, {@link #readFold}). The argument of such a fold is a read of the member's
      *  attribute or the union, nothing else (WF-037, refused by the loader), so it holds no place of its own. */
-    private boolean deponeert(Expr e) {
+    private boolean deposits(Expr e) {
         return switch (e) {
             case null -> false;
-            case Expr.Binair b -> deponeerplek(b) || deponeert(b.links()) || deponeert(b.rechts());
-            case Expr.Functie f -> deponeerplek(f) || f.argumenten().stream().anyMatch(this::deponeert)
-                    || deponeert(f.leegwaarde()) || deponeert(f.filter());
-            case Expr.InstanceSetUnion u -> u.takken().stream().anyMatch(t -> deponeert(t.filter()));
-            case Expr.Afgerond a -> deponeert(a.basis());
-            case Expr.Begrensd g -> deponeert(g.basis()) || deponeert(g.minimum()) || deponeert(g.maximum());
-            case Expr.Let l -> deponeert(l.value()) || deponeert(l.body());
-            case Expr.IfThenElse k -> deponeert(k.conditie()) || deponeert(k.dan()) || deponeert(k.anders());
+            case Expr.Binair b -> depositSite(b) || deposits(b.links()) || deposits(b.rechts());
+            case Expr.Functie f -> depositSite(f) || f.argumenten().stream().anyMatch(this::deposits)
+                    || deposits(f.leegwaarde()) || deposits(f.filter());
+            case Expr.InstanceSetUnion u -> u.takken().stream().anyMatch(t -> deposits(t.filter()));
+            case Expr.Afgerond a -> deposits(a.basis());
+            case Expr.Begrensd g -> deposits(g.basis()) || deposits(g.minimum()) || deposits(g.maximum());
+            case Expr.Let l -> deposits(l.value()) || deposits(l.body());
+            case Expr.IfThenElse k -> deposits(k.conditie()) || deposits(k.dan()) || deposits(k.anders());
             case Expr.TekstReeks t -> t.delen().stream()
-                    .anyMatch(d -> d instanceof Expr.TekstReeks.Ingevoegd i && deponeert(i.expr()));
+                    .anyMatch(d -> d instanceof Expr.TekstReeks.Ingevoegd i && deposits(i.expr()));
             default -> false;
         };
     }
 
-    private boolean deponeert(Conditie c) {
+    private boolean deposits(Conditie c) {
         return switch (c) {
             case null -> false;
-            case Conditie.Vergelijking v -> deponeert(v.links()) || deponeert(v.rechts());
-            case Conditie.Predicaat p -> deponeert(p.operand());
-            case Conditie.Samengesteld s -> s.onderdelen().stream().anyMatch(this::deponeert);
-            case Conditie.Kwantorvouw kv -> deponeert(kv.filter()) || deponeert(kv.toets());
+            case Conditie.Vergelijking v -> deposits(v.links()) || deposits(v.rechts());
+            case Conditie.Predicaat p -> deposits(p.operand());
+            case Conditie.Samengesteld s -> s.onderdelen().stream().anyMatch(this::deposits);
+            case Conditie.Kwantorvouw kv -> deposits(kv.filter()) || deposits(kv.toets());
             default -> false;
         };
     }
@@ -1745,35 +1745,35 @@ public final class TmsTranspiler {
     /** Whether {@code e} is itself a place that deposits: every division and every square root, whatever its operands,
      *  as the reference interpreter deposits wherever it divides a filled dividend by a leeg divisor or takes the root of
      *  a negative number (RUNTIME-SEMANTICS ch. 1.2, 5.6). */
-    private static boolean deponeerplek(Expr e) {
+    private static boolean depositSite(Expr e) {
         if (e instanceof Expr.Binair b) return b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS;
         return e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL && f.argumenten().size() == 1;
     }
 
     /**
-     * The two generic rules that keep one {@link KanaalStand} for the channel of the form named {@code producent}:
+     * The two generic rules that keep one {@link ChannelState} for the channel of the form named {@code producer}:
      * inconsistent while an error fact of that form stands, on any subject, and consistent while none does. The second
      * carries the negation over the channel, so a condition that reads it, in either polarity, binds the standing as a
      * positive pattern.
      */
-    private List<Regelplan> kanaalstandregels(String producent) {
+    private List<RulePlan> channelStateRules(String producer) {
         // the class the fact model generates for the inconsistency is data of the plan, by which a rendering names it
-        Class<?> klasse;
+        Class<?> javaClass;
         try {
-            klasse = Class.forName(INCONSISTENTIE, true, beanLoader);
+            javaClass = Class.forName(INCONSISTENCY, true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen beanklasse " + INCONSISTENTIE + " voor het kanaal van " + producent, e);
+            throw new IllegalStateException("geen beanklasse " + INCONSISTENCY + " voor het kanaal van " + producer, e);
         }
-        String naam = "kanaalstand " + producent + ": ";
-        Patroon fout = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
+        String naam = "kanaalstand " + producer + ": ";
+        FactPattern fout = new FactPattern(javaClass, "$inconsistentie", List.of(equal(id("kanaal"), "regel", producer)),
                 List.of(), List.of());
-        Regelplan inconsistent = new Regelplan(naam + "inconsistent", null, null, new Leestabel(List.of()),
-                List.of(new Bestaat(List.of(fout), List.of(fout.naam()), List.of())),
-                new Gevolg.Kanaalstand(producent, true, Gevolg.Invoeging.LOGISCH));
-        Patroon geen = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
+        RulePlan inconsistent = new RulePlan(naam + "inconsistent", null, null, new ReadTable(List.of()),
+                List.of(new Exists(List.of(fout), List.of(fout.naam()), List.of())),
+                new Consequence.InsertChannelState(producer, true, Consequence.Insertion.LOGICAL));
+        FactPattern none = new FactPattern(javaClass, "$inconsistentie", List.of(equal(id("kanaal"), "regel", producer)),
                 List.of(), List.of());
-        Regelplan consistent = new Regelplan(naam + "consistent", null, null, new Leestabel(List.of()),
-                List.of(new Niet(geen)), new Gevolg.Kanaalstand(producent, false, Gevolg.Invoeging.LOGISCH));
+        RulePlan consistent = new RulePlan(naam + "consistent", null, null, new ReadTable(List.of()),
+                List.of(new Not(none)), new Consequence.InsertChannelState(producer, false, Consequence.Insertion.LOGICAL));
         return List.of(inconsistent, consistent);
     }
 
@@ -1781,229 +1781,229 @@ public final class TmsTranspiler {
 
     /**
      * An allocation (IR-SPEC ch. 3.2, RUNTIME-SEMANTICS ch. 4): a computation over the set of recipients that the
-     * left-hand side binds. One rule of the allocation inserts, per source and per recipient, an {@link Ontvanger}
+     * left-hand side binds. One rule of the allocation inserts, per source and per recipient, an {@link Recipient}
      * logically: the recipient is an instance of {@code targetType} that the connecting relation links to the source
-     * ({@link #ontvangersjoin}), so a related instance that is no {@code targetType} receives nothing and stays leeg
+     * ({@link #recipientsJoin}), so a related instance that is no {@code targetType} receives nothing and stays leeg
      * (ch. 4.1), and its weight, ordering key and cap are bound in that rule's left-hand side, a derived one through its
      * standing. The allocation's own rule binds the source, its pot, the reads of its condition and, through an
-     * accumulate, the list of the source's {@link Ontvanger} facts ({@link Lezingen#ontvangers}), and its consequence
-     * computes the distribution from those bound values only ({@link Verdeling}): each share and the rest are a
-     * {@link Waarde} with the allocation as the writer, and each degradation of ch. 4.3 and 4.4 (an empty weight, a
+     * accumulate, the list of the source's {@link Recipient} facts ({@link Reads#recipients}), and its consequence
+     * computes the distribution from those bound values only ({@link Allocation}): each share and the rest are a
+     * {@link Value} with the allocation as the writer, and each degradation of ch. 4.3 and 4.4 (an empty weight, a
      * negative proportional weight, an empty or negative cap) is the allocation's §9.5 deposit on that recipient. All of
      * it is logical, so a recipient that arrives or leaves, a weight, key, cap or pot that changes, and a condition that
      * stops holding take the whole distribution of the source along, the rest included (ch. 4.3), and a deposit made on
      * an intermediate state goes again: like a fault it counts at the fixpoint (PLAN §9, 2026-10-09). An empty pot is
      * no distribution in every method, as ch. 4.4 decides for v1: it writes nothing, deposits nothing and is no fault,
      * where the reference interpreter keeps the v0 hole of the equal-shares and the proportional method and faults
-     * ({@link Verdeling}). A version with a bounded validity gates on the evaluation date and faults a session
+     * ({@link Allocation}). A version with a bounded validity gates on the evaluation date and faults a session
      * without one, as a rule's version does; a condition that can fault or deposit has its own fault and deposit rules,
      * on the source, as the reference interpreter evaluates the condition per source before anything else.
      *
      * <p>A share or a rest replaces the input on its target, as the reference interpreter overwrites it, and a recipient
      * that receives nothing keeps its input; the member value an object creation sets is the input of the object it
-     * makes. Every other writer of a target is refused ({@link #verdelingsschrijvers}): two allocations on one target
+     * makes. Every other writer of a target is refused ({@link #allocationWriters}): two allocations on one target
      * are ill-formed (WF-026), so is a defaults group beside an allocation (WF-050), and a rule beside one, a computing
      * rule or an initialisation, this branch does not carry yet.
      */
-    private List<Regelplan> verdeling(ResolvedVerdeling v) {
+    private List<RulePlan> allocation(ResolvedVerdeling v) {
         String naam = v.naam();
         // the rules of a form are named by the form, and the deposits and shares carry that name
-        if (naam == null) throw new Weigering("een verdeling zonder naam (WF-107)");
+        if (naam == null) throw new Refusal("een verdeling zonder naam (WF-107)");
         Objecttype bron = v.bronType(), doel = v.doelType();
         ResolvedVerdeling.Methode methode = v.methode();
         if (bron == null || doel == null || v.bronAttribuut() == null || v.doelAttribuut() == null || methode == null)
-            throw new Weigering("een verdeling zonder opgeloste bron, doel of methode");
-        RolBindingRef rb = rolBindingen.get(v);
-        if (rb == null) throw new Weigering("een verdeling zonder connectingRole (IR-SPEC ch. 3.2)");
+            throw new Refusal("een verdeling zonder opgeloste bron, doel of methode");
+        RolBindingRef rb = roleBindings.get(v);
+        if (rb == null) throw new Refusal("een verdeling zonder connectingRole (IR-SPEC ch. 3.2)");
         // WF-025, which the verifier holds and this backend does not run: the fields each method carries
-        boolean gelijk = methode == ResolvedVerdeling.Methode.GELIJKE_DELEN;
+        boolean equal = methode == ResolvedVerdeling.Methode.GELIJKE_DELEN;
         if (methode == ResolvedVerdeling.Methode.NAAR_RATO && v.ratoAttribuut() == null)
-            throw new Weigering("een verdeling naar rato zonder gewicht (WF-025)");
-        if (gelijk && v.ratoAttribuut() != null)
-            throw new Weigering("een verdeling in gelijke delen met een gewicht (WF-025)");
+            throw new Refusal("een verdeling naar rato zonder gewicht (WF-025)");
+        if (equal && v.ratoAttribuut() != null)
+            throw new Refusal("een verdeling in gelijke delen met een gewicht (WF-025)");
         if (v.maximumAttribuut() != null && v.ratoAttribuut() == null)
-            throw new Weigering("een verdeling met een maximum zonder gewicht (WF-025)");
+            throw new Refusal("een verdeling met een maximum zonder gewicht (WF-025)");
         if (methode != ResolvedVerdeling.Methode.OP_VOLGORDE && v.groepeerAttribuut() != null)
-            throw new Weigering("een volgordesleutel op een verdeling die niet op volgorde verdeelt (WF-025)");
-        Lid pot = getallid(bron, v.bronAttribuut(), "de pot");
-        Lid aandeel = getallid(doel, v.doelAttribuut(), "het aandeel");
-        Lid rest = v.restantAttribuut() == null ? null : getallid(bron, v.restantAttribuut(), "het restant");
-        Lid gewicht = v.ratoAttribuut() == null ? null : getallid(doel, v.ratoAttribuut(), "het gewicht");
-        Lid maximum = v.maximumAttribuut() == null ? null : getallid(doel, v.maximumAttribuut(), "het maximum");
-        Lid sleutel = v.groepeerAttribuut() == null ? null : lid(doel, v.groepeerAttribuut(), false);
+            throw new Refusal("een volgordesleutel op een verdeling die niet op volgorde verdeelt (WF-025)");
+        Member pot = numberMember(bron, v.bronAttribuut(), "de pot");
+        Member aandeel = numberMember(doel, v.doelAttribuut(), "het aandeel");
+        Member rest = v.restantAttribuut() == null ? null : numberMember(bron, v.restantAttribuut(), "het restant");
+        Member weight = v.ratoAttribuut() == null ? null : numberMember(doel, v.ratoAttribuut(), "het gewicht");
+        Member maximum = v.maximumAttribuut() == null ? null : numberMember(doel, v.maximumAttribuut(), "het maximum");
+        Member sleutel = v.groepeerAttribuut() == null ? null : member(doel, v.groepeerAttribuut(), false);
         if (sleutel != null && !sleutel.datatype().isOrdenbaar())
-            throw new Weigering("de volgordesleutel '" + sleutel.naam() + "' van type " + typenaam(sleutel.datatype())
+            throw new Refusal("de volgordesleutel '" + sleutel.naam() + "' van type " + typeName(sleutel.datatype())
                     + " is niet ordenbaar (WF-025)");
-        verdelingsschrijvers(v, doel, aandeel);
-        if (rest != null) verdelingsschrijvers(v, bron, rest);
+        allocationWriters(v, doel, aandeel);
+        if (rest != null) allocationWriters(v, bron, rest);
 
-        String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        List<Regelplan> uit = new ArrayList<>();
+        String ruleName = model.geëmitteerdeRegelNaam(naam);
+        List<RulePlan> out = new ArrayList<>();
 
         // per source and recipient: the recipient's values, bound in this rule's left-hand side, after the source
-        Consumer<Lezingen> bereik = ontvangersjoin(rb, bron, doel, naam);
-        Lezingen lid = new Lezingen(doel);
-        lid.buiten = vouwbinders;
-        lid.kopPlan(new Patroon(bonenklasse(bron), VOUWONDERWERP, List.of(), List.of(), List.of()));
-        bereik.accept(lid);
-        int ontvanger = lid.lid();
-        int g = gewicht == null ? -1 : lid.eigen(gewicht);
-        int k = sleutel == null ? -1 : lid.eigen(sleutel);
-        int m = maximum == null ? -1 : lid.eigen(maximum);
-        List<LhsItem> lidregel = lid.plan(Toetsitem.Rol.VOORWAARDE, null, Set.of(), null);
-        lid.vastleggen();
-        uit.add(lid.regelplan(regelnaam + ": ontvanger", lidregel,
-                new Gevolg.Ontvanger(VOUWONDERWERP, naam, ontvanger, g, k, m, Gevolg.Invoeging.LOGISCH)));
+        Consumer<Reads> range = recipientsJoin(rb, bron, doel, naam);
+        Reads member = new Reads(doel);
+        member.outside = foldBinders;
+        member.addToHeadPlan(new FactPattern(beanClass(bron), FOLD_SUBJECT, List.of(), List.of(), List.of()));
+        range.accept(member);
+        int recipient = member.member();
+        int g = weight == null ? -1 : member.own(weight);
+        int k = sleutel == null ? -1 : member.own(sleutel);
+        int m = maximum == null ? -1 : member.own(maximum);
+        List<LhsItem> memberRule = member.plan(TestItem.Role.CONDITION, null, Set.of(), null);
+        member.recorder();
+        out.add(member.rulePlan(ruleName + ": ontvanger", memberRule,
+                new Consequence.Recipient(FOLD_SUBJECT, naam, recipient, g, k, m, Consequence.Insertion.LOGICAL)));
 
         // per source: the condition, the pot and the list of recipients, and the distribution computed from them
-        Supplier<Lezingen> nieuw = () -> new Lezingen(bron).geldig(v.geldigheid());
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = v.voorwaarde() == null ? null : voorwaarde(v.voorwaarde(), lez);
-        boolean kanFalen = lez.kanFalen();
+        Supplier<Reads> recomputed = () -> new Reads(bron).valid(v.geldigheid());
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = v.voorwaarde() == null ? null : voorwaarde(v.voorwaarde(), lez);
+        boolean canFail = lez.canFail();
         lez.stop();
-        int p = lez.eigen(pot);
-        int lijst = lez.ontvangers(naam);
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, v.voorwaarde());
-        ElementSleutel aandeelSleutel = aandeel.sleutel(), restSleutel = rest == null ? null : rest.sleutel();
-        lez.vastleggen();
-        uit.add(lez.regelplan(regelnaam, items, new Gevolg.Uitdeling(ONDERWERP, naam, methode, p, lijst,
-                gewicht != null, maximum != null, v.afnemend(), v.afrondingDecimalen(), aandeelSleutel, restSleutel,
-                naam, Gevolg.Invoeging.LOGISCH)));
-        afgeleid.put(aandeelSleutel, aandeel);
-        if (rest != null) afgeleid.put(restSleutel, rest);
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, v.voorwaarde(), null));
-        Regelplan deponering = deponeerregel(naam, regelnaam, nieuw, v.voorwaarde(), null);
-        if (deponering != null) uit.add(deponering);
-        Regelplan zonderDatum = geldigheidsfout(regelnaam, naam, v.geldigheid());
-        if (zonderDatum != null) uit.add(zonderDatum);
-        return uit;
+        int p = lez.own(pot);
+        int lijst = lez.recipients(naam);
+        List<LhsItem> items = lez.plan(conditionRole(canFail), testTerm, read, v.voorwaarde());
+        ElementSleutel aandeelKey = aandeel.sleutel(), restKey = rest == null ? null : rest.sleutel();
+        lez.recorder();
+        out.add(lez.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, naam, methode, p, lijst,
+                weight != null, maximum != null, v.afnemend(), v.afrondingDecimalen(), aandeelKey, restKey,
+                naam, Consequence.Insertion.LOGICAL)));
+        derived.put(aandeelKey, aandeel);
+        if (rest != null) derived.put(restKey, rest);
+        if (canFail) out.add(conditionFaultRule(naam, ruleName, recomputed, v.voorwaarde(), null));
+        RulePlan deposit = depositRule(naam, ruleName, recomputed, v.voorwaarde(), null);
+        if (deposit != null) out.add(deposit);
+        RulePlan withoutDate = validityFault(ruleName, naam, v.geldigheid());
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
     }
 
     /** Attribute {@code naam} of {@code houder} as an allocation reads or writes it as a number: the pot, a share, the
      *  rest, a weight or a cap, {@code rol} naming which. The distribution computes with numbers only, so another
      *  datatype is refused by name. */
-    private Lid getallid(Objecttype houder, String naam, String rol) {
-        Lid lid = lid(houder, naam, false);
-        if (!lid.datatype().isGetalachtig())
-            throw new Weigering("een verdeling waarvan " + rol + " het attribuut '" + lid.naam() + "' van "
-                    + lid.declarant().naam + " is, van type " + typenaam(lid.datatype()) + " en geen getal: " + NOG_NIET);
-        return lid;
+    private Member numberMember(Objecttype houder, String naam, String rol) {
+        Member member = member(houder, naam, false);
+        if (!member.datatype().isGetalachtig())
+            throw new Refusal("een verdeling waarvan " + rol + " het attribuut '" + member.naam() + "' van "
+                    + member.declarant().naam + " is, van type " + typeName(member.datatype()) + " en geen getal: " + STILL_NOT);
+        return member;
     }
 
     /**
      * Refuses the allocation {@code v} where another form writes the attribute {@code lid} that it writes on
      * {@code type}, its share target or its rest, on an instance it writes too: on {@code type}, an ancestor or a
-     * descendant ({@link #verwant}), read per concrete type as WF-026 and WF-050 read it, so a form on a sister subtype
+     * descendant ({@link #related}), read per concrete type as WF-026 and WF-050 read it, so a form on a sister subtype
      * does not count. Another allocation, not a version of {@code v}, is ill-formed beside it (WF-026), and so is a
      * defaults group (WF-050). A rule beside it is well-formed, and refused until this branch carries it: a computing
      * rule is a second equation of the target, whose value must agree at the fixpoint (RUNTIME-SEMANTICS ch. 5.7), a
-     * disagreement this branch keys on two computing rules only ({@link #verschilregel}); an initialisation is the
+     * disagreement this branch keys on two computing rules only ({@link #differenceRule}); an initialisation is the
      * lowest default beside the allocation (ch. 7.7), whose guard would read the allocation's shares as it reads every
      * other writer's value, but no witness holds that pair against the reference interpreter yet. The member value an
      * object creation sets is no writer here: it is the input of the object it makes, which a share replaces.
      */
-    private void verdelingsschrijvers(ResolvedVerdeling v, Objecttype type, Lid lid) {
-        ElementSleutel el = lid.sleutel();
-        String eigen = ProducentConsument.basisNaam(v.naam());
-        Set<String> verdelingen = new LinkedHashSet<>(), groepen = new LinkedHashSet<>(), regels = new LinkedHashSet<>();
+    private void allocationWriters(ResolvedVerdeling v, Objecttype type, Member member) {
+        ElementSleutel el = member.sleutel();
+        String own = ProducentConsument.basisNaam(v.naam());
+        Set<String> allocations = new LinkedHashSet<>(), groups = new LinkedHashSet<>(), rules = new LinkedHashSet<>();
         for (ResolvedVerdeling o : model.verdelingen) {
-            if (o.naam() != null && ProducentConsument.basisNaam(o.naam()).equals(eigen)) continue;
-            boolean schrijft = o.doelType() != null && o.doelAttribuut() != null && verwant(o.doelType(), type)
+            if (o.naam() != null && ProducentConsument.basisNaam(o.naam()).equals(own)) continue;
+            boolean writes = o.doelType() != null && o.doelAttribuut() != null && related(o.doelType(), type)
                     && ProducentConsument.elementVan(o.doelType(), o.doelAttribuut(), false).equals(el)
-                    || o.bronType() != null && o.restantAttribuut() != null && verwant(o.bronType(), type)
+                    || o.bronType() != null && o.restantAttribuut() != null && related(o.bronType(), type)
                     && ProducentConsument.elementVan(o.bronType(), o.restantAttribuut(), false).equals(el);
-            if (schrijft) verdelingen.add("\"" + naamOf(o.naam()) + "\"");
+            if (writes) allocations.add("\"" + nameOf(o.naam()) + "\"");
         }
-        if (!verdelingen.isEmpty())
-            throw new Weigering("twee verdelingen schrijven het attribuut '" + lid.naam() + "' van " + type.naam
-                    + " (ook " + String.join(", ", verdelingen) + "): een doel heeft hoogstens één verdeling (WF-026)");
+        if (!allocations.isEmpty())
+            throw new Refusal("twee verdelingen schrijven het attribuut '" + member.naam() + "' van " + type.naam
+                    + " (ook " + String.join(", ", allocations) + "): een doel heeft hoogstens één verdeling (WF-026)");
         for (int i = 0; i < defaults.size(); i++) {
             PrioritizedDefaults pd = defaults.get(i);
             Objecttype t = model.objecttypeOpNaam(pd.onderwerp());
-            if (t != null && pd.doel() != null && !pd.isKenmerk() && verwant(t, type)
+            if (t != null && pd.doel() != null && !pd.isKenmerk() && related(t, type)
                     && ProducentConsument.elementVan(t, pd.doel(), false).equals(el))
-                groepen.add(pd.naam() != null ? "\"" + pd.naam() + "\"" : "/rules/prioritizedDefaults/" + i);
+                groups.add(pd.naam() != null ? "\"" + pd.naam() + "\"" : "/rules/prioritizedDefaults/" + i);
         }
-        if (!groepen.isEmpty())
-            throw new Weigering("een verdeling naast de defaultsgroep " + String.join(", ", groepen) + " op het attribuut '"
-                    + lid.naam() + "' van " + type.naam + ": een doel van een defaultsgroep heeft geen andere schrijver"
+        if (!groups.isEmpty())
+            throw new Refusal("een verdeling naast de defaultsgroep " + String.join(", ", groups) + " op het attribuut '"
+                    + member.naam() + "' van " + type.naam + ": een doel van een defaultsgroep heeft geen andere schrijver"
                     + " (WF-050)");
         for (ResolvedRegel r : model.resolvedRegels)
             if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING
                     && r.doel() instanceof Expr.AttribuutRef d && d.objecttype() != null && d.attribuut() != null
-                    && verwant(d.objecttype(), type)
+                    && related(d.objecttype(), type)
                     && ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false).equals(el))
-                regels.add("\"" + naamOf(r.naam()) + "\"");
-        if (!regels.isEmpty())
-            throw new Weigering("een verdeling naast de regel " + String.join(", ", regels) + " op het attribuut '"
-                    + lid.naam() + "' van " + type.naam + ": een verdeling naast een rekenende regel of een initialisatie"
-                    + " op één doel; " + NOG_NIET);
+                rules.add("\"" + nameOf(r.naam()) + "\"");
+        if (!rules.isEmpty())
+            throw new Refusal("een verdeling naast de regel " + String.join(", ", rules) + " op het attribuut '"
+                    + member.naam() + "' van " + type.naam + ": een verdeling naast een rekenende regel of een initialisatie"
+                    + " op één doel; " + STILL_NOT);
     }
 
     /**
-     * How the rule of an allocation joins a recipient, its subject, to the source, its {@link Lezingen#drager}, over the
+     * How the rule of an allocation joins a recipient, its subject, to the source, its {@link Reads#carrier}, over the
      * connecting relation {@code rb}, whose bound role is the recipient's and its sibling the source's (IR-SPEC ch. 3.2),
-     * as a fold's one-step range joins a member ({@link #eenstapsbereik}): over a relation a form creates, through a
-     * {@link Koppeling} in an {@code exists}; over an input relation, through the one scalar bean field §13.3.9 stores
+     * as a fold's one-step range joins a member ({@link #oneStepRange}): over a relation a form creates, through a
+     * {@link RelationLink} in an {@code exists}; over an input relation, through the one scalar bean field §13.3.9 stores
      * it in, on the source where the recipient role is to-one and else on the recipient. Refused as there: a binding
      * that names no role pair, a to-one recipient role whose sibling is to-many, and a join the bean model gives no
      * field.
      */
-    private Consumer<Lezingen> ontvangersjoin(RolBindingRef rb, Objecttype bron, Objecttype doel, String naam) {
-        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
-        if (paar == null)
-            throw new Weigering("de connectingRole van de verdeling noemt geen gedeclareerde rol (" + rb.feittype() + ", "
+    private Consumer<Reads> recipientsJoin(RolBindingRef rb, Objecttype bron, Objecttype doel, String naam) {
+        RegelSpraakModel.Rol[] pair = FactModelGenerator.boundRolePair(model, rb);
+        if (pair == null)
+            throw new Refusal("de connectingRole van de verdeling noemt geen gedeclareerde rol (" + rb.feittype() + ", "
                     + rb.rol() + ")");
-        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype()))) {
-            Koppelrelatie relatie = koppelrelatie(rb, paar[0], "de verdeling '" + naam + "'");
-            return lid -> lid.bereikPlan(koppelingsbestaat(relatie));
+        if (rb.feittype() != null && createdRelations.contains(Namen.norm(rb.feittype()))) {
+            LinkRelation relation = linkRelation(rb, pair[0], "de verdeling '" + naam + "'");
+            return member -> member.addToRangePlan(linkExists(relation));
         }
-        String ontvangerrol = paar[0].naam(), bronrol = paar[1].naam();
-        boolean voorwaarts = !model.naarVeelRol(bron, doel, ontvangerrol);
-        if (voorwaarts && model.naarVeelRol(doel, bron, bronrol))
-            throw new Weigering("een verdeling over de enkelvoudige ontvangerrol '" + ontvangerrol + "' wiens zusterrol '"
-                    + bronrol + "' meervoudig is: dat feittype heeft één beanveld voor beide richtingen, zoals een vouw"
+        String recipientRole = pair[0].naam(), sourceRole = pair[1].naam();
+        boolean forward = !model.naarVeelRol(bron, doel, recipientRole);
+        if (forward && model.naarVeelRol(doel, bron, sourceRole))
+            throw new Refusal("een verdeling over de enkelvoudige ontvangerrol '" + recipientRole + "' wiens zusterrol '"
+                    + sourceRole + "' meervoudig is: dat feittype heeft één beanveld voor beide richtingen, zoals een vouw"
                     + " over zo'n rol weigert (§13.3.9 opslagrichting)");
-        Objecttype drager = voorwaarts ? bron : doel, ander = voorwaarts ? doel : bron;
-        String rol = voorwaarts ? ontvangerrol : bronrol;
-        if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, ander))
-            throw new Weigering("de join van de verdeling heeft geen beanveld — "
-                    + FactModelGenerator.geenJoinveldReden(model, drager, rol, ander) + " (§13.3.9 opslagrichting)");
+        Objecttype carrier = forward ? bron : doel, earlierBean = forward ? doel : bron;
+        String rol = forward ? recipientRole : sourceRole;
+        if (!FactModelGenerator.hasReferenceField(model, carrier, rol, earlierBean))
+            throw new Refusal("de join van de verdeling heeft geen beanveld — "
+                    + FactModelGenerator.noJoinFieldReason(model, carrier, rol, earlierBean) + " (§13.3.9 opslagrichting)");
         // forward the source's reference field names the recipient, else the recipient's names the source
-        Binding.Veld veld = new Binding.Veld(bonenklasse(drager), rol);
-        return lid -> lid.onderwerpJoin(voorwaarts ? new Join(id("verdelingsbereik"), null, VOUWONDERWERP, veld)
-                : new Join(id("verdelingsbereik"), rol, VOUWONDERWERP));
+        Binding.Field veld = new Binding.Field(beanClass(carrier), rol);
+        return member -> member.subjectJoin(forward ? new Join(id("verdelingsbereik"), null, FOLD_SUBJECT, veld)
+                : new Join(id("verdelingsbereik"), rol, FOLD_SUBJECT));
     }
 
     // ---------------- object and fact creation ----------------
 
     /** One member initialisation of an object creation: the member on the created type, and its value on the subject. */
-    private record Initialisatie(Lid lid, Term waarde) {}
+    private record Initialisation(Member member, Term waarde) {}
 
     /**
      * An object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3), a rule of the agenda group {@link #OBJECTCREATIE}:
      * the subject pattern with the reads of the condition and of the member values bound as a rule's are, the
-     * {@link Creatiefase} the driver opened, no {@link Gemaakt} of this creation for the subject, no {@link Gemaakt} that
+     * {@link CreationPhase} the driver opened, no {@link CreationStamp} of this creation for the subject, no {@link CreationStamp} that
      * makes the subject itself in this phase, and the condition as the test; and a consequence that makes a new bean of
-     * the created type and inserts, stated, the bean, its {@link Gemaakt}, the {@link Koppeling} of the connecting
-     * relation and a {@link HeeftKenmerk} for a characteristic initialisation whose value is true
-     * ({@link Gevolg.Creatie}). An attribute initialisation whose value is gevuld is set on the new bean before it is
-     * inserted, as part of its construction ({@link Gevolg.Constructie}): it is the input of the made object, as the
+     * the created type and inserts, stated, the bean, its {@link CreationStamp}, the {@link RelationLink} of the connecting
+     * relation and a {@link HasCharacteristic} for a characteristic initialisation whose value is true
+     * ({@link Consequence.Creation}). An attribute initialisation whose value is gevuld is set on the new bean before it is
+     * inserted, as part of its construction ({@link Consequence.Construction}): it is the input of the made object, as the
      * reference interpreter reads it, so a writer of the member displaces it as it displaces case input, and an
      * initialisation rule on the member finds the target filled. Each value is computed from the values the rule binds
      * when it fires. The driver fires this group only at a fixpoint of the rule layer, so the condition and the
      * values are those of that fixpoint; and nothing the creation made lapses, as in the reference interpreter, which
      * keeps a minted instance under a fixed label. One object per creation per subject, then. The object is a bean of
      * the created type, so every pattern over that type sees it, and nothing is written on a bean that was there before:
-     * the link toward it is the {@link Koppeling}, which the readers of the relation join over.
+     * the link toward it is the {@link RelationLink}, which the readers of the relation join over.
      *
      * <p>The 1:1 shape guards on the input world, as ch. 5.5 says: a subject whose reference field toward the created
      * type is filled in the case input creates nothing; this branch writes no bean while it fires, so the field is the
-     * input. The decision of the link roles is the shared one ({@link FactModelGenerator#creatiekoppeling}): the
+     * input. The decision of the link roles is the shared one ({@link FactModelGenerator#creationLink}): the
      * creation's {@code connectingRole} binding, or without one the derivation from the type pair that the DRL-text
-     * branch takes as well. The relation of a derived pair is {@link #typenpaarrelatie}, and either way the link is the
-     * same {@link Koppeling}, put on both ends at the write-back. Refused by name besides: an ambiguous back-link, which
+     * branch takes as well. The relation of a derived pair is {@link #typePairRelation}, and either way the link is the
+     * same {@link RelationLink}, put on both ends at the write-back. Refused by name besides: an ambiguous back-link, which
      * ch. 5.5 makes a fault of the program; a derived pair whose roles the decision reaches only through a supertype of
      * either end, whose relation the strata of this branch do not see written; a connecting relation that is not one of
      * two roles; a characteristic initialisation whose value is no truth value (WF-027); and
@@ -2011,170 +2011,170 @@ public final class TmsTranspiler {
      * fault rule is an ordinary rule of the rule layer, without the marks and without the 1:1 guard: the reference
      * interpreter evaluates the condition first, in every pass.
      */
-    private List<Regelplan> objectCreatie(ResolvedObjectCreatie oc) {
-        if (oc.naam() == null) throw new Weigering("een objectcreatie zonder naam (WF-107)");
-        Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
-        if (nieuw == null || subject == null) throw new Weigering("een objectcreatie zonder opgelost type");
-        RolBindingRef vr = rolBindingen.get(oc);
-        FactModelGenerator.Creatiekoppeling k = FactModelGenerator.creatiekoppeling(model, nieuw, subject, vr, oc.naam());
-        if (k.dubbelzinnig() != null)
-            throw new Weigering(k.dubbelzinnig() + "; " + NOG_NIET);
-        if (k.weigering() != null) throw new Weigering(k.weigering());
-        RegelSpraakModel.Feittype ft = vr != null ? feittype(vr.feittype()) : typenpaarrelatie(subject, nieuw, k);
+    private List<RulePlan> objectCreation(ResolvedObjectCreatie oc) {
+        if (oc.naam() == null) throw new Refusal("een objectcreatie zonder naam (WF-107)");
+        Objecttype recomputed = oc.nieuwType(), subject = oc.subject();
+        if (recomputed == null || subject == null) throw new Refusal("een objectcreatie zonder opgelost type");
+        RolBindingRef vr = roleBindings.get(oc);
+        FactModelGenerator.CreationLink k = FactModelGenerator.creationLink(model, recomputed, subject, vr, oc.naam());
+        if (k.ambiguous() != null)
+            throw new Refusal(k.ambiguous() + "; " + STILL_NOT);
+        if (k.refusal() != null) throw new Refusal(k.refusal());
+        RegelSpraakModel.Feittype ft = vr != null ? feittype(vr.feittype()) : typePairRelation(subject, recomputed, k);
         if (vr == null && ft == null)
-            throw new Weigering("een objectcreatie zonder connectingRole-binding waarvan de terugkoppeling uit het typenpaar"
-                    + " ('" + k.backRol() + "' en '" + k.fwdRol() + "') via een supertype van het onderwerp of van het"
+            throw new Refusal("een objectcreatie zonder connectingRole-binding waarvan de terugkoppeling uit het typenpaar"
+                    + " ('" + k.backRole() + "' en '" + k.fwdRole() + "') via een supertype van het onderwerp of van het"
                     + " gemaakte type loopt: de strata van deze tak leiden de relatie van de terugkoppeling af uit de exacte"
-                    + " typen en zien haar dan niet geschreven: " + NOG_NIET);
+                    + " typen en zien haar dan niet geschreven: " + STILL_NOT);
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-            throw new Weigering("een objectcreatie over de relatie '" + (vr != null ? vr.feittype() : ft.naam)
-                    + "', die geen relatie van twee rollen is: " + NOG_NIET);
-        String relatie = Namen.norm(ft.naam);
-        boolean nieuwIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(k.fwdRol()));
+            throw new Refusal("een objectcreatie over de relatie '" + (vr != null ? vr.feittype() : ft.naam)
+                    + "', die geen relatie van twee rollen is: " + STILL_NOT);
+        String relation = Namen.norm(ft.naam);
+        boolean newIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(k.fwdRole()));
         String naam = oc.naam();
-        String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        Supplier<Lezingen> nieuwe = () -> new Lezingen(subject).geldig(oc.geldigheid());
-        Lezingen lez = nieuwe.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = oc.voorwaarde() == null ? null : voorwaarde(oc.voorwaarde(), lez);
-        boolean kanFalen = lez.kanFalen();
+        String ruleName = model.geëmitteerdeRegelNaam(naam);
+        Supplier<Reads> nieuwe = () -> new Reads(subject).valid(oc.geldigheid());
+        Reads lez = nieuwe.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = oc.voorwaarde() == null ? null : voorwaarde(oc.voorwaarde(), lez);
+        boolean canFail = lez.canFail();
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
-        List<Initialisatie> inits = new ArrayList<>();
+        Set<Integer> use = lez.follow();
+        List<Initialisation> inits = new ArrayList<>();
         for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) {
             if (t.attribuut() == null || t.waarde() == null)
-                throw new Weigering("een ledeninitialisatie zonder lid of waarde");
+                throw new Refusal("een ledeninitialisatie zonder lid of waarde");
             // a characteristic is true or false (WF-027): the reference interpreter faults on a value of another type,
             // and the consequence below would read it as not true and leave the characteristic unset
-            Datatype kenmerkwaarde = t.kenmerk() ? eff.typeVan(t.waarde()) : null;
-            if (kenmerkwaarde != null && !kenmerkwaarde.isBoolean() && !kenmerkwaarde.isOnbekend())
-                throw new Weigering("een kenmerkinitialisatie van '" + t.attribuut() + "' met een waarde van type "
-                        + kenmerkwaarde.naam() + " ('" + snippet(t.waarde().bron()) + "'): een kenmerk is waar of onwaar"
+            Datatype characteristicValue = t.kenmerk() ? eff.typeOf(t.waarde()) : null;
+            if (characteristicValue != null && !characteristicValue.isBoolean() && !characteristicValue.isOnbekend())
+                throw new Refusal("een kenmerkinitialisatie van '" + t.attribuut() + "' met een waarde van type "
+                        + characteristicValue.naam() + " ('" + snippet(t.waarde().bron()) + "'): een kenmerk is waar of onwaar"
                         + " (WF-027), en de referentie-interpreter faalt op zo'n waarde");
-            String deling = deling(t.waarde());
-            if (deling != null)
-                throw new Weigering("een deling in een ledeninitialisatie ('" + deling + "'), waarvan deze tak de §6.5-"
-                        + "deponering niet maakt: " + NOG_NIET);
-            String wortel = wortel(t.waarde());
-            if (wortel != null)
-                throw new Weigering("een wortel in een ledeninitialisatie ('" + wortel + "'), waarvan deze tak de §6.6-"
-                        + "deponering niet maakt: " + NOG_NIET);
-            Lid lid = lid(nieuw, t.attribuut(), t.kenmerk());
+            String division = division(t.waarde());
+            if (division != null)
+                throw new Refusal("een deling in een ledeninitialisatie ('" + division + "'), waarvan deze tak de §6.5-"
+                        + "deponering niet maakt: " + STILL_NOT);
+            String squareRoot = squareRoot(t.waarde());
+            if (squareRoot != null)
+                throw new Refusal("een wortel in een ledeninitialisatie ('" + squareRoot + "'), waarvan deze tak de §6.6-"
+                        + "deponering niet maakt: " + STILL_NOT);
+            Member member = member(recomputed, t.attribuut(), t.kenmerk());
             Term w = waarde(t.waarde(), lez);
             if (!t.kenmerk())
-                w = herschaald(w, eff.eenheidVan(t.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het lid");
-            inits.add(new Initialisatie(lid, w));
+                w = rescaled(w, eff.unitOf(t.waarde()), member.datatype().eenheidOf(), "een §4 schrijfgrens naar het lid");
+            inits.add(new Initialisation(member, w));
         }
         lez.stop();
         int stratum = stratum(oc, naam);
-        int fase = lez.creatiefase(stratum);
-        gebruik.add(fase);
-        int herkomst = lez.herkomst();
-        gebruik.add(herkomst);
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, oc.voorwaarde(),
-                creatiebewaking(naam, lez, fase));
+        int phase = lez.creationPhase(stratum);
+        use.add(phase);
+        int origin = lez.origin();
+        use.add(origin);
+        List<LhsItem> items = lez.plan(conditionRole(canFail), testTerm, read, oc.voorwaarde(),
+                creationGuard(naam, lez, phase));
         // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
         // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
-        items.add(new Niet(new Patroon(Fout.class, "$eigen_fout", List.of(gelijk(id("eigen-fout"), "regel", naam)),
-                List.of(new Join(id("eigen-fout-onderwerp"), "onderwerp", ONDERWERP)), List.of())));
-        if (k.eenOpEen())
+        items.add(new Not(new FactPattern(Fout.class, "$eigen_fout", List.of(equal(id("eigen-fout"), "regel", naam)),
+                List.of(new Join(id("eigen-fout-onderwerp"), "onderwerp", SUBJECT)), List.of())));
+        if (k.oneToOne())
             // an instance linked toward the subject in the input world blocks the creation (ch. 5.5)
-            lez.onderwerpAlfa(new Alfa(id("geen-gekoppelde-instantie"),
-                    List.of(new Alfa.Veldtoets(k.fwdRef(), Alfa.Vergelijker.LEEG, null))));
+            lez.addSubjectAlpha(new Alpha(id("geen-gekoppelde-instantie"),
+                    List.of(new Alpha.FieldTest(k.fwdRef(), Alpha.Comparator.LEEG, null))));
         // every initialisation is set on the new bean in its construction where it is an attribute, or inserted as a
         // characteristic after the bean where it is one, in the order of the document
-        List<Gevolg.Initialisatie> initialisaties = new ArrayList<>();
-        List<Gevolg.Constructie.Zetting> zettingen = new ArrayList<>();
-        List<Gevolg.Invoegsel> invoegingen = new ArrayList<>(List.of(new Gevolg.Invoegsel.Nieuw(Gevolg.Invoeging.GESTELD),
-                new Gevolg.Invoegsel.Merk(Gevolg.Invoeging.GESTELD),
-                new Gevolg.Invoegsel.Link(relatie, nieuwIsEerste, Gevolg.Invoeging.GESTELD)));
+        List<Consequence.Initialisation> initialisations = new ArrayList<>();
+        List<Consequence.Construction.Setting> settings = new ArrayList<>();
+        List<Consequence.Insert> insertions = new ArrayList<>(List.of(new Consequence.Insert.New(Consequence.Insertion.STATED),
+                new Consequence.Insert.Mark(Consequence.Insertion.STATED),
+                new Consequence.Insert.Link(relation, newIsFirst, Consequence.Insertion.STATED)));
         for (int i = 0; i < inits.size(); i++) {
-            Lid lid = inits.get(i).lid();
-            initialisaties.add(new Gevolg.Initialisatie(lid.sleutel(), inits.get(i).waarde()));
-            if (lid.kenmerk()) invoegingen.add(new Gevolg.Invoegsel.Kenmerk(i, Gevolg.Invoeging.GESTELD));
-            else zettingen.add(new Gevolg.Constructie.Zetting(i, new Binding.Veld(lid.klasse(), lid.naam())));
+            Member member = inits.get(i).member();
+            initialisations.add(new Consequence.Initialisation(member.sleutel(), inits.get(i).waarde()));
+            if (member.kenmerk()) insertions.add(new Consequence.Insert.Characteristic(i, Consequence.Insertion.STATED));
+            else settings.add(new Consequence.Construction.Setting(i, new Binding.Field(member.javaClass(), member.naam())));
         }
         // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
         // making, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
         // creation makes, and the rule's guard on it keeps the creation from firing again in a later generation
-        Gevolg creatie = new Gevolg.Creatie(ONDERWERP, naam,
-                new Gevolg.Creatiediepte(herkomst, stratum, subject.naam, CREATIEBUDGET), initialisaties,
-                new Gevolg.Foutnaam(naam, regelnaam), Gevolg.Invoeging.GESTELD,
-                new Gevolg.Constructie(bonenklasse(nieuw), zettingen), fase, invoegingen, List.copyOf(gebruik),
-                lez.grootte());
-        for (Initialisatie i : inits) afgeleid.put(i.lid().sleutel(), i.lid());
-        lez.vastleggen();
-        creatieregels.add(regelnaam);
-        creatiestrata.add(stratum);
-        List<Regelplan> uit = new ArrayList<>();
-        uit.add(lez.regelplan(regelnaam, OBJECTCREATIE, items, creatie));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null));
-        Regelplan deponering = deponeerregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null);
-        if (deponering != null) uit.add(deponering);
-        Regelplan zonderDatum = geldigheidsfout(regelnaam, naam, oc.geldigheid());
-        if (zonderDatum != null) uit.add(zonderDatum);
-        return uit;
+        Consequence creatie = new Consequence.Creation(SUBJECT, naam,
+                new Consequence.CreationDepth(origin, stratum, subject.naam, CREATION_BUDGET), initialisations,
+                new Consequence.FaultName(naam, ruleName), Consequence.Insertion.STATED,
+                new Consequence.Construction(beanClass(recomputed), settings), phase, insertions, List.copyOf(use),
+                lez.size());
+        for (Initialisation i : inits) derived.put(i.member().sleutel(), i.member());
+        lez.recorder();
+        creationRules.add(ruleName);
+        creationStrata.add(stratum);
+        List<RulePlan> out = new ArrayList<>();
+        out.add(lez.rulePlan(ruleName, OBJECTCREATIE, items, creatie));
+        if (canFail) out.add(conditionFaultRule(naam, ruleName, nieuwe, oc.voorwaarde(), null));
+        RulePlan deposit = depositRule(naam, ruleName, nieuwe, oc.voorwaarde(), null);
+        if (deposit != null) out.add(deposit);
+        RulePlan withoutDate = validityFault(ruleName, naam, oc.geldigheid());
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
     }
 
-    /** {@link #typenpaarrelatie(Objecttype, Objecttype, FactModelGenerator.Creatiekoppeling)} for the object creation
+    /** {@link #typePairRelation(Objecttype, Objecttype, FactModelGenerator.CreationLink)} for the object creation
      *  {@code oc} without a {@code connectingRole} binding, before any form lowers; null where the shared decision does
-     *  not link the creation, which {@link #objectCreatie} then refuses by name. */
-    private RegelSpraakModel.Feittype typenpaarrelatie(ResolvedObjectCreatie oc) {
-        Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
-        if (oc.naam() == null || nieuw == null || subject == null) return null;
-        FactModelGenerator.Creatiekoppeling k = FactModelGenerator.creatiekoppeling(model, nieuw, subject, null, oc.naam());
-        return k.dubbelzinnig() != null || k.weigering() != null ? null : typenpaarrelatie(subject, nieuw, k);
+     *  not link the creation, which {@link #objectCreation} then refuses by name. */
+    private RegelSpraakModel.Feittype typePairRelation(ResolvedObjectCreatie oc) {
+        Objecttype recomputed = oc.nieuwType(), subject = oc.subject();
+        if (oc.naam() == null || recomputed == null || subject == null) return null;
+        FactModelGenerator.CreationLink k = FactModelGenerator.creationLink(model, recomputed, subject, null, oc.naam());
+        return k.ambiguous() != null || k.refusal() != null ? null : typePairRelation(subject, recomputed, k);
     }
 
     /**
      * The connecting relation of an object creation without a {@code connectingRole} binding (RUNTIME-SEMANTICS ch.
      * 5.5): the fact type of the two roles that the shared decision {@code k} derived from the type pair, the role the
-     * made object plays ({@code fwdRol}) filled by the created type and the other ({@code backRol}) by the subject's, and
+     * made object plays ({@code fwdRole}) filled by the created type and the other ({@code backRole}) by the subject's, and
      * for a subject of the created type a reciprocal fact type of that one role. The fillers are compared exactly, as
-     * {@link Kringen} derives the back-link for the strata: where the decision reached a role through a supertype of
+     * {@link Cycles} derives the back-link for the strata: where the decision reached a role through a supertype of
      * either end, the strata would not see the creation write the relation, so a creation that reads it could fire
-     * before this one has made its links. Null then, and {@link #objectCreatie} refuses the creation by name. Two fact
+     * before this one has made its links. Null then, and {@link #objectCreation} refuses the creation by name. Two fact
      * types cannot match where the decision linked: its roles are unique among the roles the pair reaches through any
      * supertype, of which the exact ones are a part.
      */
-    private RegelSpraakModel.Feittype typenpaarrelatie(Objecttype subject, Objecttype nieuw,
-                                                        FactModelGenerator.Creatiekoppeling k) {
-        RegelSpraakModel.Feittype gevonden = null;
+    private RegelSpraakModel.Feittype typePairRelation(Objecttype subject, Objecttype recomputed,
+                                                        FactModelGenerator.CreationLink k) {
+        RegelSpraakModel.Feittype found = null;
         for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
             List<RegelSpraakModel.Rol> r = ft.rollen;
-            boolean past = r.size() == 2
-                    ? vult(r.get(0), k.fwdRol(), nieuw) && vult(r.get(1), k.backRol(), subject)
-                      || vult(r.get(1), k.fwdRol(), nieuw) && vult(r.get(0), k.backRol(), subject)
-                    : r.size() == 1 && ft.wederkerig && subject == nieuw && vult(r.get(0), k.fwdRol(), nieuw);
-            if (!past) continue;
-            if (gevonden != null)
-                throw new IllegalStateException("exec-model: de terugkoppeling ('" + k.backRol() + "' en '" + k.fwdRol()
-                        + "') van een " + subject.naam + " naar een " + nieuw.naam + " ligt in twee feittypen, '"
-                        + gevonden.naam + "' en '" + ft.naam + "', waar het gedeelde besluit haar rollen uniek vond");
-            gevonden = ft;
+            boolean fits = r.size() == 2
+                    ? fills(r.get(0), k.fwdRole(), recomputed) && fills(r.get(1), k.backRole(), subject)
+                      || fills(r.get(1), k.fwdRole(), recomputed) && fills(r.get(0), k.backRole(), subject)
+                    : r.size() == 1 && ft.wederkerig && subject == recomputed && fills(r.get(0), k.fwdRole(), recomputed);
+            if (!fits) continue;
+            if (found != null)
+                throw new IllegalStateException("exec-model: de terugkoppeling ('" + k.backRole() + "' en '" + k.fwdRole()
+                        + "') van een " + subject.naam + " naar een " + recomputed.naam + " ligt in twee feittypen, '"
+                        + found.naam + "' en '" + ft.naam + "', waar het gedeelde besluit haar rollen uniek vond");
+            found = ft;
         }
-        return gevonden;
+        return found;
     }
 
     /** Whether role {@code r} carries the name {@code naam} and is filled by exactly {@code type}. */
-    private static boolean vult(RegelSpraakModel.Rol r, String naam, Objecttype type) {
+    private static boolean fills(RegelSpraakModel.Rol r, String naam, Objecttype type) {
         return naam != null && Namen.norm(r.naam()).equals(Namen.norm(naam))
                 && type.naam.equalsIgnoreCase(r.objecttypeNaam());
     }
 
-    /** The guard of an object creation beside its condition: no {@link Gemaakt} of creation {@code naam} for the
-     *  subject, so that it makes one object per subject, and no {@link Gemaakt} that made the subject itself in the
-     *  current phase, bound at {@code fase} ({@link Lezingen#creatiefase}), so that an object waits for the next phase,
+    /** The guard of an object creation beside its condition: no {@link CreationStamp} of creation {@code naam} for the
+     *  subject, so that it makes one object per subject, and no {@link CreationStamp} that made the subject itself in the
+     *  current phase, bound at {@code phase} ({@link Reads#creationPhase}), so that an object waits for the next phase,
      *  after the rule layer has reached a fixpoint over it. */
-    private List<LhsItem> creatiebewaking(String naam, Lezingen lez, int fase) {
-        String f = lez.variabele(fase);
-        String eigen = "$gemaakt_" + id("creatie"), nieuw = "$nieuw_" + id("creatie");
+    private List<LhsItem> creationGuard(String naam, Reads lez, int phase) {
+        String f = lez.variable(phase);
+        String own = "$gemaakt_" + id("creatie"), recomputed = "$nieuw_" + id("creatie");
         return List.of(
-                new Niet(new Patroon(Gemaakt.class, eigen, List.of(gelijk(id("gemaakt"), "regel", naam)),
-                        List.of(new Join(id("gemaakt-onderwerp"), "onderwerp", ONDERWERP)), List.of())),
-                new Niet(new Patroon(Gemaakt.class, nieuw, List.of(),
-                        List.of(new Join(id("nieuw-object"), "object", ONDERWERP)),
-                        List.of(new Betatoets(id("nieuw-in-deze-fase"), Functie.IN_FASE, f)), List.of())));
+                new Not(new FactPattern(CreationStamp.class, own, List.of(equal(id("gemaakt"), "regel", naam)),
+                        List.of(new Join(id("gemaakt-onderwerp"), "onderwerp", SUBJECT)), List.of())),
+                new Not(new FactPattern(CreationStamp.class, recomputed, List.of(),
+                        List.of(new Join(id("nieuw-object"), "object", SUBJECT)),
+                        List.of(new BetaTest(id("nieuw-in-deze-fase"), Aggregation.IN_PHASE, f)), List.of())));
     }
 
     /** The evaluation stratum of the creation {@code vorm}, named {@code naam}: every creation is a form of the
@@ -2189,109 +2189,109 @@ public final class TmsTranspiler {
 
     /**
      * A fact creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.4), a rule of the agenda group {@link #FEITCREATIE}: the
-     * anchor pattern with the reads of the guard, the {@link Creatiefase} the driver opened, the guard as the test where
-     * it is about the anchor, the path from the anchor to the target as a chain of patterns ({@link #keten}), over the
-     * {@link Koppeling} facts of a relation a form creates, none of the current phase, and over the reference fields of
+     * anchor pattern with the reads of the guard, the {@link CreationPhase} the driver opened, the guard as the test where
+     * it is about the anchor, the path from the anchor to the target as a chain of patterns ({@link #chain}), over the
+     * {@link RelationLink} facts of a relation a form creates, none of the current phase, and over the reference fields of
      * an input relation, no link of the created relation between anchor and target yet, and a consequence that inserts
      * that link, stated and carrying the phase. The creation is idempotent per link, as in the reference interpreter,
      * where an already present link is a write that changes nothing: a target that two routes or two creations reach,
      * or that the input links already, gets no second link, and an anchor gets the links of targets that become
      * reachable in a later generation. A guard that is a characteristic check hosted on the target, and is the whole
      * condition, filters the targets instead (ch. 5.5, WF-109); hosted on the target anywhere else it is refused, as the
-     * other branches refuse it. A second distinct filler of a to-one role is a fault ({@link #koppelingregels}).
+     * other branches refuse it. A second distinct filler of a to-one role is a fault ({@link #linkRules}).
      */
-    private List<Regelplan> feitCreatie(ResolvedFeitCreatie fc) {
-        if (fc.naam() == null) throw new Weigering("een feitcreatie zonder naam (WF-107)");
-        Objecttype anker = fc.anker(), doel = fc.doel();
-        if (anker == null || doel == null || fc.feittype() == null || fc.joinRol() == null || fc.ankerRol() == null)
-            throw new Weigering("een feitcreatie zonder opgelost anker, doel, feittype of pad");
+    private List<RulePlan> factCreation(ResolvedFeitCreatie fc) {
+        if (fc.naam() == null) throw new Refusal("een feitcreatie zonder naam (WF-107)");
+        Objecttype anchor = fc.anker(), doel = fc.doel();
+        if (anchor == null || doel == null || fc.feittype() == null || fc.joinRol() == null || fc.ankerRol() == null)
+            throw new Refusal("een feitcreatie zonder opgelost anker, doel, feittype of pad");
         RegelSpraakModel.Feittype ft = feittype(fc.feittype());
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-            throw new Weigering("een feitcreatie van de relatie '" + fc.feittype() + "', die geen relatie van twee rollen"
-                    + " is: " + NOG_NIET);
-        String relatie = Namen.norm(ft.naam);
-        boolean ankerIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(fc.ankerRol()));
+            throw new Refusal("een feitcreatie van de relatie '" + fc.feittype() + "', die geen relatie van twee rollen"
+                    + " is: " + STILL_NOT);
+        String relation = Namen.norm(ft.naam);
+        boolean anchorIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(fc.ankerRol()));
         Conditie c = fc.voorwaarde();
-        Conditie.Kenmerk doelcheck = c instanceof Conditie.Kenmerk k && k.eigenaar() != null && !Gastheer.hostOp(k, anker)
-                && Gastheer.hostOp(k, doel) && !navigatieBindingen.containsKey(k) && k.periode() == null ? k : null;
-        if (doelcheck == null && c != null && Gastheer.doelgastheerBuitenBereik(c, doel, navigatieBindingen::containsKey))
-            throw new Weigering(Gastheer.DOELPOGING_GENEST);
-        String regelnaam = model.geëmitteerdeRegelNaam(fc.naam());
-        Conditie ankerguard = doelcheck == null ? c : null;
-        Supplier<Lezingen> nieuw = () -> new Lezingen(anker).geldig(fc.geldigheid());
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = ankerguard == null ? null : voorwaarde(ankerguard, lez);
-        boolean kanFalen = lez.kanFalen();
+        Conditie.Kenmerk targetCheck = c instanceof Conditie.Kenmerk k && k.eigenaar() != null && !Host.hostOp(k, anchor)
+                && Host.hostOp(k, doel) && !path.containsKey(k) && k.periode() == null ? k : null;
+        if (targetCheck == null && c != null && Host.targetHostOutsideRange(c, doel, path::containsKey))
+            throw new Refusal(Host.TARGET_ATTEMPT_NESTED);
+        String ruleName = model.geëmitteerdeRegelNaam(fc.naam());
+        Conditie anchorGuard = targetCheck == null ? c : null;
+        Supplier<Reads> recomputed = () -> new Reads(anchor).valid(fc.geldigheid());
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = anchorGuard == null ? null : voorwaarde(anchorGuard, lez);
+        boolean canFail = lez.canFail();
         lez.stop();
         int stratum = stratum(fc, fc.naam());
-        int fase = lez.creatiefase(stratum);
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, ankerguard);
-        List<RolBindingRef> stappen = new ArrayList<>();
-        for (ResolvedFeitCreatie.Tussenstap t : fc.tussenstappen()) stappen.add(t.rolBinding());
-        stappen.add(fc.joinRol());
+        int phase = lez.creationPhase(stratum);
+        List<LhsItem> items = lez.plan(conditionRole(canFail), testTerm, read, anchorGuard);
+        List<RolBindingRef> steps = new ArrayList<>();
+        for (ResolvedFeitCreatie.Tussenstap t : fc.tussenstappen()) steps.add(t.rolBinding());
+        steps.add(fc.joinRol());
         List<Hop> hops = new ArrayList<>();
-        Objecttype cur = anker;
-        for (RolBindingRef stap : stappen) {
-            Hop h = stap(stap, cur, "het pad van de feitcreatie '" + fc.naam() + "'");
+        Objecttype cur = anchor;
+        for (RolBindingRef step : steps) {
+            Hop h = step(step, cur, "het pad van de feitcreatie '" + fc.naam() + "'");
             hops.add(h);
             cur = h.naar();
         }
-        List<Patroon> pad = new ArrayList<>(keten(hops, ONDERWERP, lez.variabele(fase)));
-        String doelvar = pad.get(pad.size() - 1).naam();
-        if (doelcheck != null) {
-            Doelbewaking b = doelbewaking(doelcheck, doelvar);
-            pad.set(pad.size() - 1, metNaAlfa(pad.get(pad.size() - 1), b.naAlfa()));
+        List<FactPattern> pad = new ArrayList<>(chain(hops, SUBJECT, lez.variable(phase)));
+        String targetVar = pad.get(pad.size() - 1).naam();
+        if (targetCheck != null) {
+            TargetGuard b = targetGuard(targetCheck, targetVar);
+            pad.set(pad.size() - 1, withAfterAlpha(pad.get(pad.size() - 1), b.afterAlpha()));
             items.addAll(pad);
-            if (b.stand() != null) items.add(b.stand());
+            if (b.state() != null) items.add(b.state());
         } else {
             items.addAll(pad);
         }
-        String ankereinde = ankerIsEerste ? "eerste" : "tweede", doeleinde = ankerIsEerste ? "tweede" : "eerste";
-        items.add(new Niet(new Patroon(Koppeling.class, "$bestaand_" + id("feitcreatie"),
-                List.of(gelijk(id("bestaand"), "relatie", relatie)),
-                List.of(new Join(id("bestaand-anker"), ankereinde, ONDERWERP),
-                        new Join(id("bestaand-doel"), doeleinde, doelvar)),
+        String anchorEnd = anchorIsFirst ? "eerste" : "tweede", targetEnd = anchorIsFirst ? "tweede" : "eerste";
+        items.add(new Not(new FactPattern(RelationLink.class, "$bestaand_" + id("feitcreatie"),
+                List.of(equal(id("bestaand"), "relation", relation)),
+                List.of(new Join(id("bestaand-anker"), anchorEnd, SUBJECT),
+                        new Join(id("bestaand-doel"), targetEnd, targetVar)),
                 List.of())));
-        Gevolg koppeling = new Gevolg.Koppeling(relatie, ankerIsEerste ? ONDERWERP : doelvar,
-                ankerIsEerste ? doelvar : ONDERWERP, fase, Gevolg.Invoeging.GESTELD);
-        lez.vastleggen();
-        creatieregels.add(regelnaam);
-        creatiestrata.add(stratum);
-        List<Regelplan> uit = new ArrayList<>();
-        uit.add(lez.regelplan(regelnaam, FEITCREATIE, items, koppeling));
-        if (kanFalen) uit.add(voorwaardefoutregel(fc.naam(), regelnaam, nieuw, ankerguard, null));
-        Regelplan deponering = deponeerregel(fc.naam(), regelnaam, nieuw, ankerguard, null);
-        if (deponering != null) uit.add(deponering);
-        Regelplan zonderDatum = geldigheidsfout(regelnaam, fc.naam(), fc.geldigheid());
-        if (zonderDatum != null) uit.add(zonderDatum);
-        return uit;
+        Consequence relationLink = new Consequence.RelationLink(relation, anchorIsFirst ? SUBJECT : targetVar,
+                anchorIsFirst ? targetVar : SUBJECT, phase, Consequence.Insertion.STATED);
+        lez.recorder();
+        creationRules.add(ruleName);
+        creationStrata.add(stratum);
+        List<RulePlan> out = new ArrayList<>();
+        out.add(lez.rulePlan(ruleName, FEITCREATIE, items, relationLink));
+        if (canFail) out.add(conditionFaultRule(fc.naam(), ruleName, recomputed, anchorGuard, null));
+        RulePlan deposit = depositRule(fc.naam(), ruleName, recomputed, anchorGuard, null);
+        if (deposit != null) out.add(deposit);
+        RulePlan withoutDate = validityFault(ruleName, fc.naam(), fc.geldigheid());
+        if (withoutDate != null) out.add(withoutDate);
+        return out;
     }
 
-    /** A step of a fact creation's path over {@code stap} from {@code van}: over a relation a form creates by its
-     *  {@link Koppeling} facts, else by the reference field of the to-one end, on the near bean where the far role is
+    /** A step of a fact creation's path over {@code step} from {@code van}: over a relation a form creates by its
+     *  {@link RelationLink} facts, else by the reference field of the to-one end, on the near bean where the far role is
      *  to-one and on the far bean where it is to-many. Two to-many roles have no field in the bean model (§13.3.9). */
-    private Hop stap(RolBindingRef stap, Objecttype van, String wat) {
-        RegelSpraakModel.Rol[] paar = stap == null ? null : FactModelGenerator.gebondenRolpaar(model, stap);
-        if (paar == null || paar[0] == paar[1])
-            throw new Weigering(wat + ": een stap die geen rolpaar van twee rollen noemt");
-        Objecttype naar = model.objecttypeOpNaam(paar[0].objecttypeNaam());
-        if (naar == null) throw new Weigering(wat + ": de rol '" + paar[0].naam() + "' heeft geen gedeclareerde vuller");
-        Hop gecreeerd = koppelingshop(stap, van, naar);
-        if (gecreeerd != null) return gecreeerd;
-        if (!paar[0].meervoudig()) {
-            if (!FactModelGenerator.heeftReferentieVeld(model, van, paar[0].naam(), naar))
-                throw new Weigering(wat + ": " + FactModelGenerator.geenReferentieveldReden(model, van, paar[0].naam(), naar)
+    private Hop step(RolBindingRef step, Objecttype van, String description) {
+        RegelSpraakModel.Rol[] pair = step == null ? null : FactModelGenerator.boundRolePair(model, step);
+        if (pair == null || pair[0] == pair[1])
+            throw new Refusal(description + ": een stap die geen rolpaar van twee rollen noemt");
+        Objecttype naar = model.objecttypeOpNaam(pair[0].objecttypeNaam());
+        if (naar == null) throw new Refusal(description + ": de rol '" + pair[0].naam() + "' heeft geen gedeclareerde vuller");
+        Hop created = linkHop(step, van, naar);
+        if (created != null) return created;
+        if (!pair[0].meervoudig()) {
+            if (!FactModelGenerator.hasReferenceField(model, van, pair[0].naam(), naar))
+                throw new Refusal(description + ": " + FactModelGenerator.noReferenceFieldReason(model, van, pair[0].naam(), naar)
                         + " (§13.3.9 opslagrichting)");
-            return new Hop(van, naar, paar[0].naam(), true, null, false);
+            return new Hop(van, naar, pair[0].naam(), true, null, false);
         }
-        if (!paar[1].meervoudig()) {
-            if (!FactModelGenerator.heeftReferentieVeld(model, naar, paar[1].naam(), van))
-                throw new Weigering(wat + ": " + FactModelGenerator.geenReferentieveldReden(model, naar, paar[1].naam(), van)
+        if (!pair[1].meervoudig()) {
+            if (!FactModelGenerator.hasReferenceField(model, naar, pair[1].naam(), van))
+                throw new Refusal(description + ": " + FactModelGenerator.noReferenceFieldReason(model, naar, pair[1].naam(), van)
                         + " (§13.3.9 opslagrichting)");
-            return new Hop(van, naar, paar[1].naam(), false, null, false);
+            return new Hop(van, naar, pair[1].naam(), false, null, false);
         }
-        throw new Weigering(wat + ": de stap over '" + stap.feittype() + "' heeft twee rollen naar veel, waarvoor het"
+        throw new Refusal(description + ": de stap over '" + step.feittype() + "' heeft twee rollen naar veel, waarvoor het"
                 + " beanmodel geen veld heeft (§13.3.9 opslagrichting)");
     }
 
@@ -2299,116 +2299,116 @@ public final class TmsTranspiler {
      *  target the variable {@code doel} binds at the end of the creation's path: the target must be of the host's type,
      *  and its characteristic must hold as the check asks, read through its standing where a form writes it and off the
      *  bean otherwise, through the getter of the class that declares it. The constraints on the target come after the
-     *  one that reaches it ({@link Patroon#naAlfa}), as do those on the standing after its join. */
-    private Doelbewaking doelbewaking(Conditie.Kenmerk check, String doel) {
+     *  one that reaches it ({@link FactPattern#afterAlpha}), as do those on the standing after its join. */
+    private TargetGuard targetGuard(Conditie.Kenmerk check, String doel) {
         Objecttype host = check.eigenaar();
-        Lid lid = lid(host, check.kenmerk(), true);
-        Class<?> hostklasse = bonenklasse(host);
-        boolean gewenst = !check.negatie();
-        Alfa gastheer = new Alfa(id("doel-gastheer"),
-                List.of(new Alfa.Veldtoets(null, Alfa.Vergelijker.IS_EEN, hostklasse)));
-        ElementSleutel sleutel = lid.sleutel();
-        if (schrijvers.containsKey(sleutel)) {
+        Member member = member(host, check.kenmerk(), true);
+        Class<?> hostClass = beanClass(host);
+        boolean desired = !check.negatie();
+        Alpha hostConstraint = new Alpha(id("doel-gastheer"),
+                List.of(new Alpha.FieldTest(null, Alpha.Comparator.IS_A, hostClass)));
+        ElementSleutel sleutel = member.sleutel();
+        if (writers.containsKey(sleutel)) {
             String st = "$doelstand_" + id("doel");
-            Patroon stand = new Patroon(KenmerkStand.class, st, List.of(gelijk(id("doelstand"), "kenmerk", sleutel)),
+            FactPattern state = new FactPattern(CharacteristicState.class, st, List.of(equal(id("doelstand"), "kenmerk", sleutel)),
                     List.of(new Join(id("doelstand-doel"), "onderwerp", doel)), List.of(),
-                    List.of(gelijk(id("doelstand-waar"), "waar", gewenst)), List.of());
-            gelezen.putIfAbsent(sleutel, lid);
-            return new Doelbewaking(List.of(gastheer), stand);
+                    List.of(equal(id("doelstand-waar"), "holds", desired)), List.of());
+            read.putIfAbsent(sleutel, member);
+            return new TargetGuard(List.of(hostConstraint), state);
         }
-        Alfa kenmerk = new Alfa(id("doel-kenmerk"), List.of(new Alfa.Veldtoets(List.of(), lid.naam(),
-                Binding.Leesvorm.WAAR, Alfa.Vergelijker.GELIJK, gewenst, lid.klasse())));
-        return new Doelbewaking(List.of(gastheer, kenmerk), null);
+        Alpha kenmerk = new Alpha(id("doel-kenmerk"), List.of(new Alpha.FieldTest(List.of(), member.naam(),
+                Binding.ReadForm.WAAR, Alpha.Comparator.GELIJK, desired, member.javaClass())));
+        return new TargetGuard(List.of(hostConstraint, kenmerk), null);
     }
 
-    /** The guard of a fact creation on its target ({@link #doelbewaking}): the constraints on the target's pattern after
+    /** The guard of a fact creation on its target ({@link #targetGuard}): the constraints on the target's pattern after
      *  the one that reaches it, and the pattern of the target's characteristic standing, null where the guard reads the
      *  characteristic off the bean. */
-    private record Doelbewaking(List<Alfa> naAlfa, Patroon stand) {}
+    private record TargetGuard(List<Alpha> afterAlpha, FactPattern state) {}
 
-    /** {@code p} with the constraints {@code naAlfa} after its joins and its other constraints. */
-    private static Patroon metNaAlfa(Patroon p, List<Alfa> naAlfa) {
-        List<Alfa> alle = new ArrayList<>(p.naAlfa());
-        alle.addAll(naAlfa);
-        return new Patroon(p.feitklasse(), p.naam(), p.alfa(), p.joins(), p.betatoetsen(), alle, p.bindingen());
+    /** {@code p} with the constraints {@code afterAlpha} after its joins and its other constraints. */
+    private static FactPattern withAfterAlpha(FactPattern p, List<Alpha> afterAlpha) {
+        List<Alpha> all = new ArrayList<>(p.afterAlpha());
+        all.addAll(afterAlpha);
+        return new FactPattern(p.factClass(), p.naam(), p.alpha(), p.joins(), p.betaTests(), all, p.bindings());
     }
 
     /** {@code p} binding {@code b} as well, after its other bindings. */
-    private static Patroon metBinding(Patroon p, Binding b) {
-        List<Binding> alle = new ArrayList<>(p.bindingen());
-        alle.add(b);
-        return new Patroon(p.feitklasse(), p.naam(), p.alfa(), p.joins(), p.betatoetsen(), p.naAlfa(), alle);
+    private static FactPattern withBinding(FactPattern p, Binding b) {
+        List<Binding> all = new ArrayList<>(p.bindings());
+        all.add(b);
+        return new FactPattern(p.factClass(), p.naam(), p.alpha(), p.joins(), p.betaTests(), p.afterAlpha(), all);
     }
 
     /**
      * The rules every relation a form creates needs, whether a form reads it or not: a rule per to-one end with a
-     * reference field that inserts the links the case input carries as {@link Koppeling} facts, so that the readers of
+     * reference field that inserts the links the case input carries as {@link RelationLink} facts, so that the readers of
      * the relation see the input and the created links alike, and a rule per to-one role that faults a second distinct
      * filler of it: one object filling the other role with two links to different objects, the fault of ch. 5.5,
      * never an overwrite.
      */
-    private List<Regelplan> koppelingregels(String relatie) {
-        RegelSpraakModel.Feittype ft = feittype(relatie);
+    private List<RulePlan> linkRules(String relation) {
+        RegelSpraakModel.Feittype ft = feittype(relation);
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig) return List.of();
         RegelSpraakModel.Rol r0 = ft.rollen.get(0), r1 = ft.rollen.get(1);
         Objecttype t0 = model.objecttypeOpNaam(r0.objecttypeNaam()), t1 = model.objecttypeOpNaam(r1.objecttypeNaam());
         if (t0 == null || t1 == null) return List.of();
-        List<Regelplan> uit = new ArrayList<>();
-        if (!r1.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t0, r1.naam(), t1))
-            uit.add(invoerkoppeling(relatie, t0, r1.naam(), true));
-        if (!r0.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t1, r0.naam(), t0))
-            uit.add(invoerkoppeling(relatie, t1, r0.naam(), false));
-        if (!r1.meervoudig()) uit.add(tweedeVulling(ft, relatie, true, r1.naam(), t0));
-        if (!r0.meervoudig()) uit.add(tweedeVulling(ft, relatie, false, r0.naam(), t1));
-        return uit;
+        List<RulePlan> out = new ArrayList<>();
+        if (!r1.meervoudig() && FactModelGenerator.hasReferenceField(model, t0, r1.naam(), t1))
+            out.add(inputLink(relation, t0, r1.naam(), true));
+        if (!r0.meervoudig() && FactModelGenerator.hasReferenceField(model, t1, r0.naam(), t0))
+            out.add(inputLink(relation, t1, r0.naam(), false));
+        if (!r1.meervoudig()) out.add(secondFilling(ft, relation, true, r1.naam(), t0));
+        if (!r0.meervoudig()) out.add(secondFilling(ft, relation, false, r0.naam(), t1));
+        return out;
     }
 
-    /** The links of {@code relatie} the reference field {@code veld} of the beans of {@code houder} carries, the holder
-     *  being the link's first end where {@code houderIsEerste}: a rule of no form, whose subject is the holder and whose
+    /** The links of {@code relation} the reference field {@code veld} of the beans of {@code houder} carries, the holder
+     *  being the link's first end where {@code houderIsFirst}: a rule of no form, whose subject is the holder and whose
      *  link has phase 0, the input's. */
-    private Regelplan invoerkoppeling(String relatie, Objecttype houder, String veld, boolean houderIsEerste) {
-        Class<?> klasse = bonenklasse(houder);
-        Onderwerp h = new Onderwerp(klasse, "$houder", List.of(new Alfa(id("koppeling-invoer"),
-                List.of(new Alfa.Veldtoets(veld, Alfa.Vergelijker.GEVULD, null)))), List.of(),
-                List.of(Binding.van("$ander", klasse, veld)));
-        return new Regelplan("koppeling " + relatie + " uit de invoer: " + houder.naam + "." + veld, null, null,
-                new Leestabel(List.of()), List.of(h), new Gevolg.Koppeling(relatie, houderIsEerste ? "$houder" : "$ander",
-                houderIsEerste ? "$ander" : "$houder", -1, Gevolg.Invoeging.LOGISCH));
+    private RulePlan inputLink(String relation, Objecttype houder, String veld, boolean houderIsFirst) {
+        Class<?> javaClass = beanClass(houder);
+        Subject h = new Subject(javaClass, "$houder", List.of(new Alpha(id("koppeling-invoer"),
+                List.of(new Alpha.FieldTest(veld, Alpha.Comparator.GEVULD, null)))), List.of(),
+                List.of(Binding.van("$ander", javaClass, veld)));
+        return new RulePlan("koppeling " + relation + " uit de invoer: " + houder.naam + "." + veld, null, null,
+                new ReadTable(List.of()), List.of(h), new Consequence.RelationLink(relation, houderIsFirst ? "$houder" : "$ander",
+                houderIsFirst ? "$ander" : "$houder", -1, Consequence.Insertion.LOGICAL));
     }
 
-    /** The fault of two links of {@code relatie} from one object to two different fillers of the to-one role
-     *  {@code rol}: the near object is the links' first end where {@code nabijIsEerste}. */
-    private Regelplan tweedeVulling(RegelSpraakModel.Feittype ft, String relatie, boolean nabijIsEerste, String rol,
-                                    Objecttype nabijType) {
-        String nabijeinde = nabijIsEerste ? "eerste" : "tweede", vereinde = nabijIsEerste ? "tweede" : "eerste";
-        String zin = "de naar-één-rol \"" + rol + "\" van een " + nabijType.naam + " heeft twee verschillende vullingen;"
+    /** The fault of two links of {@code relation} from one object to two different fillers of the to-one role
+     *  {@code rol}: the near object is the links' first end where {@code nearIsFirst}. */
+    private RulePlan secondFilling(RegelSpraakModel.Feittype ft, String relation, boolean nearIsFirst, String rol,
+                                    Objecttype nearType) {
+        String nearEnd = nearIsFirst ? "eerste" : "tweede", farEnd = nearIsFirst ? "tweede" : "eerste";
+        String sentence = "de naar-één-rol \"" + rol + "\" van een " + nearType.naam + " heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
-        Patroon een = new Patroon(Koppeling.class, "$een", List.of(gelijk(id("vulling"), "relatie", relatie)), List.of(),
-                List.of(Binding.van("$nabij", Koppeling.class, nabijeinde)));
-        Patroon twee = new Patroon(Koppeling.class, "$twee", List.of(gelijk(id("tweede-vulling"), "relatie", relatie)),
-                List.of(new Join(id("tweede-vulling-nabij"), nabijeinde, "$een",
-                        new Binding.Veld(Koppeling.class, nabijeinde))),
-                List.of(new Betatoets(id("tweede-vulling-ander"), Functie.ANDERE_VULLING, "$een",
-                        List.of(constante(vereinde)))),
+        FactPattern one = new FactPattern(RelationLink.class, "$een", List.of(equal(id("vulling"), "relation", relation)), List.of(),
+                List.of(Binding.van("$nabij", RelationLink.class, nearEnd)));
+        FactPattern two = new FactPattern(RelationLink.class, "$twee", List.of(equal(id("tweede-vulling"), "relation", relation)),
+                List.of(new Join(id("tweede-vulling-nabij"), nearEnd, "$een",
+                        new Binding.Field(RelationLink.class, nearEnd))),
+                List.of(new BetaTest(id("tweede-vulling-ander"), Aggregation.OTHER_FILLING, "$een",
+                        List.of(constant(farEnd)))),
                 List.of());
-        return new Regelplan("koppeling " + relatie + ": tweede vulling van " + rol, null, null,
-                new Leestabel(List.of()), List.of(een, twee),
-                new Gevolg.TweedeVulling("$nabij", ft.naam, zin, Gevolg.Invoeging.LOGISCH));
+        return new RulePlan("koppeling " + relation + ": tweede vulling van " + rol, null, null,
+                new ReadTable(List.of()), List.of(one, two),
+                new Consequence.SecondFilling("$nabij", ft.naam, sentence, Consequence.Insertion.LOGICAL));
     }
 
     // ---------------- prioritized defaults ----------------
 
     /** The name of an effective stack, as the destructive lowering named the rule of the group: the kind-discriminated
      *  target on the stack's owner, so two types that share one inherited target name two stacks. */
-    private static String stapelnaam(Stapels.Stapel st) {
-        PrioritizedDefaults l0 = st.leden().get(0);
+    private static String stackName(Stapels.Stack st) {
+        PrioritizedDefaults l0 = st.members().get(0);
         return "defaults " + (l0.isKenmerk() ? "K:" : "A:") + st.eigenaar().naam + "." + l0.doel();
     }
 
     /** The member a stack decides, as declared: on the type of its owner's chain that declares it, in that type's
      *  spelling, the way the model names it ({@link RegelSpraakModel#benoembaar}). */
-    private static RegelSpraakModel.Benoembaar stapeldoel(Stapels.Stapel st) {
-        PrioritizedDefaults l0 = st.leden().get(0);
+    private static RegelSpraakModel.Benoembaar stackTarget(Stapels.Stack st) {
+        PrioritizedDefaults l0 = st.members().get(0);
         for (Objecttype t : st.eigenaar().keten()) {
             if (l0.isKenmerk()) {
                 for (String k : t.kenmerken)
@@ -2418,7 +2418,7 @@ public final class TmsTranspiler {
                     if (Namen.norm(a).equals(Namen.norm(l0.doel()))) return RegelSpraakModel.Benoembaar.attribuut(t.naam, a);
             }
         }
-        throw new IllegalStateException("de stapel " + stapelnaam(st) + " beslist een lid dat de keten van "
+        throw new IllegalStateException("de stapel " + stackName(st) + " beslist een lid dat de keten van "
                 + st.eigenaar().naam + " niet declareert");
     }
 
@@ -2426,206 +2426,206 @@ public final class TmsTranspiler {
      * One default of a stack where the lowering places it: the level it is read on, its chain and its position there,
      * a label for the names of its rules, the key of a conflict among its exception groups (RUNTIME-SEMANTICS ch. 7.9:
      * the target form and the default indices from the root, member indices left out), and, where it has exception
-     * groups, their chains, numbered consecutively from {@code eersteLid}.
+     * groups, their chains, numbered consecutively from {@code firstMember}.
      */
-    private record Knoop(Default d, Objecttype niveau, int keten, int positie, String label, String sleutel,
-                         List<List<Knoop>> leden, int eersteLid, Geldigheid geldigheid) {
-        boolean heeftLeden() { return leden != null; }
+    private record Node(Default d, Objecttype levelOf, int chain, int positie, String label, String sleutel,
+                         List<List<Node>> members, int firstMember, Geldigheid validity) {
+        boolean hasMembers() { return members != null; }
     }
 
     /** What the rules of one stack share while they are built. */
-    private static final class Stapelbouw {
+    private static final class StackBuild {
         final String naam;
-        final Lid lid;
+        final Member member;
         final boolean kenmerk;
         /** The bean class of the stack's owner: the stack runs on instances of exactly that type (ch. 7.10). */
-        final Class<?> klasse;
+        final Class<?> javaClass;
         /** The bare ch. 7.2 conflict key, the target on the type that declares it. */
-        final String doelvorm;
-        final List<Lezingen> lezingen = new ArrayList<>();
-        final Set<String> stuurfeiten = new LinkedHashSet<>();
-        int volgendeKeten;
+        final String targetForm;
+        final List<Reads> lezingen = new ArrayList<>();
+        final Set<String> controlFacts = new LinkedHashSet<>();
+        int nextChain;
 
-        Stapelbouw(String naam, Lid lid, boolean kenmerk, Class<?> klasse, String doelvorm, int wortelketens) {
+        StackBuild(String naam, Member member, boolean kenmerk, Class<?> javaClass, String targetForm, int rootChains) {
             this.naam = naam;
-            this.lid = lid;
+            this.member = member;
             this.kenmerk = kenmerk;
-            this.klasse = klasse;
-            this.doelvorm = doelvorm;
-            this.volgendeKeten = wortelketens;
+            this.javaClass = javaClass;
+            this.targetForm = targetForm;
+            this.nextChain = rootChains;
         }
     }
 
     /**
      * The rules of one effective stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.8-7.10), each default lowered on its own
-     * level and on instances of exactly the stack's owner, deciding by logical control facts ({@link Stuurfeit}) where
+     * level and on instances of exactly the stack's owner, deciding by logical control facts ({@link ControlFact}) where
      * the destructive lowering walked the stack in one consequence. One chain without exception groups
-     * takes the simple form ({@link #eenvoudigeVorm}); exception groups, or more than one group at the root, the
-     * general form ({@link #algemeneVorm}). A deciding default writes the target: a {@link Waarde} with the stack as the
-     * writer, which replaces the input on an attribute, or a {@link HeeftKenmerk} for an attribution, beside which the
+     * takes the simple form ({@link #simpleForm}); exception groups, or more than one group at the root, the
+     * general form ({@link #generalForm}). A deciding default writes the target: a {@link Value} with the stack as the
+     * writer, which replaces the input on an attribute, or a {@link HasCharacteristic} for an attribution, beside which the
      * input on a characteristic stands; a conflict writes nothing and deposits the §9.5 inconsistency under its key.
      *
      * <p>Refused by name, as the destructive lowering refused them: a characteristic target that shares its name with
      * an attribute, a group with a dated validity, an initialisation default on a characteristic, a deciding default
-     * without a justification; a target on a timeline or with dimensions through {@link #lid}. Refused besides: a
-     * division anywhere in a default ({@link #deling(Conditie, Expr)}).
+     * without a justification; a target on a timeline or with dimensions through {@link #member}. Refused besides: a
+     * division anywhere in a default ({@link #division(Conditie, Expr)}).
      */
-    private List<Regelplan> stapelregels(Stapels.Stapel st) {
-        PrioritizedDefaults l0 = st.leden().get(0);
+    private List<RulePlan> stackRules(Stapels.Stack st) {
+        PrioritizedDefaults l0 = st.members().get(0);
         Objecttype eigenaar = st.eigenaar();
         boolean kenmerk = l0.isKenmerk();
         String doel = l0.doel();
         if (kenmerk && eigenaar.attribuut(doel) != null)
-            throw new Weigering("een kenmerkdoel met de naam van een attribuut ('" + doel + "' van " + eigenaar.naam
+            throw new Refusal("een kenmerkdoel met de naam van een attribuut ('" + doel + "' van " + eigenaar.naam
                     + "): de bean draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven"
                     + " en niet te onderscheiden is");
-        Lid lid = lid(eigenaar, doel, kenmerk);
+        Member member = member(eigenaar, doel, kenmerk);
         Objecttype declarant = eigenaar.declarantVan(doel);
-        Stapelbouw b = new Stapelbouw(stapelnaam(st), lid, kenmerk, bonenklasse(eigenaar),
-                (declarant != null ? declarant.naam : l0.onderwerp()) + "." + doel, st.leden().size());
-        List<List<Knoop>> wortel = new ArrayList<>();
+        StackBuild b = new StackBuild(stackName(st), member, kenmerk, beanClass(eigenaar),
+                (declarant != null ? declarant.naam : l0.onderwerp()) + "." + doel, st.members().size());
+        List<List<Node>> squareRoot = new ArrayList<>();
         // a group with a dated validity gates its own chain, the exception groups below its defaults included: where
         // the window does not admit the date the group decides nothing (RUNTIME-SEMANTICS ch. 8.2)
-        for (int m = 0; m < st.leden().size(); m++)
-            wortel.add(keten(b, st.leden().get(m).defaults(), m, null, eigenaar, List.of(),
-                    st.leden().size() == 1 ? "" : m + ":", st.leden().get(m).geldigheid()));
-        boolean algemeen = wortel.size() > 1 || wortel.stream().flatMap(List::stream).anyMatch(Knoop::heeftLeden);
-        List<Regelplan> regels = new ArrayList<>(algemeen ? algemeneVorm(b, wortel) : eenvoudigeVorm(b, wortel.get(0)));
-        if (st.leden().stream().anyMatch(l -> l.geldigheid() != null && !l.geldigheid().altijd()))
-            regels.add(stapelGeldigheidsfout(b));
+        for (int m = 0; m < st.members().size(); m++)
+            squareRoot.add(chain(b, st.members().get(m).defaults(), m, null, eigenaar, List.of(),
+                    st.members().size() == 1 ? "" : m + ":", st.members().get(m).geldigheid()));
+        boolean general = squareRoot.size() > 1 || squareRoot.stream().flatMap(List::stream).anyMatch(Node::hasMembers);
+        List<RulePlan> rules = new ArrayList<>(general ? generalForm(b, squareRoot) : simpleForm(b, squareRoot.get(0)));
+        if (st.members().stream().anyMatch(l -> l.geldigheid() != null && !l.geldigheid().altijd()))
+            rules.add(stackValidityFault(b));
         // registered only once every default of the stack lowered, as a single rule registers its reads
-        for (Lezingen lez : b.lezingen) lez.vastleggen();
-        afgeleid.put(lid.sleutel(), lid);
-        defaultsgroepen.add(new Defaultsgroep(b.naam, algemeen, regels.size(), List.copyOf(b.stuurfeiten)));
-        return regels;
+        for (Reads lez : b.lezingen) lez.recorder();
+        derived.put(member.sleutel(), member);
+        defaultsGroups.add(new DefaultsGroup(b.naam, general, rules.size(), List.copyOf(b.controlFacts)));
+        return rules;
     }
 
     /** The rule that faults every object of the stack's owner, of exactly its type, in a session without an evaluation
      *  date, where a group of the stack has a dated validity: the reference interpreter asks the validity of a group when
      *  it evaluates the stack on an object, and faults there (RUNTIME-SEMANTICS ch. 8.1), so an owner without objects
      *  faults nothing. */
-    private Regelplan stapelGeldigheidsfout(Stapelbouw b) {
-        rekendatumNodig();
+    private RulePlan stackValidityFault(StackBuild b) {
+        evaluationDateNeeded();
         String naam = b.naam;
-        Alfa concreet = concreetType(b.klasse);
-        Alfa zonderDatum = new Alfa(id("geen-rekendatum"),
-                List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.LEEG, null)));
-        return new Regelplan(naam + ": geen rekendatum", vorm, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(b.klasse, ONDERWERP, List.of(concreet), List.of(), List.of()),
-                        new Patroon(Rekendatum.class, "$rekendatum", List.of(zonderDatum), List.of(), List.of())),
-                new Gevolg.Fout(ONDERWERP, Rekenfout.GELDIGHEID_ZONDER_DATUM, new Gevolg.Foutnaam(naam, naam),
-                        Gevolg.Invoeging.LOGISCH));
+        Alpha concrete = concreteType(b.javaClass);
+        Alpha withoutDate = new Alpha(id("geen-rekendatum"),
+                List.of(new Alpha.FieldTest("date", Alpha.Comparator.LEEG, null)));
+        return new RulePlan(naam + ": geen rekendatum", vorm, null, new ReadTable(List.of()),
+                List.of(new Subject(b.javaClass, SUBJECT, List.of(concrete), List.of(), List.of()),
+                        new FactPattern(EvaluationDate.class, "$rekendatum", List.of(withoutDate), List.of(), List.of())),
+                new Consequence.Fout(SUBJECT, Rekenfout.VALIDITY_WITHOUT_DATE, new Consequence.FaultName(naam, naam),
+                        Consequence.Insertion.LOGICAL));
     }
 
     /** The constraint that keeps a rule of a stack on instances of exactly the stack's owner, the bean class
      *  {@code klasse}: the stack runs on instances of exactly that type (RUNTIME-SEMANTICS ch. 7.10,
-     *  {@link Stapelbouw#klasse}). */
-    private Alfa concreetType(Class<?> klasse) {
-        return new Alfa(id("concreet-type"), List.of(new Alfa.Veldtoets(null, Alfa.Vergelijker.KLASSE_IS, klasse)));
+     *  {@link StackBuild#javaClass}). */
+    private Alpha concreteType(Class<?> javaClass) {
+        return new Alpha(id("concreet-type"), List.of(new Alpha.FieldTest(null, Alpha.Comparator.CLASS_IS, javaClass)));
     }
 
-    /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#niveau}), an
+    /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#levelOf}), an
      *  exception group's defaults on the level of the default that carries them ({@code drager}); every knot carries
      *  the validity of the group at the root of its chain. */
-    private List<Knoop> keten(Stapelbouw b, List<Default> ds, int id, Objecttype drager, Objecttype eigenaar,
-                              List<Integer> pad, String voorvoegsel, Geldigheid geldigheid) {
-        List<Knoop> uit = new ArrayList<>();
+    private List<Node> chain(StackBuild b, List<Default> ds, int id, Objecttype carrier, Objecttype eigenaar,
+                              List<Integer> pad, String prefix, Geldigheid validity) {
+        List<Node> out = new ArrayList<>();
         for (int i = 0; i < ds.size(); i++) {
             Default d = ds.get(i);
-            Objecttype niveau = drager != null ? drager : stapels.niveau(d, eigenaar);
+            Objecttype levelOf = carrier != null ? carrier : stapels.levelOf(d, eigenaar);
             controleer(b, d);
-            List<Integer> eigenPad = new ArrayList<>(pad);
-            eigenPad.add(i);
-            String label = voorvoegsel + i;
-            StringBuilder sleutel = new StringBuilder(b.doelvorm);
-            for (int p : eigenPad) sleutel.append('/').append(p);
-            List<List<Knoop>> leden = null;
+            List<Integer> ownPath = new ArrayList<>(pad);
+            ownPath.add(i);
+            String label = prefix + i;
+            StringBuilder sleutel = new StringBuilder(b.targetForm);
+            for (int p : ownPath) sleutel.append('/').append(p);
+            List<List<Node>> members = null;
             int eerste = -1;
             if (d.excepties() != null) {
-                List<dev.uchar.regelspraak.ir.ExceptionGroup> groepen = d.excepties().leden();
-                eerste = b.volgendeKeten;
-                b.volgendeKeten += groepen.size();
-                leden = new ArrayList<>();
-                for (int m = 0; m < groepen.size(); m++)
-                    leden.add(keten(b, groepen.get(m).defaults(), eerste + m, niveau, eigenaar, eigenPad,
-                            label + "." + m + ".", geldigheid));
+                List<dev.uchar.regelspraak.ir.ExceptionGroup> groups = d.excepties().leden();
+                eerste = b.nextChain;
+                b.nextChain += groups.size();
+                members = new ArrayList<>();
+                for (int m = 0; m < groups.size(); m++)
+                    members.add(chain(b, groups.get(m).defaults(), eerste + m, levelOf, eigenaar, ownPath,
+                            label + "." + m + ".", validity));
             }
-            uit.add(new Knoop(d, niveau, id, i, label, sleutel.toString(), leden, eerste, geldigheid));
+            out.add(new Node(d, levelOf, id, i, label, sleutel.toString(), members, eerste, validity));
         }
-        return uit;
+        return out;
     }
 
     /** The refusals per default. */
-    private void controleer(Stapelbouw b, Default d) {
+    private void controleer(StackBuild b, Default d) {
         if (d.initialisatie() && b.kenmerk)
-            throw new Weigering("een initialisatiedefault op een kenmerkdoel ('" + b.lid.naam() + "' van "
-                    + b.lid.declarant().naam + "): een kenmerk kent geen initialisatie (WF-075)");
+            throw new Refusal("een initialisatiedefault op een kenmerkdoel ('" + b.member.naam() + "' van "
+                    + b.member.declarant().naam + "): een kenmerk kent geen initialisatie (WF-075)");
         if (!d.initialisatie() && d.voorwaarde() == null && d.heeftEigenInhoud())
-            throw new Weigering("een beslissende default zonder rechtvaardiging ('" + (d.bron() != null ? d.bron()
-                    : "zonder bron") + "', doel '" + b.lid.naam() + "')");
-        String deling = deling(d.voorwaarde(), d.consequentie());
-        if (deling != null)
-            throw new Weigering("een deling in een default ('" + deling + "'): deze tak rekent een default uit zodra wat"
+            throw new Refusal("een beslissende default zonder rechtvaardiging ('" + (d.bron() != null ? d.bron()
+                    : "zonder bron") + "', doel '" + b.member.naam() + "')");
+        String division = division(d.voorwaarde(), d.consequentie());
+        if (division != null)
+            throw new Refusal("een deling in een default ('" + division + "'): deze tak rekent een default uit zodra wat"
                     + " hij leest staat, ook een die een hogere default verdringt; een deling door nul daar is een fout op"
                     + " een tussenstand, die deze tak intrekt zodra de hogere default beslist: of zo'n fout telt, wacht op"
                     + " een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)");
-        String wortel = wortel(d.voorwaarde(), d.consequentie());
-        if (wortel != null)
-            throw new Weigering("een wortel in een default ('" + wortel + "'), waarvan deze tak de §6.6-deponering niet"
+        String squareRoot = squareRoot(d.voorwaarde(), d.consequentie());
+        if (squareRoot != null)
+            throw new Refusal("een wortel in een default ('" + squareRoot + "'), waarvan deze tak de §6.6-deponering niet"
                     + " maakt: een default deponeert alleen waar hij beslist (RUNTIME-SEMANTICS ch. 7.1)");
     }
 
     /** The snippet of the first division in {@code voorwaarde} or {@code waarde}, or null: in the justification or the
      *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
-     *  ch. 7.7 reads as the lowest default ({@link #initialisatieRegel}). The destructive lowering refused a division
+     *  ch. 7.7 reads as the lowest default ({@link #initialisationRule}). The destructive lowering refused a division
      *  below the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a
      *  default is evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault
      *  on an intermediate state, which this branch would withdraw ({@link Fout}); whether such a fault counts waits on
      *  a decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
-     *  no division fault ({@link #eigenRegel}). The walk enters every expression and condition the forms carry, a
+     *  no division fault ({@link #ownRule}). The walk enters every expression and condition the forms carry, a
      *  {@code Let}'s value and body, both branches of an {@code IfThenElse} and its condition, a rounding, a clamp's
      *  bounds and a fold's argument, fallback and filter among them, so a division under one of them is found too. */
-    private static String deling(Conditie voorwaarde, Expr waarde) {
-        return eerste(voorwaarde, waarde, TmsTranspiler::isDeling);
+    private static String division(Conditie voorwaarde, Expr waarde) {
+        return eerste(voorwaarde, waarde, TmsTranspiler::isDivision);
     }
 
-    private static String deling(Expr e) {
-        return eerste(null, e, TmsTranspiler::isDeling);
+    private static String division(Expr e) {
+        return eerste(null, e, TmsTranspiler::isDivision);
     }
 
     /** The snippet of the first square root in {@code waarde}, or null: a place of the §6.6 deposit, which a member
      *  initialisation and a default do not make. */
-    private static String wortel(Expr e) {
-        return eerste(null, e, TmsTranspiler::isWortel);
+    private static String squareRoot(Expr e) {
+        return eerste(null, e, TmsTranspiler::isSquareRoot);
     }
 
-    private static String wortel(Conditie voorwaarde, Expr waarde) {
-        return eerste(voorwaarde, waarde, TmsTranspiler::isWortel);
+    private static String squareRoot(Conditie voorwaarde, Expr waarde) {
+        return eerste(voorwaarde, waarde, TmsTranspiler::isSquareRoot);
     }
 
-    private static boolean isDeling(Expr e) {
+    private static boolean isDivision(Expr e) {
         return e instanceof Expr.Binair b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS);
     }
 
-    private static boolean isWortel(Expr e) {
+    private static boolean isSquareRoot(Expr e) {
         return e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL;
     }
 
     /** The snippet of the first expression node for which {@code soort} holds, in {@code voorwaarde} and then in
      *  {@code waarde} (either may be null), each walked node before its operands, or null. */
     private static String eerste(Conditie voorwaarde, Expr waarde, java.util.function.Predicate<Expr> soort) {
-        String[] gevonden = {null};
-        java.util.function.Predicate<Expr> raak = x -> {
+        String[] found = {null};
+        java.util.function.Predicate<Expr> touch = x -> {
             if (!soort.test(x)) return false;
-            gevonden[0] = snippet(x.bron());
+            found[0] = snippet(x.bron());
             return true;
         };
-        if (Conditie.bevatOperand(voorwaarde, raak) || Expr.bevat(waarde, raak)) return gevonden[0];
+        if (Conditie.bevatOperand(voorwaarde, touch) || Expr.bevat(waarde, touch)) return found[0];
         return null;
     }
 
     /** Whether {@code d} decides anything itself: a decision on a characteristic, a consequence on an attribute. */
-    private static boolean beslistZelf(Stapelbouw b, Default d) {
+    private static boolean decidesSelf(StackBuild b, Default d) {
         return b.kenmerk ? d.besluit() != null : d.consequentie() != null;
     }
 
@@ -2633,100 +2633,100 @@ public final class TmsTranspiler {
      * The simple form, variant M of A10 in the trial of card drools-logische-afleiding: one rule per default that
      * decides anything itself, with its reads bound, its justification as the test and {@code not Beslist} over every
      * higher index; the consequence computes the value from what the rule bound and, where it decides, inserts the
-     * write and, where a lower default has a rule, {@link Beslist}. A leeg consequence inserts nothing, so the lower
+     * write and, where a lower default has a rule, {@link Decides}. A leeg consequence inserts nothing, so the lower
      * defaults decide (ch. 7.1); the initialisation default matches only where the target is empty on the bean, which
      * holds the input (ch. 7.3). A do-not-attribute decision with no attribution below it has nothing to displace and
      * gets no rule.
      */
-    private List<Regelplan> eenvoudigeVorm(Stapelbouw b, List<Knoop> keten) {
-        List<Knoop> beslissend = new ArrayList<>(keten.stream().filter(k -> beslistZelf(b, k.d())).toList());
-        while (b.kenmerk && !beslissend.isEmpty()
-                && Boolean.FALSE.equals(beslissend.get(beslissend.size() - 1).d().besluit()))
-            beslissend.remove(beslissend.size() - 1);
+    private List<RulePlan> simpleForm(StackBuild b, List<Node> chain) {
+        List<Node> deciding = new ArrayList<>(chain.stream().filter(k -> decidesSelf(b, k.d())).toList());
+        while (b.kenmerk && !deciding.isEmpty()
+                && Boolean.FALSE.equals(deciding.get(deciding.size() - 1).d().besluit()))
+            deciding.remove(deciding.size() - 1);
         String naam = b.naam;
-        ElementSleutel sleutel = b.lid.sleutel();
-        List<Regelplan> uit = new ArrayList<>();
-        for (int j = 0; j < beslissend.size(); j++) {
-            Knoop k = beslissend.get(j);
+        ElementSleutel sleutel = b.member.sleutel();
+        List<RulePlan> out = new ArrayList<>();
+        for (int j = 0; j < deciding.size(); j++) {
+            Node k = deciding.get(j);
             int i = k.positie();
-            boolean hoger = j > 0, lager = j < beslissend.size() - 1;
-            if (lager) b.stuurfeiten.add("Beslist");
+            boolean higher = j > 0, lower = j < deciding.size() - 1;
+            if (lower) b.controlFacts.add("Beslist");
             // the target: an attribute's value, or the attribution of a characteristic, whose decision the default
             // declares; a do-not-attribute decision writes nothing and only displaces the defaults below it
-            List<Gevolg.Stapelfeit> feiten = new ArrayList<>();
-            if (!b.kenmerk) feiten.add(new Gevolg.Stapelfeit.Waarde(sleutel, naam));
-            else if (Boolean.TRUE.equals(k.d().besluit())) feiten.add(new Gevolg.Stapelfeit.Kenmerk(sleutel));
-            if (lager) feiten.add(new Gevolg.Stapelfeit.Beslist(naam, i));
-            uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(),
-                    () -> hoger ? List.of(geenBeslist(naam, i)) : List.of(), feiten));
+            List<Consequence.StackFact> sessionFacts = new ArrayList<>();
+            if (!b.kenmerk) sessionFacts.add(new Consequence.StackFact.Value(sleutel, naam));
+            else if (Boolean.TRUE.equals(k.d().besluit())) sessionFacts.add(new Consequence.StackFact.Characteristic(sleutel));
+            if (lower) sessionFacts.add(new Consequence.StackFact.Decides(naam, i));
+            out.addAll(ownRule(b, k, naam + ": default " + k.label(),
+                    () -> higher ? List.of(noDecides(naam, i)) : List.of(), sessionFacts));
         }
-        return uit;
+        return out;
     }
 
     /**
-     * The general form: an {@link Uitkomst} per default that settles. A default without exception groups settles by
-     * its own decision; a default with them reconciles the outcomes of their chains ({@link #verzoening}) and, with
+     * The general form: an {@link Outcome} per default that settles. A default without exception groups settles by
+     * its own decision; a default with them reconciles the outcomes of their chains ({@link #reconciliation}) and, with
      * content of its own, falls back to its own decision where no member settles. Every rule of a default carries
      * {@code not Uitkomst} over the positions above it in its chain and above each default whose exception group its
-     * chain is ({@link #ketenregels}), so a lower default is displaced with whatever it would settle, a conflict
+     * chain is ({@link #chainRules}), so a lower default is displaced with whatever it would settle, a conflict
      * included (ch. 7.9), and its exception groups with it. At the root the groups of the stack reconcile once more, by
      * the same rules, under the bare key, and that reconciliation writes the target or deposits the conflict.
      */
-    private List<Regelplan> algemeneVorm(Stapelbouw b, List<List<Knoop>> wortel) {
-        List<Regelplan> uit = new ArrayList<>();
-        for (List<Knoop> keten : wortel) ketenregels(b, keten, List::of, uit);
-        ElementSleutel sleutel = b.lid.sleutel();
+    private List<RulePlan> generalForm(StackBuild b, List<List<Node>> squareRoot) {
+        List<RulePlan> out = new ArrayList<>();
+        for (List<Node> chain : squareRoot) chainRules(b, chain, List::of, out);
+        ElementSleutel sleutel = b.member.sleutel();
         // at the root the reconciliation writes the target and deposits a conflict as the §9.5 inconsistency; on a
-        // characteristic only an attribution reaches the write (alleenWaar), so the attribution is planned as such
-        Gevolg.Stapelfeit doel = b.kenmerk ? new Gevolg.Stapelfeit.Kenmerk(sleutel)
-                : new Gevolg.Stapelfeit.Waarde(sleutel, b.naam);
-        verzoening(b, 0, wortel.size(), wortel.stream().anyMatch(TmsTranspiler::kanConflicteren), b.doelvorm, "wortel",
-                List::of, new Gevolg.Stapelfeit.Inconsistentie(), doel, b.kenmerk, false, uit);
-        return uit;
+        // characteristic only an attribution reaches the write (onlyTrue), so the attribution is planned as such
+        Consequence.StackFact doel = b.kenmerk ? new Consequence.StackFact.Characteristic(sleutel)
+                : new Consequence.StackFact.Value(sleutel, b.naam);
+        reconciliation(b, 0, squareRoot.size(), squareRoot.stream().anyMatch(TmsTranspiler::canConflict), b.targetForm, "wortel",
+                List::of, new Consequence.StackFact.Inconsistency(), doel, b.kenmerk, false, out);
+        return out;
     }
 
     /**
      * The rules of {@code keten} and, below each of its defaults, of their member chains. Every rule of a default waits
-     * on the positions above it in its own chain and on {@code voorouders}, the positions above each default whose
+     * on the positions above it in its own chain and on {@code ancestors}, the positions above each default whose
      * exception group the chain is, at any depth: the reference interpreter reaches the exception groups of a default
      * only where no higher default in its chain decides ({@code decide}), so a group below a displaced default is not
      * evaluated, settles nothing and raises no fault (RUNTIME-SEMANTICS ch. 7.9; PLAN §9, 2026-10-09).
      */
-    private void ketenregels(Stapelbouw b, List<Knoop> keten, Supplier<List<LhsItem>> voorouders, List<Regelplan> uit) {
+    private void chainRules(StackBuild b, List<Node> chain, Supplier<List<LhsItem>> ancestors, List<RulePlan> out) {
         String naam = b.naam;
-        for (Knoop k : keten) {
-            int id = k.keten(), i = k.positie();
-            Supplier<List<LhsItem>> nietHoger = () -> {
-                List<LhsItem> wacht = new ArrayList<>(voorouders.get());
-                if (i > 0) wacht.add(geenUitkomst(naam, id, i));
-                return wacht;
+        for (Node k : chain) {
+            int id = k.chain(), i = k.positie();
+            Supplier<List<LhsItem>> notHigher = () -> {
+                List<LhsItem> guard = new ArrayList<>(ancestors.get());
+                if (i > 0) guard.add(noOutcome(naam, id, i));
+                return guard;
             };
-            Gevolg.Stapelfeit beslist = new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.BESLIST);
-            if (!k.heeftLeden()) {
-                if (!beslistZelf(b, k.d())) continue;
-                b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
-                uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, List.of(beslist)));
+            Consequence.StackFact decides = new Consequence.StackFact.Outcome(naam, id, i, Outcome.Kind.DECIDED);
+            if (!k.hasMembers()) {
+                if (!decidesSelf(b, k.d())) continue;
+                b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
+                out.addAll(ownRule(b, k, naam + ": default " + k.label(), notHigher, List.of(decides)));
                 continue;
             }
-            for (List<Knoop> lid : k.leden()) ketenregels(b, lid, nietHoger, uit);
-            int eerste = k.eersteLid(), tot = eerste + k.leden().size();
-            verzoening(b, eerste, k.leden().size(), k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren),
-                    k.sleutel(), k.label(), nietHoger,
-                    new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.CONFLICT), beslist, false, true, uit);
-            if (beslistZelf(b, k.d()))
-                uit.addAll(eigenRegel(b, k, naam + ": terugval " + k.label(), () -> {
-                    List<LhsItem> wacht = new ArrayList<>();
-                    wacht.add(new Niet(uitkomsten(naam, eerste, tot, null)));
-                    wacht.addAll(nietHoger.get());
-                    return wacht;
-                }, List.of(beslist)));
+            for (List<Node> member : k.members()) chainRules(b, member, notHigher, out);
+            int eerste = k.firstMember(), to = eerste + k.members().size();
+            reconciliation(b, eerste, k.members().size(), k.members().stream().anyMatch(TmsTranspiler::canConflict),
+                    k.sleutel(), k.label(), notHigher,
+                    new Consequence.StackFact.Outcome(naam, id, i, Outcome.Kind.CONFLICT), decides, false, true, out);
+            if (decidesSelf(b, k.d()))
+                out.addAll(ownRule(b, k, naam + ": terugval " + k.label(), () -> {
+                    List<LhsItem> guard = new ArrayList<>();
+                    guard.add(new Not(outcomes(naam, eerste, to, null)));
+                    guard.addAll(notHigher.get());
+                    return guard;
+                }, List.of(decides)));
         }
     }
 
     /** Whether a chain can end in a conflict: some default in it reconciles two or more members, or a member that can. */
-    private static boolean kanConflicteren(List<Knoop> keten) {
-        for (Knoop k : keten)
-            if (k.heeftLeden() && (k.leden().size() > 1 || k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren)))
+    private static boolean canConflict(List<Node> chain) {
+        for (Node k : chain)
+            if (k.hasMembers() && (k.members().size() > 1 || k.members().stream().anyMatch(TmsTranspiler::canConflict)))
                 return true;
         return false;
     }
@@ -2737,122 +2737,122 @@ public final class TmsTranspiler {
      * in member order passes on unchanged; else the first deciding member's decision, which is a conflict under
      * {@code sleutel} where another member decides differently (numbers by value), and the decision otherwise. A rule
      * per outcome, each under {@code wacht}; the rules that cannot match are left out (a conflict among members that
-     * cannot conflict, a difference among one member). {@code alleenWaar} restricts the decision to an attribution, the
-     * one decision on a characteristic that writes; {@code tussen} says the outcomes are control facts, not the write.
+     * cannot conflict, a difference among one member). {@code onlyTrue} restricts the decision to an attribution, the
+     * one decision on a characteristic that writes; {@code between} says the outcomes are control facts, not the write.
      */
-    private void verzoening(Stapelbouw b, int eerste, int aantal, boolean ledenConflicteren, String sleutel, String label,
-                            Supplier<List<LhsItem>> wacht, Gevolg.Stapelfeit bijConflict,
-                            Gevolg.Stapelfeit bijBesluit, boolean alleenWaar, boolean tussen, List<Regelplan> uit) {
+    private void reconciliation(StackBuild b, int eerste, int aantal, boolean membersConflict, String sleutel, String label,
+                            Supplier<List<LhsItem>> guard, Consequence.StackFact atConflict,
+                            Consequence.StackFact atDecision, boolean onlyTrue, boolean between, List<RulePlan> out) {
         String naam = b.naam;
-        int tot = eerste + aantal;
-        Binding vanOnderwerp = Binding.van(ONDERWERP, Uitkomst.class, "onderwerp");
-        if (ledenConflicteren) {
+        int to = eerste + aantal;
+        Binding ofSubject = Binding.van(SUBJECT, Outcome.class, "onderwerp");
+        if (membersConflict) {
             List<LhsItem> items = new ArrayList<>();
-            items.add(new Patroon(Uitkomst.class, "$conflict",
-                    List.of(uitkomstVanLid("lid-conflict", naam, Uitkomst.Soort.CONFLICT, eerste, tot, false)), List.of(),
-                    List.of(vanOnderwerp, Binding.van("$sleutel", Uitkomst.class, "sleutel"))));
-            if (aantal > 1) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT,
-                    "eerder-lid", Functie.EERDER_LID, "$conflict")));
-            items.addAll(wacht.get());
-            uit.add(new Regelplan(naam + ": doorgeven " + label, vorm, null,
-                    new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0,
-                            Leessoort.CONFLICTSLEUTEL, "conflictsleutel", "$sleutel"))), items,
-                    new Gevolg.Conflict(ONDERWERP, new Term.Lees(0, null), List.of(0), 1, bijConflict,
-                            Gevolg.Invoeging.LOGISCH)));
-            if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
+            items.add(new FactPattern(Outcome.class, "$conflict",
+                    List.of(outcomeOfMember("lid-conflict", naam, Outcome.Kind.CONFLICT, eerste, to, false)), List.of(),
+                    List.of(ofSubject, Binding.van("$sleutel", Outcome.class, "sleutel"))));
+            if (aantal > 1) items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.CONFLICT,
+                    "eerder-lid", Aggregation.EARLIER_MEMBER, "$conflict")));
+            items.addAll(guard.get());
+            out.add(new RulePlan(naam + ": doorgeven " + label, vorm, null,
+                    new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
+                            ReadKind.CONFLICT_KEY, "conflictsleutel", "$sleutel"))), items,
+                    new Consequence.Conflict(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, atConflict,
+                            Consequence.Insertion.LOGICAL)));
+            if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
         }
         if (aantal > 1) {
             List<LhsItem> items = new ArrayList<>();
-            items.add(new Patroon(Uitkomst.class, "$besluit",
-                    List.of(uitkomstVanLid("lid-besluit", naam, Uitkomst.Soort.BESLIST, eerste, tot, false)), List.of(),
-                    List.of(vanOnderwerp)));
-            items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "eerder-lid",
-                    Functie.EERDER_LID, "$besluit")));
-            if (ledenConflicteren) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT)));
-            Patroon ander = uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "ander-besluit", Functie.ANDER_BESLUIT,
+            items.add(new FactPattern(Outcome.class, "$besluit",
+                    List.of(outcomeOfMember("lid-besluit", naam, Outcome.Kind.DECIDED, eerste, to, false)), List.of(),
+                    List.of(ofSubject)));
+            items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "eerder-lid",
+                    Aggregation.EARLIER_MEMBER, "$besluit")));
+            if (membersConflict) items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.CONFLICT)));
+            FactPattern earlierBean = outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "ander-besluit", Aggregation.OTHER_DECISION,
                     "$besluit");
-            items.add(new Bestaat(List.of(ander), Bestaat.verklaard(List.of(ander)), Bestaat.gelezen(List.of(ander))));
-            items.addAll(wacht.get());
-            uit.add(new Regelplan(naam + ": verschil " + label, vorm, null, new Leestabel(List.of()), items,
-                    new Gevolg.Conflict(ONDERWERP, constante(sleutel), List.of(), 0, bijConflict,
-                            Gevolg.Invoeging.LOGISCH)));
-            if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
+            items.add(new Exists(List.of(earlierBean), Exists.verklaard(List.of(earlierBean)), Exists.read(List.of(earlierBean))));
+            items.addAll(guard.get());
+            out.add(new RulePlan(naam + ": verschil " + label, vorm, null, new ReadTable(List.of()), items,
+                    new Consequence.Conflict(SUBJECT, constant(sleutel), List.of(), 0, atConflict,
+                            Consequence.Insertion.LOGICAL)));
+            if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
         }
         List<LhsItem> items = new ArrayList<>();
-        items.add(new Patroon(Uitkomst.class, "$besluit",
-                List.of(uitkomstVanLid("lid-besluit", naam, Uitkomst.Soort.BESLIST, eerste, tot, alleenWaar)), List.of(),
-                List.of(vanOnderwerp, Binding.van("$waarde", Uitkomst.class, "waarde"))));
+        items.add(new FactPattern(Outcome.class, "$besluit",
+                List.of(outcomeOfMember("lid-besluit", naam, Outcome.Kind.DECIDED, eerste, to, onlyTrue)), List.of(),
+                List.of(ofSubject, Binding.van("$waarde", Outcome.class, "waarde"))));
         if (aantal > 1) {
-            items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "eerder-lid", Functie.EERDER_LID,
+            items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "eerder-lid", Aggregation.EARLIER_MEMBER,
                     "$besluit")));
-            if (ledenConflicteren) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT)));
-            items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "ander-besluit",
-                    Functie.ANDER_BESLUIT, "$besluit")));
+            if (membersConflict) items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.CONFLICT)));
+            items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "ander-besluit",
+                    Aggregation.OTHER_DECISION, "$besluit")));
         }
-        items.addAll(wacht.get());
-        uit.add(new Regelplan(naam + ": eens " + label, vorm, null,
-                new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, Leessoort.BESLUIT,
+        items.addAll(guard.get());
+        out.add(new RulePlan(naam + ": eens " + label, vorm, null,
+                new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.DECISION,
                         "besluit", "$waarde"))), items,
-                new Gevolg.Afloop(ONDERWERP, new Term.Lees(0, null), List.of(0), 1, false, null, List.of(bijBesluit),
-                        Gevolg.Invoeging.LOGISCH)));
-        if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
+                new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null, List.of(atDecision),
+                        Consequence.Insertion.LOGICAL)));
+        if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
     }
 
     /** The constraint {@code soort} on the outcome a reconciliation binds: of stack {@code naam}, settled as
-     *  {@code uitkomst}, of a member chain in {@code [eerste, tot)}, and where {@code alleenWaar} an attribution, the one
+     *  {@code uitkomst}, of a member chain in {@code [eerste, tot)}, and where {@code onlyTrue} an attribution, the one
      *  decision on a characteristic that writes. */
-    private Alfa uitkomstVanLid(String soort, String naam, Uitkomst.Soort uitkomst, int eerste, int tot,
-                                boolean alleenWaar) {
-        List<Alfa.Veldtoets> toetsen = new ArrayList<>(List.of(
-                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
-                new Alfa.Veldtoets("soort", Alfa.Vergelijker.GELIJK, uitkomst),
-                new Alfa.Veldtoets("keten", Alfa.Vergelijker.MINSTENS, eerste),
-                new Alfa.Veldtoets("keten", Alfa.Vergelijker.ONDER, tot)));
-        if (alleenWaar) toetsen.add(new Alfa.Veldtoets("waarde", Alfa.Vergelijker.GELIJK, Boolean.TRUE));
-        return new Alfa(id(soort), toetsen);
+    private Alpha outcomeOfMember(String soort, String naam, Outcome.Kind outcome, int eerste, int to,
+                                boolean onlyTrue) {
+        List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, naam),
+                new Alpha.FieldTest("soort", Alpha.Comparator.GELIJK, outcome),
+                new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, eerste),
+                new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to)));
+        if (onlyTrue) tests.add(new Alpha.FieldTest("waarde", Alpha.Comparator.GELIJK, Boolean.TRUE));
+        return new Alpha(id(soort), tests);
     }
 
     /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for the subject, of {@code soort}, or of
      *  either where it is null, under a variable of their own. */
-    private Patroon uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort) {
-        return uitkomsten(naam, van, tot, soort, null, null, null);
+    private FactPattern outcomes(String naam, int van, int to, Outcome.Kind soort) {
+        return outcomes(naam, van, to, soort, null, null, null);
     }
 
-    /** As {@link #uitkomsten(String, int, int, Uitkomst.Soort)}, with the constraint {@code betasoort}, which calls
-     *  {@code functie}, between the outcome and the one the variable {@code doel} binds, where it is not null. */
-    private Patroon uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort, String betasoort, Functie functie,
+    /** As {@link #outcomes(String, int, int, Outcome.Kind)}, with the constraint {@code betaKind}, which calls
+     *  {@code function}, between the outcome and the one the variable {@code doel} binds, where it is not null. */
+    private FactPattern outcomes(String naam, int van, int to, Outcome.Kind soort, String betaKind, Aggregation function,
                                String doel) {
-        String variabele = "$uitkomst_" + idSeq;
-        List<Alfa.Veldtoets> toetsen = new ArrayList<>(List.of(
-                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
-                new Alfa.Veldtoets("keten", Alfa.Vergelijker.MINSTENS, van),
-                new Alfa.Veldtoets("keten", Alfa.Vergelijker.ONDER, tot)));
-        if (soort != null) toetsen.add(new Alfa.Veldtoets("soort", Alfa.Vergelijker.GELIJK, soort));
-        Alfa alfa = new Alfa(id("uitkomst"), toetsen);
-        Join opOnderwerp = new Join(id("uitkomst-onderwerp"), "onderwerp", ONDERWERP);
-        List<Betatoets> beta = betasoort == null ? List.of() : List.of(new Betatoets(id(betasoort), functie, doel));
-        return new Patroon(Uitkomst.class, variabele, List.of(alfa), List.of(opOnderwerp), beta, List.of());
+        String variable = "$uitkomst_" + idSeq;
+        List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, naam),
+                new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, van),
+                new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to)));
+        if (soort != null) tests.add(new Alpha.FieldTest("soort", Alpha.Comparator.GELIJK, soort));
+        Alpha alpha = new Alpha(id("uitkomst"), tests);
+        Join onSubject = new Join(id("uitkomst-onderwerp"), "onderwerp", SUBJECT);
+        List<BetaTest> beta = betaKind == null ? List.of() : List.of(new BetaTest(id(betaKind), function, doel));
+        return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
     }
 
     /** {@code not Uitkomst} over the positions above {@code positie} in chain {@code keten}, for the subject. */
-    private LhsItem geenUitkomst(String naam, int keten, int positie) {
-        String variabele = "$hoger_" + idSeq;
-        Alfa hoger = new Alfa(id("hoger-uitkomst"), List.of(
-                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
-                new Alfa.Veldtoets("keten", Alfa.Vergelijker.GELIJK, keten),
-                new Alfa.Veldtoets("positie", Alfa.Vergelijker.ONDER, positie)));
-        return new Niet(new Patroon(Uitkomst.class, variabele, List.of(hoger),
-                List.of(new Join(id("hoger-uitkomst-onderwerp"), "onderwerp", ONDERWERP)), List.of()));
+    private LhsItem noOutcome(String naam, int chain, int positie) {
+        String variable = "$hoger_" + idSeq;
+        Alpha higher = new Alpha(id("hoger-uitkomst"), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, naam),
+                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                new Alpha.FieldTest("positie", Alpha.Comparator.UNDER, positie)));
+        return new Not(new FactPattern(Outcome.class, variable, List.of(higher),
+                List.of(new Join(id("hoger-uitkomst-onderwerp"), "onderwerp", SUBJECT)), List.of()));
     }
 
     /** {@code not Beslist} over the indices above {@code index} in the stack, for the subject. */
-    private LhsItem geenBeslist(String naam, int index) {
-        String variabele = "$hoger_" + idSeq;
-        Alfa hoger = new Alfa(id("hoger-beslist"), List.of(
-                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
-                new Alfa.Veldtoets("index", Alfa.Vergelijker.ONDER, index)));
-        return new Niet(new Patroon(Beslist.class, variabele, List.of(hoger),
-                List.of(new Join(id("hoger-beslist-onderwerp"), "onderwerp", ONDERWERP)), List.of()));
+    private LhsItem noDecides(String naam, int index) {
+        String variable = "$hoger_" + idSeq;
+        Alpha higher = new Alpha(id("hoger-beslist"), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, naam),
+                new Alpha.FieldTest("index", Alpha.Comparator.UNDER, index)));
+        return new Not(new FactPattern(Decides.class, variable, List.of(higher),
+                List.of(new Join(id("hoger-beslist-onderwerp"), "onderwerp", SUBJECT)), List.of()));
     }
 
     /**
@@ -2861,117 +2861,117 @@ public final class TmsTranspiler {
      * as any rule binds them; {@code wacht}, the control-fact patterns, before the test of the justification; and a
      * consequence that hands the decision to {@code besluit}: a characteristic's decision as declared, an attribute's
      * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1). The validity of the group
-     * at the root of the default's chain gates the rule on the evaluation date ({@link Lezingen#geldig}).
+     * at the root of the default's chain gates the rule on the evaluation date ({@link Reads#valid}).
      *
      * <p>A default carries no division and no square root ({@link #controleer}), but its justification or its
      * consequence can still fault, a date step out of range or a context value without an evaluation date
      * ({@link Rekenfout}). Such a fault is a {@link Fout} under the stack's name, as in a rule: the consequence inserts
      * it in place of the decision, and where the justification can fault, a fault rule with the rule's own left-hand
-     * side, its control-fact patterns included, inserts it ({@link #voorwaardefoutregel}). A default a higher one
-     * displaces loses its match, and so does every default of an exception group below it ({@link #ketenregels}), and
+     * side, its control-fact patterns included, inserts it ({@link #conditionFaultRule}). A default a higher one
+     * displaces loses its match, and so does every default of an exception group below it ({@link #chainRules}), and
      * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint (PLAN §9,
      * 2026-10-09).
      */
-    private List<Regelplan> eigenRegel(Stapelbouw b, Knoop k, String regelnaam, Supplier<List<LhsItem>> wacht,
-                                       List<Gevolg.Stapelfeit> feiten) {
+    private List<RulePlan> ownRule(StackBuild b, Node k, String ruleName, Supplier<List<LhsItem>> guard,
+                                       List<Consequence.StackFact> sessionFacts) {
         Default d = k.d();
-        Supplier<Lezingen> nieuw = () -> {
-            Lezingen l = new Lezingen(k.niveau());
-            l.onderwerpAlfa(concreetType(b.klasse));
+        Supplier<Reads> recomputed = () -> {
+            Reads l = new Reads(k.levelOf());
+            l.addSubjectAlpha(concreteType(b.javaClass));
             // the input on the target, read through the getter of the type that declares it, as the bean holds it
             if (d.initialisatie())
-                l.onderwerpAlfa(new Alfa(id("doel-leeg-in-de-invoer"), List.of(new Alfa.Veldtoets(List.of(),
-                        b.lid.naam(), Binding.Leesvorm.WAARDE, Alfa.Vergelijker.LEEG, null, b.lid.klasse()))));
-            return l.geldig(k.geldigheid());
+                l.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"), List.of(new Alpha.FieldTest(List.of(),
+                        b.member.naam(), Binding.ReadForm.VALUE, Alpha.Comparator.LEEG, null, b.member.javaClass()))));
+            return l.valid(k.validity());
         };
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
-        boolean kanFalen = lez.kanFalen();
+        Reads lez = recomputed.get();
+        Set<Integer> read = lez.follow();
+        Term testTerm = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
+        boolean canFail = lez.canFail();
         lez.stop();
         String naam = b.naam;
         List<LhsItem> items;
-        Gevolg besluit;
+        Consequence decision;
         if (b.kenmerk) {
-            items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.get());
-            besluit = new Gevolg.Afloop(ONDERWERP, constante(d.besluit()), List.of(), lez.grootte(), false, null, feiten,
-                    Gevolg.Invoeging.LOGISCH);
+            items = lez.plan(conditionRole(canFail), testTerm, read, d.voorwaarde(), guard.get());
+            decision = new Consequence.Decision(SUBJECT, constant(d.besluit()), List.of(), lez.size(), false, null, sessionFacts,
+                    Consequence.Insertion.LOGICAL);
         } else {
-            Set<Integer> gebruik = lez.volg();
-            Term waarde = herschaald(waarde(d.consequentie(), lez), eff.eenheidVan(d.consequentie()),
-                    b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
+            Set<Integer> use = lez.follow();
+            Term waarde = rescaled(waarde(d.consequentie(), lez), eff.unitOf(d.consequentie()),
+                    b.member.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
             lez.stop();
-            items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.get());
-            besluit = new Gevolg.Afloop(ONDERWERP, waarde, List.copyOf(gebruik), lez.grootte(), true,
-                    new Gevolg.Foutnaam(naam, naam), feiten, Gevolg.Invoeging.LOGISCH);
+            items = lez.plan(conditionRole(canFail), testTerm, read, d.voorwaarde(), guard.get());
+            decision = new Consequence.Decision(SUBJECT, waarde, List.copyOf(use), lez.size(), true,
+                    new Consequence.FaultName(naam, naam), sessionFacts, Consequence.Insertion.LOGICAL);
         }
         b.lezingen.add(lez);
-        List<Regelplan> uit = new ArrayList<>();
-        uit.add(lez.regelplan(regelnaam, items, besluit));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, d.voorwaarde(), l -> wacht.get()));
-        return uit;
+        List<RulePlan> out = new ArrayList<>();
+        out.add(lez.rulePlan(ruleName, items, decision));
+        if (canFail) out.add(conditionFaultRule(naam, ruleName, recomputed, d.voorwaarde(), l -> guard.get()));
+        return out;
     }
 
     // ---------------- values ----------------
 
     /** A value as the analysis plans it ({@link Term}): a tree of calls over the values the rule binds, indexed as
-     *  {@link Lezingen} numbers them, which {@link ClosureWeergave} renders into the function a consequence or a test
+     *  {@link Reads} numbers them, which {@link ClosureRendering} renders into the function a consequence or a test
      *  calls. Every expression node is named here, so a node the IR records gain later fails to compile until it is
      *  decided whether this branch computes it. */
-    private Term waarde(Expr e, Lezingen lez) {
+    private Term waarde(Expr e, Reads lez) {
         return switch (e) {
-            case Expr.Literal l -> literaal(l);
-            case Expr.AttribuutRef a -> new Term.Lees(attribuutlezing(a, lez), bron(a.bron()));
-            case Expr.ParameterRef p -> new Term.Lees(lez.parameter(p.parameter()), bron(p.bron()));
-            case Expr.Binair b -> binair(b, lez);
-            case Expr.TekstReeks t -> tekstreeks(t, lez);
-            case Expr.Functie f -> functie(f, lez);
+            case Expr.Literal l -> literal(l);
+            case Expr.AttribuutRef a -> new Term.SlotValue(attributeRead(a, lez), bron(a.bron()));
+            case Expr.ParameterRef p -> new Term.SlotValue(lez.parameter(p.parameter()), bron(p.bron()));
+            case Expr.Binair b -> binary(b, lez);
+            case Expr.TekstReeks t -> textComposition(t, lez);
+            case Expr.Functie f -> function(f, lez);
             // IR-SPEC ch. 4.3: a union denotes instances and stands only as the argument of a count, which reads it in
             // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)) and the reference
             // interpreter faults on; both branches refuse it in this sentence, which the destructive DRL-text lowering
             // gave until card drl-teksttak-op-truth-maintenance
-            case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), "zij duidt de instanties van"
+            case Expr.InstanceSetUnion u -> throw notComputed("InstanceSetUnion", u.bron(), "zij duidt de instanties van"
                     + " een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110 (a))");
-            case Expr.Afgerond a -> afronding(a, lez);
-            case Expr.Begrensd b -> begrenzing(b, lez);
-            case Expr.DimensieCel c -> dimensiecel(c, lez);
-            case Expr.VariabeleRef v -> throw nietBerekend("VariableReference", v.bron(), "het merkteken van een"
+            case Expr.Afgerond a -> rounding(a, lez);
+            case Expr.Begrensd b -> clamp(b, lez);
+            case Expr.DimensieCel c -> dimensionCell(c, lez);
+            case Expr.VariabeleRef v -> throw notComputed("VariableReference", v.bron(), "het merkteken van een"
                     + " variabele die de frontend niet bond, dat de lader weigert (WF-034), zodat het deze tak alleen in een"
                     + " met de hand gebouwd model bereikt");
             case Expr.Let l -> let(l, lez);
-            case Expr.BinderRef b -> binderlezing(b, lez);
+            case Expr.BinderRef b -> binderRead(b, lez);
             case Expr.IfThenElse i -> keuze(i, lez);
-            case Expr.Constante c -> contextwaarde(c, lez);
+            case Expr.Constante c -> contextValue(c, lez);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the rule's evaluation where the evaluation reaches it,
             // and only there, so a marker in a branch that is not taken plays
             case Expr.Onopgelost o -> {
-                lez.markeerFalen();
-                yield new Term.Faal(Rekenfout.ONOPGELOST, bron(o.bron()));
+                lez.markFail();
+                yield new Term.Fail(Rekenfout.UNRESOLVED, bron(o.bron()));
             }
         };
     }
 
     /** A constant of the analysis, which an argument of a function of the plan takes ({@link Term.Const}). */
-    private static Term.Const constante(Object waarde) {
+    private static Term.Const constant(Object waarde) {
         return new Term.Const(waarde, null, null);
     }
 
-    /** A test a form composes itself ({@link Toetsitem.Rol#VORM}) of the checks {@code leden}: their conjunction,
-     *  read in order up to the first that does not hold ({@link Term.Samengesteld} under all). No node of the IR
+    /** A test a form composes itself ({@link TestItem.Role#VORM}) of the checks {@code leden}: their conjunction,
+     *  read in order up to the first that does not hold ({@link Term.Compound} under all). No node of the IR
      *  stands for it, so it carries no source fragment. */
-    private static Term alle(List<Term> leden) {
-        return new Term.Samengesteld(Conditie.Kwantor.ALLE, 0, leden, null);
+    private static Term all(List<Term> members) {
+        return new Term.Compound(Conditie.Kwantor.ALLE, 0, members, null);
     }
 
     /** The check that the value bound at slot {@code slot} is gevuld, in a test a form composes itself. */
-    private static Term gevuld(int slot) {
-        return new Term.Aanroep(Functie.LEEGTOETS, List.of(new Term.Lees(slot, null), constante(false)), null);
+    private static Term filled(int slot) {
+        return new Term.Call(Aggregation.EMPTY_TEST, List.of(new Term.SlotValue(slot, null), constant(false)), null);
     }
 
-    /** The check that the value bound at slot {@code slot} is ({@code gewenst}) or is not the asOfDate-bucket scalar
-     *  of a timeline ({@link Emmerscalair}), in a test a form composes itself. */
-    private static Term emmerscalair(int slot, boolean gewenst) {
-        return new Term.Aanroep(Functie.EMMERSCALAIR, List.of(new Term.Lees(slot, null), constante(gewenst)), null);
+    /** The check that the value bound at slot {@code slot} is ({@code desired}) or is not the asOfDate-bucket scalar
+     *  of a timeline ({@link BucketScalar}), in a test a form composes itself. */
+    private static Term emmerscalair(int slot, boolean desired) {
+        return new Term.Call(Aggregation.BUCKET_SCALAR, List.of(new Term.SlotValue(slot, null), constant(desired)), null);
     }
 
     /** The source fragment of an IR node, which a term carries; null where the IR has none. */
@@ -2979,8 +2979,8 @@ public final class TmsTranspiler {
         return bron == null ? null : bron.snippet();
     }
 
-    private static Weigering nietBerekend(String vorm, dev.uchar.regelspraak.ir.Bron bron, String reden) {
-        return new Weigering("een " + vorm + " in een waarde ('" + snippet(bron) + "'): " + reden);
+    private static Refusal notComputed(String vorm, dev.uchar.regelspraak.ir.Bron bron, String reden) {
+        return new Refusal("een " + vorm + " in een waarde ('" + snippet(bron) + "'): " + reden);
     }
 
     private static String snippet(dev.uchar.regelspraak.ir.Bron bron) {
@@ -2993,12 +2993,12 @@ public final class TmsTranspiler {
 
     /** A literal: a number, and a percentage, a number in the unit %, exact where its
      *  quotient does not terminate, a date, a boolean, and a text or an enumeration label as its string. */
-    private static Term literaal(Expr.Literal l) {
+    private static Term literal(Expr.Literal l) {
         Datatype t = l.type();
         String bron = bron(l.bron());
         if (t instanceof Datatype.Numeriek || t instanceof Datatype.Percentage) {
             BigDecimal[] r = Rationaal.van(l.waarde());
-            if (r == null) throw new Weigering("een getal dat niet te lezen is ('" + l.waarde() + "')");
+            if (r == null) throw new Refusal("een getal dat niet te lezen is ('" + l.waarde() + "')");
             Breuk b = Breuk.van(r[0]).delen(Breuk.van(r[1]));
             Object v = b.isTerminerend() ? b.naarDecimal() : b;
             return new Term.Const(v, t, bron);
@@ -3009,48 +3009,48 @@ public final class TmsTranspiler {
         }
         if (t instanceof Datatype.DatumInDagen) {
             LocalDate v = Literalen.parseDatum(l.waarde());
-            if (v == null) throw new Weigering("een datum die niet te lezen is ('" + l.waarde() + "')");
+            if (v == null) throw new Refusal("een datum die niet te lezen is ('" + l.waarde() + "')");
             return new Term.Const(v, t, bron);
         }
         if (t instanceof Datatype.DatumTijd) {
             LocalDateTime v = Literalen.parseDatumTijd(l.waarde());
-            if (v == null) throw new Weigering("een datum-tijd die niet te lezen is ('" + l.waarde() + "')");
+            if (v == null) throw new Refusal("een datum-tijd die niet te lezen is ('" + l.waarde() + "')");
             return new Term.Const(v, t, bron);
         }
         String label = Literalen.tekstOfEnumLabel(l);
-        if (label == null) throw new Weigering("een Literal van type " + t + ": " + NOG_NIET);
+        if (label == null) throw new Refusal("een Literal van type " + t + ": " + STILL_NOT);
         return new Term.Const(label, t, bron);
     }
 
     /** The arithmetic operators on numbers, a percentage being a number in the unit % (RUNTIME-SEMANTICS ch. 2.2, 2.6),
      *  through the runtime's exact helpers and with their leeg tables (ch. 1.2); a date plus or minus a duration through
-     *  {@link #datumrekening}, a power through {@link #macht}. A sum or a difference restates its right operand into the
+     *  {@link #dateCalculation}, a power through {@link #power}. A sum or a difference restates its right operand into the
      *  left one's unit (ch. 2.6); a product, a quotient and a percentage of a value do not. A division faults on a numeric
      *  zero (ch. 1.4, point 4), and one of a filled dividend by a leeg divisor deposits where the evaluation reaches it and
-     *  its operands qualify ({@link #deponeerplek}, {@link Sonde}). The operands are evaluated left before right
+     *  its operands qualify ({@link #depositSite}, {@link DepositFlag}). The operands are evaluated left before right
      *  (ch. 5.11). */
-    private Term binair(Expr.Binair b, Lezingen lez) {
-        Datatype lt = eff.typeVan(b.links()), rt = eff.typeVan(b.rechts());
-        if (lt.isDatum() || rt.isDatum()) return datumrekening(b, lez);
+    private Term binary(Expr.Binair b, Reads lez) {
+        Datatype lt = eff.typeOf(b.links()), rt = eff.typeOf(b.rechts());
+        if (lt.isDatum() || rt.isDatum()) return dateCalculation(b, lez);
         Expr.BinOp op = b.op();
-        if (op == Expr.BinOp.TOT_DE_MACHT) return macht(b, lez);
-        boolean deling = op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS;
+        if (op == Expr.BinOp.TOT_DE_MACHT) return power(b, lez);
+        boolean division = op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS;
         // a condition that holds a division carries the rule that inserts its fault (voorwaardefoutregel)
-        if (deling) lez.markeerFalen();
-        Term l = waarde(b.links(), lez), rechts = waarde(b.rechts(), lez);
+        if (division) lez.markFail();
+        Term l = waarde(b.links(), lez), right = waarde(b.rechts(), lez);
         Term r = op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET
-                ? herschaald(rechts, eff.eenheidVan(b.rechts()), eff.eenheidVan(b.links()), "een additieve operandgrens")
-                : rechts;
-        int sonde = deling && deponeerplek(b) ? lez.sonde() : -1;
+                ? rescaled(right, eff.unitOf(b.rechts()), eff.unitOf(b.links()), "een additieve operandgrens")
+                : right;
+        int depositFlag = division && depositSite(b) ? lez.depositFlag() : -1;
         String bron = bron(b.bron());
         return switch (op) {
-            case PLUS -> new Term.Aanroep(Functie.RS_PLUS, List.of(l, r), bron);
-            case MIN -> new Term.Aanroep(Functie.RS_MIN, List.of(l, r), bron);
-            case VERMINDERD_MET -> new Term.Aanroep(Functie.RS_VERMINDERD, List.of(l, r), bron);
-            case MAAL -> new Term.Aanroep(Functie.RS_MAAL, List.of(l, r), bron);
-            case PERCENTAGE_VAN -> new Term.Aanroep(Functie.RS_PERCENTAGE_VAN, List.of(l, r), bron);
-            case GEDEELD_DOOR -> new Term.Deel(Functie.GEDEELD, l, r, sonde, bron);
-            case GEDEELD_DOOR_ABS -> new Term.Deel(Functie.GEDEELD_ABS, l, r, sonde, bron);
+            case PLUS -> new Term.Call(Aggregation.RS_PLUS, List.of(l, r), bron);
+            case MIN -> new Term.Call(Aggregation.RS_MIN, List.of(l, r), bron);
+            case VERMINDERD_MET -> new Term.Call(Aggregation.RS_REDUCED, List.of(l, r), bron);
+            case MAAL -> new Term.Call(Aggregation.RS_TIMES, List.of(l, r), bron);
+            case PERCENTAGE_VAN -> new Term.Call(Aggregation.RS_PERCENTAGE_OF, List.of(l, r), bron);
+            case GEDEELD_DOOR -> new Term.Division(Aggregation.DIVIDED, l, r, depositFlag, bron);
+            case GEDEELD_DOOR_ABS -> new Term.Division(Aggregation.DIVIDED_ABS, l, r, depositFlag, bron);
             case TOT_DE_MACHT -> throw new IllegalStateException("een macht gaat door macht()");
         };
     }
@@ -3060,124 +3060,124 @@ public final class TmsTranspiler {
      *  negative or fractional literal, or a value read while the session fires, reaches the real power, which ch. 2.1
      *  leaves OPEN, where the reference interpreter answers an exact root or faults and the destructive lowering
      *  computed a binary double. */
-    private Term macht(Expr.Binair b, Lezingen lez) {
-        Integer n = b.rechts() instanceof Expr.Literal lit && lit.type().isGetalachtig() ? heleExponent(lit.waarde()) : null;
+    private Term power(Expr.Binair b, Reads lez) {
+        Integer n = b.rechts() instanceof Expr.Literal lit && lit.type().isGetalachtig() ? wholeExponent(lit.waarde()) : null;
         if (n == null)
-            throw new Weigering("een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('"
+            throw new Refusal("een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('"
                     + snippet(b.bron()) + "'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de"
                     + " referentie-interpreter een exacte wortel geeft of faalt");
-        Term basis = waarde(b.links(), lez);
-        return new Term.Aanroep(Functie.RS_MACHT, List.of(basis, constante(n)), bron(b.bron()));
+        Term base = waarde(b.links(), lez);
+        return new Term.Call(Aggregation.RS_POWER, List.of(base, constant(n)), bron(b.bron()));
     }
 
     /** The whole exponent of at least 0 the lexeme writes, or null. */
-    private static Integer heleExponent(String lexeem) {
-        BigDecimal[] r = Rationaal.van(lexeem);
+    private static Integer wholeExponent(String lexeme) {
+        BigDecimal[] r = Rationaal.van(lexeme);
         if (r == null || r[1].signum() == 0) return null;
         try {
             BigDecimal v = r[0].divide(r[1]);
             if (v.signum() < 0 || v.stripTrailingZeros().scale() > 0) return null;
             int n = v.intValueExact();
             return n <= 999_999_999 ? n : null;
-        } catch (ArithmeticException geenGeheelGetal) {
+        } catch (ArithmeticException noWholeNumber) {
             return null;
         }
     }
 
     /** A date plus or minus a duration with a calendar or clock unit: no date minus date, no duration minus a date, a
-     *  clock unit only on a date-time. A duration counted in a day kind walks the calendar ({@link #dagsoortstap}). A
+     *  clock unit only on a date-time. A duration counted in a day kind walks the calendar ({@link #dayKindStep}). A
      *  step or a count outside the range of RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault
-     *  ({@link Rekenhulpen#datumstap}); the date is evaluated before the duration (ch. 5.11). */
-    private Term datumrekening(Expr.Binair b, Lezingen lez) {
+     *  ({@link ComputeHelpers#dateStep}); the date is evaluated before the duration (ch. 5.11). */
+    private Term dateCalculation(Expr.Binair b, Reads lez) {
         Expr.BinOp op = b.op();
         if (op != Expr.BinOp.PLUS && op != Expr.BinOp.MIN && op != Expr.BinOp.VERMINDERD_MET)
-            throw new Weigering("een Binary " + Spelling.BINARY_OP.spelling(op) + " met een datum ('" + snippet(b.bron())
+            throw new Refusal("een Binary " + Spelling.BINARY_OP.spelling(op) + " met een datum ('" + snippet(b.bron())
                     + "')");
-        boolean datumLinks = eff.typeVan(b.links()).isDatum();
-        Expr datumExpr = datumLinks ? b.links() : b.rechts();
-        Expr duurExpr = datumLinks ? b.rechts() : b.links();
+        boolean dateLeft = eff.typeOf(b.links()).isDatum();
+        Expr dateExpr = dateLeft ? b.links() : b.rechts();
+        Expr durationExpr = dateLeft ? b.rechts() : b.links();
         boolean optellen = op == Expr.BinOp.PLUS;
-        if (eff.typeVan(duurExpr).isDatum() || (!optellen && !datumLinks))
-            throw new Weigering("een rekensom van twee datums of een duur min een datum ('" + snippet(b.bron()) + "')");
+        if (eff.typeOf(durationExpr).isDatum() || (!optellen && !dateLeft))
+            throw new Refusal("een rekensom van twee datums of een duur min een datum ('" + snippet(b.bron()) + "')");
         // ch. 3.8 puts the calendar table first, as Tijdrekening.dagsoortVoorEenheid looks a spelling up for every branch
-        String dagsoort = Tijdrekening.dagsoortVoorEenheid(model, eff.typeVan(duurExpr).eenheidOf());
-        if (dagsoort != null) return dagsoortstap(b, datumExpr, duurExpr, optellen, dagsoort, lez);
-        String eenheid = Tijdrekening.chronoUnit(eff.typeVan(duurExpr));
-        if (eenheid == null) throw new Weigering("een duur zonder tijdseenheid ('" + snippet(b.bron()) + "')");
-        boolean klok = switch (eenheid) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
-        if (klok && !(eff.typeVan(datumExpr) instanceof Datatype.DatumTijd))
-            throw new Weigering("een klokeenheid bij een datum zonder tijd ('" + snippet(b.bron()) + "')");
-        lez.markeerFalen();
-        Term d = waarde(datumExpr, lez), n = waarde(duurExpr, lez);
-        return new Term.Aanroep(Functie.DATUMSTAP, List.of(d, n, constante(eenheid), constante(optellen)),
+        String dayKind = Tijdrekening.dagsoortVoorEenheid(model, eff.typeOf(durationExpr).eenheidOf());
+        if (dayKind != null) return dayKindStep(b, dateExpr, durationExpr, optellen, dayKind, lez);
+        String unit = Tijdrekening.chronoUnit(eff.typeOf(durationExpr));
+        if (unit == null) throw new Refusal("een duur zonder tijdseenheid ('" + snippet(b.bron()) + "')");
+        boolean clock = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
+        if (clock && !(eff.typeOf(dateExpr) instanceof Datatype.DatumTijd))
+            throw new Refusal("een klokeenheid bij een datum zonder tijd ('" + snippet(b.bron()) + "')");
+        lez.markFail();
+        Term d = waarde(dateExpr, lez), n = waarde(durationExpr, lez);
+        return new Term.Call(Aggregation.DATE_STEP, List.of(d, n, constant(unit), constant(optellen)),
                 bron(b.bron()));
     }
 
     /**
-     * A date or a date-time plus or minus a count of days of the day kind {@code dagsoort} (RUNTIME-SEMANTICS ch. 3.8,
+     * A date or a date-time plus or minus a count of days of the day kind {@code dayKind} (RUNTIME-SEMANTICS ch. 3.8,
      * §6.11), as the runtime walks it for the other branches: from the date, which never counts, one calendar day at a
      * time to the Nth day the definition admits ({@code rsDatumPlusDagsoort}); on a date-time over its date part, the
      * clock time riding through ({@code rsDatumTijdPlusDagsoort}). A count of 0 or leeg gives the date unchanged, a leeg
      * date leeg. The definition reads nothing of working memory (WF-031), so its predicate is a constant of the document
-     * ({@link #dagsoortpredikaat}), and the reads the step depends on are the date and the count, bound as any value of
+     * ({@link #dayKindPredicate}), and the reads the step depends on are the date and the count, bound as any value of
      * the rule. A walk that passes the reach of ch. 3.8 without a day of the kind is an evaluation fault in the sentence
-     * of the reference interpreter ({@link Rekenhulpen#dagsoortstap}), a {@link Fout} that counts only where it stands
+     * of the reference interpreter ({@link ComputeHelpers#dayKindStep}), a {@link Fout} that counts only where it stands
      * at the fixpoint. The date is evaluated before the count (ch. 5.11).
      */
-    private Term dagsoortstap(Expr.Binair b, Expr datumExpr, Expr duurExpr, boolean optellen, String dagsoort,
-                              Lezingen lez) {
-        java.util.function.Predicate<LocalDate> predikaat =
-                dagsoortpredikaat(dagsoort, "een duur in dagsoorten ('" + snippet(b.bron()) + "')");
-        boolean datumTijd = eff.typeVan(datumExpr) instanceof Datatype.DatumTijd;
-        lez.markeerFalen();
-        Term d = waarde(datumExpr, lez), n = waarde(duurExpr, lez);
-        return new Term.Aanroep(datumTijd ? Functie.DATUMTIJD_DAGSOORTSTAP : Functie.DAGSOORTSTAP,
-                List.of(d, n, new Term.Dagsoort(dagsoort, predikaat, null), constante(optellen)), bron(b.bron()));
+    private Term dayKindStep(Expr.Binair b, Expr dateExpr, Expr durationExpr, boolean optellen, String dayKind,
+                              Reads lez) {
+        java.util.function.Predicate<LocalDate> datePredicate =
+                dayKindPredicate(dayKind, "een duur in dagsoorten ('" + snippet(b.bron()) + "')");
+        boolean dateTime = eff.typeOf(dateExpr) instanceof Datatype.DatumTijd;
+        lez.markFail();
+        Term d = waarde(dateExpr, lez), n = waarde(durationExpr, lez);
+        return new Term.Call(dateTime ? Aggregation.DATE_TIME_DAY_KIND_STEP : Aggregation.DAY_KIND_STEP,
+                List.of(d, n, new Term.DayKind(dayKind, datePredicate, null), constant(optellen)), bron(b.bron()));
     }
 
     /**
      * The predicate of the day kind {@code naam} over a calendar day, from its definition (IR-SPEC ch. 3.7), compiled by
-     * the backend's day-kind compiler ({@code kern.Dagsoorten}) the first time a form needs it and the same object for
+     * the backend's day-kind compiler ({@code kern.DayKinds}) the first time a form needs it and the same object for
      * every form after: the bound day, its date parts, the first Easter day, literals and other day kinds on the bound
-     * day. The form {@code wat} that steps or counts in the day kind is refused by name where the definition does not
-     * compile ({@link #dagsoortweigering}); a definition that no form uses is never compiled, so it refuses nothing.
+     * day. The form {@code description} that steps or counts in the day kind is refused by name where the definition does not
+     * compile ({@link #dayKindRefusal}); a definition that no form uses is never compiled, so it refuses nothing.
      */
-    private java.util.function.Predicate<LocalDate> dagsoortpredikaat(String naam, String wat) {
-        java.util.function.Predicate<LocalDate> p = dagsoorten.predikaat(naam);
-        if (p == null) throw new Weigering(wat + ": " + dagsoortweigering(naam, new LinkedHashSet<>()));
+    private java.util.function.Predicate<LocalDate> dayKindPredicate(String naam, String description) {
+        java.util.function.Predicate<LocalDate> p = dayKinds.datePredicate(naam);
+        if (p == null) throw new Refusal(description + ": " + dayKindRefusal(naam, new LinkedHashSet<>()));
         return p;
     }
 
     /**
      * Why the day kind {@code naam} has no predicate here, found in its definition and in the definitions it refers to
-     * ({@code bezocht} holds those already looked at, the reference graph being acyclic by WF-085): no definition; a
+     * ({@code visited} holds those already looked at, the reference graph being acyclic by WF-085): no definition; a
      * parameter, which WF-031 admits and the reference interpreter reads, and which this branch does not read, since
      * the day-kind compiler binds nothing; a day-kind test on another day than the bound day, which no executor carries
      * (RUNTIME-SEMANTICS ch. 3.8, red case {@code dagsoortverwijzing-andere-dag}); and else a shape of its condition
      * outside what the compiler carries.
      */
-    private String dagsoortweigering(String naam, Set<String> bezocht) {
+    private String dayKindRefusal(String naam, Set<String> visited) {
         ResolvedDagsoort def = null;
         for (ResolvedDagsoort d : model.resolvedDagsoorten)
             if (d.naam() != null && d.naam().equalsIgnoreCase(naam)) def = d;
         if (def == null) return "de dagsoort '" + naam + "' heeft geen definitie (WF-031)";
-        if (!bezocht.add(naam.toLowerCase())) return null;
+        if (!visited.add(naam.toLowerCase())) return null;
         String[] parameter = {null};
         Conditie.bevatOperand(def.voorwaarde(), e -> e instanceof Expr.ParameterRef pr
                 && (parameter[0] = pr.parameter() == null ? "(onopgelost)" : pr.parameter().naam()) != null);
         if (parameter[0] != null)
             return "de definitie van de dagsoort '" + naam + "' leest de parameter '" + parameter[0] + "', die deze"
                     + " tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)";
-        List<Conditie.Predicaat> toetsen = new ArrayList<>();
-        dagsoorttoetsen(def.voorwaarde(), toetsen);
-        for (Conditie.Predicaat t : toetsen) {
+        List<Conditie.Predicaat> tests = new ArrayList<>();
+        dayKindTests(def.voorwaarde(), tests);
+        for (Conditie.Predicaat t : tests) {
             if (!(t.operand() == null || t.operand() instanceof Expr.Constante c && "de dag".equalsIgnoreCase(c.naam())))
                 return "de definitie van de dagsoort '" + naam + "' toetst de dagsoort '" + t.dagsoort() + "' op een andere"
                         + " dag dan de gebonden dag ('" + snippet(t) + "'), een vorm die geen executor uitvoert"
                         + " (RUNTIME-SEMANTICS ch. 3.8)";
-            if (t.dagsoort() != null && dagsoorten.predikaat(t.dagsoort()) == null) {
-                String genest = dagsoortweigering(t.dagsoort(), bezocht);
-                if (genest != null) return genest;
+            if (t.dagsoort() != null && dayKinds.datePredicate(t.dagsoort()) == null) {
+                String nested = dayKindRefusal(t.dagsoort(), visited);
+                if (nested != null) return nested;
             }
         }
         return "de definitie van de dagsoort '" + naam + "' heeft een voorwaarde ('" + snippet(def.voorwaarde()) + "')"
@@ -3186,9 +3186,9 @@ public final class TmsTranspiler {
     }
 
     /** The day-kind tests in {@code c}, in wire order, through its composites. */
-    private static void dagsoorttoetsen(Conditie c, List<Conditie.Predicaat> uit) {
-        if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.DAGSOORT) uit.add(p);
-        else if (c instanceof Conditie.Samengesteld s) for (Conditie d : s.onderdelen()) dagsoorttoetsen(d, uit);
+    private static void dayKindTests(Conditie c, List<Conditie.Predicaat> out) {
+        if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.DAGSOORT) out.add(p);
+        else if (c instanceof Conditie.Samengesteld s) for (Conditie d : s.onderdelen()) dayKindTests(d, out);
     }
 
     /** {@code t} restated from unit {@code van} into unit {@code naar} (RUNTIME-SEMANTICS ch. 2.6): times the exact
@@ -3196,31 +3196,31 @@ public final class TmsTranspiler {
      *  stays exact until a collapse point (ch. 2.1), as the reference interpreter restates; times the single ratio of the
      *  two units otherwise, a rate whose factors are not both known; unchanged where no restatement is due, a unitless
      *  side adopting the other's unit. A leeg value stays leeg and a value that is not a number passes through
-     *  ({@link Term.Herschaal}). Two units that do not convert fault while the model is built ({@link Eenheidsconflict}). */
-    private static Term herschaald(Term t, Eenheid van, Eenheid naar, String plek) {
-        Eenheidsconflict.eisHerschaalbaar(van, naar, plek);
+     *  ({@link Term.Rescale}). Two units that do not convert fault while the model is built ({@link UnitConflict}). */
+    private static Term rescaled(Term t, Eenheid van, Eenheid naar, String site) {
+        UnitConflict.requireRescalable(van, naar, site);
         if (van == null || naar == null || !van.convertibleNaar(naar) || !van.vereistOmrekening(naar)) return t;
         BigDecimal[] exact = van.exacteHerschaalFactoren(naar);
         if (exact != null)
-            return new Term.Herschaal(Functie.HERSCHAAL_EXACT, t, van, naar, exact[0], exact[1], t.bron());
-        return new Term.Herschaal(Functie.HERSCHAAL, t, van, naar, van.omrekenfactorNaar(naar), null, t.bron());
+            return new Term.Rescale(Aggregation.RESCALE_EXACT, t, van, naar, exact[0], exact[1], t.bron());
+        return new Term.Rescale(Aggregation.RESCALE, t, van, naar, van.omrekenfactorNaar(naar), null, t.bron());
     }
 
     // ---------------- the forms of a value beside the arithmetic ----------------
 
     /** A rounding (RUNTIME-SEMANTICS ch. 2.5) of its base, a leeg base leeg (ch. 1.2), through {@code rsAfronding}, which
      *  rounds an exact rational on its true value; a square root as the base is the root under its mandatory rounding
-     *  ({@link #wortelwaarde}). */
-    private Term afronding(Expr.Afgerond a, Lezingen lez) {
-        java.math.RoundingMode modus = afrondModus(a.modus());
-        int decimalen = a.decimalen();
-        Term basis = a.basis() instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL
-                ? wortelwaarde(f, lez) : waarde(a.basis(), lez);
-        return new Term.Aanroep(Functie.RS_AFRONDING, List.of(basis, constante(decimalen), constante(modus)),
+     *  ({@link #squareRootValue}). */
+    private Term rounding(Expr.Afgerond a, Reads lez) {
+        java.math.RoundingMode mode = roundingMode(a.modus());
+        int decimals = a.decimalen();
+        Term base = a.basis() instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL
+                ? squareRootValue(f, lez) : waarde(a.basis(), lez);
+        return new Term.Call(Aggregation.RS_ROUNDING, List.of(base, constant(decimals), constant(mode)),
                 bron(a.bron()));
     }
 
-    private static java.math.RoundingMode afrondModus(Expr.AfrondModus m) {
+    private static java.math.RoundingMode roundingMode(Expr.AfrondModus m) {
         return switch (m) {
             case NAAR_BENEDEN -> java.math.RoundingMode.FLOOR;
             case NAAR_BOVEN -> java.math.RoundingMode.CEILING;
@@ -3233,69 +3233,69 @@ public final class TmsTranspiler {
     /** A square root under its rounding (§13.4.17.13): the runtime's root at 34
      *  digits ({@code rsWortel}), which the rounding above it collapses; a leeg radicand leeg, and a negative one leeg
      *  with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (RUNTIME-SEMANTICS ch. 1.2,
-     *  {@link Sonde}). */
-    private Term wortelwaarde(Expr.Functie f, Lezingen lez) {
+     *  {@link DepositFlag}). */
+    private Term squareRootValue(Expr.Functie f, Reads lez) {
         if (f.argumenten().size() != 1)
-            throw new Weigering("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+            throw new Refusal("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
                     + "'): de wortel heeft er één (WF-037)");
         Term radicand = waarde(f.argumenten().get(0), lez);
-        int sonde = deponeerplek(f) ? lez.sonde() : -1;
-        return new Term.Wortel(Functie.WORTEL, radicand, sonde, bron(f.bron()));
+        int depositFlag = depositSite(f) ? lez.depositFlag() : -1;
+        return new Term.SquareRoot(Aggregation.SQUARE_ROOT, radicand, depositFlag, bron(f.bron()));
     }
 
     /** A clamp (RUNTIME-SEMANTICS ch. 2.7): its base, then its minimum, then its maximum, in the order of ch. 5.11 and
      *  of the bounds' application, each bound restated into the base's unit (ch. 2.6); a leeg base leeg, an absent or
      *  leeg bound no bound ({@code rsBegrens}). */
-    private Term begrenzing(Expr.Begrensd g, Lezingen lez) {
-        Term basis = waarde(g.basis(), lez);
-        Eenheid eenheid = eff.eenheidVan(g.basis());
-        Term minimum = g.minimum() == null ? constante(null)
-                : herschaald(waarde(g.minimum(), lez), eff.eenheidVan(g.minimum()), eenheid, "een begrenzing (minimum)");
-        Term maximum = g.maximum() == null ? constante(null)
-                : herschaald(waarde(g.maximum(), lez), eff.eenheidVan(g.maximum()), eenheid, "een begrenzing (maximum)");
-        return new Term.Aanroep(Functie.RS_BEGRENS, List.of(basis, minimum, maximum), bron(g.bron()));
+    private Term clamp(Expr.Begrensd g, Reads lez) {
+        Term base = waarde(g.basis(), lez);
+        Eenheid unit = eff.unitOf(g.basis());
+        Term minimum = g.minimum() == null ? constant(null)
+                : rescaled(waarde(g.minimum(), lez), eff.unitOf(g.minimum()), unit, "een begrenzing (minimum)");
+        Term maximum = g.maximum() == null ? constant(null)
+                : rescaled(waarde(g.maximum(), lez), eff.unitOf(g.maximum()), unit, "een begrenzing (maximum)");
+        return new Term.Call(Aggregation.RS_CLAMP, List.of(base, minimum, maximum), bron(g.bron()));
     }
 
     /** A text composition (IR-SPEC ch. 4.2): the literal chunks and the inserted parts in part order (RUNTIME-SEMANTICS
-     *  ch. 5.11), each as its text ({@link #tekstdeel}). */
-    private Term tekstreeks(Expr.TekstReeks t, Lezingen lez) {
-        List<Term> delen = new ArrayList<>();
+     *  ch. 5.11), each as its text ({@link #textPart}). */
+    private Term textComposition(Expr.TekstReeks t, Reads lez) {
+        List<Term> parts = new ArrayList<>();
         for (Expr.TekstReeks.Deel d : t.delen()) {
             switch (d) {
                 case Expr.TekstReeks.Letterlijk l ->
-                        delen.add(new Term.Const(l.tekst() == null ? "" : l.tekst(), new Datatype.Tekst(), null));
-                case Expr.TekstReeks.Ingevoegd i -> delen.add(tekstdeel(i.expr(), lez, "TextComposition"));
+                        parts.add(new Term.Const(l.tekst() == null ? "" : l.tekst(), new Datatype.Tekst(), null));
+                case Expr.TekstReeks.Ingevoegd i -> parts.add(textPart(i.expr(), lez, "TextComposition"));
             }
         }
-        return new Term.Tekstreeks(delen, bron(t.bron()));
+        return new Term.TextComposition(parts, bron(t.bron()));
     }
 
     /** An inserted part of a text composition or an argument of a concatenation, as its text: a text or an enumeration
      *  label is its own text, and a leeg part reads "" (RUNTIME-SEMANTICS ch. 1.2). A part of another type is refused by
      *  name: the spec states the leeg rule and nothing more, and for the text of a number, a truth value or a date the
      *  reference interpreter (5,50 as "5.5", waar as "waar") and the runtime's {@code rsTekst} (5.50, true) differ. */
-    private Term tekstdeel(Expr e, Lezingen lez, String waar) {
-        Datatype t = eff.typeVan(e);
+    private Term textPart(Expr e, Reads lez, String where) {
+        Datatype t = eff.typeOf(e);
         if (!(t instanceof Datatype.Tekst) && !(t instanceof Datatype.Enumeratie))
-            throw new Weigering("een tekstdeel van type " + typenaam(t) + " in een " + waar + " ('" + snippet(e.bron())
+            throw new Refusal("een tekstdeel van type " + typeName(t) + " in een " + where + " ('" + snippet(e.bron())
                     + "'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest; de tekst van een getal,"
                     + " een waarheidswaarde of een datum beslist de spec niet, en de referentie-interpreter en de"
                     + " runtimehulp rsTekst geven er een verschillende");
         Term f = waarde(e, lez);
-        return new Term.Aanroep(Functie.RS_TEKST, List.of(f), f.bron());
+        return new Term.Call(Aggregation.RS_TEXT, List.of(f), f.bron());
     }
 
     /** A cell of a dimensioned attribute (§3.6): the value at its one label in the attribute's {@code Map<label, value>}
      *  bean member, leeg where the map or the label is absent. The attribute is
-     *  input, read off the subject's own bean ({@link #dimensielezing}); a cell over several dimensions is refused by
+     *  input, read off the subject's own bean ({@link #dimensionRead}); a cell over several dimensions is refused by
      *  name, as that branch refuses it. The reference interpreter and the ASP backend do not read a cell. */
-    private Term dimensiecel(Expr.DimensieCel c, Lezingen lez) {
+    private Term dimensionCell(Expr.DimensieCel c, Reads lez) {
         if (c.labels() == null || c.labels().size() != 1)
-            throw new Weigering("een DimensionCellRead over " + (c.labels() == null ? 0 : c.labels().size())
+            throw new Refusal("een DimensionCellRead over " + (c.labels() == null ? 0 : c.labels().size())
                     + " dimensies ('" + snippet(c.bron()) + "'): deze tak leest alleen een cel van één dimensie");
-        int i = dimensielezing(c.attribuut(), lez, "een DimensionCellRead");
+        int i = dimensionRead(c.attribuut(), lez, "een DimensionCellRead");
         String label = c.labels().get(0);
-        return new Term.Aanroep(Functie.CEL, List.of(new Term.Lees(i, bron(c.attribuut().bron())), constante(label)),
+        return new Term.Call(Aggregation.CELL, List.of(new Term.SlotValue(i, bron(c.attribuut().bron())), constant(label)),
                 bron(c.bron()));
     }
 
@@ -3304,49 +3304,49 @@ public final class TmsTranspiler {
      *  {@code rsDimMin} and {@code rsDimMax}; a sum's {@code emptyFallback} is evaluated after the cells, every time
      *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The reference interpreter and the ASP backend do
      *  not fold a dimension selection. */
-    private Term dimensievouw(Expr.Functie f, Lezingen lez) {
+    private Term dimensionFold(Expr.Functie f, Reads lez) {
         Expr.FunctieKind kind = f.kind();
         if (kind != Expr.FunctieKind.SOM && kind != Expr.FunctieKind.MINIMUM && kind != Expr.FunctieKind.MAXIMUM)
-            throw new Weigering("een Aggregation " + kind + " over een dimensieselectie ('" + snippet(f.bron())
+            throw new Refusal("een Aggregation " + kind + " over een dimensieselectie ('" + snippet(f.bron())
                     + "'): alleen een som, een minimum en een maximum vouwen een dimensieselectie (WF-037)");
         if (f.leegwaarde() != null && kind != Expr.FunctieKind.SOM)
-            throw new Weigering("een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.bron()) + "'): alleen"
+            throw new Refusal("een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.bron()) + "'): alleen"
                     + " een som heeft er een (WF-037)");
         if (f.argumenten().size() != 1 || !(f.argumenten().get(0) instanceof Expr.AttribuutRef a))
-            throw new Weigering("een Aggregation over een dimensieselectie over iets anders dan één attribuut ('"
+            throw new Refusal("een Aggregation over een dimensieselectie over iets anders dan één attribuut ('"
                     + snippet(f.bron()) + "')");
-        int i = dimensielezing(a, lez, "een Aggregation over een dimensieselectie");
+        int i = dimensionRead(a, lez, "een Aggregation over een dimensieselectie");
         List<String> labels = List.copyOf(f.dimensieSelectie().labels());
-        Term terugval = f.leegwaarde() == null ? null : herschaald(waarde(f.leegwaarde(), lez),
-                eff.eenheidVan(f.leegwaarde()), eff.eenheidVan(a), "een §5.8.2 terugvalwaarde");
-        Functie vouw = switch (kind) {
-            case SOM -> Functie.RS_DIM_SOM;
-            case MINIMUM -> Functie.RS_DIM_MIN;
-            default -> Functie.RS_DIM_MAX;
+        Term fallback = f.leegwaarde() == null ? null : rescaled(waarde(f.leegwaarde(), lez),
+                eff.unitOf(f.leegwaarde()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
+        Aggregation fold = switch (kind) {
+            case SOM -> Aggregation.RS_DIM_SUM;
+            case MINIMUM -> Aggregation.RS_DIM_MIN;
+            default -> Aggregation.RS_DIM_MAX;
         };
         String bron = bron(f.bron());
-        Term cellen = new Term.Aanroep(vouw, List.of(new Term.Aanroep(Functie.KAART,
-                List.of(new Term.Lees(i, bron(a.bron()))), null), constante(labels)), bron);
+        Term cells = new Term.Call(fold, List.of(new Term.Call(Aggregation.MAP,
+                List.of(new Term.SlotValue(i, bron(a.bron()))), null), constant(labels)), bron);
         // only a sum has a fallback, evaluated after the cells
-        return terugval == null ? cellen : new Term.Aanroep(Functie.TERUGVAL, List.of(cellen, terugval), bron);
+        return fallback == null ? cells : new Term.Call(Aggregation.FALLBACK, List.of(cells, fallback), bron);
     }
 
     /** The read of the dimensioned attribute {@code a} as its whole map: the subject's own attribute, which no form
      *  writes, bound off its bean. A dimensioned attribute over a path, or one a form writes, is refused by name. */
-    private int dimensielezing(Expr.AttribuutRef a, Lezingen lez, String wat) {
+    private int dimensionRead(Expr.AttribuutRef a, Reads lez, String description) {
         if (a.objecttype() == null || a.attribuut() == null)
-            throw new Weigering("een onopgeloste AttributeReference in " + wat + " ('" + snippet(a.bron()) + "')");
-        if (navigatieBindingen.containsKey(a))
-            throw new Weigering(wat + " over een pad ('" + snippet(a.bron()) + "'): de tak leest een gedimensioneerd"
+            throw new Refusal("een onopgeloste AttributeReference in " + description + " ('" + snippet(a.bron()) + "')");
+        if (path.containsKey(a))
+            throw new Refusal(description + " over een pad ('" + snippet(a.bron()) + "'): de tak leest een gedimensioneerd"
                     + " attribuut alleen op het eigen onderwerp");
         if (a.objecttype() != lez.subject)
-            throw new Weigering("een eigen lezing die " + a.objecttype().naam + " noemt op een " + lez.subject.naam
+            throw new Refusal("een eigen lezing die " + a.objecttype().naam + " noemt op een " + lez.subject.naam
                     + " ('" + snippet(a.bron()) + "', WF-053)");
-        Lid lid = gedimensioneerdLid(lez.subject, a.attribuut());
-        if (schrijvers.containsKey(lid.sleutel()))
-            throw new Weigering(wat + " over het attribuut '" + lid.naam() + "', dat een vorm schrijft ('"
+        Member member = dimensionedMember(lez.subject, a.attribuut());
+        if (writers.containsKey(member.sleutel()))
+            throw new Refusal(description + " over het attribuut '" + member.naam() + "', dat een vorm schrijft ('"
                     + snippet(a.bron()) + "'): de tak leest een gedimensioneerd attribuut alleen als invoer");
-        return lez.eigen(lid);
+        return lez.own(member);
     }
 
     /**
@@ -3355,26 +3355,26 @@ public final class TmsTranspiler {
      * every further read (clause 1); a read whose value is leeg ends the {@code Let} with leeg (clause 2), the barrier
      * belonging to the {@code Let} whose binder was read; a body that never reads the binder evaluates nothing of the
      * value, so no leeg, no fault and no deposit come of it (clause 3). The binder is a slot of the value array that no
-     * pattern binds ({@link Lezingen#binder}), which the rendering fills with the need for the body
-     * ({@link ClosureWeergave}). Every read the value and the body make is bound in the left-hand side all the same, read
+     * pattern binds ({@link Reads#binder}), which the rendering fills with the need for the body
+     * ({@link ClosureRendering}). Every read the value and the body make is bound in the left-hand side all the same, read
      * or not: truth maintenance follows each value the evaluation may need, and a read through a total standing never
      * keeps the rule from matching. The plan marks the {@code Let} eager where the body reads the binder before anything
-     * else of it can fault, deposit or end an evaluation ({@link #leestEerst}).
+     * else of it can fault, deposit or end an evaluation ({@link #readsFirst}).
      */
-    private Term let(Expr.Let l, Lezingen lez) {
-        if (l.binder() == null) throw new Weigering("een Let zonder binder ('" + snippet(l.bron()) + "')");
+    private Term let(Expr.Let l, Reads lez) {
+        if (l.binder() == null) throw new Refusal("een Let zonder binder ('" + snippet(l.bron()) + "')");
         Term waarde = waarde(l.value(), lez);
         int slot = lez.binder();
         String sleutel = Namen.norm(l.binder());
-        Integer buiten = lez.binders.put(sleutel, slot);
-        Term lichaam;
+        Integer outside = lez.binders.put(sleutel, slot);
+        Term body;
         try {
-            lichaam = waarde(l.body(), lez);
+            body = waarde(l.body(), lez);
         } finally {
-            if (buiten == null) lez.binders.remove(sleutel);
-            else lez.binders.put(sleutel, buiten);
+            if (outside == null) lez.binders.remove(sleutel);
+            else lez.binders.put(sleutel, outside);
         }
-        return new Term.Let(slot, l.binder(), waarde, lichaam, Boolean.TRUE.equals(leestEerst(lichaam, slot)),
+        return new Term.Let(slot, l.binder(), waarde, body, Boolean.TRUE.equals(readsFirst(body, slot)),
                 bron(l.bron()));
     }
 
@@ -3386,55 +3386,55 @@ public final class TmsTranspiler {
      * to what follows it. A {@code Let} whose body gives TRUE can have its value evaluated before the body with the same
      * outcome, faults and deposits ({@link Term.Let#gretig}).
      */
-    private static Boolean leestEerst(Term t, int slot) {
+    private static Boolean readsFirst(Term t, int slot) {
         return switch (t) {
             case Term.Const c -> null;
-            case Term.Lees l -> null;
-            case Term.Dagsoort d -> null;
+            case Term.SlotValue l -> null;
+            case Term.DayKind d -> null;
             // a read of an input has no effect and cannot fault, so the evaluation goes on to what follows it
-            case Term.Invoer i -> leestEerst(i.object(), slot);
+            case Term.Invoer i -> readsFirst(i.object(), slot);
             case Term.Binder b -> b.slot() == slot;
-            case Term.Aanroep a -> {
-                Boolean eerst = leestEerst(a.argumenten(), slot);
-                yield eerst != null ? eerst : a.functie().kanFalen() ? Boolean.FALSE : null;
+            case Term.Call a -> {
+                Boolean first = readsFirst(a.arguments(), slot);
+                yield first != null ? first : a.function().canFail() ? Boolean.FALSE : null;
             }
-            case Term.Herschaal h -> leestEerst(h.term(), slot);
-            case Term.Deel d -> {
-                Boolean eerst = leestEerst(List.of(d.links(), d.rechts()), slot);
-                yield eerst != null ? eerst : Boolean.FALSE;
+            case Term.Rescale h -> readsFirst(h.term(), slot);
+            case Term.Division d -> {
+                Boolean first = readsFirst(List.of(d.left(), d.right()), slot);
+                yield first != null ? first : Boolean.FALSE;
             }
-            case Term.Wortel w -> {
-                Boolean eerst = leestEerst(w.radicand(), slot);
-                yield eerst != null ? eerst : Boolean.FALSE;
+            case Term.SquareRoot w -> {
+                Boolean first = readsFirst(w.radicand(), slot);
+                yield first != null ? first : Boolean.FALSE;
             }
-            case Term.Vereist v -> {
-                Boolean eerst = leestEerst(v.waarde(), slot);
-                yield eerst != null ? eerst : Boolean.FALSE;
+            case Term.Required v -> {
+                Boolean first = readsFirst(v.waarde(), slot);
+                yield first != null ? first : Boolean.FALSE;
             }
-            case Term.Tekstreeks s -> leestEerst(s.delen(), slot);
-            case Term.GelijsteVouw g -> leestEerst(g.operanden(), slot);
+            case Term.TextComposition s -> readsFirst(s.parts(), slot);
+            case Term.ListedFold g -> readsFirst(g.operands(), slot);
             // the value of a nested Let is evaluated at the first read of its own binder, which gives FALSE above
-            case Term.Let l -> leestEerst(l.lichaam(), slot);
+            case Term.Let l -> readsFirst(l.body(), slot);
             // the condition comes first and a branch is conditional; what the condition reads is not looked into, so the
             // choice counts as something else first, as before the conditions were planned
-            case Term.Keuze k -> Boolean.FALSE;
+            case Term.Choice k -> Boolean.FALSE;
             // a composite is a condition, which stands in a value only as the condition of a choice, answered above; its
             // members after the first are read only where no stop came before them
-            case Term.Samengesteld s -> Boolean.FALSE;
+            case Term.Compound s -> Boolean.FALSE;
             // so are the verdict of a quantifier fold that can fault and deposit, and a condition tested without its
             // fault, which stands only in a test a form composes itself
-            case Term.Kwantorlezing k -> Boolean.FALSE;
-            case Term.ZonderFout z -> Boolean.FALSE;
+            case Term.QuantifierRead k -> Boolean.FALSE;
+            case Term.WithoutFault z -> Boolean.FALSE;
             // the analysis adds the node only where the fold's filter can deposit or a fault can stand, before the value
-            case Term.Vouwlezing v -> Boolean.FALSE;
-            case Term.Faal f -> Boolean.FALSE;
+            case Term.FoldRead v -> Boolean.FALSE;
+            case Term.Fail f -> Boolean.FALSE;
         };
     }
 
-    private static Boolean leestEerst(List<Term> termen, int slot) {
-        for (Term t : termen) {
-            Boolean eerst = leestEerst(t, slot);
-            if (eerst != null) return eerst;
+    private static Boolean readsFirst(List<Term> terms, int slot) {
+        for (Term t : terms) {
+            Boolean first = readsFirst(t, slot);
+            if (first != null) return first;
         }
         return null;
     }
@@ -3442,16 +3442,16 @@ public final class TmsTranspiler {
     /** A read of the binder of the nearest enclosing {@code Let} of that name (WF-064): it forces the need and raises
      *  the {@code Let}'s barrier where the value is leeg ({@link Term.Binder}). A binder of a {@code Let} around a
      *  fold, read in the fold's filter or matrix, is in scope but bound in another rule than this contribution rule
-     *  ({@link Lezingen#buiten}), and refused as a form this branch does not carry yet. */
-    private Term binderlezing(Expr.BinderRef b, Lezingen lez) {
+     *  ({@link Reads#outside}), and refused as a form this branch does not carry yet. */
+    private Term binderRead(Expr.BinderRef b, Reads lez) {
         String naam = b.naam() == null ? null : Namen.norm(b.naam());
         Integer slot = naam == null ? null : lez.binders.get(naam);
-        if (slot == null && naam != null && lez.buiten.contains(naam))
-            throw new Weigering("een BinderRef '" + b.naam() + "' van een Let om een vouw, in het filter of de matrix"
+        if (slot == null && naam != null && lez.outside.contains(naam))
+            throw new Refusal("een BinderRef '" + b.naam() + "' van een Let om een vouw, in het filter of de matrix"
                     + " van die vouw ('" + snippet(b.bron()) + "'): de bijdrageregels van de vouw rekenen het filter en"
-                    + " de matrix per lid uit en binden de waarde van de Let niet: " + NOG_NIET);
+                    + " de matrix per lid uit en binden de waarde van de Let niet: " + STILL_NOT);
         if (slot == null)
-            throw new Weigering("een BinderRef '" + b.naam() + "' zonder omsluitende Let die hem bindt ('"
+            throw new Refusal("een BinderRef '" + b.naam() + "' zonder omsluitende Let die hem bindt ('"
                     + snippet(b.bron()) + "', WF-064)");
         return new Term.Binder(slot, b.naam(), bron(b.bron()));
     }
@@ -3459,74 +3459,74 @@ public final class TmsTranspiler {
     /** An {@code IfThenElse} (RUNTIME-SEMANTICS ch. 10.2): the condition evaluated as any condition of this branch, then
      *  exactly the branch it chooses; the other branch evaluates nothing, so it reads no binder, faults nowhere and
      *  deposits nothing. The reads of both branches are bound in the left-hand side all the same. */
-    private Term keuze(Expr.IfThenElse k, Lezingen lez) {
+    private Term keuze(Expr.IfThenElse k, Reads lez) {
         Term voorwaarde = voorwaarde(k.conditie(), lez);
-        Term dan = waarde(k.dan(), lez), anders = waarde(k.anders(), lez);
-        return new Term.Keuze(voorwaarde, dan, anders, bron(k.bron()));
+        Term then = waarde(k.dan(), lez), otherwise = waarde(k.anders(), lez);
+        return new Term.Choice(voorwaarde, then, otherwise, bron(k.bron()));
     }
 
     /** A context value (RUNTIME-SEMANTICS ch. 8.2): evaluationDate, the session's evaluation date, and evaluationYear,
      *  its calendar year as a whole number without a unit ({@code rsRekenjaar}). Both read the session's
-     *  {@link Rekendatum}, bound in the left-hand side, and fault where the session carries no date, in the reference
+     *  {@link EvaluationDate}, bound in the left-hand side, and fault where the session carries no date, in the reference
      *  interpreter's sentences. The bound day of a day-kind definition, read outside such a definition, faults as in that
      *  executor, since it denotes nothing there; a day-kind definition itself is outside this branch. */
-    private Term contextwaarde(Expr.Constante c, Lezingen lez) {
+    private Term contextValue(Expr.Constante c, Reads lez) {
         String naam = c.naam() == null ? "" : c.naam();
         String bron = bron(c.bron());
         switch (naam) {
             case "Rekendatum" -> {
                 int i = lez.rekendatum();
-                lez.markeerFalen();
-                return new Term.Vereist(new Term.Lees(i, null), Rekenfout.REKENDATUM_ZONDER_DATUM, bron);
+                lez.markFail();
+                return new Term.Required(new Term.SlotValue(i, null), Rekenfout.EVALUATION_DATE_WITHOUT_DATE, bron);
             }
             case "Rekenjaar" -> {
                 int i = lez.rekendatum();
-                lez.markeerFalen();
-                return new Term.Aanroep(Functie.RS_REKENJAAR, List.of(new Term.Vereist(new Term.Lees(i, null),
+                lez.markFail();
+                return new Term.Call(Aggregation.RS_EVALUATION_YEAR, List.of(new Term.Required(new Term.SlotValue(i, null),
                         RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM, null)), bron);
             }
             case "de dag" -> {
-                lez.markeerFalen();
-                return new Term.Faal(Rekenfout.DE_DAG_BUITEN_DAGSOORT, bron);
+                lez.markFail();
+                return new Term.Fail(Rekenfout.DAY_OUTSIDE_DAY_KIND, bron);
             }
-            default -> throw new Weigering("de contextwaarde '" + naam + "' ('" + snippet(c.bron()) + "'): de lader laat"
+            default -> throw new Refusal("de contextwaarde '" + naam + "' ('" + snippet(c.bron()) + "'): de lader laat"
                     + " alleen evaluationDate, evaluationYear en de gebonden dag toe (WF-098)");
         }
     }
 
     // ---------------- aggregations ----------------
 
-    /** A fold this branch lowers: the key its contributions carry ({@link Bijdrage#vouw}), its contribution rules (one
+    /** A fold this branch lowers: the key its contributions carry ({@link Contribution#fold}), its contribution rules (one
      *  per range, beside the filter fault rule of a filter that can fault and the filter deposit rule of a filter that
      *  can deposit), the reads of those rules, registered when a form that reads the fold lowers
-     *  ({@link Lezingen#vastleggen}), whether its filter can fault, in which case the rule that reads it binds its
-     *  {@link Filterfout} facts as well, and whether its filter can deposit, in which case that rule counts its
-     *  {@link Filterdeponering} facts; for a quantifier fold, whether its matrix can fault and whether it can deposit,
-     *  in which case its contributions carry a {@link Lidtoets} ({@link #kwantorvouw}); and for a per-element fold over
+     *  ({@link Reads#recorder}), whether its filter can fault, in which case the rule that reads it binds its
+     *  {@link FilterError} facts as well, and whether its filter can deposit, in which case that rule counts its
+     *  {@link FilterDeposit} facts; for a quantifier fold, whether its matrix can fault and whether it can deposit,
+     *  in which case its contributions carry a {@link MemberTest} ({@link #quantifierFold}); and for a per-element fold over
      *  an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
-     *  {@link Lidfout} facts as well ({@link #lidfoutregel}). */
-    private record Vouw(String sleutel, List<Regelplan> regels, List<Lezingen> lezingen, boolean kanFalen,
-                        boolean deponeert, boolean lidKanFalen, boolean lidDeponeert, boolean waardeKanFalen) {
+     *  {@link MemberError} facts as well ({@link #memberErrorRule}). */
+    private record Fold(String sleutel, List<RulePlan> rules, List<Reads> lezingen, boolean canFail,
+                        boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean valueCanFail) {
         /** A fold over a set source or a union: no matrix per member. */
-        Vouw(String sleutel, List<Regelplan> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {
-            this(sleutel, regels, lezingen, kanFalen, deponeert, false, false, false);
+        Fold(String sleutel, List<RulePlan> rules, List<Reads> lezingen, boolean canFail, boolean deposits) {
+            this(sleutel, rules, lezingen, canFail, deposits, false, false, false);
         }
 
         /** A quantifier fold: a matrix per member, and no value per member. */
-        Vouw(String sleutel, List<Regelplan> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
-             boolean lidKanFalen, boolean lidDeponeert) {
-            this(sleutel, regels, lezingen, kanFalen, deponeert, lidKanFalen, lidDeponeert, false);
+        Fold(String sleutel, List<RulePlan> rules, List<Reads> lezingen, boolean canFail, boolean deposits,
+             boolean memberCanFail, boolean memberDeposits) {
+            this(sleutel, rules, lezingen, canFail, deposits, memberCanFail, memberDeposits, false);
         }
 
         /** Whether the rule that reads the fold replays its contributors in order: a quantifier fold whose matrix can
-         *  fault or deposit ({@link Lidtoets}). */
-        boolean geordend() {
-            return lidKanFalen || lidDeponeert;
+         *  fault or deposit ({@link MemberTest}). */
+        boolean ordered() {
+            return memberCanFail || memberDeposits;
         }
     }
 
     /** The kinds of an aggregation, as against the builtins that share the node. */
-    private static boolean isVouw(Expr.FunctieKind k) {
+    private static boolean isFold(Expr.FunctieKind k) {
         return switch (k) {
             case SOM, TOTAAL, AANTAL, AANTAL_GEVULDE, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true;
             default -> false;
@@ -3536,60 +3536,60 @@ public final class TmsTranspiler {
     /** The listed fold, "de eerste van A en B": two or more operands and no filter, as against a fold over a set
      *  source; told apart by the shape, as RUNTIME-SEMANTICS ch. 1.2e does, since the element type the producer stamps
      *  on it is vestigial. */
-    private static boolean isGelisteVouw(Expr.Functie f) {
-        boolean ordenend = switch (f.kind()) { case MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true; default -> false; };
-        return ordenend && f.argumenten().size() >= 2 && f.filter() == null;
+    private static boolean isListedFold(Expr.Functie f) {
+        boolean ordering = switch (f.kind()) { case MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true; default -> false; };
+        return ordering && f.argumenten().size() >= 2 && f.filter() == null;
     }
 
     /** An aggregation, listed, over a set source or over a dimension selection; every other function node is a builtin
      *  call ({@link #builtin}). */
-    private Term functie(Expr.Functie f, Lezingen lez) {
-        if (f.dimensieSelectie() != null) return dimensievouw(f, lez);
-        if (!isVouw(f.kind())) return builtin(f, lez);
-        return isGelisteVouw(f) ? gelijsteVouw(f, lez) : vouw(f, lez);
+    private Term function(Expr.Functie f, Reads lez) {
+        if (f.dimensieSelectie() != null) return dimensionFold(f, lez);
+        if (!isFold(f.kind())) return builtin(f, lez);
+        return isListedFold(f) ? listedFold(f, lez) : fold(f, lez);
     }
 
     /**
      * A builtin call (IR-SPEC ch. 4.3), its arguments evaluated in wire order (RUNTIME-SEMANTICS ch. 5.11), through the
      * runtime's helpers: the absolute value ({@code rsAbs}); a concatenation of
-     * texts ({@link #tekstdeel}); the duration and the absolute duration in a calendar unit ({@code rsTijdsduur},
+     * texts ({@link #textPart}); the duration and the absolute duration in a calendar unit ({@code rsTijdsduur},
      * ch. 3.8); the year, month and day of a date and the hour, minute, second and millisecond of a date-time
-     * ({@code rsDatumDeel}); easterSunday of a whole year ({@link #paasdag}); a date and a date-time made of their parts
-     * ({@link #datumconstructie}). A square root is computed as the base of its mandatory rounding ({@link #afronding}),
-     * and without one exactly ({@link #exacteWortel}). A bucketing builtin over a timeline is the value of a temporal
-     * target and nothing else ({@link #tijdlijnwaarde}), so here it is refused by name, and a duration in day kinds
+     * ({@code rsDatumDeel}); easterSunday of a whole year ({@link #easterSunday}); a date and a date-time made of their parts
+     * ({@link #dateConstruction}). A square root is computed as the base of its mandatory rounding ({@link #rounding}),
+     * and without one exactly ({@link #exactSquareRoot}). A bucketing builtin over a timeline is the value of a temporal
+     * target and nothing else ({@link #timelineValue}), so here it is refused by name, and a duration in day kinds
      * belongs to the card of day kinds and is refused by name.
      */
-    private Term builtin(Expr.Functie f, Lezingen lez) {
+    private Term builtin(Expr.Functie f, Reads lez) {
         Expr.FunctieKind kind = f.kind();
         String spelling = Spelling.BUILTIN_KIND.spelling(kind);
         if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN)
-            throw nietBerekend("BuiltinCall " + spelling, f.bron(), "deze tak rekent een tijdsevenredig"
+            throw notComputed("BuiltinCall " + spelling, f.bron(), "deze tak rekent een tijdsevenredig"
                     + " deel en een dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS"
                     + " ch. 3.7, 3.8, 3.11)");
         if (f.filter() != null)
-            throw new Weigering("een BuiltinCall " + spelling + " met een filter ('" + snippet(f.bron()) + "'): alleen een"
+            throw new Refusal("een BuiltinCall " + spelling + " met een filter ('" + snippet(f.bron()) + "'): alleen een"
                     + " bucketing over een tijdlijn draagt er een");
         List<Expr> a = f.argumenten();
         return switch (kind) {
-            case WORTEL -> exacteWortel(f, lez);
-            case ABSOLUTE_WAARDE -> new Term.Aanroep(Functie.RS_ABS, List.of(waarde(eenArgument(f, spelling), lez)),
+            case WORTEL -> exactSquareRoot(f, lez);
+            case ABSOLUTE_WAARDE -> new Term.Call(Aggregation.RS_ABS, List.of(waarde(oneArgument(f, spelling), lez)),
                     bron(f.bron()));
             case CONCATENATIE -> {
-                List<Term> delen = new ArrayList<>();
-                for (Expr arg : a) delen.add(tekstdeel(arg, lez, "concatenation"));
-                yield new Term.Tekstreeks(delen, bron(f.bron()));
+                List<Term> parts = new ArrayList<>();
+                for (Expr arg : a) parts.add(textPart(arg, lez, "concatenation"));
+                yield new Term.TextComposition(parts, bron(f.bron()));
             }
-            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduur(f, lez, spelling);
-            case EERSTE_PAASDAG -> paasdag(f, lez, spelling);
-            case JAAR_UIT -> datumdeel(f, lez, spelling, ChronoField.YEAR, false);
-            case MAAND_UIT -> datumdeel(f, lez, spelling, ChronoField.MONTH_OF_YEAR, false);
-            case DAG_UIT -> datumdeel(f, lez, spelling, ChronoField.DAY_OF_MONTH, false);
-            case UUR_UIT -> datumdeel(f, lez, spelling, ChronoField.HOUR_OF_DAY, true);
-            case MINUUT_UIT -> datumdeel(f, lez, spelling, ChronoField.MINUTE_OF_HOUR, true);
-            case SECONDE_UIT -> datumdeel(f, lez, spelling, ChronoField.SECOND_OF_MINUTE, true);
-            case MILLISECONDE_UIT -> datumdeel(f, lez, spelling, ChronoField.MILLI_OF_SECOND, true);
-            case DATUM_MET, DATUMTIJD_MET -> datumconstructie(f, lez, spelling);
+            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> duration(f, lez, spelling);
+            case EERSTE_PAASDAG -> easterSunday(f, lez, spelling);
+            case JAAR_UIT -> datePart(f, lez, spelling, ChronoField.YEAR, false);
+            case MAAND_UIT -> datePart(f, lez, spelling, ChronoField.MONTH_OF_YEAR, false);
+            case DAG_UIT -> datePart(f, lez, spelling, ChronoField.DAY_OF_MONTH, false);
+            case UUR_UIT -> datePart(f, lez, spelling, ChronoField.HOUR_OF_DAY, true);
+            case MINUUT_UIT -> datePart(f, lez, spelling, ChronoField.MINUTE_OF_HOUR, true);
+            case SECONDE_UIT -> datePart(f, lez, spelling, ChronoField.SECOND_OF_MINUTE, true);
+            case MILLISECONDE_UIT -> datePart(f, lez, spelling, ChronoField.MILLI_OF_SECOND, true);
+            case DATUM_MET, DATUMTIJD_MET -> dateConstruction(f, lez, spelling);
             default -> throw new IllegalStateException("de soort " + kind + " is een vouw, geen builtin");
         };
     }
@@ -3598,119 +3598,119 @@ public final class TmsTranspiler {
      *  a radicand that is the square of a rational, and otherwise the fault that executor gives, since an irrational
      *  root exists only under the rounding §13.4.17.13 mandates (RUNTIME-SEMANTICS ch. 2.2). A leeg radicand is leeg,
      *  a negative one leeg with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (ch. 1.2,
-     *  {@link Sonde}). The destructive lowering computed a binary approximation here. */
-    private Term exacteWortel(Expr.Functie f, Lezingen lez) {
+     *  {@link DepositFlag}). The destructive lowering computed a binary approximation here. */
+    private Term exactSquareRoot(Expr.Functie f, Reads lez) {
         if (f.argumenten().size() != 1)
-            throw new Weigering("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+            throw new Refusal("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
                     + "'): de wortel heeft er één (WF-037)");
-        lez.markeerFalen();
+        lez.markFail();
         Term radicand = waarde(f.argumenten().get(0), lez);
-        int sonde = deponeerplek(f) ? lez.sonde() : -1;
-        return new Term.Wortel(Functie.EXACTE_WORTEL, radicand, sonde, bron(f.bron()));
+        int depositFlag = depositSite(f) ? lez.depositFlag() : -1;
+        return new Term.SquareRoot(Aggregation.EXACT_SQUARE_ROOT, radicand, depositFlag, bron(f.bron()));
     }
 
     /** The one argument of {@code f}; a call with another number is refused (WF-037). */
-    private static Expr eenArgument(Expr.Functie f, String spelling) {
+    private static Expr oneArgument(Expr.Functie f, String spelling) {
         if (f.argumenten().size() != 1)
-            throw new Weigering("een " + spelling + " met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+            throw new Refusal("een " + spelling + " met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
                     + "'): deze builtin heeft er één (WF-037)");
         return f.argumenten().get(0);
     }
 
     /** The duration and the absolute duration from argument 0 to argument 1 in whole units of the node's own unit
      *  (RUNTIME-SEMANTICS ch. 3.8, WF-038), the "van" evaluated before the "tot" (ch. 5.11); a leeg operand leeg. A unit
-     *  that is a day kind counts the days of the kind ({@link #dagsoortduur}). */
-    private Term tijdsduur(Expr.Functie f, Lezingen lez, String spelling) {
+     *  that is a day kind counts the days of the kind ({@link #dayKindDuration}). */
+    private Term duration(Expr.Functie f, Reads lez, String spelling) {
         List<Expr> a = f.argumenten();
         if (a.size() != 2)
-            throw new Weigering("een " + spelling + " met " + a.size() + " argumenten ('" + snippet(f.bron()) + "'): een"
+            throw new Refusal("een " + spelling + " met " + a.size() + " argumenten ('" + snippet(f.bron()) + "'): een"
                     + " tijdsduur heeft er twee (WF-037)");
-        Datatype van = eff.typeVan(a.get(0)), tot = eff.typeVan(a.get(1));
-        if (!van.isDatum() || !tot.isDatum() || !zelfdeDatumsoort(van, tot))
-            throw new Weigering("een " + spelling + " die niet twee datums van één precisie meet ('" + snippet(f.bron())
+        Datatype van = eff.typeOf(a.get(0)), to = eff.typeOf(a.get(1));
+        if (!van.isDatum() || !to.isDatum() || !sameDateKind(van, to))
+            throw new Refusal("een " + spelling + " die niet twee datums van één precisie meet ('" + snippet(f.bron())
                     + "', WF-038)");
-        Datatype type = eff.typeVan(f);
+        Datatype type = eff.typeOf(f);
         // ch. 3.8 puts the calendar table first, as Tijdrekening.dagsoortVoorEenheid looks a spelling up for every branch
-        String dagsoort = Tijdrekening.dagsoortVoorEenheid(model, type.eenheidOf());
-        if (dagsoort != null) return dagsoortduur(f, lez, spelling, dagsoort, van instanceof Datatype.DatumTijd);
-        String eenheid = Tijdrekening.chronoUnit(type);
-        if (eenheid == null)
-            throw new Weigering("een " + spelling + " zonder tijdseenheid ('" + snippet(f.bron()) + "', WF-038)");
-        boolean klok = switch (eenheid) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
-        if (klok && !(van instanceof Datatype.DatumTijd))
-            throw new Weigering("een " + spelling + " in een klokeenheid tussen datums zonder tijd ('" + snippet(f.bron())
+        String dayKind = Tijdrekening.dagsoortVoorEenheid(model, type.eenheidOf());
+        if (dayKind != null) return dayKindDuration(f, lez, spelling, dayKind, van instanceof Datatype.DatumTijd);
+        String unit = Tijdrekening.chronoUnit(type);
+        if (unit == null)
+            throw new Refusal("een " + spelling + " zonder tijdseenheid ('" + snippet(f.bron()) + "', WF-038)");
+        boolean clock = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
+        if (clock && !(van instanceof Datatype.DatumTijd))
+            throw new Refusal("een " + spelling + " in een klokeenheid tussen datums zonder tijd ('" + snippet(f.bron())
                     + "', WF-038)");
-        Term vanaf = waarde(a.get(0), lez), totaan = waarde(a.get(1), lez);
-        boolean absoluut = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
-        return new Term.Aanroep(Functie.RS_TIJDSDUUR, List.of(vanaf, totaan, constante(eenheid), constante(absoluut)),
+        Term from = waarde(a.get(0), lez), upTo = waarde(a.get(1), lez);
+        boolean absolute = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
+        return new Term.Call(Aggregation.RS_DURATION, List.of(from, upTo, constant(unit), constant(absolute)),
                 bron(f.bron()));
     }
 
     /**
-     * The duration from argument 0 to argument 1 in whole days of the day kind {@code dagsoort} (RUNTIME-SEMANTICS
+     * The duration from argument 0 to argument 1 in whole days of the day kind {@code dayKind} (RUNTIME-SEMANTICS
      * ch. 3.8, §6.10), as the runtime counts it for the other branches ({@code rsTijdsduurDagsoort}): the days of the
      * kind after the start up to and including the end, signed by the order of the two, the absolute duration without
      * the sign, a leeg operand leeg. The interval bounds the count, so it has no reach and no fault. The predicate is a
-     * constant of the document ({@link #dagsoortpredikaat}). Over two date-times the form is refused by name, as the
+     * constant of the document ({@link #dayKindPredicate}). Over two date-times the form is refused by name, as the
      * reference interpreter and the ASP backend refuse it: counting whole days of a kind between two instants needs a
      * rule for the part-day at each end, which ch. 3.8 does not fix, and the refusal does not wait for a filled operand.
      */
-    private Term dagsoortduur(Expr.Functie f, Lezingen lez, String spelling, String dagsoort, boolean datumTijd) {
-        String wat = "een " + spelling + " in dagsoorten ('" + snippet(f.bron()) + "')";
-        if (datumTijd)
-            throw new Weigering(wat + " tussen twee datum-tijden: de referentie-interpreter en de ASP-backend weigeren haar"
+    private Term dayKindDuration(Expr.Functie f, Reads lez, String spelling, String dayKind, boolean dateTime) {
+        String description = "een " + spelling + " in dagsoorten ('" + snippet(f.bron()) + "')";
+        if (dateTime)
+            throw new Refusal(description + " tussen twee datum-tijden: de referentie-interpreter en de ASP-backend weigeren haar"
                     + " met naam, omdat het tellen van hele dagen van een soort tussen twee tijdstippen een regel voor de"
                     + " deeldag aan elk eind vraagt, die RUNTIME-SEMANTICS ch. 3.8 niet vastlegt (ch. 3.12)");
-        java.util.function.Predicate<LocalDate> predikaat = dagsoortpredikaat(dagsoort, wat);
-        Term vanaf = waarde(f.argumenten().get(0), lez), totaan = waarde(f.argumenten().get(1), lez);
-        boolean absoluut = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
-        return new Term.Aanroep(Functie.RS_TIJDSDUUR_DAGSOORT, List.of(vanaf, totaan,
-                new Term.Dagsoort(dagsoort, predikaat, null), constante(absoluut)), bron(f.bron()));
+        java.util.function.Predicate<LocalDate> datePredicate = dayKindPredicate(dayKind, description);
+        Term from = waarde(f.argumenten().get(0), lez), upTo = waarde(f.argumenten().get(1), lez);
+        boolean absolute = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
+        return new Term.Call(Aggregation.RS_DURATION_DAY_KIND, List.of(from, upTo,
+                new Term.DayKind(dayKind, datePredicate, null), constant(absolute)), bron(f.bron()));
     }
 
     /** A part of a date or a date-time, as a whole number without a unit; a leeg date leeg (RUNTIME-SEMANTICS ch. 1.2,
      *  3.8). A clock part demands a date-time. */
-    private Term datumdeel(Expr.Functie f, Lezingen lez, String spelling, ChronoField veld, boolean klok) {
-        Expr arg = eenArgument(f, spelling);
-        Datatype t = eff.typeVan(arg);
-        if (!t.isDatum() || (klok && !(t instanceof Datatype.DatumTijd)))
-            throw new Weigering("een " + spelling + " uit iets anders dan een " + (klok ? "datum-tijd" : "datum") + " ('"
+    private Term datePart(Expr.Functie f, Reads lez, String spelling, ChronoField veld, boolean clock) {
+        Expr arg = oneArgument(f, spelling);
+        Datatype t = eff.typeOf(arg);
+        if (!t.isDatum() || (clock && !(t instanceof Datatype.DatumTijd)))
+            throw new Refusal("een " + spelling + " uit iets anders dan een " + (clock ? "datum-tijd" : "datum") + " ('"
                     + snippet(f.bron()) + "')");
         Term d = waarde(arg, lez);
-        return new Term.Aanroep(Functie.RS_DATUM_DEEL, List.of(d, constante(veld)), bron(f.bron()));
+        return new Term.Call(Aggregation.RS_DATE_PART, List.of(d, constant(veld)), bron(f.bron()));
     }
 
     /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter
-     *  ({@link Rekenhulpen#paasdag}); a leeg year leeg. A year that is not whole is a fault in the reference interpreter's
+     *  ({@link ComputeHelpers#easterSunday}); a leeg year leeg. A year that is not whole is a fault in the reference interpreter's
      *  sentence, never a silent truncation, and so is a year outside the years this backend's dates hold. */
-    private Term paasdag(Expr.Functie f, Lezingen lez, String spelling) {
-        Expr arg = eenArgument(f, spelling);
-        Eenheid eenheid = eff.eenheidVan(arg);
-        if (eenheid != null)
-            throw new Weigering("een " + spelling + " van een jaar met de eenheid " + eenheid.weergave() + " ('"
+    private Term easterSunday(Expr.Functie f, Reads lez, String spelling) {
+        Expr arg = oneArgument(f, spelling);
+        Eenheid unit = eff.unitOf(arg);
+        if (unit != null)
+            throw new Refusal("een " + spelling + " van een jaar met de eenheid " + unit.weergave() + " ('"
                     + snippet(f.bron()) + "'): het jaar is een geheel getal zonder eenheid (WF-038)");
-        lez.markeerFalen();
-        Term jaar = waarde(arg, lez);
-        return new Term.Aanroep(Functie.PAASDAG, List.of(jaar), bron(f.bron()));
+        lez.markFail();
+        Term year = waarde(arg, lez);
+        return new Term.Call(Aggregation.EASTER_SUNDAY, List.of(year), bron(f.bron()));
     }
 
     /** A date of three parts or a date-time of seven, through the runtime's {@code rsDatumMet} and
      *  {@code rsDatumtijdMet}: every part evaluated in order (RUNTIME-SEMANTICS ch. 5.11), any leeg part leeg (ch.
      *  1.2). A part that is not a whole number within the range of a date part, or parts that name no day, fault: the
      *  reference interpreter makes no such date, and the runtime would truncate the part or throw past the fire
-     *  ({@link Rekenhulpen#datumMet}). */
-    private Term datumconstructie(Expr.Functie f, Lezingen lez, String spelling) {
-        boolean tijd = f.kind() == Expr.FunctieKind.DATUMTIJD_MET;
-        int aantal = tijd ? 7 : 3;
+     *  ({@link ComputeHelpers#dateWith}). */
+    private Term dateConstruction(Expr.Functie f, Reads lez, String spelling) {
+        boolean time = f.kind() == Expr.FunctieKind.DATUMTIJD_MET;
+        int aantal = time ? 7 : 3;
         if (f.argumenten().size() != aantal)
-            throw new Weigering("een " + spelling + " met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+            throw new Refusal("een " + spelling + " met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
                     + "'): deze builtin heeft er " + aantal + " (WF-037)");
-        lez.markeerFalen();
-        List<Term> argumenten = new ArrayList<>();
+        lez.markFail();
+        List<Term> arguments = new ArrayList<>();
         // the spelling first: the sentence of a fault names the builtin
-        argumenten.add(constante(spelling));
-        for (Expr arg : f.argumenten()) argumenten.add(waarde(arg, lez));
-        return new Term.Aanroep(tijd ? Functie.DATUMTIJD_MET : Functie.DATUM_MET, argumenten, bron(f.bron()));
+        arguments.add(constant(spelling));
+        for (Expr arg : f.argumenten()) arguments.add(waarde(arg, lez));
+        return new Term.Call(time ? Aggregation.DATUMTIJD_MET : Aggregation.DATUM_MET, arguments, bron(f.bron()));
     }
 
     /**
@@ -3719,132 +3719,132 @@ public final class TmsTranspiler {
      * are computed from the values the rule binds, in wire order, each after the first restated into the first one's
      * unit, the unit of the result (§4.6 Eenheid1, RUNTIME-SEMANTICS ch. 2.6).
      */
-    private Term gelijsteVouw(Expr.Functie f, Lezingen lez) {
-        boolean kleinste = f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.EERSTE;
-        Eenheid eerste = eff.eenheidVan(f.argumenten().get(0));
-        List<Term> operanden = new ArrayList<>();
+    private Term listedFold(Expr.Functie f, Reads lez) {
+        boolean smallest = f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.EERSTE;
+        Eenheid eerste = eff.unitOf(f.argumenten().get(0));
+        List<Term> operands = new ArrayList<>();
         for (int i = 0; i < f.argumenten().size(); i++) {
             Expr a = f.argumenten().get(i);
             Term op = waarde(a, lez);
-            operanden.add(i == 0 ? op : herschaald(op, eff.eenheidVan(a), eerste, "een §5.8.3 operand van een gelijste vouw"));
+            operands.add(i == 0 ? op : rescaled(op, eff.unitOf(a), eerste, "een §5.8.3 operand van een gelijste vouw"));
         }
-        return new Term.GelijsteVouw(kleinste ? Functie.KLEINSTE : Functie.GROOTSTE, operanden, bron(f.bron()));
+        return new Term.ListedFold(smallest ? Aggregation.SMALLEST : Aggregation.LARGEST, operands, bron(f.bron()));
     }
 
     /**
      * A fold over a set source (RUNTIME-SEMANTICS ch. 1.2 "Aggregations", ch. 3.4a-d): an accumulate in this rule's
-     * left-hand side over the contributions ({@link Bijdrage}) that the fold's contribution rules insert for this rule's
-     * subject, one per member of the range that passes the filter ({@link #bijdrageregels}). A contribution rule binds the
+     * left-hand side over the contributions ({@link Contribution}) that the fold's contribution rules insert for this rule's
+     * subject, one per member of the range that passes the filter ({@link #contributionRules}). A contribution rule binds the
      * member's value and every read of the filter in its own left-hand side, so a member, or a value derived for it, that
      * changes takes its contribution along, and the accumulate here follows; this rule computes only with what the
      * accumulate binds. A value fold skips a leeg member, which therefore contributes nothing, and a count counts every
      * member. Over no contribution a sum is leeg or its fallback, which is computed whether it is used or not
      * (ch. 5.11), a total 0, both counts 0 and an ordering fold leeg; eerste and laatste are the least and the greatest
-     * value. A count over an instance-set union counts the members its selections select together ({@link #unievouw}).
+     * value. A count over an instance-set union counts the members its selections select together ({@link #unionFold}).
      *
-     * <p>A filter that faults for a member is a {@link Filterfout} of the member, no fault: the reference interpreter
+     * <p>A filter that faults for a member is a {@link FilterError} of the member, no fault: the reference interpreter
      * evaluates the filter only where it evaluates the fold, per member in fold order, and stops at the first fault
      * (RUNTIME-SEMANTICS ch. 5.11). This rule binds the first of those facts in fold order on its subject, and the
      * fold's value faults with that division where it is computed, before the fallback, which the reference
-     * interpreter evaluates after the members ({@link #gelezenVouw}). The fault is then this rule's, as a division in its
-     * own value or condition is: inserted by its consequence or by its fault rule ({@link #voorwaardefoutregel}), and
-     * only where its evaluation reaches the fold. A filter that deposits for a member is a {@link Filterdeponering} of
+     * interpreter evaluates after the members ({@link #readFold}). The fault is then this rule's, as a division in its
+     * own value or condition is: inserted by its consequence or by its fault rule ({@link #conditionFaultRule}), and
+     * only where its evaluation reaches the fold. A filter that deposits for a member is a {@link FilterDeposit} of
      * the member in the same way: the reference interpreter evaluates the filter with this rule's collector, so the
-     * deposit is this rule's, on its subject, where its evaluation reaches the fold ({@link #gelezenVouw}).
+     * deposit is this rule's, on its subject, where its evaluation reaches the fold ({@link #readFold}).
      *
-     * <p>A total without a range reads the subject's own timeline ({@link #eigenTotaal}). A sum or a total over a member
+     * <p>A total without a range reads the subject's own timeline ({@link #ownTotal}). A sum or a total over a member
      * on a timeline folds twice (RUNTIME-SEMANTICS ch. 3.6, the per-element fold): each member's timeline collapses over
      * time first, at its own granularity, in the contribution rule, which contributes that scalar, and a member without
      * a timeline contributes nothing; the fold over the set is the ordinary one. Every other fold over a member on a
      * timeline is refused by name, as the reference interpreter refuses it: it has no moment at which to rank, count or
      * test the timeline.
      */
-    private Term vouw(Expr.Functie f, Lezingen lez) {
+    private Term fold(Expr.Functie f, Reads lez) {
         Expr.FunctieKind kind = f.kind();
         String fragment = bron(f.bron());
         if (kind == Expr.FunctieKind.AANTAL && f.argumenten().size() == 1
                 && f.argumenten().get(0) instanceof Expr.InstanceSetUnion u) {
-            Vouw v = unievouw(f, u, lez);
-            int[] i = lez.vouw(v, null);
-            return gelezenVouw(v, i, lez, new Term.Aanroep(Functie.AANTAL, List.of(new Term.Lees(i[0], null)), fragment),
+            Fold v = unionFold(f, u, lez);
+            int[] i = lez.fold(v, null);
+            return readFold(v, i, lez, new Term.Call(Aggregation.COUNT, List.of(new Term.SlotValue(i[0], null)), fragment),
                     fragment);
         }
         Objecttype elem = f.elementObjecttype();
-        if (elem == null) throw new Weigering("een Aggregation " + kind + " zonder elementtype ('" + snippet(f.bron()) + "')");
+        if (elem == null) throw new Refusal("een Aggregation " + kind + " zonder elementtype ('" + snippet(f.bron()) + "')");
         if (f.argumenten().size() != 1)
-            throw new Weigering("een Aggregation " + kind + " over " + f.argumenten().size() + " operanden met een"
+            throw new Refusal("een Aggregation " + kind + " over " + f.argumenten().size() + " operanden met een"
                     + " elementtype ('" + snippet(f.bron()) + "'): een vouw over een bereik heeft één argument (WF-037)");
         if (f.leegwaarde() != null && kind != Expr.FunctieKind.SOM)
-            throw new Weigering("een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.bron()) + "'): alleen"
+            throw new Refusal("een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.bron()) + "'): alleen"
                     + " een som heeft er een (WF-037)");
-        boolean telling = kind == Expr.FunctieKind.AANTAL;
+        boolean count = kind == Expr.FunctieKind.AANTAL;
         Expr.AttribuutRef arg = null;
-        if (!telling) {
+        if (!count) {
             if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || a.attribuut() == null)
-                throw new Weigering("een Aggregation " + kind + " over iets anders dan een attribuut van het element ('"
+                throw new Refusal("een Aggregation " + kind + " over iets anders dan een attribuut van het element ('"
                         + snippet(f.bron()) + "')");
             arg = a;
         }
-        boolean metBereik = bronPaden.containsKey(f) || rolBindingen.containsKey(f);
-        if (kind == Expr.FunctieKind.TOTAAL && !metBereik) return eigenTotaal(f, lez);
-        if (arg != null && Namen.bevatNaam(elem.granulariteitLeden(), arg.attribuut())
+        boolean withRange = sourcePaths.containsKey(f) || roleBindings.containsKey(f);
+        if (kind == Expr.FunctieKind.TOTAAL && !withRange) return ownTotal(f, lez);
+        if (arg != null && Namen.containsName(elem.granulariteitLeden(), arg.attribuut())
                 && kind != Expr.FunctieKind.SOM && kind != Expr.FunctieKind.TOTAAL)
-            throw nietBerekend("Aggregation " + kind + " over het tijdsafhankelijke attribuut '" + arg.attribuut() + "'",
+            throw notComputed("Aggregation " + kind + " over het tijdsafhankelijke attribuut '" + arg.attribuut() + "'",
                     f.bron(), "zij heeft geen moment waarop zij een tijdlijn rangschikt, telt of toetst; alleen een som en"
                     + " een totaal vouwen de tijdlijn van elk lid eerst over de tijd (RUNTIME-SEMANTICS ch. 3.4c, 3.6)");
-        if (!metBereik)
-            throw new Weigering("een Aggregation " + kind + " zonder bereik ('" + snippet(f.bron()) + "'): IR-SPEC ch. 4.3"
+        if (!withRange)
+            throw new Refusal("een Aggregation " + kind + " zonder bereik ('" + snippet(f.bron()) + "'): IR-SPEC ch. 4.3"
                     + " eist een sourceRole of sourcePath");
-        Expr.AttribuutRef lid = arg;
+        Expr.AttribuutRef member = arg;
         // a member on a timeline the case gives as the asOfDate-bucket scalar faults, naming the first such member in
         // fold order (RUNTIME-SEMANTICS ch. 3.6, 8.4), and a made link has no place in that order
-        boolean tijdlijnlid = lid != null && gedeclareerd(elem, lid.attribuut(), false).tijd() != null;
+        boolean timelineMember = member != null && declared(elem, member.attribuut(), false).time() != null;
         // a member on a timeline is asked by the per-element fold, which refuses one that is no number (integreerbaar)
-        if (lid != null && !tijdlijnlid) {
-            String setbron = setbronweigering(kind, elem, lid);
-            if (setbron != null) throw new Weigering(setbron);
+        if (member != null && !timelineMember) {
+            String setSource = setSourceRefusal(kind, elem, member);
+            if (setSource != null) throw new Refusal(setSource);
         }
-        RolBindingRef bron = rolBindingen.get(f);
-        if (tijdlijnlid && bron != null && bron.feittype() != null
-                && gecreeerdeRelaties.contains(Namen.norm(bron.feittype())))
-            throw new Weigering("een " + kind + " per lid over het tijdsafhankelijke attribuut '" + lid.attribuut()
+        RolBindingRef bron = roleBindings.get(f);
+        if (timelineMember && bron != null && bron.feittype() != null
+                && createdRelations.contains(Namen.norm(bron.feittype())))
+            throw new Refusal("een " + kind + " per lid over het tijdsafhankelijke attribuut '" + member.attribuut()
                     + "' in een vouw over de gecreëerde relatie '" + bron.feittype() + "' ('" + snippet(f.bron()) + "'): een"
                     + " gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welk lid met een emmerscalair als"
-                    + " invoer de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); " + NOG_NIET + ", en geen golden met"
+                    + " invoer de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); " + STILL_NOT + ", en geen golden met"
                     + " cases heeft het");
-        Vouw v = vouwVoor(f, lez, (sleutel, naam) -> {
-            List<Regelplan> regels = new ArrayList<>();
-            List<Lezingen> lezingen = new ArrayList<>();
-            boolean kanFalen = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem), 0,
-                    f.filter(), lid, regels, lezingen);
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert(f.filter()), false,
-                    false, tijdlijnlid);
+        Fold v = foldFor(f, lez, (sleutel, naam) -> {
+            List<RulePlan> rules = new ArrayList<>();
+            List<Reads> lezingen = new ArrayList<>();
+            boolean canFail = contributionRules(sleutel, naam, kind, lez.subject, elem, range(f, lez.subject, elem), 0,
+                    f.filter(), member, rules, lezingen);
+            return new Fold(sleutel, List.copyOf(rules), List.copyOf(lezingen), canFail, deposits(f.filter()), false,
+                    false, timelineMember);
         });
-        Accumulatie.Soort functie = switch (kind) {
-            case SOM, TOTAAL -> Accumulatie.Soort.SOM;
-            case MINIMUM, EERSTE -> Accumulatie.Soort.MINIMUM;
-            case MAXIMUM, LAATSTE -> Accumulatie.Soort.MAXIMUM;
+        Accumulation.Kind function = switch (kind) {
+            case SOM, TOTAAL -> Accumulation.Kind.SUM;
+            case MINIMUM, EERSTE -> Accumulation.Kind.MINIMUM;
+            case MAXIMUM, LAATSTE -> Accumulation.Kind.MAXIMUM;
             default -> null;
         };
-        int[] i = lez.vouw(v, functie);
+        int[] i = lez.fold(v, function);
         // the fallback restated into the unit of the folded member (RUNTIME-SEMANTICS ch. 2.6)
-        Term terugval = f.leegwaarde() == null ? null : herschaald(waarde(f.leegwaarde(), lez),
-                eff.eenheidVan(f.leegwaarde()), arg == null ? null : eff.eenheidVan(arg), "een §5.8.2 terugvalwaarde");
-        Term aantal = new Term.Lees(i[0], null);
+        Term fallback = f.leegwaarde() == null ? null : rescaled(waarde(f.leegwaarde(), lez),
+                eff.unitOf(f.leegwaarde()), arg == null ? null : eff.unitOf(arg), "een §5.8.2 terugvalwaarde");
+        Term aantal = new Term.SlotValue(i[0], null);
         // over no contribution a sum is its fallback or leeg, a total 0 and an ordering fold leeg
-        Term uitkomst = switch (kind) {
-            case AANTAL, AANTAL_GEVULDE -> new Term.Aanroep(Functie.AANTAL, List.of(aantal), fragment);
-            case SOM -> vouwwaarde(aantal, i[1], terugval == null ? constante(null) : terugval, fragment);
-            case TOTAAL -> vouwwaarde(aantal, i[1], constante(BigDecimal.ZERO), fragment);
-            default -> vouwwaarde(aantal, i[1], constante(null), fragment);
+        Term outcome = switch (kind) {
+            case AANTAL, AANTAL_GEVULDE -> new Term.Call(Aggregation.COUNT, List.of(aantal), fragment);
+            case SOM -> foldValue(aantal, i[1], fallback == null ? constant(null) : fallback, fragment);
+            case TOTAAL -> foldValue(aantal, i[1], constant(BigDecimal.ZERO), fragment);
+            default -> foldValue(aantal, i[1], constant(null), fragment);
         };
-        return gelezenVouw(v, i, lez, uitkomst, fragment);
+        return readFold(v, i, lez, outcome, fragment);
     }
 
     /** The value of a fold from the count {@code aantal} and the folded value at slot {@code waarde}, with
-     *  {@code terugval} over no contribution ({@link Rekenhulpen#vouwwaarde}). */
-    private static Term vouwwaarde(Term aantal, int waarde, Term terugval, String bron) {
-        return new Term.Aanroep(Functie.VOUWWAARDE, List.of(aantal, new Term.Lees(waarde, null), terugval), bron);
+     *  {@code fallback} over no contribution ({@link ComputeHelpers#foldValue}). */
+    private static Term foldValue(Term aantal, int waarde, Term fallback, String bron) {
+        return new Term.Call(Aggregation.FOLD_VALUE, List.of(aantal, new Term.SlotValue(waarde, null), fallback), bron);
     }
 
     /**
@@ -3856,18 +3856,18 @@ public final class TmsTranspiler {
      * refusal of the destructive DRL-text lowering opened, so that a gate report named the same form on both branches
      * while that lowering existed, until card drl-teksttak-op-truth-maintenance.
      */
-    private String setbronweigering(Expr.FunctieKind kind, Objecttype elem, Expr.AttribuutRef arg) {
-        boolean optellend = kind == Expr.FunctieKind.SOM || kind == Expr.FunctieKind.TOTAAL;
-        boolean ordenend = kind == Expr.FunctieKind.MINIMUM || kind == Expr.FunctieKind.MAXIMUM
+    private String setSourceRefusal(Expr.FunctieKind kind, Objecttype elem, Expr.AttribuutRef arg) {
+        boolean summing = kind == Expr.FunctieKind.SOM || kind == Expr.FunctieKind.TOTAAL;
+        boolean ordering = kind == Expr.FunctieKind.MINIMUM || kind == Expr.FunctieKind.MAXIMUM
                 || kind == Expr.FunctieKind.EERSTE || kind == Expr.FunctieKind.LAATSTE;
-        Datatype t = gedeclareerd(elem, arg.attribuut(), false).datatype();
-        String kop = "vouw " + kind + " over de setbron '" + arg.attribuut() + "' van " + elem.naam
+        Datatype t = declared(elem, arg.attribuut(), false).datatype();
+        String head = "vouw " + kind + " over de setbron '" + arg.attribuut() + "' van " + elem.naam
                 + ": die leden zijn van type " + t.naam();
-        if (optellend && !t.isGetalachtig())
-            return kop + " en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de"
+        if (summing && !t.isGetalachtig())
+            return head + " en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de"
                     + " referentie-interpreter faalt op de optelling zelf: geen enkele uitvoerder draagt deze vorm";
-        if (ordenend && !t.isOrdenbaar())
-            return kop + " en kennen geen ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de"
+        if (ordering && !t.isOrdenbaar())
+            return head + " en kennen geen ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de"
                     + " referentie-interpreter faalt op de vergelijking zelf: geen enkele uitvoerder draagt deze vorm";
         return null;
     }
@@ -3875,59 +3875,59 @@ public final class TmsTranspiler {
     /**
      * The temporal total of the subject's own timeline (RUNTIME-SEMANTICS ch. 3.6): "het totaal van zijn X", optionally
      * "gedurende" a clause, as a function of the values this rule binds: the timeline of X, through its standing
-     * ({@link Lezingen#tijdlijn}), and every timeline and value the clause reads. The two routes of the total take the two
+     * ({@link Reads#timeline}), and every timeline and value the clause reads. The two routes of the total take the two
      * conventions of the case input, and a form that needs the one and finds the other faults ({@link Invoervormfout},
      * ch. 8.4). Without a clause the total takes the asOfDate-bucket scalar, the session's date being the horizon: it is
-     * {@code rsTijdTotaal} of the one period of X's grid that holds the evaluation date ({@link Emmerscalair}), the
+     * {@code rsTijdTotaal} of the one period of X's grid that holds the evaluation date ({@link BucketScalar}), the
      * segment's value times the whole units it spans, and leeg where X has no input; a full timeline faults, in the
      * reference interpreter's words, and so does a session without an evaluation date, where the total has no bucket to
-     * take, X filled or not: this route reads the date ({@link Lezingen#rekendatum}), and the reference interpreter tests
+     * take, X filled or not: this route reads the date ({@link Reads#rekendatum}), and the reference interpreter tests
      * the full timeline first, then the date, then the value. With a clause the total reads the full timeline: it is
      * clipped to the clause's true
-     * periods first ({@link #knip}) and then totalled per clipped fragment, so an absent timeline totals 0 (ch. 3.6: the
+     * periods first ({@link #clip}) and then totalled per clipped fragment, so an absent timeline totals 0 (ch. 3.6: the
      * clip's presence turns absence into 0), and the bucket scalar faults, before the clause is evaluated, as in the
-     * reference interpreter. The runtime's helpers compute this, with {@link Tijdvak} as their segment class.
+     * reference interpreter. The runtime's helpers compute this, with {@link Period} as their segment class.
      *
      * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
      * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator is not that
-     * unit ({@link #integreerbaar}), and the total without a clause over a timeline a form writes: the reference
+     * unit ({@link #integrable}), and the total without a clause over a timeline a form writes: the reference
      * interpreter takes that total only of the case's scalar on the period of the evaluation date and faults on a full
      * timeline (ch. 3.6), so no executor confirms it, and no golden has it.
      */
-    private Term eigenTotaal(Expr.Functie f, Lezingen lez) {
-        String wat = "een totaal over de eigen tijdlijn ('" + snippet(f.bron()) + "')";
+    private Term ownTotal(Expr.Functie f, Reads lez) {
+        String description = "een totaal over de eigen tijdlijn ('" + snippet(f.bron()) + "')";
         Expr.AttribuutRef a = (Expr.AttribuutRef) f.argumenten().get(0);
-        if (a.objecttype() != lez.subject || navigatieBindingen.containsKey(a))
-            throw new Weigering(wat + " over een attribuut van een ander object dan het onderwerp: zonder bereik leest"
-                    + " het totaal de tijdlijn van het onderwerp zelf (WF-083 (c)); " + NOG_NIET + " over een pad");
-        Lid lid = integreerbaar(tijdlid(lez.subject, a.attribuut(), false, wat), wat);
-        if (f.filter() == null && schrijvers.containsKey(lid.sleutel()))
-            throw new Weigering(wat + " zonder knip over de tijdlijn van '" + lid.naam() + "', die een vorm schrijft:"
+        if (a.objecttype() != lez.subject || path.containsKey(a))
+            throw new Refusal(description + " over een attribuut van een ander object dan het onderwerp: zonder bereik leest"
+                    + " het totaal de tijdlijn van het onderwerp zelf (WF-083 (c)); " + STILL_NOT + " over een pad");
+        Member member = integrable(timeMember(lez.subject, a.attribuut(), false, description), description);
+        if (f.filter() == null && writers.containsKey(member.sleutel()))
+            throw new Refusal(description + " zonder knip over de tijdlijn van '" + member.naam() + "', die een vorm schrijft:"
                     + " de referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode"
-                    + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); " + NOG_NIET
+                    + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); " + STILL_NOT
                     + ", en geen golden met cases heeft het");
-        int tijdlijn = lez.tijdlijn(lid);
-        int onderwerp = lez.lid();
-        lez.markeerFalen();
-        String gran = lid.tijd().name();
-        String naam = lid.naam();
+        int timeline = lez.timeline(member);
+        int onderwerp = lez.member();
+        lez.markFail();
+        String gran = member.time().name();
+        String naam = member.naam();
         String bron = bron(f.bron());
         if (f.filter() == null) {
-            int datum = lez.rekendatum();
-            return new Term.Aanroep(Functie.EIGEN_TOTAAL, List.of(new Term.Lees(tijdlijn, bron(a.bron())),
-                    new Term.Lees(onderwerp, null), new Term.Lees(datum, null), constante(naam), constante(gran)), bron);
+            int date = lez.rekendatum();
+            return new Term.Call(Aggregation.OWN_TOTAL, List.of(new Term.SlotValue(timeline, bron(a.bron())),
+                    new Term.SlotValue(onderwerp, null), new Term.SlotValue(date, null), constant(naam), constant(gran)), bron);
         }
-        Term geknipt = knip(f.filter(), lez, wat, naam, volledig(tijdlijn, "the gedurende clip of \"" + naam
+        Term cut = clip(f.filter(), lez, description, naam, complete(timeline, "the gedurende clip of \"" + naam
                 + "\" needs the full timeline; ", onderwerp, " supplies only the asOfDate-bucket scalar", bron(a.bron())));
-        return new Term.Aanroep(Functie.RS_TIJD_TOTAAL, List.of(geknipt, constante(gran)), bron);
+        return new Term.Call(Aggregation.RS_TIME_TOTAL, List.of(cut, constant(gran)), bron);
     }
 
-    /** The timeline bound at slot {@code tijdlijn}, which a form reads whole, or the fault in the sentence {@code voor},
+    /** The timeline bound at slot {@code timeline}, which a form reads whole, or the fault in the sentence {@code voor},
      *  the subject bound at slot {@code onderwerp}, {@code na}, where the case gives that input as the asOfDate-bucket
-     *  scalar ({@link Emmerscalair}, RUNTIME-SEMANTICS ch. 8.4; {@link Rekenhulpen#volledig}). */
-    private static Term volledig(int tijdlijn, String voor, int onderwerp, String na, String bron) {
-        return new Term.Aanroep(Functie.VOLLEDIG, List.of(new Term.Lees(tijdlijn, bron), constante(voor),
-                new Term.Lees(onderwerp, null), constante(na)), bron);
+     *  scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4; {@link ComputeHelpers#complete}). */
+    private static Term complete(int timeline, String before, int onderwerp, String after, String bron) {
+        return new Term.Call(Aggregation.COMPLETE, List.of(new Term.SlotValue(timeline, bron), constant(before),
+                new Term.SlotValue(onderwerp, null), constant(after)), bron);
     }
 
     /**
@@ -3939,9 +3939,9 @@ public final class TmsTranspiler {
      * attribute on a timeline with a value, whose true periods are the segments of that timeline whose value satisfies
      * it ({@code rsTijdConditie}), where a leeg segment and a leeg bound satisfy no ordering. The fragments are kept
      * apart, never coalesced, so a clip that splits one whole unit loses it. Every characteristic's true periods are
-     * bound off the bean ({@link Lezingen#tijdlijn}), the compared timeline through its standing, read whole
-     * ({@link #vergelijkingsknip}), and the bound like any value of the rule. {@code geknipt} names the attribute whose
-     * timeline is clipped, and {@code tijdlijn} computes that timeline, which the clip takes first.
+     * bound off the bean ({@link Reads#timeline}), the compared timeline through its standing, read whole
+     * ({@link #comparisonClip}), and the bound like any value of the rule. {@code cut} names the attribute whose
+     * timeline is clipped, and {@code timeline} computes that timeline, which the clip takes first.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
      * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
@@ -3951,76 +3951,76 @@ public final class TmsTranspiler {
      * sides are equal and exactly one leeg side is unequal (ch. 3.6, the worked example of 500,00); no golden has
      * either.
      */
-    private Term knip(Conditie c, Lezingen lez, String wat, String geknipt, Term tijdlijn) {
+    private Term clip(Conditie c, Reads lez, String description, String cut, Term timeline) {
         if (c instanceof Conditie.Kenmerk k) {
             if (k.eigenaar() != null || k.periode() != null)
-                throw new Weigering(wat + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
+                throw new Refusal(description + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
                         + snippet(k) + "', WF-097)");
-            if (k.navigatie() != null || navigatieBindingen.containsKey(k))
-                throw new Weigering(wat + " met een genavigeerd kenmerk in de knip ('" + snippet(k) + "'): " + NOG_NIET
+            if (k.navigatie() != null || path.containsKey(k))
+                throw new Refusal(description + " met een genavigeerd kenmerk in de knip ('" + snippet(k) + "'): " + STILL_NOT
                         + "; geen golden met cases heeft het");
-            int perioden = lez.tijdlijn(tijdlid(lez.subject, k.kenmerk(), true, wat));
-            return new Term.Aanroep(k.negatie() ? Functie.RS_TIJD_KNIP_NIET : Functie.RS_TIJD_KNIP,
-                    List.of(tijdlijn, new Term.Lees(perioden, null), constante(Tijdvak.class)), bron(k.bron()));
+            int periods = lez.timeline(timeMember(lez.subject, k.kenmerk(), true, description));
+            return new Term.Call(k.negatie() ? Aggregation.RS_TIME_CLIP_NOT : Aggregation.RS_TIME_CLIP,
+                    List.of(timeline, new Term.SlotValue(periods, null), constant(Period.class)), bron(k.bron()));
         }
         if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE && !s.onderdelen().isEmpty()) {
             // each check clips what the one before it left
-            Term uit = tijdlijn;
-            for (Conditie deel : s.onderdelen()) {
-                if (!(deel instanceof Conditie.Kenmerk))
-                    throw new Weigering(wat + " met een lid van de samengestelde knip dat geen kenmerk is ('"
-                            + snippet(deel) + "'): " + NOG_NIET + "; de referentie-interpreter neemt alleen kenmerken"
+            Term out = timeline;
+            for (Conditie part : s.onderdelen()) {
+                if (!(part instanceof Conditie.Kenmerk))
+                    throw new Refusal(description + " met een lid van de samengestelde knip dat geen kenmerk is ('"
+                            + snippet(part) + "'): " + STILL_NOT + "; de referentie-interpreter neemt alleen kenmerken"
                             + " (RUNTIME-SEMANTICS ch. 3.6)");
-                uit = knip(deel, lez, wat, geknipt, uit);
+                out = clip(part, lez, description, cut, out);
             }
-            return uit;
+            return out;
         }
-        if (c instanceof Conditie.Vergelijking v) return vergelijkingsknip(v, lez, wat, geknipt, tijdlijn);
-        throw new Weigering(wat + " met de knip '" + snippet(c) + "': " + NOG_NIET + "; de referentie-interpreter"
+        if (c instanceof Conditie.Vergelijking v) return comparisonClip(v, lez, description, cut, timeline);
+        throw new Refusal(description + " met de knip '" + snippet(c) + "': " + STILL_NOT + "; de referentie-interpreter"
                 + " neemt een eigen tijdsafhankelijk kenmerk, een vergelijking van een eigen tijdsafhankelijk attribuut"
                 + " en een 'alle' daarvan (RUNTIME-SEMANTICS ch. 3.6)");
     }
 
-    /** The comparison clip of {@link #knip} of the timeline of {@code geknipt}: the left side an own attribute on a
+    /** The comparison clip of {@link #clip} of the timeline of {@code cut}: the left side an own attribute on a
      *  timeline, which the clip reads whole, segment by segment, so that the asOfDate-bucket scalar faults there
      *  ({@link Invoervormfout}, RUNTIME-SEMANTICS ch. 8.4) before the bound is evaluated; the right side a value. */
-    private Term vergelijkingsknip(Conditie.Vergelijking v, Lezingen lez, String wat, String geknipt, Term tijdlijn) {
+    private Term comparisonClip(Conditie.Vergelijking v, Reads lez, String description, String cut, Term timeline) {
         if (v.periode() != null)
-            throw new Weigering(wat + " met een geheleperiodetoets in de knip ('" + snippet(v) + "', WF-097)");
-        Integer toets = Tijdrekening.toets(v.op());
-        if (toets == null)
-            throw new Weigering(wat + " met een datumvergelijking in de knip ('" + snippet(v) + "'): " + NOG_NIET);
+            throw new Refusal(description + " met een geheleperiodetoets in de knip ('" + snippet(v) + "', WF-097)");
+        Integer testTerm = Tijdrekening.toets(v.op());
+        if (testTerm == null)
+            throw new Refusal(description + " met een datumvergelijking in de knip ('" + snippet(v) + "'): " + STILL_NOT);
         // an ordering with a leeg side holds nowhere, in ch. 1.2 and in that helper alike; the equalities differ
         if (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)
-            throw new Weigering(wat + " met '" + (v.op() == Conditie.Operator.GELIJK ? "gelijk aan" : "ongelijk aan")
-                    + "' in de knip ('" + snippet(v) + "'): " + NOG_NIET + "; de rekenhulp rsTijdConditie leest een"
+            throw new Refusal(description + " met '" + (v.op() == Conditie.Operator.GELIJK ? "gelijk aan" : "ongelijk aan")
+                    + "' in de knip ('" + snippet(v) + "'): " + STILL_NOT + "; de rekenhulp rsTijdConditie leest een"
                     + " lege kant, een gat in de vergeleken tijdlijn of een lege grens, als geen periode, waar"
                     + " RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de vergelijking van ch. 1.2 per periode"
                     + " toepassen: twee lege kanten zijn gelijk, en precies één lege kant is ongelijk; geen golden met"
                     + " cases heeft het");
         if (!(v.links() instanceof Expr.AttribuutRef a) || a.attribuut() == null || a.objecttype() != lez.subject
-                || navigatieBindingen.containsKey(a))
-            throw new Weigering(wat + " met een vergelijking in de knip waarvan de linkerkant geen eigen"
-                    + " tijdsafhankelijk attribuut is ('" + snippet(v) + "'): " + NOG_NIET);
-        Lid getoetst = tijdlid(lez.subject, a.attribuut(), false, wat);
-        if (!getoetst.datatype().isNumeriek() || !eff.typeVan(v.rechts()).isNumeriek())
-            throw new Weigering(wat + " met een vergelijking in de knip die geen getallen vergelijkt ('" + snippet(v)
-                    + "'): " + NOG_NIET);
-        if (!Objects.equals(eff.eenheidVan(v.links()), eff.eenheidVan(v.rechts())))
-            throw new Weigering(wat + " met een vergelijking in de knip over twee eenheden ('" + snippet(v) + "'): "
-                    + NOG_NIET);
-        int getoetsteTijdlijn = lez.tijdlijn(getoetst);
-        int onderwerp = lez.lid();
-        lez.markeerFalen();
-        Term grens = waarde(v.rechts(), lez);
-        String vergeleken = getoetst.naam();
-        Term perioden = new Term.Aanroep(Functie.RS_TIJD_CONDITIE, List.of(
-                volledig(getoetsteTijdlijn, "the gedurende clip of \"" + geknipt + "\" compares \"" + vergeleken
+                || path.containsKey(a))
+            throw new Refusal(description + " met een vergelijking in de knip waarvan de linkerkant geen eigen"
+                    + " tijdsafhankelijk attribuut is ('" + snippet(v) + "'): " + STILL_NOT);
+        Member tested = timeMember(lez.subject, a.attribuut(), false, description);
+        if (!tested.datatype().isNumeriek() || !eff.typeOf(v.rechts()).isNumeriek())
+            throw new Refusal(description + " met een vergelijking in de knip die geen getallen vergelijkt ('" + snippet(v)
+                    + "'): " + STILL_NOT);
+        if (!Objects.equals(eff.unitOf(v.links()), eff.unitOf(v.rechts())))
+            throw new Refusal(description + " met een vergelijking in de knip over twee eenheden ('" + snippet(v) + "'): "
+                    + STILL_NOT);
+        int testedTimeline = lez.timeline(tested);
+        int onderwerp = lez.member();
+        lez.markFail();
+        Term bound = waarde(v.rechts(), lez);
+        String compared = tested.naam();
+        Term periods = new Term.Call(Aggregation.RS_TIME_CONDITION, List.of(
+                complete(testedTimeline, "the gedurende clip of \"" + cut + "\" compares \"" + compared
                         + "\" per segment and needs its full timeline; ", onderwerp,
                         " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", bron(a.bron())),
-                constante(toets), new Term.Aanroep(Functie.COLLAPSE, List.of(grens), grens.bron()),
-                constante(Tijdvak.class)), null);
-        return new Term.Aanroep(Functie.RS_TIJD_KNIP, List.of(tijdlijn, perioden, constante(Tijdvak.class)),
+                constant(testTerm), new Term.Call(Aggregation.COLLAPSE, List.of(bound), bound.bron()),
+                constant(Period.class)), null);
+        return new Term.Call(Aggregation.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
                 bron(v.bron()));
     }
 
@@ -4030,17 +4030,17 @@ public final class TmsTranspiler {
      * unit, with a unit without a denominator, or a rate whose denominator is the time unit of the grid itself
      * ({@code EUR/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6 cancels it one for one.
      * Refused by name: a value that is no number (WF-091); a rate over a grid whose unit the document does not declare
-     * as exactly one unit ({@link #rastereenheid}), which the reference interpreter refuses to integrate (ch. 3.6) and
+     * as exactly one unit ({@link #gridUnit}), which the reference interpreter refuses to integrate (ch. 3.6) and
      * {@code rsTijdTotaal} would weigh as if it did; and a rate whose denominator is another unit, which the reference
      * interpreter integrates through the declared factors and {@code rsTijdTotaal} would weigh unit-blind (the executor
      * note of ch. 3.6); no golden has it.
      */
-    private Lid integreerbaar(Lid lid, String wat) {
-        if (!lid.datatype().isNumeriek())
-            throw new Weigering(wat + " over '" + lid.naam() + "', dat geen getal is (WF-091)");
-        Eenheid e = lid.datatype().eenheidOf();
-        if (e == null || e.noemer() == null) return lid;
-        String raster = switch (lid.tijd()) {
+    private Member integrable(Member member, String description) {
+        if (!member.datatype().isNumeriek())
+            throw new Refusal(description + " over '" + member.naam() + "', dat geen getal is (WF-091)");
+        Eenheid e = member.datatype().eenheidOf();
+        if (e == null || e.noemer() == null) return member;
+        String grid = switch (member.time()) {
             case DAG -> "DAYS";
             case WEEK -> "WEEKS";
             case MAAND -> "MONTHS";
@@ -4049,34 +4049,34 @@ public final class TmsTranspiler {
         };
         // the reference interpreter resolves the grid's unit before it looks at the denominator, so a document without
         // one is refused for that whatever the denominator
-        String zonderRastereenheid = rastereenheid(lid.tijd(), raster);
-        if (zonderRastereenheid != null)
-            throw new Weigering(wat + " over '" + lid.naam() + "': the temporal total of a " + e.weergave() + " value: "
-                    + zonderRastereenheid);
-        if (!raster.equals(Tijdrekening.chronoUnit(e.noemer())))
-            throw new Weigering(wat + " over '" + lid.naam() + "' met het tarief " + e.weergave() + " op een raster van "
-                    + lid.tijd() + ": de noemer is niet de eenheid van het raster, en de tak herrekent hem niet"
+        String withoutGridUnit = gridUnit(member.time(), grid);
+        if (withoutGridUnit != null)
+            throw new Refusal(description + " over '" + member.naam() + "': the temporal total of a " + e.weergave() + " value: "
+                    + withoutGridUnit);
+        if (!grid.equals(Tijdrekening.chronoUnit(e.noemer())))
+            throw new Refusal(description + " over '" + member.naam() + "' met het tarief " + e.weergave() + " op een raster van "
+                    + member.time() + ": de noemer is niet de eenheid van het raster, en de tak herrekent hem niet"
                     + " (RUNTIME-SEMANTICS ch. 3.6); geen golden met cases heeft het");
-        return lid;
+        return member;
     }
 
     /**
      * Whether the document declares the unit of the grid {@code g}, which a rate over that grid integrates against, as
      * the reference interpreter resolves it once per fold (RUNTIME-SEMANTICS ch. 3.6, "Units, the explicit rate
      * operand"): among the units the unit systems declare without a denominator, those whose abbreviation the calendar
-     * table spells as the grid's unit ({@code raster}, as {@link Tijdrekening#chronoUnit} names it), counted once per
+     * table spells as the grid's unit ({@code grid}, as {@link Tijdrekening#chronoUnit} names it), counted once per
      * canonical chain, the canonical unit and the exact factor. Null where there is exactly one chain; otherwise the
      * reference interpreter's reason, that the document declares none or several.
      */
-    private String rastereenheid(RegelSpraakModel.Granulariteit g, String raster) {
-        record Keten(String canoniek, RegelSpraakModel.Eenheidstelsel.Factor factor) {}
-        Set<Keten> ketens = new LinkedHashSet<>();
+    private String gridUnit(RegelSpraakModel.Granulariteit g, String grid) {
+        record Chain(String canonical, RegelSpraakModel.Eenheidstelsel.Factor factor) {}
+        Set<Chain> chains = new LinkedHashSet<>();
         for (RegelSpraakModel.Eenheidstelsel s : model.eenheidstelsels.values())
             for (Map.Entry<String, Eenheid> u : s.eenheden.entrySet())
-                if (u.getValue().noemer() == null && raster.equals(Tijdrekening.chronoUnit(u.getValue())))
-                    ketens.add(new Keten(u.getValue().canoniek() == null ? null : Namen.norm(u.getValue().canoniek()),
+                if (u.getValue().noemer() == null && grid.equals(Tijdrekening.chronoUnit(u.getValue())))
+                    chains.add(new Chain(u.getValue().canoniek() == null ? null : Namen.norm(u.getValue().canoniek()),
                             s.exacteFactoren.get(u.getKey())));
-        if (ketens.size() == 1) return null;
+        if (chains.size() == 1) return null;
         // the grid's unit in the spelling the reference interpreter's sentence gives it
         String spelling = switch (g) {
             case DAG -> "dg";
@@ -4085,48 +4085,48 @@ public final class TmsTranspiler {
             case KWARTAAL -> "kw";
             case JAAR -> "jr";
         };
-        return ketens.isEmpty()
+        return chains.isEmpty()
                 ? "the document declares no " + spelling + " unit, so this timeline's grid has no unit to integrate"
                         + " against (ch. 3.6)"
-                : "the document declares " + ketens.size() + " different " + spelling + " units, so this timeline's grid"
+                : "the document declares " + chains.size() + " different " + spelling + " units, so this timeline's grid"
                         + " has no single unit to integrate against (ch. 3.6)";
     }
 
     /**
-     * The evaluation of the fold {@code v} in the rule that reads it, bound at {@code i} ({@link Lezingen#vouw}): where
-     * its filter deposited for a member, the deposit is heard by this rule's probe ({@link Sonde}), since the reference
+     * The evaluation of the fold {@code v} in the rule that reads it, bound at {@code i} ({@link Reads#fold}): where
+     * its filter deposited for a member, the deposit is heard by this rule's probe ({@link DepositFlag}), since the reference
      * interpreter evaluates the filter with the reading form's collector, only where that form's evaluation reaches the
      * fold (RUNTIME-SEMANTICS ch. 5.10, 5.11); then, where its filter faulted for a member, the fault of the first in
-     * fold order ({@link Filterfout}); then, where the case gives a member's timeline as the asOfDate-bucket scalar, the
-     * fault that names the first such member in fold order ({@link Lidfout}, ch. 3.6, 8.4); then {@code uitkomst}, the
-     * fold's value, whose fallback the reference interpreter evaluates after the members ({@link Term.Vouwlezing}). A
+     * fold order ({@link FilterError}); then, where the case gives a member's timeline as the asOfDate-bucket scalar, the
+     * fault that names the first such member in fold order ({@link MemberError}, ch. 3.6, 8.4); then {@code uitkomst}, the
+     * fold's value, whose fallback the reference interpreter evaluates after the members ({@link Term.FoldRead}). A
      * deposit for a member after the one that faults, which the reference interpreter does not reach, is heard as well:
      * the session faults at the fixpoint, so it changes no outcome.
      */
-    private static Term gelezenVouw(Vouw v, int[] i, Lezingen lez, Term uitkomst, String bron) {
-        if (v.kanFalen() || v.waardeKanFalen()) lez.markeerFalen();
-        int sonde = v.deponeert() ? lez.sonde() : -1;
-        if (!v.kanFalen() && !v.waardeKanFalen() && sonde < 0) return uitkomst;
-        return new Term.Vouwlezing(uitkomst, sonde < 0 ? -1 : i[3], sonde, v.kanFalen() ? i[2] : -1,
-                v.waardeKanFalen() ? i[4] : -1, bron);
+    private static Term readFold(Fold v, int[] i, Reads lez, Term outcome, String bron) {
+        if (v.canFail() || v.valueCanFail()) lez.markFail();
+        int depositFlag = v.deposits() ? lez.depositFlag() : -1;
+        if (!v.canFail() && !v.valueCanFail() && depositFlag < 0) return outcome;
+        return new Term.FoldRead(outcome, depositFlag < 0 ? -1 : i[3], depositFlag, v.canFail() ? i[2] : -1,
+                v.valueCanFail() ? i[4] : -1, bron);
     }
 
     /** The fold of {@code f}, an aggregation or a quantifier fold, on the subject of {@code lez}, the rule that reads
      *  it, built by {@code bouw} from its key and its name the first time it is read. While it is built, the binders in
-     *  scope in {@code lez} are those its contribution rules see from outside ({@link #vouwbinders}). */
-    private Vouw vouwVoor(Object f, Lezingen lez, BiFunction<String, String, Vouw> bouw) {
-        Map<Objecttype, Vouw> perOnderwerp = vouwen.computeIfAbsent(f, k -> new IdentityHashMap<>());
-        Vouw v = perOnderwerp.get(lez.subject);
+     *  scope in {@code lez} are those its contribution rules see from outside ({@link #foldBinders}). */
+    private Fold foldFor(Object f, Reads lez, BiFunction<String, String, Fold> bouw) {
+        Map<Objecttype, Fold> perSubject = folds.computeIfAbsent(f, k -> new IdentityHashMap<>());
+        Fold v = perSubject.get(lez.subject);
         if (v == null) {
-            String naam = "vouw " + vouwteller++;
-            Set<String> buiten = vouwbinders;
-            vouwbinders = lez.binderbereik();
+            String naam = "vouw " + foldCounter++;
+            Set<String> outside = foldBinders;
+            foldBinders = lez.binderRange();
             try {
                 v = bouw.apply(vorm + ": " + naam, naam);
             } finally {
-                vouwbinders = buiten;
+                foldBinders = outside;
             }
-            perOnderwerp.put(lez.subject, v);
+            perSubject.put(lez.subject, v);
         }
         return v;
     }
@@ -4134,228 +4134,228 @@ public final class TmsTranspiler {
     /** The count over an instance-set union (RUNTIME-SEMANTICS ch. 3.4d): a contribution rule per selection, each with
      *  its own relation and its own filter, all under one key; a member two selections select gives two equal
      *  contributions, which merge into one fact, so the count is that of the union. */
-    private Vouw unievouw(Expr.Functie f, Expr.InstanceSetUnion u, Lezingen lez) {
+    private Fold unionFold(Expr.Functie f, Expr.InstanceSetUnion u, Reads lez) {
         Objecttype subject = lez.subject;
         // one count answers a number of instances of one declared type: two populations leave whether two selections
         // share an instance to the subtype lattice, which the reference interpreter faults on (WF-110 (d))
-        Objecttype populatie = null;
+        Objecttype population = null;
         for (Expr.InstanceSetUnion.Tak t : u.takken()) {
             if (t.elementType() == null) continue;
-            if (populatie == null) populatie = t.elementType();
-            else if (t.elementType() != populatie)
-                throw new Weigering("een InstanceSetUnion over twee populaties ('" + populatie.naam + "' en '"
+            if (population == null) population = t.elementType();
+            else if (t.elementType() != population)
+                throw new Refusal("een InstanceSetUnion over twee populaties ('" + population.naam + "' en '"
                         + t.elementType().naam + "', '" + snippet(u.bron()) + "'): één telling antwoordt een aantal over"
                         + " één gedeclareerd type, en of twee selecties dan een instantie delen, is een vraag over de"
                         + " subtyperelatie (WF-110 (d))");
         }
-        return vouwVoor(f, lez, (sleutel, naam) -> {
-            List<Regelplan> regels = new ArrayList<>();
-            List<Lezingen> lezingen = new ArrayList<>();
-            boolean kanFalen = false, deponeert = false;
+        return foldFor(f, lez, (sleutel, naam) -> {
+            List<RulePlan> rules = new ArrayList<>();
+            List<Reads> lezingen = new ArrayList<>();
+            boolean canFail = false, deposits = false;
             for (int k = 0; k < u.takken().size(); k++) {
                 Expr.InstanceSetUnion.Tak t = u.takken().get(k);
                 if (t.elementType() == null)
-                    throw new Weigering("een selectie zonder elementtype in een InstanceSetUnion ('" + snippet(t.bron()) + "')");
-                kanFalen |= bijdrageregels(sleutel, naam + ", selectie " + k, Expr.FunctieKind.AANTAL, subject,
-                        t.elementType(), eenstapsbereik(t.bronRol(), subject, t.elementType(), snippet(t.bron())), k,
-                        t.filter(), null, regels, lezingen);
-                deponeert |= deponeert(t.filter());
+                    throw new Refusal("een selectie zonder elementtype in een InstanceSetUnion ('" + snippet(t.bron()) + "')");
+                canFail |= contributionRules(sleutel, naam + ", selectie " + k, Expr.FunctieKind.AANTAL, subject,
+                        t.elementType(), oneStepRange(t.bronRol(), subject, t.elementType(), snippet(t.bron())), k,
+                        t.filter(), null, rules, lezingen);
+                deposits |= deposits(t.filter());
             }
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert);
+            return new Fold(sleutel, List.copyOf(rules), List.copyOf(lezingen), canFail, deposits);
         });
     }
 
     /**
      * The contribution rule of one range of the fold {@code sleutel}, planned: the fold's subject bound first, the
-     * member's pattern joined to it through {@code bereik}, the member's reads, the {@code filter} as the test (the member
-     * is the filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Bijdrage}
+     * member's pattern joined to it through {@code range}, the member's reads, the {@code filter} as the test (the member
+     * is the filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Contribution}
      * logically: for a count the member; for a filled count the member where its value is gevuld; for the other folds
-     * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2) ({@link Gevolg.Inbreng}). Beside
-     * it, where the filter can fault, the rule that inserts the member's {@link Filterfout} ({@link #filterfoutregel}),
-     * and where the filter can deposit, the rule that inserts the member's {@link Filterdeponering}
-     * ({@link #filterdeponeerregel}); {@code selectie} is the number of the selection of an instance-set union, 0 for any
+     * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2) ({@link Consequence.Input}). Beside
+     * it, where the filter can fault, the rule that inserts the member's {@link FilterError} ({@link #filterErrorRule}),
+     * and where the filter can deposit, the rule that inserts the member's {@link FilterDeposit}
+     * ({@link #filterDepositRule}); {@code selection} is the number of the selection of an instance-set union, 0 for any
      * other fold. The rules go into {@code uit} and their reads into {@code lezingen}, to be registered with the form;
      * returns whether the filter can fault.
      */
-    private boolean bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
-                                   Objecttype elem, Bereik bereik, int selectie, Conditie filter,
-                                   Expr.AttribuutRef arg, List<Regelplan> uit, List<Lezingen> lezingen) {
-        Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
-        Set<Integer> gelezen = lez.volg();
-        Term toets = filter == null ? null : voorwaarde(filter, lez);
-        boolean kanFalen = lez.kanFalen();
+    private boolean contributionRules(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
+                                   Objecttype elem, Range range, int selection, Conditie filter,
+                                   Expr.AttribuutRef arg, List<RulePlan> out, List<Reads> lezingen) {
+        Reads lez = contributionReads(subject, elem, range.join());
+        Set<Integer> read = lez.follow();
+        Term testTerm = filter == null ? null : voorwaarde(filter, lez);
+        boolean canFail = lez.canFail();
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
-        int lid = lez.lid();
+        Set<Integer> use = lez.follow();
+        int member = lez.member();
         // a member on a timeline contributes its own total over time (RUNTIME-SEMANTICS ch. 3.6, the per-element fold);
         // vouw admits only a sum and a total over one
-        Lid lidwaarde = arg == null ? null : gedeclareerd(elem, arg.attribuut(), false).tijd() == null
-                ? lid(elem, arg.attribuut(), false) : integreerbaar(tijdlid(elem, arg.attribuut(), false,
+        Member memberValue = arg == null ? null : declared(elem, arg.attribuut(), false).time() == null
+                ? member(elem, arg.attribuut(), false) : integrable(timeMember(elem, arg.attribuut(), false,
                         "een totaal per lid ('" + snippet(arg.bron()) + "')"), "een totaal per lid");
-        int waarde = lidwaarde == null ? -1 : lidwaarde.tijd() == null ? lez.eigen(lidwaarde) : lez.tijdlijn(lidwaarde);
-        String totaal = lidwaarde == null || lidwaarde.tijd() == null ? null : lidwaarde.tijd().name();
+        int waarde = memberValue == null ? -1 : memberValue.time() == null ? lez.own(memberValue) : lez.timeline(memberValue);
+        String totaal = memberValue == null || memberValue.time() == null ? null : memberValue.time().name();
         lez.stop();
-        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, filter);
-        Gevolg.Inbreng inbreng = kind == Expr.FunctieKind.AANTAL ? new Gevolg.Inbreng.Telling()
-                : new Gevolg.Inbreng.Lidwaarde(waarde, totaal, kind == Expr.FunctieKind.AANTAL_GEVULDE);
-        String vormnaam = model.geëmitteerdeRegelNaam(vorm);
-        uit.add(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
-                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH)));
+        List<LhsItem> items = lez.plan(conditionRole(canFail), testTerm, read, filter);
+        Consequence.Input input = kind == Expr.FunctieKind.AANTAL ? new Consequence.Input.Count()
+                : new Consequence.Input.MemberValue(waarde, totaal, kind == Expr.FunctieKind.AANTAL_GEVULDE);
+        String formName = model.geëmitteerdeRegelNaam(vorm);
+        out.add(lez.rulePlan(formName + ": bijdrage aan " + naam, items, new Consequence.Contribution(FOLD_SUBJECT,
+                sleutel, member, input, List.copyOf(use), lez.size(), Consequence.Insertion.LOGICAL)));
         lezingen.add(lez);
-        if (kanFalen) uit.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem, bereik,
-                selectie, filter, lezingen::add));
-        if (totaal != null) uit.add(lidfoutregel(sleutel, vormnaam + ": lidfout in " + naam, subject, elem, bereik,
-                selectie, filter, lidwaarde, lezingen::add));
-        if (deponeert(filter)) uit.add(filterdeponeerregel(sleutel, vormnaam + ": filterdeponering in " + naam, subject,
-                elem, bereik, filter, lezingen::add));
-        return kanFalen;
+        if (canFail) out.add(filterErrorRule(sleutel, formName + ": filterfout in " + naam, subject, elem, range,
+                selection, filter, lezingen::add));
+        if (totaal != null) out.add(memberErrorRule(sleutel, formName + ": lidfout in " + naam, subject, elem, range,
+                selection, filter, memberValue, lezingen::add));
+        if (deposits(filter)) out.add(filterDepositRule(sleutel, formName + ": filterdeponering in " + naam, subject,
+                elem, range, filter, lezingen::add));
+        return canFail;
     }
 
     /**
      * The rule beside a contribution rule whose filter can deposit, planned: that rule's left-hand side planned again,
      * the test that evaluating the filter for the member reaches a place that deposits (a division of a filled dividend
      * by a leeg divisor or the square root of a negative number, RUNTIME-SEMANTICS ch. 1.2), heard by a probe in the
-     * test as {@link #deponeerregel} hears a condition's ({@link Sonde}), so a place the filter's own composite does not
-     * reach deposits nothing (ch. 5.10), and a consequence that inserts the member's {@link Filterdeponering} logically,
+     * test as {@link #depositRule} hears a condition's ({@link DepositFlag}), so a place the filter's own composite does not
+     * reach deposits nothing (ch. 5.10), and a consequence that inserts the member's {@link FilterDeposit} logically,
      * on the fold's subject. No inconsistency: the reference interpreter evaluates the filter only where the evaluation
-     * of the form that reads the fold reaches it, and deposits under that form ({@link #gelezenVouw}). A filter that
+     * of the form that reads the fold reaches it, and deposits under that form ({@link #readFold}). A filter that
      * faults after a place that deposits has deposited, as there; the fault is the reading form's
-     * ({@link #filterfoutregel}). The fact goes when a read it rested on changes, as a contribution does.
+     * ({@link #filterErrorRule}). The fact goes when a read it rested on changes, as a contribution does.
      */
-    private Regelplan filterdeponeerregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
-                                          Bereik bereik, Conditie filter, Consumer<Lezingen> vastleggen) {
-        Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
-        Set<Integer> gelezen = lez.volg();
-        Term toets = voorwaarde(filter, lez);
+    private RulePlan filterDepositRule(String sleutel, String ruleName, Objecttype subject, Objecttype elem,
+                                          Range range, Conditie filter, Consumer<Reads> recorder) {
+        Reads lez = contributionReads(subject, elem, range.join());
+        Set<Integer> read = lez.follow();
+        Term testTerm = voorwaarde(filter, lez);
         lez.stop();
-        if (lez.sondeplaats() < 0)
+        if (lez.depositFlagSlot() < 0)
             throw new IllegalStateException("het filter van " + sleutel + " deponeert, maar kreeg geen sonde");
-        int lid = lez.lid();
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.DEPONERING, toets, gelezen, filter);
-        vastleggen.accept(lez);
-        return lez.regelplan(regelnaam, items, new Gevolg.Filterdeponering(VOUWONDERWERP, sleutel, lid,
-                Gevolg.Invoeging.LOGISCH));
+        int member = lez.member();
+        List<LhsItem> items = lez.plan(TestItem.Role.DEPOSIT, testTerm, read, filter);
+        recorder.accept(lez);
+        return lez.rulePlan(ruleName, items, new Consequence.FilterDeposit(FOLD_SUBJECT, sleutel, member,
+                Consequence.Insertion.LOGICAL));
     }
 
     /**
      * The rule beside a contribution rule whose filter can fault, planned: that rule's left-hand side planned again,
      * joined per route from the fold's subject with the member's place bound at every to-many step of the route
-     * ({@link Bereik#perRoute}), the test that the filter faults for the member, and a consequence that inserts the
-     * member's {@link Filterfout} logically, on the fold's subject, with its place in the fold order: the
-     * {@code selectie}, then those places ({@link Gevolg.Vouwplaats}). No {@link Fout}: whether the division happens
+     * ({@link Range#perRoute}), the test that the filter faults for the member, and a consequence that inserts the
+     * member's {@link FilterError} logically, on the fold's subject, with its place in the fold order: the
+     * {@code selection}, then those places ({@link Consequence.FoldPlace}). No {@link Fout}: whether the division happens
      * depends on the form that reads the fold, which faults where its evaluation reaches the fold while such a fact
-     * stands ({@link #vouw}). The fact goes when a read it rested on changes, as a contribution does. A member whose
+     * stands ({@link #fold}). The fact goes when a read it rested on changes, as a contribution does. A member whose
      * place the input did not state has no place in the fold order, and the first fault cannot be told without it: the
      * consequence throws, naming the field.
      */
-    private Regelplan filterfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
-                                      Bereik bereik, int selectie, Conditie filter, Consumer<Lezingen> vastleggen) {
-        List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
-        Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
-        Set<Integer> gelezen = lez.volg();
-        Term toets = voorwaarde(filter, lez);
+    private RulePlan filterErrorRule(String sleutel, String ruleName, Objecttype subject, Objecttype elem,
+                                      Range range, int selection, Conditie filter, Consumer<Reads> recorder) {
+        List<Consequence.FoldPlace.Step> places = new ArrayList<>();
+        Reads lez = contributionReads(subject, elem, l -> places.addAll(range.perRoute().apply(l)));
+        Set<Integer> read = lez.follow();
+        Term testTerm = voorwaarde(filter, lez);
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
-        int lid = lez.lid();
+        Set<Integer> use = lez.follow();
+        int member = lez.member();
         lez.stop();
-        gebruik.addAll(gelezen);
-        for (Gevolg.Vouwplaats.Stap p : plaatsen) {
-            gebruik.add(p.aantal());
-            gebruik.add(p.plaats());
+        use.addAll(read);
+        for (Consequence.FoldPlace.Step p : places) {
+            use.add(p.aantal());
+            use.add(p.place());
         }
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.FOUT, toets, gelezen, filter);
-        vastleggen.accept(lez);
-        return lez.regelplan(regelnaam, items, new Gevolg.Filterfout(VOUWONDERWERP, sleutel, lid, toets,
-                new Gevolg.Vouwplaats(selectie, plaatsen, Gevolg.Plaatsreden.FILTERFOUT), List.copyOf(gebruik),
-                lez.grootte(), Gevolg.Invoeging.LOGISCH));
+        List<LhsItem> items = lez.plan(TestItem.Role.FAULT, testTerm, read, filter);
+        recorder.accept(lez);
+        return lez.rulePlan(ruleName, items, new Consequence.FilterError(FOLD_SUBJECT, sleutel, member, testTerm,
+                new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.FILTER_ERROR), List.copyOf(use),
+                lez.size(), Consequence.Insertion.LOGICAL));
     }
 
     /**
      * The rule beside a contribution rule of a per-element fold over an attribute on a timeline (RUNTIME-SEMANTICS
      * ch. 3.6, §7.1), planned: that rule's left-hand side planned again, joined per route from the fold's subject with
-     * the member's place bound at every to-many step of the route ({@link Bereik#perRoute}), the test that the member's
-     * filter holds and that the case gives the member's timeline as the asOfDate-bucket scalar ({@link Emmerscalair}),
-     * and a consequence that inserts the member's {@link Lidfout} logically, on the fold's subject, with its place in
-     * the fold order: the {@code selectie}, then those places. Such a member contributes nothing, since a set fold needs
+     * the member's place bound at every to-many step of the route ({@link Range#perRoute}), the test that the member's
+     * filter holds and that the case gives the member's timeline as the asOfDate-bucket scalar ({@link BucketScalar}),
+     * and a consequence that inserts the member's {@link MemberError} logically, on the fold's subject, with its place in
+     * the fold order: the {@code selection}, then those places. Such a member contributes nothing, since a set fold needs
      * each member's own timeline and the scalar states none (ch. 8.4); the form that reads the fold faults where its
-     * evaluation reaches the fold while such a fact stands ({@link #gelezenVouw}), in the reference interpreter's words.
-     * A member whose filter faults has its {@link Filterfout} instead, which the reading form meets first. A member whose
+     * evaluation reaches the fold while such a fact stands ({@link #readFold}), in the reference interpreter's words.
+     * A member whose filter faults has its {@link FilterError} instead, which the reading form meets first. A member whose
      * place the input did not state has no place in the fold order: the consequence throws, naming the field, as the
      * filter fault rule does.
      */
-    private Regelplan lidfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
-                                   int selectie, Conditie filter, Lid lidwaarde, Consumer<Lezingen> vastleggen) {
-        List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
-        Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
-        Set<Integer> gelezen = lez.volg();
+    private RulePlan memberErrorRule(String sleutel, String ruleName, Objecttype subject, Objecttype elem, Range range,
+                                   int selection, Conditie filter, Member memberValue, Consumer<Reads> recorder) {
+        List<Consequence.FoldPlace.Step> places = new ArrayList<>();
+        Reads lez = contributionReads(subject, elem, l -> places.addAll(range.perRoute().apply(l)));
+        Set<Integer> read = lez.follow();
         // the member's filter holds, without its fault where it can fault: the filter fault rule takes that fault
-        List<Term> emmer = new ArrayList<>();
+        List<Term> bucket = new ArrayList<>();
         if (filter != null) {
-            Term filtertoets = voorwaarde(filter, lez);
-            emmer.add(lez.kanFalen() ? new Term.ZonderFout(filtertoets, bron(filter.bron())) : filtertoets);
+            Term filterTest = voorwaarde(filter, lez);
+            bucket.add(lez.canFail() ? new Term.WithoutFault(filterTest, bron(filter.bron())) : filterTest);
         }
-        int waarde = lez.tijdlijn(lidwaarde);
+        int waarde = lez.timeline(memberValue);
         lez.stop();
-        int lid = lez.lid();
-        emmer.add(emmerscalair(waarde, true));
-        List<LhsItem> items = lez.plan(Toetsitem.Rol.VORM, alle(emmer), gelezen, filter);
-        vastleggen.accept(lez);
-        return lez.regelplan(regelnaam, items, new Gevolg.Lidfout(VOUWONDERWERP, sleutel, lid,
-                new Gevolg.Vouwplaats(selectie, plaatsen, Gevolg.Plaatsreden.LIDFOUT),
-                "the per-element temporal total of \"" + lidwaarde.naam() + "\" over ", ": the case supplies an"
+        int member = lez.member();
+        bucket.add(emmerscalair(waarde, true));
+        List<LhsItem> items = lez.plan(TestItem.Role.VORM, all(bucket), read, filter);
+        recorder.accept(lez);
+        return lez.rulePlan(ruleName, items, new Consequence.MemberError(FOLD_SUBJECT, sleutel, member,
+                new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.MEMBER_ERROR),
+                "the per-element temporal total of \"" + memberValue.naam() + "\" over ", ": the case supplies an"
                 + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
-                + " timeline (ch. 3.6/§7.1, ch. 8.4)", Gevolg.Invoeging.LOGISCH));
+                + " timeline (ch. 3.6/§7.1, ch. 8.4)", Consequence.Insertion.LOGICAL));
     }
 
     /** The reads of a contribution rule, planned: the member is the subject, the fold's subject is bound before it
-     *  ({@link #VOUWONDERWERP}), and {@code bereik} joins the two. */
-    private Lezingen bijdragelezingen(Objecttype subject, Objecttype elem, Consumer<Lezingen> bereik) {
-        Lezingen lez = new Lezingen(elem);
-        lez.buiten = vouwbinders;
-        lez.kopPlan(new Patroon(bonenklasse(subject), VOUWONDERWERP, List.of(), List.of(), List.of()));
-        bereik.accept(lez);
+     *  ({@link #FOLD_SUBJECT}), and {@code range} joins the two. */
+    private Reads contributionReads(Objecttype subject, Objecttype elem, Consumer<Reads> range) {
+        Reads lez = new Reads(elem);
+        lez.outside = foldBinders;
+        lez.addToHeadPlan(new FactPattern(beanClass(subject), FOLD_SUBJECT, List.of(), List.of(), List.of()));
+        range.accept(lez);
         return lez;
     }
 
     /**
-     * How a rule of a fold joins the member, its subject, to the fold's subject ({@link #VOUWONDERWERP}), in two
-     * shapes, each planned into the rule's reads. {@code koppel}, for the contribution rule: the join on the member's
+     * How a rule of a fold joins the member, its subject, to the fold's subject ({@link #FOLD_SUBJECT}), in two
+     * shapes, each planned into the rule's reads. {@code join}, for the contribution rule: the join on the member's
      * pattern, and the intermediates a multi-step range needs right after it, quantified, so a member matches once.
      * {@code perRoute}, for the filter fault rule: the same join with the intermediates bound, so a member matches once
      * per route, and per to-many step of the route, in order, the place of the step's member in its list
-     * ({@link #plaats}); it returns those places, and refuses a range whose members have no place.
+     * ({@link #place}); it returns those places, and refuses a range whose members have no place.
      */
-    private record Bereik(Consumer<Lezingen> koppel, Function<Lezingen, List<Gevolg.Vouwplaats.Stap>> perRoute) {}
+    private record Range(Consumer<Reads> join, Function<Reads, List<Consequence.FoldPlace.Step>> perRoute) {}
 
 
     /** The place of a to-many step's member in its list, for the filter fault rule, planned after the subject pattern:
-     *  an accumulate over the {@link Lijstplaats} facts of field {@code veld} on the node the walk over {@code keten}
-     *  reaches from {@code knoop}, a variable a pattern before it binds (the node itself without a chain), which counts
+     *  an accumulate over the {@link ListPlace} facts of field {@code veld} on the node the walk over {@code keten}
+     *  reaches from {@code jsonNode}, a variable a pattern before it binds (the node itself without a chain), which counts
      *  them and takes the least place. The count gives a row where the input stated no place, so the rule still fires
      *  and its consequence names the gap instead of dropping the fault. */
-    private Gevolg.Vouwplaats.Stap plaats(Lezingen lid, String veld, String knoop, List<String> keten) {
-        lijstvelden.add(veld);
+    private Consequence.FoldPlace.Step place(Reads member, String veld, String jsonNode, List<String> chain) {
+        listFields.add(veld);
         String p = "$lijstplaats_" + id("plaats");
         String waarde = "$lijstplaatswaarde_" + id("plaats");
         String aantal = "$lijstplaatsen_" + id("plaats");
-        String minste = "$plaats_" + id("plaats");
-        Alfa vanVeld = gelijk(id("plaats-veld"), "veld", veld);
-        Betatoets vanLid = new Betatoets(id("plaats-lid"), Functie.PLAATS_VAN, knoop,
-                List.of(constante(List.copyOf(keten))));
-        lid.bereikPlan(new Accumulatie(new Patroon(Lijstplaats.class, p, List.of(vanVeld), List.of(), List.of(vanLid),
-                List.of(Binding.van(waarde, Lijstplaats.class, "plaats"))),
-                List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal),
-                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, waarde, minste))));
-        int n = lid.grootte();
-        return new Gevolg.Vouwplaats.Stap(veld, lid.nieuw(Leessoort.LIJSTPLAATSEN, "lijstplaatsen " + n, aantal),
-                lid.nieuw(Leessoort.LIJSTPLAATS, "lijstplaats " + n, minste));
+        String least = "$plaats_" + id("plaats");
+        Alpha ofField = equal(id("plaats-veld"), "veld", veld);
+        BetaTest ofMember = new BetaTest(id("plaats-lid"), Aggregation.PLACE_OF, jsonNode,
+                List.of(constant(List.copyOf(chain))));
+        member.addToRangePlan(new Accumulation(new FactPattern(ListPlace.class, p, List.of(ofField), List.of(), List.of(ofMember),
+                List.of(Binding.van(waarde, ListPlace.class, "place"))),
+                List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, aantal),
+                        new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, waarde, least))));
+        int n = member.size();
+        return new Consequence.FoldPlace.Step(veld, member.recomputed(ReadKind.LIST_PLACES, "lijstplaatsen " + n, aantal),
+                member.recomputed(ReadKind.LIST_PLACE, "lijstplaats " + n, least));
     }
 
     /** The range of the fold {@code f} from {@code subject} to {@code elem}: its multi-step path, or its one step. */
-    private Bereik bereik(Expr.Functie f, Objecttype subject, Objecttype elem) {
-        List<RolBindingRef> pad = bronPaden.get(f);
-        if (pad != null) return padbereik(pad, subject, elem, snippet(f.bron()));
-        return eenstapsbereik(rolBindingen.get(f), subject, elem, snippet(f.bron()));
+    private Range range(Expr.Functie f, Objecttype subject, Objecttype elem) {
+        List<RolBindingRef> pad = sourcePaths.get(f);
+        if (pad != null) return pathRange(pad, subject, elem, snippet(f.bron()));
+        return oneStepRange(roleBindings.get(f), subject, elem, snippet(f.bron()));
     }
 
     /**
@@ -4366,188 +4366,188 @@ public final class TmsTranspiler {
      * branch refuses them: a binding that names no role pair, a to-one member role whose sibling is to-many (one field
      * carries both directions there, and that branch keeps refusing the shape until a card of its own measures it), and
      * a join the bean model gives no field. A to-many member role stores its links on the members, each in the list of
-     * the subject at a place the case input states under the field ({@link Lijstplaats}); a to-one member role reaches
+     * the subject at a place the case input states under the field ({@link ListPlace}); a to-one member role reaches
      * one member at most, whose place compares with nothing. The join is planned on the member's pattern, as the
-     * recipient rule of an allocation plans its join ({@link #ontvangersjoin}).
+     * recipient rule of an allocation plans its join ({@link #recipientsJoin}).
      */
-    private Bereik eenstapsbereik(RolBindingRef rb, Objecttype subject, Objecttype elem, String wat) {
-        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
-        if (paar == null) throw new Weigering("het bereik van '" + wat + "' noemt geen rolpaar (IR-SPEC ch. 4.3)");
-        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype())))
-            return koppelingsbereik(rb, paar[0], wat);
-        String elemRol = paar[0].naam(), terug = paar[1].naam();
-        boolean voorwaarts = !model.naarVeelRol(subject, elem, elemRol);
-        if (voorwaarts && model.naarVeelRol(elem, subject, terug))
-            throw new Weigering("een Aggregation over de enkelvoudige elementrol '" + elemRol + "' wiens zusterrol '"
-                    + terug + "' meervoudig is ('" + wat + "'): dat feittype heeft één beanveld voor beide richtingen, en"
+    private Range oneStepRange(RolBindingRef rb, Objecttype subject, Objecttype elem, String description) {
+        RegelSpraakModel.Rol[] pair = FactModelGenerator.boundRolePair(model, rb);
+        if (pair == null) throw new Refusal("het bereik van '" + description + "' noemt geen rolpaar (IR-SPEC ch. 4.3)");
+        if (rb.feittype() != null && createdRelations.contains(Namen.norm(rb.feittype())))
+            return linkRange(rb, pair[0], description);
+        String elemRole = pair[0].naam(), readBack = pair[1].naam();
+        boolean forward = !model.naarVeelRol(subject, elem, elemRole);
+        if (forward && model.naarVeelRol(elem, subject, readBack))
+            throw new Refusal("een Aggregation over de enkelvoudige elementrol '" + elemRole + "' wiens zusterrol '"
+                    + readBack + "' meervoudig is ('" + description + "'): dat feittype heeft één beanveld voor beide richtingen, en"
                     + " deze tak weigert de vorm voorzichtig tot een eigen kaart haar meet (§13.3.9 opslagrichting)");
-        Objecttype drager = voorwaarts ? subject : elem, doel = voorwaarts ? elem : subject;
-        String rol = voorwaarts ? elemRol : terug;
-        if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel))
-            throw new Weigering("de aggregatie-join van '" + wat + "' heeft geen beanveld — "
-                    + FactModelGenerator.geenJoinveldReden(model, drager, rol, doel) + " (§13.3.9 opslagrichting)");
+        Objecttype carrier = forward ? subject : elem, doel = forward ? elem : subject;
+        String rol = forward ? elemRole : readBack;
+        if (!FactModelGenerator.hasReferenceField(model, carrier, rol, doel))
+            throw new Refusal("de aggregatie-join van '" + description + "' heeft geen beanveld — "
+                    + FactModelGenerator.noJoinFieldReason(model, carrier, rol, doel) + " (§13.3.9 opslagrichting)");
         // forward the fold subject's reference field names the member, else the member's names the fold's subject
-        Binding.Veld veld = new Binding.Veld(bonenklasse(drager), rol);
-        Consumer<Lezingen> koppel = lid -> lid.onderwerpJoin(voorwaarts
-                ? new Join(id("bereik"), null, VOUWONDERWERP, veld) : new Join(id("bereik"), rol, VOUWONDERWERP));
-        String lijstveld = Namen.ident(rol, false);
-        return new Bereik(koppel, lid -> {
-            koppel.accept(lid);
-            return voorwaarts ? List.of() : List.of(plaats(lid, lijstveld, ONDERWERP, List.of()));
+        Binding.Field veld = new Binding.Field(beanClass(carrier), rol);
+        Consumer<Reads> join = member -> member.subjectJoin(forward
+                ? new Join(id("bereik"), null, FOLD_SUBJECT, veld) : new Join(id("bereik"), rol, FOLD_SUBJECT));
+        String listField = Namen.ident(rol, false);
+        return new Range(join, member -> {
+            join.accept(member);
+            return forward ? List.of() : List.of(place(member, listField, SUBJECT, List.of()));
         });
     }
 
     /** The one-step range of a fold over a relation a form creates: the member and the fold's subject joined by an
-     *  {@link Koppeling} of the relation in an {@code exists} ({@link #koppelingsbestaat}), the member filling
-     *  {@code lidrol}. The links of such a relation change while the session fires and are in no bean field, so a field
+     *  {@link RelationLink} of the relation in an {@code exists} ({@link #linkExists}), the member filling
+     *  {@code memberRole}. The links of such a relation change while the session fires and are in no bean field, so a field
      *  join would miss them. A created link has no place in the fold order, which the reference interpreter gives by the
      *  order of creation, so a filter that can fault over such a range is refused. */
-    private Bereik koppelingsbereik(RolBindingRef rb, RegelSpraakModel.Rol lidrol, String wat) {
-        Koppelrelatie r = koppelrelatie(rb, lidrol, wat);
-        return new Bereik(lid -> lid.bereikPlan(koppelingsbestaat(r)), lid -> {
-            throw new Weigering("een filter dat kan falen in een vouw over de gecreëerde relatie '" + rb.feittype()
-                    + "' ('" + wat + "'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout"
-                    + " de vouw geeft (RUNTIME-SEMANTICS ch. 5.11); " + NOG_NIET);
+    private Range linkRange(RolBindingRef rb, RegelSpraakModel.Rol memberRole, String description) {
+        LinkRelation r = linkRelation(rb, memberRole, description);
+        return new Range(member -> member.addToRangePlan(linkExists(r)), member -> {
+            throw new Refusal("een filter dat kan falen in een vouw over de gecreëerde relatie '" + rb.feittype()
+                    + "' ('" + description + "'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout"
+                    + " de vouw geeft (RUNTIME-SEMANTICS ch. 5.11); " + STILL_NOT);
         });
     }
 
     /** A relation a form creates, as a one-step range over it walks it: by its normalised name, and whether the member
      *  fills its first role. */
-    private record Koppelrelatie(String relatie, boolean lidIsEerste) {}
+    private record LinkRelation(String relation, boolean memberIsFirst) {}
 
-    /** The relation a form creates that a one-step range over {@code rb} walks, its member filling {@code lidrol}, for
-     *  {@code wat}; a fact type that is no relation of two roles is refused. */
-    private Koppelrelatie koppelrelatie(RolBindingRef rb, RegelSpraakModel.Rol lidrol, String wat) {
+    /** The relation a form creates that a one-step range over {@code rb} walks, its member filling {@code memberRole}, for
+     *  {@code description}; a fact type that is no relation of two roles is refused. */
+    private LinkRelation linkRelation(RolBindingRef rb, RegelSpraakModel.Rol memberRole, String description) {
         RegelSpraakModel.Feittype ft = feittype(rb.feittype());
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-            throw new Weigering("het bereik van '" + wat + "' over de gecreëerde relatie '" + rb.feittype()
-                    + "', die geen relatie van twee rollen is: " + NOG_NIET);
-        return new Koppelrelatie(Namen.norm(ft.naam),
-                Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(lidrol.naam())));
+            throw new Refusal("het bereik van '" + description + "' over de gecreëerde relatie '" + rb.feittype()
+                    + "', die geen relatie van twee rollen is: " + STILL_NOT);
+        return new LinkRelation(Namen.norm(ft.naam),
+                Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(memberRole.naam())));
     }
 
     /** The range over the relation {@code r} a form creates, planned, of a fold's contribution rule and of an
-     *  allocation's recipient rule: an {@code exists} of a {@link Koppeling} of the relation that holds the subject at
-     *  the member's end and the object the rule binds before the subject ({@link #VOUWONDERWERP}) at the other. */
-    private Bestaat koppelingsbestaat(Koppelrelatie r) {
-        String koppeling = "$koppeling_" + id("bereik");
-        Alfa vanRelatie = gelijk(id("bereik-koppeling"), "relatie", r.relatie());
-        Join lid = new Join(id("bereik-lid"), r.lidIsEerste() ? "eerste" : "tweede", ONDERWERP);
-        Join drager = new Join(id("bereik-drager"), r.lidIsEerste() ? "tweede" : "eerste", VOUWONDERWERP);
-        return new Bestaat(List.of(new Patroon(Koppeling.class, koppeling, List.of(vanRelatie), List.of(lid, drager),
-                List.of())), List.of(koppeling), List.of(ONDERWERP, VOUWONDERWERP));
+     *  allocation's recipient rule: an {@code exists} of a {@link RelationLink} of the relation that holds the subject at
+     *  the member's end and the object the rule binds before the subject ({@link #FOLD_SUBJECT}) at the other. */
+    private Exists linkExists(LinkRelation r) {
+        String relationLink = "$koppeling_" + id("bereik");
+        Alpha ofRelation = equal(id("bereik-koppeling"), "relation", r.relation());
+        Join member = new Join(id("bereik-lid"), r.memberIsFirst() ? "eerste" : "tweede", SUBJECT);
+        Join carrier = new Join(id("bereik-drager"), r.memberIsFirst() ? "tweede" : "eerste", FOLD_SUBJECT);
+        return new Exists(List.of(new FactPattern(RelationLink.class, relationLink, List.of(ofRelation), List.of(member, carrier),
+                List.of())), List.of(relationLink), List.of(SUBJECT, FOLD_SUBJECT));
     }
 
     /**
      * The multi-step range of a fold (IR-SPEC ch. 4.3, {@code sourcePath}; RUNTIME-SEMANTICS ch. 3.4b), on the plan the
-     * shared {@link Bronpad} derives: where the walk down from the subject and the walk up from the member meet, one
-     * constraint on the member's pattern that the two walks reach one object ({@link Functie#ONTMOETING}); otherwise
+     * shared {@link SourcePath} derives: where the walk down from the subject and the walk up from the member meet, one
+     * constraint on the member's pattern that the two walks reach one object ({@link Aggregation#MEETING}); otherwise
      * the intermediates neither walk determines go into one {@code exists} after the member's pattern, so a member that
-     * two intermediates reach still matches once ({@link Bestaat}, whose scope holds the intermediates, and reads the
+     * two intermediates reach still matches once ({@link Exists}, whose scope holds the intermediates, and reads the
      * fold's subject and the member from outside). Two matches would give two equal contributions, which merge into one
      * fact as well. The filter fault rule binds the intermediates instead, as patterns of the rule, one match per route,
-     * and the place of the member of every backward step, the to-many ones ({@link Bronpad}): an intermediate where the
+     * and the place of the member of every backward step, the to-many ones ({@link SourcePath}): an intermediate where the
      * step ends on one, else the node the member's own walk reaches.
      */
-    private Bereik padbereik(List<RolBindingRef> pad, Objecttype subject, Objecttype elem, String wat) {
-        for (RolBindingRef stap : pad)
-            if (stap.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(stap.feittype())))
-                throw new Weigering("een vouw met een bereik van meer stappen over de gecreëerde relatie '"
-                        + stap.feittype() + "' ('" + wat + "'): " + NOG_NIET);
-        Bronpad.Plan plan = Bronpad.ontleed(model, subject, pad, elem);
-        if (plan.weigering() != null) throw new Weigering(plan.weigering() + " ('" + wat + "')");
-        if (plan.ontmoet()) {
-            int m = plan.ontmoeting();
-            List<String> vanafLid = List.copyOf(plan.ketenVanafElement(m)),
-                    vanafOnderwerp = List.copyOf(plan.ketenVanafOnderwerp(m));
-            Consumer<Lezingen> koppel = lid -> lid.onderwerpBeta(new Betatoets(id("pad"), Functie.ONTMOETING,
-                    VOUWONDERWERP, List.of(constante(vanafLid), constante(vanafOnderwerp))));
-            return new Bereik(koppel, lid -> {
-                koppel.accept(lid);
-                return plaatsenLangs(plan, Map.of(), lid);
+    private Range pathRange(List<RolBindingRef> pad, Objecttype subject, Objecttype elem, String description) {
+        for (RolBindingRef step : pad)
+            if (step.feittype() != null && createdRelations.contains(Namen.norm(step.feittype())))
+                throw new Refusal("een vouw met een bereik van meer stappen over de gecreëerde relatie '"
+                        + step.feittype() + "' ('" + description + "'): " + STILL_NOT);
+        SourcePath.Plan plan = SourcePath.parse(model, subject, pad, elem);
+        if (plan.refusal() != null) throw new Refusal(plan.refusal() + " ('" + description + "')");
+        if (plan.meets()) {
+            int m = plan.meeting();
+            List<String> fromMember = List.copyOf(plan.chainFromElement(m)),
+                    fromSubject = List.copyOf(plan.chainFromSubject(m));
+            Consumer<Reads> join = member -> member.subjectBeta(new BetaTest(id("pad"), Aggregation.MEETING,
+                    FOLD_SUBJECT, List.of(constant(fromMember), constant(fromSubject))));
+            return new Range(join, member -> {
+                join.accept(member);
+                return placesAlong(plan, Map.of(), member);
             });
         }
-        return new Bereik(lid -> {
-            List<Patroon> patronen = tussenpatronen(plan, new LinkedHashMap<>());
+        return new Range(member -> {
+            List<FactPattern> patterns = betweenPatterns(plan, new LinkedHashMap<>());
             // the first intermediate hangs off the fold's subject and the last off the member: both bound before
-            lid.bereikPlan(new Bestaat(patronen, patronen.stream().map(Patroon::naam).toList(),
-                    List.of(VOUWONDERWERP, ONDERWERP)));
-        }, lid -> {
-            Map<Integer, String> tussen = new LinkedHashMap<>();
-            for (Patroon p : tussenpatronen(plan, tussen)) lid.bereikPlan(p);
-            return plaatsenLangs(plan, tussen, lid);
+            member.addToRangePlan(new Exists(patterns, patterns.stream().map(FactPattern::naam).toList(),
+                    List.of(FOLD_SUBJECT, SUBJECT)));
+        }, member -> {
+            Map<Integer, String> between = new LinkedHashMap<>();
+            for (FactPattern p : betweenPatterns(plan, between)) member.addToRangePlan(p);
+            return placesAlong(plan, between, member);
         });
     }
 
     /** The patterns of the intermediates of {@code plan} that neither walk determines, each over its node's bean class,
-     *  its variable named into {@code tussen}, and constrained to its neighbours by the hops on either side of it
-     *  ({@link #padstap}). */
-    private List<Patroon> tussenpatronen(Bronpad.Plan plan, Map<Integer, String> tussen) {
-        for (int i : plan.tussenknopen()) tussen.put(i, "$tussen_" + id("pad"));
-        List<Patroon> patronen = new ArrayList<>();
-        int laatste = plan.achterwaartsVanaf() - 1;
-        for (Map.Entry<Integer, String> e : tussen.entrySet()) {
+     *  its variable named into {@code between}, and constrained to its neighbours by the hops on either side of it
+     *  ({@link #pathStep}). */
+    private List<FactPattern> betweenPatterns(SourcePath.Plan plan, Map<Integer, String> between) {
+        for (int i : plan.betweenNodes()) between.put(i, "$tussen_" + id("pad"));
+        List<FactPattern> patterns = new ArrayList<>();
+        int last = plan.backwardFrom() - 1;
+        for (Map.Entry<Integer, String> e : between.entrySet()) {
             int i = e.getKey();
-            List<Betatoets> stappen = new ArrayList<>();
-            stappen.add(padstap(plan, i, i, tussen));
-            if (i == laatste) stappen.add(padstap(plan, plan.achterwaartsVanaf(), i, tussen));
-            patronen.add(new Patroon(bonenklasse(plan.knoopTypen().get(i)), e.getValue(), List.of(), List.of(), stappen,
+            List<BetaTest> steps = new ArrayList<>();
+            steps.add(pathStep(plan, i, i, between));
+            if (i == last) steps.add(pathStep(plan, plan.backwardFrom(), i, between));
+            patterns.add(new FactPattern(beanClass(plan.nodeTypes().get(i)), e.getValue(), List.of(), List.of(), steps,
                     List.of()));
         }
-        return patronen;
+        return patterns;
     }
 
     /** The places along a route of {@code plan}, one per backward step in step order: the step's own member, node
      *  {@code i}, holds the field toward node {@code i - 1}, whose list it is in. A backward step never lies in the
      *  subject's forward run, so its node is a bound intermediate or a node of the member's own walk. */
-    private List<Gevolg.Vouwplaats.Stap> plaatsenLangs(Bronpad.Plan plan, Map<Integer, String> tussen, Lezingen lid) {
-        List<Gevolg.Vouwplaats.Stap> uit = new ArrayList<>();
-        for (int i = 1; i <= plan.stappen().size(); i++) {
-            Bronpad.Stap stap = plan.stappen().get(i - 1);
-            if (!stap.achterwaarts()) continue;
-            String knoop = tussen.get(i);
-            uit.add(knoop != null ? plaats(lid, stap.beanveld(), knoop, List.of())
-                    : plaats(lid, stap.beanveld(), ONDERWERP, plan.ketenVanafElement(i)));
+    private List<Consequence.FoldPlace.Step> placesAlong(SourcePath.Plan plan, Map<Integer, String> between, Reads member) {
+        List<Consequence.FoldPlace.Step> out = new ArrayList<>();
+        for (int i = 1; i <= plan.steps().size(); i++) {
+            SourcePath.Step step = plan.steps().get(i - 1);
+            if (!step.backward()) continue;
+            String jsonNode = between.get(i);
+            out.add(jsonNode != null ? place(member, step.beanField(), jsonNode, List.of())
+                    : place(member, step.beanField(), SUBJECT, plan.chainFromElement(i)));
         }
-        return uit;
+        return out;
     }
 
-    /** The constraint on the pattern of node {@code dit} of {@code plan} by hop {@code stap}, which connects nodes
-     *  {@code stap - 1} and {@code stap}: its other end is read through whichever walk determines it, the subject's (a
+    /** The constraint on the pattern of node {@code current} of {@code plan} by hop {@code step}, which connects nodes
+     *  {@code stap - 1} and {@code step}: its other end is read through whichever walk determines it, the subject's (a
      *  forward prefix), the member's (a backward suffix) or an intermediate declared before it, and the hop's field on
      *  the end that holds it, the hop's source going forward and its target going backward. The two walks meet where
-     *  the hop holds ({@link Functie#ONTMOETING}). */
-    private Betatoets padstap(Bronpad.Plan plan, int stap, int dit, Map<Integer, String> tussen) {
-        int ander = stap - 1 == dit ? stap : stap - 1;
-        boolean ditIsDoel = ander == stap - 1;
-        List<String> keten = ander <= plan.voorwaarts() ? plan.ketenVanafOnderwerp(ander)
-                : ander >= plan.achterwaartsVanaf() ? plan.ketenVanafElement(ander) : List.of();
-        String anderNaam = ander <= plan.voorwaarts() ? VOUWONDERWERP
-                : ander >= plan.achterwaartsVanaf() ? ONDERWERP : tussen.get(ander);
-        Bronpad.Stap hop = plan.stappen().get(stap - 1);
-        boolean veldHier = hop.achterwaarts() == ditIsDoel;
-        List<String> eigen = veldHier ? List.of(hop.beanveld()) : List.of();
-        List<String> andere = new ArrayList<>(keten);
-        if (!veldHier) andere.add(hop.beanveld());
-        return new Betatoets(id("pad"), Functie.ONTMOETING, anderNaam,
-                List.of(constante(eigen), constante(List.copyOf(andere))));
+     *  the hop holds ({@link Aggregation#MEETING}). */
+    private BetaTest pathStep(SourcePath.Plan plan, int step, int current, Map<Integer, String> between) {
+        int earlierBean = step - 1 == current ? step : step - 1;
+        boolean thisIsTarget = earlierBean == step - 1;
+        List<String> chain = earlierBean <= plan.forward() ? plan.chainFromSubject(earlierBean)
+                : earlierBean >= plan.backwardFrom() ? plan.chainFromElement(earlierBean) : List.of();
+        String otherName = earlierBean <= plan.forward() ? FOLD_SUBJECT
+                : earlierBean >= plan.backwardFrom() ? SUBJECT : between.get(earlierBean);
+        SourcePath.Step hop = plan.steps().get(step - 1);
+        boolean fieldHere = hop.backward() == thisIsTarget;
+        List<String> own = fieldHere ? List.of(hop.beanField()) : List.of();
+        List<String> other = new ArrayList<>(chain);
+        if (!fieldHere) other.add(hop.beanField());
+        return new BetaTest(id("pad"), Aggregation.MEETING, otherName,
+                List.of(constant(own), constant(List.copyOf(other))));
     }
 
 
     /** A read of an attribute: of the subject where the reference carries no path (it must name the subject's own type,
      *  WF-053), else over its path of roles. */
-    private int attribuutlezing(Expr.AttribuutRef a, Lezingen lez) {
+    private int attributeRead(Expr.AttribuutRef a, Reads lez) {
         if (a.objecttype() == null || a.attribuut() == null)
-            throw new Weigering("een onopgeloste AttributeReference ('" + snippet(a.bron()) + "')");
-        List<RolBindingRef> pad = navigatieBindingen.get(a);
+            throw new Refusal("een onopgeloste AttributeReference ('" + snippet(a.bron()) + "')");
+        List<RolBindingRef> pad = path.get(a);
         if (pad == null) {
             if (a.objecttype() != lez.subject)
-                throw new Weigering("een eigen lezing die " + a.objecttype().naam + " noemt op een " + lez.subject.naam
+                throw new Refusal("een eigen lezing die " + a.objecttype().naam + " noemt op een " + lez.subject.naam
                         + " ('" + snippet(a.bron()) + "', WF-053)");
-            return lez.eigen(lid(lez.subject, a.attribuut(), false));
+            return lez.own(member(lez.subject, a.attribuut(), false));
         }
-        Pad p = pad(lez.subject, pad, a.objecttype(), "de lezing '" + snippet(a.bron()) + "'");
-        return lez.genavigeerd(p, lid(p.bereikt(), a.attribuut(), false));
+        Path p = pad(lez.subject, pad, a.objecttype(), "de lezing '" + snippet(a.bron()) + "'");
+        return lez.navigated(p, member(p.reaches(), a.attribuut(), false));
     }
 
     // ---------------- conditions ----------------
@@ -4555,25 +4555,25 @@ public final class TmsTranspiler {
     /** The condition {@code c} as a term whose value is a truth value ({@link Term}), with the reads it needs bound in
      *  {@code lez}. Every condition node is named here, so a node the IR records gain later fails to compile until it
      *  is decided whether this branch reads it. */
-    private Term voorwaarde(Conditie c, Lezingen lez) {
+    private Term voorwaarde(Conditie c, Reads lez) {
         return switch (c) {
-            case Conditie.Kenmerk k -> kenmerkcheck(k, lez);
-            case Conditie.Samengesteld s -> samengesteld(s, lez);
-            case Conditie.Vergelijking v -> vergelijking(v, lez);
-            case Conditie.Predicaat p -> predicaat(p, lez);
-            case Conditie.Periode p -> tijdvenster(p, lez);
-            case Conditie.Kwantorvouw q -> kwantorvouw(q, lez);
-            case Conditie.Rollidmaatschap rol -> rolcontrole(rol, lez);
+            case Conditie.Kenmerk k -> characteristicCheck(k, lez);
+            case Conditie.Samengesteld s -> compound(s, lez);
+            case Conditie.Vergelijking v -> comparison(v, lez);
+            case Conditie.Predicaat p -> predicate(p, lez);
+            case Conditie.Periode p -> timeWindow(p, lez);
+            case Conditie.Kwantorvouw q -> quantifierFold(q, lez);
+            case Conditie.Rollidmaatschap rol -> roleCheck(rol, lez);
             // the v0 far-side record, which the loader no longer makes: since L2 a role check is one node (IR-SPEC
             // ch. 4.5), so only a hand-built model reaches this
-            case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("VerreRollidmaatschap", c, "de verre rolcontrole"
+            case Conditie.VerreRollidmaatschap rol -> throw notRead("VerreRollidmaatschap", c, "de verre rolcontrole"
                     + " van v0, die sinds L2 de ene knoop RoleMembership is (IR-SPEC ch. 4.5) en die de lader niet maakt");
-            case Conditie.Regelversie rv -> kanaallezing(rv, lez);
+            case Conditie.Regelversie rv -> channelRead(rv, lez);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
             // reaches it, so a composite that settles before it reads it plays
             case Conditie.Onopgelost o -> {
-                lez.markeerFalen();
-                yield new Term.Faal(Rekenfout.ONOPGELOSTE_VOORWAARDE, bron(o.bron()));
+                lez.markFail();
+                yield new Term.Fail(Rekenfout.UNRESOLVED_CONDITION, bron(o.bron()));
             }
         };
     }
@@ -4584,53 +4584,53 @@ public final class TmsTranspiler {
      * source wrote "tot en met" ({@code toInclusive}), an absent bound open. An unset evaluation date never matches, nor
      * does a leeg bound; neither is a fault. Both bounds are read, {@code from} before {@code to}, before the date decides
      * (ch. 5.11). A bound is a date literal or the subject's own scalar date attribute (WF-111), read per subject, also
-     * where another rule derives it; any other bound is refused by name ({@link Vensterpositie#GRENSVORM}). On a
+     * where another rule derives it; any other bound is refused by name ({@link WindowPosition#BOUND_FORM}). On a
      * time-dependent target the window would clip the timeline instead, and such a target is refused before this
-     * ({@link #lid}).
+     * ({@link #member}).
      */
-    private Term tijdvenster(Conditie.Periode p, Lezingen lez) {
+    private Term timeWindow(Conditie.Periode p, Reads lez) {
         if (p.vanaf() == null && p.tot() == null)
-            throw new Weigering("een periodevenster zonder grens ('" + snippet(p) + "'): er is geen venster om op te"
+            throw new Refusal("een periodevenster zonder grens ('" + snippet(p) + "'): er is geen venster om op te"
                     + " poorten");
-        for (Expr grens : java.util.Arrays.asList(p.vanaf(), p.tot()))
-            if (grens != null && !Vensterpositie.grensLowerbaar(grens, lez.subject, navigatieBindingen::containsKey))
-                throw new Weigering(Vensterpositie.GRENSVORM + ": " + snippet(p));
-        Term vanaf = p.vanaf() == null ? null : waarde(p.vanaf(), lez);
-        Term tot = p.tot() == null ? null : waarde(p.tot(), lez);
-        int datum = lez.rekendatum();
+        for (Expr bound : java.util.Arrays.asList(p.vanaf(), p.tot()))
+            if (bound != null && !WindowPosition.boundLowerable(bound, lez.subject, path::containsKey))
+                throw new Refusal(WindowPosition.BOUND_FORM + ": " + snippet(p));
+        Term from = p.vanaf() == null ? null : waarde(p.vanaf(), lez);
+        Term to = p.tot() == null ? null : waarde(p.tot(), lez);
+        int date = lez.rekendatum();
         // an absent bound is open where a leeg one never matches, so whether the window has the bound is a constant
         // of its own beside the bound's place
-        return new Term.Aanroep(Functie.TIJDVENSTER, List.of(vanaf == null ? constante(null) : vanaf,
-                constante(vanaf != null), tot == null ? constante(null) : tot, constante(tot != null),
-                constante(p.totInclusief()), new Term.Lees(datum, null)), bron(p.bron()));
+        return new Term.Call(Aggregation.TIME_WINDOW, List.of(from == null ? constant(null) : from,
+                constant(from != null), to == null ? constant(null) : to, constant(to != null),
+                constant(p.totInclusief()), new Term.SlotValue(date, null)), bron(p.bron()));
     }
 
-    private static Weigering nietGelezen(String vorm, Conditie c, String reden) {
-        return new Weigering("een " + vorm + " in de voorwaarde ('" + snippet(c) + "'): " + reden);
+    private static Refusal notRead(String vorm, Conditie c, String reden) {
+        return new Refusal("een " + vorm + " in de voorwaarde ('" + snippet(c) + "'): " + reden);
     }
 
     /** A characteristic check: of the subject, a bound truth value, complemented where the check is negated; over a
      *  role, the reached object's, and a check over an absent link holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8
      *  rule 3). The standings are total, so no negation is needed here. Under the whole-period qualifier the check
-     *  folds the characteristic's true periods instead ({@link #geheelPeriodeKenmerk}). */
-    private Term kenmerkcheck(Conditie.Kenmerk k, Lezingen lez) {
+     *  folds the characteristic's true periods instead ({@link #wholePeriodCharacteristicCheck}). */
+    private Term characteristicCheck(Conditie.Kenmerk k, Reads lez) {
         // WF-109: the host is satisfied extensionally; a host the subject is no instance of names another object, which
         // a rule condition does not bind
-        if (!Gastheer.hostOp(k, lez.subject))
-            throw new Weigering("een CharacteristicCheck met een host die het onderwerp niet is ('" + snippet(k) + "')");
-        if (k.periode() != null) return geheelPeriodeKenmerk(k, lez);
-        boolean gewenst = !k.negatie();
-        List<RolBindingRef> nav = navigatieBindingen.get(k);
+        if (!Host.hostOp(k, lez.subject))
+            throw new Refusal("een CharacteristicCheck met een host die het onderwerp niet is ('" + snippet(k) + "')");
+        if (k.periode() != null) return wholePeriodCharacteristicCheck(k, lez);
+        boolean desired = !k.negatie();
+        List<RolBindingRef> nav = path.get(k);
         if (nav == null) {
             if (k.navigatie() != null)
-                throw new Weigering("een CharacteristicCheck met een navigatie zonder binding ('" + snippet(k) + "')");
-            int i = lez.eigen(lid(lez.subject, k.kenmerk(), true));
-            return new Term.Aanroep(Functie.KENMERK, List.of(new Term.Lees(i, null), constante(gewenst)),
+                throw new Refusal("een CharacteristicCheck met een navigatie zonder binding ('" + snippet(k) + "')");
+            int i = lez.own(member(lez.subject, k.kenmerk(), true));
+            return new Term.Call(Aggregation.KENMERK, List.of(new Term.SlotValue(i, null), constant(desired)),
                     bron(k.bron()));
         }
-        Pad p = pad(lez.subject, nav, null, "de kenmerkcheck '" + snippet(k) + "'");
-        int i = lez.genavigeerd(p, lid(p.bereikt(), k.kenmerk(), true));
-        return new Term.Aanroep(Functie.KENMERK_LANGS_PAD, List.of(new Term.Lees(i, null), constante(gewenst)),
+        Path p = pad(lez.subject, nav, null, "de kenmerkcheck '" + snippet(k) + "'");
+        int i = lez.navigated(p, member(p.reaches(), k.kenmerk(), true));
+        return new Term.Call(Aggregation.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(new Term.SlotValue(i, null), constant(desired)),
                 bron(k.bron()));
     }
 
@@ -4638,33 +4638,33 @@ public final class TmsTranspiler {
 
     /**
      * A characteristic check under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the characteristic's
-     * true periods cover every day of every calendar year or month they touch ({@link #geheelPeriode}). The periods are
+     * true periods cover every day of every calendar year or month they touch ({@link #wholePeriod}). The periods are
      * those of the subject or of the object a path of to-one roles reaches, bound as a timeline; where a link on the
      * path is absent the timeline is null, which touches no bucket and passes, as a characteristic without periods does,
      * where the unqualified check over an absent link holds in neither polarity. No executor writes a characteristic on
      * a timeline (ch. 3.11), so its periods are input. Refused by name: the negation inside the qualifier
      * ("gedurende het gehele jaar niet …"), a per-day complement of the periods (ch. 3.12), on both branches.
      */
-    private Term geheelPeriodeKenmerk(Conditie.Kenmerk k, Lezingen lez) {
-        String wat = "een CharacteristicCheck met wholePeriod ('" + snippet(k) + "')";
+    private Term wholePeriodCharacteristicCheck(Conditie.Kenmerk k, Reads lez) {
+        String description = "een CharacteristicCheck met wholePeriod ('" + snippet(k) + "')";
         if (k.negatie())
-            throw new Weigering(wat + " met de ontkenning binnen de kwalificatie: " + NOG_NIET + ", zoals de andere twee"
+            throw new Refusal(description + " met de ontkenning binnen de kwalificatie: " + STILL_NOT + ", zoals de andere twee"
                     + " takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen golden met cases heeft haar");
-        List<RolBindingRef> nav = navigatieBindingen.get(k);
+        List<RolBindingRef> nav = path.get(k);
         if (nav == null) {
-            if (k.navigatie() != null) throw new Weigering(wat + " met een navigatie zonder binding");
-            return geheelPeriode(k.periode(), new Term.Lees(lez.tijdlijn(tijdlid(lez.subject, k.kenmerk(), true, wat)),
-                    null), TOETS_KENMERK, null, bron(k.bron()));
+            if (k.navigatie() != null) throw new Refusal(description + " met een navigatie zonder binding");
+            return wholePeriod(k.periode(), new Term.SlotValue(lez.timeline(timeMember(lez.subject, k.kenmerk(), true, description)),
+                    null), CHARACTERISTIC_TEST, null, bron(k.bron()));
         }
-        Pad p = pad(lez.subject, nav, null, wat);
-        return geheelPeriode(k.periode(), new Term.Lees(lez.genavigeerd(p, tijdlid(p.bereikt(), k.kenmerk(), true, wat)),
-                null), TOETS_KENMERK, null, bron(k.bron()));
+        Path p = pad(lez.subject, nav, null, description);
+        return wholePeriod(k.periode(), new Term.SlotValue(lez.navigated(p, timeMember(p.reaches(), k.kenmerk(), true, description)),
+                null), CHARACTERISTIC_TEST, null, bron(k.bron()));
     }
 
     /**
      * A comparison under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the subject's own timeline
      * satisfies the comparison with a bound on every day of every calendar year or month it touches
-     * ({@link #geheelPeriode}). One side is an own attribute on a timeline, the other the bound, a value of the rule like
+     * ({@link #wholePeriod}). One side is an own attribute on a timeline, the other the bound, a value of the rule like
      * any other, evaluated whatever the timeline holds, as the reference interpreter evaluates it, and restated into the
      * timeline's unit (ch. 2.6); a leeg bound fails every day, never a fault. Where the timeline stands on the right, the
      * operator is reversed, never negated: on a leeg day the two differ. Refused by name, as the reference interpreter
@@ -4672,103 +4672,103 @@ public final class TmsTranspiler {
      * timeline, a date ordering (ch. 3.12) and a side that is no number. A bound read over a path is a value like any
      * other. The timeline is read before the bound, as the reference interpreter reads them.
      */
-    private Term geheelPeriodeVergelijking(Conditie.Vergelijking v, Lezingen lez) {
-        String wat = "een Comparison met wholePeriod ('" + snippet(v) + "')";
-        for (Expr kant : java.util.Arrays.asList(v.links(), v.rechts()))
-            if (kant instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a) && a.objecttype() != null
-                    && a.attribuut() != null && gedeclareerd(a.objecttype(), a.attribuut(), false).tijd() != null)
-                throw new Weigering(wat + " over een tijdlijn langs een pad ('" + snippet(a.bron()) + "'): de"
+    private Term wholePeriodComparison(Conditie.Vergelijking v, Reads lez) {
+        String description = "een Comparison met wholePeriod ('" + snippet(v) + "')";
+        for (Expr side : java.util.Arrays.asList(v.links(), v.rechts()))
+            if (side instanceof Expr.AttribuutRef a && path.containsKey(a) && a.objecttype() != null
+                    && a.attribuut() != null && declared(a.objecttype(), a.attribuut(), false).time() != null)
+                throw new Refusal(description + " over een tijdlijn langs een pad ('" + snippet(a.bron()) + "'): de"
                         + " referentie-interpreter vouwt alleen een eigen tijdsafhankelijk attribuut van het onderwerp"
                         + " (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
-        boolean links = eigenTijdlijn(v.links(), lez), rechts = eigenTijdlijn(v.rechts(), lez);
-        if (links == rechts)
-            throw new Weigering(wat + (links ? " tussen twee tijdlijnen" : " zonder eigen tijdsafhankelijk attribuut aan"
+        boolean left = ownTimeline(v.links(), lez), right = ownTimeline(v.rechts(), lez);
+        if (left == right)
+            throw new Refusal(description + (left ? " tussen twee tijdlijnen" : " zonder eigen tijdsafhankelijk attribuut aan"
                     + " één kant") + ": de vouw toetst één tijdlijn van het onderwerp tegen een grens (RUNTIME-SEMANTICS"
                     + " ch. 3.9)");
-        Expr.AttribuutRef tijd = (Expr.AttribuutRef) (links ? v.links() : v.rechts());
-        Expr grensExpr = links ? v.rechts() : v.links();
-        Integer toets = Tijdrekening.toets(links ? v.op() : Operatoren.omkeren(v.op()));
-        if (toets == null)
-            throw new Weigering(wat + " met een datumvergelijking: een datum over een gehele periode heeft geen lezing"
+        Expr.AttribuutRef time = (Expr.AttribuutRef) (left ? v.links() : v.rechts());
+        Expr boundExpr = left ? v.rechts() : v.links();
+        Integer testTerm = Tijdrekening.toets(left ? v.op() : Operators.reverse(v.op()));
+        if (testTerm == null)
+            throw new Refusal(description + " met een datumvergelijking: een datum over een gehele periode heeft geen lezing"
                     + " (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
-        Lid lid = tijdlid(lez.subject, tijd.attribuut(), false, wat);
-        if (!lid.datatype().isGetalachtig() || !eff.typeVan(grensExpr).isGetalachtig())
-            throw new Weigering(wat + " die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal"
+        Member member = timeMember(lez.subject, time.attribuut(), false, description);
+        if (!member.datatype().isGetalachtig() || !eff.typeOf(boundExpr).isGetalachtig())
+            throw new Refusal(description + " die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal"
                     + " (RUNTIME-SEMANTICS ch. 3.9)");
-        int tijdlijn = lez.tijdlijn(lid);
-        Term grens = herschaald(waarde(grensExpr, lez), eff.eenheidVan(grensExpr), eff.eenheidVan(tijd),
+        int timeline = lez.timeline(member);
+        Term bound = rescaled(waarde(boundExpr, lez), eff.unitOf(boundExpr), eff.unitOf(time),
                 "een §8.2 tijdlijngrens");
-        return geheelPeriode(v.periode(), volledigeTijdlijn(tijdlijn, lid, null, lez, bron(tijd.bron())), toets, grens,
+        return wholePeriod(v.periode(), fullTimeline(timeline, member, null, lez, bron(time.bron())), testTerm, bound,
                 bron(v.bron()));
     }
 
     /**
      * The leeg or the gevuld test under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the timeline of an
      * attribute reads leeg, or a value, on every day of every calendar year or month in which it reads a value
-     * ({@link #geheelPeriode}), the attribute the subject's own or that of the object a path of to-one roles reaches,
+     * ({@link #wholePeriod}), the attribute the subject's own or that of the object a path of to-one roles reaches,
      * whose absent link gives the null timeline, which passes. The inner negation is per day, so a negated test is its
      * sister test; the loader already writes it so. A test of another kind and an operand that is no attribute on a
      * timeline are refused by name (the loader refuses a parameter as the operand, in the sentence of the other two
      * executors).
      */
-    private Term geheelPeriodePredicaat(Conditie.Predicaat p, Lezingen lez) {
-        String wat = "een Predicate met wholePeriod ('" + snippet(p) + "')";
-        boolean gevuld = switch (p.soort()) {
+    private Term wholePeriodPredicate(Conditie.Predicaat p, Reads lez) {
+        String description = "een Predicate met wholePeriod ('" + snippet(p) + "')";
+        boolean filled = switch (p.soort()) {
             case LEEG -> p.negatie();
             case GEVULD -> !p.negatie();
-            default -> throw new Weigering(wat + " van de soort " + Spelling.PREDICATE_KIND.spelling(p.soort()) + ": alleen"
+            default -> throw new Refusal(description + " van de soort " + Spelling.PREDICATE_KIND.spelling(p.soort()) + ": alleen"
                     + " de leeg- en de gevuldtoets hebben een lezing onder de kwalificatie (RUNTIME-SEMANTICS ch. 3.9)");
         };
         if (!(p.operand() instanceof Expr.AttribuutRef a) || a.objecttype() == null || a.attribuut() == null)
-            throw new Weigering(wat + " over iets anders dan een attribuut: de vouw leest de tijdlijn van een"
+            throw new Refusal(description + " over iets anders dan een attribuut: de vouw leest de tijdlijn van een"
                     + " tijdsafhankelijk attribuut (RUNTIME-SEMANTICS ch. 3.9)");
-        int toets = gevuld ? TOETS_GEVULD : TOETS_LEEG;
-        List<RolBindingRef> pad = navigatieBindingen.get(a);
+        int testTerm = filled ? FILLED_TEST : TEST_EMPTY;
+        List<RolBindingRef> pad = path.get(a);
         if (pad == null) {
             if (a.objecttype() != lez.subject)
-                throw new Weigering(wat + " over een eigen lezing die " + a.objecttype().naam + " noemt op een "
+                throw new Refusal(description + " over een eigen lezing die " + a.objecttype().naam + " noemt op een "
                         + lez.subject.naam + " (WF-053)");
-            Lid lid = tijdlid(lez.subject, a.attribuut(), false, wat);
-            return geheelPeriode(p.periode(), volledigeTijdlijn(lez.tijdlijn(lid), lid, null, lez, bron(a.bron())),
-                    toets, null, bron(p.bron()));
+            Member member = timeMember(lez.subject, a.attribuut(), false, description);
+            return wholePeriod(p.periode(), fullTimeline(lez.timeline(member), member, null, lez, bron(a.bron())),
+                    testTerm, null, bron(p.bron()));
         }
-        Pad q = pad(lez.subject, pad, a.objecttype(), wat);
-        Lid lid = tijdlid(q.bereikt(), a.attribuut(), false, wat);
-        return geheelPeriode(p.periode(), volledigeTijdlijn(lez.genavigeerd(q, lid), lid, q, lez, bron(a.bron())),
-                toets, null, bron(p.bron()));
+        Path q = pad(lez.subject, pad, a.objecttype(), description);
+        Member member = timeMember(q.reaches(), a.attribuut(), false, description);
+        return wholePeriod(p.periode(), fullTimeline(lez.navigated(q, member), member, q, lez, bron(a.bron())),
+                testTerm, null, bron(p.bron()));
     }
 
     /**
-     * The timeline of the attribute {@code lid} bound at slot {@code tijdlijn}, which the whole-period fold reads whole,
-     * or the fault where the case gives its input as the asOfDate-bucket scalar ({@link Emmerscalair},
-     * {@link Functie#VOLLEDIG}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
+     * The timeline of the attribute {@code lid} bound at slot {@code timeline}, which the whole-period fold reads whole,
+     * or the fault where the case gives its input as the asOfDate-bucket scalar ({@link BucketScalar},
+     * {@link Aggregation#COMPLETE}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
      * guess. The fault names the object by the subject of the rule, through the roles of {@code pad} where the attribute
      * is read over one ("the werf of "S1""). Registers that the rule's evaluation can fault. The reference interpreter
      * and the ASP backend read such an input as no timeline, which passes (measured 2026-10-09).
      */
-    private static Term volledigeTijdlijn(int tijdlijn, Lid lid, Pad pad, Lezingen lez, String bron) {
-        int onderwerp = lez.lid();
-        lez.markeerFalen();
-        StringBuilder langs = new StringBuilder();
-        if (pad != null) for (int i = pad.rollen().size() - 1; i >= 0; i--)
-            langs.append("the ").append(pad.rollen().get(i)).append(" of ");
-        String voor = "the whole-period qualifier over \"" + lid.naam() + "\" needs the full timeline; " + langs;
-        return volledig(tijdlijn, voor, onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", bron);
+    private static Term fullTimeline(int timeline, Member member, Path pad, Reads lez, String bron) {
+        int onderwerp = lez.member();
+        lez.markFail();
+        StringBuilder along = new StringBuilder();
+        if (pad != null) for (int i = pad.roles().size() - 1; i >= 0; i--)
+            along.append("the ").append(pad.roles().get(i)).append(" of ");
+        String before = "the whole-period qualifier over \"" + member.naam() + "\" needs the full timeline; " + along;
+        return complete(timeline, before, onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", bron);
     }
 
     /** Whether {@code e} reads an attribute on a timeline of this rule's subject itself: an attribute reference without
      *  a path, naming the subject's type, whose declaration on that type's chain lies on a timeline. */
-    private boolean eigenTijdlijn(Expr e, Lezingen lez) {
+    private boolean ownTimeline(Expr e, Reads lez) {
         return e instanceof Expr.AttribuutRef a && a.objecttype() == lez.subject && a.attribuut() != null
-                && !navigatieBindingen.containsKey(a) && gedeclareerd(lez.subject, a.attribuut(), false).tijd() != null;
+                && !path.containsKey(a) && declared(lez.subject, a.attribuut(), false).time() != null;
     }
 
     /** The tests of {@code rsGeheelPeriode}, by its own codes: a comparison takes the code {@link Tijdrekening#toets}
      *  gives its operator. */
-    private static final int TOETS_GEVULD = 6, TOETS_KENMERK = 7, TOETS_LEEG = 8;
+    private static final int FILLED_TEST = 6, CHARACTERISTIC_TEST = 7, TEST_EMPTY = 8;
 
     /**
-     * The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) over the timeline bound at {@code tijdlijn}, as
+     * The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) over the timeline bound at {@code timeline}, as
      * the runtime folds it ({@code rsGeheelPeriode}): for every calendar year or month the
      * timeline touches, the days on which the test holds must be all the days of that bucket. The grid is the
      * qualifier's own, "het gehele jaar" or "de gehele maand", never the member's grid nor the session's, so the fold
@@ -4777,13 +4777,13 @@ public final class TmsTranspiler {
      * so the qualifier's own negation ("niet gedurende …"), which complements the folded verdict, fails on them. The
      * bound of a comparison is read as a decimal ({@code toBd}), after the timeline.
      * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults
-     * ({@link #volledigeTijdlijn}); a characteristic, whose input is its true periods, reads its timeline as it is.
+     * ({@link #fullTimeline}); a characteristic, whose input is its true periods, reads its timeline as it is.
      * {@code grens} is null where the test has no bound.
      */
-    private static Term geheelPeriode(Conditie.GeheelPeriode periode, Term tijdlijn, int toets, Term grens,
+    private static Term wholePeriod(Conditie.GeheelPeriode period, Term timeline, int testTerm, Term bound,
                                       String bron) {
-        return new Term.Aanroep(Functie.GEHEEL_PERIODE, List.of(tijdlijn, grens == null ? constante(null) : grens,
-                constante(periode.jaar() ? "JAAR" : "MAAND"), constante(toets), constante(periode.niet())), bron);
+        return new Term.Call(Aggregation.WHOLE_PERIOD, List.of(timeline, bound == null ? constant(null) : bound,
+                constant(period.jaar() ? "JAAR" : "MAAND"), constant(testTerm), constant(period.niet())), bron);
     }
 
     /**
@@ -4791,62 +4791,62 @@ public final class TmsTranspiler {
      * the role the check names and, where it names a counterpart type, an instance of that type at the other end, a
      * class test that a subtype passes; negated, whether no such link exists. An existence question, never a count and
      * never a pick, bound as a value the test reads, so the check stands in a composite as any condition does. A
-     * relation a form creates is read over its {@link Koppeling} facts, which its creations state while the session
+     * relation a form creates is read over its {@link RelationLink} facts, which its creations state while the session
      * fires and which the input's links insert logically; any other relation is input and is read where the bean model
-     * stores it ({@link FactModelGenerator#lidmaatschapsopslag}): a to-one other role is the subject's own reference
+     * stores it ({@link FactModelGenerator#membershipOpslag}): a to-one other role is the subject's own reference
      * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
      * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
-     * refused in the sentence of {@code FactModelGenerator.geenReferentieveldReden}, on both branches.
+     * refused in the sentence of {@code FactModelGenerator.noReferenceFieldReason}, on both branches.
      */
-    private Term rolcontrole(Conditie.Rollidmaatschap r, Lezingen lez) {
-        RolBindingRef rb = rolBindingen.get(r);
-        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
-        if (paar == null)
-            throw nietGelezen("RoleMembership", r, "de binding (" + (rb == null ? "geen" : rb.feittype() + ", " + rb.rol())
+    private Term roleCheck(Conditie.Rollidmaatschap r, Reads lez) {
+        RolBindingRef rb = roleBindings.get(r);
+        RegelSpraakModel.Rol[] pair = FactModelGenerator.boundRolePair(model, rb);
+        if (pair == null)
+            throw notRead("RoleMembership", r, "de binding (" + (rb == null ? "geen" : rb.feittype() + ", " + rb.rol())
                     + ") noemt geen gedeclareerde rol");
-        Objecttype tegenpartij = dev.uchar.regelspraak.loader.IrLoader.tegenpartij(r);
-        Class<?> klasse = tegenpartij == null ? null : bonenklasse(tegenpartij);
-        boolean ontkend = r.negatie();
-        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype()))) {
+        Objecttype counterpart = dev.uchar.regelspraak.loader.IrLoader.counterpart(r);
+        Class<?> javaClass = counterpart == null ? null : beanClass(counterpart);
+        boolean negated = r.negatie();
+        if (rb.feittype() != null && createdRelations.contains(Namen.norm(rb.feittype()))) {
             RegelSpraakModel.Feittype ft = feittype(rb.feittype());
             if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-                throw nietGelezen("RoleMembership", r, "over de gecreëerde relatie '" + rb.feittype() + "', die geen"
-                        + " relatie van twee rollen is: " + NOG_NIET);
-            boolean onderwerpIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(paar[0].naam()));
-            int i = lez.rolkoppelingen(Namen.norm(ft.naam), onderwerpIsEerste, klasse);
-            return new Term.Aanroep(Functie.ROLAANTAL, List.of(new Term.Lees(i, null), constante(ontkend)),
+                throw notRead("RoleMembership", r, "over de gecreëerde relatie '" + rb.feittype() + "', die geen"
+                        + " relatie van twee rollen is: " + STILL_NOT);
+            boolean subjectIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(pair[0].naam()));
+            int i = lez.roleLinks(Namen.norm(ft.naam), subjectIsFirst, javaClass);
+            return new Term.Call(Aggregation.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
                     bron(r.bron()));
         }
-        FactModelGenerator.Lidmaatschapsopslag o = FactModelGenerator.lidmaatschapsopslag(model, rb);
-        if (o.weigering() != null) throw nietGelezen("RoleMembership", r, o.weigering());
+        FactModelGenerator.MembershipOpslag o = FactModelGenerator.membershipOpslag(model, rb);
+        if (o.refusal() != null) throw notRead("RoleMembership", r, o.refusal());
         if (o.opSubject()) {
-            if (!FactModelGenerator.heeftReferentieVeld(model, lez.subject, o.beanveld(), o.ander()))
-                throw nietGelezen("RoleMembership", r, FactModelGenerator.geenReferentieveldReden(model, lez.subject,
-                        o.beanveld(), o.ander()) + " (§13.3.9 opslagrichting)");
-            int i = lez.rolveld(o.beanveld(), klasse);
-            return new Term.Aanroep(Functie.ROLVELD, List.of(new Term.Lees(i, null), constante(ontkend)),
+            if (!FactModelGenerator.hasReferenceField(model, lez.subject, o.beanField(), o.earlierBean()))
+                throw notRead("RoleMembership", r, FactModelGenerator.noReferenceFieldReason(model, lez.subject,
+                        o.beanField(), o.earlierBean()) + " (§13.3.9 opslagrichting)");
+            int i = lez.roleField(o.beanField(), javaClass);
+            return new Term.Call(Aggregation.ROLE_FIELD, List.of(new Term.SlotValue(i, null), constant(negated)),
                     bron(r.bron()));
         }
-        Objecttype vuller = tegenpartij != null ? tegenpartij : o.ander();
-        if (!FactModelGenerator.heeftReferentieVeld(model, vuller, o.beanveld(), lez.subject))
-            throw nietGelezen("RoleMembership", r, FactModelGenerator.geenReferentieveldReden(model, vuller,
-                    o.beanveld(), lez.subject) + " (§13.3.9 opslagrichting)");
-        int i = lez.rolvullers(bonenklasse(vuller), o.beanveld());
-        return new Term.Aanroep(Functie.ROLAANTAL, List.of(new Term.Lees(i, null), constante(ontkend)),
+        Objecttype filler = counterpart != null ? counterpart : o.earlierBean();
+        if (!FactModelGenerator.hasReferenceField(model, filler, o.beanField(), lez.subject))
+            throw notRead("RoleMembership", r, FactModelGenerator.noReferenceFieldReason(model, filler,
+                    o.beanField(), lez.subject) + " (§13.3.9 opslagrichting)");
+        int i = lez.roleFillers(beanClass(filler), o.beanField());
+        return new Term.Call(Aggregation.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
                 bron(r.bron()));
     }
 
     /** A composite folds its members in wire order and stops at the first member after which the verdict stands
      *  (RUNTIME-SEMANTICS ch. 5.10), so a member that would fault, a comparison with a division by zero, is not read
      *  where an earlier member settled the verdict, and the composite faults only where it reads such a member. */
-    private Term samengesteld(Conditie.Samengesteld s, Lezingen lez) {
+    private Term compound(Conditie.Samengesteld s, Reads lez) {
         // a window under GEEN or a counting quantifier has no reading (WF-112), refused in the sentence both other
         // branches give
-        String venster = Vensterpositie.weigering(s);
-        if (venster != null) throw new Weigering(venster + ": " + snippet(s));
-        List<Term> leden = new ArrayList<>();
-        for (Conditie deel : s.onderdelen()) leden.add(voorwaarde(deel, lez));
-        return new Term.Samengesteld(s.kwantor(), s.drempel(), leden, bron(s.bron()));
+        String window = WindowPosition.refusal(s);
+        if (window != null) throw new Refusal(window + ": " + snippet(s));
+        List<Term> members = new ArrayList<>();
+        for (Conditie part : s.onderdelen()) members.add(voorwaarde(part, lez));
+        return new Term.Compound(s.kwantor(), s.drempel(), members, bron(s.bron()));
     }
 
     /**
@@ -4854,113 +4854,113 @@ public final class TmsTranspiler {
      * contributor, a member of the range that passes the {@code filter}, each with the member as the condition's
      * subject, and counted under the quantifier: {@code all} holds where every contributor holds the matrix, {@code none}
      * where none does, the three counting quantifiers on the number that do, and over no contributor all and none hold.
-     * The contributors are an aggregation's ({@link #kwantorbijdragen}): a contribution rule per member that passes the
+     * The contributors are an aggregation's ({@link #quantifierContributions}): a contribution rule per member that passes the
      * filter, with the member's reads of the filter and the matrix bound in its left-hand side, so a member whose derived
      * value changes takes its contribution along, and an accumulate over the contributions in the left-hand side of the
      * rule that reads the fold. Where the matrix can neither fault nor deposit, a contribution carries 1 or 0 for the
      * matrix's verdict and the accumulate counts the contributors and sums the verdicts: the order of the members is then
-     * invisible, and the verdict a call over the count and the sum ({@link Functie#KWANTOROORDEEL}). Where it can, the
+     * invisible, and the verdict a call over the count and the sum ({@link Aggregation#QUANTIFIER_VERDICT}). Where it can, the
      * order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the contributors' order and stops at
      * the first contributor after which the verdict stands, so a contributor it does not reach raises no fault and
-     * deposits nothing. A contribution then carries the matrix's outcome and the member's place ({@link Lidtoets}), the
-     * accumulate collects them, and the evaluation replays that order ({@link Term.Kwantorlezing}). The filter is settled
-     * for every member before the matrix, as for any fold ({@link #gelezenVouw}). The range is one step,
+     * deposits nothing. A contribution then carries the matrix's outcome and the member's place ({@link MemberTest}), the
+     * accumulate collects them, and the evaluation replays that order ({@link Term.QuantifierRead}). The filter is settled
+     * for every member before the matrix, as for any fold ({@link #readFold}). The range is one step,
      * {@code sourceRole}: the loader refuses a multi-step one (WF-108 (c)), and so does this method where a hand-built
      * model carries one.
      */
-    private Term kwantorvouw(Conditie.Kwantorvouw kv, Lezingen lez) {
+    private Term quantifierFold(Conditie.Kwantorvouw kv, Reads lez) {
         // WF-112, in the sentence of Vensterpositie, on both branches: a window in the filter or the test under none
         // or a counting quantifier has no reading
-        String venster = Vensterpositie.weigering(kv);
-        if (venster != null) throw new Weigering(venster + ": " + snippet(kv));
+        String window = WindowPosition.refusal(kv);
+        if (window != null) throw new Refusal(window + ": " + snippet(kv));
         Objecttype elem = kv.elementObjecttype();
-        if (elem == null) throw nietGelezen("QuantifierFold", kv, "zonder opgelost elementtype");
+        if (elem == null) throw notRead("QuantifierFold", kv, "zonder opgelost elementtype");
         if (kv.toets() == null)
-            throw nietGelezen("QuantifierFold", kv, "zonder matrix: een kwantor over geen voorwaarde heeft geen oordeel"
+            throw notRead("QuantifierFold", kv, "zonder matrix: een kwantor over geen voorwaarde heeft geen oordeel"
                     + " (WF-108 (d))");
         if (kv.kwantor() == Conditie.Kwantor.DE)
-            throw nietGelezen("QuantifierFold", kv, "onder de kwantor DE, die één lid noemt en geen verzameling"
+            throw notRead("QuantifierFold", kv, "onder de kwantor DE, die één lid noemt en geen verzameling"
                     + " kwantificeert (WF-108 (a))");
         if (kv.bronRol() == null || !kv.bronPad().isEmpty())
-            throw nietGelezen("QuantifierFold", kv, "zonder bereik van één stap: de lader weigert een bereik van meer"
+            throw notRead("QuantifierFold", kv, "zonder bereik van één stap: de lader weigert een bereik van meer"
                     + " stappen (WF-108 (c))");
         Conditie.Kwantor kw = kv.kwantor();
-        int drempel = kv.drempel();
-        Vouw v = vouwVoor(kv, lez, (sleutel, naam) -> kwantorbijdragen(kv, sleutel, naam, lez.subject, elem));
+        int threshold = kv.drempel();
+        Fold v = foldFor(kv, lez, (sleutel, naam) -> quantifierContributions(kv, sleutel, naam, lez.subject, elem));
         String bron = bron(kv.bron());
-        if (!v.geordend()) {
-            int[] i = lez.vouw(v, Accumulatie.Soort.SOM);
-            return gelezenVouw(v, i, lez, new Term.Aanroep(Functie.KWANTOROORDEEL, List.of(new Term.Lees(i[0], null),
-                    new Term.Lees(i[1], null), constante(kw), constante(drempel)), bron), bron);
+        if (!v.ordered()) {
+            int[] i = lez.fold(v, Accumulation.Kind.SUM);
+            return readFold(v, i, lez, new Term.Call(Aggregation.QUANTIFIER_VERDICT, List.of(new Term.SlotValue(i[0], null),
+                    new Term.SlotValue(i[1], null), constant(kw), constant(threshold)), bron), bron);
         }
-        int[] i = lez.vouw(v, Accumulatie.Soort.LIJST);
-        if (v.lidKanFalen()) lez.markeerFalen();
-        int sonde = v.lidDeponeert() ? lez.sonde() : -1;
-        return gelezenVouw(v, i, lez, new Term.Kwantorlezing(Functie.KWANTORLEZING, new Term.Lees(i[0], null),
-                new Term.Lees(i[1], null), kw, drempel, sonde, bron), bron);
+        int[] i = lez.fold(v, Accumulation.Kind.LIST);
+        if (v.memberCanFail()) lez.markFail();
+        int depositFlag = v.memberDeposits() ? lez.depositFlag() : -1;
+        return readFold(v, i, lez, new Term.QuantifierRead(Aggregation.QUANTIFIER_READ, new Term.SlotValue(i[0], null),
+                new Term.SlotValue(i[1], null), kw, threshold, depositFlag, bron), bron);
     }
 
     /**
      * The contribution rules of the quantifier fold {@code kv} on {@code subject}, planned: one over its range, the
      * fold's subject bound first and the member joined to it, the member's reads of the filter and of the matrix bound,
-     * the filter as the test (with the role {@link Toetsitem.Rol#ZONDER_FOUT} where it can fault), and a consequence
-     * that evaluates the matrix for the member and inserts the member's {@link Bijdrage} logically: 1 or 0 for its
-     * verdict ({@link Gevolg.Inbreng.Oordeel}), or, where the matrix can fault or deposit, its {@link Lidtoets}
-     * ({@link Gevolg.Inbreng.Lidtoets}), with the member's place bound as the filter fault rule binds it
-     * ({@link Bereik#perRoute}) and the rule's probe. Beside it the filter fault rule and the filter deposit rule of a
-     * filter that can fault or deposit, as for any fold ({@link #bijdrageregels}). A made link has no place in the order
+     * the filter as the test (with the role {@link TestItem.Role#ZONDER_FOUT} where it can fault), and a consequence
+     * that evaluates the matrix for the member and inserts the member's {@link Contribution} logically: 1 or 0 for its
+     * verdict ({@link Consequence.Input.Verdict}), or, where the matrix can fault or deposit, its {@link MemberTest}
+     * ({@link Consequence.Input.MemberTest}), with the member's place bound as the filter fault rule binds it
+     * ({@link Range#perRoute}) and the rule's probe. Beside it the filter fault rule and the filter deposit rule of a
+     * filter that can fault or deposit, as for any fold ({@link #contributionRules}). A made link has no place in the order
      * of the members, so a matrix that can fault or deposit over a relation a form creates is refused.
      */
-    private Vouw kwantorbijdragen(Conditie.Kwantorvouw kv, String sleutel, String naam, Objecttype subject,
+    private Fold quantifierContributions(Conditie.Kwantorvouw kv, String sleutel, String naam, Objecttype subject,
                                   Objecttype elem) {
-        String wat = snippet(kv);
-        Bereik bereik = eenstapsbereik(kv.bronRol(), subject, elem, wat);
+        String description = snippet(kv);
+        Range range = oneStepRange(kv.bronRol(), subject, elem, description);
         // the member's reads first and its join after: whether the matrix can fault or deposit decides whether the join
         // binds the member's place
-        Lezingen lez = bijdragelezingen(subject, elem, l -> { });
-        Set<Integer> gelezen = lez.volg();
+        Reads lez = contributionReads(subject, elem, l -> { });
+        Set<Integer> read = lez.follow();
         Term filter = kv.filter() == null ? null : voorwaarde(kv.filter(), lez);
-        boolean filterKanFalen = lez.kanFalen();
+        boolean filterCanFail = lez.canFail();
         lez.stop();
-        Set<Integer> gebruik = lez.volg();
-        int lid = lez.lid();
+        Set<Integer> use = lez.follow();
+        int member = lez.member();
         Term matrix = voorwaarde(kv.toets(), lez);
-        boolean lidKanFalen = lez.kanFalen();
+        boolean memberCanFail = lez.canFail();
         lez.stop();
-        boolean lidDeponeert = deponeert(kv.toets());
-        int sonde = lez.sondeplaats();
-        boolean geordend = lidKanFalen || lidDeponeert;
-        List<Gevolg.Vouwplaats.Stap> plaatsen = new ArrayList<>();
-        if (geordend) {
-            if (kv.bronRol().feittype() != null && gecreeerdeRelaties.contains(Namen.norm(kv.bronRol().feittype())))
-                throw new Weigering("een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over de gecreëerde"
-                        + " relatie '" + kv.bronRol().feittype() + "' ('" + wat + "'): een gemaakte link heeft geen plaats"
+        boolean memberDeposits = deposits(kv.toets());
+        int depositFlag = lez.depositFlagSlot();
+        boolean ordered = memberCanFail || memberDeposits;
+        List<Consequence.FoldPlace.Step> places = new ArrayList<>();
+        if (ordered) {
+            if (kv.bronRol().feittype() != null && createdRelations.contains(Namen.norm(kv.bronRol().feittype())))
+                throw new Refusal("een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over de gecreëerde"
+                        + " relatie '" + kv.bronRol().feittype() + "' ('" + description + "'): een gemaakte link heeft geen plaats"
                         + " in de volgorde van de leden, die bepaalt welk lid de kortsluiting nog bereikt"
-                        + " (RUNTIME-SEMANTICS ch. 3.9a, 5.10); " + NOG_NIET);
-            plaatsen.addAll(bereik.perRoute().apply(lez));
-            for (Gevolg.Vouwplaats.Stap p : plaatsen) {
-                gebruik.add(p.aantal());
-                gebruik.add(p.plaats());
+                        + " (RUNTIME-SEMANTICS ch. 3.9a, 5.10); " + STILL_NOT);
+            places.addAll(range.perRoute().apply(lez));
+            for (Consequence.FoldPlace.Step p : places) {
+                use.add(p.aantal());
+                use.add(p.place());
             }
-        } else bereik.koppel().accept(lez);
-        List<LhsItem> items = lez.plan(voorwaarderol(filterKanFalen), filter, gelezen, kv.filter());
-        Gevolg.Inbreng inbreng = geordend
-                ? new Gevolg.Inbreng.Lidtoets(matrix, sonde, new Gevolg.Vouwplaats(0, plaatsen,
-                        Gevolg.Plaatsreden.KWANTOR))
-                : new Gevolg.Inbreng.Oordeel(matrix);
-        String vormnaam = model.geëmitteerdeRegelNaam(vorm);
-        List<Regelplan> regels = new ArrayList<>();
-        List<Lezingen> lezingen = new ArrayList<>();
-        regels.add(lez.regelplan(vormnaam + ": bijdrage aan " + naam, items, new Gevolg.Bijdrage(VOUWONDERWERP,
-                sleutel, lid, inbreng, List.copyOf(gebruik), lez.grootte(), Gevolg.Invoeging.LOGISCH)));
+        } else range.join().accept(lez);
+        List<LhsItem> items = lez.plan(conditionRole(filterCanFail), filter, read, kv.filter());
+        Consequence.Input input = ordered
+                ? new Consequence.Input.MemberTest(matrix, depositFlag, new Consequence.FoldPlace(0, places,
+                        Consequence.PlaceReason.QUANTIFIER))
+                : new Consequence.Input.Verdict(matrix);
+        String formName = model.geëmitteerdeRegelNaam(vorm);
+        List<RulePlan> rules = new ArrayList<>();
+        List<Reads> lezingen = new ArrayList<>();
+        rules.add(lez.rulePlan(formName + ": bijdrage aan " + naam, items, new Consequence.Contribution(FOLD_SUBJECT,
+                sleutel, member, input, List.copyOf(use), lez.size(), Consequence.Insertion.LOGICAL)));
         lezingen.add(lez);
-        if (filterKanFalen) regels.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem,
-                bereik, 0, kv.filter(), lezingen::add));
-        boolean filterDeponeert = deponeert(kv.filter());
-        if (filterDeponeert) regels.add(filterdeponeerregel(sleutel, vormnaam + ": filterdeponering in " + naam,
-                subject, elem, bereik, kv.filter(), lezingen::add));
-        return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), filterKanFalen, filterDeponeert,
-                lidKanFalen, lidDeponeert);
+        if (filterCanFail) rules.add(filterErrorRule(sleutel, formName + ": filterfout in " + naam, subject, elem,
+                range, 0, kv.filter(), lezingen::add));
+        boolean filterDeposits = deposits(kv.filter());
+        if (filterDeposits) rules.add(filterDepositRule(sleutel, formName + ": filterdeponering in " + naam,
+                subject, elem, range, kv.filter(), lezingen::add));
+        return new Fold(sleutel, List.copyOf(rules), List.copyOf(lezingen), filterCanFail, filterDeposits,
+                memberCanFail, memberDeposits);
     }
 
     /**
@@ -4968,85 +4968,85 @@ public final class TmsTranspiler {
      * numbers through {@code rsAggVergelijk} (an ordering with a leeg operand is onwaar, two leeg numbers are equal,
      * exactly one leeg is unequal; exact where a value is a rational), a percentage being a number in the unit %, the
      * right operand restated into the left one's unit (RUNTIME-SEMANTICS ch. 2.6); dates of one precision through
-     * {@link Rekenhulpen#datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a truth value
-     * through {@link Rekenhulpen#tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated before the right
+     * {@link ComputeHelpers#dateCompare} (two leeg dates are not equal); a text, an enumeration label or a truth value
+     * through {@link ComputeHelpers#textEqual}, an enumeration up to its normalised label. The left operand is evaluated before the right
      * one (ch. 5.11). Two sides whose types allow no comparison are refused. Under the whole-period qualifier the
-     * comparison folds a timeline instead ({@link #geheelPeriodeVergelijking}).
+     * comparison folds a timeline instead ({@link #wholePeriodComparison}).
      */
-    private Term vergelijking(Conditie.Vergelijking v, Lezingen lez) {
-        if (v.periode() != null) return geheelPeriodeVergelijking(v, lez);
-        Datatype lt = eff.typeVan(v.links()), rt = eff.typeVan(v.rechts());
+    private Term comparison(Conditie.Vergelijking v, Reads lez) {
+        if (v.periode() != null) return wholePeriodComparison(v, lez);
+        Datatype lt = eff.typeOf(v.links()), rt = eff.typeOf(v.rechts());
         Conditie.Operator op = v.op();
-        Term linkerterm = waarde(v.links(), lez), rechterterm = waarde(v.rechts(), lez);
+        Term leftTerm = waarde(v.links(), lez), rightTerm = waarde(v.rechts(), lez);
         String bron = bron(v.bron());
-        if (lt.isGetalachtig() && rt.isGetalachtig() && !isDatumOp(op)) {
-            Term rechts = herschaald(rechterterm, eff.eenheidVan(v.rechts()), eff.eenheidVan(v.links()),
+        if (lt.isGetalachtig() && rt.isGetalachtig() && !isDateOperator(op)) {
+            Term right = rescaled(rightTerm, eff.unitOf(v.rechts()), eff.unitOf(v.links()),
                     "een §5.1 vergelijking");
-            return new Term.Aanroep(Functie.RS_AGG_VERGELIJK, List.of(linkerterm, rechts,
-                    constante(Operatoren.symbool(op))), bron);
+            return new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(leftTerm, right,
+                    constant(Operators.symbol(op))), bron);
         }
-        if (lt.isDatum() && rt.isDatum() && (isDatumOp(op) || op == Conditie.Operator.GELIJK
+        if (lt.isDatum() && rt.isDatum() && (isDateOperator(op) || op == Conditie.Operator.GELIJK
                 || op == Conditie.Operator.ONGELIJK)) {
-            if (!zelfdeDatumsoort(lt, rt))
-                throw new Weigering("een Comparison van een datum met een datum-tijd ('" + snippet(v) + "', §5.3 Tabel 36)");
-            return new Term.Aanroep(Functie.DATUM_VERGELIJK, List.of(linkerterm, rechterterm, constante(op)), bron);
+            if (!sameDateKind(lt, rt))
+                throw new Refusal("een Comparison van een datum met een datum-tijd ('" + snippet(v) + "', §5.3 Tabel 36)");
+            return new Term.Call(Aggregation.DATE_COMPARE, List.of(leftTerm, rightTerm, constant(op)), bron);
         }
-        if ((op == Conditie.Operator.GELIJK || op == Conditie.Operator.ONGELIJK) && gelijkheidstype(lt)
-                && gelijkheidstype(rt) && lt.isBoolean() == rt.isBoolean()) {
-            boolean enumeratie = lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie;
-            Term links = enumeratie ? enumnaam(linkerterm) : linkerterm;
-            Term rechts = enumeratie ? enumnaam(rechterterm) : rechterterm;
-            return new Term.Aanroep(Functie.TEKST_GELIJK, List.of(links, rechts,
-                    constante(op == Conditie.Operator.GELIJK)), bron);
+        if ((op == Conditie.Operator.GELIJK || op == Conditie.Operator.ONGELIJK) && equalityType(lt)
+                && equalityType(rt) && lt.isBoolean() == rt.isBoolean()) {
+            boolean enumeration = lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie;
+            Term left = enumeration ? enumName(leftTerm) : leftTerm;
+            Term right = enumeration ? enumName(rightTerm) : rightTerm;
+            return new Term.Call(Aggregation.TEXT_EQUAL, List.of(left, right,
+                    constant(op == Conditie.Operator.GELIJK)), bron);
         }
-        throw new Weigering("een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typenaam(lt) + " en "
-                + typenaam(rt) + " ('" + snippet(v) + "'): de typen van de twee kanten laten deze vergelijking niet toe"
+        throw new Refusal("een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typeName(lt) + " en "
+                + typeName(rt) + " ('" + snippet(v) + "'): de typen van de twee kanten laten deze vergelijking niet toe"
                 + " (RUNTIME-SEMANTICS ch. 1.2)");
     }
 
-    /** {@code t}, an enumeration label or leeg, up to its normalisation ({@link Functie#RS_ENUM_NAAM}); the call has no
+    /** {@code t}, an enumeration label or leeg, up to its normalisation ({@link Aggregation#RS_ENUM_NAME}); the call has no
      *  node of its own in the IR and carries the fragment of the operand it normalises, as a restatement does. */
-    private static Term enumnaam(Term t) {
-        return new Term.Aanroep(Functie.RS_ENUM_NAAM, List.of(t), t.bron());
+    private static Term enumName(Term t) {
+        return new Term.Call(Aggregation.RS_ENUM_NAME, List.of(t), t.bron());
     }
 
-    private static String typenaam(Datatype t) {
+    private static String typeName(Datatype t) {
         return t == null ? "onbekend" : t.getClass().getSimpleName();
     }
 
-    private static boolean gelijkheidstype(Datatype t) {
+    private static boolean equalityType(Datatype t) {
         return t != null && (t.isTekst() || t instanceof Datatype.Enumeratie || t.isBoolean());
     }
 
-    private static boolean isDatumOp(Conditie.Operator op) {
+    private static boolean isDateOperator(Conditie.Operator op) {
         return switch (op) {
             case EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK -> true;
             default -> false;
         };
     }
 
-    private static boolean zelfdeDatumsoort(Datatype a, Datatype b) {
+    private static boolean sameDateKind(Datatype a, Datatype b) {
         if (a instanceof Datatype.DatumTijd) return b instanceof Datatype.DatumTijd;
         return a instanceof Datatype.DatumInDagen && b instanceof Datatype.DatumInDagen;
     }
 
     /** A leeg or gevuld test of a value; a read over an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8 rule 1). The loader
      *  writes a negated test as its sister test. Under the whole-period qualifier the test folds a timeline instead
-     *  ({@link #geheelPeriodePredicaat}). */
-    private Term predicaat(Conditie.Predicaat p, Lezingen lez) {
-        if (p.periode() != null) return geheelPeriodePredicaat(p, lez);
+     *  ({@link #wholePeriodPredicate}). */
+    private Term predicate(Conditie.Predicaat p, Reads lez) {
+        if (p.periode() != null) return wholePeriodPredicate(p, lez);
         switch (p.soort()) {
             case LEEG, GEVULD -> {
                 Term operand = waarde(p.operand(), lez);
-                return new Term.Aanroep(Functie.LEEGTOETS, List.of(operand,
-                        constante(p.soort() == Conditie.Predicaatsoort.LEEG)), bron(p.bron()));
+                return new Term.Call(Aggregation.EMPTY_TEST, List.of(operand,
+                        constant(p.soort() == Conditie.Predicaatsoort.LEEG)), bron(p.bron()));
             }
             case ELFPROEF, NUMERIEK_MET_EXACT -> {
-                return cijferproef(p, lez);
+                return digitTrial(p, lez);
             }
             // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
             // fixpoint (ch. 5.4); inside a day-kind definition the test is the definition's own (dagsoortpredikaat)
-            case DAGSOORT -> throw new Weigering("een Predicate dayKind als voorwaarde ('" + snippet(p) + "'): de"
+            case DAGSOORT -> throw new Refusal("een Predicate dayKind als voorwaarde ('" + snippet(p) + "'): de"
                     + " referentie-interpreter en de ASP-backend weigeren haar met naam buiten een dagsoortdefinitie"
                     + " (RUNTIME-SEMANTICS ch. 3.12, 5.4)");
             default -> throw new IllegalStateException("predicaatsoort " + p.soort());
@@ -5058,17 +5058,17 @@ public final class TmsTranspiler {
      *  passes neither test. The operand is read as any value, in which an absent link over a path of roles is leeg
      *  (RUNTIME-SEMANTICS ch. 5.8, rule 1), so the test cannot tell an absent link from a leeg value there; such an
      *  operand is refused by name. The reference interpreter and the ASP backend do not evaluate these predicates. */
-    private Term cijferproef(Conditie.Predicaat p, Lezingen lez) {
-        if (p.operand() instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a))
-            throw new Weigering("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " over een pad ('"
+    private Term digitTrial(Conditie.Predicaat p, Reads lez) {
+        if (p.operand() instanceof Expr.AttribuutRef a && path.containsKey(a))
+            throw new Refusal("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " over een pad ('"
                     + snippet(p) + "'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
                     + " (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege"
                     + " waarde kan onderscheiden");
         Term operand = waarde(p.operand(), lez);
-        boolean gewenst = !p.negatie();
+        boolean desired = !p.negatie();
         if (p.soort() == Conditie.Predicaatsoort.ELFPROEF)
-            return new Term.Aanroep(Functie.ELFPROEF, List.of(operand, constante(gewenst)), bron(p.bron()));
-        return new Term.Aanroep(Functie.NUMERIEK_MET_EXACT, List.of(operand, constante(p.cijfers()), constante(gewenst)),
+            return new Term.Call(Aggregation.ELEVEN_TEST, List.of(operand, constant(desired)), bron(p.bron()));
+        return new Term.Call(Aggregation.NUMERIEK_MET_EXACT, List.of(operand, constant(p.cijfers()), constant(desired)),
                 bron(p.bron()));
     }
 
@@ -5078,52 +5078,52 @@ public final class TmsTranspiler {
      * The reads of one rule, each bound once in its left-hand side and numbered in the order they are met: a member of
      * the subject that no form writes off the subject's bean pattern, over a path through the reference fields read in
      * the same binding; a derived member of the subject off its standing; a derived member over a path off its
-     * {@link PadStand}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
+     * {@link PathState}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
      * the condition's test and the consequence receive. The standings and path standings a rule reads are registered
-     * with the transpiler only when the rule lowers ({@link #vastleggen}).
+     * with the transpiler only when the rule lowers ({@link #recorder}).
      *
-     * <p>It decides what the rule reads and plans it: a {@link dev.uchar.regelspraak.transpiler.tms.plan.Lezing} per
-     * slot (the plan's record, which the record {@link Lezing} of a read of the fixpoint shadows here), and the items of
+     * <p>It decides what the rule reads and plans it: a {@link dev.uchar.regelspraak.transpiler.tms.plan.Read} per
+     * slot (the plan's record, which the record {@link Read} of a read of the fixpoint shadows here), and the items of
      * the left-hand side in the closed vocabulary of {@code transpiler/tms/plan} ({@link LhsItem}). It builds no
-     * pattern itself: the plan of the rule ({@link #regelplan}) carries every item, and a rendering makes the rule of it.
+     * pattern itself: the plan of the rule ({@link #rulePlan}) carries every item, and a rendering makes the rule of it.
      */
-    private final class Lezingen {
+    private final class Reads {
         final Objecttype subject;
         /** The slots of the value array, as the plan reads them. */
-        private final List<dev.uchar.regelspraak.transpiler.tms.plan.Lezing> slots = new ArrayList<>();
+        private final List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = new ArrayList<>();
         /** The values bound off the subject pattern. */
-        private final List<Binding> onderwerpbindingen = new ArrayList<>();
-        /** The constraints of the subject pattern on the subject bean, which the form sets ({@link #onderwerpAlfa}). */
-        private final List<Alfa> onderwerpalfa = new ArrayList<>();
+        private final List<Binding> subjectBindings = new ArrayList<>();
+        /** The constraints of the subject pattern on the subject bean, which the form sets ({@link #addSubjectAlpha}). */
+        private final List<Alpha> subjectAlpha = new ArrayList<>();
         /** The parameter items of the left-hand side: parameters, the evaluation date, the validity gate, the phase. */
         private final List<LhsItem> parameters = new ArrayList<>();
         /** The standing items of the left-hand side: standings, folds and the other accumulates, channels. */
-        private final List<LhsItem> standen = new ArrayList<>();
+        private final List<LhsItem> states = new ArrayList<>();
         private final Map<String, Integer> index = new LinkedHashMap<>();
-        /** The variables of this rule's slots, so that a read name ({@link #leesnaam}) is one no other slot has. */
-        private final Set<String> namen = new HashSet<>();
-        private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
-        private final Map<String, Padlezing> paden = new LinkedHashMap<>();
-        private final Set<String> kanaalnamen = new LinkedHashSet<>();
+        /** The variables of this rule's slots, so that a read name ({@link #readName}) is one no other slot has. */
+        private final Set<String> names = new HashSet<>();
+        private final Map<ElementSleutel, Member> derived = new LinkedHashMap<>();
+        private final Map<String, PathRead> paths = new LinkedHashMap<>();
+        private final Set<String> channelNames = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
-        private Set<Integer> gebruik;
-        /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault. */
-        private boolean falen;
+        private Set<Integer> use;
+        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault. */
+        private boolean fail;
         /** The planned items before the subject pattern: the pattern of the source of an allocation's recipient rule,
-         *  and of the fold's subject in a contribution rule ({@link #kopPlan}). */
-        private final List<LhsItem> kopplan = new ArrayList<>();
+         *  and of the fold's subject in a contribution rule ({@link #addToHeadPlan}). */
+        private final List<LhsItem> headPlan = new ArrayList<>();
         /** The identity joins of the subject pattern to an object a planned item before it binds
-         *  ({@link #onderwerpJoin}). */
-        private final List<Join> onderwerpjoins = new ArrayList<>();
+         *  ({@link #subjectJoin}). */
+        private final List<Join> subjectJoins = new ArrayList<>();
         /** The other constraints of the subject pattern on such an object: the meeting of the two walks of a fold's
-         *  range of more steps ({@link #onderwerpBeta}). */
-        private final List<Betatoets> onderwerpbetatoetsen = new ArrayList<>();
+         *  range of more steps ({@link #subjectBeta}). */
+        private final List<BetaTest> subjectBetaTests = new ArrayList<>();
         /** The planned items right after the subject pattern: the range of an allocation over a relation a form
          *  creates, and in a contribution rule the intermediates of a range of more steps and the accumulates of the
-         *  member's places ({@link #bereikPlan}). */
-        private final List<LhsItem> bereikplan = new ArrayList<>();
-        /** The folds this rule reads, registered with it ({@link #vastleggen}). */
-        private final List<Vouw> vouwen = new ArrayList<>();
+         *  member's places ({@link #addToRangePlan}). */
+        private final List<LhsItem> rangePlan = new ArrayList<>();
+        /** The folds this rule reads, registered with it ({@link #recorder}). */
+        private final List<Fold> folds = new ArrayList<>();
         /** The binders of the {@code Let}s around the expression being compiled, by normalised name, each to its slot
          *  in the value array ({@link #binder}); a nested {@code Let} of the same name shadows the outer one while its
          *  body compiles (WF-064). */
@@ -5131,672 +5131,672 @@ public final class TmsTranspiler {
         /** In a contribution rule, the binders in scope at its fold, by normalised name: those of the {@code Let}s
          *  around the fold in the rule that reads it, which bind them there, and for a fold in a fold's filter those in
          *  scope at the outer fold as well. This rule binds none of their values; empty in every other rule. */
-        Set<String> buiten = Set.of();
-        /** The slot of the probe of this rule's deposits ({@link #sonde}), -1 while no place that deposits compiled. */
-        private int sonde = -1;
+        Set<String> outside = Set.of();
+        /** The slot of the probe of this rule's deposits ({@link #depositFlag}), -1 while no place that deposits compiled. */
+        private int depositFlag = -1;
 
-        /** The reads of a rule on {@code subject}, which its plan carries ({@link #regelplan}). */
-        Lezingen(Objecttype subject) {
+        /** The reads of a rule on {@code subject}, which its plan carries ({@link #rulePlan}). */
+        Reads(Objecttype subject) {
             this.subject = subject;
         }
 
-        /** The binders in scope where the expression being compiled stands: this rule's own and {@link #buiten}. */
-        Set<String> binderbereik() {
-            if (binders.isEmpty()) return buiten;
-            Set<String> uit = new LinkedHashSet<>(buiten);
-            uit.addAll(binders.keySet());
-            return uit;
+        /** The binders in scope where the expression being compiled stands: this rule's own and {@link #outside}. */
+        Set<String> binderRange() {
+            if (binders.isEmpty()) return outside;
+            Set<String> out = new LinkedHashSet<>(outside);
+            out.addAll(binders.keySet());
+            return out;
         }
 
         /** The subject itself as a bound value, for a consequence that hands on another object beside it. */
-        int lid() {
-            int bekend = bestaand("onderwerp zelf");
-            return bekend >= 0 ? bekend : nieuw(Leessoort.ONDERWERP, "onderwerp zelf", ONDERWERP);
+        int member() {
+            int known = existing("onderwerp zelf");
+            return known >= 0 ? known : recomputed(ReadKind.SUBJECT, "onderwerp zelf", SUBJECT);
         }
 
         /** The left-hand side of the rule after its subject pattern, once its condition and its value are compiled:
          *  the parameter items, the standing items, and the test of {@code voorwaarde} over the values at
-         *  {@code gelezen}, which asks {@code rol} of it ({@link Toetsitem.Rol}); {@link #regelplan} takes them with
-         *  what the form adds after them. A test of deposits takes the probe of this rule ({@link #sondeplaats}). */
-        List<LhsItem> plan(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde) {
-            return plan(rol, toets, gelezen, voorwaarde, List.of());
+         *  {@code read}, which asks {@code rol} of it ({@link TestItem.Role}); {@link #rulePlan} takes them with
+         *  what the form adds after them. A test of deposits takes the probe of this rule ({@link #depositFlagSlot}). */
+        List<LhsItem> plan(TestItem.Role rol, Term testTerm, Set<Integer> read, Conditie voorwaarde) {
+            return plan(rol, testTerm, read, voorwaarde, List.of());
         }
 
-        /** As {@link #plan(Toetsitem.Rol, Term, Set, Conditie)}, with {@code stuur} between the standing items and the
+        /** As {@link #plan(TestItem.Role, Term, Set, Conditie)}, with {@code control} between the standing items and the
          *  test: the guard of a creation, whose ids the analysis draws before the test's, or the control-fact patterns
          *  of a default, so that a default a higher one displaced is not tested at all. */
-        List<LhsItem> plan(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde,
-                           List<LhsItem> stuur) {
-            Toetsitem test = toetsitem(rol, toets, gelezen, voorwaarde);
-            List<LhsItem> uit = new ArrayList<>(parameters);
-            uit.addAll(standen);
-            uit.addAll(stuur);
-            if (test != null) uit.add(test);
-            return uit;
+        List<LhsItem> plan(TestItem.Role rol, Term testTerm, Set<Integer> read, Conditie voorwaarde,
+                           List<LhsItem> control) {
+            TestItem test = testItem(rol, testTerm, read, voorwaarde);
+            List<LhsItem> out = new ArrayList<>(parameters);
+            out.addAll(states);
+            out.addAll(control);
+            if (test != null) out.add(test);
+            return out;
         }
 
-        /** The test of {@code voorwaarde}, compiled into {@code toets}, over the values at {@code gelezen}, asking
+        /** The test of {@code voorwaarde}, compiled into {@code toets}, over the values at {@code read}, asking
          *  {@code rol} of it; null where the rule has no condition. */
-        private Toetsitem toetsitem(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde) {
-            if (toets == null) return null;
-            int[] pos = posities(gelezen);
-            if (pos.length > MAX_LEZINGEN)
-                throw new Weigering("een voorwaarde die " + pos.length + " waarden leest ('" + snippet(voorwaarde)
-                        + "'): de toets van deze tak neemt hoogstens " + MAX_LEZINGEN + " gebonden waarden");
-            return new Toetsitem(id("voorwaarde"), rol, toets, rol == Toetsitem.Rol.DEPONERING ? sonde : -1,
-                    List.copyOf(gelezen), slots.size());
+        private TestItem testItem(TestItem.Role rol, Term testTerm, Set<Integer> read, Conditie voorwaarde) {
+            if (testTerm == null) return null;
+            int[] pos = positions(read);
+            if (pos.length > MAX_READS)
+                throw new Refusal("een voorwaarde die " + pos.length + " waarden leest ('" + snippet(voorwaarde)
+                        + "'): de toets van deze tak neemt hoogstens " + MAX_READS + " gebonden waarden");
+            return new TestItem(id("voorwaarde"), rol, testTerm, rol == TestItem.Role.DEPOSIT ? depositFlag : -1,
+                    List.copyOf(read), slots.size());
         }
 
         /** The plan of this rule, {@code naam}, of the form being lowered: the planned items before the subject
          *  pattern, the subject pattern with its constraints, joins, other constraints and bindings as they stand now,
-         *  the planned items right after it, {@code items} after those, and {@code gevolg}. */
-        Regelplan regelplan(String naam, List<LhsItem> items, Gevolg gevolg) {
-            return regelplan(naam, null, items, gevolg);
+         *  the planned items right after it, {@code items} after those, and {@code consequence}. */
+        RulePlan rulePlan(String naam, List<LhsItem> items, Consequence consequence) {
+            return rulePlan(naam, null, items, consequence);
         }
 
-        /** As {@link #regelplan(String, List, Gevolg)}, for a rule of the agenda group {@code agendagroep}. */
-        Regelplan regelplan(String naam, String agendagroep, List<LhsItem> items, Gevolg gevolg) {
-            List<LhsItem> lhs = new ArrayList<>(kopplan);
-            lhs.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbetatoetsen,
-                    onderwerpbindingen));
-            lhs.addAll(bereikplan);
+        /** As {@link #rulePlan(String, List, Gevolg)}, for a rule of the agenda group {@code agendaGroup}. */
+        RulePlan rulePlan(String naam, String agendaGroup, List<LhsItem> items, Consequence consequence) {
+            List<LhsItem> lhs = new ArrayList<>(headPlan);
+            lhs.add(new Subject(beanClass(subject), SUBJECT, subjectAlpha, subjectJoins, subjectBetaTests,
+                    subjectBindings));
+            lhs.addAll(rangePlan);
             lhs.addAll(items);
-            return new Regelplan(naam, vorm, agendagroep, new Leestabel(slots), zonderOngevuldeSonde(lhs),
-                    zonderOngevuldeSonde(gevolg));
+            return new RulePlan(naam, vorm, agendaGroup, new ReadTable(slots), withoutUnfilledDepositFlag(lhs),
+                    withoutUnfilledDepositFlag(consequence));
         }
 
         /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */
-        String variabele(int slot) {
+        String variable(int slot) {
             String naam = slots.get(slot).naam();
             if (naam == null) throw new IllegalStateException("slot " + slot + " wordt door geen patroon gebonden");
             return naam;
         }
 
         /** Plans {@code item} before the subject pattern. */
-        void kopPlan(LhsItem item) {
-            kopplan.add(item);
+        void addToHeadPlan(LhsItem item) {
+            headPlan.add(item);
         }
 
         /** Plans the identity join {@code j} on the subject pattern, after its constraints. */
-        void onderwerpJoin(Join j) {
-            onderwerpjoins.add(j);
+        void subjectJoin(Join j) {
+            subjectJoins.add(j);
         }
 
         /** Plans the constraint {@code t} between the subject and an object a planned item before it binds on the
          *  subject pattern, after its joins. */
-        void onderwerpBeta(Betatoets t) {
-            onderwerpbetatoetsen.add(t);
+        void subjectBeta(BetaTest t) {
+            subjectBetaTests.add(t);
         }
 
         /** Plans {@code item} right after the subject pattern. */
-        void bereikPlan(LhsItem item) {
-            bereikplan.add(item);
+        void addToRangePlan(LhsItem item) {
+            rangePlan.add(item);
         }
 
         /** The number of slots of the value array so far. */
-        int grootte() {
+        int size() {
             return slots.size();
         }
 
         /** Adds the constraint {@code a} on the subject bean to the subject pattern, after the ones before it. */
-        void onderwerpAlfa(Alfa a) {
-            onderwerpalfa.add(a);
+        void addSubjectAlpha(Alpha a) {
+            subjectAlpha.add(a);
         }
 
         /** The number of the other writers of an initialisation's target that wrote leeg on the subject, bound off an
-         *  accumulate the form plans ({@link TmsTranspiler#initialisatieRegel}). */
-        int legeSchrijvers() {
-            return nieuw(Leessoort.LEGE_SCHRIJVERS, "lege schrijvers", "$lege_schrijvers");
+         *  accumulate the form plans ({@link TmsTranspiler#initialisationRule}). */
+        int emptyWriters() {
+            return recomputed(ReadKind.EMPTY_WRITERS, "lege schrijvers", "$lege_schrijvers");
         }
 
-        Set<Integer> volg() {
-            gebruik = new TreeSet<>();
-            falen = false;
-            return gebruik;
+        Set<Integer> follow() {
+            use = new TreeSet<>();
+            fail = false;
+            return use;
         }
 
-        void stop() { gebruik = null; }
+        void stop() { use = null; }
 
         /** Records that the expression being compiled can raise an evaluation fault. */
-        void markeerFalen() { falen = true; }
+        void markFail() { fail = true; }
 
-        /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault: a condition that
-         *  can is tested with the role {@link Toetsitem.Rol#ZONDER_FOUT}, beside the rule that inserts its fault. */
-        boolean kanFalen() { return falen; }
+        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault: a condition that
+         *  can is tested with the role {@link TestItem.Role#ZONDER_FOUT}, beside the rule that inserts its fault. */
+        boolean canFail() { return fail; }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
          *  standings it needs, and the contribution rules of its folds with what those read. */
-        void vastleggen() {
-            gelezen.putAll(afgeleid);
-            for (Padlezing p : paden.values()) {
-                padlezingen.putIfAbsent(p.sleutel(), p);
-                if (schrijvers.containsKey(p.lid().sleutel()) || tijdlijnattribuut(p.lid()))
-                    gelezen.putIfAbsent(p.lid().sleutel(), p.lid());
+        void recorder() {
+            read.putAll(derived);
+            for (PathRead p : paths.values()) {
+                pathReads.putIfAbsent(p.sleutel(), p);
+                if (writers.containsKey(p.member().sleutel()) || timelineAttribute(p.member()))
+                    read.putIfAbsent(p.member().sleutel(), p.member());
             }
-            kanalen.addAll(kanaalnamen);
-            for (Vouw v : vouwen) {
-                if (bijdrageregels.putIfAbsent(v.sleutel(), v.regels()) == null)
-                    for (Regelplan r : v.regels()) vormVanRegel.put(r.naam(), vorm);
-                for (Lezingen l : v.lezingen()) l.vastleggen();
+            channels.addAll(channelNames);
+            for (Fold v : folds) {
+                if (contributionRules.putIfAbsent(v.sleutel(), v.rules()) == null)
+                    for (RulePlan r : v.rules()) formOfRule.put(r.naam(), vorm);
+                for (Reads l : v.lezingen()) l.recorder();
             }
         }
 
         /**
-         * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Bijdrage}): one
-         * accumulate over them that counts them and, where {@code functie} names a fold, folds their values with it;
-         * where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts on this subject, which
+         * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Contribution}): one
+         * accumulate over them that counts them and, where {@code function} names a fold, folds their values with it;
+         * where the fold's filter can fault, a second accumulate over its {@link FilterError} facts on this subject, which
          * binds the least of them, the first in fold order, or null; where the filter can deposit, an accumulate that
-         * counts its {@link Filterdeponering} facts on this subject; and where a member's value can fault, an
-         * accumulate over its {@link Lidfout} facts on this subject, which binds the least of them in the same way.
+         * counts its {@link FilterDeposit} facts on this subject; and where a member's value can fault, an
+         * accumulate over its {@link MemberError} facts on this subject, which binds the least of them in the same way.
          * Returns the index of the count, that of the folded value, that of the least filter fault, that of the count of
          * filter deposits and that of the least member fault, each -1 without one. An accumulate over no fact still binds
          * a row, through the count, so the rule reads an empty fold, and a fold without a filter fault, a filter deposit
          * or a member fault, as well.
          */
-        int[] vouw(Vouw v, Accumulatie.Soort functie) {
-            vouwen.add(v);
+        int[] fold(Fold v, Accumulation.Kind function) {
+            folds.add(v);
             String sleutel = v.sleutel();
-            int bekend = bestaand("vouw " + sleutel);
-            if (bekend >= 0) return new int[]{bekend, functie == null ? -1 : bestaand("vouwwaarde " + sleutel),
-                    v.kanFalen() ? bestaand("filterfout " + sleutel) : -1,
-                    v.deponeert() ? bestaand("filterdeponering " + sleutel) : -1,
-                    v.waardeKanFalen() ? bestaand("lidfout " + sleutel) : -1};
+            int known = existing("vouw " + sleutel);
+            if (known >= 0) return new int[]{known, function == null ? -1 : existing("vouwwaarde " + sleutel),
+                    v.canFail() ? existing("filterfout " + sleutel) : -1,
+                    v.deposits() ? existing("filterdeponering " + sleutel) : -1,
+                    v.valueCanFail() ? existing("lidfout " + sleutel) : -1};
             String b = "$bijdrage_" + id("vouw");
-            Alfa vanVouw = gelijk(id("vouw"), "vouw", sleutel);
-            Join opOnderwerp = opOnderwerp(id("vouw-onderwerp"));
+            Alpha ofFold = equal(id("vouw"), "fold", sleutel);
+            Join onSubject = onSubject(id("vouw-onderwerp"));
             String aantal = "$aantal_" + id("vouw");
-            int[] uit;
-            if (functie == null) {
-                standen(new Accumulatie(new Patroon(Bijdrage.class, b, List.of(vanVouw), List.of(opOnderwerp), List.of()),
-                        List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal))));
-                uit = new int[]{nieuw(Leessoort.VOUW_AANTAL, "vouw " + sleutel, aantal), -1, -1, -1, -1};
+            int[] out;
+            if (function == null) {
+                states(new Accumulation(new FactPattern(Contribution.class, b, List.of(ofFold), List.of(onSubject), List.of()),
+                        List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, aantal))));
+                out = new int[]{recomputed(ReadKind.FOLD_COUNT, "vouw " + sleutel, aantal), -1, -1, -1, -1};
             } else {
-                String bijdragewaarde = "$bijdragewaarde_" + id("vouw");
-                String uitkomst = "$vouw_" + id("vouw");
-                standen(new Accumulatie(new Patroon(Bijdrage.class, b, List.of(vanVouw), List.of(opOnderwerp),
-                        List.of(Binding.van(bijdragewaarde, Bijdrage.class, "waarde"))),
-                        List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal),
-                                new Accumulatie.Functie(functie, bijdragewaarde, uitkomst))));
-                uit = new int[]{nieuw(Leessoort.VOUW_AANTAL, "vouw " + sleutel, aantal),
-                        nieuw(Leessoort.VOUW_WAARDE, "vouwwaarde " + sleutel, uitkomst), -1, -1, -1};
+                String contributionValue = "$bijdragewaarde_" + id("vouw");
+                String outcome = "$vouw_" + id("vouw");
+                states(new Accumulation(new FactPattern(Contribution.class, b, List.of(ofFold), List.of(onSubject),
+                        List.of(Binding.van(contributionValue, Contribution.class, "waarde"))),
+                        List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, aantal),
+                                new Accumulation.Aggregation(function, contributionValue, outcome))));
+                out = new int[]{recomputed(ReadKind.FOLD_COUNT, "vouw " + sleutel, aantal),
+                        recomputed(ReadKind.FOLDED_VALUE, "vouwwaarde " + sleutel, outcome), -1, -1, -1};
             }
-            if (v.kanFalen()) {
+            if (v.canFail()) {
                 String f = "$filterfout_" + id("vouw");
-                Alfa vanFilter = gelijk(id("filterfout"), "vouw", sleutel);
-                Join filterOpOnderwerp = opOnderwerp(id("filterfout-onderwerp"));
+                Alpha ofFilter = equal(id("filterfout"), "fold", sleutel);
+                Join filterOnSubject = onSubject(id("filterfout-onderwerp"));
                 String fouten = "$filterfouten_" + id("vouw");
                 String eerste = "$eerste_filterfout_" + id("vouw");
-                standen(new Accumulatie(new Patroon(Filterfout.class, f, List.of(vanFilter), List.of(filterOpOnderwerp),
-                        List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, fouten),
-                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, null, eerste))));
-                uit[2] = nieuw(Leessoort.FILTERFOUT, "filterfout " + sleutel, eerste);
+                states(new Accumulation(new FactPattern(FilterError.class, f, List.of(ofFilter), List.of(filterOnSubject),
+                        List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, fouten),
+                        new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, null, eerste))));
+                out[2] = recomputed(ReadKind.FILTER_ERROR, "filterfout " + sleutel, eerste);
             }
-            if (v.deponeert()) {
+            if (v.deposits()) {
                 String d = "$filterdeponering_" + id("vouw");
-                Alfa vanDeponering = gelijk(id("filterdeponering"), "vouw", sleutel);
-                Join deponeringOpOnderwerp = opOnderwerp(id("filterdeponering-onderwerp"));
-                String deponeringen = "$filterdeponeringen_" + id("vouw");
-                standen(new Accumulatie(new Patroon(Filterdeponering.class, d, List.of(vanDeponering),
-                        List.of(deponeringOpOnderwerp), List.of()),
-                        List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, deponeringen))));
-                uit[3] = nieuw(Leessoort.FILTERDEPONERING, "filterdeponering " + sleutel, deponeringen);
+                Alpha ofDeposit = equal(id("filterdeponering"), "fold", sleutel);
+                Join depositOnSubject = onSubject(id("filterdeponering-onderwerp"));
+                String depositCount = "$filterdeponeringen_" + id("vouw");
+                states(new Accumulation(new FactPattern(FilterDeposit.class, d, List.of(ofDeposit),
+                        List.of(depositOnSubject), List.of()),
+                        List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, depositCount))));
+                out[3] = recomputed(ReadKind.FILTER_DEPOSIT, "filterdeponering " + sleutel, depositCount);
             }
-            if (v.waardeKanFalen()) {
+            if (v.valueCanFail()) {
                 String f = "$lidfout_" + id("vouw");
-                Alfa vanLid = gelijk(id("lidfout"), "vouw", sleutel);
-                Join lidOpOnderwerp = opOnderwerp(id("lidfout-onderwerp"));
+                Alpha ofMember = equal(id("lidfout"), "fold", sleutel);
+                Join memberOnSubject = onSubject(id("lidfout-onderwerp"));
                 String fouten = "$lidfouten_" + id("vouw");
                 String eerste = "$eerste_lidfout_" + id("vouw");
-                standen(new Accumulatie(new Patroon(Lidfout.class, f, List.of(vanLid), List.of(lidOpOnderwerp),
-                        List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, fouten),
-                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, null, eerste))));
-                uit[4] = nieuw(Leessoort.LIDFOUT, "lidfout " + sleutel, eerste);
+                states(new Accumulation(new FactPattern(MemberError.class, f, List.of(ofMember), List.of(memberOnSubject),
+                        List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, fouten),
+                        new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, null, eerste))));
+                out[4] = recomputed(ReadKind.MEMBER_ERROR, "lidfout " + sleutel, eerste);
             }
-            return uit;
+            return out;
         }
 
-        /** The session's evaluation date (RUNTIME-SEMANTICS ch. 8.1), bound off its {@link Rekendatum}: one fact for the
+        /** The session's evaluation date (RUNTIME-SEMANTICS ch. 8.1), bound off its {@link EvaluationDate}: one fact for the
          *  whole session, joined to no subject, bound among the parameters; null where the case carries no date. */
         int rekendatum() {
-            int bekend = bestaand("rekendatum");
-            if (bekend >= 0) return bekend;
-            rekendatumNodig();
+            int known = existing("rekendatum");
+            if (known >= 0) return known;
+            evaluationDateNeeded();
             String r = "$rekendatum_" + slots.size();
             String d = "$rekendatumwaarde_" + slots.size();
-            parameters(new Patroon(Rekendatum.class, r, List.of(), List.of(),
-                    List.of(Binding.van(d, Rekendatum.class, "datum"))));
-            return nieuw(Leessoort.REKENDATUM, "rekendatum", d);
+            parameters(new FactPattern(EvaluationDate.class, r, List.of(), List.of(),
+                    List.of(Binding.van(d, EvaluationDate.class, "date"))));
+            return recomputed(ReadKind.REKENDATUM, "rekendatum", d);
         }
 
         /** Gates this rule on the evaluation date (RUNTIME-SEMANTICS ch. 8.2): it matches only where the validity
          *  window {@code g} admits the date, both bounds inclusive and an absent one open (IR-SPEC ch. 3.10), and never
-         *  in a session without a date, where the form faults instead ({@link #geldigheidsfout}). A window that is always
+         *  in a session without a date, where the form faults instead ({@link #validityFault}). A window that is always
          *  valid adds nothing. The date is constant while the session fires, so the gate never changes a match. */
-        Lezingen geldig(Geldigheid g) {
+        Reads valid(Geldigheid g) {
             if (g == null || g.altijd()) return this;
-            rekendatumNodig();
+            evaluationDateNeeded();
             String r = "$geldigheid_" + slots.size();
-            parameters(new Patroon(Rekendatum.class, r, List.of(new Alfa(id("geldig"),
-                    List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.BINNEN, g)))), List.of(), List.of()));
+            parameters(new FactPattern(EvaluationDate.class, r, List.of(new Alpha(id("geldig"),
+                    List.of(new Alpha.FieldTest("date", Alpha.Comparator.WITHIN, g)))), List.of(), List.of()));
             return this;
         }
 
         /** A slot of the value array for the binder of a {@code Let} ({@link TmsTranspiler#let}): no pattern binds it, so
          *  it is no position a condition reads or a consequence binds, and the array is sized past it. */
         int binder() {
-            return ongebonden(Leessoort.BINDER);
+            return unbound(ReadKind.BINDER);
         }
 
-        /** The slot of the probe of this rule's deposits ({@link Sonde}), made at the first place that deposits; like a
+        /** The slot of the probe of this rule's deposits ({@link DepositFlag}), made at the first place that deposits; like a
          *  binder's slot no pattern binds it. */
-        int sonde() {
-            if (sonde < 0) sonde = ongebonden(Leessoort.SONDE);
-            return sonde;
+        int depositFlag() {
+            if (depositFlag < 0) depositFlag = unbound(ReadKind.DEPOSIT_FLAG);
+            return depositFlag;
         }
 
         /** The slot of the probe, or -1 where no place that deposits compiled. */
-        int sondeplaats() {
-            return sonde;
+        int depositFlagSlot() {
+            return depositFlag;
         }
 
-        /** The number of the {@link Creatiefase} the driver opened, for a creation rule of stratum {@code stratum}: one
+        /** The number of the {@link CreationPhase} the driver opened, for a creation rule of stratum {@code stratum}: one
          *  fact for the whole session, joined to no subject, bound among the parameters, and only a phase of this
          *  stratum or one above, as a pass of the reference interpreter over stratum k runs every form of stratum k or
          *  below (RUNTIME-SEMANTICS ch. 6.3). */
-        int creatiefase(int stratum) {
-            int bekend = bestaand("creatiefase");
-            if (bekend >= 0) return bekend;
-            parameters(new Patroon(Creatiefase.class, "$creatiefase", List.of(new Alfa(id("creatiestratum"),
-                    List.of(new Alfa.Veldtoets("stratum", Alfa.Vergelijker.MINSTENS, stratum)))), List.of(),
-                    List.of(Binding.van("$fase", Creatiefase.class, "nummer"))));
-            return nieuw(Leessoort.CREATIEFASE, "creatiefase", "$fase");
+        int creationPhase(int stratum) {
+            int known = existing("creatiefase");
+            if (known >= 0) return known;
+            parameters(new FactPattern(CreationPhase.class, "$creatiefase", List.of(new Alpha(id("creatiestratum"),
+                    List.of(new Alpha.FieldTest("stratum", Alpha.Comparator.AT_LEAST, stratum)))), List.of(),
+                    List.of(Binding.van("$fase", CreationPhase.class, "number"))));
+            return recomputed(ReadKind.CREATION_PHASE, "creatiefase", "$fase");
         }
 
-        /** The marks of the creation that made this rule's subject, the {@link Gemaakt} facts whose object is the
+        /** The marks of the creation that made this rule's subject, the {@link CreationStamp} facts whose object is the
          *  subject, bound as a list off an accumulate: empty for an object of the input, one mark for an object a
          *  creation made. An accumulate over no fact still binds a row, so the rule reads an object of the input as
-         *  well. An object creation reads the depth of its subject off it ({@link Rekenhulpen#creatiediepte}). */
-        /** The {@link Ontvanger} facts of the allocation {@code verdeling} whose source is this rule's subject, bound as
+         *  well. An object creation reads the depth of its subject off it ({@link ComputeHelpers#creationDepth}). */
+        /** The {@link Recipient} facts of the allocation {@code verdeling} whose source is this rule's subject, bound as
          *  a list off an accumulate: the recipients with their weights, keys and caps as their own rule bound them
-         *  ({@link TmsTranspiler#verdeling}). A recipient whose fact changes changes the list, and the activation that
+         *  ({@link TmsTranspiler#allocation}). A recipient whose fact changes changes the list, and the activation that
          *  read it fires again. An accumulate over no fact still binds a row, an empty list. */
-        int ontvangers(String verdeling) {
-            String sleutel = "ontvangers " + verdeling;
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
+        int recipients(String allocation) {
+            String sleutel = "ontvangers " + allocation;
+            int known = existing(sleutel);
+            if (known >= 0) return known;
             String o = "$ontvanger_" + id("verdeling");
             String lijst = "$ontvangers_" + id("verdeling");
-            Alfa vanVerdeling = gelijk(id("ontvanger"), "verdeling", verdeling);
-            standen(new Accumulatie(new Patroon(Ontvanger.class, o, List.of(vanVerdeling),
-                    List.of(new Join(id("ontvanger-bron"), "bron", ONDERWERP)), List.of()),
-                    List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, lijst))));
-            return nieuw(Leessoort.ONTVANGERS, sleutel, lijst);
+            Alpha ofAllocation = equal(id("ontvanger"), "allocation", allocation);
+            states(new Accumulation(new FactPattern(Recipient.class, o, List.of(ofAllocation),
+                    List.of(new Join(id("ontvanger-bron"), "bron", SUBJECT)), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, lijst))));
+            return recomputed(ReadKind.RECIPIENTS, sleutel, lijst);
         }
 
-        int herkomst() {
-            int bekend = bestaand("herkomst");
-            if (bekend >= 0) return bekend;
+        int origin() {
+            int known = existing("herkomst");
+            if (known >= 0) return known;
             String g = "$herkomst_" + id("creatie");
             String lijst = "$herkomsten_" + id("creatie");
-            standen(new Accumulatie(new Patroon(Gemaakt.class, g, List.of(),
-                    List.of(new Join(id("herkomst"), "object", ONDERWERP)), List.of()),
-                    List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, lijst))));
-            return nieuw(Leessoort.HERKOMST, "herkomst", lijst);
+            states(new Accumulation(new FactPattern(CreationStamp.class, g, List.of(),
+                    List.of(new Join(id("herkomst"), "object", SUBJECT)), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, lijst))));
+            return recomputed(ReadKind.ORIGIN, "herkomst", lijst);
         }
 
-        /** The standing of the §9.5 channel of the form named {@code producent}, bound off its {@link KanaalStand}:
+        /** The standing of the §9.5 channel of the form named {@code producer}, bound off its {@link ChannelState}:
          *  one fact for the whole session, joined to no subject, since the channel test has none of its own. */
-        int kanaal(String producent) {
-            String sleutel = "kanaal " + producent;
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
-            String w = leesnaam(producent + " inconsistent");
+        int channel(String producer) {
+            String sleutel = "kanaal " + producer;
+            int known = existing(sleutel);
+            if (known >= 0) return known;
+            String w = readName(producer + " inconsistent");
             String st = "$kanaal_" + slots.size();
-            standen(new Patroon(KanaalStand.class, st, List.of(gelijk(id("kanaal"), "regel", producent)), List.of(),
-                    List.of(Binding.van(w, KanaalStand.class, "inconsistent"))));
-            kanaalnamen.add(producent);
-            return nieuw(Leessoort.KANAAL, sleutel, w);
+            states(new FactPattern(ChannelState.class, st, List.of(equal(id("kanaal"), "regel", producer)), List.of(),
+                    List.of(Binding.van(w, ChannelState.class, "inconsistent"))));
+            channelNames.add(producer);
+            return recomputed(ReadKind.CHANNEL, sleutel, w);
         }
 
         /** Whether the reference field {@code veld} of this rule's subject is set, to an instance of {@code klasse} where
          *  a role check narrows the other end (null: any): a link of an input relation stored on the subject
-         *  ({@link TmsTranspiler#rolcontrole}). Input does not change while the session fires, so it is bound off the
-         *  subject's bean, as an input member is ({@link #eigen}). */
-        int rolveld(String veld, Class<?> klasse) {
-            String sleutel = "rolveld " + veld + " " + (klasse == null ? "" : klasse.getName());
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
-            String w = leesnaam(veld + " gezet");
-            bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(bonenklasse(subject), veld), Binding.Leesvorm.GEZET,
-                    klasse));
-            return nieuw(Leessoort.ROLVELD, sleutel, w);
+         *  ({@link TmsTranspiler#roleCheck}). Input does not change while the session fires, so it is bound off the
+         *  subject's bean, as an input member is ({@link #own}). */
+        int roleField(String veld, Class<?> javaClass) {
+            String sleutel = "rolveld " + veld + " " + (javaClass == null ? "" : javaClass.getName());
+            int known = existing(sleutel);
+            if (known >= 0) return known;
+            String w = readName(veld + " gezet");
+            bindSubject(new Binding(w, List.of(), new Binding.Field(beanClass(subject), veld), Binding.ReadForm.IS_SET,
+                    javaClass));
+            return recomputed(ReadKind.ROLE_FIELD, sleutel, w);
         }
 
         /** The number of beans of {@code klasse} whose reference field {@code veld} names this rule's subject: the links
-         *  of an input relation stored on the other end ({@link TmsTranspiler#rolcontrole}), bound off an accumulate,
+         *  of an input relation stored on the other end ({@link TmsTranspiler#roleCheck}), bound off an accumulate,
          *  which over no bean still binds a row. */
-        int rolvullers(Class<?> klasse, String veld) {
-            String sleutel = "rolvullers " + klasse.getName() + " " + veld;
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
-            String vuller = "$vuller_" + id("rol");
+        int roleFillers(Class<?> javaClass, String veld) {
+            String sleutel = "rolvullers " + javaClass.getName() + " " + veld;
+            int known = existing(sleutel);
+            if (known >= 0) return known;
+            String filler = "$vuller_" + id("rol");
             String aantal = "$vullers_" + id("rol");
-            standen(new Accumulatie(new Patroon(klasse, vuller, List.of(),
-                    List.of(new Join(id("rolvuller"), veld, ONDERWERP)), List.of()),
-                    List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal))));
-            return nieuw(Leessoort.ROLVULLERS, sleutel, aantal);
+            states(new Accumulation(new FactPattern(javaClass, filler, List.of(),
+                    List.of(new Join(id("rolvuller"), veld, SUBJECT)), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, aantal))));
+            return recomputed(ReadKind.ROLE_FILLERS, sleutel, aantal);
         }
 
-        /** The number of links of the created relation {@code relatie} that hold this rule's subject at its first end
-         *  where {@code onderwerpIsEerste}, else at its second, with an instance of {@code klasse} at the other end (null:
-         *  any): the {@link Koppeling} facts, bound off an accumulate, which over no link still binds a row
-         *  ({@link TmsTranspiler#rolcontrole}). */
-        int rolkoppelingen(String relatie, boolean onderwerpIsEerste, Class<?> klasse) {
-            String sleutel = "rolkoppelingen " + relatie + " " + onderwerpIsEerste + " "
-                    + (klasse == null ? "" : klasse.getName());
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
+        /** The number of links of the created relation {@code relation} that hold this rule's subject at its first end
+         *  where {@code subjectIsFirst}, else at its second, with an instance of {@code klasse} at the other end (null:
+         *  any): the {@link RelationLink} facts, bound off an accumulate, which over no link still binds a row
+         *  ({@link TmsTranspiler#roleCheck}). */
+        int roleLinks(String relation, boolean subjectIsFirst, Class<?> javaClass) {
+            String sleutel = "rolkoppelingen " + relation + " " + subjectIsFirst + " "
+                    + (javaClass == null ? "" : javaClass.getName());
+            int known = existing(sleutel);
+            if (known >= 0) return known;
             String k = "$rolkoppeling_" + id("rol");
             String aantal = "$rolkoppelingen_" + id("rol");
             // the test of the other end's class reads the link alone, so it goes with the relation and the join to the
             // subject stays an identity join that the memories can hash
-            List<Alfa.Veldtoets> toetsen = new ArrayList<>();
-            toetsen.add(new Alfa.Veldtoets("relatie", Alfa.Vergelijker.GELIJK, relatie));
-            if (klasse != null)
-                toetsen.add(new Alfa.Veldtoets(onderwerpIsEerste ? "tweede" : "eerste", Alfa.Vergelijker.IS_EEN, klasse));
-            Alfa vanRelatie = new Alfa(id("rolkoppeling"), toetsen);
-            Join opOnderwerp = new Join(id("rolkoppeling-onderwerp"), onderwerpIsEerste ? "eerste" : "tweede", ONDERWERP);
-            standen(new Accumulatie(new Patroon(Koppeling.class, k, List.of(vanRelatie), List.of(opOnderwerp), List.of()),
-                    List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal))));
-            return nieuw(Leessoort.ROLKOPPELINGEN, sleutel, aantal);
+            List<Alpha.FieldTest> tests = new ArrayList<>();
+            tests.add(new Alpha.FieldTest("relation", Alpha.Comparator.GELIJK, relation));
+            if (javaClass != null)
+                tests.add(new Alpha.FieldTest(subjectIsFirst ? "tweede" : "eerste", Alpha.Comparator.IS_A, javaClass));
+            Alpha ofRelation = new Alpha(id("rolkoppeling"), tests);
+            Join onSubject = new Join(id("rolkoppeling-onderwerp"), subjectIsFirst ? "eerste" : "tweede", SUBJECT);
+            states(new Accumulation(new FactPattern(RelationLink.class, k, List.of(ofRelation), List.of(onSubject), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, aantal))));
+            return recomputed(ReadKind.ROLE_LINKS, sleutel, aantal);
         }
 
-        /** The parent of this rule's subject in the scope of a uniqueness ({@link TmsTranspiler#sleutelregel}): the
+        /** The parent of this rule's subject in the scope of a uniqueness ({@link TmsTranspiler#keyRule}): the
          *  reference field on the subject that the scope's binding names, the role the parent plays, read off the
          *  subject's bean, since the relation is input; null where the subject has no parent. A scope over a relation a
          *  form creates, whose links are in no field, is refused. */
-        int scopelezing(RolBindingRef scopeRol) {
-            String sleutel = "scope " + scopeRol.feittype() + " " + scopeRol.rol();
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
-            RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, scopeRol);
-            if (paar == null)
-                throw new Weigering("de scope van een Uniqueness noemt geen gedeclareerde rol (" + scopeRol.feittype() + ", "
-                        + scopeRol.rol() + ")");
-            if (scopeRol.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(scopeRol.feittype())))
-                throw new Weigering("de scope van een Uniqueness over de gecreëerde relatie '" + scopeRol.feittype()
-                        + "': " + NOG_NIET);
-            Objecttype ouder = model.objecttypeOpNaam(paar[0].objecttypeNaam());
-            if (!FactModelGenerator.heeftReferentieVeld(model, subject, paar[0].naam(), ouder))
-                throw new Weigering("de scope van een Uniqueness: " + FactModelGenerator.geenReferentieveldReden(model,
-                        subject, paar[0].naam(), ouder) + " (§13.3.9 opslagrichting)");
-            String w = leesnaam(paar[0].naam());
-            bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(bonenklasse(subject), paar[0].naam()),
-                    Binding.Leesvorm.WAARDE, null));
-            return nieuw(Leessoort.SCOPE, sleutel, w);
+        int scopeRead(RolBindingRef scopeRole) {
+            String sleutel = "scope " + scopeRole.feittype() + " " + scopeRole.rol();
+            int known = existing(sleutel);
+            if (known >= 0) return known;
+            RegelSpraakModel.Rol[] pair = FactModelGenerator.boundRolePair(model, scopeRole);
+            if (pair == null)
+                throw new Refusal("de scope van een Uniqueness noemt geen gedeclareerde rol (" + scopeRole.feittype() + ", "
+                        + scopeRole.rol() + ")");
+            if (scopeRole.feittype() != null && createdRelations.contains(Namen.norm(scopeRole.feittype())))
+                throw new Refusal("de scope van een Uniqueness over de gecreëerde relatie '" + scopeRole.feittype()
+                        + "': " + STILL_NOT);
+            Objecttype parent = model.objecttypeOpNaam(pair[0].objecttypeNaam());
+            if (!FactModelGenerator.hasReferenceField(model, subject, pair[0].naam(), parent))
+                throw new Refusal("de scope van een Uniqueness: " + FactModelGenerator.noReferenceFieldReason(model,
+                        subject, pair[0].naam(), parent) + " (§13.3.9 opslagrichting)");
+            String w = readName(pair[0].naam());
+            bindSubject(new Binding(w, List.of(), new Binding.Field(beanClass(subject), pair[0].naam()),
+                    Binding.ReadForm.VALUE, null));
+            return recomputed(ReadKind.SCOPE, sleutel, w);
         }
 
-        private int bestaand(String sleutel) {
+        private int existing(String sleutel) {
             Integer i = index.get(sleutel);
-            if (i != null && gebruik != null) gebruik.add(i);
+            if (i != null && use != null) use.add(i);
             return i == null ? -1 : i;
         }
 
-        /** The variable of a slot that reads {@code gelezen} ({@link TmsTranspiler#leesnaam(String, Set)}), unique
+        /** The variable of a slot that reads {@code read} ({@link TmsTranspiler#readName(String, Set)}), unique
          *  against the slots of this rule before it. */
-        private String leesnaam(String gelezen) {
-            return TmsTranspiler.leesnaam(gelezen, namen);
+        private String readName(String read) {
+            return TmsTranspiler.readName(read, names);
         }
 
         /** A slot that a binding of the plan binds to the variable {@code naam}, read once per rule under
          *  {@code sleutel}. */
-        private int nieuw(Leessoort soort, String sleutel, String naam) {
+        private int recomputed(ReadKind soort, String sleutel, String naam) {
             int i = slots.size();
-            dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(i, soort, sleutel, naam);
+            dev.uchar.regelspraak.transpiler.tms.plan.Read l = new dev.uchar.regelspraak.transpiler.tms.plan.Read(i, soort, sleutel, naam);
             slots.add(l);
             index.put(sleutel, i);
-            namen.add(naam);
-            if (gebruik != null) gebruik.add(i);
+            names.add(naam);
+            if (use != null) use.add(i);
             return i;
         }
 
         /** A slot that no pattern binds: the consequence fills it. */
-        private int ongebonden(Leessoort soort) {
-            dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(slots.size(), soort, null, null);
+        private int unbound(ReadKind soort) {
+            dev.uchar.regelspraak.transpiler.tms.plan.Read l = new dev.uchar.regelspraak.transpiler.tms.plan.Read(slots.size(), soort, null, null);
             slots.add(l);
             return l.slot();
         }
 
-        private void bindOnderwerp(Binding b) {
-            onderwerpbindingen.add(b);
+        private void bindSubject(Binding b) {
+            subjectBindings.add(b);
         }
 
         private void parameters(LhsItem item) {
             parameters.add(item);
         }
 
-        private void standen(LhsItem item) {
-            standen.add(item);
+        private void states(LhsItem item) {
+            states.add(item);
         }
 
-        /** The standing of {@code lid} of the subject, a {@link Stand} or a {@link KenmerkStand}, binding {@code veld}
+        /** The standing of {@code lid} of the subject, a {@link State} or a {@link CharacteristicState}, binding {@code veld}
          *  of it to {@code w}: a constraint on the member, the join on the subject, the binding. */
-        private Patroon stand(Class<?> klasse, String naam, String lidveld, ElementSleutel lk, String veld, String w) {
-            Alfa vanLid = gelijk(id("stand"), lidveld, lk);
-            Join opOnderwerp = opOnderwerp(id("stand-onderwerp"));
-            return new Patroon(klasse, naam, List.of(vanLid), List.of(opOnderwerp), List.of(Binding.van(w, klasse, veld)));
+        private FactPattern state(Class<?> javaClass, String naam, String memberField, ElementSleutel lk, String veld, String w) {
+            Alpha ofMember = equal(id("stand"), memberField, lk);
+            Join onSubject = onSubject(id("stand-onderwerp"));
+            return new FactPattern(javaClass, naam, List.of(ofMember), List.of(onSubject), List.of(Binding.van(w, javaClass, veld)));
         }
 
-        int eigen(Lid lid) {
-            String sleutel = "eigen " + lid.sleutel();
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
-            String w = leesnaam(lid.naam());
-            ElementSleutel lk = lid.sleutel();
-            if (schrijvers.containsKey(lk)) {
-                if (lid.kenmerk()) {
-                    standen(stand(KenmerkStand.class, "$stand_" + slots.size(), "kenmerk", lk, "waar", w));
-                    afgeleid.put(lk, lid);
-                    return nieuw(Leessoort.KENMERKSTAND, sleutel, w);
+        int own(Member member) {
+            String sleutel = "eigen " + member.sleutel();
+            int known = existing(sleutel);
+            if (known >= 0) return known;
+            String w = readName(member.naam());
+            ElementSleutel lk = member.sleutel();
+            if (writers.containsKey(lk)) {
+                if (member.kenmerk()) {
+                    states(state(CharacteristicState.class, "$stand_" + slots.size(), "kenmerk", lk, "holds", w));
+                    derived.put(lk, member);
+                    return recomputed(ReadKind.CHARACTERISTIC_STATE, sleutel, w);
                 }
-                standen(stand(Stand.class, "$stand_" + slots.size(), "attribuut", lk, "waarde", w));
-                afgeleid.put(lk, lid);
-                return nieuw(Leessoort.STAND, sleutel, w);
+                states(state(State.class, "$stand_" + slots.size(), "attribuut", lk, "waarde", w));
+                derived.put(lk, member);
+                return recomputed(ReadKind.STATE, sleutel, w);
             }
             // input: no form writes it, so it does not change while the session fires and is read off the bean
-            bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(lid.klasse(), lid.naam()),
-                    lid.kenmerk() ? Binding.Leesvorm.WAAR : Binding.Leesvorm.WAARDE, null));
-            return nieuw(Leessoort.INVOER, sleutel, w);
+            bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.naam()),
+                    member.kenmerk() ? Binding.ReadForm.WAAR : Binding.ReadForm.VALUE, null));
+            return recomputed(ReadKind.INVOER, sleutel, w);
         }
 
         /**
-         * The timeline of a member on a timeline of this rule's subject ({@link Lid#tijd}), or null where the member
-         * holds none (an absent timeline, RUNTIME-SEMANTICS ch. 3.1). An attribute is bound off its {@link Stand},
+         * The timeline of a member on a timeline of this rule's subject ({@link Member#time}), or null where the member
+         * holds none (an absent timeline, RUNTIME-SEMANTICS ch. 3.1). An attribute is bound off its {@link State},
          * whether a form writes it or not: the standing carries the timeline a form derived, and otherwise the input,
-         * as an immutable {@code List<Tijdvak>}, or as an {@link Emmerscalair} where the case gives the input in the
-         * asOfDate-bucket convention ({@link Emmerinvoer}). The bean does not show that convention, and every reader of
+         * as an immutable {@code List<Period>}, or as an {@link BucketScalar} where the case gives the input in the
+         * asOfDate-bucket convention ({@link BucketInput}). The bean does not show that convention, and every reader of
          * the full timeline must tell it apart (ch. 8.4), so the input is read where the standing rules join that fact
-         * ({@link #attribuutstandregels}). A characteristic on a timeline is input: no executor writes one (ch. 3.11),
+         * ({@link #attributeStateRules}). A characteristic on a timeline is input: no executor writes one (ch. 3.11),
          * and a case delivers it only as its true periods, so they are bound off the bean, turned into that form there
-         * ({@link Tijdvak#lijst}), and never through {@link #kenmerkstandregels}, whose test of {@code true} is false on
+         * ({@link Period#lijst}), and never through {@link #characteristicStateRules}, whose test of {@code true} is false on
          * a list; the bean does not change while the session fires, so the binding is stable.
          */
-        int tijdlijn(Lid lid) {
-            String sleutel = "tijdlijn " + lid.sleutel();
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
+        int timeline(Member member) {
+            String sleutel = "tijdlijn " + member.sleutel();
+            int known = existing(sleutel);
+            if (known >= 0) return known;
             String w = "$tijdlijn_" + slots.size();
-            ElementSleutel lk = lid.sleutel();
-            if (lid.kenmerk()) {
-                if (schrijvers.containsKey(lk))
-                    throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
-                            + ", dat een vorm schrijft: " + NOG_NIET + " (RUNTIME-SEMANTICS ch. 3.11)");
-                bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(lid.klasse(), lid.naam()),
-                        Binding.Leesvorm.TIJDVAKKEN, null));
+            ElementSleutel lk = member.sleutel();
+            if (member.kenmerk()) {
+                if (writers.containsKey(lk))
+                    throw new Refusal("het tijdsafhankelijke kenmerk '" + member.naam() + "' van " + member.declarant().naam
+                            + ", dat een vorm schrijft: " + STILL_NOT + " (RUNTIME-SEMANTICS ch. 3.11)");
+                bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.naam()),
+                        Binding.ReadForm.PERIODS, null));
             } else {
-                standen(stand(Stand.class, "$stand_" + slots.size(), "attribuut", lk, "waarde", w));
-                afgeleid.put(lk, lid);
+                states(state(State.class, "$stand_" + slots.size(), "attribuut", lk, "waarde", w));
+                derived.put(lk, member);
             }
-            return nieuw(Leessoort.TIJDLIJN, sleutel, w);
+            return recomputed(ReadKind.TIJDLIJN, sleutel, w);
         }
 
         /** A member of the object {@code pad} reaches from this rule's subject, null where a link on the path is absent.
-         *  An attribute on a timeline is read through its standing at the end of the path, as {@link #tijdlijn} reads
-         *  one of the subject's own, so the read carries the case's input convention, a {@code List<Tijdvak>} or an
-         *  {@link Emmerscalair}; a characteristic on a timeline, which is input only, is bound as its true periods, a
-         *  {@code List<Tijdvak>} ({@link TmsTranspiler#invoervorm}). */
-        int genavigeerd(Pad pad, Lid lid) {
-            String sleutel = "pad " + pad.sleutel() + " " + lid.sleutel();
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
-            String w = leesnaam(String.join(" ", pad.rollen()) + " " + lid.naam());
-            ElementSleutel lk = lid.sleutel();
-            if (lid.tijd() != null && lid.kenmerk() && schrijvers.containsKey(lk))
-                throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
-                        + ", dat een vorm schrijft: " + NOG_NIET + " (RUNTIME-SEMANTICS ch. 3.11)");
+         *  An attribute on a timeline is read through its standing at the end of the path, as {@link #timeline} reads
+         *  one of the subject's own, so the read carries the case's input convention, a {@code List<Period>} or an
+         *  {@link BucketScalar}; a characteristic on a timeline, which is input only, is bound as its true periods, a
+         *  {@code List<Period>} ({@link TmsTranspiler#inputForm}). */
+        int navigated(Path pad, Member member) {
+            String sleutel = "pad " + pad.sleutel() + " " + member.sleutel();
+            int known = existing(sleutel);
+            if (known >= 0) return known;
+            String w = readName(String.join(" ", pad.roles()) + " " + member.naam());
+            ElementSleutel lk = member.sleutel();
+            if (member.time() != null && member.kenmerk() && writers.containsKey(lk))
+                throw new Refusal("het tijdsafhankelijke kenmerk '" + member.naam() + "' van " + member.declarant().naam
+                        + ", dat een vorm schrijft: " + STILL_NOT + " (RUNTIME-SEMANTICS ch. 3.11)");
             // a derived member, an attribute on a timeline, or any member at the end of a path whose links a form
             // creates: through the path's standing, whose rules bind every link and the member in their left-hand sides
-            if (schrijvers.containsKey(lk) || tijdlijnattribuut(lid) || pad.gecreeerd()) {
-                Padlezing p = new Padlezing(pad, lid);
+            if (writers.containsKey(lk) || timelineAttribute(member) || pad.created()) {
+                PathRead p = new PathRead(pad, member);
                 String ps = pad.sleutel();
                 String st = "$padstand_" + slots.size();
-                Alfa vanPad = new Alfa(id("padstand"), List.of(new Alfa.Veldtoets("pad", Alfa.Vergelijker.GELIJK, ps),
-                        new Alfa.Veldtoets("lid", Alfa.Vergelijker.GELIJK, lk)));
-                Join opOnderwerp = opOnderwerp(id("padstand-onderwerp"));
-                standen(new Patroon(PadStand.class, st, List.of(vanPad), List.of(opOnderwerp),
-                        List.of(Binding.van(w, PadStand.class, "waarde"))));
-                paden.put(p.sleutel(), p);
-                return nieuw(Leessoort.PADSTAND, sleutel, w);
+                Alpha ofPath = new Alpha(id("padstand"), List.of(new Alpha.FieldTest("pad", Alpha.Comparator.GELIJK, ps),
+                        new Alpha.FieldTest("member", Alpha.Comparator.GELIJK, lk)));
+                Join onSubject = onSubject(id("padstand-onderwerp"));
+                states(new FactPattern(PathState.class, st, List.of(ofPath), List.of(onSubject),
+                        List.of(Binding.van(w, PathState.class, "waarde"))));
+                paths.put(p.sleutel(), p);
+                return recomputed(ReadKind.PATH_STATE, sleutel, w);
             }
             // input over links that are input: bound off the subject's bean, null where a link is absent
-            bindOnderwerp(new Binding(w, pad.velden(), new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid),
+            bindSubject(new Binding(w, pad.fields(), new Binding.Field(member.javaClass(), member.naam()), inputForm(member),
                     null));
-            return nieuw(Leessoort.INVOERPAD, sleutel, w);
+            return recomputed(ReadKind.INPUT_PATH, sleutel, w);
         }
 
-        /** A parameter, bound off its {@link ParameterStand}: no test or consequence names a global itself, since two
+        /** A parameter, bound off its {@link ParameterState}: no test or consequence names a global itself, since two
          *  globals in one constraint of the executable model read as the last one, and a source over a global was not
-         *  kept apart from another parameter's in another rule ({@link ParameterStand}). A parameter the case leaves
+         *  kept apart from another parameter's in another rule ({@link ParameterState}). A parameter the case leaves
          *  unset has a standing with a null value and reads leeg. */
         int parameter(Parameter p) {
             String naam = Namen.ident(p.naam(), false);
             String sleutel = "parameter " + naam;
-            int bekend = bestaand(sleutel);
-            if (bekend >= 0) return bekend;
+            int known = existing(sleutel);
+            if (known >= 0) return known;
             global(p);
-            String w = leesnaam(p.naam());
+            String w = readName(p.naam());
             String st = "$parameter_" + slots.size();
-            parameters(new Patroon(ParameterStand.class, st, List.of(gelijk(id("parameter"), "parameter", naam)),
-                    List.of(), List.of(Binding.van(w, ParameterStand.class, "waarde"))));
-            return nieuw(Leessoort.PARAMETER, sleutel, w);
+            parameters(new FactPattern(ParameterState.class, st, List.of(equal(id("parameter"), "parameter", naam)),
+                    List.of(), List.of(Binding.van(w, ParameterState.class, "waarde"))));
+            return recomputed(ReadKind.PARAMETER, sleutel, w);
         }
     }
 
     /** The name of the variable of a rule's subject in every plan: the name joins on the subject refer to. */
-    private static final String ONDERWERP = "$onderwerp";
+    private static final String SUBJECT = "$onderwerp";
     /** The variable of the object a rule binds before its subject: a fold's subject in a contribution rule, the source
      *  in an allocation's recipient rule. */
-    private static final String VOUWONDERWERP = "$vouwonderwerp";
+    private static final String FOLD_SUBJECT = "$vouwonderwerp";
     /**
-     * The variable of a slot that reads {@code gelezen}, a name as the document declares it, in a rule whose slots
+     * The variable of a slot that reads {@code read}, a name as the document declares it, in a rule whose slots
      * before it have the variables {@code bezet}: {@code $} and that name as an identifier ({@link Namen#ident}), so
      * that a rendering shows what the slot holds, in DRL text as well. Only the characters a Java identifier may hold
      * stay: {@code Namen.ident} keeps every letter and every number of Unicode, and a number such as {@code ²} or
      * {@code ½} is none, so "artikel 3²" reads {@code $artikel3}. A name of which nothing stays reads {@code $x}, the
      * name {@code Namen.ident} gives an empty name. It is unique within the rule by construction: the identifier has no
      * underscore, while every other variable of a rule has one ({@link TmsTranspiler#id}, the numbered names of
-     * {@code Lezingen}) or is one of {@link #VASTE_NAMEN}; where such a fixed name or a name in {@code bezet} has it
+     * {@code Reads}) or is one of {@link #FIXED_NAMES}; where such a fixed name or a name in {@code bezet} has it
      * already, the first free number from 2 after it makes it unique. It depends only on the reads of the rule before
-     * it, in their order. {@code Regelplan} refuses a rule that declares one variable twice, so a name that escaped
+     * it, in their order. {@code RulePlan} refuses a rule that declares one variable twice, so a name that escaped
      * this would fail the build, and not bind two values to one variable.
      */
-    static String leesnaam(String gelezen, Set<String> bezet) {
+    static String readName(String read, Set<String> bezet) {
         StringBuilder id = new StringBuilder();
-        Namen.ident(gelezen, false).codePoints().filter(Character::isJavaIdentifierPart).forEach(id::appendCodePoint);
-        String basis = "$" + (id.isEmpty() ? "x" : id);
-        String naam = basis;
-        for (int n = 2; VASTE_NAMEN.contains(naam) || bezet.contains(naam); n++) naam = basis + n;
+        Namen.ident(read, false).codePoints().filter(Character::isJavaIdentifierPart).forEach(id::appendCodePoint);
+        String base = "$" + (id.isEmpty() ? "x" : id);
+        String naam = base;
+        for (int n = 2; FIXED_NAMES.contains(naam) || bezet.contains(naam); n++) naam = base + n;
         return naam;
     }
 
     /** Every name without an underscore that the analysis gives a variable of a rule other than a read name
-     *  ({@link #leesnaam(String, Set)}): a read name that equals one of these takes a number, so that no rule binds
-     *  one name twice. {@code LeesnaamWitnessTest} holds this set equal to the fixed names this source spells. */
-    static final Set<String> VASTE_NAMEN = Set.of("$afgeleid", "$ander", "$bereikt", "$besluit", "$botsingen",
+     *  ({@link #readName(String, Set)}): a read name that equals one of these takes a number, so that no rule binds
+     *  one name twice. {@code ReadNameWitnessTest} holds this set equal to the fixed names this source spells. */
+    static final Set<String> FIXED_NAMES = Set.of("$afgeleid", "$ander", "$bereikt", "$besluit", "$botsingen",
             "$conflict", "$creatiefase", "$een", "$element", "$emmerinvoer", "$fase", "$houder", "$inconsistentie",
             "$invoer", "$nabij", "$onderwerp", "$rekendatum", "$schending", "$sleutel", "$stand", "$subject", "$twee",
             "$v", "$vouwonderwerp", "$waarde", "$waarden");
 
     /** The items {@code lhs} of a rule with the probe of every test that places none at -1
-     *  ({@link #zonderOngevuldeSonde(Gevolg)}): a test of deposits places it, every other role does not. */
-    private static List<LhsItem> zonderOngevuldeSonde(List<LhsItem> lhs) {
-        List<LhsItem> uit = new ArrayList<>(lhs.size());
+     *  ({@link #withoutUnfilledDepositFlag(Gevolg)}): a test of deposits places it, every other role does not. */
+    private static List<LhsItem> withoutUnfilledDepositFlag(List<LhsItem> lhs) {
+        List<LhsItem> out = new ArrayList<>(lhs.size());
         for (LhsItem item : lhs) {
-            if (item instanceof Toetsitem t && t.rol() != Toetsitem.Rol.DEPONERING) {
-                Term toets = zonderSonde(t.toets());
-                if (toets != t.toets()) item = new Toetsitem(t.id(), t.rol(), toets, t.sonde(), t.slots(), t.grootte());
+            if (item instanceof TestItem t && t.rol() != TestItem.Role.DEPOSIT) {
+                Term testTerm = withoutDepositFlag(t.test());
+                if (testTerm != t.test()) item = new TestItem(t.id(), t.rol(), testTerm, t.depositFlag(), t.slots(), t.size());
             }
-            uit.add(item);
+            out.add(item);
         }
-        return uit;
+        return out;
     }
 
     /**
      * {@code g} with the probe of its terms at -1 where it places none. Every place that deposits compiles with the
-     * probe slot of its rule ({@link Lezingen#sonde}), whatever the role of the rule, but only three positions put a
-     * probe in that slot: a test of deposits ({@link Toetsitem.Rol#DEPONERING}), the value of a rule with a deposit
-     * ({@link Gevolg.Waarde#deponering}) and the test of a member with a probe in a quantifier fold
-     * ({@link Gevolg.Inbreng.Lidtoets}). Elsewhere, as in the rule of a condition's fault or a filter's fault, the
+     * probe slot of its rule ({@link Reads#depositFlag}), whatever the role of the rule, but only three positions put a
+     * probe in that slot: a test of deposits ({@link TestItem.Role#DEPONERING}), the value of a rule with a deposit
+     * ({@link Consequence.Value#deposit}) and the test of a member with a probe in a quantifier fold
+     * ({@link Consequence.Input.MemberTest}). Elsewhere, as in the rule of a condition's fault or a filter's fault, the
      * places would report to a slot nobody fills, which reads as nothing; the plan says so itself, so that a rendering
      * needs no rule of its own for such a slot. The slot stays in the table, and the value array keeps its size.
      */
-    private static Gevolg zonderOngevuldeSonde(Gevolg g) {
+    private static Consequence withoutUnfilledDepositFlag(Consequence g) {
         switch (g) {
-            case Gevolg.Waarde w when w.deponering() == null -> {
-                Term z = zonderSonde(w.waarde());
-                return z == w.waarde() ? w : new Gevolg.Waarde(w.onderwerp(), w.doel(), w.schrijver(), z, w.slots(),
-                        w.grootte(), w.collapse(), w.schrijftLeeg(), null, w.fout(), w.invoeging());
+            case Consequence.Value w when w.deposit() == null -> {
+                Term z = withoutDepositFlag(w.waarde());
+                return z == w.waarde() ? w : new Consequence.Value(w.onderwerp(), w.doel(), w.writer(), z, w.slots(),
+                        w.size(), w.collapse(), w.writesEmpty(), null, w.fout(), w.insertion());
             }
-            case Gevolg.Toetsfout f -> {
-                Term z = zonderSonde(f.toets());
-                return z == f.toets() ? f : new Gevolg.Toetsfout(f.onderwerp(), z, f.rol(), f.slots(), f.grootte(),
-                        f.fout(), f.invoeging());
+            case Consequence.TestFault f -> {
+                Term z = withoutDepositFlag(f.test());
+                return z == f.test() ? f : new Consequence.TestFault(f.onderwerp(), z, f.rol(), f.slots(), f.size(),
+                        f.fout(), f.insertion());
             }
-            case Gevolg.Filterfout f -> {
-                Term z = zonderSonde(f.filter());
-                return z == f.filter() ? f : new Gevolg.Filterfout(f.onderwerp(), f.vouw(), f.lid(), z, f.plaats(),
-                        f.slots(), f.grootte(), f.invoeging());
+            case Consequence.FilterError f -> {
+                Term z = withoutDepositFlag(f.filter());
+                return z == f.filter() ? f : new Consequence.FilterError(f.onderwerp(), f.fold(), f.member(), z, f.place(),
+                        f.slots(), f.size(), f.insertion());
             }
-            case Gevolg.Bijdrage b when b.inbreng() instanceof Gevolg.Inbreng.Oordeel o -> {
-                Term z = zonderSonde(o.matrix());
-                return z == o.matrix() ? b : new Gevolg.Bijdrage(b.onderwerp(), b.vouw(), b.lid(),
-                        new Gevolg.Inbreng.Oordeel(z), b.slots(), b.grootte(), b.invoeging());
+            case Consequence.Contribution b when b.input() instanceof Consequence.Input.Verdict o -> {
+                Term z = withoutDepositFlag(o.matrix());
+                return z == o.matrix() ? b : new Consequence.Contribution(b.onderwerp(), b.fold(), b.member(),
+                        new Consequence.Input.Verdict(z), b.slots(), b.size(), b.insertion());
             }
-            case Gevolg.Bijdrage b when b.inbreng() instanceof Gevolg.Inbreng.Lidtoets l && l.sonde() < 0 -> {
-                Term z = zonderSonde(l.matrix());
-                return z == l.matrix() ? b : new Gevolg.Bijdrage(b.onderwerp(), b.vouw(), b.lid(),
-                        new Gevolg.Inbreng.Lidtoets(z, -1, l.plaats()), b.slots(), b.grootte(), b.invoeging());
+            case Consequence.Contribution b when b.input() instanceof Consequence.Input.MemberTest l && l.depositFlag() < 0 -> {
+                Term z = withoutDepositFlag(l.matrix());
+                return z == l.matrix() ? b : new Consequence.Contribution(b.onderwerp(), b.fold(), b.member(),
+                        new Consequence.Input.MemberTest(z, -1, l.place()), b.slots(), b.size(), b.insertion());
             }
-            case Gevolg.Creatie c -> {
-                List<Gevolg.Initialisatie> inits = new ArrayList<>();
-                boolean anders = false;
-                for (Gevolg.Initialisatie i : c.initialisaties()) {
-                    Term z = zonderSonde(i.waarde());
-                    anders |= z != i.waarde();
-                    inits.add(z == i.waarde() ? i : new Gevolg.Initialisatie(i.lid(), z));
+            case Consequence.Creation c -> {
+                List<Consequence.Initialisation> inits = new ArrayList<>();
+                boolean otherwise = false;
+                for (Consequence.Initialisation i : c.initialisations()) {
+                    Term z = withoutDepositFlag(i.waarde());
+                    otherwise |= z != i.waarde();
+                    inits.add(z == i.waarde() ? i : new Consequence.Initialisation(i.member(), z));
                 }
-                return !anders ? c : new Gevolg.Creatie(c.onderwerp(), c.creatie(), c.diepte(), inits, c.fout(),
-                        c.foutinvoeging(), c.constructie(), c.fase(), c.invoegingen(), c.slots(), c.grootte());
+                return !otherwise ? c : new Consequence.Creation(c.onderwerp(), c.creatie(), c.depth(), inits, c.fout(),
+                        c.faultInsertion(), c.construction(), c.phase(), c.insertions(), c.slots(), c.size());
             }
-            case Gevolg.Afloop a -> {
-                Term z = zonderSonde(a.waarde());
-                return z == a.waarde() ? a : new Gevolg.Afloop(a.onderwerp(), z, a.slots(), a.grootte(), a.collapse(),
-                        a.fout(), a.feiten(), a.invoeging());
+            case Consequence.Decision a -> {
+                Term z = withoutDepositFlag(a.waarde());
+                return z == a.waarde() ? a : new Consequence.Decision(a.onderwerp(), z, a.slots(), a.size(), a.collapse(),
+                        a.fout(), a.sessionFacts(), a.insertion());
             }
-            case Gevolg.Conflict c -> {
-                Term z = zonderSonde(c.sleutel());
-                return z == c.sleutel() ? c : new Gevolg.Conflict(c.onderwerp(), z, c.slots(), c.grootte(), c.feit(),
-                        c.invoeging());
+            case Consequence.Conflict c -> {
+                Term z = withoutDepositFlag(c.sleutel());
+                return z == c.sleutel() ? c : new Consequence.Conflict(c.onderwerp(), z, c.slots(), c.size(), c.fact(),
+                        c.insertion());
             }
             default -> {
                 return g;
@@ -5806,7 +5806,7 @@ public final class TmsTranspiler {
 
     /** {@code t} with the probe of every place that deposits at -1: of a division, a square root, the evaluation of a
      *  fold whose filter deposits and a quantifier fold whose matrix deposits; {@code t} itself where it has none. */
-    private static Term zonderSonde(Term t) {
+    private static Term withoutDepositFlag(Term t) {
         switch (t) {
             case null -> {
                 return null;
@@ -5814,110 +5814,110 @@ public final class TmsTranspiler {
             case Term.Const c -> {
                 return c;
             }
-            case Term.Lees l -> {
+            case Term.SlotValue l -> {
                 return l;
             }
             case Term.Binder b -> {
                 return b;
             }
-            case Term.Faal f -> {
+            case Term.Fail f -> {
                 return f;
             }
-            case Term.Dagsoort d -> {
+            case Term.DayKind d -> {
                 return d;
             }
             case Term.Invoer i -> {
-                Term o = zonderSonde(i.object());
+                Term o = withoutDepositFlag(i.object());
                 return o == i.object() ? i : new Term.Invoer(o, i.veld(), i.vorm(), i.bron());
             }
             case Term.Let l -> {
-                Term w = zonderSonde(l.waarde()), b = zonderSonde(l.lichaam());
-                return w == l.waarde() && b == l.lichaam() ? l
-                        : new Term.Let(l.slot(), l.naam(), w, b, l.gretig(), l.bron());
+                Term w = withoutDepositFlag(l.waarde()), b = withoutDepositFlag(l.body());
+                return w == l.waarde() && b == l.body() ? l
+                        : new Term.Let(l.slot(), l.naam(), w, b, l.eager(), l.bron());
             }
-            case Term.Keuze k -> {
-                Term v = zonderSonde(k.voorwaarde()), d = zonderSonde(k.dan()), a = zonderSonde(k.anders());
-                return v == k.voorwaarde() && d == k.dan() && a == k.anders() ? k : new Term.Keuze(v, d, a, k.bron());
+            case Term.Choice k -> {
+                Term v = withoutDepositFlag(k.voorwaarde()), d = withoutDepositFlag(k.then()), a = withoutDepositFlag(k.otherwise());
+                return v == k.voorwaarde() && d == k.then() && a == k.otherwise() ? k : new Term.Choice(v, d, a, k.bron());
             }
-            case Term.Aanroep a -> {
-                List<Term> z = zonderSonde(a.argumenten());
-                return z == a.argumenten() ? a : new Term.Aanroep(a.functie(), z, a.bron());
+            case Term.Call a -> {
+                List<Term> z = withoutDepositFlag(a.arguments());
+                return z == a.arguments() ? a : new Term.Call(a.function(), z, a.bron());
             }
-            case Term.Herschaal h -> {
-                Term z = zonderSonde(h.term());
+            case Term.Rescale h -> {
+                Term z = withoutDepositFlag(h.term());
                 return z == h.term() ? h
-                        : new Term.Herschaal(h.functie(), z, h.van(), h.naar(), h.teller(), h.noemer(), h.bron());
+                        : new Term.Rescale(h.function(), z, h.van(), h.naar(), h.counter(), h.denominator(), h.bron());
             }
-            case Term.Deel d -> {
-                Term l = zonderSonde(d.links()), r = zonderSonde(d.rechts());
-                return d.sonde() < 0 && l == d.links() && r == d.rechts() ? d
-                        : new Term.Deel(d.functie(), l, r, -1, d.bron());
+            case Term.Division d -> {
+                Term l = withoutDepositFlag(d.left()), r = withoutDepositFlag(d.right());
+                return d.depositFlag() < 0 && l == d.left() && r == d.right() ? d
+                        : new Term.Division(d.function(), l, r, -1, d.bron());
             }
-            case Term.Wortel w -> {
-                Term r = zonderSonde(w.radicand());
-                return w.sonde() < 0 && r == w.radicand() ? w : new Term.Wortel(w.functie(), r, -1, w.bron());
+            case Term.SquareRoot w -> {
+                Term r = withoutDepositFlag(w.radicand());
+                return w.depositFlag() < 0 && r == w.radicand() ? w : new Term.SquareRoot(w.function(), r, -1, w.bron());
             }
-            case Term.Vereist v -> {
-                Term z = zonderSonde(v.waarde());
-                return z == v.waarde() ? v : new Term.Vereist(z, v.zin(), v.bron());
+            case Term.Required v -> {
+                Term z = withoutDepositFlag(v.waarde());
+                return z == v.waarde() ? v : new Term.Required(z, v.sentence(), v.bron());
             }
-            case Term.Tekstreeks r -> {
-                List<Term> z = zonderSonde(r.delen());
-                return z == r.delen() ? r : new Term.Tekstreeks(z, r.bron());
+            case Term.TextComposition r -> {
+                List<Term> z = withoutDepositFlag(r.parts());
+                return z == r.parts() ? r : new Term.TextComposition(z, r.bron());
             }
-            case Term.GelijsteVouw g -> {
-                List<Term> z = zonderSonde(g.operanden());
-                return z == g.operanden() ? g : new Term.GelijsteVouw(g.functie(), z, g.bron());
+            case Term.ListedFold g -> {
+                List<Term> z = withoutDepositFlag(g.operands());
+                return z == g.operands() ? g : new Term.ListedFold(g.function(), z, g.bron());
             }
-            case Term.Vouwlezing v -> {
-                Term z = zonderSonde(v.uitkomst());
-                return v.sonde() < 0 && z == v.uitkomst() ? v
-                        : new Term.Vouwlezing(z, v.deponeringen(), -1, v.filterfout(), v.lidfout(), v.bron());
+            case Term.FoldRead v -> {
+                Term z = withoutDepositFlag(v.outcome());
+                return v.depositFlag() < 0 && z == v.outcome() ? v
+                        : new Term.FoldRead(z, v.depositCount(), -1, v.filterError(), v.memberError(), v.bron());
             }
-            case Term.Samengesteld s -> {
-                List<Term> z = zonderSonde(s.leden());
-                return z == s.leden() ? s : new Term.Samengesteld(s.kwantor(), s.drempel(), z, s.bron());
+            case Term.Compound s -> {
+                List<Term> z = withoutDepositFlag(s.members());
+                return z == s.members() ? s : new Term.Compound(s.quantifier(), s.threshold(), z, s.bron());
             }
-            case Term.Kwantorlezing k -> {
-                Term n = zonderSonde(k.aantal()), b = zonderSonde(k.bijdragen());
-                return k.sonde() < 0 && n == k.aantal() && b == k.bijdragen() ? k
-                        : new Term.Kwantorlezing(k.functie(), n, b, k.kwantor(), k.drempel(), -1, k.bron());
+            case Term.QuantifierRead k -> {
+                Term n = withoutDepositFlag(k.aantal()), b = withoutDepositFlag(k.contributions());
+                return k.depositFlag() < 0 && n == k.aantal() && b == k.contributions() ? k
+                        : new Term.QuantifierRead(k.function(), n, b, k.quantifier(), k.threshold(), -1, k.bron());
             }
-            case Term.ZonderFout z -> {
-                Term v = zonderSonde(z.voorwaarde());
-                return v == z.voorwaarde() ? z : new Term.ZonderFout(v, z.bron());
+            case Term.WithoutFault z -> {
+                Term v = withoutDepositFlag(z.voorwaarde());
+                return v == z.voorwaarde() ? z : new Term.WithoutFault(v, z.bron());
             }
         }
     }
 
-    /** {@link #zonderSonde(Term)} of each term, {@code termen} itself where none changes. */
-    private static List<Term> zonderSonde(List<Term> termen) {
-        List<Term> uit = new ArrayList<>(termen.size());
-        boolean anders = false;
-        for (Term t : termen) {
-            Term z = zonderSonde(t);
-            anders |= z != t;
-            uit.add(z);
+    /** {@link #withoutDepositFlag(Term)} of each term, {@code terms} itself where none changes. */
+    private static List<Term> withoutDepositFlag(List<Term> terms) {
+        List<Term> out = new ArrayList<>(terms.size());
+        boolean otherwise = false;
+        for (Term t : terms) {
+            Term z = withoutDepositFlag(t);
+            otherwise |= z != t;
+            out.add(z);
         }
-        return anders ? uit : termen;
+        return otherwise ? out : terms;
     }
 
     /** A constraint that field {@code veld} of a fact equals {@code waarde}. */
-    private static Alfa gelijk(String id, String veld, Object waarde) {
-        return new Alfa(id, List.of(new Alfa.Veldtoets(veld, Alfa.Vergelijker.GELIJK, waarde)));
+    private static Alpha equal(String id, String veld, Object waarde) {
+        return new Alpha(id, List.of(new Alpha.FieldTest(veld, Alpha.Comparator.GELIJK, waarde)));
     }
 
     /** The join of a standing fact on the rule's subject: its field {@code onderwerp} is the subject. */
-    private static Join opOnderwerp(String id) {
-        return new Join(id, "onderwerp", ONDERWERP);
+    private static Join onSubject(String id) {
+        return new Join(id, "onderwerp", SUBJECT);
     }
 
-    /** The rule that puts the {@link ParameterStand} of one parameter in working memory: it matches no fact, so it fires
+    /** The rule that puts the {@link ParameterState} of one parameter in working memory: it matches no fact, so it fires
      *  once per session, and it binds the global in its consequence, where the case runner set it before the session
      *  fired. The global does not change while the session fires, so the standing never needs to be withdrawn. */
-    private Regelplan parameterstandregel(String naam) {
-        return new Regelplan("parameterstand " + naam, null, null, new Leestabel(List.of()), List.of(),
-                new Gevolg.Parameterstand(naam, naam, Gevolg.Invoeging.LOGISCH));
+    private RulePlan parameterStateRule(String naam) {
+        return new RulePlan("parameterstand " + naam, null, null, new ReadTable(List.of()), List.of(),
+                new Consequence.InsertParameterState(naam, naam, Consequence.Insertion.LOGICAL));
     }
 
     /** Declares the global of parameter {@code p}, of the Java type of its datatype, so that the case runner sets it by
@@ -5926,274 +5926,274 @@ public final class TmsTranspiler {
         String naam = Namen.ident(p.naam(), false);
         if (globals.containsKey(naam)) return;
         if (p.granulariteit() != null)
-            throw new Weigering("de tijdsafhankelijke parameter '" + p.naam() + "': " + NOG_NIET + "; de goldens met"
+            throw new Refusal("de tijdsafhankelijke parameter '" + p.naam() + "': " + STILL_NOT + "; de goldens met"
                     + " cases die er een lezen, doen dat in een TemporalRead, die de lader voor alle takken weigert");
         Datatype t = p.datatype();
-        Class<?> klasse = t.isNumeriek() || t.isPercentage() ? BigDecimal.class
+        Class<?> javaClass = t.isNumeriek() || t.isPercentage() ? BigDecimal.class
                 : t instanceof Datatype.DatumInDagen ? java.time.LocalDate.class
                 : t instanceof Datatype.DatumTijd ? java.time.LocalDateTime.class
                 : t.isTekst() || t instanceof Datatype.Enumeratie ? String.class
                 : t.isBoolean() ? Boolean.class : null;
-        if (klasse == null) throw new Weigering("de parameter '" + p.naam() + "' van type " + typenaam(t) + ": " + NOG_NIET);
-        globals.put(naam, klasse);
+        if (javaClass == null) throw new Refusal("de parameter '" + p.naam() + "' van type " + typeName(t) + ": " + STILL_NOT);
+        globals.put(naam, javaClass);
     }
 
-    private static int[] posities(Set<Integer> gebruik) {
-        return gebruik.stream().mapToInt(Integer::intValue).toArray();
+    private static int[] positions(Set<Integer> use) {
+        return use.stream().mapToInt(Integer::intValue).toArray();
     }
 
     // ---------------- standings ----------------
 
     /**
-     * The three generic rules that keep one {@link KenmerkStand} per object of the declaring type: waar from the input,
+     * The three generic rules that keep one {@link CharacteristicState} per object of the declaring type: waar from the input,
      * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation over a
-     * characteristic, {@code not HeeftKenmerk}, and reads the input in its left-hand side, so a derivation that appears
+     * characteristic, {@code not HasCharacteristic}, and reads the input in its left-hand side, so a derivation that appears
      * later retracts the onwaar standing and every conclusion that read it. When both sources hold, the two waar
      * standings are equal, and truth maintenance keeps them as one fact with a justification each. The input is read
-     * off the bean as whether it holds {@code true} ({@link Binding.Leesvorm#WAAR}), the one truth value the standing
-     * holds: a characteristic on a timeline is never read through it ({@link Lezingen#tijdlijn}).
+     * off the bean as whether it holds {@code true} ({@link Binding.ReadForm#WAAR}), the one truth value the standing
+     * holds: a characteristic on a timeline is never read through it ({@link Reads#timeline}).
      */
-    private List<Regelplan> kenmerkstandregels(Lid lid) {
-        ElementSleutel sleutel = lid.sleutel();
-        String naam = "kenmerkstand " + lid.declarant().naam + "." + lid.naam() + ": ";
-        Alfa invoerWaar = invoerWaar(id("invoer"), lid, true);
-        Regelplan invoer = new Regelplan(naam + "waar uit de invoer", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(invoerWaar), List.of(), List.of())),
-                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, true, Gevolg.Invoeging.LOGISCH));
-        Regelplan afleiding = new Regelplan(naam + "waar uit een afleiding", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()), afgeleid(sleutel)),
-                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, true,
-                        Gevolg.Invoeging.LOGISCH));
-        Alfa geenInvoer = invoerWaar(id("geen-invoer"), lid, false);
-        Regelplan onwaar = new Regelplan(naam + "onwaar", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(geenInvoer), List.of(), List.of()),
-                        new Niet(afgeleid(sleutel))),
-                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.GEEN, false, Gevolg.Invoeging.LOGISCH));
-        return List.of(invoer, afleiding, onwaar);
+    private List<RulePlan> characteristicStateRules(Member member) {
+        ElementSleutel sleutel = member.sleutel();
+        String naam = "kenmerkstand " + member.declarant().naam + "." + member.naam() + ": ";
+        Alpha inputTrue = inputTrue(id("invoer"), member, true);
+        RulePlan invoer = new RulePlan(naam + "waar uit de invoer", null, null, new ReadTable(List.of()),
+                List.of(new Subject(member.javaClass(), SUBJECT, List.of(inputTrue), List.of(), List.of())),
+                new Consequence.InsertCharacteristicState(SUBJECT, sleutel, Consequence.StateSource.INVOER, true, Consequence.Insertion.LOGICAL));
+        RulePlan derivation = new RulePlan(naam + "waar uit een afleiding", null, null, new ReadTable(List.of()),
+                List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()), derived(sleutel)),
+                new Consequence.InsertCharacteristicState(SUBJECT, sleutel, Consequence.StateSource.DERIVATION, true,
+                        Consequence.Insertion.LOGICAL));
+        Alpha noInput = inputTrue(id("geen-invoer"), member, false);
+        RulePlan falsePlan = new RulePlan(naam + "onwaar", null, null, new ReadTable(List.of()),
+                List.of(new Subject(member.javaClass(), SUBJECT, List.of(noInput), List.of(), List.of()),
+                        new Not(derived(sleutel))),
+                new Consequence.InsertCharacteristicState(SUBJECT, sleutel, Consequence.StateSource.GEEN, false, Consequence.Insertion.LOGICAL));
+        return List.of(invoer, derivation, falsePlan);
     }
 
     /** The test that the input of characteristic {@code lid} on the subject's bean, read as whether it holds
-     *  {@code true}, is {@code waar}. */
-    private static Alfa invoerWaar(String id, Lid lid, boolean waar) {
-        return new Alfa(id, List.of(new Alfa.Veldtoets(List.of(), lid.naam(), Binding.Leesvorm.WAAR,
-                Alfa.Vergelijker.GELIJK, waar)));
+     *  {@code true}, is {@code polarity}. */
+    private static Alpha inputTrue(String id, Member member, boolean polarity) {
+        return new Alpha(id, List.of(new Alpha.FieldTest(List.of(), member.naam(), Binding.ReadForm.WAAR,
+                Alpha.Comparator.GELIJK, polarity)));
     }
 
-    /** The pattern of the {@link HeeftKenmerk} of {@code kenmerk} that a derivation put on the subject: a constraint on
+    /** The pattern of the {@link HasCharacteristic} of {@code kenmerk} that a derivation put on the subject: a constraint on
      *  the characteristic, the join on the subject. */
-    private Patroon afgeleid(ElementSleutel kenmerk) {
-        return new Patroon(HeeftKenmerk.class, "$afgeleid", List.of(gelijk(id("afgeleid"), "kenmerk", kenmerk)),
-                List.of(opOnderwerp(id("afgeleid-onderwerp"))), List.of());
+    private FactPattern derived(ElementSleutel kenmerk) {
+        return new FactPattern(HasCharacteristic.class, "$afgeleid", List.of(equal(id("afgeleid"), "kenmerk", kenmerk)),
+                List.of(onSubject(id("afgeleid-onderwerp"))), List.of());
     }
 
     /**
-     * The generic rules that keep one {@link Stand} per object of the declaring type: the derived value where a
-     * {@link Waarde} exists, else the input on the bean, read in the left-hand side, leeg included. An input rule
+     * The generic rules that keep one {@link State} per object of the declaring type: the derived value where a
+     * {@link Value} exists, else the input on the bean, read in the left-hand side, leeg included. An input rule
      * carries {@code not Waarde}, so a derivation that appears later retracts the input standing and every value that
      * read it. A member no form writes has no derivation, and only an attribute on a timeline is read through its
-     * standing then ({@link Lezingen#tijdlijn}).
+     * standing then ({@link Reads#timeline}).
      *
-     * <p>The input timeline of a member on a timeline stands in the form a {@link Waarde} carries one,
-     * {@code List<Tijdvak>} ({@link Tijdvak#lijst}), so every standing of the member holds one representation, except
-     * where the case gives the input as the asOfDate-bucket scalar: then the input stands as an {@link Emmerscalair}
+     * <p>The input timeline of a member on a timeline stands in the form a {@link Value} carries one,
+     * {@code List<Period>} ({@link Period#lijst}), so every standing of the member holds one representation, except
+     * where the case gives the input as the asOfDate-bucket scalar: then the input stands as an {@link BucketScalar}
      * (RUNTIME-SEMANTICS ch. 8.4). The bean holds that scalar as the one segment of its period, which a full timeline of
-     * one segment would be as well, so two input rules join the {@link Emmerinvoer} the case input states beside the
+     * one segment would be as well, so two input rules join the {@link BucketInput} the case input states beside the
      * beans, the one under {@code exists} and the other under {@code not}; the fact is stated and never changes while
      * the session fires, so exactly one of them holds for each object.
      */
-    private List<Regelplan> attribuutstandregels(Lid lid) {
-        ElementSleutel sleutel = lid.sleutel();
-        String naam = "stand " + lid.declarant().naam + "." + lid.naam() + ": ";
-        List<Regelplan> uit = new ArrayList<>();
+    private List<RulePlan> attributeStateRules(Member member) {
+        ElementSleutel sleutel = member.sleutel();
+        String naam = "stand " + member.declarant().naam + "." + member.naam() + ": ";
+        List<RulePlan> out = new ArrayList<>();
 
-        if (schrijvers.containsKey(sleutel)) {
-            Patroon waarde = new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
-                    List.of(opOnderwerp(id("waarde-onderwerp"))), List.of(Binding.van("$v", Waarde.class, "waarde")));
-            uit.add(new Regelplan(naam + "uit een afleiding", null, null,
-                    eenSlot(Leessoort.AFLEIDING, "afleiding " + sleutel, "$v"),
-                    List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()), waarde),
-                    new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, 0, false,
-                            Gevolg.Invoeging.LOGISCH)));
+        if (writers.containsKey(sleutel)) {
+            FactPattern waarde = new FactPattern(Value.class, "$waarde", List.of(equal(id("waarde"), "attribuut", sleutel)),
+                    List.of(onSubject(id("waarde-onderwerp"))), List.of(Binding.van("$v", Value.class, "waarde")));
+            out.add(new RulePlan(naam + "uit een afleiding", null, null,
+                    oneSlot(ReadKind.DERIVATION, "afleiding " + sleutel, "$v"),
+                    List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()), waarde),
+                    new Consequence.State(SUBJECT, sleutel, Consequence.StateSource.DERIVATION, 0, false,
+                            Consequence.Insertion.LOGICAL)));
         }
 
-        if (lid.tijd() == null) {
-            uit.add(invoerstandregel(lid, naam + "uit de invoer", null));
-            return uit;
+        if (member.time() == null) {
+            out.add(inputStateRule(member, naam + "uit de invoer", null));
+            return out;
         }
-        uit.add(invoerstandregel(lid, naam + "uit de invoer", false));
-        uit.add(invoerstandregel(lid, naam + "uit de invoer, een emmerscalair", true));
-        return uit;
+        out.add(inputStateRule(member, naam + "uit de invoer", false));
+        out.add(inputStateRule(member, naam + "uit de invoer, een emmerscalair", true));
+        return out;
     }
 
-    /** The input rule {@code naam} of {@link #attribuutstandregels}: where no {@link Waarde} stands on the object, the
-     *  {@link Stand} of the input on the bean, read as it is, or as its segments for a member on a timeline
-     *  ({@link #invoervorm}); with {@code emmer} null for a member that holds one value, and for a member on a timeline
-     *  only where an {@link Emmerinvoer} of the member on the object exists ({@code true}), the input then standing as
-     *  its {@link Emmerscalair}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
+    /** The input rule {@code naam} of {@link #attributeStateRules}: where no {@link Value} stands on the object, the
+     *  {@link State} of the input on the bean, read as it is, or as its segments for a member on a timeline
+     *  ({@link #inputForm}); with {@code bucket} null for a member that holds one value, and for a member on a timeline
+     *  only where an {@link BucketInput} of the member on the object exists ({@code true}), the input then standing as
+     *  its {@link BucketScalar}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
      *  timeline: a binding is computed for every object the subject pattern matches, also one whose input is a full
      *  timeline. */
-    private Regelplan invoerstandregel(Lid lid, String naam, Boolean emmer) {
-        ElementSleutel sleutel = lid.sleutel();
+    private RulePlan inputStateRule(Member member, String naam, Boolean bucket) {
+        ElementSleutel sleutel = member.sleutel();
         List<LhsItem> items = new ArrayList<>();
-        items.add(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
-                new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null))));
-        if (emmer != null) {
-            Patroon p = new Patroon(Emmerinvoer.class, "$emmerinvoer",
-                    List.of(gelijk(id("emmerinvoer"), "attribuut", sleutel)),
-                    List.of(opOnderwerp(id("emmerinvoer-onderwerp"))), List.of());
-            items.add(emmer ? new Bestaat(List.of(p), List.of(p.naam()), List.of(ONDERWERP)) : new Niet(p));
+        items.add(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
+                new Binding.Field(member.javaClass(), member.naam()), inputForm(member), null))));
+        if (bucket != null) {
+            FactPattern p = new FactPattern(BucketInput.class, "$emmerinvoer",
+                    List.of(equal(id("emmerinvoer"), "attribuut", sleutel)),
+                    List.of(onSubject(id("emmerinvoer-onderwerp"))), List.of());
+            items.add(bucket ? new Exists(List.of(p), List.of(p.naam()), List.of(SUBJECT)) : new Not(p));
         }
-        items.add(new Niet(new Patroon(Waarde.class, "$waarde", List.of(gelijk(id("waarde"), "attribuut", sleutel)),
-                List.of(opOnderwerp(id("waarde-onderwerp"))), List.of())));
-        return new Regelplan(naam, null, null, eenSlot(Leessoort.INVOER, "invoer " + sleutel, "$invoer"),
-                items, new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, 0, Boolean.TRUE.equals(emmer),
-                        Gevolg.Invoeging.LOGISCH));
+        items.add(new Not(new FactPattern(Value.class, "$waarde", List.of(equal(id("waarde"), "attribuut", sleutel)),
+                List.of(onSubject(id("waarde-onderwerp"))), List.of())));
+        return new RulePlan(naam, null, null, oneSlot(ReadKind.INVOER, "invoer " + sleutel, "$invoer"),
+                items, new Consequence.State(SUBJECT, sleutel, Consequence.StateSource.INVOER, 0, Boolean.TRUE.equals(bucket),
+                        Consequence.Insertion.LOGICAL));
     }
 
     /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code soort}, which the
      *  variable {@code naam} binds. */
-    private static Leestabel eenSlot(Leessoort soort, String sleutel, String naam) {
-        return new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, soort, sleutel, naam)));
+    private static ReadTable oneSlot(ReadKind soort, String sleutel, String naam) {
+        return new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, soort, sleutel, naam)));
     }
 
     /**
-     * The two generic rules that keep one {@link PadStand} per object of the subject type for a derived member read over
+     * The two generic rules that keep one {@link PathState} per object of the subject type for a derived member read over
      * a path: where every link on the path is present, the standing of the member on the object the path reaches,
      * joined on that object; where a link is absent, null. The links are input, read off the bean in the left-hand
      * side, and do not change while the session fires, so exactly one of the two holds for each object. Both rules
-     * read the path along its reference fields ({@link Pad#velden}): the test whether it reaches an object, and the
+     * read the path along its reference fields ({@link Path#fields}): the test whether it reaches an object, and the
      * binding of that object, which walks to the last field and reads it there.
      */
-    private List<Regelplan> padstandregels(Padlezing p) {
-        Pad pad = p.pad();
-        Lid lid = p.lid();
+    private List<RulePlan> pathStateRules(PathRead p) {
+        Path pad = p.pad();
+        Member member = p.member();
         String ps = pad.sleutel();
-        ElementSleutel lk = lid.sleutel();
-        Class<?> klasse = bonenklasse(pad.subject());
-        String naam = "padstand " + pad.subject().naam + "." + String.join(".", pad.rollen()) + " naar "
-                + lid.declarant().naam + "." + lid.naam() + ": ";
-        List<Binding.Veld> velden = pad.velden();
+        ElementSleutel lk = member.sleutel();
+        Class<?> javaClass = beanClass(pad.subject());
+        String naam = "padstand " + pad.subject().naam + "." + String.join(".", pad.roles()) + " naar "
+                + member.declarant().naam + "." + member.naam() + ": ";
+        List<Binding.Field> fields = pad.fields();
 
-        Alfa link = langsPad(id("link"), velden, Alfa.Vergelijker.GEVULD);
-        Binding bereikt = new Binding("$bereikt", velden.subList(0, velden.size() - 1), velden.get(velden.size() - 1),
-                Binding.Leesvorm.WAARDE, null);
-        Class<?> standklasse = lid.kenmerk() ? KenmerkStand.class : Stand.class;
-        Patroon stand = new Patroon(standklasse, "$stand",
-                List.of(gelijk(id("stand"), lid.kenmerk() ? "kenmerk" : "attribuut", lk)),
+        Alpha link = alongPath(id("link"), fields, Alpha.Comparator.GEVULD);
+        Binding reaches = new Binding("$bereikt", fields.subList(0, fields.size() - 1), fields.get(fields.size() - 1),
+                Binding.ReadForm.VALUE, null);
+        Class<?> stateClass = member.kenmerk() ? CharacteristicState.class : State.class;
+        FactPattern state = new FactPattern(stateClass, "$stand",
+                List.of(equal(id("stand"), member.kenmerk() ? "kenmerk" : "attribuut", lk)),
                 List.of(new Join(id("stand-bereikt"), "onderwerp", "$bereikt")),
-                List.of(Binding.van("$v", standklasse, lid.kenmerk() ? "waar" : "waarde")));
-        Regelplan aanwezig = new Regelplan(naam + "link aanwezig", null, null,
-                eenSlot(Leessoort.BEREIKTE_STAND, "stand " + ps + " " + lk, "$v"),
-                List.of(new Onderwerp(klasse, ONDERWERP, List.of(link), List.of(), List.of(bereikt)), stand),
-                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH));
+                List.of(Binding.van("$v", stateClass, member.kenmerk() ? "holds" : "waarde")));
+        RulePlan aanwezig = new RulePlan(naam + "link aanwezig", null, null,
+                oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v"),
+                List.of(new Subject(javaClass, SUBJECT, List.of(link), List.of(), List.of(reaches)), state),
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, Consequence.Insertion.LOGICAL));
 
-        Alfa geenLink = langsPad(id("geen-link"), velden, Alfa.Vergelijker.LEEG);
-        Regelplan afwezig = new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(klasse, ONDERWERP, List.of(geenLink), List.of(), List.of())),
-                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
-                        Gevolg.Invoeging.LOGISCH));
-        return List.of(aanwezig, afwezig);
+        Alpha noLink = alongPath(id("geen-link"), fields, Alpha.Comparator.LEEG);
+        RulePlan absent = new RulePlan(naam + "link afwezig", null, null, new ReadTable(List.of()),
+                List.of(new Subject(javaClass, SUBJECT, List.of(noLink), List.of(), List.of())),
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1,
+                        Consequence.Insertion.LOGICAL));
+        return List.of(aanwezig, absent);
     }
 
-    /** The test {@code op} of the object the walk over the reference fields {@code velden} reaches from the subject,
+    /** The test {@code op} of the object the walk over the reference fields {@code fields} reaches from the subject,
      *  null where a link on it is absent: {@code GEVULD} where the path reaches an object, {@code LEEG} where not. */
-    private static Alfa langsPad(String id, List<Binding.Veld> velden, Alfa.Vergelijker op) {
-        return new Alfa(id, List.of(new Alfa.Veldtoets(velden, null, Binding.Leesvorm.WAARDE, op, null)));
+    private static Alpha alongPath(String id, List<Binding.Field> fields, Alpha.Comparator op) {
+        return new Alpha(id, List.of(new Alpha.FieldTest(fields, null, Binding.ReadForm.VALUE, op, null)));
     }
 
     /**
-     * The two rules of {@link #padstandregels} for a path with a hop over a relation a form creates: such a relation
+     * The two rules of {@link #pathStateRules} for a path with a hop over a relation a form creates: such a relation
      * gains links while the session fires, so the path is a chain of patterns in the left-hand side, a hop over a
-     * created relation joining its {@link Koppeling} facts and a hop over an input relation the reference field of the
-     * near bean, each ending in a pattern over the reached bean ({@link #keten}). Where the chain reaches an object the
+     * created relation joining its {@link RelationLink} facts and a hop over an input relation the reference field of the
+     * near bean, each ending in a pattern over the reached bean ({@link #chain}). Where the chain reaches an object the
      * standing carries the member's value there, read off that bean where no form writes the member and through its
      * standing where one does, or where it is an attribute on a timeline, whose standing carries the case's input
      * convention; where it does not, the value is null, under a {@code not} over the same chain. A link that a creation
      * adds takes the standing along.
      */
-    private List<Regelplan> koppelingpadstandregels(Padlezing p) {
-        Pad pad = p.pad();
-        Lid lid = p.lid();
+    private List<RulePlan> linkPathStateRules(PathRead p) {
+        Path pad = p.pad();
+        Member member = p.member();
         String ps = pad.sleutel();
-        ElementSleutel lk = lid.sleutel();
-        Class<?> klasse = bonenklasse(pad.subject());
-        String naam = "padstand " + pad.subject().naam + "." + String.join(".", pad.rollen()) + " naar "
-                + lid.declarant().naam + "." + lid.naam() + ": ";
+        ElementSleutel lk = member.sleutel();
+        Class<?> javaClass = beanClass(pad.subject());
+        String naam = "padstand " + pad.subject().naam + "." + String.join(".", pad.roles()) + " naar "
+                + member.declarant().naam + "." + member.naam() + ": ";
 
         List<LhsItem> items = new ArrayList<>();
-        items.add(new Onderwerp(klasse, ONDERWERP, List.of(), List.of(), List.of()));
-        List<Patroon> keten = keten(pad.hops(), ONDERWERP, null);
-        Leestabel waarde;
-        if (schrijvers.containsKey(lk) || tijdlijnattribuut(lid)) {
-            items.addAll(keten);
-            Class<?> standklasse = lid.kenmerk() ? KenmerkStand.class : Stand.class;
-            items.add(new Patroon(standklasse, "$stand",
-                    List.of(gelijk(id("stand"), lid.kenmerk() ? "kenmerk" : "attribuut", lk)),
-                    List.of(new Join(id("stand-bereikt"), "onderwerp", keten.get(keten.size() - 1).naam())),
-                    List.of(Binding.van("$v", standklasse, lid.kenmerk() ? "waar" : "waarde"))));
-            waarde = eenSlot(Leessoort.BEREIKTE_STAND, "stand " + ps + " " + lk, "$v");
+        items.add(new Subject(javaClass, SUBJECT, List.of(), List.of(), List.of()));
+        List<FactPattern> chain = chain(pad.hops(), SUBJECT, null);
+        ReadTable waarde;
+        if (writers.containsKey(lk) || timelineAttribute(member)) {
+            items.addAll(chain);
+            Class<?> stateClass = member.kenmerk() ? CharacteristicState.class : State.class;
+            items.add(new FactPattern(stateClass, "$stand",
+                    List.of(equal(id("stand"), member.kenmerk() ? "kenmerk" : "attribuut", lk)),
+                    List.of(new Join(id("stand-bereikt"), "onderwerp", chain.get(chain.size() - 1).naam())),
+                    List.of(Binding.van("$v", stateClass, member.kenmerk() ? "holds" : "waarde"))));
+            waarde = oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v");
         } else {
             // the input of the member off the bean the chain reaches, read as the binding's form says
-            items.addAll(keten.subList(0, keten.size() - 1));
-            items.add(metBinding(keten.get(keten.size() - 1), new Binding("$v", List.of(),
-                    new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null)));
-            waarde = eenSlot(Leessoort.BEREIKTE_INVOER, "invoer " + ps + " " + lk, "$v");
+            items.addAll(chain.subList(0, chain.size() - 1));
+            items.add(withBinding(chain.get(chain.size() - 1), new Binding("$v", List.of(),
+                    new Binding.Field(member.javaClass(), member.naam()), inputForm(member), null)));
+            waarde = oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v");
         }
-        Regelplan aanwezig = new Regelplan(naam + "link aanwezig", null, null, waarde, items,
-                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH));
+        RulePlan aanwezig = new RulePlan(naam + "link aanwezig", null, null, waarde, items,
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, Consequence.Insertion.LOGICAL));
 
         // no combination of the chain's objects: what the chain declares lives inside the negation, and it reads the
         // subject alone from before it
-        List<Patroon> geen = keten(pad.hops(), ONDERWERP, null);
-        Regelplan afwezig = new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(klasse, ONDERWERP, List.of(), List.of(), List.of()),
-                        new Niet(geen, Bestaat.verklaard(geen), List.of(ONDERWERP))),
-                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
-                        Gevolg.Invoeging.LOGISCH));
-        return List.of(aanwezig, afwezig);
+        List<FactPattern> none = chain(pad.hops(), SUBJECT, null);
+        RulePlan absent = new RulePlan(naam + "link afwezig", null, null, new ReadTable(List.of()),
+                List.of(new Subject(javaClass, SUBJECT, List.of(), List.of(), List.of()),
+                        new Not(none, Exists.verklaard(none), List.of(SUBJECT))),
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1,
+                        Consequence.Insertion.LOGICAL));
+        return List.of(aanwezig, absent);
     }
 
     /**
      * The patterns that walk {@code hops} from the object the variable {@code van} binds, in order: per hop a pattern
      * over the bean the hop reaches, tested against the near object along the reference field of the end that holds it
-     * ({@link Functie#ONTMOETING}, the field the chain of one side), or, over a relation a form creates, a
-     * {@link Koppeling} pattern joined to the near object, which binds the link's other end, and a pattern over the bean
-     * joined to that end. Where {@code fase} names the variable of the creation phase, a link of that phase is not
+     * ({@link Aggregation#MEETING}, the field the chain of one side), or, over a relation a form creates, a
+     * {@link RelationLink} pattern joined to the near object, which binds the link's other end, and a pattern over the bean
+     * joined to that end. Where {@code phase} names the variable of the creation phase, a link of that phase is not
      * walked. The last pattern is the one over the last bean reached.
      */
-    private List<Patroon> keten(List<Hop> hops, String van, String fase) {
-        List<Patroon> uit = new ArrayList<>();
-        String nabij = van;
+    private List<FactPattern> chain(List<Hop> hops, String van, String phase) {
+        List<FactPattern> out = new ArrayList<>();
+        String near = van;
         for (Hop h : hops) {
-            Class<?> klasse = bonenklasse(h.naar());
-            String ver = "$stap_" + id("keten");
-            if (h.relatie() != null) {
-                boolean eerste = h.nabijIsEerste();
-                String koppeling = "$koppeling_" + id("keten");
-                String overzijde = "$overzijde_" + id("keten");
-                Alfa vanRelatie = gelijk(id("koppeling"), "relatie", h.relatie());
-                Join opNabij = new Join(id("koppeling-nabij"), eerste ? "eerste" : "tweede", nabij);
+            Class<?> javaClass = beanClass(h.naar());
+            String far = "$stap_" + id("keten");
+            if (h.relation() != null) {
+                boolean eerste = h.nearIsFirst();
+                String relationLink = "$koppeling_" + id("keten");
+                String otherSide = "$overzijde_" + id("keten");
+                Alpha ofRelation = equal(id("koppeling"), "relation", h.relation());
+                Join onNear = new Join(id("koppeling-nabij"), eerste ? "eerste" : "tweede", near);
                 // a creation rule does not walk a link of the phase it fires in: the rule layer has not seen it yet
-                List<Betatoets> eerder = fase == null ? List.of()
-                        : List.of(new Betatoets(id("koppeling-eerder"), Functie.NIET_IN_FASE, fase));
-                uit.add(new Patroon(Koppeling.class, koppeling, List.of(vanRelatie), List.of(opNabij), eerder,
-                        List.of(Binding.van(overzijde, Koppeling.class, eerste ? "tweede" : "eerste"))));
-                uit.add(new Patroon(klasse, ver, List.of(), List.of(new Join(id("koppeling-ver"), null, overzijde)),
+                List<BetaTest> earlier = phase == null ? List.of()
+                        : List.of(new BetaTest(id("koppeling-eerder"), Aggregation.NOT_IN_PHASE, phase));
+                out.add(new FactPattern(RelationLink.class, relationLink, List.of(ofRelation), List.of(onNear), earlier,
+                        List.of(Binding.van(otherSide, RelationLink.class, eerste ? "tweede" : "eerste"))));
+                out.add(new FactPattern(javaClass, far, List.of(), List.of(new Join(id("koppeling-ver"), null, otherSide)),
                         List.of()));
             } else {
                 // the field on the near bean reaches the far one, or the field on the far bean the near one
                 // the walk reads bean properties, as every chain of the plan holds them
-                List<String> veld = List.of(Namen.eigenschap(h.veld()));
-                Betatoets stap = h.opNabij()
-                        ? new Betatoets(id("veld-nabij"), Functie.ONTMOETING, nabij,
-                                List.of(constante(List.of()), constante(veld)))
-                        : new Betatoets(id("veld-ver"), Functie.ONTMOETING, nabij,
-                                List.of(constante(veld), constante(List.of())));
-                uit.add(new Patroon(klasse, ver, List.of(), List.of(), List.of(stap), List.of()));
+                List<String> veld = List.of(Namen.property(h.veld()));
+                BetaTest step = h.onNear()
+                        ? new BetaTest(id("veld-nabij"), Aggregation.MEETING, near,
+                                List.of(constant(List.of()), constant(veld)))
+                        : new BetaTest(id("veld-ver"), Aggregation.MEETING, near,
+                                List.of(constant(veld), constant(List.of())));
+                out.add(new FactPattern(javaClass, far, List.of(), List.of(), List.of(step), List.of()));
             }
-            nabij = ver;
+            near = far;
         }
-        return uit;
+        return out;
     }
 
     // ---------------- members, paths and beans ----------------
@@ -6202,184 +6202,184 @@ public final class TmsTranspiler {
      *  bean property), whether it is a characteristic, its declared datatype (null for a characteristic), the bean
      *  class of the declaring type, whose subtypes' beans extend it, and, for a member on a timeline, the granularity of
      *  its grid (null for a member that holds one value). A member on a timeline is read and written as a
-     *  {@code List<Tijdvak>} ({@link Tijdvak}). */
-    private record Lid(ElementSleutel sleutel, Objecttype declarant, String naam, boolean kenmerk, Datatype datatype,
-                       Class<?> klasse, RegelSpraakModel.Granulariteit tijd) {}
+     *  {@code List<Period>} ({@link Period}). */
+    private record Member(ElementSleutel sleutel, Objecttype declarant, String naam, boolean kenmerk, Datatype datatype,
+                       Class<?> javaClass, RegelSpraakModel.Granulariteit time) {}
 
     /** Whether {@code lid} is an attribute on a timeline: one the branch reads through its standing, derived or input,
-     *  whose input stands in the convention the case gave it ({@link #attribuutstandregels}). */
-    private static boolean tijdlijnattribuut(Lid lid) {
-        return lid.tijd() != null && !lid.kenmerk();
+     *  whose input stands in the convention the case gave it ({@link #attributeStateRules}). */
+    private static boolean timelineAttribute(Member member) {
+        return member.time() != null && !member.kenmerk();
     }
 
     /** How the input member {@code lid} is read off a bean of a type that declares it, the decision a plan's binding
-     *  carries ({@link Binding.Leesvorm}): a characteristic on a timeline as its true periods, a {@code List<Tijdvak>}
-     *  ({@link Tijdvak#lijst}), null for an absent timeline, a characteristic that holds one truth value as whether it
+     *  carries ({@link Binding.ReadForm}): a characteristic on a timeline as its true periods, a {@code List<Period>}
+     *  ({@link Period#lijst}), null for an absent timeline, a characteristic that holds one truth value as whether it
      *  holds {@code true}, and any other member as its value. An attribute on a timeline is read through its standing
-     *  instead ({@link #tijdlijnattribuut}). */
-    private static Binding.Leesvorm invoervorm(Lid lid) {
-        if (lid.tijd() != null) return Binding.Leesvorm.TIJDVAKKEN;
-        if (lid.kenmerk()) return Binding.Leesvorm.WAAR;
-        return Binding.Leesvorm.WAARDE;
+     *  instead ({@link #timelineAttribute}). */
+    private static Binding.ReadForm inputForm(Member member) {
+        if (member.time() != null) return Binding.ReadForm.PERIODS;
+        if (member.kenmerk()) return Binding.ReadForm.WAAR;
+        return Binding.ReadForm.VALUE;
     }
 
     /** Member {@code naam} as declared on {@code houder}'s chain, compared as the verifier compares names, holding one
-     *  value. A member on a timeline is refused here: the positions that read or write one ask {@link #tijdlid}. A
+     *  value. A member on a timeline is refused here: the positions that read or write one ask {@link #timeMember}. A
      *  member with dimensions is refused. */
-    private Lid lid(Objecttype houder, String naam, boolean kenmerk) {
-        Lid lid = gedeclareerd(houder, naam, kenmerk);
-        if (lid.tijd() != null)
-            throw new Weigering("het tijdsafhankelijke " + (kenmerk ? "kenmerk" : "attribuut") + " '" + lid.naam()
-                    + "' van " + lid.declarant().naam + " op een plek die één waarde leest of schrijft: deze"
+    private Member member(Objecttype houder, String naam, boolean kenmerk) {
+        Member member = declared(houder, naam, kenmerk);
+        if (member.time() != null)
+            throw new Refusal("het tijdsafhankelijke " + (kenmerk ? "kenmerk" : "attribuut") + " '" + member.naam()
+                    + "' van " + member.declarant().naam + " op een plek die één waarde leest of schrijft: deze"
                     + " tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig"
                     + " deel, een dagentelling en een uniciteitssleutel, en schrijft haar alleen met een tijdsevenredig"
                     + " deel of een dagentelling (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)");
-        return lid;
+        return member;
     }
 
     /**
-     * Member {@code naam} as declared on {@code houder}'s chain, on a timeline: {@code wat} reads or writes its timeline
+     * Member {@code naam} as declared on {@code houder}'s chain, on a timeline: {@code description} reads or writes its timeline
      * (RUNTIME-SEMANTICS ch. 3). Refused by name: a member that holds one value there, one on a grid of more than one
      * unit, which carries no operation (ch. 3.2, OPEN in ch. 3.12), and one on a timeline with a variable start point,
      * whose grid is laid per object from an anchor a {@code StartPointDetermination} derives: no golden with cases
      * reads or writes one, and the case input lays no timeline on such a grid, so no case can confirm this branch's
      * reading of it against the reference interpreter.
      */
-    private Lid tijdlid(Objecttype houder, String naam, boolean kenmerk, String wat) {
-        Lid lid = gedeclareerd(houder, naam, kenmerk);
+    private Member timeMember(Objecttype houder, String naam, boolean kenmerk, String description) {
+        Member member = declared(houder, naam, kenmerk);
         String soort = kenmerk ? "kenmerk" : "attribuut";
-        if (lid.tijd() == null)
-            throw new Weigering(wat + " over het " + soort + " '" + lid.naam() + "' van " + lid.declarant().naam
+        if (member.time() == null)
+            throw new Refusal(description + " over het " + soort + " '" + member.naam() + "' van " + member.declarant().naam
                     + ", dat niet tijdsafhankelijk is");
-        if (Tijdlijnen.meerPeriodiek(kenmerk ? lid.declarant().kenmerkTijdlijnAantalLeden()
-                : lid.declarant().tijdlijnAantalLeden(), lid.naam()))
-            throw new Weigering(wat + " over het " + soort + " '" + lid.naam() + "' van " + lid.declarant().naam
+        if (Timelines.morePeriodic(kenmerk ? member.declarant().kenmerkTijdlijnAantalLeden()
+                : member.declarant().tijdlijnAantalLeden(), member.naam()))
+            throw new Refusal(description + " over het " + soort + " '" + member.naam() + "' van " + member.declarant().naam
                     + " op een raster van meer perioden, dat geen bewerking draagt (RUNTIME-SEMANTICS ch. 3.2, 3.12)");
-        if (!kenmerk && model.heeftVariabelStartpunt(lid.declarant(), lid.naam()))
-            throw new Weigering(wat + " over het attribuut '" + lid.naam() + "' van " + lid.declarant().naam + " op een"
-                    + " tijdlijn met een variabel startpunt: " + NOG_NIET + "; geen golden met cases leest of schrijft er"
+        if (!kenmerk && model.heeftVariabelStartpunt(member.declarant(), member.naam()))
+            throw new Refusal(description + " over het attribuut '" + member.naam() + "' van " + member.declarant().naam + " op een"
+                    + " tijdlijn met een variabel startpunt: " + STILL_NOT + "; geen golden met cases leest of schrijft er"
                     + " een, en de caselezer legt geen tijdlijn op zo'n raster");
-        return lid;
+        return member;
     }
 
     /** Member {@code naam} as declared on {@code houder}'s chain, its granularity set where it lies on a timeline. A
      *  member with dimensions is refused. */
-    private Lid gedeclareerd(Objecttype houder, String naam, boolean kenmerk) {
+    private Member declared(Objecttype houder, String naam, boolean kenmerk) {
         for (Objecttype t : houder.keten()) {
             if (kenmerk) {
                 for (String k : t.kenmerken)
                     if (Namen.norm(k).equals(Namen.norm(naam)))
-                        return new Lid(ProducentConsument.elementVan(houder, naam, true), t, k, true, null, bonenklasse(t),
+                        return new Member(ProducentConsument.elementVan(houder, naam, true), t, k, true, null, beanClass(t),
                                 t.kenmerkGranulariteit.get(k));
             } else {
                 for (Map.Entry<String, Datatype> e : t.attributen.entrySet())
                     if (Namen.norm(e.getKey()).equals(Namen.norm(naam))) {
                         String a = e.getKey();
                         // every position that asks this method reads or writes the member whole, as one value or as a
-                        // timeline; a dimensioned one is read only per cell, through gedimensioneerdLid
+                        // timeline; a dimensioned one is read only per cell, through dimensionedMember
                         if (t.attribuutDimensies.containsKey(a))
-                            throw new Weigering("het gedimensioneerde attribuut '" + a + "' van " + t.naam + ", gelezen"
+                            throw new Refusal("het gedimensioneerde attribuut '" + a + "' van " + t.naam + ", gelezen"
                                     + " of geschreven buiten een DimensionCellRead of een vouw over een"
-                                    + " dimensieselectie: " + NOG_NIET + "; geen golden met cases heeft het");
-                        return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
-                                bonenklasse(t), t.attribuutGranulariteit.get(a));
+                                    + " dimensieselectie: " + STILL_NOT + "; geen golden met cases heeft het");
+                        return new Member(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
+                                beanClass(t), t.attribuutGranulariteit.get(a));
                     }
             }
         }
-        throw new Weigering("het " + (kenmerk ? "kenmerk" : "attribuut") + " '" + naam + "' is niet gedeclareerd op "
+        throw new Refusal("het " + (kenmerk ? "kenmerk" : "attribuut") + " '" + naam + "' is niet gedeclareerd op "
                 + houder.naam + " of een supertype");
     }
 
     /** The dimensioned attribute {@code naam} as declared on {@code houder}'s chain (§3.6): its bean member is a
      *  {@code Map<label, value>}, read whole by a dimension cell or a fold over a dimension selection. An attribute that
      *  is not dimensioned, or that also lies on a timeline, is refused by name. */
-    private Lid gedimensioneerdLid(Objecttype houder, String naam) {
+    private Member dimensionedMember(Objecttype houder, String naam) {
         for (Objecttype t : houder.keten())
             for (Map.Entry<String, Datatype> e : t.attributen.entrySet())
                 if (Namen.norm(e.getKey()).equals(Namen.norm(naam))) {
                     String a = e.getKey();
                     if (!t.attribuutDimensies.containsKey(a))
-                        throw new Weigering("een dimensielezing van het attribuut '" + a + "' van " + t.naam + ", dat niet"
+                        throw new Refusal("een dimensielezing van het attribuut '" + a + "' van " + t.naam + ", dat niet"
                                 + " gedimensioneerd is");
                     if (t.attribuutGranulariteit.containsKey(a))
-                        throw new Weigering("het gedimensioneerde attribuut '" + a + "' van " + t.naam + " op een"
-                                + " tijdlijn: " + NOG_NIET + "; geen golden met cases heeft er een");
-                    return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
-                            bonenklasse(t), null);
+                        throw new Refusal("het gedimensioneerde attribuut '" + a + "' van " + t.naam + " op een"
+                                + " tijdlijn: " + STILL_NOT + "; geen golden met cases heeft er een");
+                    return new Member(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
+                            beanClass(t), null);
                 }
-        throw new Weigering("het attribuut '" + naam + "' is niet gedeclareerd op " + houder.naam + " of een supertype");
+        throw new Refusal("het attribuut '" + naam + "' is niet gedeclareerd op " + houder.naam + " of een supertype");
     }
 
     /** A path of to-one roles from a subject type over the reference fields of the beans: the walk
-     *  {@link FactModelGenerator#navigatiewandeling} derives from the wire's bindings, the reference field of each hop
-     *  over an input relation on its bean class ({@code velden}, which a plan reads the path along, and only for a path
-     *  whose links are all input, {@link #gecreeerd}), the hops, and the type the last hop reaches. {@code sleutel}
-     *  names the subject type and the fields, as the {@link PadStand} facts of the path carry it. */
-    private record Pad(String sleutel, Objecttype subject, List<String> rollen, Objecttype bereikt,
-                       List<Binding.Veld> velden, List<Hop> hops) {
+     *  {@link FactModelGenerator#navigationWalk} derives from the wire's bindings, the reference field of each hop
+     *  over an input relation on its bean class ({@code fields}, which a plan reads the path along, and only for a path
+     *  whose links are all input, {@link #created}), the hops, and the type the last hop reaches. {@code sleutel}
+     *  names the subject type and the fields, as the {@link PathState} facts of the path carry it. */
+    private record Path(String sleutel, Objecttype subject, List<String> roles, Objecttype reaches,
+                       List<Binding.Field> fields, List<Hop> hops) {
         /** Whether a hop of the path goes over a relation a form creates, whose links change while the session fires:
-         *  such a path is read over {@link Koppeling} facts, never off the beans. */
-        boolean gecreeerd() {
-            return hops.stream().anyMatch(h -> h.relatie() != null);
+         *  such a path is read over {@link RelationLink} facts, never off the beans. */
+        boolean created() {
+            return hops.stream().anyMatch(h -> h.relation() != null);
         }
     }
 
     /** One hop of a path or a range, from an object of type {@code van} to one of type {@code naar}: over an input
-     *  relation by the reference field {@code veld} on the bean of one end ({@code opNabij}: on the near object, else on
-     *  the far one), over a relation a form creates by its {@link Koppeling} facts ({@code relatie} set,
-     *  {@code nabijIsEerste} saying which end of the link the near object is, {@code veld} null). */
-    private record Hop(Objecttype van, Objecttype naar, String veld, boolean opNabij, String relatie,
-                       boolean nabijIsEerste) {}
+     *  relation by the reference field {@code veld} on the bean of one end ({@code onNear}: on the near object, else on
+     *  the far one), over a relation a form creates by its {@link RelationLink} facts ({@code relation} set,
+     *  {@code nearIsFirst} saying which end of the link the near object is, {@code veld} null). */
+    private record Hop(Objecttype van, Objecttype naar, String veld, boolean onNear, String relation,
+                       boolean nearIsFirst) {}
 
     /** A derived member read over a path: one family of path-standing rules. */
-    private record Padlezing(Pad pad, Lid lid) {
-        String sleutel() { return pad.sleutel() + " " + Feitnamen.lid(lid.sleutel()); }
+    private record PathRead(Path pad, Member member) {
+        String sleutel() { return pad.sleutel() + " " + FactNames.member(member.sleutel()); }
     }
 
-    private Pad pad(Objecttype subject, List<RolBindingRef> bindingen, Objecttype eindpunt, String wat) {
-        FactModelGenerator.Navigatiewandeling w =
-                FactModelGenerator.navigatiewandeling(model, subject, bindingen, eindpunt);
-        if (w == null) throw new Weigering(wat + ": de navigatie resolvet niet vanaf " + subject.naam);
-        if (w.naarVeel()) throw new Weigering(wat + ": de navigatie gaat over een rol naar veel");
-        if (w.rollen().size() != bindingen.size())
-            throw new IllegalStateException(wat + ": de wandeling telt " + w.rollen().size() + " stappen en de draad "
-                    + bindingen.size() + " bindingen");
-        List<Binding.Veld> velden = new ArrayList<>();
+    private Path pad(Objecttype subject, List<RolBindingRef> bindings, Objecttype endpoint, String description) {
+        FactModelGenerator.NavigationWalk w =
+                FactModelGenerator.navigationWalk(model, subject, bindings, endpoint);
+        if (w == null) throw new Refusal(description + ": de navigatie resolvet niet vanaf " + subject.naam);
+        if (w.toMany()) throw new Refusal(description + ": de navigatie gaat over een rol naar veel");
+        if (w.roles().size() != bindings.size())
+            throw new IllegalStateException(description + ": de wandeling telt " + w.roles().size() + " stappen en de draad "
+                    + bindings.size() + " bindingen");
+        List<Binding.Field> fields = new ArrayList<>();
         List<Hop> hops = new ArrayList<>();
         Objecttype cur = subject;
-        for (int i = 0; i < w.rollen().size(); i++) {
-            String rol = w.rollen().get(i);
-            Objecttype volgend = w.bereikt().get(i);
-            Hop gecreeerd = koppelingshop(bindingen.get(i), cur, volgend);
-            if (gecreeerd != null) {
-                hops.add(gecreeerd);
-                cur = volgend;
+        for (int i = 0; i < w.roles().size(); i++) {
+            String rol = w.roles().get(i);
+            Objecttype next = w.reaches().get(i);
+            Hop created = linkHop(bindings.get(i), cur, next);
+            if (created != null) {
+                hops.add(created);
+                cur = next;
                 continue;
             }
             // a role whose name a declared member took has no reference field of its own (§13.3.9)
-            if (!FactModelGenerator.heeftReferentieVeld(model, cur, rol, volgend))
-                throw new Weigering(wat + ": " + cur.naam + " heeft geen referentieveld '" + rol + "' naar " + volgend.naam
+            if (!FactModelGenerator.hasReferenceField(model, cur, rol, next))
+                throw new Refusal(description + ": " + cur.naam + " heeft geen referentieveld '" + rol + "' naar " + next.naam
                         + " (§13.3.9 opslagrichting)");
-            velden.add(new Binding.Veld(bonenklasse(cur), rol));
-            hops.add(new Hop(cur, volgend, rol, true, null, false));
-            cur = volgend;
+            fields.add(new Binding.Field(beanClass(cur), rol));
+            hops.add(new Hop(cur, next, rol, true, null, false));
+            cur = next;
         }
-        return new Pad(subject.naam + ":" + String.join(".", w.rollen()), subject, w.rollen(), cur, List.copyOf(velden),
+        return new Path(subject.naam + ":" + String.join(".", w.roles()), subject, w.roles(), cur, List.copyOf(fields),
                 List.copyOf(hops));
     }
 
     /** The hop over {@code binding} from {@code van} to {@code naar} where its relation is one a form creates, read over
-     *  {@link Koppeling} facts; null for an input relation. The binding names the role the far end fills, so the near
+     *  {@link RelationLink} facts; null for an input relation. The binding names the role the far end fills, so the near
      *  end is the first of the link where that role is the fact type's second. */
-    private Hop koppelingshop(RolBindingRef binding, Objecttype van, Objecttype naar) {
-        if (binding == null || binding.feittype() == null || !gecreeerdeRelaties.contains(Namen.norm(binding.feittype())))
+    private Hop linkHop(RolBindingRef binding, Objecttype van, Objecttype naar) {
+        if (binding == null || binding.feittype() == null || !createdRelations.contains(Namen.norm(binding.feittype())))
             return null;
         RegelSpraakModel.Feittype ft = feittype(binding.feittype());
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-            throw new Weigering("een stap over de gecreëerde relatie '" + binding.feittype() + "' die geen relatie van twee"
-                    + " rollen is: " + NOG_NIET);
-        boolean verIsTweede = Namen.norm(ft.rollen.get(1).naam()).equals(Namen.norm(binding.rol()));
-        return new Hop(van, naar, null, false, Namen.norm(ft.naam), verIsTweede);
+            throw new Refusal("een stap over de gecreëerde relatie '" + binding.feittype() + "' die geen relatie van twee"
+                    + " rollen is: " + STILL_NOT);
+        boolean farIsSecond = Namen.norm(ft.rollen.get(1).naam()).equals(Namen.norm(binding.rol()));
+        return new Hop(van, naar, null, false, Namen.norm(ft.naam), farIsSecond);
     }
 
     /** The declared fact type named {@code naam}, compared as the verifier compares names, or null. */
@@ -6389,7 +6389,7 @@ public final class TmsTranspiler {
         return null;
     }
 
-    private Class<?> bonenklasse(Objecttype ot) {
+    private Class<?> beanClass(Objecttype ot) {
         try {
             return Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), true, beanLoader);
         } catch (ClassNotFoundException e) {

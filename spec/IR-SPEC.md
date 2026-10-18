@@ -8962,7 +8962,7 @@ has two forms.
   `drools-exec-voorwaarde-twee-rollen-ver`: with the reader first it writes
   the vinddag where `ref/` and `backends/clingo` answer leeg).
   *Closed in the exec-model branch on 2026-10-01 for a test anywhere in a
-  condition or a value (witness `LezerOnderSchrijverWitnessTest`): a rule is
+  condition or a value (witness `ReaderUnderWriterWitnessTest`): a rule is
   placed after every writer of what it reads under a leeg or gevuld test,
   and a characteristic assignment after every writer of what it reads
   stratum-strict (RUNTIME-SEMANTICS ch. 6.1), with every node such a writer
@@ -8986,7 +8986,7 @@ has two forms.
   DRL-text branch keeps the form described here.*
   *Widened in the exec-model branch on 2026-10-01 (card
   `drools-exec-voorwaarde-twee-rollen-ver`, golden `jutterswet-havenketen`,
-  witness `KetenVoorwaardeWitnessTest`): a condition that reads through a
+  witness `ChainConditionWitnessTest`): a condition that reads through a
   chain of two or more to-one roles is tested after a far-side join on every
   object the chain passes, so a relation in the middle of the chain that a
   fact creation sets while the rules run is seen too; a rule's value over a
@@ -8994,7 +8994,7 @@ has two forms.
   read leeg when the middle relation came later). The DRL-text branch
   refuses such a condition by its marker and keeps the one join in a value.*
   *Widened again in the exec-model branch on 2026-10-01 (golden
-  `jutterswet-late-vondst`, witness `VouwfilterVerreKantWitnessTest`): the
+  `jutterswet-late-vondst`, witness `FoldFilterRemoteSideWitnessTest`): the
   subselection of a fold, and the filter and the matrix of a quantifier
   fold, read with the element as subject (RUNTIME-SEMANTICS ch. 3.4a,
   3.9a); where such a test reads through a role of the element, the source
@@ -9038,7 +9038,7 @@ defaults group writes, the exec-model branch wrote leeg where `ref/` and
 `backends/clingo` write 7 and 15; with a count over the objects a creation
 declared after it mints, or over a relation a fact creation lays, both
 branches wrote 0 where they write 1. *Closed in the exec-model branch on
-2026-10-01 (witness `CreatieVolgordeWitnessTest`):* the object and the
+2026-10-01 (witness `CreationOrderWitnessTest`):* the object and the
 fact creations are nodes of the order that already placed the defaults
 groups; a creation reads its condition, its toekenningen, the population
 of its subject and the links its folds, quantifiers, navigations and hops
@@ -9047,7 +9047,7 @@ link, and goes below every node it waits on that would otherwise fire
 after it, a rule the stratification places lower and a creation declared
 after it included; a recursive creation stays on its generations
 (RUNTIME-SEMANTICS ch. 5.5). *Closed in the exec-model branch the same day
-(witness `LezerOnderSchrijverWitnessTest`):* a reader of a creation's output
+(witness `ReaderUnderWriterWitnessTest`):* a reader of a creation's output
 that writes irrevocably, such as a characteristic assignment over a count of
 the created objects or over the links a fact creation lays, and a leeg test
 on what a creation writes, wait on the creation; before, a characteristic

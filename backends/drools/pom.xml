@@ -46,7 +46,7 @@
       <version>${drools.version}</version>
     </dependency>
     <!-- The mvel DIALECT. WHY it is here: the DRL-text branch renders the analysis as DRL text whose rules
-         carry `dialect "mvel"` (DrlWeergave), and compiling that text (KieHelper, the classic DRL build of
+         carry `dialect "mvel"` (DrlRendering), and compiling that text (KieHelper, the classic DRL build of
          that branch, behind the runner's `drl` flag) needs the dialect implementation, which drools-engine
          does not carry. Until card drl-teksttak-op-truth-maintenance the text came from DrlTranspiler, a
          lowering of its own, with the same dialect.

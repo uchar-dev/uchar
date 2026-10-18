@@ -70,7 +70,7 @@ the division in the filter carries the rule's condition but does not join
 the member to the fold's subject (measured 2026-10-09: `ref` passes, clingo
 reports `viol("division by numeric zero","V2")`). So no case here holds a
 Jutter that is not actief beside one that is, nor a vondst outside every
-range; `backends/drools`' `FilterfoutWitnessTest` carries both shapes for
+range; `backends/drools`' `FilterErrorWitnessTest` carries both shapes for
 the Drools branches.
 
 ## The differential square

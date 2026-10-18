@@ -35,7 +35,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Tijdlijn;
 import dev.uchar.regelspraak.kern.Tijdrekening;
 import dev.uchar.regelspraak.kern.VastStartpunt;
-import dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid;
+import dev.uchar.regelspraak.transpiler.kern.EffectiveUnit;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.math.BigDecimal;
@@ -83,8 +83,8 @@ import java.util.Map;
  * {@code Onbekend} datatype or a role check of the L1 shape is an unknown node — each a {@link Documentfout}. So is
  * a reference-layer shape every executor refuses by name: a fold's set source its kind cannot consume, a count's
  * range that is a path, a {@code total} without a range over another type than its subject, a role check naming no link
- * the subject can be in, and a characteristic read at a value position ({@link #keurVouwbron},
- * {@link #keurOnderwerpen}).
+ * the subject can be in, and a characteristic read at a value position ({@link #checkFoldSource},
+ * {@link #checkSubjects}).
  *
  * <p><b>The type system (L3 of the v1 wire migration).</b> A number is a {@code Number}, a date a {@code Date} with
  * its precision, a unit a {@code Unit} whose factor is an exact fraction {@code {num, den}}, a unit system a list
@@ -100,7 +100,7 @@ import java.util.Map;
  * corpus does not see it, since every factor there is a whole number, but a verifier-clean document the frontend
  * emits does: with a unit declared "= 1/3" of another, 1.00 of the one plus 3.00 of the other reads 1.9999999999999999
  * in a 2-decimal attribute, and rounded down to 0 decimals it is 1 where 2 is due ({@code ref}: 2.00 and 2). The
- * backend's {@code VoorafgerondeFactorWitnessTest} pins that answer, and the like one for 1/24, in both branches.
+ * backend's {@code PreRoundedFactorWitnessTest} pins that answer, and the like one for 1/24, in both branches.
  * Closing the delta means restating through the fraction the unit system keeps; this loader does not. A type-system
  * node of the L2 shape, or one of its fields, is unknown by name.
  *
@@ -159,18 +159,18 @@ public final class IrLoader {
     /** A document that is not a well-formed {@code uchar-ir-v1} document, named by the position it sits at. A hard
      *  error and never a {@link Refusal}: a Refusal files the document under the differential gate's auto-excluded
      *  channel as a form this backend does not carry, which is a green gate over a document nobody read (the reason
-     *  {@link #datumVanIrWire} gives for its own fence). {@code plek} is a JSON pointer into the document for the
+     *  {@link #dateOfIrWire} gives for its own fence). {@code site} is a JSON pointer into the document for the
      *  container and the M1 nodes, the root being {@code ""}. An absent field is named at the object that lacks it,
      *  with the field in the detail, as the OCaml loader names it; every other defect at the value itself, an
      *  unknown field included, which the OCaml loader names at its parent. */
     public static final class Documentfout extends IllegalArgumentException {
-        private final String plek;
-        public Documentfout(String plek, String detail) {
-            super("malformed uchar-ir-v1 document at " + (plek.isEmpty() ? "<root>" : "'" + plek + "'") + ": "
+        private final String site;
+        public Documentfout(String site, String detail) {
+            super("malformed uchar-ir-v1 document at " + (site.isEmpty() ? "<root>" : "'" + site + "'") + ": "
                     + detail);
-            this.plek = plek;
+            this.site = site;
         }
-        public String plek() { return plek; }
+        public String site() { return site; }
     }
 
     private static final List<String> ROOT = List.of("format", "model", "rules", "diagnostics");
@@ -185,32 +185,32 @@ public final class IrLoader {
     /** IR-SPEC ch. 2.2: the declared supertype NAME per object type, held until every declaration is
      *  read — the wire reference is order-free, so a forward reference is legitimate. An IDENTITY map
      *  because two object types may carry the same declaration content. */
-    private final Map<Objecttype, String> supertypeNaam = new java.util.IdentityHashMap<>();
-    /** The JSON position of each {@link #supertypeNaam} entry, so a reference that does not resolve is reported
+    private final Map<Objecttype, String> supertypeName = new java.util.IdentityHashMap<>();
+    /** The JSON position of each {@link #supertypeName} entry, so a reference that does not resolve is reported
      *  where it was written. */
-    private final Map<Objecttype, String> supertypePad = new java.util.IdentityHashMap<>();
+    private final Map<Objecttype, String> supertypePath = new java.util.IdentityHashMap<>();
     /** §6.1 (Phase 4) the prioritized-defaults extension list, parsed into the shared ir records — a top-level
      *  core-layer section the {@link RegelSpraakModel} does not itself carry (the model is the v0 resolved shape),
      *  so it rides beside the model via {@link Loaded}. An empty list is a legitimate flat program (accepted). */
     private final List<PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
-    /** The wire's symbolic role bindings — see {@link Loaded#rolBindingen()}. An IDENTITY map: every IR node here
+    /** The wire's symbolic role bindings — see {@link Loaded#roleBindings()}. An IDENTITY map: every IR node here
      *  is a RECORD with VALUE equality, so two structurally identical nodes in one document would collapse into
      *  one entry and the second would silently inherit the first's binding. */
-    private final Map<Object, RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
+    private final Map<Object, RolBindingRef> roleBindings = new java.util.IdentityHashMap<>();
     /** The JSON pointer of every object and array in the document, by IDENTITY (a Jackson container is a distinct
      *  instance per position), so a node read without a path can still be refused at its place. */
-    private final Map<JsonNode, String> paden = new java.util.IdentityHashMap<>();
+    private final Map<JsonNode, String> paths = new java.util.IdentityHashMap<>();
     /** ch. 4.10: every {@link Expr.Let} this document carries, in parse order — see {@link Loaded#lets()}. */
     private final List<Expr.Let> lets = new ArrayList<>();
     /** ch. 4.3 / WF-102: the fold-source RANGE as a path, per {@link Expr.Functie} node — see
-     *  {@link Loaded#bronPaden()}. Identity-keyed for {@link #rolBindingen}'s reason. */
-    private final Map<Object, List<RolBindingRef>> bronPaden = new java.util.IdentityHashMap<>();
+     *  {@link Loaded#sourcePaths()}. Identity-keyed for {@link #roleBindings}'s reason. */
+    private final Map<Object, List<RolBindingRef>> sourcePaths = new java.util.IdentityHashMap<>();
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node — see
-     *  {@link Loaded#navigatieBindingen()}. Identity-keyed for {@link #rolBindingen}'s reason. */
-    private final Map<Object, List<RolBindingRef>> navigatieBindingen = new java.util.IdentityHashMap<>();
+     *  {@link Loaded#path()}. Identity-keyed for {@link #roleBindings}'s reason. */
+    private final Map<Object, List<RolBindingRef>> path = new java.util.IdentityHashMap<>();
     /** The JSON pointer of every AttribuutRef, fold and role check read, by identity: the node kinds
-     *  {@link #keurOnderwerpen} refuses after the whole document is read, at the place they were written. */
-    private final Map<Object, String> plekken = new java.util.IdentityHashMap<>();
+     *  {@link #checkSubjects} refuses after the whole document is read, at the place they were written. */
+    private final Map<Object, String> sites = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
@@ -220,7 +220,7 @@ public final class IrLoader {
      *  extensions belong to a VENDORED slice the toolchain consumes at a pin, so they cannot grow a field here.
      *  A consumer that needs them reads them from here (see {@link #loadAll}).
      *
-     *  @param rolBindingen the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Four node kinds
+     *  @param roleBindings the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Four node kinds
      *         carry one:
      *         <ul>
      *           <li>a {@link ResolvedObjectCreatie} — IR-SPEC ch. 3.3 {@code connectingRole}, naming the role the
@@ -238,7 +238,7 @@ public final class IrLoader {
      *           <li>a {@link Conditie.Rollidmaatschap} — the IR-SPEC ch. 4.5 {@code RoleMembership}, whose binding is its
      *               {@code factType} and the {@code role} the SUBJECT plays. The record is the carrier: its
      *               {@code rol} is that role and its other-end slot holds the {@code counterpartType} narrowing or
-     *               null (see {@link #tegenpartij}). Where the reference sits — on the subject or on the far end —
+     *               null (see {@link #counterpart}). Where the reference sits — on the subject or on the far end —
      *               is the transpilers' storage question.</li>
      *         </ul>
      *         In every case the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
@@ -249,24 +249,24 @@ public final class IrLoader {
      *  @param lets an INDEX of the {@link Expr.Let} nodes in the document, in parse order — not a channel: the Lets
      *         themselves sit in the expression trees as ordinary union nodes, and every consumer lowers and walks
      *         them there. The index exists for the one consumer that must start a walk at a Let without holding the
-     *         tree it came from ({@code EffectieveEenheid}'s binder-read table, which answers the unit of a
+     *         tree it came from ({@code EffectiveUnit}'s binder-read table, which answers the unit of a
      *         {@link Expr.BinderRef} asked in isolation). Empty for a document that carries no Let.
-     *  @param bronPaden the ch. 4.3 / WF-102 fold-source RANGE per {@link Expr.Functie} node, by IDENTITY: the
+     *  @param sourcePaths the ch. 4.3 / WF-102 fold-source RANGE per {@link Expr.Functie} node, by IDENTITY: the
      *         ordered RoleBinding steps, subject-outward, VERBATIM off the wire. It rides here for the same reason
      *         {@code sourceRole} does — {@code Expr.Functie} is the vendored slice — and for a sharper one: unlike
      *         every other extension this loader carries, a path is not re-derivable. The type PAIR answers for the
      *         endpoints only, and a path's intermediate types are its own claim; a consumer that dropped this list
      *         would silently fold whatever direct relation happens to connect subject and element. Empty for a
      *         document whose folds all carry the one-step range.
-     *  @param navigatieBindingen the IR-SPEC ch. 4.1a navigation walk per navigated {@link Expr.AttribuutRef}
+     *  @param path the IR-SPEC ch. 4.1a navigation walk per navigated {@link Expr.AttribuutRef}
      *         (its {@code path}, one binding per hop, subject-outward) and per navigated
      *         {@link Conditie.Kenmerk} (its {@code navigation}, a one-hop list), by IDENTITY, verbatim off the
      *         wire. Where a node carries one it decides the walk in both transpiler branches; a node without one
      *         is the subject's own read (or the element's, inside a fold's filter). */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
-                         Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets,
-                         Map<Object, List<RolBindingRef>> bronPaden,
-                         Map<Object, List<RolBindingRef>> navigatieBindingen) {}
+                         Map<Object, RolBindingRef> roleBindings, List<Expr.Let> lets,
+                         Map<Object, List<RolBindingRef>> sourcePaths,
+                         Map<Object, List<RolBindingRef>> path) {}
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and, since
@@ -284,78 +284,78 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets, l.bronPaden, l.navigatieBindingen);
+        return new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths, l.path);
     }
 
     /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
      *  role must belong to, or null when the check does not narrow it (the role's declared filler). The loader
      *  keeps it in the record slot the near-side check always used for the other end (the vendored record keeps its
      *  v0 components), and this is the one place that knows so. */
-    public static Objecttype tegenpartij(Conditie.Rollidmaatschap r) {
+    public static Objecttype counterpart(Conditie.Rollidmaatschap r) {
         return r.anderTeFiller();
     }
 
     private RegelSpraakModel model(JsonNode root) {
-        if (root == null || !root.isObject()) throw new Documentfout("", "expected an object, got " + kort(root));
-        wijsPadenToe(root, "");
+        if (root == null || !root.isObject()) throw new Documentfout("", "expected an object, got " + shortQuote(root));
+        assignPaths(root, "");
         // another format is a form this backend does not carry, whatever else that document holds; an absent or
         // non-string format is a defect of this one
-        String format = tekst(root, "", "format");
+        String format = textAt(root, "", "format");
         if (!"uchar-ir-v1".equals(format)) throw new Refusal("format", format);
-        velden(root, "", null, ROOT, List.of("vocabularies"));
+        fields(root, "", null, ROOT, List.of("vocabularies"));
         vocabulaires(root);
-        JsonNode model = sectie(root, "", "model");
-        JsonNode rules = sectie(root, "", "rules");
-        velden(model, "/model", null, MODEL, List.of("functionDefs"));
+        JsonNode model = section(root, "", "model");
+        JsonNode rules = section(root, "", "rules");
+        fields(model, "/model", null, MODEL, List.of("functionDefs"));
         // an extension the schema admits and this backend does not carry: a form, so a Refusal, not a defect —
         // once the section has the form the schema gives it. Its entries are not read, so not checked either.
         if (model.has("functionDefs")) {
             JsonNode fd = model.get("functionDefs");
-            if (!fd.isArray()) throw new Documentfout("/model/functionDefs", "expected an array, got " + kort(fd));
+            if (!fd.isArray()) throw new Documentfout("/model/functionDefs", "expected an array, got " + shortQuote(fd));
             throw new Refusal("functionDefs", "unknown model section");
         }
-        velden(rules, "/rules", null, RULES, List.of("prioritizedDefaults"));
+        fields(rules, "/rules", null, RULES, List.of("prioritizedDefaults"));
 
         // declarations first: the resolved lists reference them by name. Read in the v0 table order, so the
         // model fills exactly as it did from the v0 maps. The v0 `regels` stubs left the wire at M1 (delta B3);
         // no consumer here read them.
         lijst(model, "/model", "objectTypes", (p, n) -> {
             Objecttype ot = objecttype(p, n);
-            eenmaal(m.objecttypen, p + "/name", ot.naam, ot);
+            once(m.objecttypen, p + "/name", ot.naam, ot);
         });
         bindSupertypes();
         lijst(model, "/model", "domains", (p, n) -> {
-            velden(n, p, "Domain", List.of("node", "name", "datatype"), List.of());
+            fields(n, p, "Domain", List.of("node", "name", "datatype"), List.of());
             String naam = naam(n, p, "name");
-            eenmaal(m.domeinen, p + "/name", naam, domain(p, naam, n));
+            once(m.domeinen, p + "/name", naam, domain(p, naam, n));
         });
         lijst(model, "/model", "parameters", (p, n) -> {
             Parameter par = parameter(p, n);
-            eenmaal(m.parameters, p + "/name", par.naam(), par);
+            once(m.parameters, p + "/name", par.naam(), par);
         });
         lijst(model, "/model", "unitSystems", (p, n) -> {
             Eenheidstelsel es = unitSystem(p, n);
-            eenmaal(m.eenheidstelsels, p + "/name", es.naam, es);
+            once(m.eenheidstelsels, p + "/name", es.naam, es);
         });
         lijst(model, "/model", "factTypes", (p, n) -> {
             Feittype ft = feittype(p, n);
-            eenmaal(m.feittypen, p + "/name", ft.naam, ft);
+            once(m.feittypen, p + "/name", ft.naam, ft);
         });
         lijst(model, "/model", "dimensions", (p, n) -> {
-            Dimensie d = dimensie(p, n);
-            eenmaal(m.dimensies, p + "/name", d.naam(), d);
+            Dimensie d = dimension(p, n);
+            once(m.dimensies, p + "/name", d.naam(), d);
         });
-        lijst(model, "/model", "timelines", (p, n) -> m.tijdlijnen.add(tijdlijn(n)));
-        weigerOvername();
+        lijst(model, "/model", "timelines", (p, n) -> m.tijdlijnen.add(timeline(n)));
+        refuseAdoption();
         lijst(model, "/model", "dayKinds", this::dayKind);
 
         // IR-SPEC ch. 3, Versioning: each list holds named forms, and every version is one record, named as the
         // records have always named a version of a form with several ("<name> #<i>")
         lijst(rules, "/rules", "rules", this::rule);
         lijst(rules, "/rules", "dayKindDefinitions", (p, n) -> {
-            velden(n, p, "DayKindDefinition", List.of("node", "dayKind", "condition", "validity"), List.of());
-            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "dayKind"), conditie(knoopVeld(n, "condition")),
-                    geldigheid(n, "dayKind")));
+            fields(n, p, "DayKindDefinition", List.of("node", "dayKind", "condition", "validity"), List.of());
+            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "dayKind"), condition(nodeField(n, "condition")),
+                    parsedValidity(n, "dayKind")));
         });
         lijst(rules, "/rules", "objectCreations", this::objectCreation);
         lijst(rules, "/rules", "allocations", this::allocation);
@@ -363,19 +363,19 @@ public final class IrLoader {
         lijst(rules, "/rules", "uniquenesses", this::uniqueness);
         lijst(rules, "/rules", "factCreations", this::factCreation);
         lijst(rules, "/rules", "startPointDeterminations", (p, n) -> {
-            velden(n, p, "StartPointDetermination", List.of("node", "timeline", "objectType", "member"), List.of());
+            fields(n, p, "StartPointDetermination", List.of("node", "timeline", "objectType", "member"), List.of());
             m.resolvedStartpunten.add(new ResolvedStartpunt(text(n, "timeline"), text(n, "objectType"),
                     text(n, "member")));
         });
-        weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
+        refuseInheritedAnchor();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         lijst(rules, "/rules", "ruleGroups", (p, n) -> {
-            velden(n, p, "RuleGroup", List.of("node", "name", "recursive", "members"), List.of("source", "origin", "designations"));
+            fields(n, p, "RuleGroup", List.of("node", "name", "recursive", "members"), List.of("source", "origin", "designations"));
             if (text(n, "name") != null) {
-                herkomst(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
-                benamingen(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
+                origin(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
+                designations(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
             }
             m.regelGroepen.add(new ResolvedRegelGroep(
-                    text(n, "name"), bool(n, "recursive"), stringList(n.get("members")), bron(n), bronregel(n)));
+                    text(n, "name"), bool(n, "recursive"), stringList(n.get("members")), bron(n), sourceLine(n)));
         });
         lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(diagnostic(p, n)));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
@@ -384,8 +384,8 @@ public final class IrLoader {
         // node is a Documentfout, as it is at every other position.
         if (rules.has("prioritizedDefaults"))
             lijst(rules, "/rules", "prioritizedDefaults", (p, n) -> prioritizedDefaults.add(prioritizedDefaults(n)));
-        keurOnderwerpen();
-        keurTypering();
+        checkSubjects();
+        checkTyping();
         return m;
     }
 
@@ -397,85 +397,85 @@ public final class IrLoader {
      *  the role (WF-034, IR-SPEC ch. 4.5 — a link the subject can never be in), a characteristic read at a value
      *  position (WF-080 — a characteristic carries truth, no value), a read without bindings that names another
      *  type than its subject (WF-053, IR-SPEC ch. 4.1a), a value fold's set source that names no
-     *  member of the element type ({@link #keurWaardevouwbron}), and a {@code total} without a range over another
-     *  type than the subject ({@link #keurEigenTotaal}). The subject of each position is the one the verifier walks it
+     *  member of the element type ({@link #checkValueFoldSource}), and a {@code total} without a range over another
+     *  type than the subject ({@link #checkOwnTotal}). The subject of each position is the one the verifier walks it
      *  with: the rule target's type, the element type inside a fold's filter and a quantifier fold, a selection's
      *  type inside a union branch, the creation and consistency subject, the allocation's source type, the fact
      *  creation's anchor, the defaults' subject, and none in a day-kind definition. A rule target is a write,
-     *  never read here; the rest of a fold's set source is {@link #keurVouwbron}'s. Until L2's fix round the role
+     *  never read here; the rest of a fold's set source is {@link #checkFoldSource}'s. Until L2's fix round the role
      *  check was refused with a storage reason, the characteristic read played, the value fold over a role name
      *  failed at first fire, and the own total over a foreign element type played (measured on the L2 union). */
-    private void keurOnderwerpen() {
+    private void checkSubjects() {
         for (ResolvedRegel r : m.resolvedRegels) {
             Objecttype s = r.doel() instanceof Expr.AttribuutRef a ? a.objecttype() : null;
-            keurWaarde(r.waarde(), s);
-            keurConditie(r.voorwaarde(), s);
+            checkValue(r.waarde(), s);
+            checkCondition(r.voorwaarde(), s);
         }
-        for (ResolvedDagsoort d : m.resolvedDagsoorten) keurConditie(d.voorwaarde(), null);
+        for (ResolvedDagsoort d : m.resolvedDagsoorten) checkCondition(d.voorwaarde(), null);
         for (ResolvedObjectCreatie oc : m.objectCreaties) {
-            for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) keurWaarde(t.waarde(), oc.subject());
-            keurConditie(oc.voorwaarde(), oc.subject());
+            for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) checkValue(t.waarde(), oc.subject());
+            checkCondition(oc.voorwaarde(), oc.subject());
         }
-        for (ResolvedVerdeling v : m.verdelingen) keurConditie(v.voorwaarde(), v.bronType());
-        for (ResolvedConsistentie c : m.consistenties) keurConditie(c.assertie(), c.subject());
-        for (ResolvedFeitCreatie fc : m.feitCreaties) keurConditie(fc.voorwaarde(), fc.anker());
+        for (ResolvedVerdeling v : m.verdelingen) checkCondition(v.voorwaarde(), v.bronType());
+        for (ResolvedConsistentie c : m.consistenties) checkCondition(c.assertie(), c.subject());
+        for (ResolvedFeitCreatie fc : m.feitCreaties) checkCondition(fc.voorwaarde(), fc.anker());
         for (PrioritizedDefaults pd : prioritizedDefaults)
-            for (Default d : pd.defaults()) keurStandaard(d, ot(pd.onderwerp()));
+            for (Default d : pd.defaults()) checkDefault(d, ot(pd.onderwerp()));
     }
 
-    private void keurStandaard(Default d, Objecttype s) {
-        keurConditie(d.voorwaarde(), s);
-        keurWaarde(d.consequentie(), s);
+    private void checkDefault(Default d, Objecttype s) {
+        checkCondition(d.voorwaarde(), s);
+        checkValue(d.consequentie(), s);
         if (d.excepties() != null)
             for (ExceptionGroup g : d.excepties().leden())
-                for (Default x : g.defaults()) keurStandaard(x, s);
+                for (Default x : g.defaults()) checkDefault(x, s);
     }
 
     /** A value position and everything below it. Exhaustive over the sealed union, so a node the union grows is a
      *  compile error here rather than a subtree the walk skips. */
-    private void keurWaarde(Expr e, Objecttype s) {
+    private void checkValue(Expr e, Objecttype s) {
         switch (e) {
             case null -> { }
             case Expr.AttribuutRef a -> {
                 Objecttype ot = a.objecttype();
                 if (ot != null && a.attribuut() != null && ot.attribuut(a.attribuut()) == null
                         && ot.kenmerkNaam(a.attribuut()) != null)
-                    throw new Documentfout(plekken.get(a), "'" + a.attribuut() + "' is a characteristic of '" + ot.naam
+                    throw new Documentfout(sites.get(a), "'" + a.attribuut() + "' is a characteristic of '" + ot.naam
                             + "', not an attribute — a characteristic endpoint is ill-formed in a value position");
                 // WF-053, IR-SPEC ch. 4.1a: a read without bindings is the subject's own, so it names the subject
                 // type itself — a supertype is another type, even where it declares the member. Both branches
                 // refused such a read before, with a generic reason; refused here in the sentence ref and the
                 // verifier share. A subject-less position (a day-kind definition) anchors nothing.
-                if (s != null && ot != null && !navigatieBindingen.containsKey(a)
+                if (s != null && ot != null && !path.containsKey(a)
                         && !Namen.norm(ot.naam).equals(Namen.norm(s.naam)))
-                    throw new Documentfout(plekken.get(a), "an attribute reference without a path is the subject's"
+                    throw new Documentfout(sites.get(a), "an attribute reference without a path is the subject's"
                             + " own read, so its subjectType is the subject type '" + s.naam + "' — '"
                             + ot.naam + "' names another type, which only a navigation reaches");
             }
             case Expr.Functie f -> {
-                boolean setbron = f.elementObjecttype() != null && f.argumenten().size() == 1
-                        && (rolBindingen.containsKey(f) || bronPaden.containsKey(f));
-                if (setbron) keurWaardevouwbron(f, s);
-                else keurEigenTotaal(f, s);
-                if (!setbron) for (Expr x : f.argumenten()) keurWaarde(x, s);
-                keurWaarde(f.leegwaarde(), s);
-                keurConditie(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : s);
+                boolean setSource = f.elementObjecttype() != null && f.argumenten().size() == 1
+                        && (roleBindings.containsKey(f) || sourcePaths.containsKey(f));
+                if (setSource) checkValueFoldSource(f, s);
+                else checkOwnTotal(f, s);
+                if (!setSource) for (Expr x : f.argumenten()) checkValue(x, s);
+                checkValue(f.leegwaarde(), s);
+                checkCondition(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : s);
             }
-            case Expr.Binair b -> { keurWaarde(b.links(), s); keurWaarde(b.rechts(), s); }
-            case Expr.Afgerond x -> keurWaarde(x.basis(), s);
+            case Expr.Binair b -> { checkValue(b.links(), s); checkValue(b.rechts(), s); }
+            case Expr.Afgerond x -> checkValue(x.basis(), s);
             case Expr.Begrensd x -> {
-                keurWaarde(x.basis(), s); keurWaarde(x.minimum(), s); keurWaarde(x.maximum(), s);
+                checkValue(x.basis(), s); checkValue(x.minimum(), s); checkValue(x.maximum(), s);
             }
             case Expr.TekstReeks t -> {
                 for (Expr.TekstReeks.Deel d : t.delen())
-                    if (d instanceof Expr.TekstReeks.Ingevoegd i) keurWaarde(i.expr(), s);
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) checkValue(i.expr(), s);
             }
-            case Expr.Let l -> { keurWaarde(l.value(), s); keurWaarde(l.body(), s); }
+            case Expr.Let l -> { checkValue(l.value(), s); checkValue(l.body(), s); }
             case Expr.IfThenElse k -> {
-                keurConditie(k.conditie(), s); keurWaarde(k.dan(), s); keurWaarde(k.anders(), s);
+                checkCondition(k.conditie(), s); checkValue(k.dan(), s); checkValue(k.anders(), s);
             }
             case Expr.InstanceSetUnion u -> {
-                for (Expr.InstanceSetUnion.Tak t : u.takken()) keurConditie(t.filter(), t.elementType());
+                for (Expr.InstanceSetUnion.Tak t : u.takken()) checkCondition(t.filter(), t.elementType());
             }
             // a dimension cell reads a dimensioned attribute, which no characteristic is
             case Expr.DimensieCel c -> { }
@@ -488,19 +488,19 @@ public final class IrLoader {
         }
     }
 
-    private void keurConditie(Conditie c, Objecttype s) {
+    private void checkCondition(Conditie c, Objecttype s) {
         switch (c) {
             case null -> { }
-            case Conditie.Vergelijking v -> { keurWaarde(v.links(), s); keurWaarde(v.rechts(), s); }
-            case Conditie.Predicaat p -> keurWaarde(p.operand(), s);
-            case Conditie.Periode p -> { keurWaarde(p.vanaf(), s); keurWaarde(p.tot(), s); }
-            case Conditie.Samengesteld x -> { for (Conditie o : x.onderdelen()) keurConditie(o, s); }
+            case Conditie.Vergelijking v -> { checkValue(v.links(), s); checkValue(v.rechts(), s); }
+            case Conditie.Predicaat p -> checkValue(p.operand(), s);
+            case Conditie.Periode p -> { checkValue(p.vanaf(), s); checkValue(p.tot(), s); }
+            case Conditie.Samengesteld x -> { for (Conditie o : x.onderdelen()) checkCondition(o, s); }
             case Conditie.Kwantorvouw kv -> {
                 Objecttype es = kv.elementObjecttype() != null ? kv.elementObjecttype() : s;
-                keurConditie(kv.filter(), es);
-                keurConditie(kv.toets(), es);
+                checkCondition(kv.filter(), es);
+                checkCondition(kv.toets(), es);
             }
-            case Conditie.Rollidmaatschap r -> keurVulling(r, s);
+            case Conditie.Rollidmaatschap r -> checkFilling(r, s);
             case Conditie.Kenmerk k -> { }
             case Conditie.Regelversie x -> { }
             case Conditie.Onopgelost x -> { }
@@ -511,19 +511,19 @@ public final class IrLoader {
 
     /** WF-034: the subject fills the role the check names — one-sided, through the supertype chain (ch. 2.6), as
      *  every near-side question is asked. A subject-less position (a day-kind definition) has nothing to cross. */
-    private void keurVulling(Conditie.Rollidmaatschap r, Objecttype s) {
+    private void checkFilling(Conditie.Rollidmaatschap r, Objecttype s) {
         if (s == null) return;
-        RolBindingRef rb = rolBindingen.get(r);
-        RegelSpraakModel.Rol rol = rolOpNaam(feittypeOpNaam(rb.feittype()), rb.rol());
-        Objecttype vuller = ot(rol.objecttypeNaam());
-        if (vuller != null && !s.isEen(vuller))
-            throw new Documentfout(plekken.get(r) + "/role", "role check: the subject \"" + s.naam
+        RolBindingRef rb = roleBindings.get(r);
+        RegelSpraakModel.Rol rol = roleByName(factTypeByName(rb.feittype()), rb.rol());
+        Objecttype filler = ot(rol.objecttypeNaam());
+        if (filler != null && !s.isEen(filler))
+            throw new Documentfout(sites.get(r) + "/role", "role check: the subject \"" + s.naam
                     + "\" does not fill the role \"" + rb.rol() + "\" of \"" + rb.feittype()
                     + "\", so no link of it can hold the subject there");
     }
 
     /** The declared fact type of that name in the WF-001 form (case and runs of blanks folded), or null. */
-    private Feittype feittypeOpNaam(String naam) {
+    private Feittype factTypeByName(String naam) {
         if (naam == null) return null;
         String n = Namen.norm(naam);
         for (Feittype ft : m.feittypen.values()) if (n.equals(Namen.norm(ft.naam))) return ft;
@@ -532,7 +532,7 @@ public final class IrLoader {
 
     /** The role of {@code ft} with that DECLARED name (the plural does not name a role here), in the WF-001 form,
      *  or null. */
-    private static RegelSpraakModel.Rol rolOpNaam(Feittype ft, String naam) {
+    private static RegelSpraakModel.Rol roleByName(Feittype ft, String naam) {
         if (ft == null || naam == null) return null;
         String n = Namen.norm(naam);
         for (RegelSpraakModel.Rol r : ft.rollen) if (r.naam() != null && n.equals(Namen.norm(r.naam()))) return r;
@@ -540,77 +540,77 @@ public final class IrLoader {
     }
 
     /** The other role of a two-role fact type, or null when it has not exactly two. */
-    private static RegelSpraakModel.Rol andereRol(Feittype ft, RegelSpraakModel.Rol r) {
+    private static RegelSpraakModel.Rol otherRole(Feittype ft, RegelSpraakModel.Rol r) {
         if (ft.rollen.size() != 2) return null;
         return ft.rollen.get(0) == r ? ft.rollen.get(1) : ft.rollen.get(0);
     }
 
     /** The key set of a container object or an M1 node, checked as the OCaml loader's {@code check_keys} checks it:
-     *  the node discriminator when {@code knoop} names one, no key outside the node's own, every required key
+     *  the node discriminator when {@code jsonNode} names one, no key outside the node's own, every required key
      *  present, and an optional key written whole or not at all — present and null is neither (IR-SPEC § Method).
      *  Read leniently, each of these was a document part ignored or a null taken for an absent field. */
-    private static void velden(JsonNode n, String pad, String knoop, List<String> verplicht, List<String> optioneel) {
+    private static void fields(JsonNode n, String pad, String jsonNode, List<String> required, List<String> optional) {
         if (n == null || !n.isObject())
             throw new Documentfout(pad, "expected a JSON object"
-                    + (knoop == null ? "" : " (" + knoop + ")") + ", got " + kort(n));
-        if (knoop != null) {
+                    + (jsonNode == null ? "" : " (" + jsonNode + ")") + ", got " + shortQuote(n));
+        if (jsonNode != null) {
             JsonNode soort = n.get("node");
             if (soort == null)
-                throw new Documentfout(pad, "missing field 'node' (the discriminator \"" + knoop + "\")");
-            if (!soort.isTextual() || !knoop.equals(soort.asText()))
-                throw new Documentfout(pad + "/node", "expected \"" + knoop + "\", got " + kort(soort));
+                throw new Documentfout(pad, "missing field 'node' (the discriminator \"" + jsonNode + "\")");
+            if (!soort.isTextual() || !jsonNode.equals(soort.asText()))
+                throw new Documentfout(pad + "/node", "expected \"" + jsonNode + "\", got " + shortQuote(soort));
         }
         n.fieldNames().forEachRemaining(k -> {
-            if (!verplicht.contains(k) && !optioneel.contains(k))
-                throw new Documentfout(pad + "/" + k, "unknown field" + (knoop == null ? "" : " on " + knoop));
+            if (!required.contains(k) && !optional.contains(k))
+                throw new Documentfout(pad + "/" + k, "unknown field" + (jsonNode == null ? "" : " on " + jsonNode));
         });
-        for (String k : verplicht)
-            if (!n.has(k)) throw ontbreekt(pad, k);
-        for (String k : optioneel)
+        for (String k : required)
+            if (!n.has(k)) throw missing(pad, k);
+        for (String k : optional)
             if (n.has(k) && n.get(k).isNull())
                 throw new Documentfout(pad + "/" + k, "an optional field is written whole or not at all, and null is neither");
     }
 
     /** Record the JSON pointer of every container below {@code n} (RFC 6901: '~' and '/' in a key escaped). */
-    private void wijsPadenToe(JsonNode n, String pad) {
+    private void assignPaths(JsonNode n, String pad) {
         if (n == null) return;
         if (n.isObject()) {
-            paden.put(n, pad);
+            paths.put(n, pad);
             for (Map.Entry<String, JsonNode> e : n.properties())
-                wijsPadenToe(e.getValue(), pad + "/" + e.getKey().replace("~", "~0").replace("/", "~1"));
+                assignPaths(e.getValue(), pad + "/" + e.getKey().replace("~", "~0").replace("/", "~1"));
         } else if (n.isArray()) {
-            paden.put(n, pad);
-            for (int i = 0; i < n.size(); i++) wijsPadenToe(n.get(i), pad + "/" + i);
+            paths.put(n, pad);
+            for (int i = 0; i < n.size(); i++) assignPaths(n.get(i), pad + "/" + i);
         }
     }
 
     /** The pointer of a container this document holds. */
-    private String padVan(JsonNode n) {
-        String p = paden.get(n);
-        if (p == null) throw new IllegalStateException("IrLoader: a node outside the document it is reading: " + kort(n));
+    private String pathOf(JsonNode n) {
+        String p = paths.get(n);
+        if (p == null) throw new IllegalStateException("IrLoader: a node outside the document it is reading: " + shortQuote(n));
         return p;
     }
 
     /** An absent field, named at the object {@code pad} that lacks it, as the OCaml loader's {@code field} names it:
      *  a pointer to the field itself would point at nothing in the document. */
-    private static Documentfout ontbreekt(String pad, String veld) {
+    private static Documentfout missing(String pad, String veld) {
         return new Documentfout(pad, "missing field '" + veld + "'");
     }
 
-    private static JsonNode sectie(JsonNode ouder, String pad, String naam) {
-        JsonNode n = ouder.get(naam);
-        if (n == null) throw ontbreekt(pad, naam);
-        if (!n.isObject()) throw new Documentfout(pad + "/" + naam, "expected an object, got " + kort(n));
+    private static JsonNode section(JsonNode parent, String pad, String naam) {
+        JsonNode n = parent.get(naam);
+        if (n == null) throw missing(pad, naam);
+        if (!n.isObject()) throw new Documentfout(pad + "/" + naam, "expected an object, got " + shortQuote(n));
         return n;
     }
 
     /** A list the schema requires: an array, each entry read with its own position. The lenient reading took a
      *  non-array for an empty list, so {@code objectTypes: {}} loaded as a document without object types. */
-    private static void lijst(JsonNode ouder, String pad, String veld, java.util.function.BiConsumer<String, JsonNode> f) {
-        JsonNode a = ouder.get(veld);
+    private static void lijst(JsonNode parent, String pad, String veld, java.util.function.BiConsumer<String, JsonNode> f) {
+        JsonNode a = parent.get(veld);
         String p = pad + "/" + veld;
-        if (a == null) throw ontbreekt(pad, veld);
-        if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + kort(a));
+        if (a == null) throw missing(pad, veld);
+        if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + shortQuote(a));
         for (int i = 0; i < a.size(); i++) f.accept(p + "/" + i, a.get(i));
     }
 
@@ -620,51 +620,51 @@ public final class IrLoader {
         JsonNode v = n.get(veld);
         if (v == null) throw new Documentfout(pad, "a declaration without a name: missing field '" + veld + "'");
         if (!v.isTextual())
-            throw new Documentfout(pad + "/" + veld, "a declaration without a name: expected a string, got " + kort(v));
+            throw new Documentfout(pad + "/" + veld, "a declaration without a name: expected a string, got " + shortQuote(v));
         return v.asText();
     }
 
-    private static String tekst(JsonNode n, String pad, String veld) {
+    private static String textAt(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
-        if (v == null) throw ontbreekt(pad, veld);
-        if (!v.isTextual()) throw new Documentfout(pad + "/" + veld, "expected a string, got " + kort(v));
+        if (v == null) throw missing(pad, veld);
+        if (!v.isTextual()) throw new Documentfout(pad + "/" + veld, "expected a string, got " + shortQuote(v));
         return v.asText();
     }
 
-    /** An optional string field: absent is null; present, it is a string ({@link #velden} has refused a null). */
-    private static String optTekst(JsonNode n, String pad, String veld) {
-        return n.has(veld) ? tekst(n, pad, veld) : null;
+    /** An optional string field: absent is null; present, it is a string ({@link #fields} has refused a null). */
+    private static String optText(JsonNode n, String pad, String veld) {
+        return n.has(veld) ? textAt(n, pad, veld) : null;
     }
 
-    private static boolean waarheid(JsonNode n, String pad, String veld) {
+    private static boolean truth(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
-        if (v == null) throw ontbreekt(pad, veld);
-        if (!v.isBoolean()) throw new Documentfout(pad + "/" + veld, "expected a boolean, got " + kort(v));
+        if (v == null) throw missing(pad, veld);
+        if (!v.isBoolean()) throw new Documentfout(pad + "/" + veld, "expected a boolean, got " + shortQuote(v));
         return v.booleanValue();
     }
 
-    private static List<String> tekstLijst(JsonNode n, String pad, String veld) {
+    private static List<String> textList(JsonNode n, String pad, String veld) {
         JsonNode a = n.get(veld);
-        if (a == null) throw ontbreekt(pad, veld);
-        if (!a.isArray()) throw new Documentfout(pad + "/" + veld, "expected an array, got " + kort(a));
-        List<String> uit = new ArrayList<>();
+        if (a == null) throw missing(pad, veld);
+        if (!a.isArray()) throw new Documentfout(pad + "/" + veld, "expected an array, got " + shortQuote(a));
+        List<String> out = new ArrayList<>();
         for (int i = 0; i < a.size(); i++) {
             if (!a.get(i).isTextual())
-                throw new Documentfout(pad + "/" + veld + "/" + i, "expected a string, got " + kort(a.get(i)));
-            uit.add(a.get(i).asText());
+                throw new Documentfout(pad + "/" + veld + "/" + i, "expected a string, got " + shortQuote(a.get(i)));
+            out.add(a.get(i).asText());
         }
-        return uit;
+        return out;
     }
 
     /** An integer field, as the OCaml loader's {@code int_} reads it: a JSON integer and nothing else, since
      *  {@code "2"} and {@code 2.0} both read as 2 under {@code asInt}, a value the document did not write as an
      *  integer. An integer beyond a Java {@code int} is well-formed (the OCaml loader reads it into its 63-bit
      *  int) and this backend cannot hold it: a form not carried, so a {@link Refusal} under {@code vorm}. */
-    private static int geheel(JsonNode n, String pad, String veld, String vorm) {
+    private static int whole(JsonNode n, String pad, String veld, String vorm) {
         JsonNode c = n.get(veld);
         String p = pad + "/" + veld;
-        if (c == null) throw ontbreekt(pad, veld);
-        if (!c.isIntegralNumber()) throw new Documentfout(p, "expected an integer, got " + kort(c));
+        if (c == null) throw missing(pad, veld);
+        if (!c.isIntegralNumber()) throw new Documentfout(p, "expected an integer, got " + shortQuote(c));
         if (!c.canConvertToInt())
             throw new Refusal(vorm, c + " at '" + p + "' is outside this backend's integer range ["
                     + Integer.MIN_VALUE + ", " + Integer.MAX_VALUE + "]");
@@ -676,28 +676,28 @@ public final class IrLoader {
      *  WF-001/WF-002 refuse and no others. The model's tables are keyed on the exact string and look a name up
      *  case-insensitively after an exact miss, so two spellings of one name would both enter and a lookup would
      *  pick one of them. */
-    private static <V> void eenmaal(Map<String, V> tabel, String pad, String naam, V waarde) {
-        String eerder = botsing(tabel.keySet(), naam);
-        if (eerder != null) throw new Documentfout(pad, dubbel(naam, eerder));
-        tabel.put(naam, waarde);
+    private static <V> void once(Map<String, V> table, String pad, String naam, V waarde) {
+        String earlier = collision(table.keySet(), naam);
+        if (earlier != null) throw new Documentfout(pad, duplicate(naam, earlier));
+        table.put(naam, waarde);
     }
 
     /** The declared name {@code naam} collides with under {@link Namen#norm}, or null. */
-    private static String botsing(java.util.Collection<String> namen, String naam) {
+    private static String collision(java.util.Collection<String> names, String naam) {
         String sleutel = Namen.norm(naam);
-        for (String n : namen) if (Namen.norm(n).equals(sleutel)) return n;
+        for (String n : names) if (Namen.norm(n).equals(sleutel)) return n;
         return null;
     }
 
-    private static String dubbel(String naam, String eerder) {
-        return naam.equals(eerder)
+    private static String duplicate(String naam, String earlier) {
+        return naam.equals(earlier)
                 ? "the name '" + naam + "' is declared twice"
-                : "the name '" + naam + "' collides with the earlier '" + eerder
+                : "the name '" + naam + "' collides with the earlier '" + earlier
                         + "' (names are compared case-insensitively)";
     }
 
     /** A JSON value as a message quotes it, cut short: the value is evidence, not the document. */
-    private static String kort(JsonNode n) {
+    private static String shortQuote(JsonNode n) {
         String s = String.valueOf(n);
         return s.length() > 60 ? s.substring(0, 60) + "…" : s;
     }
@@ -708,11 +708,11 @@ public final class IrLoader {
      *  node here, in the shared loader's sentences, and never read for evaluation; what a vocabulary or a designation
      *  says is the verifier's (WF-116 to WF-120), so nothing here refuses it. */
     private void vocabulaires(JsonNode root) {
-        for (JsonNode v : extLijst(root, "", "vocabularies", "a document's vocabularies")) {
-            String p = padVan(v);
-            velden(v, p, "Vocabulary", List.of("node", "name", "default"), List.of("language"));
-            m.vocabulaires.add(new RegelSpraakModel.Vocabulaire(tekst(v, p, "name"), waarheid(v, p, "default"),
-                    optTekst(v, p, "language")));
+        for (JsonNode v : extList(root, "", "vocabularies", "a document's vocabularies")) {
+            String p = pathOf(v);
+            fields(v, p, "Vocabulary", List.of("node", "name", "default"), List.of("language"));
+            m.vocabulaires.add(new RegelSpraakModel.Vocabulaire(textAt(v, p, "name"), truth(v, p, "default"),
+                    optText(v, p, "language")));
         }
     }
 
@@ -721,86 +721,86 @@ public final class IrLoader {
      *  refused outside their closed sets in WF-121 (a)'s sentence, as the shared loader refuses them for every
      *  executor, since the model cannot hold a value its set does not name. What the source names — whether it resolves,
      *  whether it fits the form — is the verifier's (WF-121 (b) to (d)), so nothing here refuses it. */
-    private void herkomst(JsonNode n, String pad, RegelSpraakModel.Benoembaar element) {
+    private void origin(JsonNode n, String pad, RegelSpraakModel.Benoembaar element) {
         if (!n.has("origin")) return;
         String p = pad + "/origin";
         JsonNode o = n.get("origin");
-        velden(o, p, null, List.of("form", "from"), List.of());
+        fields(o, p, null, List.of("form", "from"), List.of());
         String vp = p + "/from";
         JsonNode van = o.get("from");
-        velden(van, vp, null, List.of("kind", "name"), List.of("owner"));
-        String vorm = tekst(o, p, "form");
+        fields(van, vp, null, List.of("kind", "name"), List.of("owner"));
+        String vorm = textAt(o, p, "form");
         RegelSpraakModel.Herkomstvorm hv = Spelling.ORIGIN_FORM.waarde("Origin.form", vorm);
         if (hv == null)
             throw new Documentfout(p + "/form", "the origin form '" + vorm + "' is none of the forms of IR-SPEC ch. 2.13 ("
-                    + opgesomd(Spelling.ORIGIN_FORM.rijen().values()) + ")");
-        String kind = tekst(van, vp, "kind");
+                    + enumerated(Spelling.ORIGIN_FORM.rijen().values()) + ")");
+        String kind = textAt(van, vp, "kind");
         RegelSpraakModel.Benoembaar.Soort soort = Spelling.originSoort(kind);
         if (soort == null) {
-            List<String> soorten = new ArrayList<>(Spelling.ORIGIN_KIND.rijen().values());
-            soorten.add(Spelling.ORIGIN_DECISION_TABLE);
+            List<String> kinds = new ArrayList<>(Spelling.ORIGIN_KIND.rijen().values());
+            kinds.add(Spelling.ORIGIN_DECISION_TABLE);
             throw new Documentfout(vp + "/kind", "the origin's source kind '" + kind
-                    + "' is none of the kinds of IR-SPEC ch. 2.13 (" + opgesomd(soorten) + ")");
+                    + "' is none of the kinds of IR-SPEC ch. 2.13 (" + enumerated(kinds) + ")");
         }
         m.gegenereerd.put(element, new RegelSpraakModel.GegenereerdUit(
-                new RegelSpraakModel.Benoembaar(soort, optTekst(van, vp, "owner"), tekst(van, vp, "name")), hv));
+                new RegelSpraakModel.Benoembaar(soort, optText(van, vp, "owner"), textAt(van, vp, "name")), hv));
     }
 
     /** The values, each quoted, joined as the shared loader joins them in WF-121 (a)'s sentence. */
-    private static String opgesomd(java.util.Collection<String> waarden) {
+    private static String enumerated(java.util.Collection<String> waarden) {
         return String.join(", ", waarden.stream().map(w -> "'" + w + "'").toList());
     }
 
     /** The designations of the declaration {@code n} at {@code pad}, into the model's side table under {@code element}
      *  (a list that is absent carries none; a present one holds at least one). */
-    private void benamingen(JsonNode n, String pad, RegelSpraakModel.Benoembaar element) {
+    private void designations(JsonNode n, String pad, RegelSpraakModel.Benoembaar element) {
         List<RegelSpraakModel.Benaming> lijst = new ArrayList<>();
-        for (JsonNode b : extLijst(n, pad, "designations", "a declaration's designations")) {
-            String p = padVan(b);
-            velden(b, p, null, List.of("vocabulary", "designation"), List.of());
-            lijst.add(new RegelSpraakModel.Benaming(tekst(b, p, "vocabulary"), tekst(b, p, "designation")));
+        for (JsonNode b : extList(n, pad, "designations", "a declaration's designations")) {
+            String p = pathOf(b);
+            fields(b, p, null, List.of("vocabulary", "designation"), List.of());
+            lijst.add(new RegelSpraakModel.Benaming(textAt(b, p, "vocabulary"), textAt(b, p, "designation")));
         }
         if (!lijst.isEmpty()) m.benamingen.computeIfAbsent(element, k -> new ArrayList<>()).addAll(lijst);
     }
 
     /** An enumeration's {@code valueDesignations}: each entry to the first value its {@code value} names under the name
      *  identity; an entry that names none (WF-117's) keeps the value as written, which names no declaration. */
-    private void waardeBenamingen(JsonNode dt, String pad, String domein, List<String> waarden) {
-        for (JsonNode e : extLijst(dt, pad, "valueDesignations", "an enumeration's value designations")) {
-            String p = padVan(e);
-            velden(e, p, null, List.of("value", "vocabulary", "designation"), List.of());
-            String waarde = tekst(e, p, "value");
-            String gedeclareerd = waarden.stream().filter(w -> Namen.norm(w).equals(Namen.norm(waarde)))
+    private void valueDesignations(JsonNode dt, String pad, String domain, List<String> waarden) {
+        for (JsonNode e : extList(dt, pad, "valueDesignations", "an enumeration's value designations")) {
+            String p = pathOf(e);
+            fields(e, p, null, List.of("value", "vocabulary", "designation"), List.of());
+            String waarde = textAt(e, p, "value");
+            String declared = waarden.stream().filter(w -> Namen.norm(w).equals(Namen.norm(waarde)))
                     .findFirst().orElse(waarde);
-            m.benamingen.computeIfAbsent(RegelSpraakModel.Benoembaar.enumeratiewaarde(domein, gedeclareerd),
-                    k -> new ArrayList<>()).add(new RegelSpraakModel.Benaming(tekst(e, p, "vocabulary"),
-                    tekst(e, p, "designation")));
+            m.benamingen.computeIfAbsent(RegelSpraakModel.Benoembaar.enumeratiewaarde(domain, declared),
+                    k -> new ArrayList<>()).add(new RegelSpraakModel.Benaming(textAt(e, p, "vocabulary"),
+                    textAt(e, p, "designation")));
         }
     }
 
     /** A list the side table writes whole or not at all, in the shared loader's sentence for an empty one. */
-    private List<JsonNode> extLijst(JsonNode ouder, String pad, String veld, String wat) {
-        JsonNode a = ouder.get(veld);
+    private List<JsonNode> extList(JsonNode parent, String pad, String veld, String description) {
+        JsonNode a = parent.get(veld);
         if (a == null) return List.of();
         String p = pad + "/" + veld;
-        if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + kort(a));
-        if (a.isEmpty()) throw new Documentfout(p, wat + " are at least one, or the field is absent");
-        List<JsonNode> uit = new ArrayList<>();
+        if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + shortQuote(a));
+        if (a.isEmpty()) throw new Documentfout(p, description + " are at least one, or the field is absent");
+        List<JsonNode> out = new ArrayList<>();
         for (int i = 0; i < a.size(); i++) {
-            if (!a.get(i).isObject()) throw new Documentfout(p + "/" + i, "expected a JSON object, got " + kort(a.get(i)));
-            uit.add(a.get(i));
+            if (!a.get(i).isObject()) throw new Documentfout(p + "/" + i, "expected a JSON object, got " + shortQuote(a.get(i)));
+            out.add(a.get(i));
         }
-        return uit;
+        return out;
     }
 
     // --- prioritized-defaults extension (ch. 7) ----------------------------
 
     private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
-        velden(n, padVan(n), "PrioritizedDefaults", List.of("node", "name", "subject", "defaults", "validity"),
+        fields(n, pathOf(n), "PrioritizedDefaults", List.of("node", "name", "subject", "defaults", "validity"),
                 List.of("characteristic", "attribute", "unordered", "source", "origin", "designations"));
         if (text(n, "name") != null)
-            herkomst(n, padVan(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
-            benamingen(n, padVan(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
+            origin(n, pathOf(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
+            designations(n, pathOf(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
         String onderwerp = text(n, "subject");
         String kenmerk = text(n, "characteristic");
         String attribuut = text(n, "attribute");
@@ -809,34 +809,34 @@ public final class IrLoader {
             throw new Refusal("PrioritizedDefaults",
                     "defaults must carry exactly one of characteristic/attribute");
         List<Default> defaults = new ArrayList<>();
-        elementen(n, "defaults", r -> defaults.add(dflt(r)));
+        elements(n, "defaults", r -> defaults.add(dflt(r)));
         return new PrioritizedDefaults(text(n, "name"), onderwerp, kenmerk, attribuut, bool(n, "unordered"),
-                defaults, bronTekst(n), geldigheid(n, "name"));
+                defaults, sourceText(n), parsedValidity(n, "name"));
     }
 
     private Default dflt(JsonNode n) {
-        velden(n, padVan(n), "Default", List.of("node"),
+        fields(n, pathOf(n), "Default", List.of("node"),
                 List.of("decision", "justification", "consequence", "initialisation", "exceptions", "source"));
         // an absent decision or justification is what the v0 null was; a null there velden has refused
         JsonNode b = n.get("decision");
-        Boolean besluit = b == null ? null : b.asBoolean();
-        return new Default(besluit, conditie(knoopVeld(n, "justification")), expr(knoopVeld(n, "consequence")),
-                bool(n, "initialisation"), excepties(knoopVeld(n, "exceptions")), bronTekst(n));
+        Boolean decision = b == null ? null : b.asBoolean();
+        return new Default(decision, condition(nodeField(n, "justification")), expr(nodeField(n, "consequence")),
+                bool(n, "initialisation"), exceptions(nodeField(n, "exceptions")), sourceText(n));
     }
 
-    private Default.Excepties excepties(JsonNode n) {
+    private Default.Excepties exceptions(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        velden(n, padVan(n), null, List.of("unordered", "members"), List.of());
-        List<ExceptionGroup> leden = new ArrayList<>();
-        elementen(n, "members", s -> leden.add(exceptionGroup(s)));
-        return new Default.Excepties(bool(n, "unordered"), leden);
+        fields(n, pathOf(n), null, List.of("unordered", "members"), List.of());
+        List<ExceptionGroup> members = new ArrayList<>();
+        elements(n, "members", s -> members.add(exceptionGroup(s)));
+        return new Default.Excepties(bool(n, "unordered"), members);
     }
 
     private ExceptionGroup exceptionGroup(JsonNode n) {
-        velden(n, padVan(n), "ExceptionGroup", List.of("node", "defaults"), List.of("source"));
+        fields(n, pathOf(n), "ExceptionGroup", List.of("node", "defaults"), List.of("source"));
         List<Default> defaults = new ArrayList<>();
-        elementen(n, "defaults", r -> defaults.add(dflt(r)));
-        return new ExceptionGroup(defaults, bronTekst(n));
+        elements(n, "defaults", r -> defaults.add(dflt(r)));
+        return new ExceptionGroup(defaults, sourceText(n));
     }
 
     /** Bind every declared supertype reference, and refuse the two shapes this backend does not carry.
@@ -850,23 +850,23 @@ public final class IrLoader {
      *  combination plays. Measured at the same card: the DIMENSIONED half was over-broad even then —
      *  every dimension read already went through {@code dimensiesVan}, which has walked the chain since
      *  the kernel. What is left of it is the §9.9 startpunt-ANCHOR family, refused in
-     *  {@link #weigerGeerfdAnker} — not here, because it needs the tijdlijn list, which is read later. */
+     *  {@link #refuseInheritedAnchor} — not here, because it needs the tijdlijn list, which is read later. */
     private void bindSupertypes() {
-        supertypeNaam.forEach((ot, naam) -> {
+        supertypeName.forEach((ot, naam) -> {
             if (naam == null) return;
             // under WF-103's name identity, the one WF-001 declared the names under: the model's own lookup
             // folds case only, and would call "Jutter " undeclared where the verifier, ref and clingo bind it
-            String gedeclareerd = botsing(m.objecttypen.keySet(), naam);
-            Objecttype ouder = gedeclareerd == null ? null : m.objecttypen.get(gedeclareerd);
-            if (ouder == null)
-                throw new Documentfout(supertypePad.get(ot), "supertype '" + naam + "' is not declared");
-            ot.supertype = ouder;
+            String declared = collision(m.objecttypen.keySet(), naam);
+            Objecttype parent = declared == null ? null : m.objecttypen.get(declared);
+            if (parent == null)
+                throw new Documentfout(supertypePath.get(ot), "supertype '" + naam + "' is not declared");
+            ot.supertype = parent;
         });
         for (Objecttype ot : m.objecttypen.values()) {
-            java.util.Set<Objecttype> gezien = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            java.util.Set<Objecttype> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
             for (Objecttype t = ot; t != null; t = t.supertype)
-                if (!gezien.add(t))
-                    throw new Documentfout(supertypePad.get(ot), "supertype cycle at '" + ot.naam + "'");
+                if (!seen.add(t))
+                    throw new Documentfout(supertypePath.get(ot), "supertype cycle at '" + ot.naam + "'");
         }
     }
 
@@ -894,19 +894,19 @@ public final class IrLoader {
      *  tijdlijn must have SOME determination, but nothing makes that determination name the type that
      *  declares the attribute — so (a) fires alone when it names another type, and (b) fires alone when
      *  no attribute rides the tijdlijn at all. */
-    private void weigerGeerfdAnker() {
+    private void refuseInheritedAnchor() {
         for (Objecttype ot : m.objecttypen.values()) {
             if (ot.supertype == null) continue;
             for (Objecttype t = ot.supertype; t != null; t = t.supertype) {       // STRICTLY above ot
-                final Objecttype voorouder = t;
-                for (String attr : voorouder.attribuutTijdlijnNaam.keySet())
-                    if (m.heeftVariabelStartpunt(voorouder, attr))
+                final Objecttype ancestor = t;
+                for (String attr : ancestor.attribuutTijdlijnNaam.keySet())
+                    if (m.heeftVariabelStartpunt(ancestor, attr))
                         throw new Refusal("Objecttype.supertype",
                                 "an INHERITED attribute ('" + attr + "') riding a NAMED tijdlijn with a VARIABEL"
                                 + " STARTPUNT (§13.3.6.9/§9.9) on the chain of '" + ot.naam + "': the anchor family"
                                 + " keys on the DECLARED subject name, so a subtype reads such an attribute as"
                                 + " unanchored");
-                if (m.resolvedStartpunten.stream().anyMatch(sp -> voorouder.naam.equals(sp.objecttype())))
+                if (m.resolvedStartpunten.stream().anyMatch(sp -> ancestor.naam.equals(sp.objecttype())))
                     throw new Refusal("Objecttype.supertype",
                             "a §9.9 startpuntbepaling declared on an ANCESTOR of '" + ot.naam
                             + "': the anchor family keys on the declared subject name, so the §6.8 leeg-fout "
@@ -920,19 +920,19 @@ public final class IrLoader {
      *  shared loader refuses them for an executor; what WF-113 demands beyond that (a message that is not blank, a
      *  line of at least 0) is the verifier's to refuse, and no consumer reads a diagnostic for evaluation. */
     private static Diagnostic diagnostic(String pad, JsonNode n) {
-        velden(n, pad, "Diagnostic", List.of("node", "severity", "message", "line"), List.of());
+        fields(n, pad, "Diagnostic", List.of("node", "severity", "message", "line"), List.of());
         String sp = pad + "/severity";
-        if (n.get("severity").isNull()) throw new Documentfout(sp, SEVERITY_ONTBREEKT);
-        String w = tekst(n, pad, "severity");
+        if (n.get("severity").isNull()) throw new Documentfout(sp, SEVERITY_MISSING);
+        String w = textAt(n, pad, "severity");
         if (Spelling.SEVERITY.weigertBijNaam("Diagnostic.severity", w))
-            throw new Documentfout(sp, severityWeigering(geweigerd(Spelling.SEVERITY, w)));
-        return new Diagnostic(enumWaarde(Spelling.SEVERITY, "Diagnostic.severity", w, sp),
-                tekst(n, pad, "message"), geheel(n, pad, "line", "Diagnostic.line"));
+            throw new Documentfout(sp, severityRefusal(refused(Spelling.SEVERITY, w)));
+        return new Diagnostic(enumValue(Spelling.SEVERITY, "Diagnostic.severity", w, sp),
+                textAt(n, pad, "message"), whole(n, pad, "line", "Diagnostic.line"));
     }
 
     /** WF-113 (a), the verifier's sentences for the two severities the schema does not admit: an executor refuses
      *  them at load, as the shared loader does. */
-    static String severityWeigering(Severity s) {
+    static String severityRefusal(Severity s) {
         return switch (s) {
             case ERROR -> "severity error is not a wire severity: an error means the producer refused to write the"
                     + " document, so a document that was written carries none";
@@ -943,84 +943,84 @@ public final class IrLoader {
     }
 
     /** WF-113 (a), the verifier's sentence for a diagnostic without a severity. */
-    static final String SEVERITY_ONTBREEKT = "diagnostic without a severity: the one wire severity is warning";
+    static final String SEVERITY_MISSING = "diagnostic without a severity: the one wire severity is warning";
 
     // --- declaration side --------------------------------------------------
 
     /** IR-SPEC ch. 2.2: the member nodes back into the model's member-keyed side-maps. Every facet's count is
      *  kept, 1 included, as the OCaml loader keeps it. The frontend's model records a count only when it is not 1,
-     *  and the one reader of these tables, {@code Tijdlijnen.meerPeriodiek}, takes an absent entry and an explicit
+     *  and the one reader of these tables, {@code Timelines.morePeriodic}, takes an absent entry and an explicit
      *  1 for the same single-period facet, so keeping the 1 moves no outcome; what it adds is that a regression to
-     *  a presence test fails on every temporal golden instead of on none ({@code MeerPeriodiekePoortWitnessTest}).
+     *  a presence test fails on every temporal golden instead of on none ({@code MorePeriodicGateWitnessTest}).
      *  A characteristic's kind is required on the wire since M1; the emitter writes nominal for an untagged one
      *  (ch. 2.2: untagged = nominal). */
     private Objecttype objecttype(String pad, JsonNode n) {
-        velden(n, pad, "ObjectType", List.of("node", "name", "animate", "attributes", "characteristics"),
+        fields(n, pad, "ObjectType", List.of("node", "name", "animate", "attributes", "characteristics"),
                 List.of("supertype", "plural", "origin", "designations"));
         Objecttype ot = new Objecttype(naam(n, pad, "name"));
-        herkomst(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
-        benamingen(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
-        ot.bezield = waarheid(n, pad, "animate");
-        ot.meervoud = optTekst(n, pad, "plural");
-        supertypeNaam.put(ot, optTekst(n, pad, "supertype"));   // resolved after every declaration is read
-        supertypePad.put(ot, pad + "/supertype");
+        origin(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
+        designations(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
+        ot.bezield = truth(n, pad, "animate");
+        ot.meervoud = optText(n, pad, "plural");
+        supertypeName.put(ot, optText(n, pad, "supertype"));   // resolved after every declaration is read
+        supertypePath.put(ot, pad + "/supertype");
         lijst(n, pad, "attributes", (ap, a) -> {
-            velden(a, ap, "Attribute", List.of("node", "name", "datatype"),
+            fields(a, ap, "Attribute", List.of("node", "name", "datatype"),
                     List.of("plural", "dimensions", "timeline", "origin", "designations"));
-            String lid = naam(a, ap, "name");
-            herkomst(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, lid));
-            benamingen(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, lid));
-            String eerder = botsing(ot.attributen.keySet(), lid);
-            if (eerder != null) throw new Documentfout(ap + "/name", dubbel(lid, eerder));
+            String member = naam(a, ap, "name");
+            origin(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, member));
+            designations(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, member));
+            String earlier = collision(ot.attributen.keySet(), member);
+            if (earlier != null) throw new Documentfout(ap + "/name", duplicate(member, earlier));
             // null is admitted here and refused by the verifier under WF-059, which names it
             JsonNode dt = a.get("datatype");
             if (!dt.isNull() && !dt.isObject())
-                throw new Documentfout(ap + "/datatype", "expected a datatype object or null, got " + kort(dt));
-            ot.attributen.put(lid, datatype(dt, ap + "/datatype", true));
-            String meervoud = optTekst(a, ap, "plural");
-            if (meervoud != null) ot.attribuutMeervoud.put(lid, meervoud);
-            if (a.has("dimensions")) ot.attribuutDimensies.put(lid, tekstLijst(a, ap, "dimensions"));
+                throw new Documentfout(ap + "/datatype", "expected a datatype object or null, got " + shortQuote(dt));
+            ot.attributen.put(member, datatype(dt, ap + "/datatype", true));
+            String plural = optText(a, ap, "plural");
+            if (plural != null) ot.attribuutMeervoud.put(member, plural);
+            if (a.has("dimensions")) ot.attribuutDimensies.put(member, textList(a, ap, "dimensions"));
             if (a.has("timeline")) {
                 String tp = ap + "/timeline";
                 JsonNode tl = a.get("timeline");
-                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"),
+                fields(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"),
                         List.of("fixedStart", "timelineName"));
-                Granulariteit gran = enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
-                        tekst(tl, tp, "granularity"), tp + "/granularity");
-                ot.attribuutGranulariteit.put(lid, gran);
-                int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
-                ot.attribuutTijdlijnAantal.put(lid, aantal);
-                String vast = vastStartpunt(tl, tp, gran, aantal);
-                if (vast != null) ot.attribuutVastStartpunt.put(lid, vast);
-                String tijdlijnNaam = optTekst(tl, tp, "timelineName");
-                if (tijdlijnNaam != null) {
-                    ot.attribuutTijdlijnNaam.put(lid, tijdlijnNaam);
-                    overnames.add(new Overname(tp + "/timelineName", tijdlijnNaam, vast));
+                Granulariteit gran = enumValue(Spelling.GRANULARITY, "TimelineFacet.granularity",
+                        textAt(tl, tp, "granularity"), tp + "/granularity");
+                ot.attribuutGranulariteit.put(member, gran);
+                int aantal = whole(tl, tp, "count", "TimelineFacet.count");
+                ot.attribuutTijdlijnAantal.put(member, aantal);
+                String fixed = fixedStartPoint(tl, tp, gran, aantal);
+                if (fixed != null) ot.attribuutVastStartpunt.put(member, fixed);
+                String timelineName = optText(tl, tp, "timelineName");
+                if (timelineName != null) {
+                    ot.attribuutTijdlijnNaam.put(member, timelineName);
+                    overnames.add(new Adoption(tp + "/timelineName", timelineName, fixed));
                 }
             }
         });
         lijst(n, pad, "characteristics", (cp, c) -> {
-            velden(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline", "origin", "designations"));
-            String lid = naam(c, cp, "name");
-            herkomst(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, lid));
-            benamingen(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, lid));
+            fields(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline", "origin", "designations"));
+            String member = naam(c, cp, "name");
+            origin(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, member));
+            designations(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, member));
             // WF-002: read leniently, a second declaration's kind replaced the first one's and its timeline did not
-            String eerder = botsing(ot.kenmerken, lid);
-            if (eerder != null) throw new Documentfout(cp + "/name", dubbel(lid, eerder));
-            ot.kenmerken.add(lid);
-            ot.kenmerkSoorten.put(lid, enumWaarde(Spelling.CHARACTERISTIC_KIND, "Characteristic.kind",
-                    tekst(c, cp, "kind"), cp + "/kind"));
+            String earlier = collision(ot.kenmerken, member);
+            if (earlier != null) throw new Documentfout(cp + "/name", duplicate(member, earlier));
+            ot.kenmerken.add(member);
+            ot.kenmerkSoorten.put(member, enumValue(Spelling.CHARACTERISTIC_KIND, "Characteristic.kind",
+                    textAt(c, cp, "kind"), cp + "/kind"));
             if (c.has("timeline")) {
                 String tp = cp + "/timeline";
                 JsonNode tl = c.get("timeline");
-                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("fixedStart"));
-                Granulariteit gran = enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
-                        tekst(tl, tp, "granularity"), tp + "/granularity");
-                ot.kenmerkGranulariteit.put(lid, gran);
-                int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
-                ot.kenmerkTijdlijnAantal.put(lid, aantal);
-                String vast = vastStartpunt(tl, tp, gran, aantal);
-                if (vast != null) ot.kenmerkVastStartpunt.put(lid, vast);
+                fields(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("fixedStart"));
+                Granulariteit gran = enumValue(Spelling.GRANULARITY, "TimelineFacet.granularity",
+                        textAt(tl, tp, "granularity"), tp + "/granularity");
+                ot.kenmerkGranulariteit.put(member, gran);
+                int aantal = whole(tl, tp, "count", "TimelineFacet.count");
+                ot.kenmerkTijdlijnAantal.put(member, aantal);
+                String fixed = fixedStartPoint(tl, tp, gran, aantal);
+                if (fixed != null) ot.kenmerkVastStartpunt.put(member, fixed);
             }
         });
         return ot;
@@ -1033,17 +1033,17 @@ public final class IrLoader {
     private Datatype domain(String pad, String naam, JsonNode n) {
         String dp = pad + "/datatype";
         JsonNode dt = n.get("datatype");
-        if (!dt.isObject()) throw new Documentfout(dp, "expected a datatype object, got " + kort(dt));
-        String soort = datatypeSoort(dt, dp);
-        List<String> sleutels = DOMEINDATATYPE.get(soort);
+        if (!dt.isObject()) throw new Documentfout(dp, "expected a datatype object, got " + shortQuote(dt));
+        String soort = datatypeKind(dt, dp);
+        List<String> keyNames = DOMAIN_DATATYPE.get(soort);
         // the values' designations stand beside their list, at this declaration position only (IR-SPEC ch. 2.12)
-        if (sleutels != null)
-            velden(dt, dp, soort, sleutels, soort.equals("Enumeration") ? List.of("valueDesignations") : List.of());
+        if (keyNames != null)
+            fields(dt, dp, soort, keyNames, soort.equals("Enumeration") ? List.of("valueDesignations") : List.of());
         if (soort.equals("Enumeration")) {
             if (!dt.get("values").isArray())
-                throw new Documentfout(dp + "/values", "expected an array, got " + kort(dt.get("values")));
+                throw new Documentfout(dp + "/values", "expected an array, got " + shortQuote(dt.get("values")));
             List<String> waarden = stringList(dt.get("values"));
-            waardeBenamingen(dt, dp, naam, waarden);
+            valueDesignations(dt, dp, naam, waarden);
             return new Datatype.Enumeratie(naam, waarden);
         }
         return datatype(dt, dp, true);
@@ -1054,7 +1054,7 @@ public final class IrLoader {
      *  reference position carry none here, and every other kind has the keys it has everywhere ({@code Number} and
      *  {@code Date} are checked in the dispatch, with their optional keys). A kind outside the table reaches the
      *  dispatch. */
-    private static final Map<String, List<String>> DOMEINDATATYPE = Map.ofEntries(
+    private static final Map<String, List<String>> DOMAIN_DATATYPE = Map.ofEntries(
             Map.entry("Enumeration", List.of("node", "values")),
             Map.entry("SumType", List.of("node", "constructors")),
             Map.entry("StructType", List.of("node", "fields")),
@@ -1063,7 +1063,7 @@ public final class IrLoader {
             Map.entry("Boolean", List.of("node")));
 
     /** The key set of each datatype kind this backend carries without optional keys, at every position but a
-     *  domain's declaration (see {@link #DOMEINDATATYPE}): an Enumeration names its domain here. */
+     *  domain's declaration (see {@link #DOMAIN_DATATYPE}): an Enumeration names its domain here. */
     private static final Map<String, List<String>> DATATYPE = Map.ofEntries(
             Map.entry("Text", List.of("node")),
             Map.entry("Boolean", List.of("node")),
@@ -1074,22 +1074,22 @@ public final class IrLoader {
      *  multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12), so another count is no document (WF-005), refused in
      *  the verifier's words. The model's parameter holds the granularity. */
     private Parameter parameter(String pad, JsonNode n) {
-        velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline", "origin", "designations"));
+        fields(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline", "origin", "designations"));
         String naam = naam(n, pad, "name");
-        herkomst(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
-        benamingen(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
+        origin(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
+        designations(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
         JsonNode dt = n.get("datatype");
-        if (!dt.isObject()) throw new Documentfout(pad + "/datatype", "expected a datatype object, got " + kort(dt));
+        if (!dt.isObject()) throw new Documentfout(pad + "/datatype", "expected a datatype object, got " + shortQuote(dt));
         Datatype datatype = datatype(dt, pad + "/datatype", true);
-        Granulariteit granulariteit = null;
-        String vast = null;
+        Granulariteit granularity = null;
+        String fixed = null;
         if (n.has("timeline")) {
             String tp = pad + "/timeline";
             JsonNode tl = n.get("timeline");
-            velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("fixedStart"));
-            granulariteit = enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
-                    tekst(tl, tp, "granularity"), tp + "/granularity");
-            int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
+            fields(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("fixedStart"));
+            granularity = enumValue(Spelling.GRANULARITY, "TimelineFacet.granularity",
+                    textAt(tl, tp, "granularity"), tp + "/granularity");
+            int aantal = whole(tl, tp, "count", "TimelineFacet.count");
             if (aantal < 1)
                 throw new Documentfout(tp + "/count", "the timeline facet of parameter '" + naam + "' has count "
                         + aantal + " < 1");
@@ -1097,25 +1097,25 @@ public final class IrLoader {
                 throw new Documentfout(tp + "/count", "the timeline facet of parameter '" + naam + "' has count "
                         + aantal + " > 1: a parameter's timeline is one period while multi-period grids are open"
                         + " (RUNTIME-SEMANTICS ch. 3.12)");
-            vast = vastStartpunt(tl, tp, granulariteit, aantal);
+            fixed = fixedStartPoint(tl, tp, granularity, aantal);
         }
-        return new Parameter(naam, datatype, granulariteit, vast);
+        return new Parameter(naam, datatype, granularity, fixed);
     }
 
     /** IR-SPEC ch. 2.5: a unit system and its units, one Unit per abbreviation under the name identity of ch. 2.1
      *  (WF-009, the identity its canonical lookup resolves under). The model keeps every unit under its abbreviation,
      *  its further spellings in the alias map, and its exact factor beside the record's decimal one. */
     private Eenheidstelsel unitSystem(String pad, JsonNode n) {
-        velden(n, pad, "UnitSystem", List.of("node", "name", "units"), List.of());
+        fields(n, pad, "UnitSystem", List.of("node", "name", "units"), List.of());
         Eenheidstelsel es = new Eenheidstelsel(naam(n, pad, "name"));
         lijst(n, pad, "units", (up, u) -> {
             Eenheid e = unit(u, up, es);
-            if (botsing(es.eenheden.keySet(), e.afkorting()) != null)
+            if (collision(es.eenheden.keySet(), e.afkorting()) != null)
                 throw new Documentfout(up + "/abbreviation", "the unit '" + e.afkorting() + "' is declared twice in"
                         + " the unit system '" + es.naam + "': one Unit per abbreviation");
             es.eenheden.put(e.afkorting(), e);
             if (u.has("spellings"))
-                for (String spelling : tekstLijst(u, up, "spellings")) es.aliassen.put(spelling, e);
+                for (String spelling : textList(u, up, "spellings")) es.aliassen.put(spelling, e);
         });
         return es;
     }
@@ -1124,28 +1124,28 @@ public final class IrLoader {
      *  a spelling there is an unknown field (spellings belong to the declaration). */
     private Eenheid unit(JsonNode n, String pad) { return unit(n, pad, null); }
 
-    /** A unit, with {@code stelsel} the unit system it is declared in, or null where it occurs. A declared unit may
+    /** A unit, with {@code system} the unit system it is declared in, or null where it occurs. A declared unit may
      *  carry its further spellings, at least one; its exact factor lands in the system. */
-    private Eenheid unit(JsonNode n, String pad, Eenheidstelsel stelsel) {
+    private Eenheid unit(JsonNode n, String pad, Eenheidstelsel system) {
         // a factor written null is a factor in no form, refused in the factor's own sentence
         if (n.isObject() && n.has("factorToCanonical") && n.get("factorToCanonical").isNull())
-            throw new Documentfout(pad + "/factorToCanonical", FACTOR_VORM + "null");
-        velden(n, pad, "Unit", List.of("node", "abbreviation"), stelsel == null
+            throw new Documentfout(pad + "/factorToCanonical", FACTOR_FORM + "null");
+        fields(n, pad, "Unit", List.of("node", "abbreviation"), system == null
                 ? List.of("system", "canonical", "factorToCanonical", "denominator")
                 : List.of("system", "canonical", "factorToCanonical", "denominator", "spellings"));
-        String afkorting = tekst(n, pad, "abbreviation");
+        String abbreviation = textAt(n, pad, "abbreviation");
         Eenheidstelsel.Factor factor = n.has("factorToCanonical")
                 ? factor(n.get("factorToCanonical"), pad + "/factorToCanonical") : null;
-        Eenheid noemer = n.has("denominator") ? unit(n.get("denominator"), pad + "/denominator") : null;
-        if (stelsel != null && n.has("spellings") && tekstLijst(n, pad, "spellings").isEmpty())
-            throw new Documentfout(pad + "/spellings", SPELLINGEN_LEEG);
-        if (stelsel != null && factor != null) stelsel.exacteFactoren.put(afkorting, factor);
-        return new Eenheid(afkorting, optTekst(n, pad, "system"), optTekst(n, pad, "canonical"),
-                factor == null ? null : decimaal(factor), noemer);
+        Eenheid denominator = n.has("denominator") ? unit(n.get("denominator"), pad + "/denominator") : null;
+        if (system != null && n.has("spellings") && textList(n, pad, "spellings").isEmpty())
+            throw new Documentfout(pad + "/spellings", SPELLINGS_EMPTY);
+        if (system != null && factor != null) system.exacteFactoren.put(abbreviation, factor);
+        return new Eenheid(abbreviation, optText(n, pad, "system"), optText(n, pad, "canonical"),
+                factor == null ? null : decimal(factor), denominator);
     }
 
     /** The shared loader's sentence for an empty list of spellings. */
-    static final String SPELLINGEN_LEEG = "a unit's spellings are at least one spelling, or the field is absent";
+    static final String SPELLINGS_EMPTY = "a unit's spellings are at least one spelling, or the field is absent";
 
     /** The exact factor (IR-SPEC ch. 2.5): an object of exactly the two integers {@code num} and {@code den}, each at
      *  least 1 and at most 2^62 - 1, the schema's bound and the shared loader's native integer range. Every other form
@@ -1154,17 +1154,17 @@ public final class IrLoader {
      *  question, so {2, 4} is read as 1/2, as the shared loader reads it for {@code ref} and the ASP backend. */
     private static Eenheidstelsel.Factor factor(JsonNode n, String pad) {
         if (n.isObject() && n.size() == 2 && n.has("num") && n.has("den")) {
-            BigInteger num = geheelVanAfEen(n.get("num")), den = geheelVanAfEen(n.get("den"));
+            BigInteger num = wholeFromOne(n.get("num")), den = wholeFromOne(n.get("den"));
             if (num != null && den != null) return new Eenheidstelsel.Factor(num, den);
         }
-        throw new Documentfout(pad, FACTOR_VORM + n);
+        throw new Documentfout(pad, FACTOR_FORM + n);
     }
 
     /** The shared loader's sentence for a factor in any other form than {@code {num, den}}; the value follows. */
-    static final String FACTOR_VORM = "a conversion factor is an exact rational {num, den} whose two integers are at"
+    static final String FACTOR_FORM = "a conversion factor is an exact rational {num, den} whose two integers are at"
             + " least 1 and at most 4611686018427387903 (2^62 - 1), got ";
 
-    private static BigInteger geheelVanAfEen(JsonNode c) {
+    private static BigInteger wholeFromOne(JsonNode c) {
         if (!c.isIntegralNumber()) return null;
         BigInteger v = c.bigIntegerValue();
         return v.signum() > 0 && v.bitLength() <= 62 ? v : null;
@@ -1172,7 +1172,7 @@ public final class IrLoader {
 
     /** The record's decimal factor of an exact fraction: a whole number exactly, any other fraction rounded to 16
      *  significant digits, as the frontend rounds a declared "1/N" (see the class comment). */
-    private static BigDecimal decimaal(Eenheidstelsel.Factor f) {
+    private static BigDecimal decimal(Eenheidstelsel.Factor f) {
         return f.den().equals(BigInteger.ONE) ? new BigDecimal(f.num())
                 : new BigDecimal(f.num()).divide(new BigDecimal(f.den()), MathContext.DECIMAL64);
     }
@@ -1182,29 +1182,29 @@ public final class IrLoader {
      *  recognition reads: the name and then the plural, the first to claim a spelling keeping it, as the frontend
      *  registers them. */
     private void dayKind(String pad, JsonNode n) {
-        velden(n, pad, "DayKind", List.of("node", "name"), List.of("plural"));
-        String naam = tekst(n, pad, "name");
-        String meervoud = optTekst(n, pad, "plural");
+        fields(n, pad, "DayKind", List.of("node", "name"), List.of("plural"));
+        String naam = textAt(n, pad, "name");
+        String plural = optText(n, pad, "plural");
         m.dagsoorten.add(naam);
         m.dagsoortPerEenheid.putIfAbsent(naam.trim().toLowerCase(), naam);
-        if (meervoud != null) m.dagsoortPerEenheid.putIfAbsent(meervoud.trim().toLowerCase(), naam);
+        if (plural != null) m.dagsoortPerEenheid.putIfAbsent(plural.trim().toLowerCase(), naam);
     }
 
     /** IR-SPEC ch. 2.6: a fact type and its roles. A role's plural is written whole or not at all: absent is the
      *  record's null. */
     private Feittype feittype(String pad, JsonNode n) {
-        velden(n, pad, "FactType", List.of("node", "name", "reciprocal", "roles"), List.of("origin", "designations"));
+        fields(n, pad, "FactType", List.of("node", "name", "reciprocal", "roles"), List.of("origin", "designations"));
         Feittype ft = new Feittype(naam(n, pad, "name"));
         ft.wederkerig = bool(n, "reciprocal");
-        herkomst(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
-        benamingen(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
-        elementen(n, "roles", r -> {
-            velden(r, padVan(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural", "origin", "designations"));
+        origin(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
+        designations(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
+        elements(n, "roles", r -> {
+            fields(r, pathOf(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural", "origin", "designations"));
             ft.rollen.add(new RegelSpraakModel.Rol(
                     text(r, "name"), text(r, "objectType"), text(r, "plural"), bool(r, "many")));
             if (text(r, "name") != null) {
-                herkomst(r, padVan(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
-                benamingen(r, padVan(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
+                origin(r, pathOf(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
+                designations(r, pathOf(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
             }
         });
         return ft;
@@ -1212,57 +1212,57 @@ public final class IrLoader {
 
     /** IR-SPEC ch. 2.7: a dimension and its labels. Its plural and its preposition are written whole or not at all:
      *  absent is the record's null. */
-    private Dimensie dimensie(String pad, JsonNode n) {
-        velden(n, pad, "Dimension", List.of("node", "name", "labels"), List.of("plural", "preposition"));
+    private Dimensie dimension(String pad, JsonNode n) {
+        fields(n, pad, "Dimension", List.of("node", "name", "labels"), List.of("plural", "preposition"));
         return new Dimensie(naam(n, pad, "name"), text(n, "plural"),
                 text(n, "preposition"), stringList(n.get("labels")));
     }
 
     /** IR-SPEC ch. 2.8: a named timeline. Its granularity is the one field of the family that admits a null. Its
      *  fixed start point is refused in the verifier's WF-115 sentences: on a variable start (a), off its grid (b). */
-    private Tijdlijn tijdlijn(JsonNode n) {
-        String p = padVan(n);
-        velden(n, p, "Timeline", List.of("node", "name", "variableStart", "granularity", "count"), List.of("fixedStart"));
-        Granulariteit granulariteit = n.get("granularity").isNull()
+    private Tijdlijn timeline(JsonNode n) {
+        String p = pathOf(n);
+        fields(n, p, "Timeline", List.of("node", "name", "variableStart", "granularity", "count"), List.of("fixedStart"));
+        Granulariteit granularity = n.get("granularity").isNull()
                 && Spelling.GRANULARITY.laatNullToe("Timeline.granularity") ? null
-                : enumWaarde(Spelling.GRANULARITY, "Timeline.granularity", tekst(n, p, "granularity"),
+                : enumValue(Spelling.GRANULARITY, "Timeline.granularity", textAt(n, p, "granularity"),
                         p + "/granularity");
         String naam = text(n, "name");
-        boolean variabel = bool(n, "variableStart");
+        boolean variable = bool(n, "variableStart");
         int aantal = intOf(n, "count");
-        String vast = optTekst(n, p, "fixedStart");
-        if (vast != null && variabel)
-            throw new Documentfout(p + "/fixedStart", VastStartpunt.weigeringVariabel(naam == null ? "" : naam, vast));
-        if (vast != null && granulariteit != null) {
-            String weigering = VastStartpunt.weigering(granulariteit, aantal, vast);
-            if (weigering != null) throw new Documentfout(p + "/fixedStart", weigering);
+        String fixed = optText(n, p, "fixedStart");
+        if (fixed != null && variable)
+            throw new Documentfout(p + "/fixedStart", VastStartpunt.weigeringVariabel(naam == null ? "" : naam, fixed));
+        if (fixed != null && granularity != null) {
+            String refusal = VastStartpunt.weigering(granularity, aantal, fixed);
+            if (refusal != null) throw new Documentfout(p + "/fixedStart", refusal);
         }
-        return new Tijdlijn(naam, variabel, granulariteit, aantal, vast);
+        return new Tijdlijn(naam, variable, granularity, aantal, fixed);
     }
 
     /** A facet's fixed start point, refused in the verifier's WF-115 (b) sentence when it does not fit the facet's
      *  grid; null when the facet carries none. */
-    private static String vastStartpunt(JsonNode facet, String tp, Granulariteit gran, int aantal) {
-        String vast = optTekst(facet, tp, "fixedStart");
-        if (vast == null) return null;
-        String weigering = VastStartpunt.weigering(gran, aantal, vast);
-        if (weigering != null) throw new Documentfout(tp + "/fixedStart", weigering);
-        return vast;
+    private static String fixedStartPoint(JsonNode facet, String tp, Granulariteit gran, int aantal) {
+        String fixed = optText(facet, tp, "fixedStart");
+        if (fixed == null) return null;
+        String refusal = VastStartpunt.weigering(gran, aantal, fixed);
+        if (refusal != null) throw new Documentfout(tp + "/fixedStart", refusal);
+        return fixed;
     }
 
     /** An attribute facet that names a timeline, kept until the timelines are read: WF-115 (c) crosses its fixed
      *  start point with the declaration's. */
-    private record Overname(String pad, String tijdlijn, String vast) {}
+    private record Adoption(String pad, String timeline, String fixed) {}
 
-    private final List<Overname> overnames = new ArrayList<>();
+    private final List<Adoption> overnames = new ArrayList<>();
 
     /** WF-115 (c), in the verifier's sentence and at its pointer: a facet that names a timeline carries that
      *  timeline's fixed start point, or none when it has none. A name that resolves to no timeline is WF-003's. */
-    private void weigerOvername() {
-        for (Overname o : overnames) {
-            Tijdlijn tl = m.tijdlijnOpNaam(o.tijdlijn());
-            if (tl != null && !java.util.Objects.equals(o.vast(), tl.vastStartpunt()))
-                throw new Documentfout(o.pad(), VastStartpunt.weigeringOvername(o.vast(), o.tijdlijn(), tl.vastStartpunt()));
+    private void refuseAdoption() {
+        for (Adoption o : overnames) {
+            Tijdlijn tl = m.tijdlijnOpNaam(o.timeline());
+            if (tl != null && !java.util.Objects.equals(o.fixed(), tl.vastStartpunt()))
+                throw new Documentfout(o.pad(), VastStartpunt.weigeringOvername(o.fixed(), o.timeline(), tl.vastStartpunt()));
         }
     }
 
@@ -1273,15 +1273,15 @@ public final class IrLoader {
      *  {@code type} of an expression node), where a presentation tag is refused (WF-007). */
     private Datatype datatype(JsonNode n, String pad, boolean declaratie) {
         if (n == null || n.isNull()) return null;
-        if (!n.isObject()) throw new Documentfout(pad, "expected a datatype object or null, got " + kort(n));
-        String node = datatypeSoort(n, pad);
-        List<String> sleutels = DATATYPE.get(node);
-        if (sleutels != null) velden(n, pad, node, sleutels, List.of());
+        if (!n.isObject()) throw new Documentfout(pad, "expected a datatype object or null, got " + shortQuote(n));
+        String node = datatypeKind(n, pad);
+        List<String> keyNames = DATATYPE.get(node);
+        if (keyNames != null) fields(n, pad, node, keyNames, List.of());
         return switch (node) {
             case "Number" -> number(n, pad, declaratie);
             case "Date" -> {
-                velden(n, pad, "Date", List.of("node", "precision"), List.of());
-                yield enumWaarde(Spelling.DATE_PRECISION, "Date.precision", tekst(n, pad, "precision"),
+                fields(n, pad, "Date", List.of("node", "precision"), List.of());
+                yield enumValue(Spelling.DATE_PRECISION, "Date.precision", textAt(n, pad, "precision"),
                         pad + "/precision");
             }
             case "Text" -> new Datatype.Tekst();
@@ -1303,76 +1303,76 @@ public final class IrLoader {
      *  unspecified. The presentation tag presents a percentage, stands at a declaration only and means nothing to
      *  evaluation. Every refusal here is the shared OCaml loader's or the verifier's, in their words. */
     private Datatype number(JsonNode n, String pad, boolean declaratie) {
-        velden(n, pad, "Number", List.of("node", "whole", "decimals", "sign"), List.of("unit", "presentation"));
-        boolean geheel = waarheid(n, pad, "whole");
-        int decimalen = geheel(n, pad, "decimals", "Number.decimals");
-        Datatype.Teken teken = enumWaarde(Spelling.NUMBER_SIGN, "Number.sign", tekst(n, pad, "sign"), pad + "/sign");
-        Eenheid eenheid = n.has("unit") ? unit(n.get("unit"), pad + "/unit") : null;
-        String presentatie = optTekst(n, pad, "presentation");
-        if (presentatie != null && !presentatie.equals("percentage"))
-            throw new Documentfout(pad + "/presentation", onbekendeWaarde("presentation", presentatie));
-        boolean procent = eenheid != null && eenheid.afkorting().equals("%");
-        if (procent && teken != Datatype.Teken.ONBEPAALD)
-            throw new Documentfout(pad + "/sign", PROCENT_MET_TEKEN);
-        if (!procent && presentatie != null) throw new Documentfout(pad + "/presentation", TAG_ZONDER_PROCENT);
-        if (presentatie != null && !declaratie)
-            throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE);
-        return procent ? new Datatype.Percentage(geheel, decimalen, eenheid)
-                : new Datatype.Numeriek(geheel, decimalen, teken, eenheid);
+        fields(n, pad, "Number", List.of("node", "whole", "decimals", "sign"), List.of("unit", "presentation"));
+        boolean whole = truth(n, pad, "whole");
+        int decimals = whole(n, pad, "decimals", "Number.decimals");
+        Datatype.Teken sign = enumValue(Spelling.NUMBER_SIGN, "Number.sign", textAt(n, pad, "sign"), pad + "/sign");
+        Eenheid unit = n.has("unit") ? unit(n.get("unit"), pad + "/unit") : null;
+        String presentation = optText(n, pad, "presentation");
+        if (presentation != null && !presentation.equals("percentage"))
+            throw new Documentfout(pad + "/presentation", unknownValue("presentation", presentation));
+        boolean percent = unit != null && unit.afkorting().equals("%");
+        if (percent && sign != Datatype.Teken.ONBEPAALD)
+            throw new Documentfout(pad + "/sign", PERCENT_WITH_SIGN);
+        if (!percent && presentation != null) throw new Documentfout(pad + "/presentation", TAG_WITHOUT_PERCENT);
+        if (presentation != null && !declaratie)
+            throw new Documentfout(pad + "/presentation", TAG_ON_ANNOTATION);
+        return percent ? new Datatype.Percentage(whole, decimals, unit)
+                : new Datatype.Numeriek(whole, decimals, sign, unit);
     }
 
     /** The shared loader's sentence for a value outside an enumeration: its family's values, a v0 spelling
      *  included, or the one presentation tag. */
-    static String onbekendeWaarde(String veld, String waarde) {
+    static String unknownValue(String veld, String waarde) {
         return "unknown " + veld + " value \"" + waarde + "\"";
     }
 
-    /** The in-memory value a wire spelling names at {@code plaats} (IR-SPEC, Conventions: every enumeration value is
+    /** The in-memory value a wire spelling names at {@code place} (IR-SPEC, Conventions: every enumeration value is
      *  read through the one translation table), or the shared loader's refusal naming the field — the last segment
      *  of the place — and the value, a v0 spelling included. A value the place refuses by name never reaches here:
      *  its reader refuses it first, in the rule's sentence. */
-    private static <K> K enumWaarde(Spelling.Familie<K> familie, String plaats, String waarde, String pad) {
-        K k = familie.waarde(plaats, waarde);
+    private static <K> K enumValue(Spelling.Familie<K> family, String place, String waarde, String pad) {
+        K k = family.waarde(place, waarde);
         if (k != null) return k;
-        if (familie.weigertBijNaam(plaats, waarde))
-            throw new IllegalStateException("IrLoader: '" + waarde + "' at " + plaats
+        if (family.weigertBijNaam(place, waarde))
+            throw new IllegalStateException("IrLoader: '" + waarde + "' at " + place
                     + " is refused by name by its reader");
-        throw new Documentfout(pad, onbekendeWaarde(plaats.substring(plaats.lastIndexOf('.') + 1), waarde));
+        throw new Documentfout(pad, unknownValue(place.substring(place.lastIndexOf('.') + 1), waarde));
     }
 
     /** The in-memory value of a spelling the table lists among those some place refuses by name. */
-    private static <K> K geweigerd(Spelling.Familie<K> familie, String spelling) {
-        for (Map.Entry<K, String> e : familie.geweigerd().entrySet())
+    private static <K> K refused(Spelling.Familie<K> family, String spelling) {
+        for (Map.Entry<K, String> e : family.geweigerd().entrySet())
             if (e.getValue().equals(spelling)) return e.getKey();
-        throw new IllegalStateException("IrLoader: '" + spelling + "' is no value the family " + familie.naam()
+        throw new IllegalStateException("IrLoader: '" + spelling + "' is no value the family " + family.naam()
                 + " refuses by name");
     }
 
     /** The shared loader's sentence: the percentage record has no sign, and the wire writes a percentage unsigned. */
-    static final String PROCENT_MET_TEKEN =
+    static final String PERCENT_WITH_SIGN =
             "a percentage carries no sign restriction: a number whose unit is '%' has the sign unspecified";
     /** The shared loader's sentence: the tag presents a percentage, and a number without the unit '%' is none. */
-    static final String TAG_ZONDER_PROCENT = "the presentation \"percentage\" on a number whose unit is not '%'";
+    static final String TAG_WITHOUT_PERCENT = "the presentation \"percentage\" on a number whose unit is not '%'";
     /** WF-007's presentation arm — the verifier's sentence. */
-    static final String TAG_OP_ANNOTATIE = "the presentation tag \"percentage\" on a type annotation: the tag is"
+    static final String TAG_ON_ANNOTATION = "the presentation tag \"percentage\" on a type annotation: the tag is"
             + " written only where a datatype is declared";
 
     /** The {@code node} of a datatype object, required: a switch on an absent one ended in a NullPointerException
      *  that named no place in the document. */
-    private static String datatypeSoort(JsonNode n, String pad) {
+    private static String datatypeKind(JsonNode n, String pad) {
         JsonNode soort = n.get("node");
         if (soort == null) throw new Documentfout(pad, "missing field 'node' (the datatype discriminator)");
-        if (!soort.isTextual()) throw new Documentfout(pad + "/node", "expected a string, got " + kort(soort));
+        if (!soort.isTextual()) throw new Documentfout(pad + "/node", "expected a string, got " + shortQuote(soort));
         return soort.asText();
     }
 
     // --- the key sets of the rule-side nodes ----------------------------------
 
     /** A node's keys as the schema gives them: required, then optional (IR-SPEC § Method). */
-    private record Sleutels(List<String> verplicht, List<String> optioneel) {}
+    private record Keys(List<String> required, List<String> optional) {}
 
-    private static Map.Entry<String, Sleutels> sleutels(String node, List<String> verplicht, String... optioneel) {
-        return Map.entry(node, new Sleutels(verplicht, List.of(optioneel)));
+    private static Map.Entry<String, Keys> keyNames(String node, List<String> required, String... optional) {
+        return Map.entry(node, new Keys(required, List.of(optional)));
     }
 
     /** Every expression node this loader reads, with the schema's keys; an instance-set union's selection is read
@@ -1380,62 +1380,62 @@ public final class IrLoader {
      *  carry where the schema's expression union has the kind, no node of this format where it does not. The
      *  temporal read is such a form, and its keys stand here all the same: a key of its v0 shape is refused by name
      *  before the form is refused. */
-    private static final Map<String, Sleutels> EXPRESSIE = Map.ofEntries(
-            sleutels("Literal", List.of("node", "value", "type"), "source"),
-            sleutels("TextComposition", List.of("node", "parts", "type"), "source"),
-            sleutels("Binary", List.of("node", "op", "left", "right", "type"), "source"),
-            sleutels("Aggregation", List.of("node", "kind", "arguments", "type"), "elementType", "filter",
+    private static final Map<String, Keys> EXPRESSION = Map.ofEntries(
+            keyNames("Literal", List.of("node", "value", "type"), "source"),
+            keyNames("TextComposition", List.of("node", "parts", "type"), "source"),
+            keyNames("Binary", List.of("node", "op", "left", "right", "type"), "source"),
+            keyNames("Aggregation", List.of("node", "kind", "arguments", "type"), "elementType", "filter",
                     "emptyFallback", "dimensionSelection", "sourceRole", "sourcePath", "source"),
-            sleutels("BuiltinCall", List.of("node", "kind", "arguments", "type"), "filter", "granularity", "source"),
-            sleutels("Rounding", List.of("node", "base", "mode", "decimals", "type"), "source"),
-            sleutels("Clamp", List.of("node", "base", "type"), "minimum", "maximum", "source"),
-            sleutels("AttributeReference", List.of("node", "attribute", "subjectType"), "path", "source"),
-            sleutels("DimensionCellRead", List.of("node", "attribute", "labels"), "source"),
-            sleutels("ParameterReference", List.of("node", "parameter"), "source"),
-            sleutels("VariableReference", List.of("node", "name"), "source"),
-            sleutels("BoundDay", List.of("node", "type"), "source"),
-            sleutels("ContextValue", List.of("node", "name", "type"), "source"),
-            sleutels("Unresolved", List.of("node"), "type", "source"),
-            sleutels("TemporalRead", List.of("node", "base", "date", "type"), "source"),
-            sleutels("Let", List.of("node", "type", "binder", "value", "body"), "source"),
-            sleutels("BinderRef", List.of("node", "name"), "source"),
-            sleutels("IfThenElse", List.of("node", "type", "condition", "then", "else"), "source"),
-            sleutels("InstanceSetUnion", List.of("node", "branches"), "source"));
+            keyNames("BuiltinCall", List.of("node", "kind", "arguments", "type"), "filter", "granularity", "source"),
+            keyNames("Rounding", List.of("node", "base", "mode", "decimals", "type"), "source"),
+            keyNames("Clamp", List.of("node", "base", "type"), "minimum", "maximum", "source"),
+            keyNames("AttributeReference", List.of("node", "attribute", "subjectType"), "path", "source"),
+            keyNames("DimensionCellRead", List.of("node", "attribute", "labels"), "source"),
+            keyNames("ParameterReference", List.of("node", "parameter"), "source"),
+            keyNames("VariableReference", List.of("node", "name"), "source"),
+            keyNames("BoundDay", List.of("node", "type"), "source"),
+            keyNames("ContextValue", List.of("node", "name", "type"), "source"),
+            keyNames("Unresolved", List.of("node"), "type", "source"),
+            keyNames("TemporalRead", List.of("node", "base", "date", "type"), "source"),
+            keyNames("Let", List.of("node", "type", "binder", "value", "body"), "source"),
+            keyNames("BinderRef", List.of("node", "name"), "source"),
+            keyNames("IfThenElse", List.of("node", "type", "condition", "then", "else"), "source"),
+            keyNames("InstanceSetUnion", List.of("node", "branches"), "source"));
 
     /** Every condition node this loader reads, with the schema's keys. The condition marker carries no type: that
      *  field is the expression marker's alone. */
-    private static final Map<String, Sleutels> CONDITIE = Map.ofEntries(
-            sleutels("Comparison", List.of("node", "op", "left", "right"), "wholePeriod", "source"),
-            sleutels("Predicate", List.of("node", "kind", "operand", "negated", "digits"), "dayKind", "wholePeriod",
+    private static final Map<String, Keys> CONDITION = Map.ofEntries(
+            keyNames("Comparison", List.of("node", "op", "left", "right"), "wholePeriod", "source"),
+            keyNames("Predicate", List.of("node", "kind", "operand", "negated", "digits"), "dayKind", "wholePeriod",
                     "source"),
-            sleutels("CharacteristicCheck", List.of("node", "characteristic", "negated"), "host", "wholePeriod",
+            keyNames("CharacteristicCheck", List.of("node", "characteristic", "negated"), "host", "wholePeriod",
                     "source", "navigation"),
-            sleutels("RoleMembership", List.of("node", "factType", "role", "negated"), "counterpartType", "source"),
-            sleutels("TimeWindow", List.of("node", "toInclusive"), "from", "to", "source"),
-            sleutels("Compound", List.of("node", "quantifier", "threshold", "parts"), "source"),
-            sleutels("QuantifierFold", List.of("node", "quantifier", "elementType", "test"),
+            keyNames("RoleMembership", List.of("node", "factType", "role", "negated"), "counterpartType", "source"),
+            keyNames("TimeWindow", List.of("node", "toInclusive"), "from", "to", "source"),
+            keyNames("Compound", List.of("node", "quantifier", "threshold", "parts"), "source"),
+            keyNames("QuantifierFold", List.of("node", "quantifier", "elementType", "test"),
                     "threshold", "filter", "source", "sourceRole", "sourcePath"),
-            sleutels("Regelversie", List.of("node", "regel", "inconsistent"), "source"),
-            sleutels("Unresolved", List.of("node"), "source"));
+            keyNames("Regelversie", List.of("node", "regel", "inconsistent"), "source"),
+            keyNames("Unresolved", List.of("node"), "source"));
 
     /** The two parts of a text composition. */
-    private static final Map<String, Sleutels> DEEL = Map.ofEntries(
-            sleutels("LiteralChunk", List.of("node", "text")),
-            sleutels("EmbeddedExpression", List.of("node", "expr")));
+    private static final Map<String, Keys> PART = Map.ofEntries(
+            keyNames("LiteralChunk", List.of("node", "text")),
+            keyNames("EmbeddedExpression", List.of("node", "expr")));
 
     /** The discriminator of an expression or condition node, and — for the kinds this loader reads — its key set,
-     *  checked as {@link #velden} checks every node since L2's fix round: no key outside the node's own, every
+     *  checked as {@link #fields} checks every node since L2's fix round: no key outside the node's own, every
      *  required key present, an optional one written whole or not at all. Until then a field no node has was read
      *  past on most rule-side nodes, a condition marker carrying a type among them. A scalar where the node should
-     *  stand is refused by the caller's {@link #knoopVeld} or {@link #elementen}, at the field's pointer. */
-    private String knoopSoort(JsonNode n, Map<String, Sleutels> tabel, String wat) {
-        // every caller reads the node through knoopVeld or elementen, which refuse a non-object at its pointer
-        String p = padVan(n);
+     *  stand is refused by the caller's {@link #nodeField} or {@link #elements}, at the field's pointer. */
+    private String nodeKind(JsonNode n, Map<String, Keys> table, String description) {
+        // every caller reads the node through nodeField or elementen, which refuse a non-object at its pointer
+        String p = pathOf(n);
         JsonNode soort = n.get("node");
-        if (soort == null) throw new Documentfout(p, "missing field 'node' (the " + wat + " discriminator)");
-        if (!soort.isTextual()) throw new Documentfout(p + "/node", "expected a string, got " + kort(soort));
-        Sleutels sl = tabel.get(soort.asText());
-        if (sl != null) velden(n, p, soort.asText(), sl.verplicht(), sl.optioneel());
+        if (soort == null) throw new Documentfout(p, "missing field 'node' (the " + description + " discriminator)");
+        if (!soort.isTextual()) throw new Documentfout(p + "/node", "expected a string, got " + shortQuote(soort));
+        Keys sl = table.get(soort.asText());
+        if (sl != null) fields(n, p, soort.asText(), sl.required(), sl.optional());
         return soort.asText();
     }
 
@@ -1443,56 +1443,56 @@ public final class IrLoader {
 
     private Expr expr(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        String node = knoopSoort(n, EXPRESSIE, "expression");
+        String node = nodeKind(n, EXPRESSION, "expression");
         return switch (node) {
             case "Literal" -> literal(n);
             case "TextComposition" -> {
-                afgeleidType(n);
-                List<Expr.TekstReeks.Deel> delen = new ArrayList<>();
-                elementen(n, "parts", d -> delen.add(tekstReeksDeel(d)));
-                yield new Expr.TekstReeks(delen, bron(n));
+                derivedType(n);
+                List<Expr.TekstReeks.Deel> parts = new ArrayList<>();
+                elements(n, "parts", d -> parts.add(textCompositionPart(d)));
+                yield new Expr.TekstReeks(parts, bron(n));
             }
             case "Binary" -> {
-                String p = padVan(n);
+                String p = pathOf(n);
                 Expr.Binair b = new Expr.Binair(
-                        enumWaarde(Spelling.BINARY_OP, "Binary.op", tekst(n, p, "op"), p + "/op"),
-                        expr(knoopVeld(n, "left")), expr(knoopVeld(n, "right")), typeVeld(n), bron(n));
-                plekken.put(b, p);
+                        enumValue(Spelling.BINARY_OP, "Binary.op", textAt(n, p, "op"), p + "/op"),
+                        expr(nodeField(n, "left")), expr(nodeField(n, "right")), typeField(n), bron(n));
+                sites.put(b, p);
                 yield b;
             }
             case "Aggregation" -> aggregation(n);
             case "BuiltinCall" -> builtinCall(n);
             case "Rounding" -> {
-                String p = padVan(n);
-                afgeleidType(n);
-                yield new Expr.Afgerond(expr(knoopVeld(n, "base")),
-                        enumWaarde(Spelling.ROUNDING_MODE, "Rounding.mode", tekst(n, p, "mode"), p + "/mode"),
+                String p = pathOf(n);
+                derivedType(n);
+                yield new Expr.Afgerond(expr(nodeField(n, "base")),
+                        enumValue(Spelling.ROUNDING_MODE, "Rounding.mode", textAt(n, p, "mode"), p + "/mode"),
                         intOf(n, "decimals"), bron(n));
             }
             // a bound is written whole or not at all: absent is no bound on that side, the record's null
             case "Clamp" -> {
-                afgeleidType(n);
-                yield new Expr.Begrensd(expr(knoopVeld(n, "base")), expr(knoopVeld(n, "minimum")),
-                        expr(knoopVeld(n, "maximum")), bron(n));
+                derivedType(n);
+                yield new Expr.Begrensd(expr(nodeField(n, "base")), expr(nodeField(n, "minimum")),
+                        expr(nodeField(n, "maximum")), bron(n));
             }
             // IR-SPEC ch. 4.1/4.1a: the reference nodes carry no type (the declaration is the one source) and a read
             // carries no written navigation; the record's components for both stay empty
             case "AttributeReference" -> {
-                String p = padVan(n);
+                String p = pathOf(n);
                 Expr.AttribuutRef a = new Expr.AttribuutRef(text(n, "attribute"), ot(text(n, "subjectType")),
                         null, null, null, bron(n), false, List.of());
-                plekken.put(a, p);
+                sites.put(a, p);
                 if (n.has("path")) {
                     // written whole or not at all, never empty (IR-SPEC ch. 4.1a): an empty list would read as the
                     // subject's own attribute
-                    List<RolBindingRef> stappen = rolBindingLijst(n, p, "path");
-                    if (stappen.isEmpty()) throw new Documentfout(p + "/path", PAD_ZONDER_STAP);
-                    navigatieBindingen.put(a, List.copyOf(stappen));
+                    List<RolBindingRef> steps = roleBindingList(n, p, "path");
+                    if (steps.isEmpty()) throw new Documentfout(p + "/path", PATH_WITHOUT_STEP);
+                    path.put(a, List.copyOf(steps));
                 }
                 yield a;
             }
             case "DimensionCellRead" -> {
-                yield new Expr.DimensieCel((Expr.AttribuutRef) expr(knoopVeld(n, "attribute")),
+                yield new Expr.DimensieCel((Expr.AttribuutRef) expr(nodeField(n, "attribute")),
                         stringList(n.get("labels")),
                         bron(n));
             }
@@ -1505,7 +1505,7 @@ public final class IrLoader {
             // structure before it refuses the node
             case "VariableReference" -> {
                 bron(n);
-                throw new Documentfout(padVan(n), variabeleVerwijzingWeigering(text(n, "name")));
+                throw new Documentfout(pathOf(n), variableReferenceRefusal(text(n, "name")));
             }
             // IR-SPEC ch. 4.1: the bound day of a day-kind definition and a session value, each a node of its own; the
             // record keeps the one constant it always was, named "de dag" for the first
@@ -1513,19 +1513,19 @@ public final class IrLoader {
             // the record keeps the session value's v0 name, which the table gives for the wire's (WF-098: a name
             // outside the two is refused, byte for byte)
             case "ContextValue" -> {
-                String p = padVan(n);
+                String p = pathOf(n);
                 JsonNode naam = n.get("name");
-                if (!naam.isTextual()) throw new Documentfout(p + "/name", CONTEXTWAARDE_NAAM);
-                String geheugen = Spelling.CONTEXT_VALUE_NAME.waarde("ContextValue.name", naam.asText());
-                if (geheugen == null) throw new Documentfout(p + "/name", contextwaardeWeigering(naam.asText()));
-                yield new Expr.Constante(geheugen, contextType(n, CONTEXTWAARDE_TYPE), bron(n));
+                if (!naam.isTextual()) throw new Documentfout(p + "/name", CONTEXT_VALUE_NAME);
+                String contextValueName = Spelling.CONTEXT_VALUE_NAME.waarde("ContextValue.name", naam.asText());
+                if (contextValueName == null) throw new Documentfout(p + "/name", contextValueRefusal(naam.asText()));
+                yield new Expr.Constante(contextValueName, contextType(n, CONTEXT_VALUE_TYPE), bron(n));
             }
             // reden null: it is the FRONTEND's own field (the WARNING it raises over a surviving marker)
             // and the wire carries no such key, so a marker read off the wire has none to recover. IR-SPEC
             // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
             case "Unresolved" -> {
-                String p = padVan(n);
-                if (!n.has("source")) throw new Documentfout(p, MARKER_ZONDER_BRON);
+                String p = pathOf(n);
+                if (!n.has("source")) throw new Documentfout(p, MARKER_WITHOUT_SOURCE);
                 yield new Expr.Onopgelost(n.has("type") ? datatype(n.get("type"), p + "/type", false) : null, bron(n),
                         null);
             }
@@ -1533,18 +1533,18 @@ public final class IrLoader {
             // with nothing riding beside them. Note the wire's field names: a BinderRef's is "name", an
             // IfThenElse's are "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
             case "Let" -> let(new Expr.Let(
-                    verplicht("Let", "binder", text(n, "binder")),
-                    verplicht("Let", "value", expr(knoopVeld(n, "value"))),
-                    verplicht("Let", "body", expr(knoopVeld(n, "body"))),
-                    verplicht("Let", "type", typeVeld(n)), bron(n)));
+                    required("Let", "binder", text(n, "binder")),
+                    required("Let", "value", expr(nodeField(n, "value"))),
+                    required("Let", "body", expr(nodeField(n, "body"))),
+                    required("Let", "type", typeField(n)), bron(n)));
             case "BinderRef" -> {
-                yield new Expr.BinderRef(verplicht("BinderRef", "name", text(n, "name")), null, bron(n));
+                yield new Expr.BinderRef(required("BinderRef", "name", text(n, "name")), null, bron(n));
             }
             case "IfThenElse" -> new Expr.IfThenElse(
-                    verplicht("IfThenElse", "condition", conditie(knoopVeld(n, "condition"))),
-                    verplicht("IfThenElse", "then", expr(knoopVeld(n, "then"))),
-                    verplicht("IfThenElse", "else", expr(knoopVeld(n, "else"))),
-                    verplicht("IfThenElse", "type", typeVeld(n)), bron(n));
+                    required("IfThenElse", "condition", condition(nodeField(n, "condition"))),
+                    required("IfThenElse", "then", expr(nodeField(n, "then"))),
+                    required("IfThenElse", "else", expr(nodeField(n, "else"))),
+                    required("IfThenElse", "type", typeField(n)), bron(n));
             // IR-SPEC ch. 4.3 / WF-110: the §5.7 concatenation of subject expressions as the source of an
             // instance count. Read VERBATIM, one selection per branch, for the reason sourcePath is: every
             // selection names its own population and its own relation, and a backend that re-derived either
@@ -1553,24 +1553,24 @@ public final class IrLoader {
             // BY NAME here, on the verplicht() pattern, so a document that reaches this executor without
             // passing the verifier fails naming the shape it violates.
             case "InstanceSetUnion" -> {
-                List<Expr.InstanceSetUnion.Tak> takken = new ArrayList<>();
-                elementen(n, "branches", b -> {
-                    String bp = padVan(b);
-                    velden(b, bp, "InstanceSetBranch", List.of("node", "elementType", "sourceRole", "filter"),
+                List<Expr.InstanceSetUnion.Tak> branches = new ArrayList<>();
+                elements(n, "branches", b -> {
+                    String bp = pathOf(b);
+                    fields(b, bp, "InstanceSetBranch", List.of("node", "elementType", "sourceRole", "filter"),
                             List.of("source"));
-                    RegelSpraakModel.Objecttype el = verplicht("InstanceSetBranch", "elementType",
+                    RegelSpraakModel.Objecttype el = required("InstanceSetBranch", "elementType",
                             ot(text(b, "elementType")));
                     // IR-SPEC ch. 4.3: every selection names its relation; nothing derives a missing one
-                    RolBindingRef rb = rolBinding(b, bp, "sourceRole");
+                    RolBindingRef rb = roleBinding(b, bp, "sourceRole");
                     if (rb == null) throw new Documentfout(bp + "/sourceRole", "expected a RoleBinding, got null");
-                    takken.add(new Expr.InstanceSetUnion.Tak(el, rb, conditie(knoopVeld(b, "filter")), bron(b)));
+                    branches.add(new Expr.InstanceSetUnion.Tak(el, rb, condition(nodeField(b, "filter")), bron(b)));
                 });
-                if (takken.size() < 2)
+                if (branches.size() < 2)
                     throw new Refusal("InstanceSetUnion.branches",
-                            "an instance-set union carries at least TWO selections, found " + takken.size()
+                            "an instance-set union carries at least TWO selections, found " + branches.size()
                                     + " — a single selection IS the ordinary instance count and has a spelling"
                                     + " of its own (WF-110 (b))");
-                yield new Expr.InstanceSetUnion(List.copyOf(takken), bron(n));
+                yield new Expr.InstanceSetUnion(List.copyOf(branches), bron(n));
             }
             // the members of IR-SPEC ch. 4's expression union that have no record here: a form this backend does not
             // carry (the temporal read's keys are checked all the same, see EXPRESSIE)
@@ -1579,7 +1579,7 @@ public final class IrLoader {
                     throw new Refusal("Expr:" + node, "unknown expression node");
             // any other name is no node of this format, refused at the discriminator in the shared loader's words: a
             // node of the v0 shape that L4 replaced or L5 renamed, a node of another union, or no node at all
-            default -> throw new Documentfout(padVan(n) + "/node", "unknown expr node \"" + node + "\"");
+            default -> throw new Documentfout(pathOf(n) + "/node", "unknown expr node \"" + node + "\"");
         };
     }
 
@@ -1588,10 +1588,10 @@ public final class IrLoader {
     /** IR-SPEC ch. 4.3: a fold, one of the eight aggregation kinds, read into the frontend's function record with no
      *  granularity (a builtin's field, unknown on this node). */
     private Expr aggregation(JsonNode n) {
-        String p = padVan(n);
-        String soort = tekst(n, p, "kind");
-        Expr.FunctieKind fk = enumWaarde(Spelling.AGGREGATION_KIND, "Aggregation.kind", soort, p + "/kind");
-        JsonNode rauw = n.get("arguments");
+        String p = pathOf(n);
+        String soort = textAt(n, p, "kind");
+        Expr.FunctieKind fk = enumValue(Spelling.AGGREGATION_KIND, "Aggregation.kind", soort, p + "/kind");
+        JsonNode raw = n.get("arguments");
         // WF-037, the fold-source arm: the one argument of a fold that names its population is judged by its shape. A
         // node this backend does not carry — that argument, a ListLiteral among them, or a node under it — refuses as
         // a node while it is read, where the verifier, ref and the ASP backend refuse the shape. That refusal
@@ -1599,28 +1599,28 @@ public final class IrLoader {
         // refused; a Documentfout while reading (an unbound VariableReference, WF-034; an Unresolved marker without a
         // source, WF-113) is not held back, as ref and the ASP backend refuse those first, while loading
         List<Expr> args = new ArrayList<>();
-        Refusal ongedragen = null;
+        Refusal uncarried = null;
         try {
-            elementen(n, "arguments", a -> args.add(expr(a)));
+            elements(n, "arguments", a -> args.add(expr(a)));
         } catch (Refusal r) {
-            if (!n.has("elementType") || rauw == null || !rauw.isArray() || rauw.size() != 1) throw r;
-            ongedragen = r;
+            if (!n.has("elementType") || raw == null || !raw.isArray() || raw.size() != 1) throw r;
+            uncarried = r;
         }
-        String elementType = optTekst(n, p, "elementType");
-        Expr.Functie f = new Expr.Functie(fk, args, ot(elementType), expr(knoopVeld(n, "emptyFallback")),
-                conditie(knoopVeld(n, "filter")), dimensieSelectie(knoopVeld(n, "dimensionSelection")), typeVeld(n),
+        String elementType = optText(n, p, "elementType");
+        Expr.Functie f = new Expr.Functie(fk, args, ot(elementType), expr(nodeField(n, "emptyFallback")),
+                condition(nodeField(n, "filter")), dimensionSelection(nodeField(n, "dimensionSelection")), typeField(n),
                 bron(n), null);
         // IR-SPEC ch. 4.3: the range of a fold over ONE source is one field with two spellings, and a fold with an
         // element type and a kind other than total carries it — without it the argument is the subject's own
         // attribute and the fold folds something the sentence did not name. Both spellings at once is no document.
-        if (n.has("sourceRole") && n.has("sourcePath")) throw new Documentfout(p + "/sourcePath", BEREIK_TWEEMAAL);
+        if (n.has("sourceRole") && n.has("sourcePath")) throw new Documentfout(p + "/sourcePath", RANGE_TWICE);
         // WF-102 (c): a count's range is one step, whatever its source reads — asked before anything of the source
         // is, so a source this loader cannot judge (a null name, a navigated or non-reference argument) is no way
         // past it (measured: with a null name the count was counted along the path)
-        if (fk == Expr.FunctieKind.AANTAL && n.has("sourcePath")) throw new Documentfout(p + "/sourcePath", BRONPAD_C);
-        boolean eenBron = elementType != null && (ongedragen != null || args.size() == 1);
-        if (eenBron && fk != Expr.FunctieKind.TOTAAL && !n.has("sourceRole") && !n.has("sourcePath"))
-            throw new Documentfout(p, BEREIK_ONTBREEKT);
+        if (fk == Expr.FunctieKind.AANTAL && n.has("sourcePath")) throw new Documentfout(p + "/sourcePath", SOURCE_PATH_C);
+        boolean oneSource = elementType != null && (uncarried != null || args.size() == 1);
+        if (oneSource && fk != Expr.FunctieKind.TOTAAL && !n.has("sourceRole") && !n.has("sourcePath"))
+            throw new Documentfout(p, RANGE_MISSING);
         // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list of
         // RoleBinding steps, nothing derived from the presentation strings and nothing re-derived from the endpoint
         // type PAIR. That is the whole point of the field: a by-pair search binds a coincidental DIRECT relation
@@ -1632,49 +1632,49 @@ public final class IrLoader {
         // know the fold SUBJECT this node does not.
         // The position (WF-102 (c)) is asked before the number of steps, as ref asks it.
         if (n.has("sourcePath")) {
-            List<RolBindingRef> pad = rolBindingLijst(n, p, "sourcePath");
-            if (!isLedenVouwbron(n)) throw new Documentfout(p + "/sourcePath", BRONPAD_C);
+            List<RolBindingRef> pad = roleBindingList(n, p, "sourcePath");
+            if (!isMemberFoldSource(n)) throw new Documentfout(p + "/sourcePath", SOURCE_PATH_C);
             if (pad.size() < 2)
                 throw new Refusal("Aggregation.sourcePath", "a sourcePath carries at least TWO steps, found "
                         + pad.size() + " — the one-step range is spelled sourceRole");
-            bronPaden.put(f, List.copyOf(pad));
+            sourcePaths.put(f, List.copyOf(pad));
         }
-        // the one-step range — see Loaded#rolBindingen. It stays OUT of the record (that one is vendored).
-        RolBindingRef br = rolBinding(n, p, "sourceRole");
-        if (br != null) rolBindingen.put(f, br);
+        // the one-step range — see Loaded#roleBindings. It stays OUT of the record (that one is vendored).
+        RolBindingRef br = roleBinding(n, p, "sourceRole");
+        if (br != null) roleBindings.put(f, br);
         // WF-037: a fold that names its population and hands no source, in every shape, a ListLiteral included. Asked
         // after the range, so a path beside it is refused first under WF-102 (c) and a missing range first as such, as
         // ref and the ASP backend refuse them first
-        String bronloos = bronWeigering(soort, elementType, rauw);
-        if (bronloos != null) throw new Documentfout(p, bronloos);
-        String unie = unieBronWeigering(fk, elementType, n);
-        if (unie != null) throw new Documentfout(p, unie);
-        if (ongedragen != null) throw ongedragen;
-        if (eenBron && (n.has("sourceRole") || n.has("sourcePath"))) keurVouwbron(n, p, fk, f);
-        plekken.put(f, p);
+        String sourceless = sourceRefusal(soort, elementType, raw);
+        if (sourceless != null) throw new Documentfout(p, sourceless);
+        String union = unionSourceRefusal(fk, elementType, n);
+        if (union != null) throw new Documentfout(p, union);
+        if (uncarried != null) throw uncarried;
+        if (oneSource && (n.has("sourceRole") || n.has("sourcePath"))) checkFoldSource(n, p, fk, f);
+        sites.put(f, p);
         return f;
     }
 
     /** IR-SPEC ch. 4.3: every other function kind, with plain arguments, read into the frontend's function record
      *  with none of the fold's fields (unknown on this node). */
     private Expr builtinCall(JsonNode n) {
-        String p = padVan(n);
-        Expr.FunctieKind fk = enumWaarde(Spelling.BUILTIN_KIND, "BuiltinCall.kind", tekst(n, p, "kind"), p + "/kind");
+        String p = pathOf(n);
+        Expr.FunctieKind fk = enumValue(Spelling.BUILTIN_KIND, "BuiltinCall.kind", textAt(n, p, "kind"), p + "/kind");
         List<Expr> args = new ArrayList<>();
-        elementen(n, "arguments", a -> args.add(expr(a)));
-        String g = optTekst(n, p, "granularity");
-        Granulariteit granulariteit = null;
+        elements(n, "arguments", a -> args.add(expr(a)));
+        String g = optText(n, p, "granularity");
+        Granulariteit granularity = null;
         if (g != null) {
-            granulariteit = enumWaarde(Spelling.GRANULARITY, "BuiltinCall.granularity", g, p + "/granularity");
+            granularity = enumValue(Spelling.GRANULARITY, "BuiltinCall.granularity", g, p + "/granularity");
             // WF-037: the facet belongs to the two bucketing builtins. On any other kind neither branch reads it, and
             // both played the call as if it were not written (measured, yearOf with month), where the verifier
             // refuses it and ref faults.
             if (fk != Expr.FunctieKind.TIJDSEVENREDIG_DEEL && fk != Expr.FunctieKind.AANTAL_DAGEN_IN)
                 throw new Documentfout(p, "granularity facet on a non-bucketing kind");
         }
-        Expr.Functie f = new Expr.Functie(fk, args, null, null, conditie(knoopVeld(n, "filter")), null, typeVeld(n),
-                bron(n), granulariteit);
-        plekken.put(f, p);
+        Expr.Functie f = new Expr.Functie(fk, args, null, null, condition(nodeField(n, "filter")), null, typeField(n),
+                bron(n), granularity);
+        sites.put(f, p);
         return f;
     }
 
@@ -1689,19 +1689,19 @@ public final class IrLoader {
      *  without an argument beside its range, and crashed on a sum, a total, a minimum or a maximum over a literal
      *  (measured before the card aantal-bronarm-en-drools-lader); the exec-model branch refused the rest with a scope
      *  note. */
-    static String bronWeigering(String soort, String elementType, JsonNode argumenten) {
-        if (elementType == null || argumenten == null || !argumenten.isArray()) return null;
-        String kop = "a " + soort + " aggregation carries elementType \"" + elementType + "\"";
-        if (argumenten.isEmpty())
-            return kop + " but no source operand: an instance fold ranges over a written source";
-        if (argumenten.size() != 1) return null;
-        boolean telling = soort.equals("count") || soort.equals("filledCount");
-        String knoop = text(argumenten.get(0), "node");
-        if (knoop == null || knoop.isEmpty() || knoop.equals("AttributeReference")) return null;
-        if (knoop.equals("ListLiteral"))
-            return telling ? kop + " and a ListLiteral operand: a listed value is no source of instances" : null;
-        if (knoop.equals("InstanceSetUnion") && soort.equals("count")) return null;
-        return kop + " and " + ("AEIOU".indexOf(knoop.charAt(0)) >= 0 ? "an " : "a ") + knoop
+    static String sourceRefusal(String soort, String elementType, JsonNode arguments) {
+        if (elementType == null || arguments == null || !arguments.isArray()) return null;
+        String head = "a " + soort + " aggregation carries elementType \"" + elementType + "\"";
+        if (arguments.isEmpty())
+            return head + " but no source operand: an instance fold ranges over a written source";
+        if (arguments.size() != 1) return null;
+        boolean count = soort.equals("count") || soort.equals("filledCount");
+        String jsonNode = text(arguments.get(0), "node");
+        if (jsonNode == null || jsonNode.isEmpty() || jsonNode.equals("AttributeReference")) return null;
+        if (jsonNode.equals("ListLiteral"))
+            return count ? head + " and a ListLiteral operand: a listed value is no source of instances" : null;
+        if (jsonNode.equals("InstanceSetUnion") && soort.equals("count")) return null;
+        return head + " and " + ("AEIOU".indexOf(jsonNode.charAt(0)) >= 0 ? "an " : "a ") + jsonNode
                 + " operand: the source of an instance fold is an AttributeReference";
     }
 
@@ -1710,25 +1710,25 @@ public final class IrLoader {
      *  the union's selections; the fields are named in the verifier's order. Null for any other node. A path there is
      *  refused before this, as a count's path (WF-102 (c)). Without it both branches played such a count, counting the
      *  union and never reading the node's own source (measured before the card aantal-bronarm-en-drools-lader). */
-    static String unieBronWeigering(Expr.FunctieKind fk, String elementType, JsonNode n) {
-        JsonNode argumenten = n.get("arguments");
-        if (fk != Expr.FunctieKind.AANTAL || argumenten == null || !argumenten.isArray() || argumenten.size() != 1
-                || !"InstanceSetUnion".equals(text(argumenten.get(0), "node"))) return null;
-        List<String> velden = new ArrayList<>();
-        if (elementType != null) velden.add("elementType");
-        if (n.has("sourceRole")) velden.add("sourceRole");
-        if (n.has("sourcePath")) velden.add("sourcePath");
-        if (n.has("filter")) velden.add("filter");
-        if (velden.isEmpty()) return null;
+    static String unionSourceRefusal(Expr.FunctieKind fk, String elementType, JsonNode n) {
+        JsonNode arguments = n.get("arguments");
+        if (fk != Expr.FunctieKind.AANTAL || arguments == null || !arguments.isArray() || arguments.size() != 1
+                || !"InstanceSetUnion".equals(text(arguments.get(0), "node"))) return null;
+        List<String> fields = new ArrayList<>();
+        if (elementType != null) fields.add("elementType");
+        if (n.has("sourceRole")) fields.add("sourceRole");
+        if (n.has("sourcePath")) fields.add("sourcePath");
+        if (n.has("filter")) fields.add("filter");
+        if (fields.isEmpty()) return null;
         return "a count over an instance-set union names no source of its own, and this node carries "
-                + String.join(" + ", velden) + ": the union's selections carry the population, the relation and the"
+                + String.join(" + ", fields) + ": the union's selections carry the population, the relation and the"
                 + " subselection, one set per selection, so a source here is a second claim on one node (ch. 4.3)";
     }
 
     /** The shared loader's sentence for two range spellings on one fold. */
-    static final String BEREIK_TWEEMAAL = "sourcePath beside sourceRole: a fold carries one range, never two";
+    static final String RANGE_TWICE = "sourcePath beside sourceRole: a fold carries one range, never two";
     /** The shared loader's sentence for a fold over one source without its range. */
-    static final String BEREIK_ONTBREEKT = "a single-argument fold with an elementType carries its range (sourceRole"
+    static final String RANGE_MISSING = "a single-argument fold with an elementType carries its range (sourceRole"
             + " or sourcePath) under every kind but total: the range is written, never derived";
 
     /**
@@ -1747,60 +1747,60 @@ public final class IrLoader {
      * scope", "TODO datumliteral"), where the verifier named the lexeme (measured on the WF-084 and WF-095 witnesses).
      */
     private Expr literal(JsonNode n) {
-        String p = padVan(n);
+        String p = pathOf(n);
         JsonNode waarde = n.get("value");
-        String variant = null, lexeem = null;
+        String variant = null, lexeme = null;
         if (waarde.isObject() && waarde.size() == 1) {
             variant = waarde.fieldNames().next();
             JsonNode v = waarde.get(variant);
-            if (variant.equals("boolean")) lexeem = v.isBoolean() ? (v.booleanValue() ? "waar" : "onwaar") : null;
-            else if (LITERAALVARIANTEN.contains(variant) && v.isTextual()) lexeem = v.asText();
+            if (variant.equals("boolean")) lexeme = v.isBoolean() ? (v.booleanValue() ? "waar" : "onwaar") : null;
+            else if (LITERAL_VARIANTS.contains(variant) && v.isTextual()) lexeme = v.asText();
         }
-        if (lexeem == null) throw new Documentfout(p + "/value", LITERAALWAARDE);
-        Datatype type = typeVeld(n);
+        if (lexeme == null) throw new Documentfout(p + "/value", LITERAL_VALUE);
+        Datatype type = typeField(n);
         if (type != null) {
-            String weigering = literaalvariantWeigering(variant, type);
-            if (weigering != null) throw new Documentfout(p + "/value", weigering);
+            String refusal = literalVariantRefusal(variant, type);
+            if (refusal != null) throw new Documentfout(p + "/value", refusal);
         }
-        if (variant.equals("number") && !GETAL.matcher(lexeem).matches())
-            throw new Documentfout(p + "/value", "numeric literal lexeme '" + lexeem + "' is not a number of the case"
+        if (variant.equals("number") && !GETAL.matcher(lexeme).matches())
+            throw new Documentfout(p + "/value", "numeric literal lexeme '" + lexeme + "' is not a number of the case"
                     + " format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator"
                     + " has no leading zero — ch. 4.1)");
-        if (variant.equals("date") && !isoDatum(lexeem))
-            throw new Documentfout(p + "/value", "date literal lexeme '" + lexeem + "' is not the ISO form yyyy-mm-dd"
+        if (variant.equals("date") && !isoDate(lexeme))
+            throw new Documentfout(p + "/value", "date literal lexeme '" + lexeme + "' is not the ISO form yyyy-mm-dd"
                     + " (fixed field widths, valid ranges — ch. 4.1)");
-        if (variant.equals("dateTime") && !isoDatumTijd(lexeem))
-            throw new Documentfout(p + "/value", "millisecond-precision date literal lexeme '" + lexeem + "' is not the"
+        if (variant.equals("dateTime") && !isoDateTime(lexeme))
+            throw new Documentfout(p + "/value", "millisecond-precision date literal lexeme '" + lexeme + "' is not the"
                     + " canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds"
                     + " field written, no zone or offset, a fraction of exactly three digits; the day-first source"
                     + " snippet belongs in `source` — ch. 4.1)");
-        return new Expr.Literal(lexeem, type, bron(n));
+        return new Expr.Literal(lexeme, type, bron(n));
     }
 
     /** WF-084's grammar, the verifier's: four-two-two digit fields, a month of the year and a day of that month,
      *  leap years included. */
-    private static boolean isoDatum(String s) {
-        java.util.regex.Matcher m = DATUM.matcher(s);
-        return m.matches() && kalenderdag(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
+    private static boolean isoDate(String s) {
+        java.util.regex.Matcher m = DATE.matcher(s);
+        return m.matches() && calendarDay(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
                 Integer.parseInt(m.group(3)));
     }
 
     /** WF-095's grammar, the verifier's: the date of WF-084, a 'T', hours, minutes and seconds in range, and an
      *  optional fraction of exactly three digits, with nothing after it. */
-    private static boolean isoDatumTijd(String s) {
-        java.util.regex.Matcher m = DATUMTIJD.matcher(s);
-        return m.matches() && kalenderdag(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
+    private static boolean isoDateTime(String s) {
+        java.util.regex.Matcher m = DATE_TIME.matcher(s);
+        return m.matches() && calendarDay(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
                 Integer.parseInt(m.group(3))) && Integer.parseInt(m.group(4)) <= 23 && Integer.parseInt(m.group(5)) <= 59
                 && Integer.parseInt(m.group(6)) <= 59;
     }
 
-    private static boolean kalenderdag(int jaar, int maand, int dag) {
-        return maand >= 1 && maand <= 12 && dag >= 1 && dag <= java.time.YearMonth.of(jaar, maand).lengthOfMonth();
+    private static boolean calendarDay(int year, int month, int day) {
+        return month >= 1 && month <= 12 && day >= 1 && day <= java.time.YearMonth.of(year, month).lengthOfMonth();
     }
 
-    private static final java.util.regex.Pattern DATUM =
+    private static final java.util.regex.Pattern DATE =
             java.util.regex.Pattern.compile("([0-9]{4})-([0-9]{2})-([0-9]{2})");
-    private static final java.util.regex.Pattern DATUMTIJD = java.util.regex.Pattern.compile(
+    private static final java.util.regex.Pattern DATE_TIME = java.util.regex.Pattern.compile(
             "([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(\\.[0-9]{3})?");
 
     /** The number grammar of the case format (uchar-case-v0), which the literal's number variant carries. */
@@ -1808,70 +1808,70 @@ public final class IrLoader {
             java.util.regex.Pattern.compile("-?[0-9]+(\\.[0-9]+)?|-?[0-9]+/[1-9][0-9]*");
 
     /** The seven variants of the case format's value union, in its order. */
-    private static final List<String> LITERAALVARIANTEN = List.of("number", "boolean", "text", "date", "dateTime",
+    private static final List<String> LITERAL_VARIANTS = List.of("number", "boolean", "text", "date", "dateTime",
             "enumeration", "constructor");
 
     /** The shared loader's sentence for a literal value in any other shape. */
-    static final String LITERAALWAARDE = "a literal value is exactly one variant: {\"number\": string}, {\"boolean\":"
+    static final String LITERAL_VALUE = "a literal value is exactly one variant: {\"number\": string}, {\"boolean\":"
             + " true or false}, {\"text\": string}, {\"date\": string}, {\"dateTime\": string}, {\"enumeration\":"
             + " string} or {\"constructor\": string}, without a payload";
 
     /** WF-114 (IR-SPEC ch. 4.1), the shared loader's sentence: null when {@code variant} is the one {@code type}
      *  names. Every datatype this backend carries names a variant; a sum, list or struct type is refused as a form
      *  before a literal reaches here. */
-    static String literaalvariantWeigering(String variant, Datatype type) {
-        String benoemd, frase;
+    static String literalVariantRefusal(String variant, Datatype type) {
+        String named, frase;
         switch (type) {
-            case Datatype.Numeriek x -> { benoemd = "number"; frase = "a Number"; }
-            case Datatype.Percentage x -> { benoemd = "number"; frase = "a Number"; }
-            case Datatype.Booleaan x -> { benoemd = "boolean"; frase = "a Boolean"; }
-            case Datatype.Tekst x -> { benoemd = "text"; frase = "a Text"; }
-            case Datatype.DatumInDagen x -> { benoemd = "date"; frase = "a day-precision Date"; }
-            case Datatype.DatumTijd x -> { benoemd = "dateTime"; frase = "a millisecond-precision Date"; }
-            case Datatype.Enumeratie x -> { benoemd = "enumeration"; frase = "an Enumeration"; }
+            case Datatype.Numeriek x -> { named = "number"; frase = "a Number"; }
+            case Datatype.Percentage x -> { named = "number"; frase = "a Number"; }
+            case Datatype.Booleaan x -> { named = "boolean"; frase = "a Boolean"; }
+            case Datatype.Tekst x -> { named = "text"; frase = "a Text"; }
+            case Datatype.DatumInDagen x -> { named = "date"; frase = "a day-precision Date"; }
+            case Datatype.DatumTijd x -> { named = "dateTime"; frase = "a millisecond-precision Date"; }
+            case Datatype.Enumeratie x -> { named = "enumeration"; frase = "an Enumeration"; }
             case Datatype.Onbekend x -> throw new IllegalStateException("IrLoader: an Onbekend datatype is refused"
                     + " while it is read, before a literal is crossed against it");
         }
-        if (benoemd.equals(variant)) return null;
+        if (named.equals(variant)) return null;
         return "literal value is " + (variant.equals("enumeration") ? "an" : "a") + " " + variant + " value but its"
                 + " type is " + frase + ": the variant is the one the type names";
     }
 
     /** WF-098, the shared loader's sentence for a context value outside the closed set of IR-SPEC ch. 4.1 — the bound
      *  day's name included, since that day is a node of its own, and the v0 names of the two. */
-    static String contextwaardeWeigering(String naam) {
+    static String contextValueRefusal(String naam) {
         return "context value '" + naam + "' is not one of the two admissible names evaluationDate, evaluationYear:"
                 + " the context-value name is a closed set, spelled byte for byte";
     }
 
     /** WF-034, the shared loader's sentence for a VariableReference: the frontend's marker of a variable it could not
      *  bind, which resolves against no binding on the wire. */
-    static String variabeleVerwijzingWeigering(String naam) {
+    static String variableReferenceRefusal(String naam) {
         return (naam == null ? "a variable reference without a name" : "variable reference '" + naam + "'")
                 + " resolves against no binding: a rule-local variable is a Let, read by a BinderRef";
     }
 
     /** The shared loader's sentence for a path without a hop: a read without navigation leaves the field out. */
-    static final String PAD_ZONDER_STAP = "an empty path is not a navigation";
+    static final String PATH_WITHOUT_STEP = "an empty path is not a navigation";
 
     /** The shared loader's sentences for the name and the datatype the two context nodes require. */
-    static final String CONTEXTWAARDE_NAAM = "a ContextValue carries its name as a string";
-    static final String CONTEXTWAARDE_TYPE = "a ContextValue carries its datatype";
+    static final String CONTEXT_VALUE_NAME = "a ContextValue carries its name as a string";
+    static final String CONTEXT_VALUE_TYPE = "a ContextValue carries its datatype";
     static final String BOUNDDAY_TYPE = "a BoundDay carries its datatype";
     /** WF-108 (a), the verifier's sentence for the one quantifier a quantifier fold does not admit: the executors
      *  refuse it at load, as the shared loader does when it reads for an executor. */
-    static final String KWANTORVOUW_THE = "quantifier fold with quantifier the: the bare definite is a description of"
+    static final String QUANTIFIER_FOLD_THE = "quantifier fold with quantifier the: the bare definite is a description of"
             + " ONE member, not a quantification over the set — a fold over it has no reading";
     /** WF-113 (b)'s arm for a marker without a source, the verifier's sentence: the executors refuse such a marker at
      *  load, as the shared loader does when it reads for an executor. */
-    static final String MARKER_ZONDER_BRON = "Unresolved marker without a source: no diagnostic message can contain it,"
+    static final String MARKER_WITHOUT_SOURCE = "Unresolved marker without a source: no diagnostic message can contain it,"
             + " so it cannot be accounted for";
 
     /** The required datatype of a context node: anything but a datatype object is refused in the node's sentence. */
-    private Datatype contextType(JsonNode n, String zin) {
+    private Datatype contextType(JsonNode n, String sentence) {
         JsonNode t = n.get("type");
-        if (!t.isObject()) throw new Documentfout(padVan(n) + "/type", zin);
-        return typeVeld(n);
+        if (!t.isObject()) throw new Documentfout(pathOf(n) + "/type", sentence);
+        return typeField(n);
     }
 
     /** Assert that a ch. 4.10 Let-cluster node carries a field the shape REQUIRES (WF-076/WF-064/WF-069), naming
@@ -1879,20 +1879,20 @@ public final class IrLoader {
      *  {@code value}/{@code body}/branch throws an unattributed NPE out of the transpiler's {@code List.of}
      *  child accessor, and a missing {@code type} silently produces a node typed null, which every walk that reads
      *  a datatype then mis-reads. Fail fast, with the form and the field in the message. */
-    private static <T> T verplicht(String vorm, String veld, T waarde) {
+    private static <T> T required(String vorm, String veld, T waarde) {
         if (waarde == null) throw new Refusal(vorm, "malformed node: missing required field '" + veld + "'");
         return waarde;
     }
 
     /** WF-102 (c), the one sentence for both halves of the position: a path ranges a value fold's set source and
      *  nothing else. */
-    private static final String BRONPAD_C = "a sourcePath is admissible only as the range of a single-argument VALUE"
+    private static final String SOURCE_PATH_C = "a sourcePath is admissible only as the range of a single-argument VALUE"
             + " fold's set source — a count's range is one step, spelled sourceRole";
 
     /** WF-102 (c): is this {@code Aggregation} node a single-argument instance fold — the one position a range
      *  stands at? Asked of the RAW node: a declared {@code elementType} plus exactly one argument that is a read
      *  carrying no navigation of its own (IR-SPEC ch. 4.3: with a range, that argument IS the source). */
-    private static boolean isLedenVouwbron(JsonNode n) {
+    private static boolean isMemberFoldSource(JsonNode n) {
         if (!n.hasNonNull("elementType")) return false;
         JsonNode args = n.get("arguments");
         if (args == null || !args.isArray() || args.size() != 1) return false;
@@ -1908,26 +1908,26 @@ public final class IrLoader {
      *  fold's own arm asks before this, whatever the source reads. Under a value fold the name is read per
      *  contributor, so it must be an attribute of the element type: a
      *  characteristic carries no value there (WF-080). A name that is neither is refused once the subject is known
-     *  ({@link #keurWaardevouwbron}). Without these the exec branch played a count over an attribute as a count of
+     *  ({@link #checkValueFoldSource}). Without these the exec branch played a count over an attribute as a count of
      *  members and failed with a runtime error at first fire on a value fold over a role name, and the DRL-text
      *  branch compiled neither (measured on the L2 union). A navigated source is WF-053's and is left to the
      *  transpilers' refusal. */
-    private void keurVouwbron(JsonNode n, String p, Expr.FunctieKind fk, Expr.Functie f) {
+    private void checkFoldSource(JsonNode n, String p, Expr.FunctieKind fk, Expr.Functie f) {
         if (fk == null || f.elementObjecttype() == null
-                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigatieBindingen.containsKey(bron)
+                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || path.containsKey(bron)
                 || bron.attribuut() == null) return;
         Objecttype el = f.elementObjecttype();
-        String a = bron.attribuut(), plek = p + "/arguments/0";
+        String a = bron.attribuut(), site = p + "/arguments/0";
         boolean attribuut = el.attribuut(a) != null, kenmerk = !attribuut && el.kenmerkNaam(a) != null;
         if (fk == Expr.FunctieKind.AANTAL) {
             if (attribuut || kenmerk)
-                throw new Documentfout(plek, "the source of this count aggregation reads '" + a + "', a member of the"
+                throw new Documentfout(site, "the source of this count aggregation reads '" + a + "', a member of the"
                         + " element type '" + el.naam + "': a count folds INSTANCES, so its source is a count source"
                         + " naming the relation's role, never a value read per contributor");
             return;
         }
-        if (WAARDEVOUWEN.contains(fk) && kenmerk)
-            throw new Documentfout(plek, "'" + a + "' is a characteristic of '" + el.naam + "', not an attribute — a"
+        if (VALUE_FOLDS.contains(fk) && kenmerk)
+            throw new Documentfout(site, "'" + a + "' is a characteristic of '" + el.naam + "', not an attribute — a"
                     + " characteristic endpoint is ill-formed in an aggregation source position");
     }
 
@@ -1937,18 +1937,18 @@ public final class IrLoader {
      *  which only a count folds (WF-093 (a)); any other name declares nothing on the element type (WF-034), even
      *  where some other type's relation carries a role of that name. At a subject-less position (a day-kind
      *  definition) any declared role name counts, as the verifier has no subject to ask either. */
-    private void keurWaardevouwbron(Expr.Functie f, Objecttype s) {
-        if (!WAARDEVOUWEN.contains(f.kind()) || f.elementObjecttype() == null
-                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigatieBindingen.containsKey(bron)
+    private void checkValueFoldSource(Expr.Functie f, Objecttype s) {
+        if (!VALUE_FOLDS.contains(f.kind()) || f.elementObjecttype() == null
+                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || path.containsKey(bron)
                 || bron.attribuut() == null) return;
         Objecttype el = f.elementObjecttype();
-        String a = bron.attribuut(), plek = plekken.get(f) + "/arguments/0";
+        String a = bron.attribuut(), site = sites.get(f) + "/arguments/0";
         if (el.attribuut(a) != null || el.kenmerkNaam(a) != null) return;   // read, or refused as WF-080 while reading
-        if (s == null ? isRolnaam(a) : isRolnaamVanaf(s, a))
-            throw new Documentfout(plek, "value aggregation over \"" + a + "\", which is no attribute of \""
+        if (s == null ? isRoleName(a) : isRoleNameFrom(s, a))
+            throw new Documentfout(site, "value aggregation over \"" + a + "\", which is no attribute of \""
                     + el.naam + "\": a value fold reads an attribute per contributor, and a role name is a count source"
                     + " only a count folds");
-        throw new Documentfout(plek, "'" + a + "' is not a declared attribute of '" + el.naam + "': a value fold's"
+        throw new Documentfout(site, "'" + a + "' is not a declared attribute of '" + el.naam + "': a value fold's"
                 + " source reads an attribute of each contributor");
     }
 
@@ -1957,52 +1957,52 @@ public final class IrLoader {
      *  branch reads the field there, so a foreign type in it changed no answer: {@code jutterswet-tempototaal} with
      *  its own total naming Vondst played in both branches (measured before this check). It is refused here in the
      *  verifier's words. */
-    private void keurEigenTotaal(Expr.Functie f, Objecttype s) {
+    private void checkOwnTotal(Expr.Functie f, Objecttype s) {
         if (f.kind() != Expr.FunctieKind.TOTAAL || f.elementObjecttype() == null || s == null
-                || f.argumenten().size() != 1 || rolBindingen.containsKey(f) || bronPaden.containsKey(f)) return;
+                || f.argumenten().size() != 1 || roleBindings.containsKey(f) || sourcePaths.containsKey(f)) return;
         Objecttype el = f.elementObjecttype();
         if (Namen.norm(el.naam).equals(Namen.norm(s.naam))) return;
-        throw new Documentfout(plekken.get(f) + "/elementType", "the elementType '" + el.naam
+        throw new Documentfout(sites.get(f) + "/elementType", "the elementType '" + el.naam
                 + "' of a total without a range is not the fold subject '" + s.naam + "': without a range the fold is"
                 + " the subject's own read, so its elementType must name the subject type");
     }
 
     /** The fold kinds that read a VALUE per contributor (IR-SPEC ch. 4.3) — every aggregation kind but
      *  {@code count}, which folds the contributors themselves. */
-    private static final java.util.Set<Expr.FunctieKind> WAARDEVOUWEN = java.util.EnumSet.of(
+    private static final java.util.Set<Expr.FunctieKind> VALUE_FOLDS = java.util.EnumSet.of(
             Expr.FunctieKind.SOM, Expr.FunctieKind.TOTAAL, Expr.FunctieKind.MINIMUM, Expr.FunctieKind.MAXIMUM,
             Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE, Expr.FunctieKind.AANTAL_GEVULDE);
 
     /** Does {@code naam} name a declared role — by its declared name or its declared plural, in the WF-001 form? */
-    private boolean isRolnaam(String naam) {
+    private boolean isRoleName(String naam) {
         for (Feittype ft : m.feittypen.values())
             for (RegelSpraakModel.Rol r : ft.rollen)
-                if (noemt(r, naam)) return true;
+                if (hasName(r, naam)) return true;
         return false;
     }
 
     /** Does {@code naam} name a role reachable from {@code st}: the far role of a two-role fact type whose near role
      *  {@code st} fills (⊑ through the supertype chain, ch. 2.6), or the one role of a reciprocal fact type it
      *  fills? */
-    private boolean isRolnaamVanaf(Objecttype st, String naam) {
+    private boolean isRoleNameFrom(Objecttype st, String naam) {
         for (Feittype ft : m.feittypen.values()) {
             if (ft.rollen.size() == 2) {
                 RegelSpraakModel.Rol a = ft.rollen.get(0), b = ft.rollen.get(1);
-                if ((vult(st, a) && noemt(b, naam)) || (vult(st, b) && noemt(a, naam))) return true;
+                if ((fills(st, a) && hasName(b, naam)) || (fills(st, b) && hasName(a, naam))) return true;
             } else if (ft.rollen.size() == 1 && ft.wederkerig) {
                 RegelSpraakModel.Rol r = ft.rollen.get(0);
-                if (vult(st, r) && noemt(r, naam)) return true;
+                if (fills(st, r) && hasName(r, naam)) return true;
             }
         }
         return false;
     }
 
-    private boolean vult(Objecttype st, RegelSpraakModel.Rol r) {
-        Objecttype vuller = ot(r.objecttypeNaam());
-        return vuller != null && st.isEen(vuller);
+    private boolean fills(Objecttype st, RegelSpraakModel.Rol r) {
+        Objecttype filler = ot(r.objecttypeNaam());
+        return filler != null && st.isEen(filler);
     }
 
-    private static boolean noemt(RegelSpraakModel.Rol r, String naam) {
+    private static boolean hasName(RegelSpraakModel.Rol r, String naam) {
         String n = Namen.norm(naam);
         return (r.naam() != null && Namen.norm(r.naam()).equals(n))
                 || (r.meervoud() != null && Namen.norm(r.meervoud()).equals(n));
@@ -2010,7 +2010,7 @@ public final class IrLoader {
 
     /** The two range spellings of a quantifier fold are one field (IR-SPEC ch. 4.5, WF-102 (a)): exactly one of
      *  them, written, never derived — refused otherwise in the shared loader's sentences. */
-    private static void bereikVelden(JsonNode n, String p) {
+    private static void rangeFields(JsonNode n, String p) {
         if (n.has("sourceRole") && n.has("sourcePath"))
             throw new Documentfout(p + "/sourcePath",
                     "sourcePath beside sourceRole: a quantifier fold carries one range, never two");
@@ -2023,14 +2023,14 @@ public final class IrLoader {
      *  composition as text: the wire's {@code type} there is still a datatype or null (IR-SPEC ch. 2.10), so it is read
      *  for its defects and not kept. An {@code Onbekend} or a scalar in it is no document, as the verifier holds;
      *  until L2's advisory round the field was not read at all. */
-    private void afgeleidType(JsonNode n) {
-        typeVeld(n);
+    private void derivedType(JsonNode n) {
+        typeField(n);
     }
 
     /** The datatype at a node's {@code type} field — a type annotation — with that field's pointer for every defect
      *  in it. */
-    private Datatype typeVeld(JsonNode n) {
-        return datatype(n.get("type"), padVan(n) + "/type", false);
+    private Datatype typeField(JsonNode n) {
+        return datatype(n.get("type"), pathOf(n) + "/type", false);
     }
 
     /** Index one {@link Expr.Let} (see {@link Loaded#lets()}) and return it — the node itself goes into the tree. */
@@ -2039,101 +2039,101 @@ public final class IrLoader {
         return l;
     }
 
-    private Expr.TekstReeks.Deel tekstReeksDeel(JsonNode d) {
-        String node = knoopSoort(d, DEEL, "text part");
+    private Expr.TekstReeks.Deel textCompositionPart(JsonNode d) {
+        String node = nodeKind(d, PART, "text part");
         return switch (node) {
             case "LiteralChunk" -> new Expr.TekstReeks.Letterlijk(text(d, "text"));
-            case "EmbeddedExpression" -> new Expr.TekstReeks.Ingevoegd(expr(knoopVeld(d, "expr")));
+            case "EmbeddedExpression" -> new Expr.TekstReeks.Ingevoegd(expr(nodeField(d, "expr")));
             // any other name is no node of this format — the two parts of the v0 shape that L5 renamed among them —
             // refused at the discriminator in the shared loader's words
-            default -> throw new Documentfout(padVan(d) + "/node", "unknown TextCompositionPart node \"" + node + "\"");
+            default -> throw new Documentfout(pathOf(d) + "/node", "unknown TextCompositionPart node \"" + node + "\"");
         };
     }
 
-    private Expr.DimensieSelectie dimensieSelectie(JsonNode n) {
+    private Expr.DimensieSelectie dimensionSelection(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        velden(n, padVan(n), "DimensionSelection", List.of("node", "dimension", "labels"), List.of("source"));
+        fields(n, pathOf(n), "DimensionSelection", List.of("node", "dimension", "labels"), List.of("source"));
         return new Expr.DimensieSelectie(text(n, "dimension"), stringList(n.get("labels")), bron(n));
     }
 
     // --- Conditie ----------------------------------------------------------
 
-    private Conditie conditie(JsonNode n) {
+    private Conditie condition(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        String node = knoopSoort(n, CONDITIE, "condition");
+        String node = nodeKind(n, CONDITION, "condition");
         return switch (node) {
             // a whole-period qualifier is written whole or not at all: absent is none, the record's null
             case "Comparison" -> {
-                String p = padVan(n);
+                String p = pathOf(n);
                 yield new Conditie.Vergelijking(
-                        enumWaarde(Spelling.COMPARISON_OP, "Comparison.op", tekst(n, p, "op"), p + "/op"),
-                        expr(knoopVeld(n, "left")), expr(knoopVeld(n, "right")),
-                        geheelPeriode(knoopVeld(n, "wholePeriod")), bron(n));
+                        enumValue(Spelling.COMPARISON_OP, "Comparison.op", textAt(n, p, "op"), p + "/op"),
+                        expr(nodeField(n, "left")), expr(nodeField(n, "right")),
+                        wholePeriod(nodeField(n, "wholePeriod")), bron(n));
             }
-            case "Predicate" -> predicaat(n);
+            case "Predicate" -> predicate(n);
             // IR-SPEC ch. 4.5: the binding IS the hop — a check without one tests the subject's own kenmerk; an
             // absent host is the subject (RUNTIME-SEMANTICS ch. 5.8b), the record's null
             case "CharacteristicCheck" -> {
-                String p = padVan(n);
+                String p = pathOf(n);
                 Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "characteristic"), null, bool(n, "negated"),
-                        ot(text(n, "host")), geheelPeriode(knoopVeld(n, "wholePeriod")), bron(n));
-                RolBindingRef nb = rolBinding(n, p, "navigation");
-                if (nb != null) navigatieBindingen.put(k, List.of(nb));
+                        ot(text(n, "host")), wholePeriod(nodeField(n, "wholePeriod")), bron(n));
+                RolBindingRef nb = roleBinding(n, p, "navigation");
+                if (nb != null) path.put(k, List.of(nb));
                 yield k;
             }
             // IR-SPEC ch. 4.5: one node for the role check — the fact type, the role the SUBJECT plays in it, and the
-            // narrowing of the other end where there is one. The record is the carrier (see Loaded#rolBindingen).
+            // narrowing of the other end where there is one. The record is the carrier (see Loaded#roleBindings).
             case "RoleMembership" -> {
-                String p = padVan(n);
+                String p = pathOf(n);
                 // WF-034, the role check's pair crossed against the declarations, in the words ref and the ASP
                 // backend fault with: a check naming no declared link holds for no instance, and until L2's fix
                 // round this backend refused it with a storage reason instead (the fact type, the role, the
-                // narrowing here; whether the subject fills the role in keurOnderwerpen, which has the subject)
-                String feittype = tekst(n, p, "factType"), rol = tekst(n, p, "role");
-                Feittype ft = feittypeOpNaam(feittype);
+                // narrowing here; whether the subject fills the role in checkSubjects, which has the subject)
+                String feittype = textAt(n, p, "factType"), rol = textAt(n, p, "role");
+                Feittype ft = factTypeByName(feittype);
                 if (ft == null)
                     throw new Documentfout(p + "/factType", "role check names fact type '" + feittype + "', which is"
                             + " not declared: the check resolves against no declaration");
-                RegelSpraakModel.Rol gebonden = rolOpNaam(ft, rol);
-                if (gebonden == null)
+                RegelSpraakModel.Rol bound = roleByName(ft, rol);
+                if (bound == null)
                     throw new Documentfout(p + "/role", "'" + rol + "' is not a declared role of fact type '" + feittype
                             + "' (a role check names the role by its declared name)");
-                String tegenpartij = optTekst(n, p, "counterpartType");
-                Objecttype ander = tegenpartij == null ? null : ot(tegenpartij);
-                if (tegenpartij != null) {
-                    if (ander == null)
+                String counterpart = optText(n, p, "counterpartType");
+                Objecttype earlierBean = counterpart == null ? null : ot(counterpart);
+                if (counterpart != null) {
+                    if (earlierBean == null)
                         throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
-                                + tegenpartij + "\" is no declared object type");
-                    RegelSpraakModel.Rol overzijde = ft.wederkerig ? gebonden : andereRol(ft, gebonden);
-                    Objecttype vuller = overzijde == null ? null : ot(overzijde.objecttypeNaam());
-                    if (vuller != null && !ander.isEen(vuller))
+                                + counterpart + "\" is no declared object type");
+                    RegelSpraakModel.Rol otherSide = ft.wederkerig ? bound : otherRole(ft, bound);
+                    Objecttype filler = otherSide == null ? null : ot(otherSide.objecttypeNaam());
+                    if (filler != null && !earlierBean.isEen(filler))
                         throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
-                                + tegenpartij + "\" is no subtype of \"" + vuller.naam + "\", the filler the role \""
-                                + overzijde.naam() + "\" declares");
+                                + counterpart + "\" is no subtype of \"" + filler.naam + "\", the filler the role \""
+                                + otherSide.naam() + "\" declares");
                 }
-                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(rol, ander, bron(n),
-                        waarheid(n, p, "negated"));
-                rolBindingen.put(r, new RolBindingRef(feittype, r.rol()));
-                plekken.put(r, p);
+                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(rol, earlierBean, bron(n),
+                        truth(n, p, "negated"));
+                roleBindings.put(r, new RolBindingRef(feittype, r.rol()));
+                sites.put(r, p);
                 yield r;
             }
             // a bound is written whole or not at all: absent is open on that side, the record's null
-            case "TimeWindow" -> new Conditie.Periode(expr(knoopVeld(n, "from")), expr(knoopVeld(n, "to")),
+            case "TimeWindow" -> new Conditie.Periode(expr(nodeField(n, "from")), expr(nodeField(n, "to")),
                     bool(n, "toInclusive"), bron(n));
             case "Compound" -> {
-                String p = padVan(n);
-                List<Conditie> delen = new ArrayList<>();
-                elementen(n, "parts", o -> delen.add(conditie(o)));
+                String p = pathOf(n);
+                List<Conditie> parts = new ArrayList<>();
+                elements(n, "parts", o -> parts.add(condition(o)));
                 yield new Conditie.Samengesteld(
-                        enumWaarde(Spelling.QUANTIFIER, "Compound.quantifier", tekst(n, p, "quantifier"),
+                        enumValue(Spelling.QUANTIFIER, "Compound.quantifier", textAt(n, p, "quantifier"),
                                 p + "/quantifier"),
-                        intOf(n, "threshold"), delen, bron(n));
+                        intOf(n, "threshold"), parts, bron(n));
             }
             // IR-SPEC ch. 4.5 / WF-108 the QUANTIFIER FOLD. Unlike Compound — whose quantifier ranges over the
             // BULLETS of one subject — this one ranges over INSTANCES, and its range fields are the instance fold's
             // (ch. 4.3) spelled unchanged. Both range fields are decoded INTO the record: Kwantorvouw is not part
             // of the vendored frontend slice the function/object-creation side-channel exists for, so its sourceRole
-            // needs no Loaded#rolBindingen entry.
+            // needs no Loaded#roleBindings entry.
             case "QuantifierFold" -> {
                 // WF-108 (c), the WF-102 discipline under this node's own rule. Refused for exactly the reason
                 // Aggregation.sourcePath is: the model cannot re-derive a multi-step range, and the by-pair fallback would
@@ -2141,10 +2141,10 @@ public final class IrLoader {
                 // OCaml executors quantify over the right one. A named per-form Refusal puts the golden in gate 12's
                 // channel floor by reason instead.
                 // IR-SPEC ch. 4.5: the range is required, one field with two spellings
-                String p = padVan(n);
-                bereikVelden(n, p);
+                String p = pathOf(n);
+                rangeFields(n, p);
                 if (n.has("sourcePath")) {
-                    rolBindingLijst(n, p, "sourcePath");   // its shape first: a malformed path is no document
+                    roleBindingList(n, p, "sourcePath");   // its shape first: a malformed path is no document
                     throw new Refusal("Kwantorvouw.bronPad",
                             "a multi-step quantifier range (WF-108 (c)); the accumulate source carries one join role");
                 }
@@ -2153,44 +2153,44 @@ public final class IrLoader {
                 // in the verifier's sentence, as the shared loader refuses it for an executor — the bare definite
                 // describes one member, and reading it as a forall is the misreading this node exists to prevent. Any
                 // other value outside the family is an unknown value.
-                String wq = tekst(n, p, "quantifier");
+                String wq = textAt(n, p, "quantifier");
                 if (Spelling.QUANTIFIER.weigertBijNaam("QuantifierFold.quantifier", wq))
-                    throw new Documentfout(p + "/quantifier", KWANTORVOUW_THE);
-                Conditie.Kwantor kw = enumWaarde(Spelling.QUANTIFIER, "QuantifierFold.quantifier", wq,
+                    throw new Documentfout(p + "/quantifier", QUANTIFIER_FOLD_THE);
+                Conditie.Kwantor kw = enumValue(Spelling.QUANTIFIER, "QuantifierFold.quantifier", wq,
                         p + "/quantifier");
                 // WF-108 (e): the threshold is present EXACTLY under a counting quantifier. Read as an absence rather
                 // than as a 0 — a counting fold whose threshold is missing has no verdict, and guessing one here
                 // would answer a question the document does not ask.
-                boolean telt = kw == Conditie.Kwantor.TEN_MINSTE || kw == Conditie.Kwantor.TEN_HOOGSTE
+                boolean counts = kw == Conditie.Kwantor.TEN_MINSTE || kw == Conditie.Kwantor.TEN_HOOGSTE
                         || kw == Conditie.Kwantor.PRECIES;
-                if (telt != n.has("threshold"))
+                if (counts != n.has("threshold"))
                     throw new Refusal("Kwantorvouw.drempel", "a threshold is written exactly under a counting"
                             + " quantifier (WF-108 (e)); this node has quantifier " + wq
-                            + (telt ? " and no threshold" : " and one"));
+                            + (counts ? " and no threshold" : " and one"));
                 // a subselection is written whole or not at all: absent is none, the record's null
-                yield new Conditie.Kwantorvouw(kw, telt ? intOf(n, "threshold") : 0,
+                yield new Conditie.Kwantorvouw(kw, counts ? intOf(n, "threshold") : 0,
                         ot(text(n, "elementType")),
-                        conditie(knoopVeld(n, "filter")), conditie(knoopVeld(n, "test")),
-                        rolBinding(n, p, "sourceRole"), List.of(), bron(n));
+                        condition(nodeField(n, "filter")), condition(nodeField(n, "test")),
+                        roleBinding(n, p, "sourceRole"), List.of(), bron(n));
             }
             case "Regelversie" -> new Conditie.Regelversie(text(n, "regel"), bool(n, "inconsistent"), bron(n));
             case "Unresolved" -> {
-                if (!n.has("source")) throw new Documentfout(padVan(n), MARKER_ZONDER_BRON);
+                if (!n.has("source")) throw new Documentfout(pathOf(n), MARKER_WITHOUT_SOURCE);
                 yield new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
             }
             // this backend carries every member of IR-SPEC ch. 4.5's condition union, so any other name is no node of
             // this format, refused at the discriminator in the shared loader's words: a node of the v0 shape that L5
             // renamed, one of the two role checks of the L1 shape that RoleMembership replaced, a node of another
             // union, or no node at all
-            default -> throw new Documentfout(padVan(n) + "/node", "unknown condition node \"" + node + "\"");
+            default -> throw new Documentfout(pathOf(n) + "/node", "unknown condition node \"" + node + "\"");
         };
     }
 
     /** A negated leeg/gevuld test is lowered HERE to its sister soort, unnegated: pointwise "niet leeg" IS "gevuld"
      *  (ref: {@code not is_empty} against {@code v <> Empty}). Both transpiler branches read the leeg/gevuld soort at
-     *  a dozen sites and none of them reads {@code negatie} — the RegelSpraak frontend never writes it on these two
+     *  a dozen sites and none of them reads {@code negated} — the RegelSpraak frontend never writes it on these two
      *  soorten — so answering it once at the wire boundary covers every site, own and navigated, in both branches.
-     *  {@code negatie} is the INNER negation, per day; the qualifier's own "niet gedurende …" is
+     *  {@code negated} is the INNER negation, per day; the qualifier's own "niet gedurende …" is
      *  {@code GeheelPeriode.niet} and is untouched here.
      *
      *  <p>The swap holds under the ch. 3.9 whole-period qualifier as well (decided 2026-09-26): the leeg and the
@@ -2198,44 +2198,44 @@ public final class IrLoader {
      *  complementary days of the same touched buckets, which is exactly its sister test. Until that date both
      *  forms were refused here, the negated one because the leeg test still had a threshold of its own and the
      *  unnegated one because ref did not execute the fold. */
-    private Conditie.Predicaat predicaat(JsonNode n) {
-        String p = padVan(n);
-        Conditie.Predicaatsoort soort = enumWaarde(Spelling.PREDICATE_KIND, "Predicate.kind", tekst(n, p, "kind"),
+    private Conditie.Predicaat predicate(JsonNode n) {
+        String p = pathOf(n);
+        Conditie.Predicaatsoort soort = enumValue(Spelling.PREDICATE_KIND, "Predicate.kind", textAt(n, p, "kind"),
                 p + "/kind");
-        boolean negatie = bool(n, "negated");
-        Conditie.GeheelPeriode periode = geheelPeriode(knoopVeld(n, "wholePeriod"));
-        boolean leegOfGevuld = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
+        boolean negated = bool(n, "negated");
+        Conditie.GeheelPeriode period = wholePeriod(nodeField(n, "wholePeriod"));
+        boolean emptyOrFilled = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
         // WF-043 admits a time-dependent PARAMETER as the operand of a whole-period test, and no executor folds one:
         // ref and the ASP backend refuse it in this sentence, the wire's own spelling of the name included
-        JsonNode operand = knoopVeld(n, "operand");
-        if (leegOfGevuld && periode != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
+        JsonNode operand = nodeField(n, "operand");
+        if (emptyOrFilled && period != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
             throw new Refusal("Predicate.operand", "a whole-period leeg/gevuld test over the parameter '"
                     + operand.path("parameter").asText() + "' is not executed: the fold reads the timeline of an attribute");
-        if (leegOfGevuld && negatie) {
+        if (emptyOrFilled && negated) {
             soort = soort == Conditie.Predicaatsoort.LEEG ? Conditie.Predicaatsoort.GEVULD : Conditie.Predicaatsoort.LEEG;
-            negatie = false;
+            negated = false;
         }
         // the day kind is written on a predicate of kind dayKind alone: absent elsewhere, the record's null
-        return new Conditie.Predicaat(soort, expr(operand), text(n, "dayKind"), negatie,
+        return new Conditie.Predicaat(soort, expr(operand), text(n, "dayKind"), negated,
                 intOf(n, "digits"),
-                periode, bron(n));
+                period, bron(n));
     }
 
     /** IR-SPEC ch. 4.5: the whole-period qualifier, its granularity read onto the record's {@code jaar} flag (year
      *  true, month false). */
-    private Conditie.GeheelPeriode geheelPeriode(JsonNode n) {
+    private Conditie.GeheelPeriode wholePeriod(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        String p = padVan(n);
-        velden(n, p, "WholePeriod", List.of("node", "granularity", "negated"), List.of());
-        return new Conditie.GeheelPeriode(enumWaarde(Spelling.WHOLE_PERIOD_GRANULARITY, "WholePeriod.granularity",
-                tekst(n, p, "granularity"), p + "/granularity"), bool(n, "negated"));
+        String p = pathOf(n);
+        fields(n, p, "WholePeriod", List.of("node", "granularity", "negated"), List.of());
+        return new Conditie.GeheelPeriode(enumValue(Spelling.WHOLE_PERIOD_GRANULARITY, "WholePeriod.granularity",
+                textAt(n, p, "granularity"), p + "/granularity"), bool(n, "negated"));
     }
 
     // --- resolved IR lists -------------------------------------------------
 
     /** One version of a named form: the name its record carries, the JSON pointer of the version, and the version
      *  record itself. */
-    private record Versie(String naam, String pad, JsonNode knoop) {}
+    private record Version(String naam, String pad, JsonNode jsonNode) {}
 
     /**
      * IR-SPEC ch. 3, Versioning (delta B19): a named form is {@code {node, name, versions}}, and the frontend's
@@ -2244,89 +2244,89 @@ public final class IrLoader {
      * (WF-107's) stays null on every version. That spelling is why a form's own name may not end in a space, '#'
      * and digits: it would read as a version of another form. A form carries at least one version.
      */
-    private List<Versie> vorm(JsonNode n, String pad, String knoop, List<String> optioneel) {
-        List<String> opt = new ArrayList<>(optioneel);
+    private List<Version> vorm(JsonNode n, String pad, String jsonNode, List<String> optional) {
+        List<String> opt = new ArrayList<>(optional);
         opt.add("origin");     // the origin of a declaration a producer made itself (IR-SPEC ch. 2.13)
         opt.add("designations");   // a named form's names in the vocabularies (IR-SPEC ch. 2.12), on the form
-        velden(n, pad, knoop, List.of("node", "name", "versions"), opt);
+        fields(n, pad, jsonNode, List.of("node", "name", "versions"), opt);
         JsonNode nm = n.get("name");
         if (!nm.isNull() && !nm.isTextual())
-            throw new Documentfout(pad + "/name", "expected a string or null, got " + kort(nm));
+            throw new Documentfout(pad + "/name", "expected a string or null, got " + shortQuote(nm));
         String naam = nm.isNull() ? null : nm.asText();
         if (naam != null) {
-            herkomst(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
-            benamingen(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
+            origin(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
+            designations(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
         }
-        if (naam != null && VERSIENAAM.matcher(naam).matches()) throw new Documentfout(pad + "/name", VORMNAAM);
+        if (naam != null && VERSION_NAME.matcher(naam).matches()) throw new Documentfout(pad + "/name", FORM_NAME);
         String vp = pad + "/versions";
         JsonNode vs = n.get("versions");
-        if (!vs.isArray()) throw new Documentfout(vp, "expected an array, got " + kort(vs));
-        if (vs.isEmpty()) throw new Documentfout(vp, VERSIES_LEEG);
-        List<Versie> uit = new ArrayList<>();
+        if (!vs.isArray()) throw new Documentfout(vp, "expected an array, got " + shortQuote(vs));
+        if (vs.isEmpty()) throw new Documentfout(vp, VERSIONS_EMPTY);
+        List<Version> out = new ArrayList<>();
         for (int i = 0; i < vs.size(); i++) {
             JsonNode v = vs.get(i);
-            if (!v.isObject()) throw new Documentfout(vp + "/" + i, "expected a JSON object, got " + kort(v));
-            uit.add(new Versie(naam != null && vs.size() >= 2 ? naam + " #" + (i + 1) : naam, vp + "/" + i, v));
+            if (!v.isObject()) throw new Documentfout(vp + "/" + i, "expected a JSON object, got " + shortQuote(v));
+            out.add(new Version(naam != null && vs.size() >= 2 ? naam + " #" + (i + 1) : naam, vp + "/" + i, v));
         }
-        return uit;
+        return out;
     }
 
     /** A name ending in a space, '#' and digits: the in-memory spelling of one version of a form with several. */
-    private static final java.util.regex.Pattern VERSIENAAM = java.util.regex.Pattern.compile("[\\s\\S]* #[0-9]+");
+    private static final java.util.regex.Pattern VERSION_NAME = java.util.regex.Pattern.compile("[\\s\\S]* #[0-9]+");
 
     /** The shared loader's sentences for a form's name and its versions. */
-    static final String VORMNAAM = "a form's name does not end in a space, '#' and digits: that spelling names one"
+    static final String FORM_NAME = "a form's name does not end in a space, '#' and digits: that spelling names one"
             + " version of a form with several";
-    static final String VERSIES_LEEG = "a form carries at least one version";
+    static final String VERSIONS_EMPTY = "a form carries at least one version";
 
-    /** The key set of a version record, which carries no node discriminator: {@link #velden} without the node, and an
+    /** The key set of a version record, which carries no node discriminator: {@link #fields} without the node, and an
      *  unknown field named on the record's own kind. */
-    private static void versievelden(JsonNode n, String pad, String soort, List<String> verplicht,
-                                     List<String> optioneel) {
+    private static void versionFields(JsonNode n, String pad, String soort, List<String> required,
+                                     List<String> optional) {
         n.fieldNames().forEachRemaining(k -> {
-            if (!verplicht.contains(k) && !optioneel.contains(k))
+            if (!required.contains(k) && !optional.contains(k))
                 throw new Documentfout(pad + "/" + k, "unknown field on " + soort);
         });
-        for (String k : verplicht)
-            if (!n.has(k)) throw ontbreekt(pad, k);
-        for (String k : optioneel)
+        for (String k : required)
+            if (!n.has(k)) throw missing(pad, k);
+        for (String k : optional)
             if (n.has(k) && n.get(k).isNull())
                 throw new Documentfout(pad + "/" + k, "an optional field is written whole or not at all, and null is neither");
     }
 
     /** A field that holds a node, required: a scalar or null there is refused at the field's pointer. */
-    private static JsonNode knoop(JsonNode ouder, String pad, String veld) {
-        JsonNode c = ouder.get(veld);
-        if (!c.isObject()) throw new Documentfout(pad + "/" + veld, "expected a JSON object, got " + kort(c));
+    private static JsonNode jsonNode(JsonNode parent, String pad, String veld) {
+        JsonNode c = parent.get(veld);
+        if (!c.isObject()) throw new Documentfout(pad + "/" + veld, "expected a JSON object, got " + shortQuote(c));
         return c;
     }
 
     /** A field whose value is a string or null (IR-SPEC § Method: a name a WF rule guards is nullable). */
-    private static String tekstOfNull(JsonNode n, String pad, String veld) {
+    private static String textOrNull(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
         if (v.isNull()) return null;
-        if (!v.isTextual()) throw new Documentfout(pad + "/" + veld, "expected a string or null, got " + kort(v));
+        if (!v.isTextual()) throw new Documentfout(pad + "/" + veld, "expected a string or null, got " + shortQuote(v));
         return v.asText();
     }
 
     /** IR-SPEC ch. 3.10: the validity of a version, always written; each bound is written whole or not at all, an
      *  absent one open on that side, and a Validity with neither bound is always. A malformed bound is named by its
      *  JSON pointer. */
-    private Geldigheid validity(JsonNode versie, String pad) {
-        JsonNode g = knoop(versie, pad, "validity");
+    private Geldigheid validity(JsonNode version, String pad) {
+        JsonNode g = jsonNode(version, pad, "validity");
         String gp = pad + "/validity";
-        velden(g, gp, "Validity", List.of("node"), List.of("from", "to"));
-        String vanaf = optTekst(g, gp, "from"), tot = optTekst(g, gp, "to");
-        return new Geldigheid(vanaf == null ? null : datumVanIrWire(vanaf, gp + "/from"),
-                tot == null ? null : datumVanIrWire(tot, gp + "/to"));
+        fields(g, gp, "Validity", List.of("node"), List.of("from", "to"));
+        String from = optText(g, gp, "from"), to = optText(g, gp, "to");
+        return new Geldigheid(from == null ? null : dateOfIrWire(from, gp + "/from"),
+                to == null ? null : dateOfIrWire(to, gp + "/to"));
     }
 
     /** IR-SPEC ch. 3.1: a rule and its versions; the statute annotations stand on the form, and every version's
      *  record carries them. */
     private void rule(String pad, JsonNode n) {
-        List<Versie> versies = vorm(n, pad, "Rule", List.of("statuteAnnotations"));
-        List<String> annotaties = n.has("statuteAnnotations") ? tekstLijst(n, pad, "statuteAnnotations") : List.of();
-        for (Versie v : versies) m.resolvedRegels.add(ruleVersion(v, annotaties));
+        List<Version> versions = vorm(n, pad, "Rule", List.of("statuteAnnotations"));
+        List<String> annotations = n.has("statuteAnnotations") ? textList(n, pad, "statuteAnnotations") : List.of();
+        for (Version v : versions) m.resolvedRegels.add(ruleVersion(v, annotations));
     }
 
     /**
@@ -2338,26 +2338,26 @@ public final class IrLoader {
      * name that is both decides nothing. Without the cross a version without a tag that names a Booleaan attribute
      * would be carried out as a characteristic of that name.
      */
-    private ResolvedRegel ruleVersion(Versie versie, List<String> annotaties) {
-        JsonNode n = versie.knoop();
-        String pad = versie.pad();
-        versievelden(n, pad, "RuleVersion", List.of("validity", "target", "value", "initialisation"),
+    private ResolvedRegel ruleVersion(Version version, List<String> annotations) {
+        JsonNode n = version.jsonNode();
+        String pad = version.pad();
+        versionFields(n, pad, "RuleVersion", List.of("validity", "target", "value", "initialisation"),
                 List.of("condition", "presentation"));
-        boolean initialisatie = waarheid(n, pad, "initialisation");
-        String presentatie = optTekst(n, pad, "presentation");
-        ResolvedRegel.Soort getagd = presentatie == null ? null : enumWaarde(Spelling.PRESENTATION,
-                "RuleVersion.presentation", presentatie, pad + "/presentation");
-        if (initialisatie && presentatie != null)
-            throw new Documentfout(pad + "/presentation", PRESENTATIE_BIJ_INITIALISATIE);
+        boolean initialisatie = truth(n, pad, "initialisation");
+        String presentation = optText(n, pad, "presentation");
+        ResolvedRegel.Soort tagged = presentation == null ? null : enumValue(Spelling.PRESENTATION,
+                "RuleVersion.presentation", presentation, pad + "/presentation");
+        if (initialisatie && presentation != null)
+            throw new Documentfout(pad + "/presentation", PRESENTATION_AT_INITIALISATION);
         ResolvedRegel.Soort soort = initialisatie ? ResolvedRegel.Soort.INITIALISATIE
-                : getagd == null ? ResolvedRegel.Soort.KENMERKTOEKENNING : getagd;
+                : tagged == null ? ResolvedRegel.Soort.KENMERKTOEKENNING : tagged;
         JsonNode t = n.get("target");
         if (!t.isObject() || !"AttributeReference".equals(text(t, "node")))
-            throw new Documentfout(pad + "/target", DOEL_ATTRIBUUTREF);
+            throw new Documentfout(pad + "/target", TARGET_ATTRIBUTE_REFERENCE);
         Expr.AttribuutRef doel = (Expr.AttribuutRef) expr(t);
-        keurLedensoort(doel, text(t, "subjectType"), soort, pad + "/target");
-        ResolvedRegel r = new ResolvedRegel(versie.naam(), soort, doel, expr(knoop(n, pad, "value")),
-                conditie(knoopVeld(n, "condition")), validity(n, pad), annotaties);
+        checkMembersKind(doel, text(t, "subjectType"), soort, pad + "/target");
+        ResolvedRegel r = new ResolvedRegel(version.naam(), soort, doel, expr(jsonNode(n, pad, "value")),
+                condition(nodeField(n, "condition")), validity(n, pad), annotations);
         // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
         // reads the value — the exec-model one writes true whatever it says, the DRL-text one writes what it
         // says — so on a false (measured 2026-09-23 on the negatief wf022-kenmerk-onwaar, verifier bypassed)
@@ -2375,14 +2375,14 @@ public final class IrLoader {
     }
 
     /** The shared loader's sentences for a rule version's kind and target. */
-    static final String PRESENTATIE_BIJ_INITIALISATIE = "presentation beside initialisation true: a presentation tags"
+    static final String PRESENTATION_AT_INITIALISATION = "presentation beside initialisation true: a presentation tags"
             + " a computing version, never an initialisation";
-    static final String DOEL_ATTRIBUUTREF = "the target of a rule version is an AttributeReference";
+    static final String TARGET_ATTRIBUTE_REFERENCE = "the target of a rule version is an AttributeReference";
 
     /** WF-022, the member-kind arm and the name that is both (IR-SPEC ch. 3.1): the verifier's sentences, which
      *  name the member and the type as the target writes them. A target whose type or member does not resolve is
      *  left to the rule that reports it. */
-    private void keurLedensoort(Expr.AttribuutRef doel, String typeNaam, ResolvedRegel.Soort soort, String plek) {
+    private void checkMembersKind(Expr.AttribuutRef doel, String typeName, ResolvedRegel.Soort soort, String site) {
         Objecttype ot = doel.objecttype();
         String naam = doel.attribuut();
         if (ot == null || naam == null) return;
@@ -2391,48 +2391,48 @@ public final class IrLoader {
             for (String a : t.attributen.keySet()) attribuut |= Namen.norm(a).equals(Namen.norm(naam));
             for (String k : t.kenmerken) kenmerk |= Namen.norm(k).equals(Namen.norm(naam));
         }
-        if (attribuut && kenmerk) throw new Documentfout(plek, doelTweeledig(naam, typeNaam));
+        if (attribuut && kenmerk) throw new Documentfout(site, targetTwofold(naam, typeName));
         if (soort == ResolvedRegel.Soort.KENMERKTOEKENNING && attribuut)
-            throw new Documentfout(plek, kenmerkdoel(naam, typeNaam));
+            throw new Documentfout(site, characteristicTarget(naam, typeName));
         if (soort != ResolvedRegel.Soort.KENMERKTOEKENNING && kenmerk)
-            throw new Documentfout(plek, attribuutdoel(naam, typeNaam));
+            throw new Documentfout(site, attributeTarget(naam, typeName));
     }
 
     /** WF-022's two member-kind sentences and the one for a name that is both. */
-    static String kenmerkdoel(String naam, String type) {
+    static String characteristicTarget(String naam, String type) {
         return "a version without a presentation and without initialisation attributes a characteristic, so its"
                 + " target MUST name one, and '" + naam + "' is an attribute of '" + type + "'";
     }
-    static String attribuutdoel(String naam, String type) {
+    static String attributeTarget(String naam, String type) {
         return "a version with a presentation or with initialisation true writes an attribute, so its target MUST"
                 + " name one, and '" + naam + "' is a characteristic of '" + type + "'";
     }
-    static String doelTweeledig(String naam, String type) {
+    static String targetTwofold(String naam, String type) {
         return "target '" + naam + "' names both an attribute and a characteristic of '" + type + "': which member a"
                 + " rule writes decides its kind, and this name decides nothing";
     }
 
     /** IR-SPEC ch. 3.3: an object creation and its versions; the back-link is optional. */
     private void objectCreation(String pad, JsonNode n) {
-        for (Versie v : vorm(n, pad, "ObjectCreation", List.of())) {
-            JsonNode k = v.knoop();
+        for (Version v : vorm(n, pad, "ObjectCreation", List.of())) {
+            JsonNode k = v.jsonNode();
             String p = v.pad();
-            versievelden(k, p, "ObjectCreationVersion", List.of("createdType", "subject", "initialisations", "validity"),
+            versionFields(k, p, "ObjectCreationVersion", List.of("createdType", "subject", "initialisations", "validity"),
                     List.of("condition", "connectingRole"));
             List<ResolvedObjectCreatie.Toekenning> tk = new ArrayList<>();
             lijst(k, p, "initialisations", (tp, t) -> {
-                velden(t, tp, "MemberInit", List.of("node", "member", "value", "characteristic"), List.of());
-                tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "member"), expr(knoopVeld(t, "value")),
+                fields(t, tp, "MemberInit", List.of("node", "member", "value", "characteristic"), List.of());
+                tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "member"), expr(nodeField(t, "value")),
                         bool(t, "characteristic")));
             });
-            ResolvedObjectCreatie oc = new ResolvedObjectCreatie(v.naam(), ot(tekstOfNull(k, p, "createdType")),
-                    ot(tekstOfNull(k, p, "subject")), tk, conditie(knoopVeld(k, "condition")), validity(k, p));
+            ResolvedObjectCreatie oc = new ResolvedObjectCreatie(v.naam(), ot(textOrNull(k, p, "createdType")),
+                    ot(textOrNull(k, p, "subject")), tk, condition(nodeField(k, "condition")), validity(k, p));
             // IR-SPEC ch. 3.3: the symbolic connectingRole is NOT a field of the (vendored, pinned)
             // ResolvedObjectCreatie record, so it cannot be reconstructed INTO the model the way a fact creation's
             // path can. ch. 5.5 makes it AUTHORITATIVE (the reference interpreter lets it win over the type-pair
             // derivation, and it is the only route for a self-typed pair), so it rides BESIDE the model.
-            RolBindingRef vr = rolBinding(k, p, "connectingRole");
-            if (vr != null) rolBindingen.put(oc, vr);
+            RolBindingRef vr = roleBinding(k, p, "connectingRole");
+            if (vr != null) roleBindings.put(oc, vr);
             m.objectCreaties.add(oc);
         }
     }
@@ -2440,27 +2440,27 @@ public final class IrLoader {
     /** IR-SPEC ch. 3.2: an allocation and its versions: one of the three methods, the optional fields absent when
      *  none, and the recipient join required. */
     private void allocation(String pad, JsonNode n) {
-        for (Versie v : vorm(n, pad, "Allocation", List.of())) {
-            JsonNode k = v.knoop();
+        for (Version v : vorm(n, pad, "Allocation", List.of())) {
+            JsonNode k = v.jsonNode();
             String p = v.pad();
-            versievelden(k, p, "AllocationVersion", List.of("sourceType", "sourceAttribute", "targetType",
+            versionFields(k, p, "AllocationVersion", List.of("sourceType", "sourceAttribute", "targetType",
                     "targetAttribute", "method", "descending", "validity", "connectingRole"), List.of("ratioAttribute",
                     "maximumAttribute", "roundingDecimals", "remainderAttribute", "orderingAttribute", "condition"));
-            ResolvedVerdeling.Methode methode = enumWaarde(Spelling.METHOD, "AllocationVersion.method",
-                    tekst(k, p, "method"), p + "/method");
-            ResolvedVerdeling vd = new ResolvedVerdeling(v.naam(), ot(tekstOfNull(k, p, "sourceType")),
-                    tekstOfNull(k, p, "sourceAttribute"), ot(tekstOfNull(k, p, "targetType")),
-                    tekstOfNull(k, p, "targetAttribute"), methode,
-                    optTekst(k, p, "ratioAttribute"), optTekst(k, p, "maximumAttribute"),
-                    k.has("roundingDecimals") ? geheel(k, p, "roundingDecimals", "AllocationVersion.roundingDecimals")
+            ResolvedVerdeling.Methode methode = enumValue(Spelling.METHOD, "AllocationVersion.method",
+                    textAt(k, p, "method"), p + "/method");
+            ResolvedVerdeling vd = new ResolvedVerdeling(v.naam(), ot(textOrNull(k, p, "sourceType")),
+                    textOrNull(k, p, "sourceAttribute"), ot(textOrNull(k, p, "targetType")),
+                    textOrNull(k, p, "targetAttribute"), methode,
+                    optText(k, p, "ratioAttribute"), optText(k, p, "maximumAttribute"),
+                    k.has("roundingDecimals") ? whole(k, p, "roundingDecimals", "AllocationVersion.roundingDecimals")
                             : null,
-                    optTekst(k, p, "remainderAttribute"), optTekst(k, p, "orderingAttribute"),
-                    waarheid(k, p, "descending"), conditie(knoopVeld(k, "condition")), validity(k, p));
+                    optText(k, p, "remainderAttribute"), optText(k, p, "orderingAttribute"),
+                    truth(k, p, "descending"), condition(nodeField(k, "condition")), validity(k, p));
             // IR-SPEC ch. 3.2: the recipient role binding IS the join, and it is required. Not a field of the
-            // vendored record, so it rides beside the model like the object creation's; see Loaded#rolBindingen.
-            RolBindingRef vr = rolBinding(k, p, "connectingRole");
+            // vendored record, so it rides beside the model like the object creation's; see Loaded#roleBindings.
+            RolBindingRef vr = roleBinding(k, p, "connectingRole");
             if (vr == null) throw new Documentfout(p + "/connectingRole", "expected a RoleBinding, got null");
-            rolBindingen.put(vd, vr);
+            roleBindings.put(vd, vr);
             m.verdelingen.add(vd);
         }
     }
@@ -2468,12 +2468,12 @@ public final class IrLoader {
     /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source record, with its line, stands on the
      *  version. */
     private void consistency(String pad, JsonNode n) {
-        for (Versie v : vorm(n, pad, "Consistency", List.of())) {
-            JsonNode k = v.knoop();
+        for (Version v : vorm(n, pad, "Consistency", List.of())) {
+            JsonNode k = v.jsonNode();
             String p = v.pad();
-            versievelden(k, p, "ConsistencyVersion", List.of("subject", "assertion", "validity"), List.of("source"));
-            m.consistenties.add(new ResolvedConsistentie(v.naam(), ot(tekstOfNull(k, p, "subject")),
-                    conditie(knoop(k, p, "assertion")), bron(k), bronregel(k), validity(k, p)));
+            versionFields(k, p, "ConsistencyVersion", List.of("subject", "assertion", "validity"), List.of("source"));
+            m.consistenties.add(new ResolvedConsistentie(v.naam(), ot(textOrNull(k, p, "subject")),
+                    condition(jsonNode(k, p, "assertion")), bron(k), sourceLine(k), validity(k, p)));
         }
     }
 
@@ -2482,46 +2482,46 @@ public final class IrLoader {
      *  carries no scope (a scoped union is an open design question). The order of the wire's one list carries no
      *  meaning. */
     private void uniqueness(String pad, JsonNode n) {
-        for (Versie v : vorm(n, pad, "Uniqueness", List.of())) {
-            JsonNode k = v.knoop();
+        for (Version v : vorm(n, pad, "Uniqueness", List.of())) {
+            JsonNode k = v.jsonNode();
             String p = v.pad();
-            versievelden(k, p, "UniquenessVersion", List.of("sources", "validity"), List.of("scope", "source"));
-            List<ResolvedUniciteitUnie.Bron> bronnen = new ArrayList<>();
+            versionFields(k, p, "UniquenessVersion", List.of("sources", "validity"), List.of("scope", "source"));
+            List<ResolvedUniciteitUnie.Bron> sources = new ArrayList<>();
             lijst(k, p, "sources", (sp, s) -> {
-                velden(s, sp, "Source", List.of("node", "objectType", "keys"), List.of());
+                fields(s, sp, "Source", List.of("node", "objectType", "keys"), List.of());
                 String kp = sp + "/keys";
                 JsonNode keys = s.get("keys");
-                if (!keys.isArray()) throw new Documentfout(kp, "expected an array, got " + kort(keys));
-                if (keys.isEmpty()) throw new Documentfout(kp, SLEUTELS_LEEG);
-                List<String> sleutels = new ArrayList<>();
-                for (int i = 0; i < keys.size(); i++) sleutels.add(tekstOfNull(keys, kp, i));
-                bronnen.add(new ResolvedUniciteitUnie.Bron(ot(tekstOfNull(s, sp, "objectType")), sleutels));
+                if (!keys.isArray()) throw new Documentfout(kp, "expected an array, got " + shortQuote(keys));
+                if (keys.isEmpty()) throw new Documentfout(kp, KEYS_EMPTY);
+                List<String> keyNames = new ArrayList<>();
+                for (int i = 0; i < keys.size(); i++) keyNames.add(textOrNull(keys, kp, i));
+                sources.add(new ResolvedUniciteitUnie.Bron(ot(textOrNull(s, sp, "objectType")), keyNames));
             });
-            if (bronnen.isEmpty()) throw new Documentfout(p + "/sources", BRONNEN_LEEG);
-            Geldigheid geldigheid = validity(k, p);
-            if (bronnen.size() == 1) {
+            if (sources.isEmpty()) throw new Documentfout(p + "/sources", SOURCES_EMPTY);
+            Geldigheid parsedValidity = validity(k, p);
+            if (sources.size() == 1) {
                 // IR-SPEC ch. 3.6: the scope binding IS the scoping; the record's field-name component stays empty
-                ResolvedUniciteitUnie.Bron b = bronnen.get(0);
-                m.uniciteiten.add(new ResolvedUniciteit(v.naam(), b.type(), b.sleutels(), null, bron(k), geldigheid,
-                        rolBinding(k, p, "scope")));
+                ResolvedUniciteitUnie.Bron b = sources.get(0);
+                m.uniciteiten.add(new ResolvedUniciteit(v.naam(), b.type(), b.sleutels(), null, bron(k), parsedValidity,
+                        roleBinding(k, p, "scope")));
             } else {
-                if (k.has("scope")) throw new Documentfout(p + "/scope", GESCOOPTE_UNIE);
-                m.uniciteitUnies.add(new ResolvedUniciteitUnie(v.naam(), bronnen, bron(k), geldigheid));
+                if (k.has("scope")) throw new Documentfout(p + "/scope", SCOPED_UNION);
+                m.uniciteitUnies.add(new ResolvedUniciteitUnie(v.naam(), sources, bron(k), parsedValidity));
             }
         }
     }
 
     /** The shared loader's sentences for the sources of a uniqueness version. */
-    static final String BRONNEN_LEEG = "a uniqueness version carries at least one source";
-    static final String SLEUTELS_LEEG = "a source carries at least one key";
-    static final String GESCOOPTE_UNIE = "a uniqueness version with two or more sources carries no scope: a scoped"
+    static final String SOURCES_EMPTY = "a uniqueness version carries at least one source";
+    static final String KEYS_EMPTY = "a source carries at least one key";
+    static final String SCOPED_UNION = "a uniqueness version with two or more sources carries no scope: a scoped"
             + " union is an open design question";
 
     /** An entry of a list of strings or nulls. */
-    private static String tekstOfNull(JsonNode lijst, String pad, int i) {
+    private static String textOrNull(JsonNode lijst, String pad, int i) {
         JsonNode v = lijst.get(i);
         if (v.isNull()) return null;
-        if (!v.isTextual()) throw new Documentfout(pad + "/" + i, "expected a string or null, got " + kort(v));
+        if (!v.isTextual()) throw new Documentfout(pad + "/" + i, "expected a string or null, got " + shortQuote(v));
         return v.asText();
     }
 
@@ -2529,7 +2529,7 @@ public final class IrLoader {
      * IR-SPEC ch. 3.4: a fact creation and its versions. The creation IS its symbolic block — the created relation,
      * both ends, and the path from the anchor, one binding per hop — and each part is required. The record's
      * bean-field components stay empty; the transpilers derive the fields from the bindings
-     * ({@code FactModelGenerator.creatievelden}). Every hop of the path but the last is a step, the last is the join.
+     * ({@code FactModelGenerator.creationFields}). Every hop of the path but the last is a step, the last is the join.
      * The target type is not written: it is the declared filler of the target role in the created fact type, found
      * as the verifier finds it, and where that does not resolve the version is refused in the verifier's WF-028
      * words — a record without a target type would join to nothing. The anchor role is resolved the same way and
@@ -2537,77 +2537,77 @@ public final class IrLoader {
      * reached both branches as a creation they could only call unresolved.
      */
     private void factCreation(String pad, JsonNode n) {
-        for (Versie v : vorm(n, pad, "FactCreation", List.of())) {
-            JsonNode k = v.knoop();
+        for (Version v : vorm(n, pad, "FactCreation", List.of())) {
+            JsonNode k = v.jsonNode();
             String p = v.pad();
-            versievelden(k, p, "FactCreationVersion", List.of("factType", "anchorRole", "targetRole", "anchor", "path",
+            versionFields(k, p, "FactCreationVersion", List.of("factType", "anchorRole", "targetRole", "anchor", "path",
                     "validity"), List.of("condition"));
-            List<RolBindingRef> hops = rolBindingLijst(k, p, "path");
-            if (hops.isEmpty()) throw new Documentfout(p + "/path", PAD_LEEG);
+            List<RolBindingRef> hops = roleBindingList(k, p, "path");
+            if (hops.isEmpty()) throw new Documentfout(p + "/path", PATH_EMPTY);
             List<ResolvedFeitCreatie.Tussenstap> ts = new ArrayList<>();
             for (RolBindingRef rb : hops.subList(0, hops.size() - 1))
                 ts.add(new ResolvedFeitCreatie.Tussenstap(null, null, false, rb));
-            String feittype = tekst(k, p, "factType"), ankerRol = tekst(k, p, "anchorRole"),
-                    doelRol = tekst(k, p, "targetRole");
-            m.feitCreaties.add(new ResolvedFeitCreatie(v.naam(), ot(tekstOfNull(k, p, "anchor")),
-                    doelsoort(p, feittype, ankerRol, doelRol), null, null, ts, conditie(knoopVeld(k, "condition")),
-                    validity(k, p), feittype, ankerRol, doelRol, hops.get(hops.size() - 1)));
+            String feittype = textAt(k, p, "factType"), anchorRole = textAt(k, p, "anchorRole"),
+                    targetRole = textAt(k, p, "targetRole");
+            m.feitCreaties.add(new ResolvedFeitCreatie(v.naam(), ot(textOrNull(k, p, "anchor")),
+                    targetKind(p, feittype, anchorRole, targetRole), null, null, ts, condition(nodeField(k, "condition")),
+                    validity(k, p), feittype, anchorRole, targetRole, hops.get(hops.size() - 1)));
         }
     }
 
     /** The shared loader's sentence for an empty path. */
-    static final String PAD_LEEG = "a fact creation's path carries at least one hop";
+    static final String PATH_EMPTY = "a fact creation's path carries at least one hop";
 
     /** The target type of a fact creation: the declared filler of the target role in the created fact type, under
      *  the verifier's name identity. What does not resolve is refused, in WF-028's sentences, the anchor role first
      *  as the verifier reports it. */
-    private Objecttype doelsoort(String p, String feittype, String ankerRol, String doelRol) {
-        Feittype ft = feittypeOpNaam(feittype);
+    private Objecttype targetKind(String p, String feittype, String anchorRole, String targetRole) {
+        Feittype ft = factTypeByName(feittype);
         if (ft == null)
             throw new Documentfout(p + "/factType", "created fact type '" + feittype + "' is not declared");
         if (ft.rollen.size() != 2)
             throw new Documentfout(p + "/factType", "created fact type '" + feittype + "' does not have exactly two"
                     + " roles");
-        rolVan(p + "/anchorRole", ft, feittype, ankerRol);
-        RegelSpraakModel.Rol doel = rolVan(p + "/targetRole", ft, feittype, doelRol);
-        Objecttype vuller = ot(doel.objecttypeNaam());
-        if (vuller == null)
-            throw new Documentfout(p + "/targetRole", "the role '" + doelRol + "' of '" + feittype + "' is filled by '"
+        roleOf(p + "/anchorRole", ft, feittype, anchorRole);
+        RegelSpraakModel.Rol doel = roleOf(p + "/targetRole", ft, feittype, targetRole);
+        Objecttype filler = ot(doel.objecttypeNaam());
+        if (filler == null)
+            throw new Documentfout(p + "/targetRole", "the role '" + targetRole + "' of '" + feittype + "' is filled by '"
                     + doel.objecttypeNaam() + "', which is no declared object type: a fact creation's target"
                     + " type is the filler of its target role");
-        return vuller;
+        return filler;
     }
 
     /** The role {@code rol} of the created fact type {@code ft} under the verifier's name identity, or WF-028's
      *  refusal at {@code pad}. */
-    private static RegelSpraakModel.Rol rolVan(String pad, Feittype ft, String feittype, String rol) {
-        List<RegelSpraakModel.Rol> rollen = ft.rollen.stream()
+    private static RegelSpraakModel.Rol roleOf(String pad, Feittype ft, String feittype, String rol) {
+        List<RegelSpraakModel.Rol> roles = ft.rollen.stream()
                 .filter(r -> r.naam() != null && Namen.norm(r.naam()).equals(Namen.norm(rol))).toList();
-        if (rollen.isEmpty())
+        if (roles.isEmpty())
             throw new Documentfout(pad, "'" + rol + "' is not a role of '" + feittype + "'");
-        if (rollen.size() > 1)
+        if (roles.size() > 1)
             throw new Documentfout(pad, "role '" + rol + "' is ambiguous within '" + feittype + "'");
-        return rollen.get(0);
+        return roles.get(0);
     }
 
     /** The RoleBinding field {@code veld} of the object at {@code pad}: absent or null is null (the caller decides
      *  whether that is allowed), anything else is a {@code RoleBinding} object with exactly its two string fields. */
-    private static RolBindingRef rolBinding(JsonNode ouder, String pad, String veld) {
-        JsonNode n = ouder.get(veld);
+    private static RolBindingRef roleBinding(JsonNode parent, String pad, String veld) {
+        JsonNode n = parent.get(veld);
         if (n == null || n.isNull()) return null;
-        return rolBindingOp(n, pad + "/" + veld);
+        return roleBindingOn(n, pad + "/" + veld);
     }
 
-    private static RolBindingRef rolBindingOp(JsonNode n, String pad) {
-        velden(n, pad, "RoleBinding", List.of("node", "factType", "role"), List.of());
-        return new RolBindingRef(tekst(n, pad, "factType"), tekst(n, pad, "role"));
+    private static RolBindingRef roleBindingOn(JsonNode n, String pad) {
+        fields(n, pad, "RoleBinding", List.of("node", "factType", "role"), List.of());
+        return new RolBindingRef(textAt(n, pad, "factType"), textAt(n, pad, "role"));
     }
 
     /** A list of RoleBindings at field {@code veld} of the object at {@code pad}. */
-    private static List<RolBindingRef> rolBindingLijst(JsonNode ouder, String pad, String veld) {
-        List<RolBindingRef> uit = new ArrayList<>();
-        lijst(ouder, pad, veld, (sp, s) -> uit.add(rolBindingOp(s, sp)));
-        return uit;
+    private static List<RolBindingRef> roleBindingList(JsonNode parent, String pad, String veld) {
+        List<RolBindingRef> out = new ArrayList<>();
+        lijst(parent, pad, veld, (sp, s) -> out.add(roleBindingOn(s, sp)));
+        return out;
     }
 
     /** The validity window of {@code eigenaar} — a day-kind definition or a defaults group, the two carriers outside
@@ -2616,27 +2616,27 @@ public final class IrLoader {
      *  against the declaration that carries it: "from" alone does not locate the defect among the hundreds of windows
      *  a document holds. This mirrors {@link #bron(JsonNode)} one method below, which reads its own field the same
      *  way.
-     *  <p>{@code naamVeld} is the carrier's name field ({@code dayKind} on a day-kind definition, {@code name} on a
+     *  <p>{@code nameField} is the carrier's name field ({@code dayKind} on a day-kind definition, {@code name} on a
      *  defaults group). The prefix falls back to the NODE KIND where a carrier has none: that field is
      *  {@code ["string","null"]} on both carrying node kinds, so a nameless carrier is a legal wire document, and a
      *  bare "validity.from" would locate nothing. */
-    private Geldigheid geldigheid(JsonNode eigenaar, String naamVeld) {
-        JsonNode n = knoopVeld(eigenaar, "validity");
+    private Geldigheid parsedValidity(JsonNode eigenaar, String nameField) {
+        JsonNode n = nodeField(eigenaar, "validity");
         if (n == null) return null;
-        String gp = padVan(n);
-        velden(n, gp, "Validity", List.of("node"), List.of("from", "to"));
-        String naam = text(eigenaar, naamVeld), soort = text(eigenaar, "node");
-        String plek = (naam != null ? naam : "<unnamed " + (soort == null ? "carrier" : soort) + ">")
+        String gp = pathOf(n);
+        fields(n, gp, "Validity", List.of("node"), List.of("from", "to"));
+        String naam = text(eigenaar, nameField), soort = text(eigenaar, "node");
+        String site = (naam != null ? naam : "<unnamed " + (soort == null ? "carrier" : soort) + ">")
                 + ".validity";
-        String vanaf = optTekst(n, gp, "from"), tot = optTekst(n, gp, "to");
-        return new Geldigheid(vanaf == null ? null : datumVanIrWire(vanaf, plek + ".from"),
-                tot == null ? null : datumVanIrWire(tot, plek + ".to"));
+        String from = optText(n, gp, "from"), to = optText(n, gp, "to");
+        return new Geldigheid(from == null ? null : dateOfIrWire(from, site + ".from"),
+                to == null ? null : dateOfIrWire(to, site + ".to"));
     }
 
     /* The uchar-ir-v1 validity-bound lexeme, matched WHOLE: four-two-two digit fields, digits only, no
      * sign and no extended year. It is WF-084's date-literal grammar (IR-SPEC ch. 4.1) applied to the other
      * date position on this wire — where, unlike the case wire, the schema carried no pattern at all. */
-    private static final java.util.regex.Pattern IR_DATUM =
+    private static final java.util.regex.Pattern IR_DATE =
             java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
 
     /** The calendar day a validity bound names — or a loud refusal naming the FORM, never a guess.
@@ -2654,14 +2654,14 @@ public final class IrLoader {
      *  not carry, so it is a hard error and never an {@link Refusal} — a Refusal would file the document
      *  under the differential gate's auto-excluded channel and leave the gate green over a document nobody
      *  read. */
-    private static java.time.LocalDate datumVanIrWire(String lexeem, String veld) {
-        if (!IR_DATUM.matcher(lexeem).matches())
-            throw new IllegalArgumentException("malformed validity date '" + lexeem + "' on '" + veld
+    private static java.time.LocalDate dateOfIrWire(String lexeme, String veld) {
+        if (!IR_DATE.matcher(lexeme).matches())
+            throw new IllegalArgumentException("malformed validity date '" + lexeme + "' on '" + veld
                     + "': the uchar-ir-v1 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
                     + " no sign and no extended year");
-        try { return java.time.LocalDate.parse(lexeem); }
+        try { return java.time.LocalDate.parse(lexeme); }
         catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("malformed validity date '" + lexeem + "' on '" + veld
+            throw new IllegalArgumentException("malformed validity date '" + lexeme + "' on '" + veld
                     + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
         }
     }
@@ -2675,49 +2675,49 @@ public final class IrLoader {
      *  object with its snippet — a string, never empty — and an optional line of at least 1, and nothing beside
      *  them: a file or a column is an unknown field until a card writes positions. Every other form is refused at
      *  its pointer. A line is read wherever it stands; the two records with a place for it keep it
-     *  ({@link #bronregel}), and every other node drops it. */
-    private Bronrecord bronrecord(JsonNode n) {
+     *  ({@link #sourceLine}), and every other node drops it. */
+    private SourceReference sourceReference(JsonNode n) {
         JsonNode s = n.get("source");
         if (s == null) return null;
-        String p = padVan(n) + "/source";
-        velden(s, p, null, List.of("snippet"), List.of("line"));
-        String snippet = tekst(s, p, "snippet");
-        if (snippet.isEmpty()) throw new Documentfout(p + "/snippet", SNIPPET_LEEG);
+        String p = pathOf(n) + "/source";
+        fields(s, p, null, List.of("snippet"), List.of("line"));
+        String snippet = textAt(s, p, "snippet");
+        if (snippet.isEmpty()) throw new Documentfout(p + "/snippet", SNIPPET_EMPTY);
         int regel = 0;
         if (s.has("line")) {
-            regel = geheel(s, p, "line", "source.line");
-            if (regel < 1) throw new Documentfout(p + "/line", BRONREGEL_ONDER_1);
+            regel = whole(s, p, "line", "source.line");
+            if (regel < 1) throw new Documentfout(p + "/line", SOURCE_LINE_UNDER_1);
         }
-        return new Bronrecord(snippet, regel);
+        return new SourceReference(snippet, regel);
     }
 
     /** A source record as this loader holds it: the snippet, and the line or 0 where the record has none. */
-    private record Bronrecord(String snippet, int regel) {}
+    private record SourceReference(String snippet, int regel) {}
 
     /** The shared loader's sentence: an empty snippet has no reading, as a node without source text carries no
      *  record. */
-    static final String SNIPPET_LEEG = "a source snippet is never empty: a node without source text carries no source";
+    static final String SNIPPET_EMPTY = "a source snippet is never empty: a node without source text carries no source";
     /** The shared loader's sentence for a line below 1, on every node. */
-    static final String BRONREGEL_ONDER_1 = "a source line is at least 1";
+    static final String SOURCE_LINE_UNDER_1 = "a source line is at least 1";
 
     /** The anchor a node's record holds: its snippet, and "" where it carries no source record — the value the
      *  record held for a node without source text before the source record landed. */
     private Bron bron(JsonNode n) {
-        Bronrecord b = bronrecord(n);
+        SourceReference b = sourceReference(n);
         return Bron.synthetisch(b == null ? "" : b.snippet());
     }
 
     /** The source text of a node of the defaults layer, whose records keep it as a string: null where it carries
      *  no source record. */
-    private String bronTekst(JsonNode n) {
-        Bronrecord b = bronrecord(n);
+    private String sourceText(JsonNode n) {
+        SourceReference b = sourceReference(n);
         return b == null ? null : b.snippet();
     }
 
     /** The source line of a consistency version or a rule group, the two records with a place for one: 0 where the
      *  source record has none or the node carries no record, the records' value for "no line". */
-    private int bronregel(JsonNode n) {
-        Bronrecord b = bronrecord(n);
+    private int sourceLine(JsonNode n) {
+        SourceReference b = sourceReference(n);
         return b == null ? 0 : b.regel();
     }
 
@@ -2737,9 +2737,9 @@ public final class IrLoader {
     }
 
     private static List<String> stringList(JsonNode n) {
-        List<String> uit = new ArrayList<>();
-        if (n != null && n.isArray()) n.forEach(e -> uit.add(e.asText()));
-        return uit;
+        List<String> out = new ArrayList<>();
+        if (n != null && n.isArray()) n.forEach(e -> out.add(e.asText()));
+        return out;
     }
 
     private static void forEach(JsonNode array, java.util.function.Consumer<JsonNode> f) {
@@ -2747,23 +2747,23 @@ public final class IrLoader {
     }
 
     /** The node at {@code veld} of {@code ouder}: null when the field is absent or null, and a scalar or an array
-     *  there refused at the field's own pointer. A node is found by identity ({@link #padVan}), which a scalar does
+     *  there refused at the field's own pointer. A node is found by identity ({@link #pathOf}), which a scalar does
      *  not have — Jackson shares small numbers, booleans and null — so its place is the parent's and the field's. */
-    private JsonNode knoopVeld(JsonNode ouder, String veld) {
-        JsonNode c = ouder.get(veld);
+    private JsonNode nodeField(JsonNode parent, String veld) {
+        JsonNode c = parent.get(veld);
         if (c == null || c.isNull()) return null;
-        if (!c.isObject()) throw new Documentfout(padVan(ouder) + "/" + veld, "expected a JSON object, got " + kort(c));
+        if (!c.isObject()) throw new Documentfout(pathOf(parent) + "/" + veld, "expected a JSON object, got " + shortQuote(c));
         return c;
     }
 
     /** Each node of the list at {@code veld} of {@code ouder}, in order; an absent list is empty, and an entry that is
-     *  not an object is refused at its own pointer (see {@link #knoopVeld}). */
-    private void elementen(JsonNode ouder, String veld, java.util.function.Consumer<JsonNode> f) {
-        JsonNode a = ouder.get(veld);
+     *  not an object is refused at its own pointer (see {@link #nodeField}). */
+    private void elements(JsonNode parent, String veld, java.util.function.Consumer<JsonNode> f) {
+        JsonNode a = parent.get(veld);
         if (a == null || !a.isArray()) return;
         for (int i = 0; i < a.size(); i++) {
             JsonNode e = a.get(i);
-            if (!e.isObject()) throw new Documentfout(padVan(a) + "/" + i, "expected a JSON object, got " + kort(e));
+            if (!e.isObject()) throw new Documentfout(pathOf(a) + "/" + i, "expected a JSON object, got " + shortQuote(e));
             f.accept(e);
         }
     }
@@ -2777,64 +2777,64 @@ public final class IrLoader {
      *  words of their own: a duration plus a date PLAYED with the operands silently commuted, a text operand under a
      *  square root faulted at fire, and the other forms were refused as rules out of scope (measured 2026-09-25).
      *  Asked once the whole document is read, as the verifier asks it: a reference's type is its declaration's, a
-     *  binder read's its binding's ({@link EffectieveEenheid#typeVan}), and a type the document does not give
+     *  binder read's its binding's ({@link EffectiveUnit#typeOf}), and a type the document does not give
      *  defers, as the verifier defers on it. */
-    private void keurTypering() {
-        EffectieveEenheid typen = new EffectieveEenheid(lets);
+    private void checkTyping() {
+        EffectiveUnit typen = new EffectiveUnit(lets);
         for (ResolvedRegel r : m.resolvedRegels) {
-            keurTypen(r.waarde(), typen);
-            keurTypen(r.voorwaarde(), typen);
+            checkTypes(r.waarde(), typen);
+            checkTypes(r.voorwaarde(), typen);
         }
-        for (ResolvedDagsoort d : m.resolvedDagsoorten) keurTypen(d.voorwaarde(), typen);
+        for (ResolvedDagsoort d : m.resolvedDagsoorten) checkTypes(d.voorwaarde(), typen);
         for (ResolvedObjectCreatie oc : m.objectCreaties) {
-            for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) keurTypen(t.waarde(), typen);
-            keurTypen(oc.voorwaarde(), typen);
+            for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) checkTypes(t.waarde(), typen);
+            checkTypes(oc.voorwaarde(), typen);
         }
-        for (ResolvedVerdeling v : m.verdelingen) keurTypen(v.voorwaarde(), typen);
-        for (ResolvedConsistentie c : m.consistenties) keurTypen(c.assertie(), typen);
-        for (ResolvedFeitCreatie fc : m.feitCreaties) keurTypen(fc.voorwaarde(), typen);
+        for (ResolvedVerdeling v : m.verdelingen) checkTypes(v.voorwaarde(), typen);
+        for (ResolvedConsistentie c : m.consistenties) checkTypes(c.assertie(), typen);
+        for (ResolvedFeitCreatie fc : m.feitCreaties) checkTypes(fc.voorwaarde(), typen);
         for (PrioritizedDefaults pd : prioritizedDefaults)
-            for (Default d : pd.defaults()) keurTypenStandaard(d, typen);
+            for (Default d : pd.defaults()) checkDefaultTypes(d, typen);
     }
 
-    private void keurTypenStandaard(Default d, EffectieveEenheid typen) {
-        keurTypen(d.voorwaarde(), typen);
-        keurTypen(d.consequentie(), typen);
+    private void checkDefaultTypes(Default d, EffectiveUnit typen) {
+        checkTypes(d.voorwaarde(), typen);
+        checkTypes(d.consequentie(), typen);
         if (d.excepties() != null)
             for (ExceptionGroup g : d.excepties().leden())
-                for (Default x : g.defaults()) keurTypenStandaard(x, typen);
+                for (Default x : g.defaults()) checkDefaultTypes(x, typen);
     }
 
     /** Every node below a value position. Exhaustive over the sealed union, so a node the union grows is a compile
      *  error here rather than a subtree the walk skips. */
-    private void keurTypen(Expr e, EffectieveEenheid typen) {
+    private void checkTypes(Expr e, EffectiveUnit typen) {
         switch (e) {
             case null -> { }
             case Expr.Binair b -> {
-                keurDatumrekening(b, typen);
-                keurTypen(b.links(), typen);
-                keurTypen(b.rechts(), typen);
+                checkDateCalculation(b, typen);
+                checkTypes(b.links(), typen);
+                checkTypes(b.rechts(), typen);
             }
             case Expr.Functie f -> {
-                keurBouwsteen(f, typen);
-                for (Expr x : f.argumenten()) keurTypen(x, typen);
-                keurTypen(f.leegwaarde(), typen);
-                keurTypen(f.filter(), typen);
+                checkBuildingBlock(f, typen);
+                for (Expr x : f.argumenten()) checkTypes(x, typen);
+                checkTypes(f.leegwaarde(), typen);
+                checkTypes(f.filter(), typen);
             }
-            case Expr.Afgerond x -> keurTypen(x.basis(), typen);
+            case Expr.Afgerond x -> checkTypes(x.basis(), typen);
             case Expr.Begrensd x -> {
-                keurTypen(x.basis(), typen); keurTypen(x.minimum(), typen); keurTypen(x.maximum(), typen);
+                checkTypes(x.basis(), typen); checkTypes(x.minimum(), typen); checkTypes(x.maximum(), typen);
             }
             case Expr.TekstReeks t -> {
                 for (Expr.TekstReeks.Deel d : t.delen())
-                    if (d instanceof Expr.TekstReeks.Ingevoegd i) keurTypen(i.expr(), typen);
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) checkTypes(i.expr(), typen);
             }
-            case Expr.Let l -> { keurTypen(l.value(), typen); keurTypen(l.body(), typen); }
+            case Expr.Let l -> { checkTypes(l.value(), typen); checkTypes(l.body(), typen); }
             case Expr.IfThenElse k -> {
-                keurTypen(k.conditie(), typen); keurTypen(k.dan(), typen); keurTypen(k.anders(), typen);
+                checkTypes(k.conditie(), typen); checkTypes(k.dan(), typen); checkTypes(k.anders(), typen);
             }
             case Expr.InstanceSetUnion u -> {
-                for (Expr.InstanceSetUnion.Tak t : u.takken()) keurTypen(t.filter(), typen);
+                for (Expr.InstanceSetUnion.Tak t : u.takken()) checkTypes(t.filter(), typen);
             }
             case Expr.DimensieCel c -> { }
             case Expr.Literal x -> { }
@@ -2847,14 +2847,14 @@ public final class IrLoader {
         }
     }
 
-    private void keurTypen(Conditie c, EffectieveEenheid typen) {
+    private void checkTypes(Conditie c, EffectiveUnit typen) {
         switch (c) {
             case null -> { }
-            case Conditie.Vergelijking v -> { keurTypen(v.links(), typen); keurTypen(v.rechts(), typen); }
-            case Conditie.Predicaat p -> keurTypen(p.operand(), typen);
-            case Conditie.Periode p -> { keurTypen(p.vanaf(), typen); keurTypen(p.tot(), typen); }
-            case Conditie.Samengesteld x -> { for (Conditie o : x.onderdelen()) keurTypen(o, typen); }
-            case Conditie.Kwantorvouw kv -> { keurTypen(kv.filter(), typen); keurTypen(kv.toets(), typen); }
+            case Conditie.Vergelijking v -> { checkTypes(v.links(), typen); checkTypes(v.rechts(), typen); }
+            case Conditie.Predicaat p -> checkTypes(p.operand(), typen);
+            case Conditie.Periode p -> { checkTypes(p.vanaf(), typen); checkTypes(p.tot(), typen); }
+            case Conditie.Samengesteld x -> { for (Conditie o : x.onderdelen()) checkTypes(o, typen); }
+            case Conditie.Kwantorvouw kv -> { checkTypes(kv.filter(), typen); checkTypes(kv.toets(), typen); }
             case Conditie.Rollidmaatschap r -> { }
             case Conditie.Kenmerk k -> { }
             case Conditie.Regelversie x -> { }
@@ -2866,79 +2866,79 @@ public final class IrLoader {
     /** WF-035 on plus and min (RUNTIME-SEMANTICS ch. 3.8): the form is decided on the date type of either precision
      *  — two dates, a duration on the left, or a date on the left and the step — and the step's duration is a number
      *  whose unit is a time unit, sub-day only on a millisecond-precision date, or a declared day kind. */
-    private void keurDatumrekening(Expr.Binair b, EffectieveEenheid typen) {
+    private void checkDateCalculation(Expr.Binair b, EffectiveUnit typen) {
         if (b.op() != Expr.BinOp.PLUS && b.op() != Expr.BinOp.MIN) return;
-        Datatype l = typen.typeVan(b.links());
-        Datatype r = typen.typeVan(b.rechts());
-        if (!isDatumType(l) && !isDatumType(r)) return;
-        String p = plekken.get(b);
-        if (isDatumType(l) && isDatumType(r)) throw new Documentfout(p, DATUM_PLUS_DATUM);
-        if (!isDatumType(l)) throw new Documentfout(p, duurVoorDatumWeigering(b.op() == Expr.BinOp.MIN));
+        Datatype l = typen.typeOf(b.links());
+        Datatype r = typen.typeOf(b.rechts());
+        if (!isDateType(l) && !isDateType(r)) return;
+        String p = sites.get(b);
+        if (isDateType(l) && isDateType(r)) throw new Documentfout(p, DATE_PLUS_DATE);
+        if (!isDateType(l)) throw new Documentfout(p, durationForDateRefusal(b.op() == Expr.BinOp.MIN));
         Eenheid u = r == null ? null : r.eenheidOf();
         if (u != null) {
-            String tijd = Tijdrekening.chronoUnit(u);
-            if (tijd != null) {
-                if (SUBDAG.contains(tijd) && l instanceof Datatype.DatumInDagen)
-                    throw new Documentfout(p, SUBDAG_OP_DAGDATUM);
+            String time = Tijdrekening.chronoUnit(u);
+            if (time != null) {
+                if (SUB_DAY.contains(time) && l instanceof Datatype.DatumInDagen)
+                    throw new Documentfout(p, SUB_DAY_ON_DAY_DATE);
             } else if (m.dagsoortVoorEenheid(u.afkorting()) == null)
-                throw new Documentfout(p + "/right", datumstapOnbekendeEenheid(afkortingVan(u)));
-        } else if (bekendType(r) && !r.isGetalachtig())
-            throw new Documentfout(p + "/right", datumstapOperandWeigering(r));
-        else if (bekendType(r)) throw new Documentfout(p + "/right", DATUMSTAP_ZONDER_TIJDSEENHEID);
+                throw new Documentfout(p + "/right", dateStepUnknownUnit(abbreviationOf(u)));
+        } else if (knownType(r) && !r.isGetalachtig())
+            throw new Documentfout(p + "/right", dateStepOperandRefusal(r));
+        else if (knownType(r)) throw new Documentfout(p + "/right", DATE_STEP_WITHOUT_TIME_UNIT);
     }
 
     /** WF-038 on the builtins that type their operands here: a square root and an absolute value take a number; a
      *  duration takes two dates of one precision and counts in its node type's unit, a time unit — sub-day only over
      *  millisecond-precision operands — or a declared day kind. In the verifier's order and at its pointers. */
-    private void keurBouwsteen(Expr.Functie f, EffectieveEenheid typen) {
+    private void checkBuildingBlock(Expr.Functie f, EffectiveUnit typen) {
         Expr.FunctieKind k = f.kind();
         List<Expr> args = f.argumenten();
-        String p = plekken.get(f);
+        String p = sites.get(f);
         if ((k == Expr.FunctieKind.WORTEL || k == Expr.FunctieKind.ABSOLUTE_WAARDE) && args.size() == 1) {
-            Datatype t = typen.typeVan(args.get(0));
-            if (bekendType(t) && !t.isGetalachtig()) throw new Documentfout(p, numeriekeOperandWeigering(k, t));
+            Datatype t = typen.typeOf(args.get(0));
+            if (knownType(t) && !t.isGetalachtig()) throw new Documentfout(p, numericOperandRefusal(k, t));
             return;
         }
         if ((k != Expr.FunctieKind.TIJDSDUUR && k != Expr.FunctieKind.ABSOLUTE_TIJDSDUUR) || args.size() != 2) return;
-        Datatype ta = typen.typeVan(args.get(0));
-        Datatype tb = typen.typeVan(args.get(1));
+        Datatype ta = typen.typeOf(args.get(0));
+        Datatype tb = typen.typeOf(args.get(1));
         for (int i = 0; i < 2; i++) {
             Datatype t = i == 0 ? ta : tb;
-            if (bekendType(t) && !t.isDatum()) throw new Documentfout(p + "/arguments/" + i, duurOperandWeigering(k, t));
+            if (knownType(t) && !t.isDatum()) throw new Documentfout(p + "/arguments/" + i, durationOperandRefusal(k, t));
         }
-        if (isDatumType(ta) && isDatumType(tb) && ta.getClass() != tb.getClass())
-            throw new Documentfout(p, duurGemengdePrecisie(k));
+        if (isDateType(ta) && isDateType(tb) && ta.getClass() != tb.getClass())
+            throw new Documentfout(p, durationMixedPrecision(k));
         Datatype typ = f.type();
-        if (typ == null) throw new Documentfout(p, duurZonderKnooptype(k));
+        if (typ == null) throw new Documentfout(p, durationWithoutNodeType(k));
         Eenheid u = typ.eenheidOf();
-        if (u == null) throw new Documentfout(p, duurZonderTijdseenheid(k));
-        String tijd = Tijdrekening.chronoUnit(u);
-        if (tijd != null) {
-            if (SUBDAG.contains(tijd) && (ta instanceof Datatype.DatumInDagen || tb instanceof Datatype.DatumInDagen))
-                throw new Documentfout(p, duurSubdagOpDagdatums(k));
+        if (u == null) throw new Documentfout(p, durationWithoutTimeUnit(k));
+        String time = Tijdrekening.chronoUnit(u);
+        if (time != null) {
+            if (SUB_DAY.contains(time) && (ta instanceof Datatype.DatumInDagen || tb instanceof Datatype.DatumInDagen))
+                throw new Documentfout(p, durationSubDayOnDayDates(k));
         } else if (m.dagsoortVoorEenheid(u.afkorting()) == null)
-            throw new Documentfout(p, duurOnbekendeEenheid(k, afkortingVan(u)));
+            throw new Documentfout(p, durationUnknownUnit(k, abbreviationOf(u)));
     }
 
     /** The calendar units below a day, as {@link Tijdrekening#chronoUnit} names them. */
-    private static final java.util.Set<String> SUBDAG = java.util.Set.of("HOURS", "MINUTES", "SECONDS", "MILLIS");
+    private static final java.util.Set<String> SUB_DAY = java.util.Set.of("HOURS", "MINUTES", "SECONDS", "MILLIS");
 
-    private static boolean isDatumType(Datatype t) {
+    private static boolean isDateType(Datatype t) {
         return t != null && t.isDatum();
     }
 
     /** Whether the document gives this type: an absent or unknown one defers, as the verifier's does. */
-    private static boolean bekendType(Datatype t) {
+    private static boolean knownType(Datatype t) {
         return t != null && !t.isOnbekend();
     }
 
-    private static String afkortingVan(Eenheid u) {
+    private static String abbreviationOf(Eenheid u) {
         return u.afkorting() == null ? "?" : u.afkorting();
     }
 
     /** The verifier's name of a datatype in these sentences ({@code datatype_kind}); an unknown type is never named,
      *  it defers. */
-    static String typeSoort(Datatype d) {
+    static String typeKind(Datatype d) {
         return switch (d) {
             case Datatype.Numeriek x -> "number";
             case Datatype.Percentage x -> "percentage";
@@ -2953,57 +2953,57 @@ public final class IrLoader {
 
     // The sentences below are the shared OCaml ones, word for word (spec/verifier/lib/checks.ml).
 
-    static final String DATUM_PLUS_DATUM =
+    static final String DATE_PLUS_DATE =
             "date \u00b1 date is ill-formed (date arithmetic takes a date and a duration)";
 
-    static String duurVoorDatumWeigering(boolean min) {
+    static String durationForDateRefusal(boolean min) {
         return min ? "duration \u2212 date is ill-formed (subtraction admits the date on the left only)"
                 : "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)";
     }
 
-    static final String DATUMSTAP_ZONDER_TIJDSEENHEID =
+    static final String DATE_STEP_WITHOUT_TIME_UNIT =
             "date \u00b1 duration: the duration operand carries no time unit";
 
-    static final String SUBDAG_OP_DAGDATUM =
+    static final String SUB_DAY_ON_DAY_DATE =
             "sub-day time unit on a day-precision date (millisecond precision required)";
 
-    static String datumstapOnbekendeEenheid(String afkorting) {
-        return "date \u00b1 duration: the duration unit '" + afkorting
+    static String dateStepUnknownUnit(String abbreviation) {
+        return "date \u00b1 duration: the duration unit '" + abbreviation
                 + "' is neither a recognised time unit nor a declared day kind";
     }
 
-    static String datumstapOperandWeigering(Datatype d) {
-        return "date \u00b1 duration: the duration operand is " + typeSoort(d)
+    static String dateStepOperandRefusal(Datatype d) {
+        return "date \u00b1 duration: the duration operand is " + typeKind(d)
                 + ", must be a number carrying a time unit";
     }
 
-    static String numeriekeOperandWeigering(Expr.FunctieKind k, Datatype d) {
-        return Spelling.BUILTIN_KIND.spelling(k) + " operand is " + typeSoort(d) + ", must be a number";
+    static String numericOperandRefusal(Expr.FunctieKind k, Datatype d) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " operand is " + typeKind(d) + ", must be a number";
     }
 
-    static String duurOperandWeigering(Expr.FunctieKind k, Datatype d) {
-        return Spelling.BUILTIN_KIND.spelling(k) + " operand is " + typeSoort(d) + ", must be a date";
+    static String durationOperandRefusal(Expr.FunctieKind k, Datatype d) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " operand is " + typeKind(d) + ", must be a date";
     }
 
-    static String duurGemengdePrecisie(Expr.FunctieKind k) {
+    static String durationMixedPrecision(Expr.FunctieKind k) {
         return Spelling.BUILTIN_KIND.spelling(k) + " operands mix date precisions (both must share one precision)";
     }
 
-    static String duurZonderKnooptype(Expr.FunctieKind k) {
+    static String durationWithoutNodeType(Expr.FunctieKind k) {
         return Spelling.BUILTIN_KIND.spelling(k) + " without a node type (the counted unit is the node type's unit)";
     }
 
-    static String duurZonderTijdseenheid(Expr.FunctieKind k) {
+    static String durationWithoutTimeUnit(Expr.FunctieKind k) {
         return Spelling.BUILTIN_KIND.spelling(k) + " without a recognised time unit on its node type";
     }
 
-    static String duurSubdagOpDagdatums(Expr.FunctieKind k) {
+    static String durationSubDayOnDayDates(Expr.FunctieKind k) {
         return "sub-day " + Spelling.BUILTIN_KIND.spelling(k)
                 + " unit on day-precision operands (millisecond precision required)";
     }
 
-    static String duurOnbekendeEenheid(Expr.FunctieKind k, String afkorting) {
-        return Spelling.BUILTIN_KIND.spelling(k) + ": the counted unit '" + afkorting
+    static String durationUnknownUnit(Expr.FunctieKind k, String abbreviation) {
+        return Spelling.BUILTIN_KIND.spelling(k) + ": the counted unit '" + abbreviation
                 + "' is neither a recognised time unit nor a declared day kind";
     }
 }

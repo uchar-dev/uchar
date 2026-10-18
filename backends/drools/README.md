@@ -10,8 +10,8 @@ in tests.
 ## Layout
 
 - `transpiler/tms/` — the analysis (`TmsTranspiler`), which derives with truth maintenance, with
-  the fact classes it inserts, and its two renderings: `PatternDslWeergave`, Drools' executable
-  model, for the exec-model branch (below, "The exec-model branch"), and `DrlWeergave`, DRL text,
+  the fact classes it inserts, and its two renderings: `PatternDslRendering`, Drools' executable
+  model, for the exec-model branch (below, "The exec-model branch"), and `DrlRendering`, DRL text,
   for the DRL-text branch (below, "The DRL-text branch").
 - `transpiler/kern/` — parts of the lowering the analysis shares with the rest of the backend: names, the coverage manifest,
   the classification of standing targets, units, day kinds, the plans of fold sources.
@@ -60,7 +60,7 @@ name, which WF-020 forbids and a hand-written document can still carry — is re
 is built: the KieBase keeps one rule per name, and the destructive exec-model lowering played such a document with the
 second rule in the place of the first (measured 2026-10-02: "kenmerk actief: verwacht aanwezig, werkelijk afwezig"). The
 analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence: "exec-model: Duplicate rule
-name: actief — …" (witness `DubbeleRegelnaamWitnessTest`).
+name: actief — …" (witness `DuplicateRuleNameWitnessTest`).
 
 **A session in four calls.** The replay makes them for every case (`CaseRunner`), so the gate fires a session as a
 consumer does.
@@ -79,7 +79,7 @@ consumer does.
    attribute's grid that holds the evaluation date (RUNTIME-SEMANTICS ch. 8.4), and `lijst(holder, role, members)`
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it. `voegIn` states the facts the branch reads from these
-   (`Emmerinvoer`, `Lijstplaats`), so a consumer states no fact class of the branch itself.
+   (`BucketInput`, `ListPlace`), so a consumer states no fact class of the branch itself.
    `CaseInvoer.van(build, case)` makes that `Invoer` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
@@ -90,7 +90,7 @@ consumer does.
    `CaseInvoer.Rolweigering` (a `CaseRunner.Excluded`), a second, different target on a to-one field (WF-013) a
    `CaseInvoer.Rolbotsing` (an `IllegalArgumentException`); both name the link the case wrote, its instance, role key
    and target (`CaseInvoer.Rolfout`), and both come from `van`, before anything goes into a session (witness
-   `CaseInvoerWitnessTest`). The parameters and the evaluation date stay the caller's, as globals (step 1).
+   `CaseInputWitnessTest`). The parameters and the evaluation date stay the caller's, as globals (step 1).
 3. `DroolsBackend.vuur(build, session)`, which fires to the fixpoint under a cap, a model with a creation in
    generations per stratum (below), and returns a `Vuring`: the firings, the cap, and `geenFixpunt`, the sentence of a
    run without a fixpoint, at the cap or at the creation budget, or null. The cap is `max(10 000, FACTOR × R × N0)`,
@@ -98,16 +98,16 @@ consumer does.
    the KieBase and N0 the facts just before the fire, computed again at the start of every creation phase and never
    lowered; FACTOR is 4, at least twice the largest number of firings per rule per fact measured over the played
    goldens and the scale model (`DroolsBackend.FACTOR`, with the measurement). The cap is a safeguard against a fault
-   of the lowering, not a norm: the build refuses a cycle (`Kringen`), and a chain of creations ends at the creation
+   of the lowering, not a norm: the build refuses a cycle (`Cycles`), and a chain of creations ends at the creation
    budget. Nothing can be read of a run without a fixpoint: `lees` and `zetAfgeleideWaarden` refuse it.
-   `DroolsBackend.vuur(build, session, waarnemer)` fires the same run and records what it fired in a
+   `DroolsBackend.vuur(build, session, observer)` fires the same run and records what it fired in a
    `DroolsBackend.Waarnemer`, made with a function that gives the label of an input bean and null for any other
    object: `vuringen()`, per form of the document without its version suffix, how often its rules fired and the labels
    their matches bound, and `vormen()`, the exact names of the forms that fired, from which
    `DroolsBackend.dekking(build, vormen)` gives per manifest entry `GEVUURD` or `NIET_GERAAKT`. The scenario report
    (`CaseRunner.rapport`) is made from these two. A waarnemer belongs to one session and is refused at a `vuur` of
    another, and its listener is on the session only during that `vuur`, so parallel sessions of one build each record
-   their own firings (witness `WaarnemerWitnessTest`).
+   their own firings (witness `ObserverWitnessTest`).
 4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.zetAfgeleideWaarden(build, session)`; or
    `lees(build, session, label)` and `zetAfgeleideWaarden(build, session, label)` with a function that gives the
    label of an input bean, and null for a made object, by which a fault then names its object as the reference
@@ -122,7 +122,7 @@ consumer does.
    beans, which carry the fixpoint only after `zetAfgeleideWaarden`, and refuses a session that was not written back,
    one whose fixpoint carries evaluation faults, what `lees` refuses, a label given to two beans, an expectation on a
    member of a label no bean carries, and, as `CaseRunner.Excluded` in the replay's sentence, a form it does not
-   compare. The replay and the scenario report compare through it (witness `VergelijkingWitnessTest`).
+   compare. The replay and the scenario report compare through it (witness `ComparisonWitnessTest`).
 
 **One write-back per session.** The beans hold the input alone until the write-back.
 `lees` reads what stands at the fixpoint without writing anything, as a `Fixpunt` (`transpiler/tms`): per object the
@@ -142,8 +142,8 @@ branches do so alike: the DRL-text branch renders the same analysis, and its rul
 bean `voegIn` put in between the fires, with `session.update(handle, bean)`, fires with `vuur`, and reads every answer
 with `lees`; the write-back comes once, after the last fire. A derivation whose reads changed lapses, a fault arises or
 lapses, and an initialisation fires again, since its target stayed empty on the bean (witness
-`TmsHerhaaldVurenWitnessTest`). Two rules hold a session to that order. The entry keeps both with a watch on the
-session (`Bewaking`), a listener that `vuur` takes off while it fires itself, so that Drools makes no event for it and
+`TmsRepeatedFireWitnessTest`). Two rules hold a session to that order. The entry keeps both with a watch on the
+session (`Watch`), a listener that `vuur` takes off while it fires itself, so that Drools makes no event for it and
 it costs a fire nothing per firing; what Drools reports by no event, a cleared agenda group and a call on a group that
 waits for the next fire, the watch reads from Drools' agenda (`org.drools.core`, the one place the backend reads an
 internal class of Drools). An action of another kind on the agenda's propagation list than an insert, update or delete
@@ -154,7 +154,7 @@ refuse in a sentence that names its class, since it cannot tell what that action
   `vuur`: a fact inserted, updated or deleted, or a rule that fired, by a plain `fireAllRules` among others. Their
   sentence names what happened and the way on: fire again with `vuur`, or open a fresh session where `vuur` refuses
   this one (a model with a creation, a session written back, input that came or went). So an update shows only after
-  the next `vuur`, and a plain fire never takes the place of one (witness `TmsAfnemerWitnessTest`).
+  the next `vuur`, and a plain fire never takes the place of one (witness `TmsConsumerWitnessTest`).
 - `vuur` refuses a session in which, since `voegIn` or the last `vuur`, more happened outside it than an update of an
   attribute or a characteristic of a bean `voegIn` put in, naming what happened, and sends the consumer to a fresh
   session with all beans in one `Invoer`; `lees` and `zetAfgeleideWaarden` then give that way too. That is: a fact
@@ -170,7 +170,7 @@ refuse in a sentence that names its class, since it cannot tell what that action
   compares the reference fields of the beans `voegIn` put in with what they held then: a relation changed without an
   update makes no event, and Drools keeps reading the old relation, so `vuur`, `lees` and `zetAfgeleideWaarden` refuse
   such a session, naming the field and the two objects, and send the consumer to a fresh session. The links a creation
-  lays on those fields at the write-back count as none (witness `TmsHerhaaldVurenWitnessTest`).
+  lays on those fields at the write-back count as none (witness `TmsRepeatedFireWitnessTest`).
 
 A session of a model with a creation fires once, and `vuur` refuses it at every later call: an object or a fact
 creation is stated and never lapses, and so are its initialisations, its links and the fault of a failed
@@ -214,7 +214,7 @@ subject, and after the write-back the reference fields reach it.
 - `session.update` after a change of an attribute or a characteristic: Drools does not see a field set without an
   update, and neither does the entry, which compares only the reference fields with what `voegIn` put in. `vuur` then
   reaches the fixpoint of the old value, and `lees` and `zetAfgeleideWaarden` give it without a refusal; step 4 of card
-  tms-omschakeling measured it with the second fire of `Schaalproef` and a mutant without the update.
+  tms-omschakeling measured it with the second fire of `ScaleTrial` and a mutant without the update.
 - An object a bean refers to: `voegIn` refuses a reference field that holds an object outside the input, naming the
   bean, the field and the object's type, before it inserts anything. The branch derives nothing for an object outside
   the session, so every value read through the field would stay empty, and the link the field gives would still block
@@ -292,7 +292,7 @@ the gate is the truth.
 ## The DRL-text branch
 
 `DroolsBackend.Branch.DRL_TEXT`, the flag `--drl` of the CLI: the analysis of the exec-model
-branch rendered as DRL text (`transpiler/tms/DrlWeergave`, through `TmsTranspiler.drl()`) and
+branch rendered as DRL text (`transpiler/tms/DrlRendering`, through `TmsTranspiler.drl()`) and
 compiled by the classic DRL build (`KieHelper`) in EQUALITY mode. It is the second rendering of
 one analysis (card `drl-teksttak-op-truth-maintenance`, 2026-10-14): the same rules under the
 same names, the same facts, the same truth maintenance and the same driver, so every entry of
@@ -300,7 +300,7 @@ a session treats it as the exec-model branch, and what this README says of that 
 for it. Every RegelSpraak comparison or computation is a Java function of the text, with the
 source sentence above it; the structural constraints stay DRL. The predicates of the day kinds
 are globals of the text (`Build.dagsoortGlobalen()`). It refuses three kinds of its own,
-after the label `drl:` (`DrlWeergave.Weigering`): a member whose name Drools reads as
+after the label `drl:` (`DrlRendering.Refusal`): a member whose name Drools reads as
 something else where a pattern spells it (a word of DRL or MVEL such as `in`, or a variable of
 a consequence such as `drools`), a day kind whose global is no Java identifier, and a bean class
 as the constant of a term; a text the compiler rejects is a fault of the rendering, an
@@ -329,40 +329,40 @@ one target; `tms-verdeling-en-tijdlijnen` allocations, timelines, the whole-peri
 `tms-omschakeling` made it the exec-model branch on 2026-10-10 and removed the destructive lowering, the branch value
 `TRUTH_MAINTENANCE` and the flag `--tms`. Each card's `Result:` gives its measurements. It plays 250 of the 295 goldens
 with cases (since card `objectcreatie-zonder-connectingrole-binding`, 2026-10-11), every golden the destructive lowering
-played among them. `TmsMeting` and `Schaalproef` in the test tree
+played among them. `TmsMeasurement` and `ScaleTrial` in the test tree
 measure it, their javadoc says how to run them, and the suite runs its witnesses (`Tms*WitnessTest`), among them
 `TmsCorpusWitnessTest` (above, "Gate 12").
 
-**Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
+**Derivations are logical facts.** A derived characteristic is a `HasCharacteristic`, a derived attribute value a `Value`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
 branch writes no bean and calls no `update`. Every read a derived value depends on is a bound pattern in the
 left-hand side, and a consequence computes only from bound variables, so truth maintenance withdraws whatever rested
 on a read that changed. A read of a derived member goes through a total standing fact, exactly one per object and
-member (`KenmerkStand`, `Stand`, and `PadStand` for a read one role away), which carries the derivation or else the
+member (`CharacteristicState`, `State`, and `PathState` for a read one role away), which carries the derivation or else the
 input; a read of an input member or of a role binds the bean, except a relation a form creates (below), and a
-parameter is read through its `ParameterStand`. A
+parameter is read through its `ParameterState`. A
 condition is a predicate over bound values; the negations sit in the generic standing rules, in the guard of an
 initialisation and in the control facts of a defaults group. The KieBase runs in `EqualityBehaviorOption.EQUALITY`,
 where a stated fact takes over an equal logical one; equal logical facts merge into one fact with a justification per
 rule, which rests on the `equals` and `hashCode` of the fact classes, the subject compared by identity.
 
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
-bean and no other writer holds a `Waarde` on it (beside a writer outside the standing domain, a written leeg leaves
-the target empty: below); its guard excludes its own write, since a guard that counted its own `Waarde` would undo the
+bean and no other writer holds a `Value` on it (beside a writer outside the standing domain, a written leeg leaves
+the target empty: below); its guard excludes its own write, since a guard that counted its own `Value` would undo the
 write it justified. A consistency inserts a logical `Inconsistentie`, and "regelversie X is
-inconsistent" reads the total standing fact `KanaalStand`. A defaults group decides with control facts (`Stuurfeit`).
-In the simple form, one chain without exception groups, a deciding default inserts `Beslist` where a lower default
-has a rule, and every lower default carries `not Beslist` over the ones above it. In the general form, with
+inconsistent" reads the total standing fact `ChannelState`. A defaults group decides with control facts (`ControlFact`).
+In the simple form, one chain without exception groups, a deciding default inserts `Decides` where a lower default
+has a rule, and every lower default carries `not Decides` over the ones above it. In the general form, with
 exception groups or more than one group at the root of the effective stack (RUNTIME-SEMANTICS ch. 7.10), every
-default settles into an `Uitkomst`, and the member chains are reconciled by the rules of ch. 7.2 and 7.9. A higher
+default settles into an `Outcome`, and the member chains are reconciled by the rules of ch. 7.2 and 7.9. A higher
 decision displaces a lower one through truth maintenance alone and gives it back when it goes. The rules of a member
 chain also wait on the positions above each default whose exception group the chain is, at any depth, as the
 reference interpreter reaches the exception groups of a default only where that default is reached (ch. 7.9): an
-exception group below a displaced default settles no `Uitkomst` and raises no fault at the fixpoint, so no control
+exception group below a displaced default settles no `Outcome` and raises no fault at the fixpoint, so no control
 fact stands under a displaced default.
 
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.zetAfgeleideWaarden(build, session)` puts
-the derivations on the beans: `setX(true)` per `HeeftKenmerk`, the attribute's setter per `Waarde`. Input on a
+the derivations on the beans: `setX(true)` per `HasCharacteristic`, the attribute's setter per `Value`. Input on a
 characteristic stands, since nothing writes false; a derived value replaces input on an attribute, a computed leeg
 of a standing writer writes nothing, so the input stands (ch. 7.1, 7.8), and a computed leeg of a writer outside the
 standing domain empties the attribute (ch. 1.2g). Two different values on one attribute of one object have no common
@@ -395,8 +395,8 @@ after the rule and in the reference interpreter's sentence wherever that executo
 then by the sentence, so the report does not depend on the order of the rules. That message opens with a head that names
 the rule of every fault ("aan het fixpunt staan 2 evaluatiefouten, in de regels "aandeel", "verhouding""), and the CLI's
 ERROR line bounds only the sentences after it, so no fault drops off the line. A consumer meets the fault at
-`zetAfgeleideWaarden`, or as data in `DroolsBackend.lees`, not out of the fire. Witnesses `TmsFoutWitnessTest`,
-`TmsVoorwaardefoutWitnessTest` and, for the date faults, `TmsDatumfoutWitnessTest`, among them a duration count that
+`zetAfgeleideWaarden`, or as data in `DroolsBackend.lees`, not out of the fire. Witnesses `TmsFaultWitnessTest`,
+`TmsConditionFaultWitnessTest` and, for the date faults, `TmsDateFaultWitnessTest`, among them a duration count that
 lies outside the range only on an intermediate state, where the branch threw out of the fire until 2026-10-09. Other
 exceptions are no evaluation fault and still leave the fire: a broken contract and a bug.
 
@@ -407,28 +407,28 @@ the branch its condition chooses and nothing of the other (ch. 10.2). Both bind 
 binder's value in the left-hand side all the same, so truth maintenance follows each value the evaluation may need.
 Which §6.5 or §6.6 place deposits therefore depends on the evaluation itself: every division of a filled dividend by
 a leeg divisor and every square root of a negative number that the evaluation reaches deposits, as in the reference
-interpreter (ch. 1.2, 5.6). The consequence of a computing rule puts a probe (`Sonde`) in its value array, and every
+interpreter (ch. 1.2, 5.6). The consequence of a computing rule puts a probe (`DepositFlag`) in its value array, and every
 such place reports to it where it runs; a condition deposits through a rule of the form's own, `<rule>: deponering in
 de voorwaarde`, with the same left-hand side and a probe in its test, so a member of a composite that its verdict no
-longer reads deposits nothing (ch. 5.10). Witness `TmsDeponeringWitnessTest`. Rounding,
+longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Rounding,
 clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
 whole exponent, the restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
 exact-digit tests compute through the runtime's helpers from bound values; the last three and the sub-day extractors,
 dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend computes them. The
-evaluation date is the fact `Rekendatum`, put in working memory once per session from the global `rekendatum` the case
+evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `rekendatum` the case
 runner sets, with a null date in a time-free session. A version with a bounded validity gates on it with a pattern that
 admits the date (ch. 8.2) and beside it a rule inserts the fault where the session carries no date, as the reference
 interpreter faults when it evaluates the form, with or without a subject; a defaults group with a dated validity gates
 its own chain the same way and faults per object of the stack's type, where the reference interpreter asks the group's
 window. A `TimeWindow` on a scalar target and the context values `evaluationDate` and `evaluationYear` read the date as
-a bound value. Witnesses `TmsLetWitnessTest`, `TmsRekenvormWitnessTest`, `TmsBuiltinWitnessTest` and
-`TmsRekendatumWitnessTest`.
+a bound value. Witnesses `TmsLetWitnessTest`, `TmsComputeFormWitnessTest`, `TmsBuiltinWitnessTest` and
+`TmsEvaluationDateWitnessTest`.
 
 **Aggregations.** A fold over a set source (`count`, `filledCount`, `sum` with its `emptyFallback`, a `total` over
 members that are not time-dependent, `minimum`, `maximum`, `first`, `last`) is an accumulate in the left-hand side of
-the rule that reads it, over `Bijdrage` facts: one per member of the range that passes the fold's filter, inserted
+the rule that reads it, over `Contribution` facts: one per member of the range that passes the fold's filter, inserted
 logically by a contribution rule of the fold. That rule binds the fold's subject, the member joined to it through the
-range (`sourceRole`, or `sourcePath` on the plan of `transpiler/kern/Bronpad`, with the intermediates in an `exists`),
+range (`sourceRole`, or `sourcePath` on the plan of `transpiler/kern/SourcePath`, with the intermediates in an `exists`),
 the member's value and every read of the filter, with the member as the filter's subject; a member whose value or
 filter reading changes gives up its contribution and makes the new one, and the accumulate follows. A value fold skips
 a leeg member, a count counts every member, and over no contribution a sum is leeg or its fallback, a total 0, a count
@@ -436,68 +436,68 @@ a leeg member, a count counts every member, and over no contribution a sum is le
 are the least and the greatest value. Equal contributions merge into one fact, so a member that a multi-step range
 reaches along two routes, or that two selections of an `InstanceSetUnion` select, contributes once (RUNTIME-SEMANTICS
 ch. 3.4b, 3.4d). When the result of an accumulate changes, the activation that read it fires again and Drools
-withdraws the logical facts its earlier firing inserted and did not insert again: one `Waarde` stays for the target.
+withdraws the logical facts its earlier firing inserted and did not insert again: one `Value` stays for the target.
 A listed fold ("de eerste van A en B") is computed from its operands' bound values. Witness
-`TmsAggregatieWitnessTest`.
+`TmsAggregationWitnessTest`.
 
-A filter that divides by a numeric zero for a member inserts a `Filterfout` for that member, and no fault: the
+A filter that divides by a numeric zero for a member inserts a `FilterError` for that member, and no fault: the
 reference interpreter evaluates a filter only where the evaluation of a form reaches the fold, so not where the form's
 condition does not hold, nor in a member of a composite that its verdict no longer reads (RUNTIME-SEMANTICS ch. 5.10),
 and there per member in fold order, stopping at the first fault (ch. 5.11). The bean model keeps a to-many role as a
-reference field on each member and no order, so for a model that reads it (`TmsTranspiler.leestLijstplaatsen`) the
-case runner states the place of every member of a to-many list as a `Lijstplaats`, in the list the reference
+reference field on each member and no order, so for a model that reads it (`TmsTranspiler.readsListPlaces`) the
+case runner states the place of every member of a to-many list as a `ListPlace`, in the list the reference
 interpreter holds: the members the case writes under the holder, in the order it writes them, then the members the
-loader mirrors from their own link, in ascending label order (ch. 5.7a). The rule that inserts a `Filterfout` joins the
+loader mirrors from their own link, in ascending label order (ch. 5.7a). The rule that inserts a `FilterError` joins the
 member per route, with the intermediates of a path bound rather than in an `exists`, binds the place at every to-many
 step, and gives the fact its place in the fold order, the number of the selection of a union and then those places.
 Two routes to one member stay two facts, so the least is the member's first reach, as the dedup of the reference
-interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `Filterfout` on its subject beside the
+interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `FilterError` on its subject beside the
 contributions, the first in fold order, and where its own evaluation reaches the fold while one stands, that
 evaluation faults as a division in it would; the `Fout` is that rule's, inserted by its consequence or by its fault
-rule, named after it, and withdrawn when the `Filterfout` goes. A member whose place the input did not state makes the
-rule fail loudly. Witness `TmsFilterfoutWitnessTest`.
+rule, named after it, and withdrawn when the `FilterError` goes. A member whose place the input did not state makes the
+rule fail loudly. Witness `TmsFilterErrorWitnessTest`.
 
-A filter that deposits for a member (a division by leeg, a negative root) inserts a `Filterdeponering` for that member
+A filter that deposits for a member (a division by leeg, a negative root) inserts a `FilterDeposit` for that member
 in the same way, through a rule beside the contribution rule with a probe in its test, and no inconsistency: the
 reference interpreter evaluates the filter with the collector of the form that reads the fold, so the deposit is that
 form's, on its subject, and only where its evaluation reaches the fold (RUNTIME-SEMANTICS ch. 5.11, "keyed by (rule ×
 subject)"). The rule that reads the fold counts these facts on its subject beside the contributions and reports to its
 own probe where its evaluation reaches the fold while one stands; the filter of each selection of an
-`InstanceSetUnion` does the same. Witness `TmsFilterdeponeringWitnessTest`.
+`InstanceSetUnion` does the same. Witness `TmsFilterDepositWitnessTest`.
 
 **Condition forms.** A quantifier fold (RUNTIME-SEMANTICS ch. 3.9a) has the contributions of an aggregation over its
 one-step range: a contribution rule per member that passes the filter binds the member's reads of the filter and of
-the matrix, the condition the fold asks of each member, and inserts a `Bijdrage` with 1 or 0 for the member's verdict,
+the matrix, the condition the fold asks of each member, and inserts a `Contribution` with 1 or 0 for the member's verdict,
 so the rule that reads the fold counts the contributors and the hits with one accumulate, and all, none and the three
 counting quantifiers compare those; over no contributor all and none hold. A member whose derived value changes takes
 its contribution along. Where the matrix can fault or deposit, the order of the members shows: the reference
 interpreter reads the matrix in the contributors' order and stops at the first one after which the verdict stands
 (ch. 5.10), so a member it does not reach neither faults nor deposits. The contribution then carries the matrix's
-outcome and the member's place in the list of the fold's subject (`Lidtoets`, the place a `Lijstplaats` gives, as for
+outcome and the member's place in the list of the fold's subject (`MemberTest`, the place a `ListPlace` gives, as for
 a filter fault), and the reading rule collects them and replays the stop triggers of ch. 5.10 in that order, the empty
 prefix included; over a created relation, whose made links have no place, such a matrix is refused. The filter is
 settled for every member before the matrix, with its faults and deposits as for any fold. A role check (ch. 5.8a) is
 an existence question bound as a value, so it stands in a composite like any condition: over a relation a form
-creates, an accumulate over the relation's `Koppeling` facts that hold the subject at its end; over an input
+creates, an accumulate over the relation's `RelationLink` facts that hold the subject at its end; over an input
 relation, the subject's own reference field where the other role is to-one, and else an accumulate over the beans
-whose field names the subject, as the bean model stores the link (`FactModelGenerator.lidmaatschapsopslag`); a
+whose field names the subject, as the bean model stores the link (`FactModelGenerator.membershipOpslag`); a
 counterpart type is a class test, which a subtype passes. A uniqueness (ch. 5.9), over one source or more: per source a
-rule inserts each instance's key (`Uniciteitssleutel`), its components bound in the left-hand side, a derived one
+rule inserts each instance's key (`UniquenessKey`), its components bound in the left-hand side, a derived one
 through its standing, and for a scoped form its parent, where every component is gevuld and the parent is there; the
 form's rule counts per key the keys that collide with it, and where more than one does, marks the instance
-(`Uniciteitsschending`), which a rule of the form puts on the §9.5 channel once per instance. A key belongs to its
+(`UniquenessViolation`), which a rule of the form puts on the §9.5 channel once per instance. A key belongs to its
 source, so an instance whose keys in two sources of a union are equal duplicates against itself. Everything is
 logical, so a duplicate that arises on an intermediate state is gone at the fixpoint, where the reference interpreter
-evaluates the form. Witnesses `TmsKwantorvouwWitnessTest`, `TmsRolcontroleWitnessTest` and
-`TmsUniciteitWitnessTest`.
+evaluates the form. Witnesses `TmsQuantifierFoldWitnessTest`, `TmsRoleCheckWitnessTest` and
+`TmsUniquenessWitnessTest`.
 
 **Writers of one target.** A computing rule is an equation (RUNTIME-SEMANTICS ch. 5.1), and a target may have any
 number of them, the versions of one form among them. On a standing target (ch. 7.8, and the desugaring domain of ch.
-7.7, as `transpiler/kern/StaandeDoelen` classifies it for both branches) a computed leeg inserts nothing; outside
-it the rule inserts a `Waarde` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
+7.7, as `transpiler/kern/StandingTargets` classifies it for both branches) a computed leeg inserts nothing; outside
+it the rule inserts a `Value` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
 another writer can disagree with. Where two writers stand on one object with different values, a rule per attribute
 on which two can stand (two computing rules, or one outside the standing domain beside an initialisation; an
-accumulate over the attribute's `Waarde` facts on the object) inserts a logical
+accumulate over the attribute's `Value` facts on the object) inserts a logical
 `Fout` with a `Schrijversconflict`: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
 "melding op vinddag" schrijft 2026-03-04 en de regel "melding op aanspoeldag" schrijft 2026-03-01 in het attribuut
 meldingsdatum van V, een Vondst; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", the writers in the order of the
@@ -510,17 +510,17 @@ on the subtype's instances. An initialisation's guard reads the target as the ot
 reference interpreter's guard reads the running fact base: a value another writer places switches it off, and a leeg
 that a writer outside the standing domain writes leaves the target empty, input or not, so the initialisation fills it
 and the two writers disagree, where the reference interpreter faults on the pass budget with the same two writers.
-Witnesses `TmsSchrijversWitnessTest` and, for a member an object creation sets and a division in an initialisation
-beside a writer on a sister subtype, `TmsCreatieInvoerWitnessTest`.
+Witnesses `TmsWritersWitnessTest` and, for a member an object creation sets and a division in an initialisation
+beside a writer on a sister subtype, `TmsCreationInputWitnessTest`.
 
 **Allocations.** An allocation (RUNTIME-SEMANTICS ch. 4) is a computation over the recipients that the left-hand
-side binds. A rule of the allocation inserts, per source and per recipient, an `Ontvanger` logically: an instance of
+side binds. A rule of the allocation inserts, per source and per recipient, an `Recipient` logically: an instance of
 `targetType` that the connecting relation links to the source, through the bean field of an input relation or the
-`Koppeling` facts of a relation a form creates, so a recipient a creation adds counts as well, with its weight,
+`RelationLink` facts of a relation a form creates, so a recipient a creation adds counts as well, with its weight,
 ordering key and cap bound in that rule's left-hand side, a derived one through its standing. The allocation's own
 rule binds the source, its pot, the reads of its condition and, through an accumulate, the list of the source's
-`Ontvanger` facts; its consequence computes the distribution from those values alone (`Verdeling.bereken`, a public
-function of plain values, so that a rendering as DRL text can call it too). Every share and the rest is a `Waarde`
+`Recipient` facts; its consequence computes the distribution from those values alone (`Allocation.bereken`, a public
+function of plain values, so that a rendering as DRL text can call it too). Every share and the rest is a `Value`
 with the allocation as its writer, and every degradation of ch. 4.3 and 4.4, an empty weight, a negative proportional
 weight, an empty or negative cap, is the allocation's §9.5 deposit on that recipient. All of it is logical, so a
 recipient that arrives or leaves, a weight, key, cap or pot that a rule derives later or changes, and a condition that
@@ -541,15 +541,15 @@ interpreter and the ASP backend read it, where `rsVerdeelOpVolgorde` splits such
 ordering keys of one value in two scales, 2019 and 2019.0, are one group, as those two executors compare them, where
 that helper groups by `equals`. A version with a bounded validity gates on the evaluation date and faults a session
 without one; a condition faults and deposits through rules of its own, on the source. A share or a rest replaces the
-input on its target, and a recipient that receives nothing keeps its input. Witness `TmsVerdelingWitnessTest`.
+input on its target, and a recipient that receives nothing keeps its input. Witness `TmsAllocationWitnessTest`.
 
-**Timelines.** A timeline (RUNTIME-SEMANTICS ch. 3) is a value in a fact: an immutable `List<Tijdvak>`, where the
-record `Tijdvak` is one segment `[van, tot)` with its value. Its equality is the segment-wise equality of ch. 3.1, as
+**Timelines.** A timeline (RUNTIME-SEMANTICS ch. 3) is a value in a fact: an immutable `List<Period>`, where the
+record `Period` is one segment `[van, to)` with its value. Its equality is the segment-wise equality of ch. 3.1, as
 the reference interpreter compares two timelines (`write_timeline`): 7 and 7.00 are one value, the same values on
 another cut are another; its `hashCode` agrees with it, since the KieBase in EQUALITY merges equal logical facts. The
 generated bean `Segment` has no value equality and is mutable, so the branch converts at two boundaries only: where it
 binds a timeline off a bean, the input of an attribute or the true periods of a characteristic, and where
-`zetAfgeleideWaarden` puts a derived timeline on the bean as its `Segment`s. `Tijdvak` has the getters and the
+`zetAfgeleideWaarden` puts a derived timeline on the bean as its `Segment`s. `Period` has the getters and the
 constructor the runtime's helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdTotaal`,
 `rsTijdKnip`, `rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side
 like any read, an attribute through its standing, derived or input, and read whole: by the temporal total of the
@@ -562,38 +562,38 @@ from a fixed start point (ch. 3.2). On a standing temporal target (ch. 7.8) an e
 the input whole; elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty
 list, while a target never written stays null. A characteristic on a timeline is input only, read as its true
 periods; the case reader refuses one given in the flat list of characteristics, for every branch. Witnesses
-`TijdvakTest`, `TmsTijdlijnWitnessTest`, `TmsTijdlijnVouwWitnessTest`, `TmsOoitUniciteitWitnessTest`, and for the
-refusals below `TmsTijdlijnWeigeringWitnessTest`.
+`PeriodTest`, `TmsTimelineWitnessTest`, `TmsTimelineFoldWitnessTest`, `TmsEverUniquenessWitnessTest`, and for the
+refusals below `TmsTimelineRefusalWitnessTest`.
 
 **The two input conventions of a timeline.** The case gives an attribute on a timeline either as its full timeline or
 as the asOfDate-bucket scalar, one value for the period of the attribute's grid that holds the evaluation date, and
 RUNTIME-SEMANTICS ch. 8.4 keeps the two apart: the bucket scalar serves the subject's own total without a clip, the
 full timeline every other read, and "an executor that needs the one and finds the other faults — never guesses". The
 bean shows a bucket scalar as the one segment of its period, which a full timeline of one segment would be as well, so
-on this branch the case runner states an `Emmerinvoer(bean, attribute)` beside the beans for each bucket scalar, the
+on this branch the case runner states an `BucketInput(bean, attribute)` beside the beans for each bucket scalar, the
 attribute keyed by its declaring type as `ProducentConsument.elementVan` gives it. Two input rules of the attribute's
-standing join that fact, under `exists` and under `not`, and the input stands as an `Emmerscalair` or as a
-`List<Tijdvak>`; a timeline a form derives replaces it, as any input. A form that finds the other convention faults
+standing join that fact, under `exists` and under `not`, and the input stands as an `BucketScalar` or as a
+`List<Period>`; a timeline a form derives replaces it, as any input. A form that finds the other convention faults
 where the evaluation reaches it, an `Invoervormfout` inserted logically as a `Fout`, in the reference interpreter's
 words and naming the object, by its case label where the write-back has one: the own total without a clip over a full
 timeline; and over a bucket scalar the clip of a total, the timeline a comparison clip compares, the base of a
-pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `Lidfout`), an
+pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `MemberError`), an
 ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
 it, and the timeline the whole-period qualifier folds (below). `DroolsBackend.voegIn` states the same facts for a
-consumer, from the bucket scalars and the lists its `Invoer` names (above, "A session in four calls"): an `Emmerinvoer`
+consumer, from the bucket scalars and the lists its `Invoer` names (above, "A session in four calls"): an `BucketInput`
 per bucket scalar, without which the branch reads every input timeline as a full timeline, and where a rule reads them
-(`TmsTranspiler.lijstvelden`) a `Lijstplaats` per member of every to-many list, without which the fire stops with
+(`TmsTranspiler.listFields`) a `ListPlace` per member of every to-many list, without which the fire stops with
 Drools' `ConsequenceException` around an `IllegalStateException` ("… heeft geen Lijstplaats onder het veld …") as soon as
-a rule needs the place of a member that has none. Witness `TmsInvoerWitnessTest`. Every quantifier fold over a
+a rule needs the place of a member that has none. Witness `TmsInputWitnessTest`. Every quantifier fold over a
 to-many role whose matrix compares or tests an attribute under the whole-period qualifier reads them, whether or not the
 input holds a bucket scalar, as in golden `jutterswet-reddingsvloot`: that matrix can fault per member on a bucket
-scalar, so the fold reads its members in order (`Lidtoets`, above); a characteristic check under the qualifier cannot
+scalar, so the fold reads its members in order (`MemberTest`, above); a characteristic check under the qualifier cannot
 fault and asks no places. The reference interpreter and the ASP backend read a pro-rata base, a compared timeline and a
 timeline under the whole-period qualifier given as a bucket scalar as no timeline today; this branch follows ch. 8.4
 there, and they follow with a card. The own total without a clip in a session without an evaluation date has no bucket
 to take and faults, as in the reference interpreter ("the temporal total of "bedrag" needs the evaluation date: the case
-carries the asOfDate bucket's value"), where the evaluation reaches it. Witnesses `TmsInvoervormWitnessTest` and
-`TmsTotaalRekendatumWitnessTest`.
+carries the asOfDate bucket's value"), where the evaluation reaches it. Witnesses `TmsInputFormWitnessTest` and
+`TmsTotalEvaluationDateWitnessTest`.
 
 **The whole-period qualifier.** "gedurende het gehele jaar" and "gedurende de gehele maand" (RUNTIME-SEMANTICS ch. 3.9)
 fold a timeline that the left-hand side binds into a truth value: for every calendar year or month the timeline
@@ -611,10 +611,10 @@ fault, the inequality included, as ch. 3.9 says; the reference interpreter answe
 as true on every day (measured 2026-10-09; no golden has it). In a quantifier fold (ch. 3.9a) the qualified comparison
 is the matrix, so each member's verdict is a contribution of the fold, with its short circuit, and the qualifier's
 negation is read per member: a counting quantifier counts the members for which the fold fails. Witness
-`TmsGeheelPeriodeWitnessTest`, over timelines that a rule derives later, in every order of the rules.
+`TmsWholePeriodWitnessTest`, over timelines that a rule derives later, in every order of the rules.
 
 **Day kinds.** A day-kind definition (IR-SPEC ch. 3.7) reads nothing of working memory (WF-031), so its predicate over
-a calendar day is a constant of the document: the backend's day-kind compiler (`kern/Dagsoorten`) compiles it the first
+a calendar day is a constant of the document: the backend's day-kind compiler (`kern/DayKinds`) compiles it the first
 time a form steps or counts in its kind, and the value function of the form holds it. No rule binds anything for it,
 and a definition is no form of the manifest. A date or a date-time plus or minus a count of days of a kind walks the
 calendar (`rsDatumPlusDagsoort`, `rsDatumTijdPlusDagsoort`, ch. 3.8), and a duration in whole days of a kind between
@@ -623,7 +623,7 @@ its standing. A walk that passes the reach of ch. 3.8 without a day of the kind 
 reference interpreter's sentence ("day-kind walk: no day of the kind within 40000 calendar days of …"), a `Fout` that
 counts only where it stands at the fixpoint. A definition that does not compile refuses nothing while no form uses
 it, so `jutterswet-schouwkalender`, whose hoogschouwdag tests a day kind on another day than the bound day, plays.
-Witness `TmsDagsoortWitnessTest`.
+Witness `TmsDayKindWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
@@ -636,7 +636,7 @@ displaces case input, a leeg written outside the standing domain erases them, an
 filled. So the creation rules sit in two agenda groups of their own,
 `TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.vuur` fires the session
 in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then, per
-evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `Creatiefase` with its
+evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `CreationPhase` with its
 number and its stratum, puts both groups on the focus stack, the fact creations on top, and fires; that fires the fact
 creations that hold at the fixpoint, then the object creations, and once both groups are empty takes the rule layer to
 rest again in the same fire. The rule layer does not fire between the two groups, so every creation of a generation
@@ -660,11 +660,11 @@ ch. 6.1 and 6.3, `ref/lib/eval.ml`). With the creations of every stratum in one 
 that reads what another creation of the same generation makes read the state before it: "maak een afrekening" with a
 penningtelling counting the penningen of the Jutter fixed the count at 0 beside "geef een penning", where the reference
 interpreter gives 1, and a condition over a sum that the other creation raises held on the lower sum. So every creation
-rule gets the stratum the reference interpreter gives its form: `Kringen.strata` computes it as `eval.ml` does, over the
+rule gets the stratum the reference interpreter gives its form: `Cycles.strata` computes it as `eval.ml` does, over the
 verifier's graph with its positive, strict and negative edges (an edge counts as positive along a cycle, which WF-045
 admits only through a recursive creation), and without the one edge this branch draws beyond the verifier, a rule
-writing the channel of its own name. The rule binds a `Creatiefase` of its own stratum or one above, as a pass of the
-reference interpreter over stratum k runs every form of stratum k and below, and `TmsTranspiler.creatiestrata` gives
+writing the channel of its own name. The rule binds a `CreationPhase` of its own stratum or one above, as a pass of the
+reference interpreter over stratum k runs every form of stratum k and below, and `TmsTranspiler.creationStrata` gives
 the driver the strata in ascending order. The stratum is a field of the phase and a test in the rule rather than an
 agenda group per stratum: that keeps the two groups and their order within a generation, and stratum k needs no
 focus on the groups of the strata below it. The budget holds per stratum, as the reference interpreter counts the
@@ -673,46 +673,46 @@ stated; the rule layer stays under truth maintenance without strata and reaches 
 the corpus the strata equal those the reference interpreter's algorithm gives on the verifier's `--dependency-edges`
 for every creation of a document the loader loads (83 creations in 68 documents, 7 of them in stratum 1, among them
 `anchor/jutterswet-erflijn`, whose recursive "erf de lijn door" now walks the direct links in a later stratum, and the
-three wrakboekingen). Witness `TmsCreatiestratumWitnessTest`.
+three wrakboekingen). Witness `TmsCreationStratumWitnessTest`.
 
 **The budget counts the depth of a chain of mints.** Every object a creation makes has a creation depth in the stratum
 of that creation, one more than its subject's depth there, where an object of the input and one a lower stratum made
 stand at 0, and a mint at depth 101 is the fault, in the reference interpreter, in the ASP backend (`oc_budget`) and
-here (RUNTIME-SEMANTICS ch. 5.5). The `Gemaakt` mark of an object carries its stratum and depth; the creation rule binds
-the marks of its subject through an accumulate (`TmsTranspiler.Lezingen.herkomst`), computes the depth of what it makes
-(`TmsTranspiler.diepte`) and, past `TmsTranspiler.CREATIEBUDGET`, throws `Creatiebudget` before it makes anything; the
+here (RUNTIME-SEMANTICS ch. 5.5). The `CreationStamp` mark of an object carries its stratum and depth; the creation rule binds
+the marks of its subject through an accumulate (`TmsTranspiler.Reads.origin`), computes the depth of what it makes
+(`TmsTranspiler.depth`) and, past `TmsTranspiler.CREATION_BUDGET`, throws `CreationBudget` before it makes anything; the
 driver ends the run with its sentence, which opens with the fragment of the other two executors, "creation budget
 exhausted". A mint that waits generations for a link or a value keeps its subject's depth, and a fact creation, which
 makes no object, has no budget; the generations need no bound of their own, since under the budget a stratum makes
 finitely many objects and links. A subject that a higher stratum made cannot occur, since a creation reads its
-subject's population strictly; `TmsTranspiler.diepte` throws on one as a fault of the transpiler. The rule layer has no
+subject's population strictly; `TmsTranspiler.depth` throws on one as a fault of the transpiler. The rule layer has no
 budget either; truth maintenance takes it to rest within the fire, and the fire cap bounds that. Until 2026-10-09 the
 driver counted generations: at first as passes of the reference interpreter of then, a pass in which only the rule layer
 changed included (`TmsTranspiler.lidstratum`, since removed), then at most 100 generations per stratum that make
 something, which ended a chain whose every mint waits a generation for a link, and a fact creation that lays a closure
-of 102 hops, at their 101st generation. Witnesses in `TmsCreatiestratumWitnessTest`: one chain at 99, 100 and 101
+of 102 hops, at their 101st generation. Witnesses in `TmsCreationStratumWitnessTest`: one chain at 99, 100 and 101
 mints, 50 + 1 + 50 over three strata, document L with the kopie, the erflijn over 103 Wachters, a chain that waits for
 links to depth 100 and 101, and a forged subject of a higher stratum.
 
-An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `Creatiefase`,
-the absence of its own `Gemaakt` mark for the subject (one object per creation per subject) and the absence of a
-`Gemaakt` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
+An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `CreationPhase`,
+the absence of its own `CreationStamp` mark for the subject (one object per creation per subject) and the absence of a
+`CreationStamp` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
 which is the input world, since the branch writes no bean. Which roles link the subject and the new object, with the
 guards on the reference fields and the refusal sentences, is one decision of the bean model
-(`FactModelGenerator.creatiekoppeling`, with `verbindendeFeittypen`): the creation's `connectingRole` binding, or
+(`FactModelGenerator.creationLink`, with `connectingFactTypes`): the creation's `connectingRole` binding, or
 without one the derivation from the type pair of ch. 5.5, the one fact type that relates the subject's type and the
 created type. The connecting relation of a derived pair is the fact type of the two derived roles, with the fillers
-compared exactly, as `Kringen` derives the back-link for the strata (`TmsTranspiler.typenpaarrelatie`); golden
+compared exactly, as `Cycles` derives the back-link for the strata (`TmsTranspiler.typePairRelation`); golden
 `jutterswet-penningbesluit`. Its consequence makes a new bean of the
-created type and inserts, stated, the bean, its `Gemaakt` with the phase, the `Koppeling` of the connecting relation and
-the initialisations as `Waarde` and `HeeftKenmerk`, computed from the values the rule binds. A fact creation's rule
-walks its path, over the reference fields of an input relation and over the `Koppeling` facts of a created one, none of
-the current phase, and inserts the `Koppeling` it makes, stated, where no link between anchor and target exists yet: the
+created type and inserts, stated, the bean, its `CreationStamp` with the phase, the `RelationLink` of the connecting relation and
+the initialisations as `Value` and `HasCharacteristic`, computed from the values the rule binds. A fact creation's rule
+walks its path, over the reference fields of an input relation and over the `RelationLink` facts of a created one, none of
+the current phase, and inserts the `RelationLink` it makes, stated, where no link between anchor and target exists yet: the
 creation is idempotent per link. What a phase made carries its number, and a creation rule takes no object or link of
 the phase it fires in, so a recursive chain advances one generation per phase, after the rule layer has reached a
-fixpoint over what the previous phase made. Every relation a form creates is read through `Koppeling` facts, the links
+fixpoint over what the previous phase made. Every relation a form creates is read through `RelationLink` facts, the links
 of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation through a
-`PadStand` over a chain of patterns, the range of a fold through an `exists` over the link. A second distinct filler of
+`PathState` over a chain of patterns, the range of a fold through an `exists` over the link. A second distinct filler of
 a to-one role of such a relation is a `Fout` at the fixpoint ("een tweede vulling is een fout, geen overschrijving", ch.
 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
 without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The replay and a
@@ -720,14 +720,14 @@ consumer fire through `DroolsBackend.vuur`; `lees` and `zetAfgeleideWaarden` ref
 to its fixpoint, or in which something happened outside `vuur` since, and on a build with a creation `vuur` fires a
 session once, since what a creation made is stated. The
 write-back puts each link a creation laid on the reference fields that hold it, so a consumer that reads the beans
-reaches a made object. Witnesses `TmsCreatieWitnessTest`, `TmsAfnemerWitnessTest` and `TmsHerhaaldVurenWitnessTest`.
+reaches a made object. Witnesses `TmsCreationWitnessTest`, `TmsConsumerWitnessTest` and `TmsRepeatedFireWitnessTest`.
 
 **What it refuses**, from its manifest as `transpiler SKIP: <family>: <name> — <reason>` before the KieBase is built,
 never as a silent fall:
 
 - of dimensioned attributes, with no golden with cases: a read or a write outside a dimension cell and a fold over a
   dimension selection, and in those two an attribute that lies on a timeline, is read over a path or is written by a
-  form. Witness `TmsTijdlijnWeigeringWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its
+  form. Witness `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its
   total;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
@@ -741,12 +741,12 @@ never as a silent fall:
   whose made links have no place in the fold order that names the member given as a bucket scalar; the total without a clip
   over a timeline a form writes, which the reference interpreter refuses as well; every form that reads or writes a
   timeline on a variable start point (the `StartPointDetermination` itself is a declaration and refuses nothing, so a
-  document that declares one and uses no timeline on its grid plays; witness `TmsStartpuntWitnessTest`); a
+  document that declares one and uses no timeline on its grid plays; witness `TmsStartPointWitnessTest`); a
   time-dependent parameter, which the goldens with cases read in a `TemporalRead`
   that the loader refuses for every branch; and what the reference interpreter refuses as well: a member on a grid of
   more than one period, a fold over a member on a timeline other than a sum or a total, a uniqueness key with two
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
-  fixed start point. Witness `TmsTijdlijnWeigeringWitnessTest`;
+  fixed start point. Witness `TmsTimelineRefusalWitnessTest`;
 - of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
   check ("gedurende het gehele jaar niet …"), which the destructive DRL-text lowering refused as well (ch. 3.12); and what the
   reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
@@ -757,7 +757,7 @@ never as a silent fall:
   a day kind on another day than the bound day, which no executor carries (red case `dagsoortverwijzing-andere-dag`),
   one that reads a parameter, which WF-031 admits and the other two executors read and this branch does not (golden
   `jutterswet-havenrooster`, which the destructive DRL-text lowering refused as well), and any other shape outside the compiler.
-  Witness `TmsDagsoortWitnessTest`;
+  Witness `TmsDayKindWitnessTest`;
 - what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
   either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the destructive DRL-text
@@ -765,7 +765,7 @@ never as a silent fall:
 - the creations it does not build yet: an object creation whose back-link is ambiguous, which ch. 5.5 makes a fault of
   the program and this branch refuses when it builds (red case `ambiguous-backlink`), an object creation without a
   `connectingRole` whose type pair reaches the connecting relation only through a supertype of the subject or of the
-  created type, since the strata derive that relation from the exact types (`Kringen`) and would not see the creation
+  created type, since the strata derive that relation from the exact types (`Cycles`) and would not see the creation
   write it, a created
   relation that is not one of two roles, a division or a square root in a member initialisation, whose §6.5 or §6.6
   deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
@@ -775,10 +775,10 @@ never as a silent fall:
   and the matrix per member and do not bind the `Let`'s value, which carrying it would bind, read on the fold's
   subject, in every contribution rule, with a leeg value ending the `Let` across the rule boundary (ch. 10.6). A
   binder that no `Let` encloses keeps its WF-064 refusal, and a `Let` inside the filter plays. Witness
-  `TmsVouwbinderWitnessTest`;
+  `TmsFoldBinderWitnessTest`;
 - the shapes of a fold's range the bean model gives no field, refused as the destructive DRL-text lowering refused them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
-  role whose sibling is to-many, over a relation no form creates (a created relation is read over its `Koppeling`
+  role whose sibling is to-many, over a relation no form creates (a created relation is read over its `RelationLink`
   facts);
 - the value forms whose meaning the spec does not decide: a text part of a number, a truth value or a date in a text
   composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
@@ -802,14 +802,14 @@ never as a silent fall:
   computing rule or an initialisation, which this branch does not carry beside an allocation yet; a pot, share, rest,
   weight or cap that is no number; a to-one recipient role whose sibling is to-many, and a join the bean model gives
   no field, as a fold over such a role is refused; and the combinations of method and fields that WF-025 refuses;
-- every cycle of the dependency graph that the verifier refuses, refused by `Kringen` with an `exec-model:` sentence
+- every cycle of the dependency graph that the verifier refuses, refused by `Cycles` with an `exec-model:` sentence
   over the verifier's own graph (`checks.ml`, the nodes of IR-SPEC ch. 5.1: attribute, characteristic, channel,
   population, relation): a cycle that does not pass through a creation member of a recursive rule group (WF-045), and a
   negative edge on any cycle (WF-046). Under truth maintenance a positive cycle sustains itself, an even negative cycle
   settles by model order, and an odd one changes until the fire cap. One edge more than the verifier draws, a rule that
   writes the channel of its own name, makes a known over-refusal: where a rule reads the channel of a computing rule
   that reads the reader's target, the verifier sees no cycle and the reference interpreter computes the document, while
-  this branch refuses it. It refuses none of the goldens the loader loads (`TmsKringVerifierWitnessTest`).
+  this branch refuses it. It refuses none of the goldens the loader loads (`TmsCycleVerifierWitnessTest`).
 
 The loader and the bean model refuse on both branches alike, before the analysis.
 
@@ -823,7 +823,7 @@ supertype and a read on a subtype meet on one node. It is built from the records
 of a resolver's model, `Loaded.prioritizedDefaults()` beside a loaded one) and the type a navigated characteristic
 check reaches (`ProducentConsument.bronNavigatie(model)` from the role the record names,
 `ProducentConsument.wireNavigatie(loaded)` from the binding beside the model). `scripts/check-graaf.sh` holds it:
-over every golden the loader reads, the graph's dependencies (`GraafProjectie`) must equal the verifier's ch. 5
+over every golden the loader reads, the graph's dependencies (`GraphProjection`) must equal the verifier's ch. 5
 edges (`verifier --dependency-edges`) over an attribute or characteristic node, whatever forms they join, and the
 graph of every golden with a `bron.rgs` must render the same from the source as from the wire. Outside the
 comparison, and reported per class by the gate: the edges over a population, a relation or a channel, nodes the
@@ -831,15 +831,15 @@ graph does not draw, and the edges of a golden the loader refuses. Two readings 
 gate beside its list of deliberate differences: keyed on the declaring type, the graph draws a dependency between
 two sibling subtypes sharing an inherited member, and from an object creation assigning an inherited member to a
 read of it on a strict subtype of the created type, where ch. 5.1 closes the write over the instances it reaches.
-The tests that need the frontend's resolver live under `src/bronroute/`, outside this build, which carries no
+The tests that need the frontend's resolver live under `src/source-route/`, outside this build, which carries no
 parser; the gate compiles them against the frontend's classes and this jar.
 
-What a defaults group reads is public per default too, since 2026-10-01: `ProducentConsument.lezingen(model, groep,
-navigatie)` gives, per default of the group in the order of the group and each default before those of its exception
+What a defaults group reads is public per default too, since 2026-10-01: `ProducentConsument.lezingen(model, group,
+navigation)` gives, per default of the group in the order of the group and each default before those of its exception
 groups, its path in the tree (`[i]`, `[i, g, j]`, …), the default itself, and what its justification and its consequence
 read. A consumer that names the default where a read falls outside a scope reads it there, with the source text the
 default and its parts carry. `vormen()` takes the group's reads from it, so their union is exactly the group's
-`Vorm.leest()`; `GraafDefaultLezingTest` holds that on every defaults group of the corpus and on the forms a group
+`Vorm.leest()`; `GraphDefaultReadTest` holds that on every defaults group of the corpus and on the forms a group
 takes: a member and a characteristic check in a justification, a member in a consequence, one and two roles away, a
 nested exception group, a member of `Uitzonderingen ongeordend op` and the group-default of `<basis> voor <subtype>`.
 
@@ -863,7 +863,7 @@ branches fault on a computing rule that evaluates
 leeg beside a conditional initialisatie outside the ch. 7.7 domain, where `ref` faults and the ASP backend derives its
 `viol/2` witness. Writers whose conditions exclude each other, or that write the same value, play in both branches
 (golden `jutterswet-melding-naar-aard`, red case `jutterswet-dubbele-melding`, witnesses
-`OverlappendeSchrijversWitnessTest` and `TmsSchrijversWitnessTest`).
+`OverlappingWritersWitnessTest` and `TmsWritersWitnessTest`).
 
 ## Recorded: a division by a numeric zero
 
@@ -880,12 +880,12 @@ consequence that computes a value inserts the fault in place of the value, a con
 `<rule>: fout in de voorwaarde`, and a fold's filter that divides makes the form that reads the fold fault where its
 evaluation reaches the fold, so a division by zero on an intermediate state, or in a filter no form reaches, is no
 fault. At the fixpoint `lees` gives the fault as data and `zetAfgeleideWaarden` throws it before it writes anything,
-named as above. A division in a default is refused by name (above, "What it refuses"). Witnesses `NuldelerWitnessTest`,
-`NuldelerVoorwaardeWitnessTest`, `TmsFoutWitnessTest`, `TmsVoorwaardefoutWitnessTest` and `TmsFilterfoutWitnessTest`.
+named as above. A division in a default is refused by name (above, "What it refuses"). Witnesses `ZeroDivisorWitnessTest`,
+`ZeroDivisorConditionWitnessTest`, `TmsFaultWitnessTest`, `TmsConditionFaultWitnessTest` and `TmsFilterErrorWitnessTest`.
 
 Until card `drl-teksttak-op-truth-maintenance` the fault left the fire of the DRL-text branch, in the cause chain of
-Drools' `ConsequenceException`, and `DroolsBackend.benoem`, which `CaseRunner` calls where it fires a session, turned
-that into a second `DelingDoorNul` named as above. `benoem` stays public for a consumer that fires a KieBase itself; on
+Drools' `ConsequenceException`, and `DroolsBackend.designate`, which `CaseRunner` calls where it fires a session, turned
+that into a second `DelingDoorNul` named as above. `designate` stays public for a consumer that fires a KieBase itself; on
 the KieBases of both branches today no evaluation fault leaves the fire, so what comes to it is a broken contract or a
 bug, and it hands that on unchanged.
 
@@ -897,4 +897,4 @@ Measured 2026-10-02, when this backend set such a handler, in the distribution's
 be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `DefaultAgenda.<init>`, on every request;
 the packaged Quarkus service and the JDK service opened their sessions. The KieBases `DroolsBackend` builds therefore
 keep Drools' default handler. A consumer meets the fault in `lees` or at `zetAfgeleideWaarden`, on either branch.
-Witness `NuldelerAfnemerWitnessTest`.
+Witness `ZeroDivisorConsumerWitnessTest`.

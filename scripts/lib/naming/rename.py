@@ -4,9 +4,13 @@
     python3 -I scripts/lib/naming/rename.py <subcommand> ...
 
   inventory <prefix>...              the Dutch names of a zone, with the English words of the glossary
+  freeze <prefix>... <list> --using <checkout> [--exclude <path>]
+                                     the names of a zone that the Java sources of another checkout read
   propose <prefix>... <dir>          batches of names for the translator (prompts/translate.md)
-  merge <dir> <table>                the translator's answers as a table
-  merge-decisions <list> <answer>... the decider's answers (prompts/decide.md) into the decision list
+  merge <dir>... <table>             the translator's answers as a table
+  merge-decisions <list> <answer>... [--corrections <answer>...]
+                                     the decider's answers (prompts/decide.md) into the decision list
+  triage <list> <dir>                the rows of a decision list a rule decides, and batches of the rest
   check <table>                      the checks before applying
   apply <table> [--decisions <list>] [--files-only]
   verify <table> --base <commit> [--decisions <list>] [--renderings <dir>] [--gate-logs <before> <after>]
@@ -16,6 +20,7 @@ README.md in this directory describes the formats and the rules. Every failure n
 """
 
 import argparse
+import bisect
 import collections
 import difflib
 import io
@@ -257,9 +262,11 @@ class Lexicon:
         self.proper = {fields[0].replace(' ', ''): fields[0] for _, fields in _read_tsv(PROPER_NAMES, ['name', 'reason'])}
         self.proper_max = max((len(n.split(' ')) for n in self.proper.values()), default=1)
         self.token_names = repo.lexer_token_names()
-        self.domain = repo.domain_words(self)
         self._analysis = {}
         self._english = {}
+        self.domain = set()
+        self.declared = frozenset()
+        self.domain = repo.domain_words(self)
 
     # -- words
 
@@ -313,10 +320,14 @@ class Lexicon:
         """'dutch', 'neutral', 'compound' (glossary words inside), 'english', 'domain', 'number' or 'unknown'."""
         if w.isdigit():
             return 'number'
-        if w in self.words:
-            return 'neutral' if w in self.neutral else 'dutch'
+        # before the glossary: van and op have rows there for the translator (their context), and stay what
+        # they are on their own
         if w in COMPOUND_FUNCTION_WORDS:
             return 'dutch' if words_in_name >= 2 else 'english'
+        if w in CODE_FUNCTION_WORDS:
+            return 'english'
+        if w in self.words:
+            return 'neutral' if w in self.neutral else 'dutch'
         if w in self.domain:
             return 'domain'
         if len(w) <= 2 or self.is_english(w):
@@ -324,6 +335,11 @@ class Lexicon:
         if self.cover(w):
             return 'compound'
         return 'unknown'
+
+    def batch_words(self, a):
+        """The words of a Dutch name the translator sees with their translations: its Dutch words, and op where the
+        glossary gives it rows (a word of code on its own, a preposition in a Dutch name)."""
+        return a.dutch_words(also={w for w in CODE_FUNCTION_WORDS if w in self.words})
 
     def translations(self, w):
         if w in self.words:
@@ -402,14 +418,17 @@ class Analysis:
     def is_dutch(self):
         return any(w.cls in ('dutch', 'compound') for w in self.words)
 
-    def dutch_words(self):
-        """The Dutch words of the name: whole glossary words, and the glossary words inside a compound."""
+    def dutch_words(self, also=()):
+        """The Dutch words of the name: whole glossary words, the glossary words inside a compound, and the words
+        of `also` (op in a Dutch name, Lexicon.batch_words)."""
         out = []
         for w in self.words:
             if w.cls in ('dutch', 'neutral'):
                 out.append(w.lower)
             elif w.cls == 'compound':
                 out.extend(p[2] for p in w.parts)
+            elif w.lower in also:
+                out.append(w.lower)
         return out
 
     def split(self):
@@ -474,6 +493,13 @@ class Repo:
             m = self._models[rel] = FileModel(rel, lang, text, toks)
         return m
 
+    def adopt(self, m):
+        """Makes `m`, a code file of another checkout (freeze), the model of its path, so that a type of that file,
+        which the index resolves to the file's own path, can be read; a path of this repository fails."""
+        if os.path.exists(self.path(m.path)):
+            die('%s is a file of this repository as well; the other checkout\'s file cannot be read beside it' % m.path)
+        self._models[m.path] = m
+
     def code_files(self):
         return [p for p in self.files() if tk.language(p) and not p.startswith(('toka/', 'backlog/', 'scripts/lib/naming/'))]
 
@@ -498,11 +524,12 @@ class Repo:
 
     def domain_words(self, lex):
         words = set()
+        scanned = set()     # the words of the sources in code: only those that are no English word
 
-        def take(value):
+        def take(value, into=None):
             for piece in re.findall(r'[^\W\d_]+', value):
                 for w, _ in split_words(piece):
-                    words.add(w.lower())
+                    (words if into is None else into).add(w.lower())
 
         def walk(node):
             if isinstance(node, dict):
@@ -530,7 +557,119 @@ class Repo:
                 if comp.startswith('jutterswet-'):
                     for w in comp.split('-')[1:]:
                         words.add(w.lower())
+            # the declared names of a RegelSpraak source outside the corpus, and of an IR document in a test: an .rgs
+            # file, a string or a comment of code that holds a declaration, the JSON of a string or of a test
+            # resource (card hernoem-drools-backend: test code declares Jutterswet names of its own, boei, wrak,
+            # zeewaardig)
+            if exempt_reason(p) is not None:
+                continue
+            if p.endswith('.rgs'):
+                for name in regelspraak_names(self.text(p)):
+                    take(name, scanned)
+            elif p.endswith('.json') and '/test/resources/' in p:
+                try:
+                    doc = json.loads(self.text(p))
+                except json.JSONDecodeError as e:
+                    die('%s: not JSON (%s)' % (p, e))
+                for key, value in _json_pairs(doc):
+                    take(value, scanned)
+            elif tk.language(p):
+                for t in self.model(p).tokens:
+                    if t.kind not in (tk.STRING, tk.COMMENT):
+                        continue
+                    for name in regelspraak_names(t.text):
+                        take(name, scanned)
+                    if t.kind == tk.STRING:
+                        for key, value in _JSON_PAIR.findall(t.text.replace('\\"', '"')):
+                            if key in DOMAIN_KEYS:
+                                take(value, scanned)
+        # every word of a declared name, glossary words included (gewicht): triage reads a name in code markup that
+        # is one as domain content, not as code
+        lex.declared = frozenset(words | scanned)
+        # an English word of such a source (absolute, check, is) stays English: it makes no name Dutch either way,
+        # and as a domain word it would be listed to the translator as one
+        words |= {w for w in scanned if not lex.is_english(w) and w not in lex.english_function_words}
         return {w for w in words if w not in lex.words and len(w) >= 2}
+
+
+# A JSON member with a string value, in a string of code that holds an IR document.
+_JSON_PAIR = re.compile(r'"(\w+)"\s*:\s*"([^"]*)"')
+
+
+def _json_pairs(node):
+    """(key, value) of every member of a JSON document whose key is a DOMAIN_KEYS key and whose value is a string
+    or a list of strings."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k in DOMAIN_KEYS:
+                for x in (v if isinstance(v, list) else [v]):
+                    if isinstance(x, str):
+                        yield k, x
+            yield from _json_pairs(v)
+    elif isinstance(node, list):
+        for x in node:
+            yield from _json_pairs(x)
+# The keywords that open a declaration of RegelSpraak (frontends/regelspraak/grammar/RegelSpraak.g4), at the start of
+# a line.
+_REGELSPRAAK_KEYWORD = re.compile(r'(Objecttype|Parameter|Wederkerig feittype|Feittype|Domein|Dagsoort|Dimensie|'
+                                  r'Regel)[ \t]+(.*?)[ \t";+*/]*$')
+# what opens a line of a source in code: the stars of a comment, the quotes of a string
+_COMMENT_PREFIX = re.compile(r'^[ \t]*(?:/?\*+[ \t]?|"{1,3}|\{\w*\|)?')
+_ARTICLE = re.compile(r'^(?:de|het)\s+')
+# A member of an object type or a role of a fact type: an article, the name in small letters, an optional plural,
+# then the datatype, the domain or the object type (a capital) or the word kenmerk; and an adjective characteristic.
+_REGELSPRAAK_MEMBER = re.compile(r'^[ \t]*(?:de|het)[ \t]+([a-zà-ÿ][\wà-ÿ \'-]*?)[ \t]*'
+                                 r'(?:\(mv:[ \t]*([^)]*)\))?[ \t]+(?:[A-Z]|kenmerk\b)')
+_REGELSPRAAK_ADJECTIVE = re.compile(r'^[ \t]*is[ \t]+([a-zà-ÿ][\wà-ÿ \'-]*?)[ \t]+(?:\(mv:[^)]*\)[ \t]+)?kenmerk\b')
+
+
+def _regelspraak_declared(kw, rest, nxt):
+    """The names a declaration line declares, or [] when the line has not the shape of that declaration (English
+    prose that starts with Parameter or Regel): an object type writes a capital, a parameter a colon, a domain is
+    van het type, a day kind and a dimension an article, a fact type is followed by a role line and a rule by its
+    version (geldig)."""
+    plurals = re.findall(r'\(mv:\s*([^)]*)\)', rest)
+    bare = _ARTICLE.sub('', rest)
+    if kw == 'Objecttype':
+        return [re.split(r'\s+is een\s+|\s*\(', bare)[0]] + plurals if bare[:1].isupper() else []
+    if kw == 'Parameter':
+        return [_ARTICLE.sub('', rest.split(':')[0])] if ':' in rest else []
+    if kw == 'Domein':
+        m = re.match(r'(.+?)\s+is van het type\b', rest)
+        return [m.group(1)] if m else []
+    if kw == 'Dagsoort':
+        return [bare.split('(')[0]] + plurals if _ARTICLE.match(rest) else []
+    if kw == 'Dimensie':
+        m = re.match(r'(?:de|het)\s+(.+?),?\s+bestaande uit de\s+([^(]+)', rest)
+        return [m.group(1), m.group(2)] if m else []
+    if kw in ('Feittype', 'Wederkerig feittype'):
+        return [rest.split('(')[0]] if _ARTICLE.match(nxt.strip()) else []
+    return [rest] if re.match(r'\s*geldig\b', nxt) else []
+
+
+def regelspraak_names(text):
+    """The declared names of a RegelSpraak source, or of a string or comment of code that holds one: object types
+    with their plurals, parameters, fact types, domains, day kinds, dimensions and rules, and after an object type
+    or a fact type the members, characteristics and roles. Read by lines, not parsed: what a line holds beyond the
+    name (an article, a datatype) is left out."""
+    if not any(k in text for k in ('Objecttype', 'Parameter', 'eittype', 'Domein', 'Dagsoort', 'Dimensie', 'Regel')):
+        return []
+    lines = [_COMMENT_PREFIX.sub('', l) for l in text.replace('\\n', '\n').replace('\\"', '"').split('\n')]
+    names = []
+    members = False
+    for i, line in enumerate(lines):
+        m = _REGELSPRAAK_KEYWORD.match(line.strip())
+        if m:
+            nxt = next((l for l in lines[i + 1:] if l.strip()), '')
+            got = _regelspraak_declared(m.group(1), m.group(2), nxt)
+            names += got
+            members = bool(got) and m.group(1) in ('Objecttype', 'Feittype', 'Wederkerig feittype') or (members and not got)
+            continue
+        if members:
+            mm = _REGELSPRAAK_MEMBER.match(line) or _REGELSPRAAK_ADJECTIVE.match(line)
+            if mm:
+                names += [g for g in mm.groups() if g]
+    return [n.strip() for n in names if n.strip()]
 
 
 class TypeDecl:
@@ -562,6 +701,7 @@ class FileModel:
         self.code = [t for t in toks if t.kind != tk.COMMENT]
         self.code_pos = {t.start: k for k, t in enumerate(self.code)}
         self._lines = None
+        self._blocks = None                            # _java_blocks
         self.decls = collections.defaultdict(list)    # name -> [(kind, offset)]
         self.types = []                                # TypeDecl, Java types and nested OCaml modules
         self.package = ''
@@ -778,8 +918,14 @@ def _java_analyse(m):
         if prev is not None and prev.text in ('.', '::', '@'):
             k += 1
             continue
-        if nxt is not None and nxt.text == '->' and (prev is None or prev.text in ('(', ',', '=', '->', '?', ':', '{', ';', '&&', '||', 'return')):
+        if nxt is not None and nxt.text == '->' and (prev is None or prev.text in ('(', ',', '=', '->', '?', ':', '{', ';', '&&', '||', 'return')) \
+                and not _java_case_label(code, k):
             m.declare(t.text, 'parameter', t.start)
+            k += 1
+            continue
+        if prev is not None and _java_type_end(code, k - 1) and _java_pattern_variable(code, k):
+            # x instanceof Regel r && r.naam(), case Regel r ->: the type of r is written, as in a declaration
+            m.declare(t.text, 'variable', t.start)
             k += 1
             continue
         if prev is not None and nxt is not None and nxt.text in ('(', '=', ';', ',', ')', ':', '[') and _java_type_end(code, k - 1):
@@ -811,14 +957,289 @@ def _java_analyse(m):
             j += 1
 
 
+def _java_type_start(code, j):
+    """The index of the first token of the type that ends at code[j] (`Regel`, `a.B`, `List<Regel>`, `B[]`), or None
+    when no type ends there."""
+    while j >= 0 and code[j].text in (']', '['):
+        j -= 1
+    if j >= 0 and code[j].text in ('>', '>>', '>>>'):
+        depth = 0
+        while j >= 0:
+            x = code[j].text
+            if x in ('>', '>>', '>>>'):
+                depth += len(x)
+            elif x == '<':
+                depth -= 1
+                if depth == 0:
+                    j -= 1
+                    break
+            j -= 1
+    if j < 0 or code[j].kind != tk.IDENT or code[j].text in JAVA_KEYWORDS:
+        return None
+    while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+        j -= 2
+    return j
+
+
+def _java_pattern_variable(code, k):
+    """Whether code[k] is the variable of a type pattern: a name after a type that `instanceof` (`instanceof final`)
+    or `case` precedes (`x instanceof Regel r &&`, `case Regel r ->`)."""
+    j = _java_type_start(code, k - 1)
+    if j is None or j < 1:
+        return False
+    before = code[j - 1].text
+    if before == 'final' and j >= 2:
+        before = code[j - 2].text
+    return before in ('instanceof', 'case')
+
+
+def _java_blocks(m):
+    """Per token of the code: the index of the innermost '{' and '(' around it, the index of the matching closer of
+    each opener and of the matching opener of each closer; computed once per file."""
+    if m._blocks is None:
+        code = m.code
+        brace, paren = [None] * len(code), [None] * len(code)
+        close, opener = {}, {}
+        braces, parens = [], []
+        for k, t in enumerate(code):
+            brace[k] = braces[-1] if braces else None
+            paren[k] = parens[-1] if parens else None
+            if t.text == '{':
+                braces.append(k)
+            elif t.text == '}' and braces:
+                close[braces[-1]] = k
+                opener[k] = braces.pop()
+            elif t.text == '(':
+                parens.append(k)
+            elif t.text == ')' and parens:
+                close[parens[-1]] = k
+                opener[k] = parens.pop()
+        m._blocks = (brace, paren, close, opener)
+    return m._blocks
+
+
+def _java_scope_end(m, kd):
+    """The index of the last token where the local variable or parameter declared at code[kd] can be read. Inside a
+    parenthesis of its block: the block that follows the parenthesis (a method, a catch, a for), else the rest of
+    the block around it (an if, whose pattern variable can stay in scope after it, a lambda, an argument); in a
+    block: the rest of that block. Wider than Java's scopes, never narrower, except for a pattern variable read after
+    a method's or a for's parenthesis."""
+    code = m.code
+    brace, paren, close, _ = _java_blocks(m)
+    b, p = brace[kd], paren[kd]
+    if p is not None and (b is None or p > b) and p in close and not (p >= 1 and code[p - 1].text in ('if', 'while')):
+        j = close[p] + 1
+        if j < len(code) and code[j].text == 'throws':
+            while j < len(code) and code[j].text not in ('{', ';'):
+                j += 1
+        if j < len(code) and code[j].text == '{' and j in close:
+            return close[j]
+    return close.get(b, len(code)) if b is not None else len(code)
+
+
+def _java_visible_declarations(m, k, fields_only=False):
+    """The offsets of the declarations of the variable code[k] that a read at code[k] sees: the nearest local
+    variable or parameter before it whose scope holds it, else the fields of that name of the types around it."""
+    code_k = m.code[k]
+    name = code_k.text
+    best = None
+    fields = []
+    for kind, off in m.decls.get(name, ()):
+        kd = m.code_pos.get(off)
+        if kd is None:
+            continue
+        if kind == 'field':
+            owner = m.enclosing_types(off)
+            if owner and any(t.start <= code_k.start and (t.end is None or code_k.start <= t.end) for t in owner[-1:]):
+                fields.append(off)
+        elif kind in ('variable', 'parameter') and not fields_only and kd < k <= _java_scope_end(m, kd):
+            if best is None or kd > best:
+                best = kd
+    return [m.code[best].start] if best is not None else fields
+
+
+def _java_written_type(m, offset):
+    """The type written before the declaration of the name at `offset`, with its type arguments (`List<Bron>`,
+    `Map.Entry<String,Eenheid>`, `Expr.Functie`, `B[]`; for a method its return type); None where the code writes
+    none (a lambda parameter, `var`)."""
+    k = m.code_pos.get(offset)
+    if not k:
+        return None
+    start = _java_type_start(m.code, k - 1)
+    return None if start is None else ''.join(t.text for t in m.code[start:k])
+
+
+def _java_type_parts(written):
+    """(head, type arguments) of a written Java type: `Map.Entry<String,Eenheid>` is ('Map.Entry', ['String',
+    'Eenheid']); a wildcard `? extends Bron` stands for Bron, a bare `?` for (None, []); an array for its element."""
+    w = written.replace(' ', '')
+    if w.startswith('?'):
+        w = w[1:]
+        for bound in ('extends', 'super'):
+            if w.startswith(bound):
+                w = w[len(bound):]
+                break
+        if not w:
+            return None, []
+    i = w.find('<')
+    head = (w if i < 0 else w[:i]).replace('[]', '')
+    args = []
+    if i >= 0:
+        depth = 0
+        cur = ''
+        for ch in w[i + 1:]:
+            if ch == '<':
+                depth += 1
+            elif ch == '>':
+                if depth == 0:
+                    break
+                depth -= 1
+            elif ch == ',' and depth == 0:
+                args.append(cur)
+                cur = ''
+                continue
+            cur += ch
+        args.append(cur)
+    return head or None, args
+
+
+def _java_parameter_types(m, k):
+    """The written types of the parameters of the method whose name is code[k]."""
+    code = m.code
+    _, _, close, _ = _java_blocks(m)
+    if k + 1 >= len(code) or code[k + 1].text != '(' or (k + 1) not in close:
+        return []
+    out = []
+    end = close[k + 1]
+    depth = 0
+    j = k + 2
+    last = None
+    while j <= end:
+        x = code[j].text
+        if x in ('<', '('):
+            depth += 1
+        elif x in ('>', '>>', '>>>', ')') and j < end:
+            depth -= len(x) if x != ')' else 1
+        if (x == ',' and depth == 0) or j == end:
+            if last is not None:
+                out.append(_java_written_type(m, code[last].start))
+            last = None
+        elif code[j].kind == tk.IDENT and depth == 0:
+            last = j
+        j += 1
+    return out
+
+
+# java.lang, read without an import
+JAVA_LANG_TYPES = frozenset('Object String Integer Long Short Byte Character Boolean Double Float Number Math '
+                            'StringBuilder CharSequence Iterable Comparable Enum Record Class Void Runnable Thread '
+                            'Throwable Exception RuntimeException Error IllegalStateException IllegalArgumentException '
+                            'UnsupportedOperationException ArithmeticException NullPointerException '
+                            'IndexOutOfBoundsException System'.split())
+# Library methods that make their result of their arguments (a function, an identity): on a value whose code sees
+# nothing of the zone, their result can still be a zone value
+LIBRARY_FOREIGN_RESULT = frozenset('map flatMap mapMulti mapToObj collect reduce toArray'.split())
+# Library methods whose lambda can take a zone value though their receiver sees nothing of the zone (an accumulator)
+LIBRARY_FOREIGN_LAMBDA = frozenset('reduce collect'.split())
+
+
+def _java_library_type(m, index, head):
+    """Whether `head`, which the repository does not declare as `m` sees it, is a library type there: imported from
+    a package outside the repository, of java.lang, written with its package, or from a package outside the
+    repository that the file imports whole; not a type variable or a name the tool cannot place."""
+    first = head.split('.')[0]
+    if re.match(r'[A-Z][0-9]?$', first):
+        return False
+    if first in m.imports:
+        return index.java_fqn.get(m.imports[first]) is None
+    if first in JAVA_LANG_TYPES or first[:1].islower():
+        return True
+    return any(not static and pkg not in index.java_packages for pkg, static in m.wildcard_imports)
+
+
+def _java_case_label(code, k):
+    """Whether code[k] is a label of a switch case (`case A, B ->`, `case A:`): an enum constant read without its
+    type, never a lambda parameter."""
+    j = k - 1
+    while j >= 1 and code[j].text == ',' and code[j - 1].kind == tk.IDENT:
+        j -= 2
+    return j >= 0 and code[j].text == 'case'
+
+
+def _java_switch_labels(code, k):
+    """For a case label code[k]: the index of the '{' of its switch block, the constant labels of that switch (the
+    simple names after each `case` directly in the block, no type pattern, no qualified name) and the index of its
+    selector when that is one variable (`switch (kind)`), else None; None when the label stands in no switch
+    block."""
+    depth = 0
+    j = k - 1
+    while j >= 0:
+        x = code[j].text
+        if x == '}':
+            depth += 1
+        elif x == '{':
+            if depth == 0:
+                break
+            depth -= 1
+        j -= 1
+    if j < 1 or code[j - 1].text != ')':
+        return None
+    depth = 0
+    o = j - 1
+    while o >= 0:
+        if code[o].text == ')':
+            depth += 1
+        elif code[o].text == '(':
+            depth -= 1
+            if depth == 0:
+                break
+        o -= 1
+    if o < 1 or code[o - 1].text != 'switch':
+        return None
+    labels = []
+    n = len(code)
+    depth = 0
+    i = j + 1
+    while i < n:
+        x = code[i].text
+        if x in ('{', '(', '['):
+            depth += 1
+        elif x in ('}', ')', ']'):
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and x == 'case':
+            i += 1
+            inner = 0
+            while i < n and not (inner == 0 and code[i].text in ('->', ':')):
+                t = code[i]
+                if t.text in ('(', '['):
+                    inner += 1
+                elif t.text in (')', ']'):
+                    inner -= 1
+                elif inner == 0 and t.kind == tk.IDENT and t.text not in JAVA_KEYWORDS \
+                        and code[i - 1].text in ('case', ',') and i + 1 < n and code[i + 1].text in (',', '->', ':'):
+                    labels.append(t.text)
+                i += 1
+            continue
+        i += 1
+    selector = o + 1 if o + 2 == j - 1 and code[o + 1].kind == tk.IDENT else None
+    return j, labels, selector
+
+
 def _java_static(m, offset):
     """Whether the Java declaration of the name at `offset` carries the modifier static."""
+    return _java_modifier(m, offset, 'static')
+
+
+def _java_modifier(m, offset, modifier):
+    """Whether the Java declaration of the name at `offset` carries `modifier` (static, private)."""
     k = m.code_pos.get(offset)
     if k is None:
         return False
     j = k - 1
     while j >= 0 and m.code[j].text not in (';', '{', '}', '(', ',', '@'):
-        if m.code[j].text == 'static':
+        if m.code[j].text == modifier:
             return True
         j -= 1
     return False
@@ -1106,6 +1527,7 @@ class Index:
         self.ocaml_modules = collections.defaultdict(set)   # module name -> files
         self.ocaml_libs = {}                                # library module name -> directory
         self.dirs = collections.defaultdict(set)            # directory name -> directory paths
+        self._enums = None                                  # constant -> {(file, offset of its Java enum)}
         for p in repo.files():
             parts = p.split('/')[:-1]
             for i in range(len(parts)):
@@ -1136,6 +1558,24 @@ class Index:
 
     def declared_outside(self, name, files):
         return any(f not in files for f in self.declared.get(name, ()))
+
+    def enums_declaring(self, constants):
+        """(file, offset) of every Java enum of the repository that declares each of `constants`."""
+        if self._enums is None:
+            self._enums = collections.defaultdict(set)
+            for p in self.repo.code_files():
+                m = self.repo.model(p)
+                if m.lang != 'java' or not any(t.kind == 'enum' for t in m.types):
+                    continue
+                for name, entries in m.decls.items():
+                    for kind, offset in entries:
+                        owner = m.enclosing_types(offset) if kind == 'constant' else []
+                        if owner and owner[-1].kind == 'enum':
+                            self._enums[name].add((p, owner[-1].start))
+        found = None
+        for c in constants:
+            found = set(self._enums.get(c, ())) if found is None else found & self._enums.get(c, set())
+        return found or set()
 
     def java_type_file(self, m, name):
         """The repository file that declares the Java type `name` as `m` sees it, or None for a library type. A
@@ -1226,6 +1666,10 @@ def file_name_key(path):
     return stem
 
 
+UNKNOWN_TYPE = ('unknown', None, None)
+BLIND_TYPE = ('blind', None, None)
+
+
 class Classifier:
     """Whether an identifier occurrence in a zone file names something of the zone or something declared outside
     it, which the zone's table must not rename (it is renamed with its own zone)."""
@@ -1235,6 +1679,9 @@ class Classifier:
         self.zone = zone
         self.index = repo.index()
         self._super_names = {}
+        self._switch_enums = {}
+        self._seeing = None
+        self._expr = {}
 
     def qualifier(self, m, k):
         """For code[k] read through `.` or `::`: ('type' | 'module' | 'value', qualifier text); else None."""
@@ -1256,8 +1703,26 @@ class Classifier:
         if m.lang == 'java':
             if q.text in ('this', 'super'):
                 return ('value', q.text)
+            if q.text[:1].islower():
+                # a package of the repository before the name (an import, a.b.Type in code): the name is the type
+                # of that package, never a member of a value (card hernoem-drools-backend: every import of a
+                # renamed type from another package stayed)
+                j = k - 2
+                parts = [q.text]
+                while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+                    parts.insert(0, code[j - 2].text)
+                    j -= 2
+                package = '.'.join(parts)
+                if package in self.index.java_packages:
+                    return ('package', package)
             if q.text[:1].isupper() and not (q.text in m.decls and any(kind in ('variable', 'parameter', 'constant', 'field') for kind, _ in m.decls[q.text])):
-                return ('type', q.text)
+                # the whole chain (ResolvedRegel.Soort, a.b.Type): a nested type resolves through its outer type
+                j = k - 2
+                parts = [q.text]
+                while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+                    parts.insert(0, code[j - 2].text)
+                    j -= 2
+                return ('type', '.'.join(parts))
             return ('value', q.text)
         return None
 
@@ -1288,7 +1753,9 @@ class Classifier:
     def members(self, name, inside, reader=None):
         """The files of the zone (inside) or outside it whose Java types or OCaml record types declare a member
         `name` that a read through a value reaches: a field or a method that is not static, or a record field. With
-        `reader`, a Java member of a private type counts only in the reader's own file."""
+        `reader`, a private Java member or a member of a private type counts only in the reader's own file (card
+        hernoem-drools-backend: the private method IrLoader.geldigheid made every r.geldigheid() of a frontend record
+        a read of the zone)."""
         files = self.zone.fileset
         out = []
         for f in self.index.declared.get(name, ()):
@@ -1301,8 +1768,8 @@ class Classifier:
             for kind, offset in m.decls[name]:
                 if kind not in kinds or (m.lang == 'java' and _java_static(m, offset)):
                     continue
-                if reader is not None and f != reader and m.lang == 'java' and any(
-                        _java_private(m, t) for t in m.enclosing_types(offset)):
+                if reader is not None and f != reader and m.lang == 'java' and (
+                        _java_modifier(m, offset, 'private') or any(_java_private(m, t) for t in m.enclosing_types(offset))):
                     continue
                 out.append(f)
                 break
@@ -1310,6 +1777,345 @@ class Classifier:
 
     def zone_member(self, name, reader=None):
         return bool(self.members(name, True, reader))
+
+    def reaches_zone(self, m, written, seen):
+        """Whether the Java type `written` in `m` is a type of the zone, or a type of the repository with a zone
+        supertype; a library type has none."""
+        f = self.index.java_type_file(m, written)
+        if f is None:
+            return False
+        if self.zone.contains(f):
+            return True
+        mm = self.repo.model(f)
+        simple = written.split('.')[-1]
+        for d in mm.types:
+            if d.name == simple and (f, d.start) not in seen:
+                seen.add((f, d.start))
+                if any(self.reaches_zone(mm, s, seen) for s in d.supertypes):
+                    return True
+        return False
+
+    def value_may_be_zone(self, m, k):
+        """For a Java read code[k] through the expression before its dot: False when that expression has a type of
+        the repository outside the zone without a zone supertype, or a value of code that sees nothing of the zone
+        (expr_type); True otherwise, also where the type is not known (unknown counts as may, as `freeze` reads the
+        distribution)."""
+        return self.expr_type(m, k - 2)[0] not in ('blind', 'outside')
+
+    def blind_file(self, f):
+        """Whether the repository file `f` sees nothing of the zone: no type it imports, no file of its package, no
+        package it imports whole is of the zone or of a file that sees the zone (the frontend sees nothing of
+        backends/drools; the production runtime shares a package with tests of the zone)."""
+        if self._seeing is None:
+            readers = collections.defaultdict(set)
+            for p in self.repo.code_files():
+                if tk.language(p) != 'java':
+                    continue
+                m = self.repo.model(p)
+                deps = set(self.index.java_packages.get(m.package, ()))
+                for fqn in list(m.imports.values()) + list(m.static_imports.values()):
+                    if self.index.java_fqn.get(fqn):
+                        deps.add(self.index.java_fqn[fqn])
+                for pkg, static in m.wildcard_imports:
+                    if static and self.index.java_fqn.get(pkg):
+                        deps.add(self.index.java_fqn[pkg])
+                    deps |= self.index.java_packages.get(pkg, set())
+                for d in deps:
+                    readers[d].add(p)
+            seeing = set(self.zone.code_files)
+            todo = list(seeing)
+            while todo:
+                for p in readers.get(todo.pop(), ()):
+                    if p not in seeing:
+                        seeing.add(p)
+                        todo.append(p)
+            self._seeing = seeing
+        return f not in self._seeing
+
+    def type_class(self, mm, written, depth=0):
+        """The class of a Java type written in `mm`: 'zone' (a type of the zone, or one with a zone supertype),
+        'blind' (a type of code that sees nothing of the zone, or a library type, with type arguments of that kind
+        only: whatever such a value gives sees nothing of the zone either), 'outside' (another type of the
+        repository), 'library' (a library type over other types) or 'unknown' (a type variable, a name the tool
+        cannot place)."""
+        head, args = _java_type_parts(written) if written else (None, [])
+        if not head or depth > 6:
+            return 'unknown'
+        if head in JAVA_PRIMITIVES:
+            return 'blind'
+        f = self.index.java_type_file(mm, head)
+        if f is None:
+            if not _java_library_type(mm, self.index, head):
+                return 'unknown'
+        elif self.zone.contains(f) or self.reaches_zone(mm, head, set()):
+            return 'zone'
+        elif not self.blind_file(f):
+            return 'outside'
+        if all(a and self.type_class(mm, a, depth + 1) == 'blind' for a in args):
+            return 'blind'
+        return 'library' if f is None else 'outside'
+
+    def expr_type(self, m, j, depth=0):
+        """The type of the Java expression that ends at code[j], the receiver of a read through a dot: (class, model,
+        written), with the class of type_class, or 'static' for a type read as a qualifier. A variable has the type
+        its visible declaration writes (a pattern and a for-each included; `var x = ...` the type of its initializer);
+        a call the return type of its method in the type of its receiver or in the file's own types, `new T()` the type
+        T; a field its written type; `((T) x)` the type T; a lambda parameter the element of a value of code that
+        sees nothing of the zone, or the parameter of the zone interface a method returns the lambda as. A value of
+        code that sees nothing of the zone gives such values only, except what a library method makes of its
+        arguments (map, collect, reduce)."""
+        key = (m.path, j)
+        if key in self._expr:
+            return self._expr[key]
+        self._expr[key] = UNKNOWN_TYPE     # a cycle reads as unknown
+        out = self._expr_type(m, j, depth) if depth <= 24 and j >= 0 else UNKNOWN_TYPE
+        self._expr[key] = out
+        return out
+
+    def _expr_type(self, m, j, depth):
+        code = m.code
+        t = code[j]
+        if t.text == ')':
+            _, _, close, opener = _java_blocks(m)
+            o = opener.get(j)
+            if o is None:
+                return UNKNOWN_TYPE
+            c = o - 1
+            if c >= 0 and code[c].kind == tk.IDENT and code[c].text not in JAVA_KEYWORDS:
+                s = c
+                while s >= 2 and code[s - 1].text == '.' and code[s - 2].kind == tk.IDENT:
+                    s -= 2
+                if s >= 1 and code[s - 1].text == 'new':
+                    written = ''.join(x.text for x in code[s:c + 1])
+                    return (self.type_class(m, written), m, written)
+                if c >= 2 and code[c - 1].text == '.':
+                    return self.member_type(m, c - 2, code[c].text, True, depth)
+                if c >= 1 and code[c - 1].text == '::':
+                    return UNKNOWN_TYPE
+                return self.own_method_type(m, c, depth)
+            if c >= 0 and code[c].text in ('>', '>>'):
+                # new T<>(...)
+                k = c
+                while k >= 0 and code[k].text != '<':
+                    k -= 1
+                if k >= 2 and code[k - 1].kind == tk.IDENT:
+                    s = k - 1
+                    while s >= 2 and code[s - 1].text == '.' and code[s - 2].kind == tk.IDENT:
+                        s -= 2
+                    if s >= 1 and code[s - 1].text == 'new':
+                        written = ''.join(x.text for x in code[s:k])
+                        return (self.type_class(m, written), m, written)
+                return UNKNOWN_TYPE
+            # a cast in parentheses: ((T) e)
+            if o + 2 < j and code[o + 1].text == '(':
+                ic = close.get(o + 1)
+                if ic is not None and ic + 1 < j and _java_type_start(code, ic - 1) == o + 2 and (
+                        code[ic + 1].kind in (tk.IDENT, tk.STRING) or code[ic + 1].text == '('):
+                    written = ''.join(x.text for x in code[o + 2:ic])
+                    return (self.type_class(m, written), m, written)
+            return UNKNOWN_TYPE
+        if t.kind != tk.IDENT:
+            return UNKNOWN_TYPE
+        if j >= 2 and code[j - 1].text == '.':
+            q = self.qualifier(m, j)
+            if q is not None and q[0] in ('type', 'package'):
+                written = q[1] + '.' + t.text
+                if t.text[:1].isupper() and self.index.java_type_file(m, written) is not None:
+                    return ('static', m, written)      # a nested type, or a type behind its package
+                if q[0] == 'package':
+                    return UNKNOWN_TYPE
+            return self.member_type(m, j - 2, t.text, False, depth)
+        if t.text == 'this':
+            own = [d for d in m.enclosing_types(t.start) if d.name]
+            return (self.type_class(m, own[-1].qualified()), m, own[-1].qualified()) if own else UNKNOWN_TYPE
+        offsets = _java_visible_declarations(m, j)
+        if offsets:
+            return self.declaration_type(m, offsets, depth)
+        if t.text[:1].isupper() and (self.index.java_type_file(m, t.text) is not None
+                                     or _java_library_type(m, self.index, t.text)):
+            return ('static', m, t.text)
+        return UNKNOWN_TYPE
+
+    def declaration_type(self, m, offsets, depth):
+        """The type of the variable declared at `offsets` (the declarations a read sees): one class for all, else
+        unknown."""
+        code = m.code
+        found = []
+        for off in offsets:
+            kd = m.code_pos[off]
+            kinds = [kind for kind, o in m.decls[code[kd].text] if o == off]
+            written = _java_written_type(m, off)
+            if 'parameter' in kinds:
+                found.append(self.lambda_param_type(m, kd, depth))
+            elif written is not None:
+                found.append((self.type_class(m, written), m, written))
+            elif kd + 1 < len(code) and code[kd + 1].text == '=':
+                # var x = <a chain>;
+                end = kd + 2
+                level = 0
+                while end < len(code) and not (level == 0 and code[end].text in (';', ',')):
+                    if code[end].text in ('(', '[', '{'):
+                        level += 1
+                    elif code[end].text in (')', ']', '}'):
+                        if level == 0:
+                            break
+                        level -= 1
+                    elif level == 0 and code[end].text in ('?', ':', '+', '-', '*', '/', '&&', '||', '==', '!=',
+                                                           'instanceof'):
+                        return UNKNOWN_TYPE
+                    end += 1
+                found.append(self.expr_type(m, end - 1, depth + 1))
+            elif kd + 1 < len(code) and code[kd + 1].text == ':':
+                # for (var x : <a chain>): an element of a value that sees nothing of the zone sees nothing either
+                _, paren, close, _ = _java_blocks(m)
+                p = paren[kd]
+                it = self.expr_type(m, close[p] - 1, depth + 1) if p in close else UNKNOWN_TYPE
+                found.append(BLIND_TYPE if it[0] == 'blind' else UNKNOWN_TYPE)
+            else:
+                return UNKNOWN_TYPE
+        classes = {f[0] for f in found}
+        return found[0] if len(classes) == 1 else UNKNOWN_TYPE
+
+    def member_type(self, m, recv_end, name, call, depth):
+        """The type of the member `name` read through the expression that ends at code[recv_end]."""
+        cls, mm, written = self.expr_type(m, recv_end, depth + 1)
+        static = cls == 'static'
+        if static:
+            cls = self.type_class(mm, written)
+        if cls not in ('zone', 'outside', 'blind'):
+            return UNKNOWN_TYPE
+        if written is None or self.index.java_type_file(mm, _java_type_parts(written)[0]) is None:
+            # a library value: what it gives sees nothing of the zone, unless a method makes it of its arguments; a
+            # static library method (List.of(x)) gives what its arguments are
+            return UNKNOWN_TYPE if static or name in LIBRARY_FOREIGN_RESULT else BLIND_TYPE
+        decls = self.member_decls(mm, written, name, call)
+        if not decls:
+            return BLIND_TYPE if cls == 'blind' else UNKNOWN_TYPE    # a blind type's member of a library supertype
+        found = {(self.type_class(dm, w), dm, w) for dm, w in ((dm, _java_written_type(dm, off)) for dm, off in decls)}
+        return found.pop() if len({f[0] for f in found}) == 1 else UNKNOWN_TYPE
+
+    def member_decls(self, mm, written, name, call, depth=0):
+        """(model, offset) of each declaration of the member `name` (a method or a field when `call`, else a field or
+        an enum constant) of the type `written` in `mm`, or of its repository supertypes where it declares none."""
+        head = _java_type_parts(written)[0]
+        f = self.index.java_type_file(mm, head) if head else None
+        if f is None or depth > 6:
+            return []
+        fm = self.repo.model(f)
+        parts = head.split('.')
+        types = [d for d in fm.types if d.name == parts[-1]]
+        if len(types) > 1 and len(parts) > 1:
+            types = [d for d in types if d.qualified().endswith('.'.join(parts[-2:]))] or types
+        kinds = ('method', 'field') if call else ('field', 'constant')
+        out = []
+        for d in types:
+            here = [(fm, off) for kind, off in fm.decls.get(name, ())
+                    if kind in kinds and fm.enclosing_types(off)[-1:] == [d]]
+            if not here:
+                for st in d.supertypes:
+                    here += self.member_decls(fm, st, name, call, depth + 1)
+            out += here
+        return out
+
+    def own_method_type(self, m, c, depth):
+        """The return type of an unqualified call code[c](...) of a method the file declares."""
+        decls = [off for kind, off in m.decls.get(m.code[c].text, ()) if kind == 'method']
+        found = {(self.type_class(m, w), m, w) for w in (_java_written_type(m, off) for off in decls)}
+        return found.pop() if decls and len({f[0] for f in found}) == 1 else UNKNOWN_TYPE
+
+    def lambda_param_type(self, m, kd, depth):
+        """The type of the lambda parameter code[kd]: of an element of the receiver of the call the lambda is an
+        argument of, when that receiver sees nothing of the zone; of the parameter of the zone interface a method
+        returns the lambda as; else unknown."""
+        code = m.code
+        brace, paren, close, _ = _java_blocks(m)
+        if kd + 1 < len(code) and code[kd + 1].text == '->':
+            first, position = kd, 0
+        else:
+            p = paren[kd]
+            if p is None or p not in close or close[p] + 1 >= len(code) or code[close[p] + 1].text != '->':
+                return UNKNOWN_TYPE
+            first = p
+            position = sum(1 for x in range(p + 1, kd) if code[x].text == ',' and paren[x] == p)
+        if first >= 1 and code[first - 1].text == 'return':
+            return self.returned_lambda_param(m, first, position)
+        a = paren[first]
+        if a is None or (brace[first] is not None and brace[first] > a):
+            return UNKNOWN_TYPE
+        c = a - 1
+        if c < 2 or code[c].kind != tk.IDENT or code[c - 1].text != '.' or code[c].text in LIBRARY_FOREIGN_LAMBDA:
+            return UNKNOWN_TYPE
+        return BLIND_TYPE if self.expr_type(m, c - 2, depth + 1)[0] == 'blind' else UNKNOWN_TYPE
+
+    def returned_lambda_param(self, m, first, position):
+        """For `return (a, b) -> ...`: the type of the parameter at `position` of the one abstract method of the
+        interface the enclosing method returns."""
+        code = m.code
+        brace, _, _, opener = _java_blocks(m)
+        meth = None
+        b = brace[first]
+        while b is not None and meth is None:
+            o = opener.get(b - 1) if code[b - 1].text == ')' else None
+            if o is not None and o >= 2 and code[o - 1].kind == tk.IDENT and code[o - 1].text not in JAVA_KEYWORDS \
+                    and _java_type_end(code, o - 2):
+                meth = o - 1
+            b = brace[b]
+        written = _java_written_type(m, code[meth].start) if meth is not None else None
+        head = _java_type_parts(written)[0] if written else None
+        f = self.index.java_type_file(m, head) if head else None
+        if f is None:
+            return UNKNOWN_TYPE
+        fm = self.repo.model(f)
+        interfaces = [d for d in fm.types if d.name == head.split('.')[-1] and d.kind == 'interface']
+        if len(interfaces) != 1:
+            return UNKNOWN_TYPE
+        _, _, fclose, _ = _java_blocks(fm)
+        abstract = []
+        for name, entries in fm.decls.items():
+            for kind, off in entries:
+                k = fm.code_pos[off]
+                if kind == 'method' and fm.enclosing_types(off)[-1:] == interfaces and k + 1 in fclose \
+                        and fclose[k + 1] + 1 < len(fm.code) and fm.code[fclose[k + 1] + 1].text == ';' \
+                        and not _java_modifier(fm, off, 'default') and not _java_modifier(fm, off, 'static'):
+                    abstract.append(k)
+        params = _java_parameter_types(fm, abstract[0]) if len(abstract) == 1 else []
+        if position >= len(params) or params[position] is None:
+            return UNKNOWN_TYPE
+        return (self.type_class(fm, params[position]), fm, params[position])
+
+    def member_declaration(self, m, k):
+        """For a Java member code[k] read through a dot (`T.m`, `x.m()`, `T::m`): (file, offset) of its declaration in
+        the zone, where the type before the dot is a zone type whose declarations of that name all lie in one file,
+        else None."""
+        code = m.code
+        if m.lang != 'java' or k < 2 or code[k - 1].text not in ('.', '::'):
+            return None
+        call = code[k - 1].text == '::' or (k + 1 < len(code) and code[k + 1].text == '(')
+        q = self.qualifier(m, k)
+        if q is not None and q[0] == 'type':
+            decls = self.member_decls(m, q[1], code[k].text, call)
+        elif q is not None and q[0] == 'value':
+            cls, mm, written = self.expr_type(m, k - 2)
+            decls = self.member_decls(mm, written, code[k].text, call) if cls in ('zone', 'static') else []
+        else:
+            decls = []
+        files = {dm.path for dm, _ in decls}
+        if len(files) != 1 or not self.zone.contains(next(iter(files))):
+            return None
+        return decls[0][0].path, decls[0][1]
+
+    def switch_enum_files(self, m, switch):
+        """The files of the enum a switch reads (_java_switch_labels): the types written for its selector variable,
+        when the file declares it and the repository declares those types; else the enums of the repository that
+        declare every label."""
+        _, labels, selector = switch
+        if selector is not None:
+            offsets = _java_visible_declarations(m, selector)
+            written = [_java_declared_type(m, off) for off in offsets]
+            files = {self.index.java_type_file(m, w) if w else None for w in written}
+            if offsets and None not in files:
+                return files
+        return {f for f, _ in self.index.enums_declaring(labels)}
 
     def is_external(self, m, k):
         code = m.code
@@ -1319,6 +2125,9 @@ class Classifier:
         q = self.qualifier(m, k)
         if q is not None and q[0] in ('type', 'module'):
             return self.external_qualifier(m, q[0], q[1])
+        if q is not None and q[0] == 'package':
+            f = self.index.java_fqn.get(q[1] + '.' + name)
+            return f is None or not self.zone.contains(f)
         if m.lang == 'ocaml' and t.start in m.labels:
             # a record label names a field: outside when only a type outside the zone declares that field
             fields_in = any(f in files and 'field' in self.index.kinds[(name, f)] for f in self.index.declared.get(name, ()))
@@ -1326,8 +2135,32 @@ class Classifier:
             return fields_out and not fields_in
         if q is not None and m.lang in MEMBER_KINDS:
             # a member read through a value (r.waarde(), d.feittypen) is the zone's only when a type of the zone
-            # declares a member of that name: a local or a parameter of that name is no member
+            # declares a member of that name (a local or a parameter of that name is no member) and the type the
+            # file writes for that value may be a zone type (card hernoem-drools-backend: f.argumenten() on the
+            # frontend's Expr.Functie f)
+            if m.lang == 'java' and not self.value_may_be_zone(m, k):
+                return True
             return not self.zone_member(name, m.path)
+        if m.lang == 'java' and q is None:
+            # a type the file imports or sees from outside the zone keeps its name there, though the zone declares a
+            # type of that name too (card hernoem-drools-backend: FactModelGenerator imports the frontend's
+            # RegelSpraakModel.Rol, beside the zone's Toetsitem.Rol)
+            f = self.index.java_type_file(m, name)
+            if f is not None and not self.zone.contains(f):
+                return True
+            if _java_case_label(code, k):
+                # a constant of the switch's enum: outside when that enum is declared outside the zone (card
+                # hernoem-drools-backend: case SOM, TOTAAL -> over the frontend's Expr.FunctieKind, while the zone's
+                # Accumulatie.Soort declares SOM). The enum is the type written for the selector variable, else
+                # every enum that declares all labels of the switch
+                switch = _java_switch_labels(code, k)
+                if switch is not None and name in switch[1]:
+                    key = (m.path, switch[0])
+                    if key not in self._switch_enums:
+                        self._switch_enums[key] = self.switch_enum_files(m, switch)
+                    enums = self._switch_enums[key]
+                    if enums and not any(self.zone.contains(f) for f in enums):
+                        return True
         inside = self.index.declared_in(name, files)
         if inside:
             return False
@@ -1342,6 +2175,8 @@ class Classifier:
             if name in m.static_imports:
                 f = self.index.java_fqn.get(m.static_imports[name])
                 return f is None or not self.zone.contains(f)
+            if _java_case_label(code, k):
+                return True   # a constant of the switch's enum, which only code outside the zone declares
             return name in self.supertype_names(m, t.start)
         if m.lang == 'ocaml':
             for f in self.index.declared.get(name, ()):
@@ -1363,12 +2198,35 @@ class Occurrence:
         self.path, self.line, self.col, self.kind, self.external = path, line, col, kind, external
 
 
+TABLES = 'scripts/lib/naming/tables'
+
+
+def table_english(repo, lex):
+    """Per table under scripts/lib/naming/tables/: its zone and the new names of its rows that hold a Dutch word only
+    where the glossary gives that word as a translation of a word of the row (new_dutch_words, as check reads them):
+    the table made those names English (card hernoem-drools-backend: roleLinks of rolKoppelingen, TEN of TIEN)."""
+    d = repo.path(TABLES)
+    out = []
+    for base in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if base.endswith('.tsv'):
+            t = Table(os.path.join(d, base))
+            out.append((t.zone, {r.new for r in t.rows
+                                 if r.new and lex.analyse(r.new).is_dutch() and not new_dutch_words(lex, r)}))
+    return out
+
+
 def inventory(repo, lex, zone):
-    """name -> occurrences of every Dutch name of the zone: identifiers in code, file names and directory names."""
+    """name -> occurrences of every Dutch name of the zone: identifiers in code, file names and directory names. A
+    new name of a table of the zone is no Dutch name there (table_english)."""
     found = collections.defaultdict(list)
     unknown = collections.Counter()
     seen_unknown = set()
     classifier = Classifier(repo, zone)
+    english = table_english(repo, lex)
+
+    def dutch(a, path):
+        return a.is_dutch() and not any(a.name in names and any(under(path, p) for p in prefixes)
+                                        for prefixes, names in english)
 
     def note_unknown(a):
         if a.name in seen_unknown:
@@ -1385,7 +2243,7 @@ def inventory(repo, lex, zone):
                 continue
             a = lex.analyse(t.text)
             note_unknown(a)
-            if not a.is_dutch():
+            if not dutch(a, f):
                 continue
             line, col = m.position(t.start)
             found[t.text].append(Occurrence(f, line, col, 'ident', classifier.is_external(m, k)))
@@ -1394,14 +2252,180 @@ def inventory(repo, lex, zone):
         if key:
             a = lex.analyse(key)
             note_unknown(a)
-            if a.is_dutch():
+            if dutch(a, f):
                 found[key].append(Occurrence(f, 0, 0, 'file', False))
     for path, name in zone.dirs():
         a = lex.analyse(name)
         note_unknown(a)
-        if a.is_dutch():
+        if dutch(a, path):
             found[name].append(Occurrence(path, 0, 0, 'dir', False))
     return found, unknown
+
+
+# ================================================================ frozen names
+
+FROZEN = 'scripts/lib/naming/frozen'
+FROZEN_COLUMNS = ['name', 'file', 'count']
+# What another compilation unit can read of a zone. A name the zone declares only otherwise (a local variable, a
+# parameter) is a name of that other code's own, however it is spelled.
+REACHABLE_KINDS = frozenset(('type', 'method', 'field', 'constant'))
+
+
+class FrozenRow:
+    __slots__ = ('list', 'line', 'name', 'file', 'count', 'reader')
+
+    def __init__(self, list_path, line, name, file, count, reader='code outside this repository uses it'):
+        self.list, self.line, self.name, self.file, self.count = list_path, line, name, file, count
+        self.reader = reader
+
+    def where(self):
+        return '%s:%d' % (self.list, self.line) if self.line else self.list
+
+
+class FrozenLists:
+    """The lists under scripts/lib/naming/frozen/ (`freeze`): per list a zone and the names of it that code outside
+    this repository uses. Such a name stays until that code is renamed with it. With a zone, also the names of it that
+    the production runtime reads (runtime_reads), which the tool never renames."""
+
+    def __init__(self, repo, zone=None):
+        self.lists = []    # (prefixes, {name: FrozenRow})
+        bases = sorted(os.listdir(repo.path(FROZEN))) if os.path.isdir(repo.path(FROZEN)) else []
+        for base in bases:
+            if not base.endswith('.tsv'):
+                continue
+            rel = FROZEN + '/' + base
+            prefixes = None
+            for no, line in enumerate(read_text(repo.path(rel)).split('\n'), 1):
+                m = re.match(r'#\s*zone:\s*(.+)$', line)
+                if m:
+                    if prefixes is not None:
+                        die('%s:%d: a second zone line' % (rel, no))
+                    prefixes = [p.rstrip('/') for p in m.group(1).split()]
+            if prefixes is None:
+                die('%s: no "# zone: <prefix>..." line' % rel)
+            rows = {}
+            for no, (name, file, count) in _read_tsv(repo.path(rel), FROZEN_COLUMNS):
+                if not NAME_RE.match(name):
+                    die('%s:%d: %r is no complete name' % (rel, no, name))
+                if not file or not count.isdigit() or int(count) < 1:
+                    die('%s:%d: a frozen name needs the file that uses it and a count of one or more' % (rel, no))
+                if name in rows:
+                    die('%s:%d: %s is listed twice (first at line %d)' % (rel, no, name, rows[name].line))
+                rows[name] = FrozenRow(rel, no, name, file, int(count))
+            self.lists.append((prefixes, rows))
+        if zone is not None:
+            rows = runtime_reads(repo, zone)
+            if rows:
+                self.lists.append((zone.prefixes, rows))
+
+    def held(self, name, path):
+        """The row of a list that holds `name` in a zone that has `path`, or None."""
+        for prefixes, rows in self.lists:
+            r = rows.get(name)
+            if r is not None and any(under(path, p) for p in prefixes):
+                return r
+        return None
+
+    def names_of(self, zone):
+        """{name: FrozenRow} of the lists whose zone has a file of `zone`."""
+        out = {}
+        for prefixes, rows in self.lists:
+            if any(under(f, p) for p in prefixes for f in zone.files):
+                for name, r in rows.items():
+                    out.setdefault(name, r)
+        return out
+
+
+RUNTIME = EXEMPT[0][0]
+
+
+def runtime_reads(repo, zone):
+    """{name: FrozenRow} of the names of the zone that the production runtime reads (zone_reads): the tool never
+    renames it, and the repository compiles it with the zone (card hernoem-drools-backend: runtime/Accessors.java reads
+    Namen.lidnamen and Namen.Lidnamen). A read through a value counts only where the runtime writes a zone type for
+    that value: a read the tool misses there fails to compile, while one counted wrongly would keep a name for good
+    (Breuk.van(1).delen(...) reads the runtime's own Breuk, beside a delen of the zone)."""
+    files = [f for f in repo.files() if f.startswith(RUNTIME) and tk.language(f) == 'java']
+    if not files or not any(under(RUNTIME.rstrip('/'), p) for p in zone.prefixes):
+        return {}
+    names, constants = set(), set()
+    for f in zone.code_files:
+        m = repo.model(f)
+        for n, entries in m.decls.items():
+            kinds = {kind for kind, _ in entries}
+            if kinds & REACHABLE_KINDS:
+                names.add(n)
+            if 'constant' in kinds:
+                constants.add(n)
+        if m.lang == 'java' and m.package:
+            names.update(m.package.split('.'))
+    models = [repo.model(f) for f in files]
+    own_types = collections.defaultdict(list)
+    for m in models:
+        for decl in m.types:
+            if decl.name:
+                own_types[decl.name].append((m, decl))
+    reads = collections.defaultdict(collections.Counter)
+    for m in models:
+        for name, n in zone_reads(repo, zone, m, names, constants, own_types, unknown_reads=False).items():
+            reads[name][m.path] += n
+        for name in runtime_property_reads(m):
+            if name in names:
+                reads[name][m.path] += 1
+    return {n: FrozenRow(RUNTIME, 0, n, min(reads[n], key=lambda p: (-reads[n][p], p)), sum(reads[n].values()),
+                         'the production runtime reads it, which this tool never renames') for n in reads}
+
+
+def runtime_property_reads(m):
+    """The getters the runtime reads by a property name: get(bean, "waarde") of RegelSpraakRuntime looks up
+    getWaarde, else isWaarde, by reflection (card hernoem-drools-backend: the segments of the zone's Period)."""
+    code = m.code
+    out = []
+    for k, t in enumerate(code):
+        if t.text != 'get' or k + 1 >= len(code) or code[k + 1].text != '(':
+            continue
+        # RegelSpraakRuntime.get(...), or get(...) in that class itself
+        qualified = k >= 1 and code[k - 1].text in ('.', '::')
+        if (qualified and not (k >= 2 and code[k - 2].text == 'RegelSpraakRuntime')) or (
+                not qualified and not m.path.endswith('/RegelSpraakRuntime.java')):
+            continue
+        # the second argument at the call's own depth, a string literal alone
+        depth = 0
+        j = k + 2
+        while j < len(code):
+            x = code[j].text
+            if x in ('(', '[', '{'):
+                depth += 1
+            elif x in (')', ']', '}'):
+                if depth == 0:
+                    break
+                depth -= 1
+            elif x == ',' and depth == 0:
+                if j + 2 < len(code) and code[j + 1].kind == tk.STRING and code[j + 2].text in (')', ','):
+                    prop = _string_value(code[j + 1].text)
+                    if prop and re.match(r'[A-Za-z]\w*$', prop):
+                        out += ['get' + prop[:1].upper() + prop[1:], 'is' + prop[:1].upper() + prop[1:]]
+                break
+            j += 1
+    return out
+
+
+def hold_frozen(repo, found, zone=None):
+    """`found` without the occurrences in the zone that a frozen list holds, and those apart: name -> (FrozenRow,
+    occurrences)."""
+    frozen = FrozenLists(repo, zone)
+    if not frozen.lists:
+        return found, {}
+    plain = collections.defaultdict(list)
+    held = {}
+    for name, occ in found.items():
+        for o in occ:
+            r = None if o.external else frozen.held(name, o.path)
+            if r is None:
+                plain[name].append(o)
+            else:
+                held.setdefault(name, (r, []))[1].append(o)
+    return plain, held
 
 
 def declaration_of(repo, zone, name):
@@ -1475,18 +2499,32 @@ def cmd_inventory(args):
     zone = Zone(repo, args.prefixes)
     t0 = time.time()
     found, unknown = inventory(repo, lex, zone)
+    found, held = hold_frozen(repo, found, zone)
     elapsed = time.time() - t0
     names = {n: occ for n, occ in found.items() if any(not o.external for o in occ)}
-    external = {n: occ for n, occ in found.items() if all(o.external for o in occ)}
+    external = {n: occ for n, occ in found.items() if all(o.external for o in occ) and n not in held}
+    lists = sorted({r.list for r, _ in held.values()})
     if args.json:
         for name in sorted(names):
             print(json.dumps(_inventory_item(repo, lex, zone, name, names[name]), ensure_ascii=False))
+        for name in sorted(held):
+            item = _inventory_item(repo, lex, zone, name, held[name][1])
+            item['frozen'] = held[name][0].where()
+            print(json.dumps(item, ensure_ascii=False))
     elif not args.quiet:
         for name in sorted(names, key=lambda n: (names[n][0].path, names[n][0].line, n)):
             occ = [o for o in names[name] if not o.external]
             first = occ[0]
             where = first.path + (':%d' % first.line if first.line else ' (%s name)' % first.kind)
             print('%s\t%s\t%d\t%s' % (name, where, len(occ), _proposals_text(lex, name)))
+        if held:
+            print('# frozen (%s): code outside this repository or the production runtime reads them, and they are renamed '
+                  'with that code:' % ', '.join(lists))
+            for name in sorted(held, key=lambda n: (held[n][1][0].path, held[n][1][0].line, n)):
+                r, occ = held[name]
+                first = occ[0]
+                where = first.path + (':%d' % first.line if first.line else ' (%s name)' % first.kind)
+                print('%s\t%s\t%d\t%s (%s, %d times)' % (name, where, len(occ), r.where(), r.file, r.count))
         if args.external:
             print('# referenced from outside the zone, renamed with their own zone:')
             for name in sorted(external):
@@ -1505,9 +2543,10 @@ def cmd_inventory(args):
         for z, c in sorted(per.items()):
             print('%s\t%d' % (z, c))
     n_occ = sum(1 for occ in names.values() for o in occ if not o.external)
-    print('inventory: %d Dutch names in %s (%d occurrences); %d names declared outside the zone are not counted%s; %.1f s'
-          % (len(names), ' '.join(zone.prefixes), n_occ, len(external),
-             '' if args.external else ' (--external lists them)', elapsed), file=sys.stderr)
+    print('inventory: %d Dutch names in %s (%d occurrences); %s%d names declared outside the zone are not counted%s; '
+          '%.1f s' % (len(names), ' '.join(zone.prefixes), n_occ,
+                      '%d frozen names reported apart (%s); ' % (len(held), ', '.join(lists)) if held else '',
+                      len(external), '' if args.external else ' (--external lists them)', elapsed), file=sys.stderr)
     return 1 if names else 0
 
 
@@ -1610,16 +2649,18 @@ def write_table(path, zone, rows):
 
 
 class Scope:
-    """`*` (every file of the zone), a path prefix (a file or a directory) or a Java type or OCaml module."""
+    """`*` (every file of the zone), a path prefix (a file or a directory) or a Java type or OCaml module. A path
+    scope also holds the path it has once the files are renamed (`renamed_path`)."""
 
-    def __init__(self, text, kind, specificity, ranges=None, path=None):
+    def __init__(self, text, kind, specificity, ranges=None, path=None, renamed_path=None):
         self.text, self.kind, self.specificity, self.ranges, self.path = text, kind, specificity, ranges or {}, path
+        self.renamed_path = renamed_path or path
 
     def covers_file(self, path, aliases):
         if self.kind == 'all':
             return True
         if self.kind == 'path':
-            return any(under(p, self.path) for p in aliases)
+            return any(under(p, self.path) or under(p, self.renamed_path) for p in aliases)
         return path in self.ranges
 
     def covers(self, path, aliases, offset):
@@ -1628,18 +2669,23 @@ class Scope:
         return self.covers_file(path, aliases)
 
 
-def resolve_scope(repo, zone, text, renames_back):
-    """The Scope a table writes as `text`, or an error sentence."""
+def resolve_scope(repo, zone, text, renames_back, forward=None):
+    """The Scope a table writes as `text`, or an error sentence. A path scope names the tree before the file
+    renames; `forward` gives the path it has after them, so that it holds in a tree where they are made."""
     if text == '*':
         return Scope(text, 'all', 0), None
-    if '/' in text or tk.language(text) or os.path.splitext(text)[1]:
+    # a nested type (Gevolg.Kenmerkstand) has a dot too: only a file extension makes a path of a name without a slash
+    if '/' in text or tk.language(text) or os.path.splitext(text)[1][1:] in FILE_EXTENSIONS:
         path = text.rstrip('/')
         if not any(under(path, p) for p in zone.prefixes):
             return None, 'scope %s lies outside the zone %s' % (text, ' '.join(zone.prefixes))
-        current = [f for f in zone.files if under(f, path) or under(renames_back(f), path)]
+        renamed_path = forward(path) if forward else path
+        current = [f for f in zone.files if under(f, path) or under(f, renamed_path) or under(renames_back(f), path)]
         if not current:
             return None, 'scope %s names no file of the zone' % text
-        return Scope(text, 'path', 1 + path.count('/'), path=path), None
+        return Scope(text, 'path', 1 + path.count('/'), path=path, renamed_path=renamed_path), None
+    if '#' in text:
+        return _method_scope(repo, zone, text)
     ranges = collections.defaultdict(list)
     depth = 0
     parts = text.split('.')
@@ -1650,7 +2696,9 @@ def resolve_scope(repo, zone, text, renames_back):
             depth = max(depth, 1)
         for t in m.types:
             if t.name and (t.qualified() == text or t.name == text) and t.end is not None:
-                ranges[f].append((t.start, t.end))
+                # a Java type's comment above it speaks of its own names (`{@code waar}` of a record component)
+                start = _member_start(m, m.code_pos[t.start]) if m.lang == 'java' else t.start
+                ranges[f].append((start, t.end))
                 d = 1
                 p = t.parent
                 while p is not None:
@@ -1661,6 +2709,91 @@ def resolve_scope(repo, zone, text, renames_back):
         return None, 'scope %s names no file, Java type or OCaml module of the zone' % text
     if len(ranges) > 1 and len(parts) == 1 and not all(tk.language(f) == 'ocaml' for f in ranges):
         return None, 'scope %s names types in %d files (%s): write the path of the file' % (
+            text, len(ranges), ', '.join(sorted(ranges)))
+    return Scope(text, 'type', 100 + depth, ranges=dict(ranges)), None
+
+
+def _type_depth(t):
+    d = 0
+    while t is not None:
+        d += 1
+        t = t.parent
+    return d
+
+
+def _member_start(m, k):
+    """The offset after the code token that ends what stands before the declaration whose name is code token `k`
+    (`;`, `{` or `}`, parentheses skipped): its comment, annotations and modifiers belong to it."""
+    code = m.code
+    i = k - 1
+    paren = 0
+    while i >= 0:
+        x = code[i].text
+        if x == ')':
+            paren += 1
+        elif x == '(':
+            paren -= 1
+        elif paren == 0 and x in (';', '{', '}'):
+            return code[i].end
+        i -= 1
+    return 0
+
+
+def _method_end(m, k):
+    """The end of the Java method whose name is code token `k`: its body's closing brace, or the `;` of an
+    abstract method."""
+    code = m.code
+    j = k + 1
+    paren = 0
+    while j < len(code):
+        x = code[j].text
+        if x == '(':
+            paren += 1
+        elif x == ')':
+            paren -= 1
+        elif paren == 0 and x in ('{', ';'):
+            break
+        j += 1
+    if j < len(code) and code[j].text == '{':
+        brace = 0
+        while j < len(code):
+            if code[j].text == '{':
+                brace += 1
+            elif code[j].text == '}':
+                brace -= 1
+                if brace == 0:
+                    break
+            j += 1
+    return code[j].end if j < len(code) else len(m.text)
+
+
+def _method_scope(repo, zone, text):
+    """`Type#method`: every declaration of the method directly in that Java type of the zone, from its comment
+    to the end of its body (card hernoem-drools-backend: one class held a String waar, where, and a boolean waar,
+    true, in two of its methods)."""
+    owner, _, method = text.partition('#')
+    ranges = collections.defaultdict(list)
+    depth = 0
+    for f in zone.code_files:
+        if tk.language(f) != 'java':
+            continue
+        m = repo.model(f)
+        for kind, offset in m.decls.get(method, ()):
+            if kind != 'method':
+                continue
+            inner = None
+            for t in m.types:
+                if t.end is not None and t.start <= offset <= t.end and (inner is None or t.start >= inner.start):
+                    inner = t
+            if inner is None or not inner.name or not (inner.qualified() == owner or inner.name == owner):
+                continue
+            k = m.code_pos[offset]
+            ranges[f].append((_member_start(m, k), _method_end(m, k)))
+            depth = max(depth, _type_depth(inner) + 1)
+    if not ranges:
+        return None, 'scope %s names no method of a Java type of the zone' % text
+    if len(ranges) > 1:
+        return None, 'scope %s names methods in %d files (%s): the type is not unique' % (
             text, len(ranges), ', '.join(sorted(ranges)))
     return Scope(text, 'type', 100 + depth, ranges=dict(ranges)), None
 
@@ -1679,11 +2812,23 @@ class Plan:
         self.scopes = {}
         for r in self.rows:
             if r.scope not in self.scopes:
-                scope, err = resolve_scope(repo, self.zone, r.scope, self.renamed_back)
+                scope, err = resolve_scope(repo, self.zone, r.scope, self.renamed_back, self.forward_path)
                 if err:
                     self.errors.append((r, err))
                 self.scopes[r.scope] = scope
         self.classifier = Classifier(repo, self.zone)
+        # in the plan, so that apply refuses a frozen name as check does
+        frozen = FrozenLists(repo, self.zone)
+        for r in self.rows:
+            scope = self.scopes.get(r.scope)
+            if scope is None or not any(r.old in rows for _, rows in frozen.lists):
+                continue
+            for f in self.zone.files:
+                h = frozen.held(r.old, f) if scope.covers_file(f, self.aliases(f)) else None
+                if h is not None:
+                    self.errors.append((r, 'old %s is frozen (%s): %s (%s, %d times), and it is renamed with that code'
+                                        % (r.old, h.where(), h.reader, h.file, h.count)))
+                    break
 
     # -- files
 
@@ -1729,6 +2874,42 @@ class Plan:
                         stem = comp.split('.')[0]
                         new = (new[:1].lower() + new[1:]) if stem[:1].islower() else new
                     out.append(new + comp[len(comp.split('.')[0]):])
+        return '/'.join(out)
+
+    def forward_path(self, path):
+        """The path a path of the tree before the file renames has after them, read from the rows alone, before
+        their scopes are resolved: each component by the row of its name whose scope is * or a path the component lies
+        under, the longest scope winning. renamed_back cannot tell an unchanged directory from a renamed one (with a
+        row toets -> test, src/test reads back as src/toets); this direction is unambiguous."""
+        parts = path.split('/')
+        out = []
+        for i, comp in enumerate(parts):
+            old_prefix = '/'.join(parts[:i + 1])
+            if not any(under(old_prefix, p) for p in self.zone.prefixes):
+                out.append(comp)
+                continue
+            last = i == len(parts) - 1
+            stem = comp.split('.')[0] if last and os.path.splitext(comp)[1] else comp
+            key = stem[:1].upper() + stem[1:] if last and tk.language(comp) == 'ocaml' else stem
+            best = None
+            for r in self.by_old.get(key, ()):
+                if not r.new:
+                    continue
+                if r.scope == '*':
+                    reach = 0
+                elif ('/' in r.scope or os.path.splitext(r.scope)[1]) and under(old_prefix, r.scope.rstrip('/')):
+                    reach = len(r.scope)
+                else:
+                    continue
+                if best is None or reach > best[0]:
+                    best = (reach, r)
+            if best is None:
+                out.append(comp)
+                continue
+            new = best[1].new
+            if last and tk.language(comp) == 'ocaml' and stem[:1].islower():
+                new = new[:1].lower() + new[1:]
+            out.append(new + comp[len(stem):])
         return '/'.join(out)
 
     def renamed_back(self, path):
@@ -1777,11 +2958,18 @@ class Plan:
             if t.kind != tk.IDENT or t.text not in self.by_old:
                 continue
             r = self.name_row(path, t.text, t.start, aliases)
+            # the classifier tells the zone's own from the outside: a qualified name (A.b, x.b), an OCaml record
+            # label, and in Java a type the file imports from outside
+            external = self.classifier.is_external(m, k)
+            if not external:
+                # a member read through a zone type is renamed as its declaration is (card hernoem-drools-backend:
+                # TmsTranspiler's row for its locals toets renamed t.toets() of the record Toetsitem, whose component
+                # the row of its own file renames otherwise)
+                d = self.classifier.member_declaration(m, k)
+                if d is not None:
+                    r = self.name_row(d[0], t.text, d[1], self.aliases(d[0])) or r
             if r is None:
                 continue
-            # qualified (A.b, x.b) or an OCaml record label: the classifier tells the zone's own from the outside
-            q = self.classifier.qualifier(m, k)
-            external = (q is not None or (m.lang == 'ocaml' and t.start in m.labels)) and self.classifier.is_external(m, k)
             out.append((k, t, r, external))
         return out
 
@@ -1856,12 +3044,18 @@ def write_decisions(path, entries):
 def searchable_outside(plan):
     """What is looked for outside the zone: ({old: news} for the names of two or more words and the Java types
     and OCaml modules the zone declares, {old: (rests, news)} for the files the table renames, where a rest is
-    the part of a file name after its stem). A one-word name outside the zone is ordinary prose; a one-word
-    file name counts only with the rest of its name (`aggregatie.flogic`)."""
+    the part of a file name after its stem, {old: {(parent, new)}} for the directories the table renames, by the
+    path of their parent before the renames, and {old: (types, news)} for the one-word members of the zone's Java
+    types, by the simple names of their declaring types). A one-word name outside the zone is ordinary prose; a
+    one-word file name counts only with the rest of its name (`aggregatie.flogic`), a one-word directory only in a
+    path from the repository root (`backends/drools/src/bronroute`), a one-word member only read through its
+    type (`FactModelGenerator.creatiekoppeling`, `Gen#veld`)."""
     index = plan.repo.index()
     zone_files = plan.zone.fileset
     words = {}
     files = {}
+    dirs = collections.defaultdict(set)
+    members = {}
     for old, rows in plan.by_old.items():
         news = sorted({r.new for r in rows if r.new})
         if not news:
@@ -1885,26 +3079,91 @@ def searchable_outside(plan):
             rests, _ = files.get(old, (set(), news))
             rests.add(base[len(stem):])
             files[old] = (rests, news)
-    return words, files
+    # before and after the file renames alike: verify reads the gate logs of a tree whose files are not renamed yet
+    for f in plan.zone.files:
+        before, after = plan.renamed_back(f).split('/'), plan.renamed(f).split('/')
+        for i in range(min(len(before), len(after)) - 1):
+            if before[i] != after[i] and i > 0:
+                dirs[before[i]].add(('/'.join(before[:i]), after[i]))
+    for old, rows in plan.by_old.items():
+        news = sorted({r.new for r in rows if r.new})
+        if old in words or not news:
+            continue
+        types = set()
+        for f in index.declared.get(old, ()):
+            m = plan.repo.model(f) if f in zone_files else None
+            if m is None or m.lang != 'java':
+                continue
+            for kind, offset in m.decls[old]:
+                around = [t for t in m.enclosing_types(offset) if t.name]
+                if kind in ('field', 'method', 'constant') and around:
+                    types.add(max(around, key=lambda t: t.start).name)
+        if types:
+            members[old] = (types, news)
+    return words, files, dict(dirs), members
 
 
 def outside_hit(outside, text, word, offset):
     """The new names for `word` at `offset` of `text` when it is looked for outside the zone, or None."""
-    words, files = outside
+    words, files, dirs, members = outside
     if word in words:
         return words[word]
+    end = offset + len(word)
     entry = files.get(word)
     if entry:
         rests, news = entry
-        end = offset + len(word)
         for rest in rests:
             if text.startswith(rest, end) and not re.match(r'\w', text[end + len(rest):end + len(rest) + 1]):
                 return news
+    for parent, new in sorted(dirs.get(word, ())):
+        start = offset - len(parent) - 1
+        if start >= 0 and text.startswith(parent + '/', start) and not re.match(r'[\w-]', text[start - 1:start] if start else '') \
+                and not re.match(r'[\w-]', text[end:end + 1]):
+            return [new]
+    entry = members.get(word)
+    if entry:
+        types, news = entry
+        m = re.search(r'([A-Za-z_][A-Za-z0-9_]*)(?:\.|#|::)$', text[max(0, offset - 200):offset])
+        if m and m.group(1) in types:
+            return news
     return None
 
 
 def plan_nwords(name):
     return sum(1 for w, _ in split_words(name) if not w.isdigit())
+
+
+def offered(plan, r, word):
+    """The new names an occurrence of `word` on the list is offered: that of the row at its place first, then the
+    other new names of the name (card hernoem-drools-backend: a piece of a path takes the spelling of the renamed
+    directory, `dagsoorten`: `dayKinds|day-kinds`; a string that prints a record names its component, `waar=true`,
+    where the row at its place renames the word `waar` to where)."""
+    return [r.new] + sorted({x.new for x in plan.by_old.get(word, ()) if x.new and x.new != r.new})
+
+
+def dash_pattern(plan):
+    """The table's names with a dash (`zoals-ref`, a directory), whole, as one pattern, or None: text_words splits
+    at a dash, so such a name is looked for apart (card hernoem-drools-backend)."""
+    names = sorted((o for o in plan.by_old if '-' in o), key=len, reverse=True)
+    if not names:
+        return None
+    return re.compile(r'(?<![\w-])(?:%s)(?![\w-])' % '|'.join(re.escape(n) for n in names))
+
+
+def text_occurrences(pattern, text, base):
+    """(word, offset, qualified, qualifier, dashed) in offset order: every whole name of `pattern` (a name with a
+    dash), then every word of text_words that lies outside those."""
+    taken = []
+    out = []
+    if pattern is not None:
+        for m in pattern.finditer(text):
+            taken.append((base + m.start(), base + m.end()))
+            out.append((m.group(), base + m.start(), False, None, True))
+    for word, offset, qualified, qualifier in text_words(text, base):
+        if not any(s <= offset < e for s, e in taken):
+            out.append((word, offset, qualified, qualifier, False))
+    out.sort(key=lambda x: x[1])
+    return out
 
 
 def content_plan(plan):
@@ -1918,6 +3177,7 @@ def content_plan(plan):
     edits = collections.defaultdict(list)
     needed = []
     counts = collections.Counter()
+    dashes = dash_pattern(plan)
 
     def need(path, m_or_text, offset, word, news):
         if isinstance(m_or_text, FileModel):
@@ -1943,7 +3203,7 @@ def content_plan(plan):
         for t in m.tokens:
             if t.kind not in (tk.COMMENT, tk.STRING):
                 continue
-            for word, offset, qualified, qualifier in text_words(t.text, t.start):
+            for word, offset, qualified, qualifier, dashed in text_occurrences(dashes, t.text, t.start):
                 if word not in plan.by_old:
                     continue
                 r = plan.name_row(f, word, offset, aliases)
@@ -1952,11 +3212,12 @@ def content_plan(plan):
                 if qualifier is not None and _external_text_qualifier(plan, m, qualifier):
                     counts['external'] += 1
                     continue
-                if t.kind == tk.COMMENT and (r.nwords() >= 2 or qualified):
+                # a name with a dash names a directory or a slug, never code: it waits for a decision
+                if t.kind == tk.COMMENT and not dashed and (r.nwords() >= 2 or qualified):
                     edits[f].append((offset, offset + len(word), r.new))
                     counts['comments'] += 1
                 else:
-                    need(f, m, offset, word, [r.new])
+                    need(f, m, offset, word, offered(plan, r, word))
     outside = searchable_outside(plan)
     for f in repo.files():
         if exempt_reason(f) is not None:
@@ -1965,7 +3226,14 @@ def content_plan(plan):
         if in_zone and tk.language(f):
             continue
         lang = tk.language(f)
-        if lang:
+        if lang == 'shell':
+            # a script names a class or a test of the zone in a word of code (java -cp "$JAR" a.b.Main, MAIN=a.b.Main,
+            # the test names a gate greps for), which apply does not rename outside the zone: its whole text is read
+            # as a text file's, so those words go to the list
+            m = repo.model(f)
+            spans = [(0, m.text)]
+            holder = m
+        elif lang:
             m = repo.model(f)
             spans = [(t.start, t.text) for t in m.tokens if t.kind in (tk.COMMENT, tk.STRING)]
             holder = m
@@ -1981,11 +3249,11 @@ def content_plan(plan):
             spans = [(0, text)]
             holder = _TextLines(text)
         for base, text in spans:
-            for word, offset, qualified, qualifier in text_words(text, base):
+            for word, offset, qualified, qualifier, dashed in text_occurrences(dashes, text, base):
                 if in_zone:
                     r = plan.name_row(f, word)
                     if r is not None:
-                        need(f, holder, offset, word, [r.new])
+                        need(f, holder, offset, word, offered(plan, r, word))
                 else:
                     news = outside_hit(outside, text, word, offset - base)
                     if news:
@@ -2009,6 +3277,14 @@ class _TextLines:
 
 def _external_text_qualifier(plan, m, qualifier):
     if m.lang == 'java' and qualifier[:1].isupper():
+        # text is no code: a string or a comment names a class by its simple name where the file does not see it
+        # (card hernoem-drools-backend: a DRL text "Rekenhulpen.tijdvakken(" in a test of another package). Such a
+        # name is the zone's type when only the zone declares a Java type of that name.
+        index = plan.repo.index()
+        if index.java_type_file(m, qualifier) is None:
+            files = index.java_types.get(qualifier, ())
+            if files and all(plan.zone.contains(f) for f in files):
+                return False
         return plan.classifier.external_qualifier(m, 'type', qualifier)
     if m.lang == 'ocaml' and qualifier[:1].isupper():
         return plan.classifier.external_qualifier(m, 'module', qualifier)
@@ -2180,6 +3456,196 @@ def style_error(old, new, langs=()):
     return None
 
 
+# ---------------------------------------------------------------- spelling: the convention of the language
+# Card hernoem-drools-backend: a one-word Dutch old (creatiediepte, WORTEL, bronroute) left the translator free, and
+# it wrote English words together (creationdepth, SQUAREROOT, sourceroute) in some batches and apart in others. The
+# spelling follows from old and the language: a Java name is camelCase with the first letter of old, a constant is
+# in capitals with _ between its words, an OCaml or shell name separates its words with _, and a file or directory
+# name that is no Java class or OCaml module writes them as the names beside it. merge writes every answer so, and
+# check refuses a new that is written otherwise.
+
+def _humps(chunk):
+    """The camelCase parts of a chunk without separators; digits stay with the part before them (wf113Regel:
+    wf113, Regel; XMLParser: XML, Parser)."""
+    out = []
+    start = 0
+    for i in range(1, len(chunk)):
+        a, b = chunk[i - 1], chunk[i]
+        nxt = chunk[i + 1] if i + 1 < len(chunk) else ''
+        if b.isupper() and (a.islower() or a.isdigit() or (a.isupper() and nxt.islower())):
+            out.append(chunk[start:i])
+            start = i
+    out.append(chunk[start:])
+    return [p for p in out if p]
+
+
+def translation_words(lex, words):
+    """The English words a translation of the split `words` (invoer|vorm|fout) holds: the words of the glossary's
+    translations of each Dutch word, also of the glossary words inside a compound, and each other word as it is
+    (English already, a domain word, a code term)."""
+    out = set()
+    for w in words.split('|'):
+        w = w.lower()
+        if not w or w.isdigit():
+            continue
+        rows = list(lex.words.get(w, ()))
+        if not rows and lex.word_class(w, 2) == 'compound':
+            for _, _, part in lex._with_short_words(w, lex.cover(w)):
+                rows.extend(lex.words.get(part, ()))
+        for r in rows:
+            out.update(r.english_words())
+        out.update(COMPOUND_FUNCTION_WORDS.get(w, ()))
+        out.update(CODE_FUNCTION_WORDS.get(w, ()))
+        if w not in lex.words:
+            out.add(w)
+    return out
+
+
+def _split_joined(lex, run, expected):
+    """The words of `expected` that a run of letters in one case writes together (creationdepth: creation, depth;
+    SQUAREROOT: SQUARE, ROOT; Sessiondump: Session, dump), in the case of the run; None when the run is one word:
+    English, a domain word or a proper name, an expected word itself, or no join of expected words. An English
+    inflection of an expected word counts as that word (valuecounters: value, counters)."""
+    low = run.lower()
+    if len(low) < 4 or low in expected or lex.is_english(low) or low in lex.domain or low in lex.proper:
+        return None
+    stems = {stem(e) for e in expected}
+    n = len(low)
+    best = [None] * (n + 1)
+    best[n] = []
+    for i in range(n - 1, -1, -1):
+        for j in range(i + 2, n + 1):
+            piece = low[i:j]
+            if best[j] is None or not (piece in expected or (len(piece) >= 4 and stem(piece) in stems)):
+                continue
+            if best[i] is None or len(best[j]) + 1 < len(best[i]):
+                best[i] = [piece] + best[j]
+    pieces = best[0]
+    if not pieces or len(pieces) < 2:
+        return None
+    if run.isupper():
+        return [p.upper() for p in pieces]
+    if run[:1].isupper():
+        return [pieces[0][:1].upper() + pieces[0][1:]] + pieces[1:]
+    return pieces
+
+
+def spelling_rule(old, langs=(), name_sep=None):
+    """(separator, description) of the convention a new name for `old` is written in: '' is camelCase. Old's own
+    separator or humps decide first, then a constant in capitals, then the place: a file or directory name the
+    separator of the names beside it (`name_sep`), an OCaml or shell name _, any other name camelCase."""
+    so = _style(old)
+    if so[2]:
+        return so[2], 'as old, words separated with %r' % so[2]
+    if so[1]:
+        return '_', 'a constant: capitals, words separated with _'
+    if so[3]:
+        return '', 'as old, camelCase'
+    if name_sep is not None:
+        return name_sep, ('a file or directory name beside names that %s' % (
+            'separate their words with %r' % name_sep if name_sep else 'are camelCase'))
+    if set(langs) & {'ocaml', 'shell'}:
+        return '_', 'an %s name: words separated with _' % ('OCaml' if 'ocaml' in langs else 'shell')
+    return '', 'a %s name: camelCase' % ('Java' if 'java' in langs or not langs else '/'.join(sorted(langs)))
+
+
+def conventional(lex, old, new, words, langs=(), name_sep=None):
+    """`new` written by its convention (spelling_rule), with the English words of its translation that it writes
+    together apart: creatiediepte creationdepth is creationDepth in Java, WORTEL SQUAREROOT is SQUARE_ROOT,
+    feittype factType is fact_type in OCaml, bronroute sourceroute is source-route beside zoals-ref. The first
+    letter follows old; a test sentence with a code word in it (sectie_en_functionDefs) keeps its humps."""
+    if not new:
+        return new
+    expected = translation_words(lex, words)
+    core = new.strip("_'")
+    lead = new[:len(new) - len(new.lstrip('_'))]
+    trail = new[len(new.rstrip("_'")):] if core else ''
+    if not core:
+        return new
+    so = _style(old)
+    sep, _ = spelling_rule(old, langs, name_sep)
+    letters = [c for c in core if c.isalpha()]
+    new_caps = bool(letters) and all(c.isupper() for c in letters)
+
+    def parts_of(chunk, humps=True):
+        out = []
+        for p in (_humps(chunk) if humps else [chunk]):
+            one_case = p.isalpha() and (p.islower() or p.isupper() or p[1:].islower())
+            out.extend((_split_joined(lex, p, expected) if one_case else None) or [p])
+        return out
+
+    if sep:
+        parts = []
+        for chunk in re.split(r'[_-]+', core):
+            if chunk:
+                parts.extend(parts_of(chunk, humps=not so[3]))
+        if so[1]:
+            parts = [p.upper() for p in parts]
+        elif not any(c.isupper() for c in old[1:]):
+            parts = [p.lower() for p in parts]
+        text = sep.join(parts)
+    else:
+        parts = []
+        for chunk in re.split(r'[_-]+', core):
+            if chunk:
+                parts.extend(parts_of(chunk))
+        out = []
+        for i, p in enumerate(parts):
+            if new_caps or (p.isupper() and len(p) == 1):
+                p = p[:1] + p[1:].lower()
+            if i == 0:
+                p = (p[:1].upper() + p[1:]) if so[0] else (p.lower() if p.isupper() else p[:1].lower() + p[1:])
+            else:
+                p = p[:1].upper() + p[1:]
+            out.append(p)
+        text = ''.join(out)
+    if text and so[0] != text[:1].isupper() and text[:1].isalpha():
+        text = (text[:1].upper() if so[0] else text[:1].lower()) + text[1:]
+    return lead + text + trail
+
+
+def neighbour_separator(repo, path, cache=None):
+    """The separator the names beside a file or directory of the zone write their words with: '-', '_' or ''
+    (camelCase), the most frequent among the names of two words or more in its directory; '-' when none has two
+    words, as the repository's directory names do (zoals-ref, the jutterswet-* names)."""
+    parent = os.path.dirname(path.rstrip('/'))
+    key = (parent, path.rstrip('/'))
+    if cache is not None and key in cache:
+        return cache[key]
+    prefix = parent + '/' if parent else ''
+    names = set()
+    for f in repo.files():
+        if f.startswith(prefix):
+            entry = f[len(prefix):].split('/')[0]
+            if prefix + entry != path.rstrip('/'):
+                names.add(entry.split('.')[0])
+    counts = collections.Counter()
+    for n in names:
+        if '-' in n:
+            counts['-'] += 1
+        elif '_' in n.strip('_'):
+            counts['_'] += 1
+        elif any(c.isupper() for c in n[1:]) and not n.isupper():
+            counts[''] += 1
+    order = {'-': 0, '_': 1, '': 2}
+    sep = min(counts, key=lambda s: (-counts[s], order[s])) if counts else '-'
+    if cache is not None:
+        cache[key] = sep
+    return sep
+
+
+def spelling_error(lex, row, langs=(), name_sep=None):
+    """Why `new` is not written by its convention, or None (conventional)."""
+    want = conventional(lex, row.old, row.new, row.words, langs, name_sep)
+    if want == row.new:
+        return None
+    _, rule = spelling_rule(row.old, langs, name_sep)
+    bare = lambda s: re.sub(r"[_\-']", '', s).lower()
+    if bare(want) == bare(row.new) and len(split_words(want)) > len(split_words(row.new)):
+        return 'new %s joins English words of its translation (%s): write %s' % (row.new, rule, want)
+    return 'new %s is not written by its convention (%s): write %s' % (row.new, rule, want)
+
+
 def translation_error(lex, row):
     """Why a `translation` row is no translation by the glossary, or None. Every content word of `old` asks for
     one of its glossary translations in `new`, and what `new` holds beyond those must be English function words,
@@ -2239,8 +3705,35 @@ def translation_error(lex, row):
     content = [w for w in new_words if w not in lex.english_function_words]
     expect = ' + '.join('/'.join('()' if not x else ''.join(x) if len(x) == 1 else '-'.join(x) for x in opts[:4])
                         for opts in units)
-    return 'the content words of %s (%s) are not the glossary translations of %s (%s)' % (
-        row.new, ' '.join(content) or 'none', row.words, expect or 'none')
+    # a declared name of the corpus or of a RegelSpraak source in code is domain content, Dutch as authored
+    gone = [w.lower() for w in words if lex.word_class(w.lower(), 2) == 'domain'
+            and w.lower() not in lex.english_function_words and w.lower() not in new_words]
+    return 'the content words of %s (%s) are not the glossary translations of %s (%s)%s' % (
+        row.new, ' '.join(content) or 'none', row.words, expect or 'none',
+        '; domain words stay as written: %s' % ', '.join(gone) if gone else '')
+
+
+# Card hernoem-drools-backend: van at the start or the end of a name is part of what the name says (indexVan, the
+# index of its argument; vanObject, declared by Object; rVan, the start of a period beside tot), so English keeps it
+# as of or from (indexOf, fromObject, rFrom), as Java names do (indexOf, valueOf, fromString); between two nouns
+# English drops it in a compound (labelVanBean: beanLabel). The translation check takes van as an optional function
+# word, so without this rule vanEenStapel became stack and labelVan label.
+VAN_AT_THE_EDGE = ('of', 'from')
+
+
+def edge_error(row):
+    """Why `new` drops the van that starts or ends `old`, or None."""
+    words = [w.lower() for w in row.words.split('|') if w and not w.isdigit()]
+    if len(words) < 2 or 'van' not in (words[0], words[-1]):
+        return None
+    new = [w.lower() for w, _ in split_words(row.new) if not w.isdigit()]
+    if words[0] == 'van' and (not new or new[0] not in VAN_AT_THE_EDGE):
+        return ('van starts old %s and says what something comes from or belongs to: new %s must start with of or '
+                'from (vanObject, fromObject; vanVeld, ofField)' % (row.old, row.new))
+    if words[-1] == 'van' and (not new or new[-1] not in VAN_AT_THE_EDGE):
+        return ('van ends old %s and says the x of its argument: new %s must end with of or from (indexVan, indexOf; '
+                'rVan, rFrom)' % (row.old, row.new))
+    return None
 
 
 def stem(w):
@@ -2327,11 +3820,12 @@ def javap_members(fqns, classpath):
             h = re.match(r'(?:public |protected |abstract |final |sealed |non-sealed |static )*'
                          r'(?:class|interface|enum|record) ([\w.$]+)(?:<.*?>)?(?: extends ([^{]+?))?(?: implements ([^{]+?))?(?: permits [^{]+?)? \{', line)
             if h:
-                current = h.group(1)
+                # javap writes a nested class with $ (java.util.Map$Entry); the tool asks for it with a dot
+                current = h.group(1).replace('$', '.')
                 supers = []
                 for g in (h.group(2), h.group(3)):
                     if g:
-                        supers += [re.sub(r'<.*', '', s).strip() for s in re.split(r',\s*(?![^<]*>)', g)]
+                        supers += [re.sub(r'<.*', '', s).strip().replace('$', '.') for s in re.split(r',\s*(?![^<]*>)', g)]
                 out[current] = (supers, set())
                 for s in supers:
                     if s not in seen:
@@ -2340,7 +3834,7 @@ def javap_members(fqns, classpath):
             if current and line.startswith('  '):
                 mm = re.search(r'([\w$]+)\(', line)
                 if mm:
-                    if mm.group(1) != current.split('.')[-1]:
+                    if mm.group(1).split('$')[-1] != current.split('.')[-1]:
                         out[current][1].add(mm.group(1))
                 else:
                     mf = re.search(r'([\w$]+);\s*$', line)
@@ -2350,13 +3844,15 @@ def javap_members(fqns, classpath):
 
 
 def library_members(plan, classpath, errors):
-    """{member name: 'Type (a supertype of X in F)'} of the library types the zone's Java types extend or
-    implement, with java.lang.Object, Record and Enum where they apply; repository supertypes outside the zone
-    add the names their files declare."""
+    """{zone file: {member name: 'Type (a supertype of X in F)'}} of the library types the Java types of that file
+    extend or implement, with java.lang.Object, Record and Enum where they apply; repository supertypes outside the
+    zone add the names their files declare. Per file: a library member is a name a type of that file inherits (card
+    hernoem-drools-backend: one test class extends PropagationEntry.AbstractPropagationEntry of Drools, and its next
+    was refused in every file of the zone)."""
     repo = plan.repo
     index = repo.index()
-    wanted = {}   # fqn -> why
-    names = {}
+    wanted = collections.defaultdict(dict)   # fqn (or a tuple of candidates) -> {zone file: why}
+    names = collections.defaultdict(dict)    # zone file -> {name: why}
     for f in plan.zone.code_files:
         m = repo.model(f)
         if m.lang != 'java':
@@ -2364,14 +3860,14 @@ def library_members(plan, classpath, errors):
         for t in m.types:
             label = '%s in %s' % (t.name or 'an anonymous class', f)
             implicit = {'record': 'java.lang.Record', 'enum': 'java.lang.Enum'}.get(t.kind, 'java.lang.Object')
-            wanted.setdefault(implicit, label)
-            wanted.setdefault('java.lang.Object', label)
+            wanted[implicit].setdefault(f, label)
+            wanted['java.lang.Object'].setdefault(f, label)
             for s in t.supertypes:
                 rf = index.java_type_file(m, s)
                 if rf is not None:
                     if not plan.zone.contains(rf):
                         for n in repo.model(rf).decls:
-                            names.setdefault(n, '%s (declared in %s, a supertype of %s)' % (n, rf, label))
+                            names[f].setdefault(n, '%s (declared in %s, a supertype of %s)' % (n, rf, label))
                     continue
                 fqn = s if '.' in s and s[:1].islower() else m.imports.get(s.split('.')[0])
                 if fqn is not None and '.' in s and not s[:1].islower():
@@ -2379,34 +3875,80 @@ def library_members(plan, classpath, errors):
                 if fqn is None:
                     candidates = ['java.lang.' + s] + [p + '.' + s for p, st in m.wildcard_imports if not st]
                     fqn = candidates
-                wanted.setdefault(fqn if isinstance(fqn, str) else tuple(fqn), label + ' (supertype ' + s + ')')
+                wanted[fqn if isinstance(fqn, str) else tuple(fqn)].setdefault(f, label + ' (supertype ' + s + ')')
     plain = [k for k in wanted if isinstance(k, str)]
     multi = [k for k in wanted if isinstance(k, tuple)]
     flat = plain + [c for k in multi for c in k]
     members = javap_members(flat, classpath)
 
-    def collect(fqn, why, depth=0):
+    def collect(fqn, why, into, depth=0):
         if fqn not in members or depth > 20:
             return
         supers, mem = members[fqn]
         for n in mem:
-            names.setdefault(n, '%s.%s (a member of a supertype of %s)' % (fqn, n, why))
+            into.setdefault(n, '%s.%s (a member of a supertype of %s)' % (fqn, n, why))
         for s in supers:
-            collect(s, why, depth + 1)
+            collect(s, why, into, depth + 1)
 
     for k in plain:
         if k not in members:
             errors.append((None, 'cannot read the members of %s (%s) with javap: pass --classpath with the jar that '
-                                 'holds it' % (k, wanted[k])))
-        collect(k, wanted[k])
+                                 'holds it' % (k, next(iter(wanted[k].values())))))
+        for f, why in wanted[k].items():
+            collect(k, why, names[f])
     for k in multi:
         hit = [c for c in k if c in members]
         if not hit:
             errors.append((None, 'cannot read the members of %s (%s) with javap: pass --classpath with the jar that '
-                                 'holds it' % (k[0].split('.')[-1], wanted[k])))
+                                 'holds it' % (k[0].split('.')[-1], next(iter(wanted[k].values())))))
         for c in hit:
-            collect(c, wanted[k])
+            for f, why in wanted[k].items():
+                collect(c, why, names[f])
     return names
+
+
+def _namespace(m, k):
+    """The namespace of the identifier code[k] for capture: a Java method (a call or a declaration, followed by `(`,
+    or a method reference after `::`) or a value (a variable, a field, a type). Java keeps the two apart, so a
+    renamed local text never captures a call text(n) that stays; a staying value still counts against a renamed
+    method, as before. Any other language has one namespace."""
+    if m.lang != 'java':
+        return 'value'
+    code = m.code
+    if (k + 1 < len(code) and code[k + 1].text == '(') or (k > 0 and code[k - 1].text == '::'):
+        return 'method'
+    return 'value'
+
+
+def _names_zone_type(plan, m, k, langs):
+    """Whether the identifier code[k] of a code file outside the zone can name the type or module of the zone with
+    its spelling, which files of the languages `langs` declare. Java code names a zone type when the name resolves
+    to a zone file: unqualified through the file's own types, its imports and its package, qualified through the
+    chain before it (a package, or an outer type); OCaml code names only an OCaml declaration of the zone. Card
+    hernoem-drools-backend: OCaml constructors (Lijst, Wortel) and the frontend's own types (Tak, Regel) have the
+    spelling of zone types and are other declarations. Any other language is taken by the spelling alone."""
+    if m.lang == 'ocaml':
+        return 'ocaml' in langs
+    if m.lang != 'java':
+        return True
+    if 'java' not in langs:
+        return False
+    index = plan.repo.index()
+    code = m.code
+    name = code[k].text
+    if k >= 2 and code[k - 1].text == '.' and code[k - 2].kind == tk.IDENT:
+        j = k - 2
+        parts = [code[j].text]
+        while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+            parts.insert(0, code[j - 2].text)
+            j -= 2
+        chain = '.'.join(parts)
+        f = index.java_fqn.get(chain + '.' + name)
+        if f is None and parts[0][:1].isupper():
+            f = index.java_type_file(m, chain)
+    else:
+        f = index.java_type_file(m, name)
+    return f is not None and plan.zone.contains(f)
 
 
 def run_check(repo, table, classpath=None, out=None):
@@ -2459,11 +4001,40 @@ def run_check(repo, table, classpath=None, out=None):
     for r in rows:
         if plan.scopes.get(r.scope) is not None and not occurs[r.line]:
             errors.append((r, 'old %s does not occur as a whole token (or file or directory name) in scope %s' % (r.old, r.scope)))
-    # style, with the languages the name occurs in
+    # style, with the languages the name occurs in; then the spelling of the language (conventional), for the
+    # identifiers and for each file and directory name the row renames that is no Java class or OCaml module
+    names_of_row = collections.defaultdict(list)    # row line -> [(path, separator of the names beside it)]
+    seps = {}
+    for f, n in plan.file_renames():
+        if tk.language(f) in ('java', 'ocaml'):
+            continue
+        r = plan.name_row(f, file_name_key(f))
+        if r is not None:
+            names_of_row[r.line].append((f, neighbour_separator(repo, f, seps)))
+    for path, name in zone.dirs():
+        r = plan.name_row(path + '/', name, aliases=(path + '/',))
+        if r is not None and r.new:
+            names_of_row[r.line].append((path, neighbour_separator(repo, path, seps)))
     for r in rows:
         e = style_error(r.old, r.new, langs_of_row[r.line])
         if e:
             errors.append((r, e))
+            continue
+        if langs_of_row[r.line] or not names_of_row[r.line]:
+            e = spelling_error(lex, r, langs_of_row[r.line])
+            if e:
+                errors.append((r, e))
+                continue
+        for path, sep in names_of_row[r.line]:
+            want = conventional(lex, r.old, r.new, r.words, name_sep=sep)
+            if want != r.new:
+                if langs_of_row[r.line]:
+                    errors.append((r, 'old %s is also the name of %s, whose neighbours %s: give it a row with scope %s '
+                                      'and write %s' % (r.old, path, 'separate their words with %r' % sep if sep
+                                                         else 'are camelCase', path, want)))
+                else:
+                    errors.append((r, spelling_error(lex, r, name_sep=sep)))
+                break
     # keywords
     for r in rows:
         for lang in langs_of_row[r.line]:
@@ -2478,29 +4049,13 @@ def run_check(repo, table, classpath=None, out=None):
                     continue
                 if _scopes_overlap(a, b):
                     errors.append((rs[j], 'two rows of %s with scopes %s and %s of equal reach' % (old, rs[i].scope, rs[j].scope)))
-    # injective
-    by_new = collections.defaultdict(list)
-    for r in rows:
-        by_new[r.new].append(r)
-    for new, rs in by_new.items():
-        olds = {r.old for r in rs}
-        if len(olds) < 2:
-            continue
-        for i in range(len(rs)):
-            for j in range(i + 1, len(rs)):
-                a, b = rs[i], rs[j]
-                if a.old == b.old:
-                    continue
-                sa, sb = plan.scopes.get(a.scope), plan.scopes.get(b.scope)
-                if sa is None or sb is None or _scopes_see(sa, sb):
-                    errors.append((b, 'not injective: %s and %s (line %d) both become %s in scopes that see each '
-                                      'other (%s, %s)' % (b.old, a.old, a.line, new, b.scope, a.scope)))
     # fresh: no new is a name that stays where the renamed name is read, or a member of a supertype. An
     # unqualified name reaches the declarations of its own file, of the zone supertypes of its Java types and of
     # the OCaml modules of the zone it opens; a name read through a dot is a member of another type or module
-    stays_in = collections.defaultdict(dict)    # file -> {name that stays: line}
+    stays_in = collections.defaultdict(dict)    # file -> {name that stays: {namespace: line}}
     renames_in = collections.defaultdict(set)   # row line -> files where the row renames an identifier
-    dotted_rows = set()                         # rows that rename a read through a dot (a member of a zone type)
+    bare_in = collections.defaultdict(dict)     # row line -> {file: namespaces of what it renames there, no dot}
+    dotted_rows = collections.defaultdict(set)  # row line -> files where it renames a read through a dot
     for f in zone.code_files:
         m = repo.model(f)
         idents = plan.ident_rows(f)
@@ -2509,12 +4064,14 @@ def run_check(repo, table, classpath=None, out=None):
             if not external:
                 renames_in[r.line].add(f)
                 if k > 0 and m.code[k - 1].text in ('.', '::'):
-                    dotted_rows.add(r.line)
+                    dotted_rows[r.line].add(f)
+                else:
+                    bare_in[r.line].setdefault(f, set()).add(_namespace(m, k))
         for k, t in enumerate(m.code):
             if k > 0 and m.code[k - 1].text in ('.', '::'):
                 continue
             if t.kind == tk.IDENT and t.start not in renamed:
-                stays_in[f].setdefault(t.text, m.position(t.start)[0])
+                stays_in[f].setdefault(t.text, {}).setdefault(_namespace(m, k), m.position(t.start)[0])
     file_stays = {}
     for f in zone.files:
         key = file_name_key(f)
@@ -2545,30 +4102,91 @@ def run_check(repo, table, classpath=None, out=None):
             seen_cache[f] = out
         return seen_cache[f]
 
+    # injective: no two names onto one where a file can read both, a file where both are renamed or where one is
+    # renamed and the other in a file it sees (seen_by), as for the names that stay; a row that renames a file or a
+    # directory name keeps the reach of its scope. Card hernoem-drools-backend: most pairs check refused with the
+    # reach of their scopes alone (datumwaarde and datumWaarde, both dateValue) live in files apart
+    name_rows = set()
+    for f, n in plan.file_renames():
+        r = plan.name_row(f, file_name_key(f))
+        if r is not None:
+            name_rows.add(r.line)
+    for path, name in zone.dirs():
+        r = plan.name_row(path + '/', name, aliases=(path + '/',))
+        if r is not None:
+            name_rows.add(r.line)
+
+    def meet(a, b):
+        fa, fb = renames_in[a.line], renames_in[b.line]
+        for one, other in ((fa, fb), (fb, fa)):
+            for f in sorted(one):
+                hit = seen_by(f) & other
+                if hit:
+                    return f if f in other else '%s, which sees %s' % (f, sorted(hit)[0])
+        return None
+
+    by_new = collections.defaultdict(list)
+    for r in rows:
+        by_new[r.new].append(r)
+    for new, rs in by_new.items():
+        olds = {r.old for r in rs}
+        if len(olds) < 2:
+            continue
+        for i in range(len(rs)):
+            for j in range(i + 1, len(rs)):
+                a, b = rs[i], rs[j]
+                if a.old == b.old:
+                    continue
+                sa, sb = plan.scopes.get(a.scope), plan.scopes.get(b.scope)
+                if sa is not None and sb is not None and not _scopes_see(sa, sb):
+                    continue
+                if sa is None or sb is None or a.line in name_rows or b.line in name_rows:
+                    errors.append((b, 'not injective: %s and %s (line %d) both become %s in scopes that see each '
+                                      'other (%s, %s)' % (b.old, a.old, a.line, new, b.scope, a.scope)))
+                    continue
+                where = meet(a, b)
+                if where is not None:
+                    errors.append((b, 'not injective: %s and %s (line %d) both become %s in a file that reads both '
+                                      '(%s)' % (b.old, a.old, a.line, new, where)))
+
     # a read through a value is renamed when a zone type declares the member, whatever the value's type: on a type
-    # outside the zone that has a member old, the renamed read fails to compile, unless that type has a member new
+    # outside the zone that has a member old, the renamed read fails to compile, unless that type has a member new.
+    # A read lands on a member of its own language only (a Java read never on an OCaml record field), and never on
+    # a private member or a member of a private type of another file
     for r in rows:
         if r.line in dotted_rows:
-            both = set(plan.classifier.members(r.old, False)) & set(plan.classifier.members(r.new, False))
+            readers = dotted_rows[r.line]
+            langs = {repo.model(f).lang for f in readers}
+            reader = min(readers)
+            both = {f for f in set(plan.classifier.members(r.old, False, reader)) & set(plan.classifier.members(r.new, False, reader))
+                    if repo.model(f).lang in langs}
             if both:
                 errors.append((r, '%s is a member of a zone type, and %s has members %s and %s: a read through a value '
                                   'renamed to %s could land on its member silently' % (r.old, sorted(both)[0], r.old, r.new, r.new)))
+    # a library member counts in the files whose types inherit it: where the name is renamed and in the files of
+    # the zone supertypes of its types (seen_by). A file where the row renames only reads through a dot (e.plek()
+    # beside a parameter site) has nothing a name that stays there can capture
     members = library_members(plan, classpath, errors)
     for r in rows:
         hit = None
-        for f in sorted(renames_in[r.line]):
+        inherited = None
+        for f, spaces in sorted(bare_in[r.line].items()):
             for g in sorted(seen_by(f)):
-                if r.new in stays_in[g]:
-                    hit = '%s:%d' % (g, stays_in[g][r.new])
+                # a staying value meets whatever is renamed; a staying method only a renamed method
+                meet = sorted(line for ns, line in stays_in[g].get(r.new, {}).items() if ns == 'value' or ns in spaces)
+                if meet:
+                    hit = '%s:%d' % (g, meet[0])
                     break
+                if inherited is None and r.new in members.get(g, ()):
+                    inherited = members[g][r.new]
             if hit:
                 break
         if hit is None and r.new in file_stays:
             hit = file_stays[r.new]
         if hit:
             errors.append((r, 'new %s is not fresh: the name stays where %s is renamed (%s)' % (r.new, r.old, hit)))
-        elif r.new in members:
-            errors.append((r, 'new %s is not fresh: %s' % (r.new, members[r.new])))
+        elif inherited:
+            errors.append((r, 'new %s is not fresh: %s' % (r.new, inherited)))
     # renamed files must not land on a file that exists
     existing = set(repo.files())
     moved = {f for f, _ in plan.file_renames()}
@@ -2576,29 +4194,37 @@ def run_check(repo, table, classpath=None, out=None):
         if n in existing and n not in moved:
             r = plan.name_row(f, file_name_key(f))
             errors.append((r, 'renaming %s gives %s, which exists' % (f, n)))
-    # the zone's own declarations used as code outside it, and names declared outside it only
-    outside_code = [p for p in repo.code_files() if not zone.contains(p) and exempt_reason(p) is None]
+    # the zone's own declarations used as code outside it, and names declared outside it only. A shell script is
+    # left out: apply reads it whole and lists the words that name the zone (content_plan)
+    outside_code = [p for p in repo.code_files() if not zone.contains(p) and exempt_reason(p) is None
+                    and tk.language(p) != 'shell']
     zone_types = {}
+    zone_type_langs = collections.defaultdict(set)   # name -> languages of the zone files that declare it
     for f in zone.code_files:
         m = repo.model(f)
         for name, entries in m.decls.items():
             for kind, offset in entries:
                 if kind in ('type', 'module', 'function') or (m.lang == 'ocaml' and kind == 'module'):
                     zone_types.setdefault(name, f)
+                    zone_type_langs[name].add(m.lang)
         if m.lang == 'ocaml':
             zone_types.setdefault(m.module_name(), f)
+            zone_type_langs[m.module_name()].add('ocaml')
     renamed_types = {r.old: r for r in rows if r.old in zone_types}
     if renamed_types:
         for p in outside_code:
             m = repo.model(p)
             for k, t in enumerate(m.code):
-                if t.kind == tk.IDENT and t.text in renamed_types and t.text not in m.decls:
+                if t.kind == tk.IDENT and t.text in renamed_types and t.text not in m.decls \
+                        and _names_zone_type(plan, m, k, zone_type_langs[t.text]):
                     r = renamed_types[t.text]
                     errors.append((r, '%s is declared in the zone (%s) and used as code outside it (%s:%d): apply '
                                       'renames the zone only; add that file to the zone line or keep the name'
                                       % (t.text, zone_types[t.text], p, m.position(t.start)[0])))
+                    # each name once, at its first use; the file may use another zone type further on
                     del renamed_types[t.text]
-                    break
+                    if not renamed_types:
+                        break
             if not renamed_types:
                 break
     for r in rows:
@@ -2629,20 +4255,45 @@ def run_check(repo, table, classpath=None, out=None):
                     errors.append((r, '%s is a punned record label of a type outside the zone (%s:%d): renaming the '
                                       'variable it binds needs the pun written out, which is no rename' % (
                                           t.text, f, m.position(t.start)[0])))
-    # translation rows: words and content words by the glossary
+    # translation rows: a Dutch name, words and content words by the glossary; every row: van at the edges of a name
     for r in rows:
+        if r.kind == 'translation' and not lex.analyse(r.old).is_dutch():
+            domain = [w.lower for w in lex.analyse(r.old).words if w.cls == 'domain']
+            errors.append((r, 'old %s is no Dutch name%s: a translation renames Dutch names only; leave it out of the '
+                              'table' % (r.old, ' (domain words, as authored: %s)' % ', '.join(domain) if domain else '')))
+            continue
         if r.kind == 'translation':
             e = translation_error(lex, r)
             if e:
                 errors.append((r, e))
-    # the inventory reports no Dutch word in any new
+        e = edge_error(r)
+        if e:
+            errors.append((r, e))
+    # the inventory reports no Dutch word in any new (new_dutch_words)
     for r in rows:
-        a = lex.analyse(r.new)
-        if a.is_dutch():
-            errors.append((r, 'new %s still holds Dutch: %s' % (r.new, ', '.join(a.dutch_words()))))
+        dutch = new_dutch_words(lex, r)
+        if dutch:
+            errors.append((r, 'new %s still holds Dutch: %s' % (r.new, ', '.join(dutch))))
     for f, n in plan.file_renames():
         print('file: %s -> %s' % (f, n), file=out)
     return errors, plan
+
+
+def new_dutch_words(lex, r):
+    """The Dutch words of a row's new. A word of new that the glossary gives as a translation of a word of the row's
+    words is English in that row, also where the glossary has it as a Dutch word too (card hernoem-drools-backend:
+    koppelingen is links, tien is ten, staan is stand; links, ten and stand are Dutch for left, at and state)."""
+    a = lex.analyse(r.new) if r.new else None
+    if a is None or not a.is_dutch():
+        return []
+    given = {stem(w) for w in translation_words(lex, r.words)}
+    dutch = []
+    for w in a.words:
+        if w.cls == 'dutch' and stem(w.lower) not in given:
+            dutch.append(w.lower)
+        elif w.cls == 'compound' and stem(w.lower) not in given:
+            dutch.extend(p[2] for p in w.parts if stem(p[2]) not in given)
+    return dutch
 
 
 def _scopes_overlap(a, b):
@@ -2684,6 +4335,324 @@ def cmd_check(args):
     return 1 if errors else 0
 
 
+# ================================================================ freeze
+
+def cmd_freeze(args):
+    """The frozen list of a zone: its Dutch names that the Java sources of another checkout read (zone_reads)."""
+    repo = Repo(args.root)
+    lex = Lexicon(repo)
+    if len(args.args) < 2:
+        die('freeze: give the zone and the list to write (freeze <prefix>... <list> --using <checkout>)')
+    prefixes, target = args.args[:-1], args.args[-1]
+    zone = Zone(repo, prefixes)
+    other = os.path.abspath(args.using)
+    excludes = [e.rstrip('/') for e in args.exclude]
+    files = [p for p in git(other, 'ls-files', '-z').split('\0')
+             if p and tk.language(p) == 'java' and not any(under(p, e) for e in excludes)]
+    if not files:
+        die('freeze: %s has no Java file%s' % (other, ' outside %s' % ', '.join(excludes) if excludes else ''))
+    found, _ = inventory(repo, lex, zone)
+    found = {n: occ for n, occ in found.items() if any(not o.external for o in occ)}
+    reachable = set()
+    constants = set()
+    for f in zone.code_files:
+        m = repo.model(f)
+        for n, entries in m.decls.items():
+            kinds = {kind for kind, _ in entries}
+            if kinds & REACHABLE_KINDS:
+                reachable.add(n)
+            if 'constant' in kinds:
+                constants.add(n)
+        if m.lang == 'java' and m.package:
+            reachable.update(m.package.split('.'))
+    models = []
+    for p in files:
+        text = read_text(os.path.join(other, p))
+        try:
+            models.append(FileModel(p, 'java', text, tk.tokenize(text, 'java')))
+        except tk.TokenizeError as e:
+            die('%s: %s' % (os.path.join(other, p), e))
+    own_types = collections.defaultdict(list)     # the other code's types by simple name: (model, TypeDecl)
+    for m in models:
+        repo.adopt(m)
+        for decl in m.types:
+            if decl.name:
+                own_types[decl.name].append((m, decl))
+    spelled = collections.Counter()
+    reads = collections.defaultdict(collections.Counter)
+    for m in models:
+        for t in m.code:
+            if t.kind == tk.IDENT and t.text in found:
+                spelled[t.text] += 1
+        for name, n in zone_reads(repo, zone, m, found.keys() & reachable, constants, own_types).items():
+            reads[name][m.path] += n
+    for consts, by_file in enum_name_reads(repo, zone, models):
+        for name in consts:
+            if name in found:
+                reads[name].update(by_file)
+    rows = [(n, min(reads[n], key=lambda p: (-reads[n][p], p)), sum(reads[n].values())) for n in sorted(reads)]
+    left = sorted(n for n in spelled if n not in reads)
+    head = git(other, 'rev-parse', '--short', 'HEAD').strip()
+    lines = ['# zone: ' + ' '.join(zone.prefixes),
+             '# The names of the zone that code outside this repository reads: they stay until that code is renamed with',
+             '# them. Made by rename.py freeze from the Java sources of %s at %s%s.'
+             % (os.path.basename(other), head, ', without %s' % ', '.join(e + '/' for e in excludes) if excludes else ''),
+             '# file: the file of those sources that reads the name most; count: its reads of the zone in all of them.',
+             '\t'.join(FROZEN_COLUMNS)]
+    lines += ['%s\t%s\t%d' % r for r in rows]
+    os.makedirs(os.path.dirname(os.path.abspath(target)), exist_ok=True)
+    write_text(target, '\n'.join(lines) + '\n')
+    for name in left:
+        print('left out\t%s\t%d\t%s' % (name, spelled[name], 'the zone declares it only as a local variable or a parameter'
+                                        if name not in reachable else 'no occurrence reads the zone'))
+    print('freeze: %d names of %s in %s; %d names that code spells as well left out; %d Java files of %s at %s'
+          % (len(rows), ' '.join(zone.prefixes), target, len(left), len(files), os.path.basename(other), head),
+          file=sys.stderr)
+    return 0
+
+
+def _java_declared_type(m, offset):
+    """The type written before the declaration of the name at `offset` (`Wereld w`, `List<Regel> r`, `a.B[] b`,
+    `var w = new Wereld()`), or None when the code does not write it (a lambda parameter, `var` with another value)."""
+    code = m.code
+    k = m.code_pos.get(offset)
+    if k is None or k == 0:
+        return None
+    j = k - 1
+    while j >= 0 and code[j].text in (']', '[', '...'):
+        j -= 1
+    if j >= 0 and code[j].text in ('>', '>>', '>>>'):
+        depth = 0
+        while j >= 0:
+            x = code[j].text
+            if x in ('>', '>>', '>>>'):
+                depth += len(x)
+            elif x == '<':
+                depth -= 1
+                if depth == 0:
+                    j -= 1
+                    break
+            j -= 1
+    if j < 0 or code[j].kind != tk.IDENT:
+        return None
+    if code[j].text == 'var':
+        if k + 3 < len(code) and code[k + 1].text == '=' and code[k + 2].text == 'new' and code[k + 3].kind == tk.IDENT:
+            return '.'.join(_dotted(code, k + 3)[0])
+        return None
+    if code[j].text in JAVA_KEYWORDS and code[j].text not in JAVA_PRIMITIVES:
+        return None
+    parts = [code[j].text]
+    while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+        parts.insert(0, code[j - 2].text)
+        j -= 2
+    return '.'.join(parts)
+
+
+def _java_new_type(code, k):
+    """The type of `new T(...)` when code[k] is its closing parenthesis (`new Speler(build).speel(c)`), else None."""
+    if code[k].text != ')':
+        return None
+    depth = 0
+    j = k
+    while j >= 0:
+        if code[j].text == ')':
+            depth += 1
+        elif code[j].text == '(':
+            depth -= 1
+            if depth == 0:
+                break
+        j -= 1
+    j -= 1
+    if j >= 0 and code[j].text in ('>', '>>', '>>>') and j >= 1 and code[j - 1].text == '<':
+        j -= 2    # new T<>(...)
+    if j < 0 or code[j].kind != tk.IDENT:
+        return None
+    parts = [code[j].text]
+    while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+        parts.insert(0, code[j - 2].text)
+        j -= 2
+    return '.'.join(parts) if j >= 1 and code[j - 1].text == 'new' else None
+
+
+def zone_reads(repo, zone, m, names, constants, own_types, unknown_reads=True):
+    """Per name of `names`, the identifiers of `m`, a Java file outside the zone, that read a declaration of the zone:
+    a type or package of the zone (imported, qualified, in an import line), a member read through a type of the zone
+    or brought by a static import or a zone supertype, a member read through a value whose written type may be a zone
+    type (unknown counts as may; with unknown_reads False, as for code the repository compiles with the zone, only a
+    written zone type counts), and a constant of a zone enum in a case label. An identifier `m` declares itself and
+    reads unqualified is its own. `own_types` holds the types of the other code by simple name."""
+    index = repo.index()
+    classifier = Classifier(repo, zone)
+    code = m.code
+    out = collections.Counter()
+
+    def of_zone(f):
+        return f is not None and zone.contains(f)
+
+    def inherited(name, offset):
+        for decl in m.enclosing_types(offset):
+            for s in decl.supertypes:
+                f = index.java_type_file(m, s)
+                if of_zone(f) and name in repo.model(f).decls:
+                    return True
+        return False
+
+    def reaches_zone(mm, written, seen):
+        """Whether the type `written` in `mm` is a zone type, or a type of this repository or of the other code with
+        a zone supertype; a library type has none."""
+        simple = written.split('.')[-1]
+        f = index.java_type_file(mm, written)
+        if f is not None and f != mm.path:
+            if zone.contains(f):
+                return True
+            candidates = [(repo.model(f), d) for d in repo.model(f).types if d.name == simple]
+        else:
+            candidates = own_types.get(simple, ())
+        for om, decl in candidates:
+            if (om.path, decl.start) in seen:
+                continue
+            seen.add((om.path, decl.start))
+            if any(reaches_zone(om, s, seen) for s in decl.supertypes):
+                return True
+        return False
+
+    def value_may_be_zone(k):
+        """For a read code[k] through the value before it: False when every declaration of that variable in `m`
+        writes a type that cannot be a zone type; True otherwise, also when the type is not known here (unless
+        unknown_reads is False)."""
+        var = code[k - 2].text
+        if k >= 4 and code[k - 3].text == '.' and not (code[k - 4].text == 'this' and (k < 5 or code[k - 5].text != '.')):
+            return unknown_reads    # a.b.name: the type of b is not known here
+        decls = [off for kind, off in m.decls.get(var, ()) if kind in ('variable', 'parameter', 'field')]
+        if not decls or inherited(var, code[k].start):
+            return unknown_reads
+        written = [_java_declared_type(m, off) for off in decls]
+        return any((unknown_reads if w is None else reaches_zone(m, w, set())) for w in written)
+
+    for k, t in enumerate(code):
+        name = t.text
+        if t.kind != tk.IDENT or name not in names:
+            continue
+        if k >= 2 and code[k - 1].text in ('.', '::'):
+            q = code[k - 2]
+            if q.kind != tk.IDENT:
+                created = _java_new_type(code, k - 2)
+                hit = classifier.zone_member(name) and (unknown_reads if created is None else reaches_zone(m, created, set()))
+            elif q.text in ('this', 'super'):
+                hit = inherited(name, t.start)
+            else:
+                parts = [q.text]
+                j = k - 2
+                while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+                    parts.insert(0, code[j - 2].text)
+                    j -= 2
+                chain = '.'.join(parts)
+                if parts[0][:1].islower() and any(p == chain or p.startswith(chain + '.') for p in index.java_packages):
+                    full = chain + '.' + name
+                    hit = of_zone(index.java_fqn.get(full)) or any(
+                        zone.contains(f) for p, fs in index.java_packages.items()
+                        if p == full or p.startswith(full + '.') for f in fs)
+                elif q.text[:1].isupper() and not (q.text in m.decls and any(
+                        kind in ('variable', 'parameter', 'constant', 'field') for kind, _ in m.decls[q.text])):
+                    hit = of_zone(index.java_type_file(m, chain))
+                else:
+                    hit = classifier.zone_member(name) and value_may_be_zone(k)
+        elif name in m.static_imports:
+            hit = of_zone(index.java_fqn.get(m.static_imports[name]))
+        elif name in m.imports:
+            hit = of_zone(index.java_fqn.get(m.imports[name]))
+        else:
+            hit = any(of_zone(index.java_fqn.get(p + '.' + name)) for p, static in m.wildcard_imports if not static) \
+                or any(of_zone(index.java_fqn.get(p)) and name in repo.model(index.java_fqn[p]).decls
+                       for p, static in m.wildcard_imports if static) \
+                or inherited(name, t.start) \
+                or (_java_case_label(code, k) and name in constants and name not in m.decls)
+        if hit:
+            out[name] += 1
+    return out
+
+
+ENUM_NAME_METHODS = frozenset(('name', 'toString', 'values', 'valueOf'))
+
+
+def enum_name_reads(repo, zone, models):
+    """Per Java enum of the zone that `models`, Java files of another checkout (adopted by `repo`), read by the
+    spelling of its constants: (its constants, reads by file). Such a read is name() or toString() through a value of
+    the enum, values() or valueOf through the enum, a method reference E::name, E::toString or E::valueOf, and a
+    string literal whose value is one of its constants in a file that reads the enum (through it, a value of it or a
+    constant of it), since a spelling alone is no read: RegelSpraak words and the other code's own constants spell
+    constants of the zone (card hernoem-drools-backend: KENMERK, INVOER, REKENFOUT). The
+    type before the dot is the one Classifier.expr_type derives; where it derives none, a call does not count, since
+    every value has a toString()."""
+    classifier = Classifier(repo, zone)
+    index = repo.index()
+    enums = {}
+    for f in zone.code_files:
+        zm = repo.model(f)
+        if zm.lang != 'java':
+            continue
+        for decl in zm.types:
+            if decl.kind == 'enum':
+                enums[(f, decl.start)] = [n for n, entries in sorted(zm.decls.items()) for kind, off in entries
+                                          if kind == 'constant' and zm.enclosing_types(off)[-1:] == [decl]]
+
+    def enum_named(mm, written):
+        """The enum of the zone the type `written` in `mm` names, as a key of `enums`, else None."""
+        head = _java_type_parts(written)[0] if written else None
+        f = index.java_type_file(mm, head) if head else None
+        if f is None or not zone.contains(f):
+            return None
+        fm = repo.model(f)
+        parts = head.split('.')
+        found = [d for d in fm.types if d.name == parts[-1] and d.kind == 'enum']
+        if len(found) > 1 and len(parts) > 1:
+            found = [d for d in found if d.qualified().endswith('.'.join(parts[-2:]))] or found
+        return (f, found[0].start) if len(found) == 1 else None
+
+    def receiver(m, j):
+        """(enum, whether code[j] ends the enum itself rather than a value of it) for the expression before a dot."""
+        cls, mm, written = classifier.expr_type(m, j)
+        if cls not in ('zone', 'static'):
+            return None, False
+        e = enum_named(mm, written)
+        if e is not None:
+            return e, cls == 'static'
+        if cls == 'static' and '.' in written:
+            # E.CONSTANT, which expr_type reads as a nested type: a value of E
+            e = enum_named(mm, written.rsplit('.', 1)[0])
+            if e is not None and written.rsplit('.', 1)[1] in enums[e]:
+                return e, False
+        return None, False
+
+    by_name = collections.defaultdict(collections.Counter)
+    for m in models:
+        code = m.code
+        read = set()
+        strings = collections.Counter()
+        for k, t in enumerate(code):
+            if t.kind == tk.STRING:
+                if t.text.startswith('"') and not t.text.startswith('"""'):
+                    strings[t.text[1:-1]] += 1
+                continue
+            if t.kind != tk.IDENT or k < 2 or code[k - 1].text not in ('.', '::'):
+                continue
+            e, itself = receiver(m, k - 2)
+            if e is None:
+                continue
+            read.add(e)
+            if t.text not in ENUM_NAME_METHODS:
+                continue
+            reference = code[k - 1].text == '::'
+            call = k + 1 < len(code) and code[k + 1].text == '('
+            if reference or (call and itself == (t.text in ('values', 'valueOf'))):
+                by_name[e][m.path] += 1
+        for e in read:
+            n = sum(strings[c] for c in enums[e])
+            if n:
+                by_name[e][m.path] += n
+    return [(enums[e], by_file) for e, by_file in sorted(by_name.items())]
+
+
 # ================================================================ propose and merge
 
 def cmd_propose(args):
@@ -2695,6 +4664,7 @@ def cmd_propose(args):
         die('propose: %s exists and is not empty' % outdir)
     os.makedirs(outdir, exist_ok=True)
     found, _ = inventory(repo, lex, zone)
+    found, held = hold_frozen(repo, found, zone)
     items = []
     for name in sorted(found):
         occ = [o for o in found[name] if not o.external]
@@ -2716,7 +4686,10 @@ def cmd_propose(args):
                 m = repo.model(o.path)
                 item.update(kind='reference', file=o.path, line=o.line, declaration=m.line_text(o.line).strip()[:200], doc='')
         item['words'] = a.split()
-        item['dutch'] = [{'word': w, 'english': lex.translations(w)} for w in a.dutch_words()]
+        item['dutch'] = [{'word': w, 'english': lex.translations(w)} for w in lex.batch_words(a)]
+        # the domain words of the name stay as written (CLAUDE.md, Conventions): the translator sees which they are
+        item['domain'] = list(dict.fromkeys(w for w in item['words'].split('|') if lex.word_class(w, 2) == 'domain'
+                                            and w not in lex.english_function_words))
         item['occurrences'] = len(occ)
         item['files'] = len({o.path for o in occ})
         items.append(item)
@@ -2736,13 +4709,16 @@ def cmd_propose(args):
                     f.write(json.dumps(item, ensure_ascii=False) + '\n')
             batches.append({'file': fname, 'answer': fname[:-6] + '.answer.jsonl', 'kind': label, 'names': len(chunk)})
     meta = {'zone': zone.prefixes, 'batches': batches, 'names': len(names), 'sentences': len(sentences),
-            'prompt': 'scripts/lib/naming/prompts/translate.md', 'glossary': 'scripts/lib/naming/glossary.tsv'}
+            'frozen': len(held), 'prompt': 'scripts/lib/naming/prompts/translate.md',
+            'glossary': 'scripts/lib/naming/glossary.tsv'}
     with open(os.path.join(outdir, 'zone.json'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(meta, indent=1, ensure_ascii=False) + '\n')
     for b in batches:
         print('%s\t%s\t%d %s' % (os.path.join(outdir, b['file']), os.path.join(outdir, b['answer']), b['names'], b['kind']))
-    print('propose: %d names and %d test sentences in %d batches under %s'
-          % (len(names), len(sentences), len(batches), outdir), file=sys.stderr)
+    print('propose: %d names and %d test sentences in %d batches under %s%s'
+          % (len(names), len(sentences), len(batches), outdir,
+             '; %d frozen names left out (%s)' % (len(held), ', '.join(sorted({r.list for r, _ in held.values()})))
+             if held else ''), file=sys.stderr)
     return 0
 
 
@@ -2763,55 +4739,145 @@ def _read_jsonl(path):
 
 
 def cmd_merge(args):
-    meta_path = os.path.join(args.dir, 'zone.json')
-    if not os.path.exists(meta_path):
-        die('merge: %s is missing: run propose first' % meta_path)
-    meta = json.loads(read_text(meta_path))
-    if os.path.exists(args.table) and not args.force:
-        die('merge: %s exists; pass --force to overwrite it (rows edited by hand are lost)' % args.table)
+    dirs, table = args.args[:-1], args.args[-1]
+    if not dirs:
+        die('merge: give the batch directory (or directories) and the table')
+    metas = []
+    for d in dirs:
+        meta_path = os.path.join(d, 'zone.json')
+        if not os.path.exists(meta_path):
+            die('merge: %s is missing: run propose first' % meta_path)
+        metas.append(json.loads(read_text(meta_path)))
+    meta = metas[0]
+    for d, m in zip(dirs[1:], metas[1:]):
+        if m['zone'] != meta['zone']:
+            die('merge: %s is of zone %s, %s of zone %s' % (d, ' '.join(m['zone']), dirs[0], ' '.join(meta['zone'])))
+    if os.path.exists(table) and not args.force:
+        die('merge: %s exists; pass --force to overwrite it (rows edited by hand are lost)' % table)
+    repo = Repo(args.root)
+    lex = Lexicon(repo)
+    seps = {}
+
+    def spelled(item, new, words):
+        """The answer written by the convention of the name's language or of the names beside its file or
+        directory (conventional): the translator joined English words in some batches."""
+        path = item.get('file') or ''
+        lang = tk.language(path)
+        if item.get('kind') in ('file', 'dir') and lang not in ('java', 'ocaml'):
+            return conventional(lex, item['name'], new, words, name_sep=neighbour_separator(repo, path, seps))
+        return conventional(lex, item['name'], new, words, langs=(lang,) if lang else ())
+
     rows = []
     errors = []
-    for b in meta['batches']:
-        batch = os.path.join(args.dir, b['file'])
-        answer = os.path.join(args.dir, b['answer'])
-        inputs = {obj['id']: obj for _, obj in _read_jsonl(batch)}
-        if not os.path.exists(answer):
-            errors.append('%s: no answer file for %s (%d names)' % (answer, b['file'], len(inputs)))
+    gone = []   # names that are no Dutch names any more: the glossary or the domain words changed since propose
+    # (id, scope) -> (item, answer, where): a later directory answers again what an earlier one answered (a second
+    # round, a session's choice), and its answer replaces the earlier one of the same scope; an answer with a scope
+    # the id has no answer for yet adds a row for that scope (a file where the name needs another new name)
+    answers = {}
+    ids = {}    # id -> name, of every answer so far
+    replaced = 0
+    added = 0
+    scoped = 0
+    for n, (d, m) in enumerate(zip(dirs, metas)):
+        for b in m['batches']:
+            batch = os.path.join(d, b['file'])
+            answer = os.path.join(d, b['answer'])
+            inputs = {obj['id']: obj for _, obj in _read_jsonl(batch)}
+            if not os.path.exists(answer):
+                errors.append('%s: no answer file for %s (%d names)' % (answer, b['file'], len(inputs)))
+                continue
+            got = {}    # (id, scope) -> (line, answer): one answer per scope of an id
+            for no, obj in _read_jsonl(answer):
+                i = obj.get('id')
+                if i not in inputs:
+                    errors.append('%s:%d: id %r is not in %s' % (answer, no, i, b['file']))
+                    continue
+                key = (i, obj.get('scope') or '*')
+                if key in got:
+                    errors.append('%s:%d: a second answer for %s (first at line %d)' % (answer, no, i, got[key][0]))
+                    continue
+                got[key] = (no, obj)
+                if obj.get('old') != inputs[i]['name']:
+                    errors.append('%s:%d: id %s is %s, the answer says old %r' % (answer, no, i, inputs[i]['name'], obj.get('old')))
+            for i in inputs:
+                if not any(k[0] == i for k in got):
+                    errors.append('%s: no answer for %s (%s)' % (answer, i, inputs[i]['name']))
+            for (i, scope), (no, obj) in got.items():
+                if n and i not in ids:
+                    # a name no earlier directory holds: one the glossary made Dutch after propose (compileer, which
+                    # the dictionary takes for English) gets a row of its own; a name an earlier id answers does not
+                    earlier = next((j for j, name in ids.items() if name == inputs[i]['name']), None)
+                    if earlier is not None:
+                        errors.append('%s:%d: id %s answers no name of an earlier directory: %s is answered there as %s'
+                                      % (answer, no, i, inputs[i]['name'], earlier))
+                        continue
+                    added += 1
+                elif n and (i, scope) in answers:
+                    replaced += 1
+                elif n:
+                    scoped += 1
+                answers[(i, scope)] = (inputs[i], obj, '%s:%d' % (answer, no))
+                ids[i] = inputs[i]['name']
+    for (i, _), (item, obj, where) in answers.items():
+        new = obj.get('new') or ''
+        flag = (obj.get('flag') or '').strip()
+        words = obj.get('words') or item['words']
+        scope = obj.get('scope') or '*'
+        reason = re.sub(r'\s+', ' ', (obj.get('reason') or '').strip())
+        if not lex.analyse(item['name']).is_dutch():
+            gone.append(item['name'])
             continue
-        got = {}
-        for no, obj in _read_jsonl(answer):
-            i = obj.get('id')
-            if i not in inputs:
-                errors.append('%s:%d: id %r is not in %s' % (answer, no, i, b['file']))
-                continue
-            if i in got:
-                errors.append('%s:%d: a second answer for %s (first at line %d)' % (answer, no, i, got[i][0]))
-                continue
-            got[i] = (no, obj)
-            if obj.get('old') != inputs[i]['name']:
-                errors.append('%s:%d: id %s is %s, the answer says old %r' % (answer, no, i, inputs[i]['name'], obj.get('old')))
-        for i in inputs:
-            if i not in got:
-                errors.append('%s: no answer for %s (%s)' % (answer, i, inputs[i]['name']))
-        for i, (no, obj) in got.items():
-            new = obj.get('new') or ''
-            flag = (obj.get('flag') or '').strip()
-            words = obj.get('words') or inputs[i]['words']
-            scope = obj.get('scope') or '*'
-            if flag:
-                rows.append({'scope': scope, 'old': inputs[i]['name'], 'new': '', 'kind': 'improved', 'words': words,
-                             'reason': 'flagged: ' + re.sub(r'\s+', ' ', flag)})
-            elif not new:
-                errors.append('%s:%d: no new name and no flag for %s' % (answer, no, inputs[i]['name']))
-            else:
-                rows.append({'scope': scope, 'old': inputs[i]['name'], 'new': new, 'kind': 'translation',
-                             'words': words, 'reason': ''})
+        if flag:
+            rows.append({'scope': scope, 'old': item['name'], 'new': '', 'kind': 'improved', 'words': words,
+                         'reason': 'flagged: ' + re.sub(r'\s+', ' ', flag)})
+        elif not new:
+            errors.append('%s: no new name and no flag for %s' % (where, item['name']))
+        else:
+            # an answer with a reason is a session's improved name
+            rows.append({'scope': scope, 'old': item['name'], 'new': spelled(item, new, words),
+                         'kind': 'improved' if reason else 'translation', 'words': words, 'reason': reason})
     if errors:
         die('merge: the answers are incomplete or do not fit the batches:\n' + '\n'.join(errors[:60]) +
             ('\n... %d more' % (len(errors) - 60) if len(errors) > 60 else ''))
+    zone = Zone(repo, meta['zone'])
+    # a name frozen since propose (a frozen list, or a name the production runtime reads) has no row, as propose
+    # leaves it out
+    frozen = FrozenLists(repo, zone).names_of(zone)
+    held = sorted({r['old'] for r in rows if r['old'] in frozen})
+    rows = [r for r in rows if r['old'] not in frozen]
+    # a directory or a file that is no code, of the name of an identifier the zone renames, follows the names
+    # beside it: a row of its own, with the directory or the file as scope, where the spellings differ (dagsoorten:
+    # dayKinds, and the directory day-kinds). Only where no code file below it holds the name: the row would
+    # rename it there.
+    star = {r['old']: r for r in rows if r['scope'] == '*' and r['new']}
+    places = [(path, name) for path, name in zone.dirs()]
+    places += [(f, file_name_key(f)) for f in zone.files if tk.language(f) is None and file_name_key(f)]
+    for path, name in places:
+        r = star.get(name)
+        if r is None or any(x['old'] == name and x['scope'] == path for x in rows):
+            continue
+        new = conventional(lex, name, r['new'], r['words'], name_sep=neighbour_separator(repo, path, seps))
+        below = [f for f in zone.code_files if under(f, path)]
+        if new != r['new'] and not any(name in repo.model(f).decls or
+                                       any(t.text == name for t in repo.model(f).code) for f in below):
+            rows.append(dict(r, scope=path, new=new))
     rows.sort(key=lambda r: (r['old'], r['scope']))
-    write_table(args.table, meta['zone'], rows)
-    print('merge: %d rows (%d flagged) into %s' % (len(rows), sum(1 for r in rows if not r['new']), args.table),
+    write_table(table, meta['zone'], rows)
+    if replaced:
+        print('merge: %d answers of %s replace earlier ones' % (replaced, ', '.join(dirs[1:])), file=sys.stderr)
+    if added:
+        print('merge: %d answers of %s are of names no earlier directory holds' % (added, ', '.join(dirs[1:])),
+              file=sys.stderr)
+    if scoped:
+        print('merge: %d answers of %s add a row for a scope of their own' % (scoped, ', '.join(dirs[1:])),
+              file=sys.stderr)
+    if gone:
+        print('merge: %d answers left out, their names are no Dutch names now (domain words or the glossary changed '
+              'since propose): %s' % (len(gone), ', '.join(sorted(gone))), file=sys.stderr)
+    if held:
+        print('merge: %d names left out, they are frozen (%s): %s' % (
+            len(held), ', '.join(sorted({frozen[n].where() for n in held})), ', '.join(held)), file=sys.stderr)
+    print('merge: %d rows (%d flagged) into %s' % (len(rows), sum(1 for r in rows if not r['new']), table),
           file=sys.stderr)
     return 0
 
@@ -2839,13 +4905,607 @@ def cmd_merge_decisions(args):
     missing = [i for i in range(1, len(entries) + 1) if i not in answered]
     if missing:
         errors.append('no answer for rows %s' % ', '.join(str(i) for i in missing[:40]))
+    # the session's corrections of the decider come last, in files of their own, so the list stays the merge of
+    # its answer files; a correction that changes nothing would hide what the session turned, so it fails
+    corrected = {}
+    for path in args.corrections or []:
+        for no, obj in _read_jsonl(path):
+            row = obj.get('row')
+            if not isinstance(row, int) or not 1 <= row <= len(entries):
+                errors.append('%s:%d: row %r is not a row of %s (1..%d)' % (path, no, row, args.list, len(entries)))
+                continue
+            if row in corrected:
+                errors.append('%s:%d: a second correction for row %d' % (path, no, row))
+                continue
+            d = entries[row - 1]
+            if obj.get('old') != d.old:
+                errors.append('%s:%d: row %d is %s, the correction says %r' % (path, no, row, d.old, obj.get('old')))
+            decision = obj.get('decision')
+            if decision not in ('keep', 'change') and not (isinstance(decision, str) and decision.startswith('change:')):
+                errors.append('%s:%d: decision must be keep or change, is %r' % (path, no, decision))
+            elif decision == answered.get(row):
+                errors.append('%s:%d: the correction of row %d repeats its answer %s' % (path, no, row, decision))
+            corrected[row] = decision
     if errors:
         die('merge-decisions:\n' + '\n'.join(errors[:60]))
+    turned = collections.Counter()
+    for row, decision in corrected.items():
+        turned['%s -> %s' % ('keep' if answered[row] == 'keep' else 'change',
+                             'keep' if decision == 'keep' else 'change')] += 1
+        answered[row] = decision
     for i, d in enumerate(entries, 1):
         d.decision = answered[i]
     write_decisions(args.list, entries)
     print('merge-decisions: %d decisions (%d change) into %s' % (
         len(entries), sum(1 for d in entries if d.decision != 'keep'), args.list), file=sys.stderr)
+    if corrected:
+        print('merge-decisions: %d corrections (%s)' % (
+            len(corrected), ', '.join('%s %d' % kv for kv in sorted(turned.items()))), file=sys.stderr)
+    return 0
+
+
+# ================================================================ triage
+
+TRIAGE_BATCH = 180
+
+# The keys an IR document and a case carry at their top level ("required" in spec/schema/uchar-ir-v1.schema.json and
+# spec/schema/uchar-case-v0.schema.json): a JSON text file that holds either set is on the wire, whatever its name.
+WIRE_TOP_KEYS = (frozenset({'format', 'model', 'rules', 'diagnostics'}), frozenset({'format', 'asOfDate', 'input'}))
+
+JUNIT_ASSERTIONS = 'org.junit.jupiter.api.Assertions'
+# The arguments of a JUnit 5 assertion before its message, which JUnit 5 takes last: an argument beyond them is the
+# message. fail takes its message first.
+ASSERT_ARITY = {'assertEquals': 2, 'assertNotEquals': 2, 'assertSame': 2, 'assertNotSame': 2, 'assertArrayEquals': 2,
+                'assertIterableEquals': 2, 'assertLinesMatch': 2, 'assertInstanceOf': 2, 'assertThrows': 2,
+                'assertThrowsExactly': 2, 'assertTimeout': 2, 'assertTimeoutPreemptively': 2, 'assertTrue': 1,
+                'assertFalse': 1, 'assertNull': 1, 'assertNotNull': 1, 'assertDoesNotThrow': 1}
+PRINT_METHODS = frozenset({'println', 'print', 'printf'})
+# What a test compares a message with: e.getMessage().contains("..."), assertEquals("...", e.getMessage()).
+MESSAGE_COMPARISONS = frozenset({'contains', 'startsWith', 'endsWith', 'equals'})
+
+# Words that tell the language of a line of prose; a word of both languages (in, is, op, of, over, was, had, want)
+# is in neither set.
+DUTCH_MARKERS = frozenset('de het een van en niet geen met voor naar bij uit ook dat deze dit wordt worden zijn haar '
+                          'hij zij wat als dan maar nog nu wel tot om aan te er waar welke elk elke alle door onder '
+                          'tussen zonder omdat dus daar hier zich ze zo kan moet mag heeft hebben werd zou die '
+                          'wanneer waarin waarvan daarom zodat nooit altijd alleen hoe wie'.split())
+ENGLISH_MARKERS = frozenset('the a an and to with for from that this which by on it its are be been has have does do '
+                            'than then into only also but so what how whose there here they them their his her if '
+                            'else when where every each not no or as at were will would can may must should'.split())
+
+# A code span holds code: identifiers joined by . # :: and brackets, no space, quote, dash, slash or DRL variable
+# ($onderwerp follows a string of the code, not the identifier).
+_CODE_SPAN = re.compile(r'[\w.#:()\[\]<>,@]+')
+# A name right after a javadoc tag names a parameter or a type: code, whatever the language of the line.
+_DOC_TAG = re.compile(r'@(?:param|throws|exception|see|return|link|linkplain|value)\s+(?:<\w+>\s+)?$')
+# Characters of code in a string or a quote: a dump of a plan holds Dutch function words as its labels
+# ("niet binnen [$x] buiten [$y]", "join [] beta [] na [] bind").
+_CODE_TEXT = re.compile(r'[\[\]{}$=|]|->|<-')
+# Javadoc markup, which a line of prose holds ({@link #vouw()}) without being code.
+_DOC_MARKUP = re.compile(r'\{@\w+[^{}]*\}')
+_PROSE_BEFORE = frozenset(' \t\n"\'')
+_PROSE_AFTER = frozenset(' \t\n"\',;:!?')
+
+
+def _thrown_name(name):
+    return name.endswith(('Exception', 'Error')) or name == 'Throwable'
+
+
+def _string_value(text):
+    """The characters of a Java string or text block between its quotes, escapes as written."""
+    if text.startswith('"""'):
+        body = text[3:-3]
+        return body.split('\n', 1)[1] if '\n' in body else body
+    if text.startswith('"') and text.endswith('"') and len(text) >= 2:
+        return text[1:-1]
+    return text
+
+
+def _java_expression(code, k):
+    """(first, last) code indices of the expression that holds code[k] at its own depth: up to an unmatched
+    bracket, or a comma, semicolon, assignment, arrow, ternary or return at that depth."""
+    stops = (',', ';', '=', '->', '?', ':', '+=')
+    depth = 0
+    i = k - 1
+    while i >= 0:
+        t = code[i]
+        if t.kind == tk.PUNCT and t.text in (')', ']', '}'):
+            depth += 1
+        elif t.kind == tk.PUNCT and t.text in ('(', '[', '{'):
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and (t.text in stops or (t.kind == tk.IDENT and t.text in ('return', 'throw', 'case', 'yield'))):
+            break
+        i -= 1
+    depth = 0
+    j = k + 1
+    while j < len(code):
+        t = code[j]
+        if t.kind == tk.PUNCT and t.text in ('(', '[', '{'):
+            depth += 1
+        elif t.kind == tk.PUNCT and t.text in (')', ']', '}'):
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and t.text in stops:
+            break
+        j += 1
+    return i + 1, j - 1
+
+
+def _enclosing_call(code, k):
+    """(callee index, argument index, argument count, close index) of the call whose argument list holds code[k]
+    at its top level (also inside a + chain or after a lambda arrow), or None."""
+    depth = 0
+    arg = 0
+    i = k - 1
+    while i >= 0:
+        t = code[i]
+        if t.kind == tk.PUNCT:
+            if t.text in (')', ']', '}'):
+                depth += 1
+            elif t.text in ('(', '[', '{'):
+                if depth == 0:
+                    break
+                depth -= 1
+            elif t.text == ',' and depth == 0:
+                arg += 1
+            elif t.text == ';' and depth == 0:
+                return None
+        i -= 1
+    if i < 1 or code[i].text != '(' or code[i - 1].kind != tk.IDENT:
+        return None
+    depth = 0
+    nargs = 1
+    j = i + 1
+    while j < len(code):
+        t = code[j]
+        if t.kind == tk.PUNCT:
+            if t.text in ('(', '[', '{'):
+                depth += 1
+            elif t.text in (')', ']', '}'):
+                if depth == 0:
+                    break
+                depth -= 1
+            elif t.text == ',' and depth == 0:
+                nargs += 1
+        j += 1
+    return i - 1, arg, nargs, j
+
+
+def _callee(code, c):
+    """The dotted name that ends at code[c], as its parts, and whether `new` stands before it."""
+    parts = [code[c].text]
+    j = c
+    while j >= 2 and code[j - 1].text == '.' and code[j - 2].kind == tk.IDENT:
+        parts.insert(0, code[j - 2].text)
+        j -= 2
+    return parts, j >= 1 and code[j - 1].text == 'new'
+
+
+def _reads_get_message(tokens):
+    return any(t.kind == tk.IDENT and t.text == 'getMessage' for t in tokens)
+
+
+def _receiver(code, c):
+    """The tokens of the receiver before `.` and the method at code[c], back to the start of its expression."""
+    out = []
+    depth = 0
+    j = c - 2
+    while j >= 0:
+        t = code[j]
+        if t.kind == tk.PUNCT and t.text in (')', ']'):
+            depth += 1
+        elif t.kind == tk.PUNCT and t.text in ('(', '['):
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and t.kind == tk.PUNCT and t.text not in ('.', '::'):
+            break
+        elif depth == 0 and t.kind == tk.IDENT and t.text in JAVA_KEYWORDS:
+            break
+        out.append(t)
+        j -= 1
+    return out
+
+
+def _markup_spans(text):
+    """(start, end) of the inside of every {@code ...}, <code>...</code> and `...` of a comment or a line."""
+    spans = []
+    for m in re.finditer(r'\{@code\s', text):
+        depth = 1
+        j = m.end()
+        while j < len(text) and depth:
+            depth += {'{': 1, '}': -1}.get(text[j], 0)
+            j += 1
+        spans.append((m.end(), j - 1 if depth == 0 else j))
+    spans += [(m.start(1), m.end(1)) for m in re.finditer(r'<code>(.*?)</code>', text, re.S)]
+    spans += [(m.start(1), m.end(1)) for m in re.finditer(r'`([^`\n]+)`', text)]
+    return spans
+
+
+def _qualifiers(span, at):
+    """The names before the name at `at` of a code span that qualify it (Lezer in Lezer.lees), outermost first."""
+    out = []
+    j = at
+    while True:
+        m = re.search(r'(\w+)(\.|#|::)$', span[:j])
+        if not m:
+            return out
+        out.insert(0, m.group(1))
+        j = m.start()
+
+
+def _prose_neighbours(text, start, end):
+    """Whether the word at text[start:end] stands as a word of prose: whitespace or a quote before it; whitespace,
+    a quote, , ; : ! ? or a period that ends a sentence after it. Never a dot of a name, a bracket, a dash or a
+    slash: a call, a path or a slug."""
+    before = text[start - 1] if start > 0 else ' '
+    after = text[end] if end < len(text) else ' '
+    if after == '.':
+        after = text[end + 1] if end + 1 < len(text) else ' '
+        return before in _PROSE_BEFORE and after in _PROSE_BEFORE
+    return before in _PROSE_BEFORE and after in _PROSE_AFTER
+
+
+def _language(text):
+    """(Dutch, English) counts of the marker words of `text`."""
+    words = [w.lower() for w in re.findall(r'[^\W\d_]+', text)]
+    return sum(w in DUTCH_MARKERS for w in words), sum(w in ENGLISH_MARKERS for w in words)
+
+
+class Triage:
+    """The rows of a decision list that a rule of the card or of CLAUDE.md decides by itself (card
+    hernoem-drools-backend): RegelSpraak text, the wire, messages, function words, code markup and Dutch prose. A
+    rule decides only where it is certain; every other row goes to the decider. Outside the zone only the first two
+    rules hold."""
+
+    def __init__(self, repo, lex, table, default_keep=False):
+        self.repo, self.lex = repo, lex
+        self.zone = Zone(repo, table.zone)
+        self.default_keep = default_keep
+        index = repo.index()
+        # de, dan, met: every glossary row of the word is a function word (een is the numeral too, waar true)
+        self.function_words = {w for w, rows in lex.words.items() if all(r.is_function_word() for r in rows)}
+        self.exceptions = self._exception_types()
+        # a Java type of the zone that nothing outside the zone declares; the specification names v0 nodes that share
+        # a name with one (Kringen, Functie), so a type it names counts only as a test class
+        self.zone_types = {n for n, files in index.java_types.items() if files and files <= self.zone.fileset}
+        self.spec_words = set()
+        for f in repo.files():
+            if f.startswith('spec/') and f.endswith('.md'):
+                self.spec_words.update(re.findall(r'\w+', repo.text(f)))
+        self._texts = {}
+        self._lines = {}
+        self._tokens = {}
+
+    def _exception_types(self):
+        """The Java types of the repository whose supertypes reach an exception or an error (the refusal types)."""
+        supers = collections.defaultdict(set)
+        for f in self.repo.code_files():
+            if tk.language(f) == 'java':
+                for t in self.repo.model(f).types:
+                    if t.name:
+                        supers[t.name].update(s.split('.')[-1] for s in t.supertypes)
+
+        def reaches(name, seen):
+            if _thrown_name(name):
+                return True
+            if name in seen:
+                return False
+            seen.add(name)
+            return any(reaches(s, seen) for s in supers.get(name, ()))
+        return {n for n in supers if reaches(n, set())}
+
+    def text(self, path):
+        t = self._texts.get(path)
+        if t is None:
+            t = self._texts[path] = self.repo.text(path)
+        return t
+
+    def offset(self, d, where):
+        """The offset of the row's occurrence in its file; fails where the file does not hold `old` there."""
+        if not os.path.isfile(self.repo.path(d.path)):
+            die('triage: %s: %s is no file of the tree (stale list?)' % (where, d.path))
+        text = self.repo.model(d.path).text if tk.language(d.path) else self.text(d.path)
+        starts = self._lines.get(d.path)
+        if starts is None:
+            starts = self._lines[d.path] = tk.Lines(text).starts
+        off = starts[d.line - 1] + d.col - 1 if 1 <= d.line <= len(starts) else -1
+        if off < 0 or text[off:off + len(d.old)] != d.old:
+            die('triage: %s: %s:%d:%d does not hold %s (stale list?)' % (where, d.path, d.line, d.col, d.old))
+        return off
+
+    def token(self, d, off):
+        """The string or comment of a code file that holds the offset, or None (code, or a text file)."""
+        if not tk.language(d.path):
+            return None
+        m = self.repo.model(d.path)
+        starts = self._tokens.get(d.path)
+        if starts is None:
+            starts = self._tokens[d.path] = [t.start for t in m.tokens]
+        k = bisect.bisect_right(starts, off) - 1
+        t = m.tokens[k] if k >= 0 else None
+        return t if t is not None and t.start <= off < t.end and t.kind in (tk.STRING, tk.COMMENT) else None
+
+    def place(self, d, off):
+        """Where a row stands, for the counts: a string, a comment or code of a code file, or a text file."""
+        if not tk.language(d.path):
+            ext = os.path.splitext(d.path)[1]
+            return 'text file' + (' ' + ext if ext else '')
+        tok = self.token(d, off)
+        return 'code' if tok is None else tok.kind
+
+    def decide(self, d, off):
+        """(decision, why) for the row, `why` starting with the name of its rule, or None for the decider."""
+        in_zone = self.zone.contains(d.path)
+        if d.path.endswith('.rgs'):
+            return 'keep', 'regelspraak: an .rgs file'
+        lang = tk.language(d.path)
+        if lang is None:
+            text = self.text(d.path)
+            if self.wire_file(d.path, text):
+                return 'keep', 'wire: an IR document or a case'
+            if in_zone and d.path.endswith('.md'):
+                ls = text.rfind('\n', 0, off) + 1
+                le = text.find('\n', off)
+                line = text[ls:le if le >= 0 else len(text)]
+                span = next(((a, b) for a, b in _markup_spans(line) if a <= off - ls < b), None)
+                return self.markup(None, line[span[0]:span[1]], off - ls - span[0], d) if span else None
+            if in_zone and self.default_keep and d.path.endswith('.txt'):
+                return 'keep', 'string-default: a .txt file of the zone, an expected dump'
+            return None
+        m = self.repo.model(d.path)
+        tok = self.token(d, off)
+        if tok is None:
+            return None
+        rel = off - tok.start
+        if tok.kind == tk.STRING:
+            # a string of Java or OCaml code; a shell script is read whole, and a heredoc holds a program
+            if m.lang in ('java', 'ocaml') and self.regelspraak_string(m, tok):
+                return 'keep', 'regelspraak: a string read as a RegelSpraak source'
+            if m.lang in ('java', 'ocaml') and self.json_string(m, tok):
+                return 'keep', 'wire: a string read as IR or case JSON'
+            if not in_zone:
+                return None
+            if m.lang == 'java':
+                why = self.message(m, tok)
+                if why:
+                    return 'keep', 'message: ' + why
+                if (d.old in self.function_words and not _CODE_TEXT.search(tok.text)
+                        and _prose_neighbours(tok.text, rel, rel + len(d.old))):
+                    nl, en = _language(tok.text[:rel] + ' ' + tok.text[rel + len(d.old):])
+                    if nl >= 1 and en == 0:
+                        return 'keep', 'function-word: %s in Dutch text' % d.old
+            if self.default_keep:
+                return 'keep', "string-default: a string of the zone's code that no earlier rule decides"
+            return None
+        if in_zone:
+            r = self.comment(m, tok, rel, d)
+            if r is None and self.default_keep:
+                return 'keep', "comment-default: a comment of the zone's code that no earlier rule decides"
+            return r
+        return None
+
+    # -- the wire and RegelSpraak text
+
+    def wire_file(self, path, text):
+        base = os.path.basename(path)
+        if base == 'ir.json' or (base.startswith('case') and base.endswith('.json')):
+            return True
+        if not path.endswith('.json'):
+            return False
+        try:
+            doc = json.loads(text)
+        except json.JSONDecodeError:
+            return False
+        return isinstance(doc, dict) and any(keys <= set(doc) for keys in WIRE_TOP_KEYS)
+
+    def chain(self, m, tok):
+        """The literals that + joins with the Java string `tok` (None for each other operand), or [] when it stands
+        alone."""
+        code = m.code
+        first, last = _java_expression(code, m.code_pos[tok.start])
+        pieces = []
+        depth = 0
+        for j in range(first, last + 1):
+            t = code[j]
+            if depth == 0 and t.kind == tk.STRING:
+                pieces.append(_string_value(t.text))
+            elif not (depth == 0 and t.text == '+') and (not pieces or pieces[-1] is not None):
+                pieces.append(None)
+            if t.kind == tk.PUNCT and t.text in ('(', '[', '{'):
+                depth += 1
+            elif t.kind == tk.PUNCT and t.text in (')', ']', '}'):
+                depth -= 1
+        return pieces if sum(1 for p in pieces if p is not None) >= 2 else []
+
+    def regelspraak_string(self, m, tok):
+        # the lexicon's reading of the token; then the + chain it is part of, an operand that is no literal read as
+        # a word (Regel + naam) or as a line break (MODEL + "Regel ...")
+        if regelspraak_names(tok.text):
+            return True
+        pieces = self.chain(m, tok) if m.lang == 'java' else []
+        return bool(pieces) and any(regelspraak_names(''.join(hole if p is None else p for p in pieces))
+                                    for hole in ('X', '\n'))
+
+    def json_string(self, m, tok):
+        def reads(text):
+            return any(key in DOMAIN_KEYS for key, _ in _JSON_PAIR.findall(text.replace('\\"', '"')))
+        if reads(tok.text):
+            return True
+        pieces = self.chain(m, tok) if m.lang == 'java' else []
+        return bool(pieces) and reads(''.join('X' if p is None else p for p in pieces))
+
+    # -- messages
+
+    def message(self, m, tok):
+        code = m.code
+        k = m.code_pos[tok.start]
+        call = _enclosing_call(code, k)
+        if call is None:
+            return None
+        c, arg, nargs, close = call
+        parts, is_new = _callee(code, c)
+        name = parts[-1]
+        if is_new and (_thrown_name(name) or name in self.exceptions):
+            return 'the message of new %s' % name
+        junit = self.junit(m, parts)
+        if name == 'fail' and arg == 0 and junit:
+            return 'the message of fail'
+        if name in ASSERT_ARITY and junit:
+            if nargs > ASSERT_ARITY[name] and arg == nargs - 1:
+                return 'the message of %s' % name
+            if name == 'assertEquals' and any(i != arg and _reads_get_message(a)
+                                              for i, a in enumerate(self.arguments(code, c + 1, close))):
+                return 'compared with a message'
+        if name in PRINT_METHODS and len(parts) >= 2 and self.printer(m, parts[:-1]):
+            return 'printed by %s' % name
+        if name in MESSAGE_COMPARISONS and c >= 2 and code[c - 1].text == '.' and _reads_get_message(_receiver(code, c)):
+            return 'compared with a message'
+        return None
+
+    @staticmethod
+    def arguments(code, open_, close):
+        out = [[]]
+        depth = 0
+        for t in code[open_ + 1:close]:
+            if t.kind == tk.PUNCT and t.text in ('(', '[', '{'):
+                depth += 1
+            elif t.kind == tk.PUNCT and t.text in (')', ']', '}'):
+                depth -= 1
+            elif depth == 0 and t.text == ',':
+                out.append([])
+                continue
+            out[-1].append(t)
+        return out
+
+    @staticmethod
+    def junit(m, parts):
+        if len(parts) == 1:
+            return (m.static_imports.get(parts[0]) == JUNIT_ASSERTIONS
+                    or (JUNIT_ASSERTIONS, True) in m.wildcard_imports)
+        qualifier = '.'.join(parts[:-1])
+        return qualifier == JUNIT_ASSERTIONS or (qualifier == 'Assertions' and m.imports.get('Assertions') == JUNIT_ASSERTIONS)
+
+    @staticmethod
+    def printer(m, receiver):
+        if receiver in (['System', 'out'], ['System', 'err']):
+            return True
+        return len(receiver) == 1 and re.search(r'\b(?:PrintStream|PrintWriter)\s+%s\b' % re.escape(receiver[0]), m.text)
+
+    # -- comments and Markdown
+
+    def markup(self, m, inside, at, d):
+        """change for the name at `at` of a code span that names code of the zone: declared in the comment's file
+        (`m`, None for Markdown), a type of the zone only, or read through such types; None otherwise."""
+        if not _CODE_SPAN.fullmatch(inside.strip()) or d.old.lower() in self.lex.declared or d.old.lower() in self.lex.domain:
+            return None
+        qualifiers = _qualifiers(inside, at)
+        if qualifiers:
+            if all(self.zone_type(q) for q in qualifiers):
+                return 'change', 'code-markup: read through a type of the zone'
+            return None
+        if m is not None and d.old in m.decls:
+            return 'change', 'code-markup: declared in this file'
+        if self.zone_type(d.old):
+            return 'change', 'code-markup: a type of the zone'
+        return None
+
+    def zone_type(self, name):
+        return name in self.zone_types and (name.endswith('Test') or name not in self.spec_words)
+
+    def comment(self, m, tok, rel, d):
+        text = tok.text
+        span = next(((a, b) for a, b in _markup_spans(text) if a <= rel < b), None)
+        if span is not None:
+            return self.markup(m, text[span[0]:span[1]], rel - span[0], d)
+        if not _prose_neighbours(text, rel, rel + len(d.old)):
+            return None
+        ls = text.rfind('\n', 0, rel) + 1
+        le = text.find('\n', rel)
+        le = len(text) if le < 0 else le
+        if _DOC_TAG.search(text[ls:rel]):
+            return None
+        # the text whose language counts: the double-quoted span that holds the name, else its line outside the
+        # quotes; with an odd number of quotes in the comment, a line that holds one is not read
+        quotes = [i for i, ch in enumerate(text) if ch == '"']
+        pairs = list(zip(quotes[0::2], quotes[1::2])) if len(quotes) % 2 == 0 else []
+        if len(quotes) % 2 and '"' in text[ls:le]:
+            return None
+        inside = next(((a, b) for a, b in pairs if a < rel < b), None)
+        if inside is not None:
+            unit = text[inside[0] + 1:rel] + ' ' + text[rel + len(d.old):inside[1]]
+        else:
+            chars = list(text[ls:le])
+            for a, b in pairs:
+                for i in range(max(a, ls), min(b + 1, le)):
+                    chars[i - ls] = ' '
+            line = ''.join(chars)
+            unit = line[:rel - ls] + ' ' + line[rel - ls + len(d.old):]
+        if _CODE_TEXT.search(_DOC_MARKUP.sub(' ', unit)):
+            return None
+        nl, en = _language(unit)
+        if d.old in self.function_words:
+            if inside is None and en >= 2 and nl == 0:
+                return None
+            return 'keep', 'function-word: %s in a comment' % d.old
+        if d.old == d.old.lower() and nl >= 2 and en == 0:
+            return 'keep', 'dutch-prose: a Dutch %s of a comment' % ('quote' if inside else 'line')
+        return None
+
+
+def cmd_triage(args):
+    repo = Repo(args.root)
+    entries = read_decisions(args.list)
+    if any(d.decision for d in entries):
+        die('triage: %s has decisions: triage reads the list as apply writes it, before merge-decisions' % args.list)
+    name = os.path.splitext(os.path.basename(args.list))[0]
+    table = Table(os.path.join(repo.root, TABLES, name + '.tsv'))
+    if os.path.exists(args.dir) and os.listdir(args.dir):
+        die('triage: %s exists and is not empty' % args.dir)
+    triage = Triage(repo, Lexicon(repo), table, default_keep=args.default_keep)
+    decided, rest = [], []
+    counts = collections.Counter()
+    places = collections.Counter()
+    for i, d in enumerate(entries, 1):
+        off = triage.offset(d, '%s:%d' % (args.list, d.offset))
+        r = triage.decide(d, off)
+        if r is None:
+            rest.append({'row': i, 'file': d.path, 'line': d.line, 'col': d.col, 'old': d.old, 'new': d.new,
+                         'context': d.context})
+            places['%s %s' % ('zone' if triage.zone.contains(d.path) else 'outside', triage.place(d, off))] += 1
+        else:
+            decision = r[0]
+            if decision == 'change' and '|' in d.new:
+                # apply offers every new name of the name, the row at its place first, and refuses a plain change
+                decision = 'change:' + d.new.split('|')[0]
+            decided.append({'row': i, 'old': d.old, 'decision': decision, 'why': r[1]})
+            counts['%s %s' % (r[1].split(':')[0], r[0])] += 1
+    os.makedirs(args.dir, exist_ok=True)
+    with open(os.path.join(args.dir, 'triage.answer.jsonl'), 'w', encoding='utf-8') as f:
+        for obj in decided:
+            f.write(json.dumps(obj, ensure_ascii=False) + '\n')
+    n = (len(rest) + TRIAGE_BATCH - 1) // TRIAGE_BATCH
+    index = []
+    pos = 0
+    for b in range(n):
+        size = len(rest) // n + (1 if b < len(rest) % n else 0)
+        path = os.path.abspath(os.path.join(args.dir, 'rest-%03d.jsonl' % (b + 1)))
+        with open(path, 'w', encoding='utf-8') as f:
+            for obj in rest[pos:pos + size]:
+                f.write(json.dumps(obj, ensure_ascii=False) + '\n')
+        index.append('%s\t%d\n' % (path, size))
+        pos += size
+    with open(os.path.join(args.dir, 'INDEX.txt'), 'w', encoding='utf-8') as f:
+        f.write(''.join(index))
+    for key in sorted(counts):
+        print('triage: %-24s %d' % (key, counts[key]), file=sys.stderr)
+    for key in sorted(places):
+        print('triage: rest, %-28s %d' % (key, places[key]), file=sys.stderr)
+    print('triage: %d of %d rows decided into %s; %d rows in %d batches (INDEX.txt), for prompts/decide.md'
+          % (len(decided), len(entries), os.path.join(args.dir, 'triage.answer.jsonl'), len(rest), n), file=sys.stderr)
     return 0
 
 
@@ -2990,6 +5650,22 @@ def cmd_verify(args):
         if not os.path.isdir(args.renderings):
             die('verify: %s is no directory (make it with render)' % args.renderings)
         pattern = re.compile(r'(?<![\w$])(%s)(?![\w$])' % '|'.join(re.escape(o) for o in multi)) if multi else None
+        index = repo.index()
+        zones = [p for t in tables for p in t.zone]
+
+        def outside_member(text, start):
+            """Whether the old name at `start` is read through a qualifier that names a Java type outside the zones: a
+            member of that type, which keeps its name (card hernoem-drools-backend: the DRL rendering writes the
+            frontend's dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.NAAR_RATO in full)."""
+            q = re.search(r'([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\.$', text[max(0, start - 400):start])
+            if not q:
+                return False
+            parts = q.group(1).split('.')
+            for i in range(len(parts), 0, -1):
+                f = index.java_fqn.get('.'.join(parts[:i]))
+                if f is not None:
+                    return not any(under(f, z) for z in zones)
+            return False
         hits = []
         nfiles = 0
         for dirpath, _, files in os.walk(args.renderings):
@@ -3000,6 +5676,8 @@ def cmd_verify(args):
                     continue
                 text = read_bytes(p).decode('utf-8', 'replace')
                 for mm in pattern.finditer(text):
+                    if outside_member(text, mm.start()):
+                        continue
                     line = text.count('\n', 0, mm.start()) + 1
                     hits.append('%s:%d: %s' % (os.path.relpath(p, args.renderings), line, mm.group(1)))
         if not nfiles:
@@ -3153,15 +5831,28 @@ def main(argv):
     s.add_argument('--unknown', type=int, default=0, metavar='N', help='the N most frequent words nothing knows')
     s.add_argument('--by-zone', type=int, default=0, metavar='DEPTH', help='count the names per path prefix of DEPTH parts')
     s.add_argument('--quiet', action='store_true', help='only the summary line')
+    s = sub.add_parser('freeze', help='the names of a zone that the Java sources of another checkout read')
+    s.add_argument('args', nargs='+', metavar='prefix... list')
+    s.add_argument('--using', required=True, metavar='CHECKOUT', help='a git checkout of the code that uses the zone')
+    s.add_argument('--exclude', action='append', default=[], metavar='PATH',
+                   help='a path of that checkout to leave out, such as a submodule that holds this repository')
     s = sub.add_parser('propose', help='batches of names for the translator')
     s.add_argument('args', nargs='+', metavar='prefix... dir')
     s = sub.add_parser('merge', help="the translator's answers as a table")
-    s.add_argument('dir')
-    s.add_argument('table')
+    s.add_argument('args', nargs='+', metavar='dir... table',
+                   help='batch directories, a later one answering again what an earlier one answered, then the table')
     s.add_argument('--force', action='store_true')
     s = sub.add_parser('merge-decisions', help="the decider's answers into the decision list")
     s.add_argument('list')
     s.add_argument('answers', nargs='+')
+    s.add_argument('--corrections', nargs='+', default=None, metavar='ANSWER',
+                   help="the session's corrections: each replaces the earlier answer of its row")
+    s = sub.add_parser('triage', help='the rows of a decision list a rule decides, and batches of the rest')
+    s.add_argument('list')
+    s.add_argument('dir')
+    s.add_argument('--default-keep', action='store_true',
+                   help='the last rules string-default and comment-default: keep every other string and comment of '
+                        "the zone's code and every .txt file of the zone")
     s = sub.add_parser('check', help='the checks before applying')
     s.add_argument('table')
     s.add_argument('--classpath', default=None, help='jars for javap, for library supertypes outside the JDK')
@@ -3183,8 +5874,8 @@ def main(argv):
         if r.returncode != 0:
             die('not inside a git repository; pass --root')
         args.root = r.stdout.strip()
-    handler = {'inventory': cmd_inventory, 'propose': cmd_propose, 'merge': cmd_merge,
-               'merge-decisions': cmd_merge_decisions, 'check': cmd_check, 'apply': cmd_apply,
+    handler = {'inventory': cmd_inventory, 'freeze': cmd_freeze, 'propose': cmd_propose, 'merge': cmd_merge,
+               'merge-decisions': cmd_merge_decisions, 'triage': cmd_triage, 'check': cmd_check, 'apply': cmd_apply,
                'verify': cmd_verify, 'render': cmd_render}[args.cmd]
     return handler(args)
 

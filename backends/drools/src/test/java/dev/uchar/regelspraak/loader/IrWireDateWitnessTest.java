@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The REFUSING half of this backend's IR-wire date reader: the {@code from}/{@code to} bounds of a
  * {@code Validity}, which is the ONE place a date reaches the loader as a lexeme. The sister classes
- * {@code CaseWireDatumWitnessTest} and {@code CaseWireDatumTijdWitnessTest} do the same on the case wire;
+ * {@code CaseWireDateWitnessTest} and {@code CaseWireDateTimeWitnessTest} do the same on the case wire;
  * this one exists because the IR wire held a bare {@code LocalDate.parse} on both bounds until 2026-09-11
  * and — unlike the case wire — has NO schema pattern behind it either, so nothing anywhere refused a
  * malformed validity bound.
@@ -242,8 +242,8 @@ class IrWireDateWitnessTest {
                 "and never degrades to the bare field, which locates nothing: " + message);
 
         JsonNode window = wire(WINDOW);
-        ((ObjectNode) IrPad.rulesLijst(window, "rules").get(0)).putNull("name");
-        ((ObjectNode) IrPad.versie(window, "rules", 0, 0).get("validity")).put("from", "+012026-01-01");
+        ((ObjectNode) IrPath.rulesList(window, "rules").get(0)).putNull("name");
+        ((ObjectNode) IrPath.version(window, "rules", 0, 0).get("validity")).put("from", "+012026-01-01");
         String version = refusal(() -> IrLoader.load(window), "+012026-01-01", "a bound on a nameless form");
         assertTrue(version.contains("'" + WINDOW_VERSION + "/from'"), "the version names its place: " + version);
     }
@@ -293,7 +293,7 @@ class IrWireDateWitnessTest {
     /** {@link #WINDOW} with one bound of its first rule version replaced, loaded. */
     private static Geldigheid boundRead(String bound, String lexeme) throws Exception {
         JsonNode root = wire(WINDOW);
-        JsonNode g = IrPad.versie(root, "rules", 0, 0).path("validity");
+        JsonNode g = IrPath.version(root, "rules", 0, 0).path("validity");
         assertTrue(g.isObject(), "the twisted rule version carries a Validity node");
         ((ObjectNode) g).put(bound, lexeme);
         return window(IrLoader.load(root));

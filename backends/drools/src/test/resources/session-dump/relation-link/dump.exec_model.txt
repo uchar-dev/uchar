@@ -1,0 +1,14 @@
+invoer bean "V1" Vondst(s=leeg)
+vuringen 1 plafond 10000 geenFixpunt null
+fixpunt ja
+spoor-telling {"maak"=1}
+spoor-volgorde ["maak"]
+lees koppeling "F x" "r"="V1" "s"=«"maak"»("V1")#1
+lees object «"maak"»("V1")#1 door "maak" voor "V1"
+feiten 6
+feit CreationPhase(number=Integer(2), stratum=Integer(0))
+feit CreationStamp(regel=String("maak"), onderwerp="V1", object=«"maak"»("V1")#1, phase=Integer(1), stratum=Integer(0), depth=Integer(1))
+feit Fired(geenFixpunt=leeg)
+feit RelationLink(relation=String("f x"), eerste="V1", tweede=«"maak"»("V1")#1, phase=Integer(1))
+feit bean "V1" Vondst(s=leeg)
+feit bean «"maak"»("V1")#1 Boei(r=leeg)

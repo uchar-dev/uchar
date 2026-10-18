@@ -93,5 +93,5 @@ exec-model branch refuses it by name, as a creation has no companion that
 raises the Fout), a date fold in the creation's condition (refused by name),
 and a fold over a value that a defaults group, a later creation or a fact
 creation writes (both Drools branches fire the creation before that writer).
-The first, third and fourth are rows of `ObjectcreatieVouwWitnessTest` in the
+The first, third and fourth are rows of `ObjectCreationFoldWitnessTest` in the
 Drools backend.

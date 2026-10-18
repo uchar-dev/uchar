@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
 
@@ -72,7 +72,7 @@ class VocabularyWitnessTest {
 
     @Test void without_designation_the_effective_name_is_the_canonical() throws Exception {
         JsonNode ir = golden();
-        ObjectNode weight = IrPad.attribute(IrPad.objectType(ir, "Vondst"), "gewicht");
+        ObjectNode weight = IrPath.attribute(IrPath.objectType(ir, "Vondst"), "gewicht");
         ArrayNode list = (ArrayNode) weight.get("designations");
         list.remove(0);                                    // the handboek designation goes, the cgm one stays
         RegelSpraakModel m = IrLoader.load(ir);
@@ -88,7 +88,7 @@ class VocabularyWitnessTest {
         sub.put("node", "ObjectType").put("name", "Zware vondst").put("supertype", "Vondst").put("animate", false);
         sub.putArray("attributes");
         sub.putArray("characteristics");
-        IrPad.modelLijst(ir, "objectTypes").add(sub);
+        IrPath.modelList(ir, "objectTypes").add(sub);
         RegelSpraakModel m = IrLoader.load(ir);
         assertEquals(Optional.of(Benoembaar.attribuut("Vondst", "gewicht")),
                 m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Zware vondst", "GEWICHT"));
@@ -96,27 +96,27 @@ class VocabularyWitnessTest {
 
     @Test void the_side_table_is_read_structurally() throws Exception {
         JsonNode ir = golden();
-        ((ObjectNode) IrPad.objectType(ir, "Jutter")).putArray("designations");
+        ((ObjectNode) IrPath.objectType(ir, "Jutter")).putArray("designations");
         IrLoader.Documentfout empty = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
         assertTrue(empty.getMessage().contains("a declaration's designations are at least one, or the field is absent"),
                 empty.getMessage());
 
         JsonNode ir2 = golden();
-        ((ObjectNode) ((ArrayNode) IrPad.objectType(ir2, "Jutter").get("designations")).get(0)).put("status", "x");
+        ((ObjectNode) ((ArrayNode) IrPath.objectType(ir2, "Jutter").get("designations")).get(0)).put("status", "x");
         IrLoader.Documentfout foreign = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
-        assertEquals("/model/objectTypes/0/designations/0/status", foreign.plek());
+        assertEquals("/model/objectTypes/0/designations/0/status", foreign.site());
 
         JsonNode ir3 = golden();
         ((ObjectNode) ((ArrayNode) ir3.get("vocabularies")).get(1)).put("kind", "code");
         IrLoader.Documentfout kind = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir3));
-        assertEquals("/vocabularies/1/kind", kind.plek());
+        assertEquals("/vocabularies/1/kind", kind.site());
     }
 
     @Test void the_loader_does_not_refuse_what_a_designation_says() throws Exception {
         // an undeclared vocabulary and a value that names no declared value are the verifier's (WF-117), never a load
         // refusal: no executor refuses a document for what its designations say
         JsonNode ir = golden();
-        ObjectNode e = (ObjectNode) ((ArrayNode) IrPad.domain(ir, "Vondstsoort").get("datatype")
+        ObjectNode e = (ObjectNode) ((ArrayNode) IrPath.domain(ir, "Vondstsoort").get("datatype")
                 .get("valueDesignations")).get(0);
         e.put("vocabulary", "wet").put("value", "gruis");
         RegelSpraakModel m = IrLoader.load(ir);

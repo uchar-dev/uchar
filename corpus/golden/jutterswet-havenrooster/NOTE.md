@@ -42,7 +42,7 @@ does not count" rule, restated at a parameter-bound day kind — and its
 
 `ref` and the ASP backend replay both cases exactly. Both Drools branches
 **refuse**, and are listed by name in gate 12's two channels with the reason:
-the shared day-kind predicate compiler (`transpiler/kern/Dagsoorten`) has no
+the shared day-kind predicate compiler (`transpiler/kern/DayKinds`) has no
 parameter operand at all. It compiles a voorwaarde ONCE into the KieBase,
 while parameter values arrive per case as session globals, so a
 parameter-bound day kind has no compiled predicate and the reaching rule is

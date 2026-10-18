@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.loader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +41,7 @@ class UnknownFunctionKindWitnessTest {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "een vouwsoort buiten de gesloten verzameling hoort een benoemde documentfout te zijn,"
                         + " geen onbeheerde IllegalArgumentException");
-        assertEquals(KIND, e.plek(), e.getMessage());
+        assertEquals(KIND, e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown kind value \"GEMIDDELDE\""), e.getMessage());
     }
 
@@ -50,7 +50,7 @@ class UnknownFunctionKindWitnessTest {
         ObjectNode root = (ObjectNode) golden();
         ((ObjectNode) fold(root)).put("kind", "squareRoot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
-        assertEquals(KIND, e.plek(), e.getMessage());
+        assertEquals(KIND, e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown kind value \"squareRoot\""), e.getMessage());
     }
 
@@ -65,7 +65,7 @@ class UnknownFunctionKindWitnessTest {
 
     /** The count of {@code jutterswet-vondsttelling}, the fold this witness re-spells. */
     private static JsonNode fold(JsonNode root) {
-        return IrPad.versie(root, "rules", 0, 0).get("value");
+        return IrPath.version(root, "rules", 0, 0).get("value");
     }
 
     private static JsonNode golden() throws Exception {

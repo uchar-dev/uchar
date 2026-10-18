@@ -12,7 +12,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
  *
  * <p>The manifest replaces two weaker signals: the bare skip-COUNT cap (which could not say WHICH
  * construct regressed) and the silent marker (a semantically inert rule with no diagnostic). Every
- * non-LOWERED verdict therefore also surfaces as a deduplicated WARNING via {@link #meld}.
+ * non-LOWERED verdict therefore also surfaces as a deduplicated WARNING via {@link #report}.
  */
 public record Dekking(String soort, String naam, Verdict verdict, String reden, String spec) {
 
@@ -23,11 +23,11 @@ public record Dekking(String soort, String naam, Verdict verdict, String reden, 
     }
 
     public static Dekking marker(String soort, String naam, String reden) {
-        return new Dekking(soort, naam, Verdict.MARKER, reden, specUit(reden));
+        return new Dekking(soort, naam, Verdict.MARKER, reden, specOut(reden));
     }
 
     public static Dekking skip(String soort, String naam, String reden) {
-        return new Dekking(soort, naam, Verdict.SKIP, reden, specUit(reden));
+        return new Dekking(soort, naam, Verdict.SKIP, reden, specOut(reden));
     }
 
     /** The construct's identity across back-ends — soort plus its RegelSpraak name. */
@@ -37,7 +37,7 @@ public record Dekking(String soort, String naam, Verdict verdict, String reden, 
 
     /** A non-LOWERED verdict is never silent: raise a WARNING on the model, deduplicated so a
      *  re-transpile of the same model (or both back-ends reaching the same verdict) does not pile up. */
-    public void meld(RegelSpraakModel model) {
+    public void report(RegelSpraakModel model) {
         if (lowered()) return;
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                 "dekking: " + soort + " '" + naam + "' " + verdict
@@ -46,7 +46,7 @@ public record Dekking(String soort, String naam, Verdict verdict, String reden, 
     }
 
     /** The first spec-§ citation in the reason text, or "" — marker/skip reasons usually carry one. */
-    private static String specUit(String reden) {
+    private static String specOut(String reden) {
         var m = java.util.regex.Pattern.compile("§[0-9]+(?:\\.[0-9]+)*").matcher(reden);
         return m.find() ? m.group() : "";
     }

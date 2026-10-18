@@ -13,11 +13,11 @@ import java.util.List;
  *                the rules that compare the writers of one target, the contribution rules of the folds and the rules
  *                of the links over a created relation, then the standings
  */
-public record Modelplan(List<Globaal> globals, List<Regelplan> regels) {
+public record Modelplan(List<Global> globals, List<RulePlan> rules) {
 
     public Modelplan {
         globals = List.copyOf(globals);
-        regels = List.copyOf(regels);
+        rules = List.copyOf(rules);
     }
 
     /**
@@ -26,5 +26,5 @@ public record Modelplan(List<Globaal> globals, List<Regelplan> regels) {
      * @param naam   the name the case runner sets it under, and the one a consequence that binds it names
      * @param klasse the Java class of its value
      */
-    public record Globaal(String naam, Class<?> klasse) {}
+    public record Global(String naam, Class<?> javaClass) {}
 }

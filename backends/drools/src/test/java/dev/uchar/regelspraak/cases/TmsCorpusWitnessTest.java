@@ -83,41 +83,41 @@ class TmsCorpusWitnessTest {
      *  leaves this floor as it is. */
     private static final int EXPECTED_MIN_PLAYED = 248;
 
-    @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
+    @Test void every_golden_plays_all_its_cases_or_is_refused() throws Exception {
         List<Path> goldens;
         try (Stream<Path> s = Files.walk(GOLDEN)) {
             goldens = s.filter(p -> p.getFileName().toString().equals("ir.json")).map(Path::getParent).sorted().toList();
         }
-        Map<String, Integer> telling = new TreeMap<>();
+        Map<String, Integer> count = new TreeMap<>();
         List<String> fout = new ArrayList<>();
-        int zonderCases = 0;
+        int withoutCases = 0;
         for (Path g : goldens) {
-            List<Path> zaken;
+            List<Path> cases;
             try (Stream<Path> s = Files.list(g)) {
-                zaken = s.filter(f -> f.getFileName().toString().matches("case.*\\.json")).sorted().toList();
+                cases = s.filter(f -> f.getFileName().toString().matches("case.*\\.json")).sorted().toList();
             }
-            if (zaken.isEmpty()) { zonderCases++; continue; }
+            if (cases.isEmpty()) { withoutCases++; continue; }
             String naam = GOLDEN.relativize(g).toString();
-            CaseRunner.Result r = CaseRunner.viaExecModel(g.resolve("ir.json"), zaken);
+            CaseRunner.Result r = CaseRunner.viaExecModel(g.resolve("ir.json"), cases);
             switch (r.status()) {
-                case "PLAYED" -> telling.merge("PLAYED", 1, Integer::sum);
-                case "EXCLUDE" -> telling.merge(familie(r.reason()), 1, Integer::sum);
+                case "PLAYED" -> count.merge("PLAYED", 1, Integer::sum);
+                case "EXCLUDE" -> count.merge(family(r.reason()), 1, Integer::sum);
                 default -> fout.add(naam + ": " + r);
             }
         }
         assertEquals(List.of(), fout, "goldens die de tak draagt maar verkeerd uitrekent");
-        int gespeeld = telling.getOrDefault("PLAYED", 0), zonder = zonderCases;
-        assertTrue(gespeeld >= EXPECTED_MIN_PLAYED, () -> "gespeelde goldens " + gespeeld + " onder de vloer "
-                + EXPECTED_MIN_PLAYED + "; per familie " + telling + ", zonder cases " + zonder);
+        int played = count.getOrDefault("PLAYED", 0), without = withoutCases;
+        assertTrue(played >= EXPECTED_MIN_PLAYED, () -> "gespeelde goldens " + played + " onder de vloer "
+                + EXPECTED_MIN_PLAYED + "; per familie " + count + ", zonder cases " + without);
     }
 
     /** The family of a refusal: the kind of form the manifest refuses first, the label of the branch (a cycle, two
      *  rules of one name), or the loader. */
-    private static String familie(String reden) {
+    private static String family(String reden) {
         if (reden.startsWith("transpiler SKIP: ")) {
             String rest = reden.substring("transpiler SKIP: ".length());
-            int dubbelepunt = rest.indexOf(':');
-            return dubbelepunt < 0 ? "transpiler" : rest.substring(0, dubbelepunt);
+            int colon = rest.indexOf(':');
+            return colon < 0 ? "transpiler" : rest.substring(0, colon);
         }
         if (reden.startsWith("exec-model: ")) return "exec-model";
         if (reden.startsWith("loader: ")) return "loader";

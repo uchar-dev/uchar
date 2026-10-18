@@ -36,7 +36,7 @@ op D2, één per verdeling.
 ## Herkomst
 
 Eigen werk (kaart `drl-teksttak-op-truth-maintenance`, stap 5), deel B van
-de getuige `TmsVerdelingWitnessTest` van de Drools-backend, als document
+de getuige `TmsAllocationWitnessTest` van de Drools-backend, als document
 geschreven door de generator van die getuige. Daarom draagt het model ook
 attributen die geen regel van dit document leest. Er is geen bron in
 RegelSpraak: de IR is met de hand opgesteld. De vorm komt uit kaart

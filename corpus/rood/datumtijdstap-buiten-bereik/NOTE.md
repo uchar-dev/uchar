@@ -73,7 +73,7 @@ backend answered dates for cases 1 to 3 before.
   count 18446744073709551617 is out of range` for case 4. The two sentences
   are the reference interpreter's, so `ref` and `drools` pin the same
   fragment. Gate 8's Drools leg replays a red case on the exec-model branch
-  only; the JUnit witness `DatumstapBereikTakkenWitnessTest` replays these
+  only; the JUnit witness `DateStepRangeBranchesWitnessTest` replays these
   four cases through all three branches, which share the step
   (`RegelSpraakRuntime.rsDatumReken`).
 

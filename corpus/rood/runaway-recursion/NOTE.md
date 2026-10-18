@@ -23,8 +23,8 @@ maintenance since the card `tms-omschakeling` (2026-10-10). It faults at
 the mint at depth 101, like the two OCaml executors: `creation budget
 exhausted: objectcreatie "werf eeuwig" van stratum 0 zou een object maken
 op aanmaakdiepte 101, voor een Wachter op diepte 100 — …`, pinned up to
-`aanmaakdiepte 101` in the case and whole in `TmsCreatieWitnessTest`
-(`het_creatiebudget_ligt_waar_het_corpus_het_pint`). Until that card the
+`aanmaakdiepte 101` in the case and whole in `TmsCreationWitnessTest`
+(`the_creation_budget_lies_where_the_corpus_pins_it`). Until that card the
 red run drove the destructive lowering, which had no creation budget: it
 minted until its cap of 100 000 firings and reported "geen fixpunt
 (kringverwijzing?)", the fragment pinned for it then.

@@ -72,4 +72,4 @@ operand written by a defaults group (the DRL-text branch refuses a document
 with a group), an aggregation comparison whose own threshold is derived
 later and a role check stored on the other end (the same fix; the DRL-text
 branch answers the first wrong). Each is a row of
-`KwantorvoorwaardeOperandWitnessTest` in the Drools backend.
+`QuantifierConditionOperandWitnessTest` in the Drools backend.

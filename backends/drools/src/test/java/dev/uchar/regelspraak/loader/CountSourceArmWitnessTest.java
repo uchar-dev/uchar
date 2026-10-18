@@ -73,9 +73,9 @@ class CountSourceArmWitnessTest {
         String arg = SITE + "/arguments/0";
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                 () -> IrLoader.loadAll(negative("wf037-aantal-elementtype-variabele")));
-        assertEquals(arg, e.plek(), e.getMessage());
+        assertEquals(arg, e.site(), e.getMessage());
         assertEquals("malformed uchar-ir-v1 document at '" + arg + "': "
-                + IrLoader.variabeleVerwijzingWeigering("x"), e.getMessage());
+                + IrLoader.variableReferenceRefusal("x"), e.getMessage());
     }
 
     @Test void a_builtin_as_count_source_is_refused() throws Exception {
@@ -283,7 +283,7 @@ class CountSourceArmWitnessTest {
 
     private static void refusedAt(ObjectNode ir, String site, String sentence) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         assertEquals("malformed uchar-ir-v1 document at '" + site + "': " + sentence, e.getMessage());
     }
 

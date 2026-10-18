@@ -62,7 +62,7 @@ class RoundTripWitnessTest {
         // the loaded model is a valid transpiler input: beans generate, the contract holds, and
         // the truth-maintenance back-end wholly lowers it (no marker/skip) — loader(emit(model)) round-trips.
         Map<String, String> sources = FactModelGenerator.genereer(model);
-        ClassLoader cl = BeanCompiler.compileer(sources);
+        ClassLoader cl = BeanCompiler.compile(sources);
         List<String> violations = ContractValidator.valideer(model, cl);
         assertTrue(violations.isEmpty(), golden + ": bean contract holds — " + violations);
 
@@ -70,7 +70,7 @@ class RoundTripWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
+                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.path());
             for (Dekking d : et.dekking())
                 assertTrue(d.lowered(), golden + ": construct lowered — " + d.sleutel() + " " + d.verdict());
         } finally {

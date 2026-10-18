@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -112,7 +112,7 @@ class IfThenElseUnionWitnessTest {
     }
 
     private static String lit(String value, String type) {
-        return IrPad.literal(value, type, value);
+        return IrPath.literal(value, type, value);
     }
 
     private static String binary(String op, String left, String right, String type) {
@@ -164,7 +164,7 @@ class IfThenElseUnionWitnessTest {
                 .formatted(num(2), num(2), num(2), num(2));
         String objectType = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[%s],\"characteristics\":[]}").formatted(attributes);
-        String rule = IrPad.regel("uit van een jutter", "BEREKENING", attr("uit", num(2)), value, "null");
+        String rule = IrPath.regel("uit van een jutter", "BEREKENING", attr("uit", num(2)), value, "null");
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
+import dev.uchar.regelspraak.transpiler.kern.Timelines;
 
 import org.junit.jupiter.api.Test;
 
@@ -86,7 +86,7 @@ class FixedStartPointWitnessTest {
         for (String[] fixedStarts : new String[][]{{null, null}, {"--01-15", null}, {null, "--10-01"}}) {
             RegelSpraakModel m = IrLoader.load(proRata(fixedStarts[0], fixedStarts[1]));
             var rule = m.resolvedRegels.get(0);
-            String reason = Tijdlijnen.proRataVastRaster(m.objecttypen.get("Jutter"), "borgdeel", rule.waarde());
+            String reason = Timelines.proRataFixedGrid(m.objecttypen.get("Jutter"), "borgdeel", rule.waarde());
             if (fixedStarts[0] == null && fixedStarts[1] == null) assertNull(reason, "het kalenderraster is niet omheind");
             else assertEquals("pro-rata onto or from a grid that does not lie on the calendar is fenced"
                     + " (RUNTIME-SEMANTICS ch. 3.2)", reason, "omheind bij doel " + fixedStarts[0] + " en basis " + fixedStarts[1]);
@@ -96,7 +96,7 @@ class FixedStartPointWitnessTest {
     private static void refuses(String witness, String site, String sentence) throws Exception {
         JsonNode ir = read("negatief/" + witness);
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), witness);
-        assertEquals(site, e.plek(), e.getMessage());
+        assertEquals(site, e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": " + sentence), e.getMessage());
     }
 
