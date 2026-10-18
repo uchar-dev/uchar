@@ -10,7 +10,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
 import dev.uchar.regelspraak.transpiler.tms.plan.Exists;
 import dev.uchar.regelspraak.transpiler.tms.plan.BetaTest;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.Read;
@@ -194,7 +194,7 @@ final class DrlRendering {
     }
 
     /** A call of function {@code f}, through its class. */
-    private String function(Aggregation f) {
+    private String function(StaticFunction f) {
         return typeName(f.javaClass()) + "." + f.methode();
     }
 
@@ -747,7 +747,7 @@ final class DrlRendering {
         }
 
         /** A call of {@code f} on {@code arguments}, evaluated in that order, each cast as its parameter takes it. */
-        private Expr call(Aggregation f, List<Expr> arguments) {
+        private Expr call(StaticFunction f, List<Expr> arguments) {
             Method m = methode(f.javaClass(), f.methode());
             return new Expr(function(f) + "(" + argumentList(m, arguments) + ")", m.getReturnType());
         }
@@ -953,7 +953,7 @@ final class DrlRendering {
             String naam = naam("waarde", place);
             Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.waarde());
             Expr e = waarde(x.waarde(), c);
-            String v = x.collapse() ? call(Aggregation.COLLAPSE, List.of(e)).text() : e.text();
+            String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
             fill(place, x.waarde().bron(), "Object " + naam + "(" + c.declaratie() + ")",
                     tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
@@ -1081,7 +1081,7 @@ final class DrlRendering {
             String naam = naam("afloop", place);
             Context c = context(x.slots(), -1, null, x.waarde());
             Expr e = waarde(x.waarde(), c);
-            String v = x.collapse() ? call(Aggregation.COLLAPSE, List.of(e)).text() : e.text();
+            String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
             fill(place, x.waarde().bron(), "Object " + naam + "(" + c.declaratie() + ")", x.fout() == null
                     ? "    return " + v + ";\n"
                     : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
@@ -1161,7 +1161,7 @@ final class DrlRendering {
                 for (int i = 0; i < waarden.size(); i++) {
                     f.append("    Object i").append(i).append(" = null;\n");
                     probeer.append("        i").append(i).append(" = ")
-                            .append(call(Aggregation.COLLAPSE, List.of(waarde(waarden.get(i), c))).text()).append(";\n");
+                            .append(call(StaticFunction.COLLAPSE, List.of(waarde(waarden.get(i), c))).text()).append(";\n");
                 }
                 f.append(tryCatch(probeer.toString(), "        return " + route(Route.CAUGHT) + "(e);\n"));
             }

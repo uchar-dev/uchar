@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Route;
 
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A DRL text reaches every helper the plan names (card drl-teksttak-op-truth-maintenance, step 1e; FABLE-2 §2.9): each
- * {@link Aggregation} of a term and each {@link Route} of a test or a consequence is a public static method of a public
+ * {@link StaticFunction} of a term and each {@link Route} of a test or a consequence is a public static method of a public
  * class, the only public method of its name there, so that a text calls it class-qualified and a call by name finds
  * one method. Two checks:
  * <ul>
@@ -121,7 +121,7 @@ class ReachabilityWitnessTest {
     /** Every helper the plan names, by "functie NAAM" or "route NAAM", with its class and its method name. */
     private static Map<String, Object[]> helpers() {
         Map<String, Object[]> out = new LinkedHashMap<>();
-        for (Aggregation f : Aggregation.values()) out.put("functie " + f.name(), new Object[]{f.javaClass(), f.methode()});
+        for (StaticFunction f : StaticFunction.values()) out.put("functie " + f.name(), new Object[]{f.javaClass(), f.methode()});
         for (Route r : Route.values()) out.put("route " + r.name(), new Object[]{r.javaClass(), r.methode()});
         return out;
     }

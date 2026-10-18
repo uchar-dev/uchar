@@ -2107,6 +2107,36 @@ class Classifier:
             return None
         return decls[0][0].path, decls[0][1]
 
+    def nested_declaration(self, m, k):
+        """For a Java type name code[k] that a nested type of a zone type declares, read through its outer type
+        (`Outer.Inner`) or without a qualifier inside the outer type: (file, offset) of that nested declaration,
+        else None. Such a name is the nested type's, whatever a top-level type of the same name in the package says
+        (card drools-static-function: the plan's enum Aggregation and Accumulation.Aggregation)."""
+        code = m.code
+        name = code[k].text
+        if m.lang != 'java' or k < 1 or code[k - 1].text in ('::', '@'):
+            return None
+        if code[k - 1].text == '.':
+            q = self.qualifier(m, k)
+            f = self.index.java_type_file(m, q[1]) if q is not None and q[0] == 'type' else None
+            if f is None or not self.zone.contains(f):
+                return None
+            fm = self.repo.model(f)
+            parts = q[1].split('.')
+            owners = [d for d in fm.types if d.name == parts[-1]]
+            if len(owners) > 1 and len(parts) > 1:
+                owners = [d for d in owners if d.qualified().endswith('.'.join(parts[-2:]))] or owners
+        else:
+            # a member type is in scope in the whole body of its type, a variable or a method of the same name is not it
+            fm = m
+            if any(kind != 'type' for kind, _ in m.decls.get(name, ())):
+                return None
+            around = [d for d in reversed(m.enclosing_types(code[k].start))
+                      if any(n.parent is d and n.name == name for n in m.types)]
+            owners = around[:1]
+        found = [n for d in owners for n in fm.types if n.parent is d and n.name == name]
+        return (fm.path, found[0].start) if len(found) == 1 else None
+
     def switch_enum_files(self, m, switch):
         """The files of the enum a switch reads (_java_switch_labels): the types written for its selector variable,
         when the file declares it and the repository declares those types; else the enums of the repository that
@@ -2971,6 +3001,12 @@ class Plan:
                 d = self.classifier.member_declaration(m, k)
                 if d is not None:
                     r = self.name_row(d[0], t.text, d[1], self.aliases(d[0])) or r
+                else:
+                    # a nested type is renamed as its declaration is, and stays where that has no row, though the row
+                    # of the place renames a top-level type of the same name (card drools-static-function)
+                    d = self.classifier.nested_declaration(m, k)
+                    if d is not None:
+                        r = self.name_row(d[0], t.text, d[1], self.aliases(d[0]))
             if r is None:
                 continue
             out.append((k, t, r, external))

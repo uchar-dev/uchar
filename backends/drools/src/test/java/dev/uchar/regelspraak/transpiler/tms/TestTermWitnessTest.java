@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.ir.Conditie;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.RulePlan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
@@ -353,7 +353,7 @@ public class TestTermWitnessTest {
         Term trueTerm = new Term.Const(Boolean.TRUE, null, null);
         assertFalse(ClosureRendering.test(new Term.WithoutFault(fails, null)).test(new Object[0]));
         assertTrue(ClosureRendering.test(new Term.WithoutFault(trueTerm, null)).test(new Object[0]));
-        Term kenmerk = new Term.Call(Aggregation.KENMERK, List.of(new Term.SlotValue(0, null), trueTerm), null);
+        Term kenmerk = new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(0, null), trueTerm), null);
         Object[] noTruthValue = {"geen waarheidswaarde"};
         assertThrows(ClassCastException.class,
                 () -> ClosureRendering.test(new Term.WithoutFault(kenmerk, null)).test(noTruthValue));

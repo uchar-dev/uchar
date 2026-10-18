@@ -9,13 +9,13 @@ import java.util.List;
  * end of a walk, and not the two objects by an identity an index can hash. {@code id} is the constraint's own id (see
  * {@link Alpha}).
  */
-public record BetaTest(String id, Aggregation function, String doel, List<Term.Const> constants) {
+public record BetaTest(String id, StaticFunction function, String doel, List<Term.Const> constants) {
     public BetaTest {
         constants = List.copyOf(constants);
     }
 
     /** A constraint whose function takes the two objects alone. */
-    public BetaTest(String id, Aggregation function, String doel) {
+    public BetaTest(String id, StaticFunction function, String doel) {
         this(id, function, doel, List.of());
     }
 }

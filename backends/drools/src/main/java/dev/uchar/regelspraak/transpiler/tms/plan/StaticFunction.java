@@ -14,7 +14,7 @@ import dev.uchar.regelspraak.transpiler.tms.Period;
  * class) is a {@link Term.Const}. {@link #canFail} says whether the function can raise an evaluation fault, a division by a
  * numeric zero or a {@code Rekenfout} or an {@code Invoervormfout} of the branch (RUNTIME-SEMANTICS ch. 5.2).
  */
-public enum Aggregation {
+public enum StaticFunction {
     /** A sum, a leeg operand 0 (ch. 1.2), exact where an operand is a rational. */
     RS_PLUS(RegelSpraakRuntime.class, "rsPlus", false),
     /** A difference, a leeg operand 0. */
@@ -238,7 +238,7 @@ public enum Aggregation {
     private final String methode;
     private final boolean canFail;
 
-    Aggregation(Class<?> javaClass, String methode, boolean canFail) {
+    StaticFunction(Class<?> javaClass, String methode, boolean canFail) {
         this.javaClass = javaClass;
         this.methode = methode;
         this.canFail = canFail;

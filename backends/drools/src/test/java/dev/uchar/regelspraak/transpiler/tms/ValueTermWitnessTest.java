@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.RulePlan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
@@ -143,7 +143,7 @@ class ValueTermWitnessTest {
      *  public static method of its class. */
     @Test void every_function_of_the_plan_is_a_public_static_method() {
         List<String> fout = new ArrayList<>();
-        for (Aggregation f : Aggregation.values()) {
+        for (StaticFunction f : StaticFunction.values()) {
             boolean found = false;
             for (Method m : f.javaClass().getMethods())
                 if (m.getName().equals(f.methode()) && Modifier.isStatic(m.getModifiers())) found = true;

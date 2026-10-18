@@ -45,7 +45,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
 import dev.uchar.regelspraak.transpiler.tms.plan.Exists;
 import dev.uchar.regelspraak.transpiler.tms.plan.BetaTest;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.ReadKind;
@@ -1085,11 +1085,11 @@ public final class TmsTranspiler {
             LocalDate anchor = model.vastStartpuntAnker(doel.declarant(), doel.naam());
             Term periods = new Term.SlotValue(condition, bron(f.filter().bron()));
             Term days = anchor == null
-                    ? new Term.Call(Aggregation.RS_DAY_COUNT, List.of(periods, constant(gran),
+                    ? new Term.Call(StaticFunction.RS_DAY_COUNT, List.of(periods, constant(gran),
                             constant(Period.class)), null)
-                    : new Term.Call(Aggregation.RS_DAY_COUNT_FROM, List.of(periods, constant(gran),
+                    : new Term.Call(StaticFunction.RS_DAY_COUNT_FROM, List.of(periods, constant(gran),
                             constant(anchor), constant(Period.class)), null);
-            return new Term.Call(Aggregation.PERIOD_LIST, List.of(days), bron(f.bron()));
+            return new Term.Call(StaticFunction.PERIOD_LIST, List.of(days), bron(f.bron()));
         }
         if (f.argumenten().size() != 1 || !(f.argumenten().get(0) instanceof Expr.AttribuutRef b)
                 || b.attribuut() == null || b.objecttype() != subject || navigationBindings.containsKey(b))
@@ -1112,12 +1112,12 @@ public final class TmsTranspiler {
         int onderwerp = lez.member();
         lez.markFail();
         String baseName = base.naam();
-        Term proportional = new Term.Call(Aggregation.RS_TIME_PROPORTIONAL, List.of(
+        Term proportional = new Term.Call(StaticFunction.RS_TIME_PROPORTIONAL, List.of(
                 new Term.SlotValue(condition, bron(f.filter().bron())),
                 complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", onderwerp,
                         " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", bron(b.bron())),
                 constant(gran), constant(Period.class)), null);
-        return new Term.Call(Aggregation.PERIOD_LIST, List.of(proportional), bron(f.bron()));
+        return new Term.Call(StaticFunction.PERIOD_LIST, List.of(proportional), bron(f.bron()));
     }
 
     /**
@@ -1282,7 +1282,7 @@ public final class TmsTranspiler {
             // constraint does; read in the test, so the executable model binds no value of it
             Term invoer = new Term.Invoer(new Term.SlotValue(onderwerp, null), new Binding.Field(member.javaClass(), member.naam()),
                     Binding.ReadForm.VALUE, null);
-            Term targetEmpty = new Term.Call(Aggregation.TARGET_EMPTY, List.of(new Term.SlotValue(emptyWriterCount, null), invoer), null);
+            Term targetEmpty = new Term.Call(StaticFunction.TARGET_EMPTY, List.of(new Term.SlotValue(emptyWriterCount, null), invoer), null);
             return List.of(
                     new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another), List.of(otherOnSubject),
                             List.of())),
@@ -1387,7 +1387,7 @@ public final class TmsTranspiler {
         Alpha ofTarget = equal(id("waarde"), "attribuut", sleutel);
         Join onSubject = new Join(id("waarde-onderwerp"), "onderwerp", SUBJECT);
         TestItem difference = new TestItem(id("verschil"), TestItem.Role.VORM,
-                new Term.Call(Aggregation.DIFFER, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
+                new Term.Call(StaticFunction.DIFFER, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
         return new RulePlan("schrijvers " + member.declarant().naam + "." + member.naam() + ": verschil", null, null,
                 new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.VALUES,
                         "waarden", "$waarden"))),
@@ -1486,7 +1486,7 @@ public final class TmsTranspiler {
         Term holds = voorwaarde(c.assertie(), lez);
         boolean canFail = lez.canFail();
         lez.stop();
-        Term geschonden = new Term.Call(Aggregation.NIET, List.of(holds), bron(c.assertie().bron()));
+        Term geschonden = new Term.Call(StaticFunction.NIET, List.of(holds), bron(c.assertie().bron()));
         List<LhsItem> items = lez.plan(conditionRole(canFail), geschonden, read, c.assertie());
         String naam = c.naam();
         lez.recorder();
@@ -1552,14 +1552,14 @@ public final class TmsTranspiler {
         FactPattern sleutel = new FactPattern(UniquenessKey.class, "$sleutel", List.of(equal(id("uniciteit"), "uniqueness",
                 naam)), List.of(), List.of(Binding.van("$element", UniquenessKey.class, "element")));
         Alpha ofUniqueness = equal(id("uniciteit"), "uniqueness", naam);
-        BetaTest collision = new BetaTest(id("botsing"), Aggregation.COLLIDES_WITH, "$sleutel");
+        BetaTest collision = new BetaTest(id("botsing"), StaticFunction.COLLIDES_WITH, "$sleutel");
         Accumulation collisions = new Accumulation(new FactPattern(UniquenessKey.class, "$ander", List.of(ofUniqueness),
                 List.of(), List.of(collision), List.of()),
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$botsingen")));
         ReadTable table = new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
                 ReadKind.COLLISIONS, "botsingen", "$botsingen")));
         TestItem duplicate = new TestItem(id("dubbel"), TestItem.Role.VORM,
-                new Term.Call(Aggregation.DUPLICATE, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
+                new Term.Call(StaticFunction.DUPLICATE, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
         out.add(new RulePlan(ruleName, vorm, null, table, List.of(sleutel, collisions, duplicate),
                 new Consequence.UniquenessViolation("$element", naam, Consequence.Insertion.LOGICAL)));
         FactPattern violation = new FactPattern(UniquenessViolation.class, "$schending", List.of(equal(id("schending"),
@@ -1623,7 +1623,7 @@ public final class TmsTranspiler {
         List<Term> components = new ArrayList<>();
         for (int i = 0; i < keySlots.size(); i++) {
             Term component = new Term.SlotValue(keySlots.get(i), null);
-            components.add(enumeration.get(i) ? new Term.Call(Aggregation.RS_ENUM_NAME, List.of(component), null)
+            components.add(enumeration.get(i) ? new Term.Call(StaticFunction.RS_ENUM_NAME, List.of(component), null)
                     : component);
         }
         lez.recorder();
@@ -1692,7 +1692,7 @@ public final class TmsTranspiler {
                     + " Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar"
                     + " waarde (§6.5, §6.6)");
         int i = lez.channel(producer);
-        return new Term.Call(Aggregation.CHANNEL, List.of(new Term.SlotValue(i, null)), bron(rv.bron()));
+        return new Term.Call(StaticFunction.CHANNEL, List.of(new Term.SlotValue(i, null)), bron(rv.bron()));
     }
 
     /** Whether the form named {@code naam}, spelled as the error facts carry it, fills a channel this branch lowers. */
@@ -2174,7 +2174,7 @@ public final class TmsTranspiler {
                         List.of(new Join(id("gemaakt-onderwerp"), "onderwerp", SUBJECT)), List.of())),
                 new Not(new FactPattern(CreationStamp.class, fresh, List.of(),
                         List.of(new Join(id("nieuw-object"), "object", SUBJECT)),
-                        List.of(new BetaTest(id("nieuw-in-deze-fase"), Aggregation.IN_PHASE, f)), List.of())));
+                        List.of(new BetaTest(id("nieuw-in-deze-fase"), StaticFunction.IN_PHASE, f)), List.of())));
     }
 
     /** The evaluation stratum of the creation {@code vorm}, named {@code naam}: every creation is a form of the
@@ -2388,7 +2388,7 @@ public final class TmsTranspiler {
         FactPattern two = new FactPattern(RelationLink.class, "$twee", List.of(equal(id("tweede-vulling"), "relation", relation)),
                 List.of(new Join(id("tweede-vulling-nabij"), nearEnd, "$een",
                         new Binding.Field(RelationLink.class, nearEnd))),
-                List.of(new BetaTest(id("tweede-vulling-ander"), Aggregation.OTHER_FILLING, "$een",
+                List.of(new BetaTest(id("tweede-vulling-ander"), StaticFunction.OTHER_FILLING, "$een",
                         List.of(constant(farEnd)))),
                 List.of());
         return new RulePlan("koppeling " + relation + ": tweede vulling van " + rol, null, null,
@@ -2752,7 +2752,7 @@ public final class TmsTranspiler {
                     List.of(outcomeOfMember("lid-conflict", naam, Outcome.Kind.CONFLICT, eerste, to, false)), List.of(),
                     List.of(ofSubject, Binding.van("$sleutel", Outcome.class, "sleutel"))));
             if (aantal > 1) items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.CONFLICT,
-                    "eerder-lid", Aggregation.EARLIER_MEMBER, "$conflict")));
+                    "eerder-lid", StaticFunction.EARLIER_MEMBER, "$conflict")));
             items.addAll(guard.get());
             out.add(new RulePlan(naam + ": doorgeven " + label, vorm, null,
                     new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
@@ -2767,9 +2767,9 @@ public final class TmsTranspiler {
                     List.of(outcomeOfMember("lid-besluit", naam, Outcome.Kind.DECIDED, eerste, to, false)), List.of(),
                     List.of(ofSubject)));
             items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "eerder-lid",
-                    Aggregation.EARLIER_MEMBER, "$besluit")));
+                    StaticFunction.EARLIER_MEMBER, "$besluit")));
             if (membersConflict) items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.CONFLICT)));
-            FactPattern another = outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "ander-besluit", Aggregation.OTHER_DECISION,
+            FactPattern another = outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "ander-besluit", StaticFunction.OTHER_DECISION,
                     "$besluit");
             items.add(new Exists(List.of(another), Exists.verklaard(List.of(another)), Exists.read(List.of(another))));
             items.addAll(guard.get());
@@ -2783,11 +2783,11 @@ public final class TmsTranspiler {
                 List.of(outcomeOfMember("lid-besluit", naam, Outcome.Kind.DECIDED, eerste, to, onlyTrue)), List.of(),
                 List.of(ofSubject, Binding.van("$waarde", Outcome.class, "waarde"))));
         if (aantal > 1) {
-            items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "eerder-lid", Aggregation.EARLIER_MEMBER,
+            items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "eerder-lid", StaticFunction.EARLIER_MEMBER,
                     "$besluit")));
             if (membersConflict) items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.CONFLICT)));
             items.add(new Not(outcomes(naam, eerste, to, Outcome.Kind.DECIDED, "ander-besluit",
-                    Aggregation.OTHER_DECISION, "$besluit")));
+                    StaticFunction.OTHER_DECISION, "$besluit")));
         }
         items.addAll(guard.get());
         out.add(new RulePlan(naam + ": eens " + label, vorm, null,
@@ -2820,7 +2820,7 @@ public final class TmsTranspiler {
 
     /** As {@link #outcomes(String, int, int, Outcome.Kind)}, with the constraint {@code betaKind}, which calls
      *  {@code function}, between the outcome and the one the variable {@code doel} binds, where it is not null. */
-    private FactPattern outcomes(String naam, int van, int to, Outcome.Kind soort, String betaKind, Aggregation function,
+    private FactPattern outcomes(String naam, int van, int to, Outcome.Kind soort, String betaKind, StaticFunction function,
                                String doel) {
         String variable = "$uitkomst_" + idSeq;
         List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
@@ -2965,13 +2965,13 @@ public final class TmsTranspiler {
 
     /** The check that the value bound at slot {@code slot} is gevuld, in a test a form composes itself. */
     private static Term filled(int slot) {
-        return new Term.Call(Aggregation.EMPTY_TEST, List.of(new Term.SlotValue(slot, null), constant(false)), null);
+        return new Term.Call(StaticFunction.EMPTY_TEST, List.of(new Term.SlotValue(slot, null), constant(false)), null);
     }
 
     /** The check that the value bound at slot {@code slot} is ({@code desired}) or is not the asOfDate-bucket scalar
      *  of a timeline ({@link BucketScalar}), in a test a form composes itself. */
     private static Term emmerscalair(int slot, boolean desired) {
-        return new Term.Call(Aggregation.BUCKET_SCALAR, List.of(new Term.SlotValue(slot, null), constant(desired)), null);
+        return new Term.Call(StaticFunction.BUCKET_SCALAR, List.of(new Term.SlotValue(slot, null), constant(desired)), null);
     }
 
     /** The source fragment of an IR node, which a term carries; null where the IR has none. */
@@ -3044,13 +3044,13 @@ public final class TmsTranspiler {
         int depositFlag = division && depositSite(b) ? lez.depositFlag() : -1;
         String bron = bron(b.bron());
         return switch (op) {
-            case PLUS -> new Term.Call(Aggregation.RS_PLUS, List.of(l, r), bron);
-            case MIN -> new Term.Call(Aggregation.RS_MIN, List.of(l, r), bron);
-            case VERMINDERD_MET -> new Term.Call(Aggregation.RS_REDUCED, List.of(l, r), bron);
-            case MAAL -> new Term.Call(Aggregation.RS_TIMES, List.of(l, r), bron);
-            case PERCENTAGE_VAN -> new Term.Call(Aggregation.RS_PERCENTAGE_OF, List.of(l, r), bron);
-            case GEDEELD_DOOR -> new Term.Division(Aggregation.DIVIDED, l, r, depositFlag, bron);
-            case GEDEELD_DOOR_ABS -> new Term.Division(Aggregation.DIVIDED_ABS, l, r, depositFlag, bron);
+            case PLUS -> new Term.Call(StaticFunction.RS_PLUS, List.of(l, r), bron);
+            case MIN -> new Term.Call(StaticFunction.RS_MIN, List.of(l, r), bron);
+            case VERMINDERD_MET -> new Term.Call(StaticFunction.RS_REDUCED, List.of(l, r), bron);
+            case MAAL -> new Term.Call(StaticFunction.RS_TIMES, List.of(l, r), bron);
+            case PERCENTAGE_VAN -> new Term.Call(StaticFunction.RS_PERCENTAGE_OF, List.of(l, r), bron);
+            case GEDEELD_DOOR -> new Term.Division(StaticFunction.DIVIDED, l, r, depositFlag, bron);
+            case GEDEELD_DOOR_ABS -> new Term.Division(StaticFunction.DIVIDED_ABS, l, r, depositFlag, bron);
             case TOT_DE_MACHT -> throw new IllegalStateException("een macht gaat door macht()");
         };
     }
@@ -3067,7 +3067,7 @@ public final class TmsTranspiler {
                     + snippet(b.bron()) + "'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de"
                     + " referentie-interpreter een exacte wortel geeft of faalt");
         Term base = waarde(b.links(), lez);
-        return new Term.Call(Aggregation.RS_POWER, List.of(base, constant(n)), bron(b.bron()));
+        return new Term.Call(StaticFunction.RS_POWER, List.of(base, constant(n)), bron(b.bron()));
     }
 
     /** The whole exponent of at least 0 the lexeme writes, or null. */
@@ -3109,7 +3109,7 @@ public final class TmsTranspiler {
             throw new Refusal("een klokeenheid bij een datum zonder tijd ('" + snippet(b.bron()) + "')");
         lez.markFail();
         Term d = waarde(dateExpr, lez), n = waarde(durationExpr, lez);
-        return new Term.Call(Aggregation.DATE_STEP, List.of(d, n, constant(unit), constant(optellen)),
+        return new Term.Call(StaticFunction.DATE_STEP, List.of(d, n, constant(unit), constant(optellen)),
                 bron(b.bron()));
     }
 
@@ -3131,7 +3131,7 @@ public final class TmsTranspiler {
         boolean dateTime = eff.typeOf(dateExpr) instanceof Datatype.DatumTijd;
         lez.markFail();
         Term d = waarde(dateExpr, lez), n = waarde(durationExpr, lez);
-        return new Term.Call(dateTime ? Aggregation.DATE_TIME_DAY_KIND_STEP : Aggregation.DAY_KIND_STEP,
+        return new Term.Call(dateTime ? StaticFunction.DATE_TIME_DAY_KIND_STEP : StaticFunction.DAY_KIND_STEP,
                 List.of(d, n, new Term.DayKind(dayKind, datePredicate, null), constant(optellen)), bron(b.bron()));
     }
 
@@ -3202,8 +3202,8 @@ public final class TmsTranspiler {
         if (van == null || naar == null || !van.convertibleNaar(naar) || !van.vereistOmrekening(naar)) return t;
         BigDecimal[] exact = van.exacteHerschaalFactoren(naar);
         if (exact != null)
-            return new Term.Restate(Aggregation.RESTATE_EXACT, t, van, naar, exact[0], exact[1], t.bron());
-        return new Term.Restate(Aggregation.RESTATE, t, van, naar, van.omrekenfactorNaar(naar), null, t.bron());
+            return new Term.Restate(StaticFunction.RESTATE_EXACT, t, van, naar, exact[0], exact[1], t.bron());
+        return new Term.Restate(StaticFunction.RESTATE, t, van, naar, van.omrekenfactorNaar(naar), null, t.bron());
     }
 
     // ---------------- the forms of a value beside the arithmetic ----------------
@@ -3216,7 +3216,7 @@ public final class TmsTranspiler {
         int decimals = a.decimalen();
         Term base = a.basis() instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL
                 ? squareRootValue(f, lez) : waarde(a.basis(), lez);
-        return new Term.Call(Aggregation.RS_ROUNDING, List.of(base, constant(decimals), constant(mode)),
+        return new Term.Call(StaticFunction.RS_ROUNDING, List.of(base, constant(decimals), constant(mode)),
                 bron(a.bron()));
     }
 
@@ -3240,7 +3240,7 @@ public final class TmsTranspiler {
                     + "'): de wortel heeft er één (WF-037)");
         Term radicand = waarde(f.argumenten().get(0), lez);
         int depositFlag = depositSite(f) ? lez.depositFlag() : -1;
-        return new Term.SquareRoot(Aggregation.SQUARE_ROOT, radicand, depositFlag, bron(f.bron()));
+        return new Term.SquareRoot(StaticFunction.SQUARE_ROOT, radicand, depositFlag, bron(f.bron()));
     }
 
     /** A clamp (RUNTIME-SEMANTICS ch. 2.7): its base, then its minimum, then its maximum, in the order of ch. 5.11 and
@@ -3253,7 +3253,7 @@ public final class TmsTranspiler {
                 : restated(waarde(g.minimum(), lez), eff.unitOf(g.minimum()), unit, "een begrenzing (minimum)");
         Term maximum = g.maximum() == null ? constant(null)
                 : restated(waarde(g.maximum(), lez), eff.unitOf(g.maximum()), unit, "een begrenzing (maximum)");
-        return new Term.Call(Aggregation.RS_CLAMP, List.of(base, minimum, maximum), bron(g.bron()));
+        return new Term.Call(StaticFunction.RS_CLAMP, List.of(base, minimum, maximum), bron(g.bron()));
     }
 
     /** A text composition (IR-SPEC ch. 4.2): the literal chunks and the inserted parts in part order (RUNTIME-SEMANTICS
@@ -3282,7 +3282,7 @@ public final class TmsTranspiler {
                     + " een waarheidswaarde of een datum beslist de spec niet, en de referentie-interpreter en de"
                     + " runtimehulp rsTekst geven er een verschillende");
         Term f = waarde(e, lez);
-        return new Term.Call(Aggregation.RS_TEXT, List.of(f), f.bron());
+        return new Term.Call(StaticFunction.RS_TEXT, List.of(f), f.bron());
     }
 
     /** A cell of a dimensioned attribute (§3.6): the value at its one label in the attribute's {@code Map<label, value>}
@@ -3295,7 +3295,7 @@ public final class TmsTranspiler {
                     + " dimensies ('" + snippet(c.bron()) + "'): deze tak leest alleen een cel van één dimensie");
         int i = dimensionRead(c.attribuut(), lez, "een DimensionCellRead");
         String label = c.labels().get(0);
-        return new Term.Call(Aggregation.CELL, List.of(new Term.SlotValue(i, bron(c.attribuut().bron())), constant(label)),
+        return new Term.Call(StaticFunction.CELL, List.of(new Term.SlotValue(i, bron(c.attribuut().bron())), constant(label)),
                 bron(c.bron()));
     }
 
@@ -3319,16 +3319,16 @@ public final class TmsTranspiler {
         List<String> labels = List.copyOf(f.dimensieSelectie().labels());
         Term fallback = f.leegwaarde() == null ? null : restated(waarde(f.leegwaarde(), lez),
                 eff.unitOf(f.leegwaarde()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
-        Aggregation fold = switch (kind) {
-            case SOM -> Aggregation.RS_DIM_SUM;
-            case MINIMUM -> Aggregation.RS_DIM_MIN;
-            default -> Aggregation.RS_DIM_MAX;
+        StaticFunction fold = switch (kind) {
+            case SOM -> StaticFunction.RS_DIM_SUM;
+            case MINIMUM -> StaticFunction.RS_DIM_MIN;
+            default -> StaticFunction.RS_DIM_MAX;
         };
         String bron = bron(f.bron());
-        Term cells = new Term.Call(fold, List.of(new Term.Call(Aggregation.MAP,
+        Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP,
                 List.of(new Term.SlotValue(i, bron(a.bron()))), null), constant(labels)), bron);
         // only a sum has a fallback, evaluated after the cells
-        return fallback == null ? cells : new Term.Call(Aggregation.FALLBACK, List.of(cells, fallback), bron);
+        return fallback == null ? cells : new Term.Call(StaticFunction.FALLBACK, List.of(cells, fallback), bron);
     }
 
     /** The read of the dimensioned attribute {@code a} as its whole map: the subject's own attribute, which no form
@@ -3482,7 +3482,7 @@ public final class TmsTranspiler {
             case "Rekenjaar" -> {
                 int i = lez.rekendatum();
                 lez.markFail();
-                return new Term.Call(Aggregation.RS_EVALUATION_YEAR, List.of(new Term.Required(new Term.SlotValue(i, null),
+                return new Term.Call(StaticFunction.RS_EVALUATION_YEAR, List.of(new Term.Required(new Term.SlotValue(i, null),
                         RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM, null)), bron);
             }
             case "de dag" -> {
@@ -3573,7 +3573,7 @@ public final class TmsTranspiler {
         List<Expr> a = f.argumenten();
         return switch (kind) {
             case WORTEL -> exactSquareRoot(f, lez);
-            case ABSOLUTE_WAARDE -> new Term.Call(Aggregation.RS_ABS, List.of(waarde(oneArgument(f, spelling), lez)),
+            case ABSOLUTE_WAARDE -> new Term.Call(StaticFunction.RS_ABS, List.of(waarde(oneArgument(f, spelling), lez)),
                     bron(f.bron()));
             case CONCATENATIE -> {
                 List<Term> parts = new ArrayList<>();
@@ -3606,7 +3606,7 @@ public final class TmsTranspiler {
         lez.markFail();
         Term radicand = waarde(f.argumenten().get(0), lez);
         int depositFlag = depositSite(f) ? lez.depositFlag() : -1;
-        return new Term.SquareRoot(Aggregation.EXACT_SQUARE_ROOT, radicand, depositFlag, bron(f.bron()));
+        return new Term.SquareRoot(StaticFunction.EXACT_SQUARE_ROOT, radicand, depositFlag, bron(f.bron()));
     }
 
     /** The one argument of {@code f}; a call with another number is refused (WF-037). */
@@ -3642,7 +3642,7 @@ public final class TmsTranspiler {
                     + "', WF-038)");
         Term from = waarde(a.get(0), lez), upTo = waarde(a.get(1), lez);
         boolean absolute = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
-        return new Term.Call(Aggregation.RS_DURATION, List.of(from, upTo, constant(unit), constant(absolute)),
+        return new Term.Call(StaticFunction.RS_DURATION, List.of(from, upTo, constant(unit), constant(absolute)),
                 bron(f.bron()));
     }
 
@@ -3664,7 +3664,7 @@ public final class TmsTranspiler {
         java.util.function.Predicate<LocalDate> datePredicate = dayKindPredicate(dayKind, description);
         Term from = waarde(f.argumenten().get(0), lez), upTo = waarde(f.argumenten().get(1), lez);
         boolean absolute = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
-        return new Term.Call(Aggregation.RS_DURATION_DAY_KIND, List.of(from, upTo,
+        return new Term.Call(StaticFunction.RS_DURATION_DAY_KIND, List.of(from, upTo,
                 new Term.DayKind(dayKind, datePredicate, null), constant(absolute)), bron(f.bron()));
     }
 
@@ -3677,7 +3677,7 @@ public final class TmsTranspiler {
             throw new Refusal("een " + spelling + " uit iets anders dan een " + (clock ? "datum-tijd" : "datum") + " ('"
                     + snippet(f.bron()) + "')");
         Term d = waarde(arg, lez);
-        return new Term.Call(Aggregation.RS_DATE_PART, List.of(d, constant(veld)), bron(f.bron()));
+        return new Term.Call(StaticFunction.RS_DATE_PART, List.of(d, constant(veld)), bron(f.bron()));
     }
 
     /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter
@@ -3691,7 +3691,7 @@ public final class TmsTranspiler {
                     + snippet(f.bron()) + "'): het jaar is een geheel getal zonder eenheid (WF-038)");
         lez.markFail();
         Term year = waarde(arg, lez);
-        return new Term.Call(Aggregation.EASTER_SUNDAY, List.of(year), bron(f.bron()));
+        return new Term.Call(StaticFunction.EASTER_SUNDAY, List.of(year), bron(f.bron()));
     }
 
     /** A date of three parts or a date-time of seven, through the runtime's {@code rsDatumMet} and
@@ -3710,7 +3710,7 @@ public final class TmsTranspiler {
         // the spelling first: the sentence of a fault names the builtin
         arguments.add(constant(spelling));
         for (Expr arg : f.argumenten()) arguments.add(waarde(arg, lez));
-        return new Term.Call(time ? Aggregation.DATUMTIJD_MET : Aggregation.DATUM_MET, arguments, bron(f.bron()));
+        return new Term.Call(time ? StaticFunction.DATUMTIJD_MET : StaticFunction.DATUM_MET, arguments, bron(f.bron()));
     }
 
     /**
@@ -3728,7 +3728,7 @@ public final class TmsTranspiler {
             Term op = waarde(a, lez);
             operands.add(i == 0 ? op : restated(op, eff.unitOf(a), eerste, "een §5.8.3 operand van een gelijste vouw"));
         }
-        return new Term.ListedFold(smallest ? Aggregation.SMALLEST : Aggregation.LARGEST, operands, bron(f.bron()));
+        return new Term.ListedFold(smallest ? StaticFunction.SMALLEST : StaticFunction.LARGEST, operands, bron(f.bron()));
     }
 
     /**
@@ -3766,7 +3766,7 @@ public final class TmsTranspiler {
                 && f.argumenten().get(0) instanceof Expr.InstanceSetUnion u) {
             Fold v = unionFold(f, u, lez);
             int[] i = lez.fold(v, null);
-            return readFold(v, i, lez, new Term.Call(Aggregation.COUNT, List.of(new Term.SlotValue(i[0], null)), fragment),
+            return readFold(v, i, lez, new Term.Call(StaticFunction.COUNT, List.of(new Term.SlotValue(i[0], null)), fragment),
                     fragment);
         }
         Objecttype elem = f.elementObjecttype();
@@ -3833,7 +3833,7 @@ public final class TmsTranspiler {
         Term aantal = new Term.SlotValue(i[0], null);
         // over no contribution a sum is its fallback or leeg, a total 0 and an ordering fold leeg
         Term outcome = switch (kind) {
-            case AANTAL, AANTAL_GEVULDE -> new Term.Call(Aggregation.COUNT, List.of(aantal), fragment);
+            case AANTAL, AANTAL_GEVULDE -> new Term.Call(StaticFunction.COUNT, List.of(aantal), fragment);
             case SOM -> foldValue(aantal, i[1], fallback == null ? constant(null) : fallback, fragment);
             case TOTAAL -> foldValue(aantal, i[1], constant(BigDecimal.ZERO), fragment);
             default -> foldValue(aantal, i[1], constant(null), fragment);
@@ -3844,7 +3844,7 @@ public final class TmsTranspiler {
     /** The value of a fold from the count {@code aantal} and the folded value at slot {@code waarde}, with
      *  {@code fallback} over no contribution ({@link ComputeHelpers#foldValue}). */
     private static Term foldValue(Term aantal, int waarde, Term fallback, String bron) {
-        return new Term.Call(Aggregation.FOLD_VALUE, List.of(aantal, new Term.SlotValue(waarde, null), fallback), bron);
+        return new Term.Call(StaticFunction.FOLD_VALUE, List.of(aantal, new Term.SlotValue(waarde, null), fallback), bron);
     }
 
     /**
@@ -3914,19 +3914,19 @@ public final class TmsTranspiler {
         String bron = bron(f.bron());
         if (f.filter() == null) {
             int date = lez.rekendatum();
-            return new Term.Call(Aggregation.OWN_TOTAL, List.of(new Term.SlotValue(timeline, bron(a.bron())),
+            return new Term.Call(StaticFunction.OWN_TOTAL, List.of(new Term.SlotValue(timeline, bron(a.bron())),
                     new Term.SlotValue(onderwerp, null), new Term.SlotValue(date, null), constant(naam), constant(gran)), bron);
         }
         Term cut = clip(f.filter(), lez, description, naam, complete(timeline, "the gedurende clip of \"" + naam
                 + "\" needs the full timeline; ", onderwerp, " supplies only the asOfDate-bucket scalar", bron(a.bron())));
-        return new Term.Call(Aggregation.RS_TIME_TOTAL, List.of(cut, constant(gran)), bron);
+        return new Term.Call(StaticFunction.RS_TIME_TOTAL, List.of(cut, constant(gran)), bron);
     }
 
     /** The timeline bound at slot {@code timeline}, which a form reads whole, or the fault in the sentence {@code voor},
      *  the subject bound at slot {@code onderwerp}, {@code na}, where the case gives that input as the asOfDate-bucket
      *  scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4; {@link ComputeHelpers#complete}). */
     private static Term complete(int timeline, String before, int onderwerp, String after, String bron) {
-        return new Term.Call(Aggregation.COMPLETE, List.of(new Term.SlotValue(timeline, bron), constant(before),
+        return new Term.Call(StaticFunction.COMPLETE, List.of(new Term.SlotValue(timeline, bron), constant(before),
                 new Term.SlotValue(onderwerp, null), constant(after)), bron);
     }
 
@@ -3960,7 +3960,7 @@ public final class TmsTranspiler {
                 throw new Refusal(description + " met een genavigeerd kenmerk in de knip ('" + snippet(k) + "'): " + STILL_NOT
                         + "; geen golden met cases heeft het");
             int periods = lez.timeline(timeMember(lez.subject, k.kenmerk(), true, description));
-            return new Term.Call(k.negatie() ? Aggregation.RS_TIME_CLIP_NOT : Aggregation.RS_TIME_CLIP,
+            return new Term.Call(k.negatie() ? StaticFunction.RS_TIME_CLIP_NOT : StaticFunction.RS_TIME_CLIP,
                     List.of(timeline, new Term.SlotValue(periods, null), constant(Period.class)), bron(k.bron()));
         }
         if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE && !s.onderdelen().isEmpty()) {
@@ -4014,13 +4014,13 @@ public final class TmsTranspiler {
         lez.markFail();
         Term bound = waarde(v.rechts(), lez);
         String compared = tested.naam();
-        Term periods = new Term.Call(Aggregation.RS_TIME_CONDITION, List.of(
+        Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(
                 complete(testedTimeline, "the gedurende clip of \"" + cut + "\" compares \"" + compared
                         + "\" per segment and needs its full timeline; ", onderwerp,
                         " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", bron(a.bron())),
-                constant(testCode), new Term.Call(Aggregation.COLLAPSE, List.of(bound), bound.bron()),
+                constant(testCode), new Term.Call(StaticFunction.COLLAPSE, List.of(bound), bound.bron()),
                 constant(Period.class)), null);
-        return new Term.Call(Aggregation.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
+        return new Term.Call(StaticFunction.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
                 bron(v.bron()));
     }
 
@@ -4340,7 +4340,7 @@ public final class TmsTranspiler {
         String aantal = "$lijstplaatsen_" + id("plaats");
         String least = "$plaats_" + id("plaats");
         Alpha ofField = equal(id("plaats-veld"), "veld", veld);
-        BetaTest ofMember = new BetaTest(id("plaats-lid"), Aggregation.PLACE_OF, node,
+        BetaTest ofMember = new BetaTest(id("plaats-lid"), StaticFunction.PLACE_OF, node,
                 List.of(constant(List.copyOf(chain))));
         member.addToRangePlan(new Accumulation(new FactPattern(ListPlace.class, p, List.of(ofField), List.of(), List.of(ofMember),
                 List.of(Binding.van(waarde, ListPlace.class, "place"))),
@@ -4441,7 +4441,7 @@ public final class TmsTranspiler {
     /**
      * The multi-step range of a fold (IR-SPEC ch. 4.3, {@code sourcePath}; RUNTIME-SEMANTICS ch. 3.4b), on the plan the
      * shared {@link SourcePath} derives: where the walk down from the subject and the walk up from the member meet, one
-     * constraint on the member's pattern that the two walks reach one object ({@link Aggregation#MEETING}); otherwise
+     * constraint on the member's pattern that the two walks reach one object ({@link StaticFunction#MEETING}); otherwise
      * the intermediates neither walk determines go into one {@code exists} after the member's pattern, so a member that
      * two intermediates reach still matches once ({@link Exists}, whose scope holds the intermediates, and reads the
      * fold's subject and the member from outside). Two matches would give two equal contributions, which merge into one
@@ -4460,7 +4460,7 @@ public final class TmsTranspiler {
             int m = plan.meeting();
             List<String> fromMember = List.copyOf(plan.chainFromElement(m)),
                     fromSubject = List.copyOf(plan.chainFromSubject(m));
-            Consumer<Reads> join = member -> member.subjectBeta(new BetaTest(id("pad"), Aggregation.MEETING,
+            Consumer<Reads> join = member -> member.subjectBeta(new BetaTest(id("pad"), StaticFunction.MEETING,
                     FOLD_SUBJECT, List.of(constant(fromMember), constant(fromSubject))));
             return new Range(join, member -> {
                 join.accept(member);
@@ -4516,7 +4516,7 @@ public final class TmsTranspiler {
      *  {@code stap - 1} and {@code step}: its other end is read through whichever walk determines it, the subject's (a
      *  forward prefix), the member's (a backward suffix) or an intermediate declared before it, and the hop's field on
      *  the end that holds it, the hop's source going forward and its target going backward. The two walks meet where
-     *  the hop holds ({@link Aggregation#MEETING}). */
+     *  the hop holds ({@link StaticFunction#MEETING}). */
     private BetaTest pathStep(SourcePath.Plan plan, int step, int current, Map<Integer, String> between) {
         int another = step - 1 == current ? step : step - 1;
         boolean thisIsTarget = another == step - 1;
@@ -4529,7 +4529,7 @@ public final class TmsTranspiler {
         List<String> own = fieldHere ? List.of(hop.beanField()) : List.of();
         List<String> other = new ArrayList<>(chain);
         if (!fieldHere) other.add(hop.beanField());
-        return new BetaTest(id("pad"), Aggregation.MEETING, otherName,
+        return new BetaTest(id("pad"), StaticFunction.MEETING, otherName,
                 List.of(constant(own), constant(List.copyOf(other))));
     }
 
@@ -4600,7 +4600,7 @@ public final class TmsTranspiler {
         int date = lez.rekendatum();
         // an absent bound is open where a leeg one never matches, so whether the window has the bound is a constant
         // of its own beside the bound's place
-        return new Term.Call(Aggregation.TIME_WINDOW, List.of(from == null ? constant(null) : from,
+        return new Term.Call(StaticFunction.TIME_WINDOW, List.of(from == null ? constant(null) : from,
                 constant(from != null), to == null ? constant(null) : to, constant(to != null),
                 constant(p.totInclusief()), new Term.SlotValue(date, null)), bron(p.bron()));
     }
@@ -4625,12 +4625,12 @@ public final class TmsTranspiler {
             if (k.navigatie() != null)
                 throw new Refusal("een CharacteristicCheck met een navigatie zonder binding ('" + snippet(k) + "')");
             int i = lez.own(member(lez.subject, k.kenmerk(), true));
-            return new Term.Call(Aggregation.KENMERK, List.of(new Term.SlotValue(i, null), constant(desired)),
+            return new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(i, null), constant(desired)),
                     bron(k.bron()));
         }
         Path p = pad(lez.subject, nav, null, "de kenmerkcheck '" + snippet(k) + "'");
         int i = lez.navigated(p, member(p.reaches(), k.kenmerk(), true));
-        return new Term.Call(Aggregation.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(new Term.SlotValue(i, null), constant(desired)),
+        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(new Term.SlotValue(i, null), constant(desired)),
                 bron(k.bron()));
     }
 
@@ -4741,7 +4741,7 @@ public final class TmsTranspiler {
     /**
      * The timeline of the attribute {@code lid} bound at slot {@code timeline}, which the whole-period fold reads whole,
      * or the fault where the case gives its input as the asOfDate-bucket scalar ({@link BucketScalar},
-     * {@link Aggregation#COMPLETE}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
+     * {@link StaticFunction#COMPLETE}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
      * guess. The fault names the object by the subject of the rule, through the roles of {@code pad} where the attribute
      * is read over one ("the werf of "S1""). Registers that the rule's evaluation can fault. The reference interpreter
      * and the ASP backend read such an input as no timeline, which passes (measured 2026-10-09).
@@ -4782,7 +4782,7 @@ public final class TmsTranspiler {
      */
     private static Term wholePeriod(Conditie.GeheelPeriode qualifier, Term timeline, int testCode, Term bound,
                                       String bron) {
-        return new Term.Call(Aggregation.WHOLE_PERIOD, List.of(timeline, bound == null ? constant(null) : bound,
+        return new Term.Call(StaticFunction.WHOLE_PERIOD, List.of(timeline, bound == null ? constant(null) : bound,
                 constant(qualifier.jaar() ? "JAAR" : "MAAND"), constant(testCode), constant(qualifier.niet())), bron);
     }
 
@@ -4814,7 +4814,7 @@ public final class TmsTranspiler {
                         + " relatie van twee rollen is: " + STILL_NOT);
             boolean subjectIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(pair[0].naam()));
             int i = lez.roleLinks(Namen.norm(ft.naam), subjectIsFirst, javaClass);
-            return new Term.Call(Aggregation.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
+            return new Term.Call(StaticFunction.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
                     bron(r.bron()));
         }
         FactModelGenerator.MembershipStorage o = FactModelGenerator.membershipStorage(model, rb);
@@ -4824,7 +4824,7 @@ public final class TmsTranspiler {
                 throw notRead("RoleMembership", r, FactModelGenerator.noReferenceFieldReason(model, lez.subject,
                         o.beanField(), o.otherType()) + " (§13.3.9 opslagrichting)");
             int i = lez.roleField(o.beanField(), javaClass);
-            return new Term.Call(Aggregation.ROLE_FIELD, List.of(new Term.SlotValue(i, null), constant(negated)),
+            return new Term.Call(StaticFunction.ROLE_FIELD, List.of(new Term.SlotValue(i, null), constant(negated)),
                     bron(r.bron()));
         }
         Objecttype filler = counterpart != null ? counterpart : o.otherType();
@@ -4832,7 +4832,7 @@ public final class TmsTranspiler {
             throw notRead("RoleMembership", r, FactModelGenerator.noReferenceFieldReason(model, filler,
                     o.beanField(), lez.subject) + " (§13.3.9 opslagrichting)");
         int i = lez.roleFillers(beanClass(filler), o.beanField());
-        return new Term.Call(Aggregation.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
+        return new Term.Call(StaticFunction.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
                 bron(r.bron()));
     }
 
@@ -4859,7 +4859,7 @@ public final class TmsTranspiler {
      * value changes takes its contribution along, and an accumulate over the contributions in the left-hand side of the
      * rule that reads the fold. Where the matrix can neither fault nor deposit, a contribution carries 1 or 0 for the
      * matrix's verdict and the accumulate counts the contributors and sums the verdicts: the order of the members is then
-     * invisible, and the verdict a call over the count and the sum ({@link Aggregation#QUANTIFIER_VERDICT}). Where it can, the
+     * invisible, and the verdict a call over the count and the sum ({@link StaticFunction#QUANTIFIER_VERDICT}). Where it can, the
      * order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the contributors' order and stops at
      * the first contributor after which the verdict stands, so a contributor it does not reach raises no fault and
      * deposits nothing. A contribution then carries the matrix's outcome and the member's place ({@link MemberTest}), the
@@ -4890,13 +4890,13 @@ public final class TmsTranspiler {
         String bron = bron(kv.bron());
         if (!v.ordered()) {
             int[] i = lez.fold(v, Accumulation.Kind.SUM);
-            return readFold(v, i, lez, new Term.Call(Aggregation.QUANTIFIER_VERDICT, List.of(new Term.SlotValue(i[0], null),
+            return readFold(v, i, lez, new Term.Call(StaticFunction.QUANTIFIER_VERDICT, List.of(new Term.SlotValue(i[0], null),
                     new Term.SlotValue(i[1], null), constant(kw), constant(threshold)), bron), bron);
         }
         int[] i = lez.fold(v, Accumulation.Kind.LIST);
         if (v.memberCanFail()) lez.markFail();
         int depositFlag = v.memberDeposits() ? lez.depositFlag() : -1;
-        return readFold(v, i, lez, new Term.QuantifierRead(Aggregation.QUANTIFIER_READ, new Term.SlotValue(i[0], null),
+        return readFold(v, i, lez, new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, new Term.SlotValue(i[0], null),
                 new Term.SlotValue(i[1], null), kw, threshold, depositFlag, bron), bron);
     }
 
@@ -4982,21 +4982,21 @@ public final class TmsTranspiler {
         if (lt.isGetalachtig() && rt.isGetalachtig() && !isDateOperator(op)) {
             Term right = restated(rightTerm, eff.unitOf(v.rechts()), eff.unitOf(v.links()),
                     "een §5.1 vergelijking");
-            return new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(leftTerm, right,
+            return new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(leftTerm, right,
                     constant(Operators.symbol(op))), bron);
         }
         if (lt.isDatum() && rt.isDatum() && (isDateOperator(op) || op == Conditie.Operator.GELIJK
                 || op == Conditie.Operator.ONGELIJK)) {
             if (!sameDateKind(lt, rt))
                 throw new Refusal("een Comparison van een datum met een datum-tijd ('" + snippet(v) + "', §5.3 Tabel 36)");
-            return new Term.Call(Aggregation.DATE_COMPARE, List.of(leftTerm, rightTerm, constant(op)), bron);
+            return new Term.Call(StaticFunction.DATE_COMPARE, List.of(leftTerm, rightTerm, constant(op)), bron);
         }
         if ((op == Conditie.Operator.GELIJK || op == Conditie.Operator.ONGELIJK) && equalityType(lt)
                 && equalityType(rt) && lt.isBoolean() == rt.isBoolean()) {
             boolean enumeration = lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie;
             Term left = enumeration ? enumName(leftTerm) : leftTerm;
             Term right = enumeration ? enumName(rightTerm) : rightTerm;
-            return new Term.Call(Aggregation.TEXT_EQUAL, List.of(left, right,
+            return new Term.Call(StaticFunction.TEXT_EQUAL, List.of(left, right,
                     constant(op == Conditie.Operator.GELIJK)), bron);
         }
         throw new Refusal("een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typeName(lt) + " en "
@@ -5004,10 +5004,10 @@ public final class TmsTranspiler {
                 + " (RUNTIME-SEMANTICS ch. 1.2)");
     }
 
-    /** {@code t}, an enumeration label or leeg, up to its normalisation ({@link Aggregation#RS_ENUM_NAME}); the call has no
+    /** {@code t}, an enumeration label or leeg, up to its normalisation ({@link StaticFunction#RS_ENUM_NAME}); the call has no
      *  node of its own in the IR and carries the fragment of the operand it normalises, as a restatement does. */
     private static Term enumName(Term t) {
-        return new Term.Call(Aggregation.RS_ENUM_NAME, List.of(t), t.bron());
+        return new Term.Call(StaticFunction.RS_ENUM_NAME, List.of(t), t.bron());
     }
 
     private static String typeName(Datatype t) {
@@ -5038,7 +5038,7 @@ public final class TmsTranspiler {
         switch (p.soort()) {
             case LEEG, GEVULD -> {
                 Term operand = waarde(p.operand(), lez);
-                return new Term.Call(Aggregation.EMPTY_TEST, List.of(operand,
+                return new Term.Call(StaticFunction.EMPTY_TEST, List.of(operand,
                         constant(p.soort() == Conditie.Predicaatsoort.LEEG)), bron(p.bron()));
             }
             case ELFPROEF, NUMERIEK_MET_EXACT -> {
@@ -5067,8 +5067,8 @@ public final class TmsTranspiler {
         Term operand = waarde(p.operand(), lez);
         boolean desired = !p.negatie();
         if (p.soort() == Conditie.Predicaatsoort.ELFPROEF)
-            return new Term.Call(Aggregation.ELEVEN_TEST, List.of(operand, constant(desired)), bron(p.bron()));
-        return new Term.Call(Aggregation.NUMERIEK_MET_EXACT, List.of(operand, constant(p.cijfers()), constant(desired)),
+            return new Term.Call(StaticFunction.ELEVEN_TEST, List.of(operand, constant(desired)), bron(p.bron()));
+        return new Term.Call(StaticFunction.NUMERIEK_MET_EXACT, List.of(operand, constant(p.cijfers()), constant(desired)),
                 bron(p.bron()));
     }
 
@@ -6156,7 +6156,7 @@ public final class TmsTranspiler {
     /**
      * The patterns that walk {@code hops} from the object the variable {@code van} binds, in order: per hop a pattern
      * over the bean the hop reaches, tested against the near object along the reference field of the end that holds it
-     * ({@link Aggregation#MEETING}, the field the chain of one side), or, over a relation a form creates, a
+     * ({@link StaticFunction#MEETING}, the field the chain of one side), or, over a relation a form creates, a
      * {@link RelationLink} pattern joined to the near object, which binds the link's other end, and a pattern over the bean
      * joined to that end. Where {@code phase} names the variable of the creation phase, a link of that phase is not
      * walked. The last pattern is the one over the last bean reached.
@@ -6175,7 +6175,7 @@ public final class TmsTranspiler {
                 Join onNear = new Join(id("koppeling-nabij"), eerste ? "eerste" : "tweede", near);
                 // a creation rule does not walk a link of the phase it fires in: the rule layer has not seen it yet
                 List<BetaTest> earlier = phase == null ? List.of()
-                        : List.of(new BetaTest(id("koppeling-eerder"), Aggregation.NOT_IN_PHASE, phase));
+                        : List.of(new BetaTest(id("koppeling-eerder"), StaticFunction.NOT_IN_PHASE, phase));
                 out.add(new FactPattern(RelationLink.class, relationLink, List.of(ofRelation), List.of(onNear), earlier,
                         List.of(Binding.van(otherSide, RelationLink.class, eerste ? "tweede" : "eerste"))));
                 out.add(new FactPattern(javaClass, far, List.of(), List.of(new Join(id("koppeling-ver"), null, otherSide)),
@@ -6185,9 +6185,9 @@ public final class TmsTranspiler {
                 // the walk reads bean properties, as every chain of the plan holds them
                 List<String> veld = List.of(Namen.property(h.veld()));
                 BetaTest step = h.onNear()
-                        ? new BetaTest(id("veld-nabij"), Aggregation.MEETING, near,
+                        ? new BetaTest(id("veld-nabij"), StaticFunction.MEETING, near,
                                 List.of(constant(List.of()), constant(veld)))
-                        : new BetaTest(id("veld-ver"), Aggregation.MEETING, near,
+                        : new BetaTest(id("veld-ver"), StaticFunction.MEETING, near,
                                 List.of(constant(veld), constant(List.of())));
                 out.add(new FactPattern(javaClass, far, List.of(), List.of(), List.of(step), List.of()));
             }

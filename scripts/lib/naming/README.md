@@ -314,7 +314,10 @@ method scope covers its own text only: a read of the member in another file take
 member read through a dot whose type the classifier derives as a zone type (`T.m`, `x.m()` with a zone type for `x`,
 `T::m`), which takes the row of the member's declaration (card `hernoem-drools-backend`: `TmsTranspiler` renames its
 locals `toets` as `testTerm`, beside a local `test`, and its reads `t.toets()` of the record `Toetsitem` as that
-component, `test`). `old` and `new` are complete names; `kind` is `translation` or `improved`; `reason` is required
+component, `test`). So does a nested Java type of a zone type, read as `Outer.Inner` or by its simple name inside
+`Outer`, and it keeps its name where its declaration has no row, though the row of the place renames a top-level
+type of the same name (card `drools-static-function`: the plan's enum `Aggregation` and `Accumulation.Aggregation`).
+`old` and `new` are complete names; `kind` is `translation` or `improved`; `reason` is required
 for `improved`.
 
 The decision list: `file line col old new decision context`, `line` and `col` 1-based, `col` in characters.

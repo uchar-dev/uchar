@@ -10,7 +10,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
 import dev.uchar.regelspraak.transpiler.tms.plan.Exists;
 import dev.uchar.regelspraak.transpiler.tms.plan.BetaTest;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.ReadKind;
@@ -71,7 +71,7 @@ final class FormsPlan {
         Subject onderwerp = new Subject(wachter, O, List.of(), List.of(),
                 List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
         ReadTable one = new ReadTable(List.of(new Read(0, ReadKind.INVOER, "uitkijkbonus", "$uitkijkbonus")));
-        Term division = new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(new Term.Division(Aggregation.DIVIDED, lees(0), lees(0),
+        Term division = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, lees(0), lees(0),
                 -1, "uitkijkbonus gedeeld door uitkijkbonus"), number("1"), text(">")), "de deling groter dan 1");
         Consequence.FaultName faultName = new Consequence.FaultName("proef", "proefregel");
         rules.add(new RulePlan("fout van een toets", "proef", null, one, List.of(onderwerp,
@@ -81,11 +81,11 @@ final class FormsPlan {
                 new TestItem("zonder", TestItem.Role.WITHOUT_FAULT, division, -1, List.of(0), 1)),
                 new Consequence.Characteristic(O, ElementSleutel.van("wachter", "gevarenwacht", true), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("vaste fout", "proef", null, one, List.of(onderwerp,
-                new TestItem("vorm", TestItem.Role.VORM, new Term.Call(Aggregation.BUCKET_SCALAR, List.of(lees(0),
+                new TestItem("vorm", TestItem.Role.VORM, new Term.Call(StaticFunction.BUCKET_SCALAR, List.of(lees(0),
                         new Term.Const(Boolean.FALSE, null, null)), null), -1, List.of(0), 1)),
                 new Consequence.Fout(O, "een vaste zin", faultName, Consequence.Insertion.STATED)));
         rules.add(new RulePlan("inconsistentie", "proef", null, one, List.of(onderwerp,
-                new TestItem("voorwaarde", TestItem.Role.CONDITION, new Term.Call(Aggregation.EMPTY_TEST, List.of(lees(0),
+                new TestItem("voorwaarde", TestItem.Role.CONDITION, new Term.Call(StaticFunction.EMPTY_TEST, List.of(lees(0),
                         new Term.Const(Boolean.TRUE, null, null)), "zijn uitkijkbonus leeg is"), -1, List.of(0), 1)),
                 new Consequence.Inconsistency(O, "proef", Consequence.Insertion.LOGICAL)));
         FactPattern waarden = new FactPattern(Value.class, "$waarde", List.of(new Alpha("attribuut", List.of(
@@ -291,7 +291,7 @@ final class FormsPlan {
         rules.add(new RulePlan("sleutel", "proefuniciteit", null,
                 table(new Read(0, ReadKind.INVOER, "uitkijkbonus", "$uitkijkbonus")), List.of(withBonus),
                 new Consequence.UniquenessKey(O, "proefuniciteit", 0, List.of(new Term.SlotValue(0, "zijn uitkijkbonus"),
-                        new Term.Const(null, null, null), new Term.Call(Aggregation.FALLBACK, List.of(lees(0), number("0")),
+                        new Term.Const(null, null, null), new Term.Call(StaticFunction.FALLBACK, List.of(lees(0), number("0")),
                                 "zijn uitkijkbonus of 0")), -1, -1, List.of(0), 1, Consequence.Insertion.LOGICAL)));
         Subject withKustvak = new Subject(post, O, List.of(), List.of(),
                 List.of(Binding.van("$hoogte", post, "hoogte"), Binding.van("$kustvak", post, "kustvak")));
@@ -406,11 +406,11 @@ final class FormsPlan {
         String v = "$vouwonderwerp";
         FactPattern foldSubject = new FactPattern(kustvak, v, List.of(), List.of(), List.of());
         Binding height = Binding.van("$hoogte", post, "hoogte");
-        Term matrix = new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(lees(0), number("5"), text(">")),
+        Term matrix = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(lees(0), number("5"), text(">")),
                 "de hoogte groter dan 5");
-        Term depositing = new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(new Term.Division(Aggregation.DIVIDED, lees(0),
+        Term depositing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, lees(0),
                 number("2"), 6, "de hoogte gedeeld door 2"), number("1"), text(">")), "de helft groter dan 1");
-        Term failing = new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(new Term.Division(Aggregation.DIVIDED, lees(0),
+        Term failing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, lees(0),
                 number("0"), -1, "de hoogte gedeeld door 0"), number("1"), text(">")), "het filter dat faalt");
         List<RulePlan> rules = new ArrayList<>();
         rules.add(new RulePlan("telling", "proef", null, table(new Read(0, ReadKind.SUBJECT, "lid", O)),
@@ -430,8 +430,8 @@ final class FormsPlan {
                 placeSlot(4, ReadKind.LIST_PLACES, "$lijstplaatsen_2"), placeSlot(5, ReadKind.LIST_PLACE, "$plaats_2"),
                 new Read(6, ReadKind.DEPOSIT_FLAG, null, null)),
                 List.of(foldSubject, member(post, v, height), places(1, "kustvak", new BetaTest("plaats-1",
-                        Aggregation.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null)))),
-                        places(2, "wachter", new BetaTest("plaats-2", Aggregation.MEETING, O, List.of(
+                        StaticFunction.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null)))),
+                        places(2, "wachter", new BetaTest("plaats-2", StaticFunction.MEETING, O, List.of(
                                 new Term.Const(List.of(), null, null), new Term.Const(List.of("wachter"), null, null))))),
                 new Consequence.Contribution(v, "proefvouw: lidtoets", 1, new Consequence.Input.MemberTest(depositing, 6,
                         new Consequence.FoldPlace(1, List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3),
@@ -447,7 +447,7 @@ final class FormsPlan {
         rules.add(new RulePlan("filterfout", "proef", null, table(heightSlot(), memberSlot(1),
                 placeSlot(2, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(3, ReadKind.LIST_PLACE, "$plaats_1")),
                 List.of(foldSubject, member(post, v, height), places(1, "kustvak", new BetaTest("plaats-1",
-                        Aggregation.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null)))),
+                        StaticFunction.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null)))),
                         new TestItem("fout", TestItem.Role.FAULT, failing, -1, List.of(0), 4)),
                 new Consequence.FilterFault(v, "proefvouw", 1, failing, new Consequence.FoldPlace(0,
                         List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3)), Consequence.PlaceReason.FILTER_FAULT),
@@ -455,7 +455,7 @@ final class FormsPlan {
         rules.add(new RulePlan("lidfout", "proef", null, table(new Read(0, ReadKind.SUBJECT, "lid", O),
                 placeSlot(1, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(2, ReadKind.LIST_PLACE, "$plaats_1")),
                 List.of(foldSubject, member(post, v), places(1, "kustvak", new BetaTest("plaats-1",
-                        Aggregation.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null))))),
+                        StaticFunction.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null))))),
                 new Consequence.MemberFault(v, "proefvouw", 0, new Consequence.FoldPlace(0,
                         List.of(new Consequence.FoldPlace.Step("kustvak", 1, 2)), Consequence.PlaceReason.MEMBER_FAULT),
                         "the total of ", ": a scalar", Consequence.Insertion.LOGICAL)));
@@ -540,7 +540,7 @@ final class FormsPlan {
                 new Alpha.FieldTest("positie", Alpha.Comparator.UNDER, 3)))),
                 List.of(new Join("uitkomst", "onderwerp", O)), List.of());
         FactPattern relationLink = new FactPattern(RelationLink.class, "$koppeling", List.of(), List.of(new Join("eerste", "eerste", O),
-                new Join("tweede", "tweede", O, toPost)), List.of(new BetaTest("ontmoeting", Aggregation.MEETING, O,
+                new Join("tweede", "tweede", O, toPost)), List.of(new BetaTest("ontmoeting", StaticFunction.MEETING, O,
                 List.of(new Term.Const(List.of(), null, null), new Term.Const(List.of("post"), null, null)))), List.of());
         FactPattern notValue = new FactPattern(Value.class, "$nietWaarde", List.of(), List.of(new Join("nw", "onderwerp", O)),
                 List.of());
@@ -568,48 +568,48 @@ final class FormsPlan {
                     names[i] == null ? null : "slot " + i, names[i]));
         List<Integer> read = List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 17);
         Term test = new Term.Compound(Conditie.Kwantor.ALLE, 0, List.of(
-                new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(new Term.Division(Aggregation.DIVIDED, lees(0), number("2"), 14,
+                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, lees(0), number("2"), 14,
                         "de uitkijkbonus gedeeld door 2"), number("1"), text(">")), "de helft groter dan 1"),
-                new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(new Term.SquareRoot(Aggregation.SQUARE_ROOT, lees(0), 14,
+                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.SquareRoot(StaticFunction.SQUARE_ROOT, lees(0), 14,
                         "de wortel"), number("1"), text(">=")), "de wortel minstens 1"),
-                new Term.Call(Aggregation.RS_AGG_COMPARE, List.of(new Term.FoldRead(lees(9), 8, 14, 10, 11,
+                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.FoldRead(lees(9), 8, 14, 10, 11,
                         "de som van de bijdragen"), number("0"), text("<")), "de som onder 0"),
-                new Term.QuantifierRead(Aggregation.QUANTIFIER_READ, lees(8), lees(15), Conditie.Kwantor.TEN_MINSTE, 1, 14,
+                new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, lees(8), lees(15), Conditie.Kwantor.TEN_MINSTE, 1, 14,
                         "ten minste één bijdrage"),
-                new Term.WithoutFault(new Term.Call(Aggregation.KENMERK, List.of(lees(1), new Term.Const(Boolean.TRUE, null,
+                new Term.WithoutFault(new Term.Call(StaticFunction.KENMERK, List.of(lees(1), new Term.Const(Boolean.TRUE, null,
                         null)), "hij een gevarenwacht is"), null)), "alle voorwaarden");
-        Term waarde = new Term.Let(12, "a", new Term.Call(Aggregation.RS_PLUS, List.of(lees(0), number("1.50")), "a"),
-                new Term.Let(13, "b", new Term.Choice(new Term.WithoutFault(new Term.Call(Aggregation.RS_AGG_COMPARE,
+        Term waarde = new Term.Let(12, "a", new Term.Call(StaticFunction.RS_PLUS, List.of(lees(0), number("1.50")), "a"),
+                new Term.Let(13, "b", new Term.Choice(new Term.WithoutFault(new Term.Call(StaticFunction.RS_AGG_COMPARE,
                         List.of(new Term.Binder(12, "a", "a"), lees(6), text(">")), "a groter dan de drempel"), null),
-                        new Term.Restate(Aggregation.RESTATE_EXACT, new Term.Binder(12, "a", "a"), null, null,
+                        new Term.Restate(StaticFunction.RESTATE_EXACT, new Term.Binder(12, "a", "a"), null, null,
                                 BigDecimal.ONE, BigDecimal.TEN, null),
-                        new Term.Restate(Aggregation.RESTATE, new Term.Binder(12, "a", "a"), null, null,
+                        new Term.Restate(StaticFunction.RESTATE, new Term.Binder(12, "a", "a"), null, null,
                                 new BigDecimal("2.5"), null, null), "als a groter is dan de drempel"),
-                        new Term.ListedFold(Aggregation.LARGEST, List.of(
+                        new Term.ListedFold(StaticFunction.LARGEST, List.of(
                                 new Term.Binder(13, "b", "b"),
                                 new Term.Required(lees(7), "geen rekendatum", null),
-                                new Term.TextComposition(List.of(text("x"), new Term.Call(Aggregation.RS_TEXT,
+                                new Term.TextComposition(List.of(text("x"), new Term.Call(StaticFunction.RS_TEXT,
                                         List.of(lees(0)), null)), "x en de uitkijkbonus"),
-                                new Term.Call(Aggregation.RS_ROUNDING, List.of(lees(0), new Term.Const(2, null, null),
+                                new Term.Call(StaticFunction.RS_ROUNDING, List.of(lees(0), new Term.Const(2, null, null),
                                         new Term.Const(RoundingMode.HALF_UP, null, null)), null),
-                                new Term.Call(Aggregation.RS_DURATION_DAY_KIND, List.of(new Term.Const(
+                                new Term.Call(StaticFunction.RS_DURATION_DAY_KIND, List.of(new Term.Const(
                                         LocalDate.of(2026, 1, 1), null, null), lees(7), new Term.DayKind("werkdag",
                                         d -> true, null), new Term.Const(Boolean.TRUE, null, null)), null),
-                                new Term.Call(Aggregation.DATE_COMPARE, List.of(new Term.Const(
+                                new Term.Call(StaticFunction.DATE_COMPARE, List.of(new Term.Const(
                                         LocalDateTime.of(2026, 1, 1, 12, 0), null, null), lees(7),
                                         new Term.Const(Conditie.Operator.LATER, null, null)), null),
-                                new Term.Call(Aggregation.RS_DATE_PART, List.of(lees(7),
+                                new Term.Call(StaticFunction.RS_DATE_PART, List.of(lees(7),
                                         new Term.Const(ChronoField.YEAR, null, null)), null),
-                                new Term.Call(Aggregation.RS_TIME_CLIP, List.of(lees(2), lees(2),
+                                new Term.Call(StaticFunction.RS_TIME_CLIP, List.of(lees(2), lees(2),
                                         new Term.Const(Period.class, null, null)), null),
-                                new Term.Call(Aggregation.RS_DIM_SUM, List.of(lees(0), new Term.Const(List.of("a", "b"),
+                                new Term.Call(StaticFunction.RS_DIM_SUM, List.of(lees(0), new Term.Const(List.of("a", "b"),
                                         null, null)), null),
-                                new Term.Call(Aggregation.QUANTIFIER_VERDICT, List.of(lees(8), lees(9),
+                                new Term.Call(StaticFunction.QUANTIFIER_VERDICT, List.of(lees(8), lees(9),
                                         new Term.Const(Conditie.Kwantor.GEEN, null, null), new Term.Const(0, null, null)),
                                         null),
-                                new Term.Call(Aggregation.FALLBACK, List.of(new Term.Const(null, null, null),
+                                new Term.Call(StaticFunction.FALLBACK, List.of(new Term.Const(null, null, null),
                                         new Term.Const(Breuk.van(BigInteger.ONE, BigInteger.valueOf(3)), null, null)), null),
-                                new Term.Call(Aggregation.FALLBACK, List.of(new Term.Const(5L, null, null),
+                                new Term.Call(StaticFunction.FALLBACK, List.of(new Term.Const(5L, null, null),
                                         new Term.Const(BigInteger.valueOf(7), null, null)), null),
                                 new Term.Invoer(lees(16), new Binding.Field(wachter, "rustwacht"), Binding.ReadForm.WAAR,
                                         null),

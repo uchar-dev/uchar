@@ -14,10 +14,10 @@ import java.util.function.Predicate;
  * binds, in a closed vocabulary that a rendering turns into a function over the rule's value array or into DRL text
  * without deciding anything itself. A condition is a term whose value is a truth value. Every decision the analysis
  * takes about a value or a condition is a node or a field of a node: the function that computes it, by name
- * ({@link Aggregation}), among them the helper that compares and the operator, polarity and leeg tables it takes as
+ * ({@link StaticFunction}), among them the helper that compares and the operator, polarity and leeg tables it takes as
  * constants; the factor that restates a unit ({@link Restate}); where a division, a square root or the matrix of a
  * quantifier fold deposits ({@link Division}, {@link SquareRoot}, {@link QuantifierRead}); where the evaluation faults
- * ({@link Fail}, {@link Required}, {@link FoldRead} and the functions that can, {@link Aggregation#canFail}) and where a
+ * ({@link Fail}, {@link Required}, {@link FoldRead} and the functions that can, {@link StaticFunction#canFail}) and where a
  * fault does not hold instead ({@link WithoutFault}); what is evaluated only on need, on one branch or up to a stop
  * ({@link Let}, {@link Choice}, {@link Compound}). The children of a node are evaluated in the order the node lists
  * them, which is the order of RUNTIME-SEMANTICS ch. 5.11.
@@ -41,7 +41,7 @@ public sealed interface Term {
      * The value {@code waarde}, exactly as the analysis made it: a number as a {@code BigDecimal} with its scale or as
      * an exact rational ({@code Breuk}), a date, a date-time, a truth value, a text or an enumeration label. {@code type}
      * is the IR's type of a literal, with its unit, and a text for the literal chunk of a text composition; it is null
-     * for a constant of the analysis that an argument of a {@link Aggregation} takes (a number of decimals, a rounding mode,
+     * for a constant of the analysis that an argument of a {@link StaticFunction} takes (a number of decimals, a rounding mode,
      * a unit of time, a label, a class), and for an absent bound, whose value is null.
      */
     record Const(Object waarde, Datatype type, String bron) implements Term {}
@@ -79,7 +79,7 @@ public sealed interface Term {
     record Choice(Term voorwaarde, Term then, Term otherwise, String bron) implements Term {}
 
     /** The function {@code function} on the values of {@code arguments}, evaluated in that order. */
-    record Call(Aggregation function, List<Term> arguments, String bron) implements Term {
+    record Call(StaticFunction function, List<Term> arguments, String bron) implements Term {
         public Call {
             arguments = List.copyOf(arguments);
         }
@@ -87,16 +87,16 @@ public sealed interface Term {
 
     /**
      * The value of {@code term} restated from the unit {@code van} into the unit {@code naar} (RUNTIME-SEMANTICS ch.
-     * 2.6) through {@code function}: {@link Aggregation#RESTATE_EXACT}, a number times {@code teller} and divided by
-     * {@code noemer}, the exact canonical factors, as exact rationals; or {@link Aggregation#RESCALE}, where
+     * 2.6) through {@code function}: {@link StaticFunction#RESTATE_EXACT}, a number times {@code teller} and divided by
+     * {@code noemer}, the exact canonical factors, as exact rationals; or {@link StaticFunction#RESCALE}, where
      * {@code noemer} is null, times the single ratio {@code teller} of the two units. A leeg value and a value that is
      * no number pass unchanged. The analysis adds no node where no restatement is due.
      */
-    record Restate(Aggregation function, Term term, Eenheid van, Eenheid naar, BigDecimal counter, BigDecimal denominator,
+    record Restate(StaticFunction function, Term term, Eenheid van, Eenheid naar, BigDecimal counter, BigDecimal denominator,
                      String bron) implements Term {
         public Restate {
-            boolean exact = function == Aggregation.RESTATE_EXACT;
-            if (!exact && function != Aggregation.RESTATE || exact != (denominator != null))
+            boolean exact = function == StaticFunction.RESTATE_EXACT;
+            if (!exact && function != StaticFunction.RESTATE || exact != (denominator != null))
                 throw new IllegalArgumentException("een herschaling noemt HERSCHAAL_EXACT met een noemer of HERSCHAAL"
                         + " zonder, niet " + function + " met noemer " + denominator);
         }
@@ -104,18 +104,18 @@ public sealed interface Term {
 
     /**
      * A division, {@code left} by {@code right}, both evaluated in that order, through {@code function}
-     * ({@link Aggregation#DIVIDED} or {@link Aggregation#DIVIDED_ABS}) with the probe of the rule's §6.5 deposit: where a filled
+     * ({@link StaticFunction#DIVIDED} or {@link StaticFunction#DIVIDED_ABS}) with the probe of the rule's §6.5 deposit: where a filled
      * dividend meets a leeg divisor the probe in slot {@code depositFlag} of the value array hears it, and with {@code depositFlag}
      * -1 the place does not deposit (RUNTIME-SEMANTICS ch. 1.2). A numeric zero divisor is the fault of ch. 1.4.
      */
-    record Division(Aggregation function, Term left, Term right, int depositFlag, String bron) implements Term {}
+    record Division(StaticFunction function, Term left, Term right, int depositFlag, String bron) implements Term {}
 
     /**
-     * A square root of {@code radicand} through {@code function} ({@link Aggregation#SQUARE_ROOT} under a rounding,
-     * {@link Aggregation#EXACT_SQUARE_ROOT} without one) with the probe of the rule's §6.6 deposit: where the radicand is
+     * A square root of {@code radicand} through {@code function} ({@link StaticFunction#SQUARE_ROOT} under a rounding,
+     * {@link StaticFunction#EXACT_SQUARE_ROOT} without one) with the probe of the rule's §6.6 deposit: where the radicand is
      * negative the probe in slot {@code depositFlag} hears it, and with {@code depositFlag} -1 the place does not deposit.
      */
-    record SquareRoot(Aggregation function, Term radicand, int depositFlag, String bron) implements Term {}
+    record SquareRoot(StaticFunction function, Term radicand, int depositFlag, String bron) implements Term {}
 
     /** The evaluation fault {@code sentence}, a {@code Rekenfout}, wherever the evaluation reaches this node: an
      *  {@code Unresolved} node (RUNTIME-SEMANTICS ch. 5.7, WF-044) or the bound day outside a day kind (ch. 8.2). */
@@ -134,12 +134,12 @@ public sealed interface Term {
 
     /**
      * A listed fold (RUNTIME-SEMANTICS ch. 1.2e): the operands in order, each taken by the step {@code function} as it is
-     * evaluated, from leeg before the first: {@link Aggregation#SMALLEST} keeps the least, {@link Aggregation#LARGEST} the
+     * evaluated, from leeg before the first: {@link StaticFunction#SMALLEST} keeps the least, {@link StaticFunction#LARGEST} the
      * greatest, a leeg operand skipped and a tie taking the later operand; leeg where every operand is.
      */
-    record ListedFold(Aggregation function, List<Term> operands, String bron) implements Term {
+    record ListedFold(StaticFunction function, List<Term> operands, String bron) implements Term {
         public ListedFold {
-            if (function != Aggregation.SMALLEST && function != Aggregation.LARGEST)
+            if (function != StaticFunction.SMALLEST && function != StaticFunction.LARGEST)
                 throw new IllegalArgumentException("een gelijste vouw neemt KLEINSTE of GROOTSTE als stap, niet " + function);
             operands = List.copyOf(operands);
         }
@@ -171,18 +171,18 @@ public sealed interface Term {
 
     /**
      * The verdict of a quantifier fold whose matrix can fault or deposit, in the rule that reads the fold
-     * (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link Aggregation#QUANTIFIER_READ}): the outcome of
+     * (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link StaticFunction#QUANTIFIER_READ}): the outcome of
      * the matrix per contributor, the list {@code contributions} over the count {@code aantal}, read in the contributors'
      * order under {@code quantifier} with the threshold {@code drempel} of a counting quantifier, the stop triggers of
      * ch. 5.10 tested before each contributor. A contributor that is reached deposits where its matrix deposited, heard
      * by the probe in slot {@code depositFlag} of the value array (-1: the matrix does not deposit), and faults where its
      * matrix faulted; one that is not reached does neither. A fold whose matrix can do neither is an {@link Call} of
-     * {@link Aggregation#QUANTIFIER_VERDICT} over the count and the sum of the verdicts, where the order does not show.
+     * {@link StaticFunction#QUANTIFIER_VERDICT} over the count and the sum of the verdicts, where the order does not show.
      */
-    record QuantifierRead(Aggregation function, Term aantal, Term contributions, Conditie.Kwantor quantifier, int threshold, int depositFlag,
+    record QuantifierRead(StaticFunction function, Term aantal, Term contributions, Conditie.Kwantor quantifier, int threshold, int depositFlag,
                          String bron) implements Term {
         public QuantifierRead {
-            if (function != Aggregation.QUANTIFIER_READ)
+            if (function != StaticFunction.QUANTIFIER_READ)
                 throw new IllegalArgumentException("een kwantorlezing neemt KWANTORLEZING als functie, niet " + function);
         }
     }

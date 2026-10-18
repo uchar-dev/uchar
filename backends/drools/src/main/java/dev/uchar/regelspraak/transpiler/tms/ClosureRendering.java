@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
-import dev.uchar.regelspraak.transpiler.tms.plan.Aggregation;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.TestItem;
 
@@ -181,7 +181,7 @@ final class ClosureRendering {
     }
 
     /** The function {@code function} on the values of {@code arguments}, evaluated in order. */
-    private static ValueFunction call(Aggregation function, List<Term> arguments) {
+    private static ValueFunction call(StaticFunction function, List<Term> arguments) {
         Implementation f = implementation(function);
         ValueFunction[] argument = new ValueFunction[arguments.size()];
         for (int i = 0; i < argument.length; i++) argument[i] = valueFunction(arguments.get(i));
@@ -193,7 +193,7 @@ final class ClosureRendering {
     }
 
     /** A restatement through the function the plan names, with the factors it takes: the numerator and the denominator
-     *  of {@link Aggregation#RESTATE_EXACT}, or the one ratio of {@link Aggregation#RESTATE}, whose plan has no
+     *  of {@link StaticFunction#RESTATE_EXACT}, or the one ratio of {@link StaticFunction#RESTATE}, whose plan has no
      *  denominator ({@link Term.Restate}). */
     private static ValueFunction restate(Term.Restate h) {
         ValueFunction f = valueFunction(h.term());
@@ -289,7 +289,7 @@ final class ClosureRendering {
     /** The constraint of a pattern ({@link dev.uchar.regelspraak.transpiler.tms.plan.BetaTest}) that calls
      *  {@code function} over the pattern's object and the object another pattern binds, in that order, and the values of
      *  {@code constants} after them. */
-    static org.drools.model.functions.Predicate2<Object, Object> betaTest(Aggregation function,
+    static org.drools.model.functions.Predicate2<Object, Object> betaTest(StaticFunction function,
                                                                           List<Term.Const> constants) {
         Implementation f = implementation(function);
         Object[] c = constants.stream().map(Term.Const::waarde).toArray();
@@ -311,7 +311,7 @@ final class ClosureRendering {
     /** The call of {@code function}: the method its constant names, with the arguments cast as its parameters take
      *  them. */
     @SuppressWarnings("unchecked")
-    private static Implementation implementation(Aggregation function) {
+    private static Implementation implementation(StaticFunction function) {
         return switch (function) {
             case RS_PLUS -> x -> RegelSpraakRuntime.rsPlus(x[0], x[1]);
             case RS_MIN -> x -> RegelSpraakRuntime.rsMin(x[0], x[1]);

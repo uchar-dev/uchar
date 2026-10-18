@@ -633,6 +633,58 @@ class ImportedTypes(Fixture):
         self.assertEqual(self.read('src/plan/Item.java'), 'package plan;\npublic record Item(Role soort) {\n    public enum Role { A }\n}\n')
 
 
+class NestedTypes(Fixture):
+    # card drools-static-function: the plan's enum Aggregation (the static functions a term calls) and the record
+    # Accumulation.Aggregation (a fold of an accumulate) share a name in one package. The rows of the files that read
+    # the enum took the nested type along where a file reads both (33 compile errors), since the tool gave a nested
+    # type the row of the place and not that of its declaration
+    ENUM = 'package z.plan;\npublic enum Aggregation { RS_PLUS, RS_MIN }\n'
+    OUTER = ('package z.plan;\nimport java.util.List;\n'
+             'public record Accumulation(List<Aggregation> folds) {\n'
+             '    public record Aggregation(String target) {}\n'
+             '    Aggregation first() { return new Aggregation("x"); }\n}\n')
+    READER = ('package z;\nimport z.plan.Accumulation;\nimport z.plan.Aggregation;\nclass Transpiler {\n'
+              '    Aggregation f = Aggregation.RS_PLUS;\n'
+              '    Accumulation.Aggregation g = new Accumulation.Aggregation("x");\n}\n')
+
+    def applied(self, rows, outer=OUTER):
+        self.write({'src/z/plan/Aggregation.java': self.ENUM, 'src/z/plan/Accumulation.java': outer,
+                    'src/z/Transpiler.java': self.READER})
+        t = self.table('src', rows)
+        git(self.root, 'add', '-A')
+        git(self.root, 'commit', '-q', '-m', 'table')
+        self.assertEqual(self.check(t), [])
+        self.assertEqual(self.apply(t, files_only=True)[0], 0)
+        git(self.root, 'commit', '-q', '--allow-empty', '-m', 'files')
+        self.assertEqual(self.apply(t)[0], 0)
+
+    def test_a_nested_type_read_through_its_outer_type_keeps_its_name_beside_a_renamed_top_level_type(self):
+        self.applied([row('Aggregation', 'StaticFunction', 'aggregatie', 'improved', 'src/z/plan/Aggregation.java', 'fixture'),
+                      row('Aggregation', 'StaticFunction', 'aggregatie', 'improved', 'src/z/Transpiler.java', 'fixture')])
+        self.assertEqual(self.read('src/z/plan/StaticFunction.java'), self.ENUM.replace('Aggregation', 'StaticFunction'))
+        self.assertEqual(self.read('src/z/plan/Accumulation.java'), self.OUTER)
+        self.assertEqual(self.read('src/z/Transpiler.java'),
+                         'package z;\nimport z.plan.Accumulation;\nimport z.plan.StaticFunction;\nclass Transpiler {\n'
+                         '    StaticFunction f = StaticFunction.RS_PLUS;\n'
+                         '    Accumulation.Aggregation g = new Accumulation.Aggregation("x");\n}\n')
+
+    def test_an_unqualified_read_inside_the_outer_type_takes_the_row_of_the_nested_declaration(self):
+        # the row of the method covers its reads of the nested type, but not the declaration of that type; the read of
+        # the enum through its package, in the same method, is the enum's
+        outer = self.OUTER.replace('Aggregation first() { return new Aggregation("x"); }',
+                                   'Aggregation first() {\n        z.plan.Aggregation call = z.plan.Aggregation.RS_PLUS;\n'
+                                   '        return new Aggregation(call.name());\n    }')
+        self.applied([row('Aggregation', 'StaticFunction', 'aggregatie', 'improved', 'src/z/plan/Aggregation.java', 'fixture'),
+                      row('Aggregation', 'StaticFunction', 'aggregatie', 'improved', 'Accumulation#first', 'fixture')], outer)
+        self.assertEqual(self.read('src/z/plan/Accumulation.java'), outer.replace('z.plan.Aggregation', 'z.plan.StaticFunction'))
+
+    def test_a_nested_type_renamed_by_a_row_of_its_outer_type_is_renamed_where_another_file_reads_it(self):
+        self.applied([row('Aggregation', 'Fold', 'aggregatie', 'improved', 'Accumulation', 'fixture')])
+        self.assertEqual(self.read('src/z/plan/Accumulation.java'), self.OUTER.replace('Aggregation', 'Fold'))
+        self.assertEqual(self.read('src/z/Transpiler.java'), self.READER.replace('Accumulation.Aggregation', 'Accumulation.Fold')
+                         .replace('new Accumulation.Aggregation', 'new Accumulation.Fold'))
+
+
 class Declarators(Fixture):
     def test_the_second_variable_of_a_declaration_is_declared_in_the_zone(self):
         # String w = ..., bronrecord = ...: bronrecord is a local of the zone, beside the method IrPad.bronrecord
