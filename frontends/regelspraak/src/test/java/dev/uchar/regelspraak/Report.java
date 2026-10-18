@@ -29,12 +29,12 @@ final class Report {
             assertEquals("warning", d.get("severity"), () -> "WF-113 (a): de wire draagt alleen warning: " + d);
             meldingen.add((String) d.get("message"));
         }
-        for (String bron : markerSources(document)) {
+        for (String source : markerSources(document)) {
             // blank counts as absent: an empty snippet is contained in every message, and an absent one in none
-            assertTrue(bron != null && !bron.isBlank(),
-                    () -> "WF-113 (b): een marker zonder brontekst kan door geen warning verantwoord worden: " + bron);
-            assertTrue(meldingen.stream().anyMatch(m -> m.contains(bron)),
-                    () -> "WF-113 (b): geen warning citeert de brontekst van de marker letterlijk: '" + bron
+            assertTrue(source != null && !source.isBlank(),
+                    () -> "WF-113 (b): een marker zonder brontekst kan door geen warning verantwoord worden: " + source);
+            assertTrue(meldingen.stream().anyMatch(m -> m.contains(source)),
+                    () -> "WF-113 (b): geen warning citeert de brontekst van de marker letterlijk: '" + source
                             + "'; de meldingen: " + meldingen);
         }
     }
@@ -60,7 +60,7 @@ final class Report {
     private static void collect(Object x, List<String> result) {
         if (x instanceof Map<?, ?> m) {
             if ("Unresolved".equals(m.get("node")))
-                result.add(m.get("source") instanceof Map<?, ?> bron ? (String) bron.get("snippet") : null);
+                result.add(m.get("source") instanceof Map<?, ?> source ? (String) source.get("snippet") : null);
             for (Object v : m.values()) collect(v, result);
         } else if (x instanceof List<?> l) {
             for (Object v : l) collect(v, result);
@@ -75,25 +75,25 @@ final class Report {
         Reader(String s) { this.s = s; }
 
         Object document() {
-            Object d = waarde();
+            Object d = value();
             spaces();
-            if (i != s.length()) throw fout("tekst na het document");
+            if (i != s.length()) throw error("tekst na het document");
             return d;
         }
 
-        private Object waarde() {
+        private Object value() {
             spaces();
-            if (i >= s.length()) throw fout("einde van de tekst");
+            if (i >= s.length()) throw error("einde van de tekst");
             char c = s.charAt(i);
             if (c == '{') return object();
-            if (c == '[') return lijst();
+            if (c == '[') return list();
             if (c == '"') return tekst();
             if (s.startsWith("true", i)) { i += 4; return Boolean.TRUE; }
             if (s.startsWith("false", i)) { i += 5; return Boolean.FALSE; }
             if (s.startsWith("null", i)) { i += 4; return null; }
             int begin = i;
             while (i < s.length() && "+-0123456789.eE".indexOf(s.charAt(i)) >= 0) i++;
-            if (begin == i) throw fout("onverwacht teken '" + c + "'");
+            if (begin == i) throw error("onverwacht teken '" + c + "'");
             return s.substring(begin, i);
         }
 
@@ -106,31 +106,31 @@ final class Report {
                 spaces();
                 String k = tekst();
                 spaces();
-                if (s.charAt(i++) != ':') throw fout("':' verwacht");
-                m.put(k, waarde());
+                if (s.charAt(i++) != ':') throw error("':' verwacht");
+                m.put(k, value());
                 spaces();
                 char c = s.charAt(i++);
                 if (c == '}') return m;
-                if (c != ',') throw fout("',' of '}' verwacht");
+                if (c != ',') throw error("',' of '}' verwacht");
             }
         }
 
-        private List<Object> lijst() {
+        private List<Object> list() {
             i++;
             List<Object> l = new ArrayList<>();
             spaces();
             if (s.charAt(i) == ']') { i++; return l; }
             while (true) {
-                l.add(waarde());
+                l.add(value());
                 spaces();
                 char c = s.charAt(i++);
                 if (c == ']') return l;
-                if (c != ',') throw fout("',' of ']' verwacht");
+                if (c != ',') throw error("',' of ']' verwacht");
             }
         }
 
         private String tekst() {
-            if (s.charAt(i++) != '"') throw fout("'\"' verwacht");
+            if (s.charAt(i++) != '"') throw error("'\"' verwacht");
             StringBuilder sb = new StringBuilder();
             while (true) {
                 char c = s.charAt(i++);
@@ -145,7 +145,7 @@ final class Report {
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> { sb.append((char) Integer.parseInt(s.substring(i, i + 4), 16)); i += 4; }
-                    default -> throw fout("onbekende escape '\\" + e + "'");
+                    default -> throw error("onbekende escape '\\" + e + "'");
                 }
             }
         }
@@ -154,7 +154,7 @@ final class Report {
             while (i < s.length() && Character.isWhitespace(s.charAt(i))) i++;
         }
 
-        private AssertionError fout(String what) {
+        private AssertionError error(String what) {
             return new AssertionError("geen JSON zoals de emitter hem schrijft, op positie " + i + ": " + what);
         }
     }

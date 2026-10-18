@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * The matrix of a quantifier fold evaluated for one contributor, the value of that contributor's {@link Contribution}
  * where the matrix can fault or deposit (RUNTIME-SEMANTICS ch. 3.9a): whether it holds ({@code holds}), or the
- * evaluation fault it raised ({@code fout}, unnamed: the form that reads the fold names it), and whether its
+ * evaluation fault it raised ({@code fault}, unnamed: the form that reads the fold names it), and whether its
  * evaluation reached a place that deposits ({@code deposited}: a division of a filled dividend by a leeg divisor or
  * the square root of a negative number). It is no outcome by itself. The reference interpreter reads the matrix in
  * the contributors' order and stops at the first contributor after which the verdict stands (ch. 5.10), so a
@@ -23,16 +23,16 @@ public final class MemberTest implements Comparable<MemberTest> {
 
     private final List<Integer> place;
     private final Boolean holds;
-    private final RuntimeException fout;
+    private final RuntimeException fault;
     private final boolean deposited;
 
-    public MemberTest(List<Integer> place, Boolean holds, RuntimeException fout, boolean deposited) {
+    public MemberTest(List<Integer> place, Boolean holds, RuntimeException fault, boolean deposited) {
         this.place = List.copyOf(place);
         if (this.place.isEmpty()) throw new IllegalArgumentException("een plaats in de volgorde begint met de selectie");
-        if ((holds == null) == (fout == null))
+        if ((holds == null) == (fault == null))
             throw new IllegalArgumentException("een lidtoets houdt of faalt, nooit allebei of geen van beide");
         this.holds = holds;
-        this.fout = fout;
+        this.fault = fault;
         this.deposited = deposited;
     }
 
@@ -42,7 +42,7 @@ public final class MemberTest implements Comparable<MemberTest> {
     public Boolean holds() { return holds; }
 
     /** The fault the matrix raised for the contributor, unnamed; null where it answered. */
-    public RuntimeException fout() { return fout; }
+    public RuntimeException fault() { return fault; }
 
     public boolean deposited() { return deposited; }
 
@@ -56,18 +56,18 @@ public final class MemberTest implements Comparable<MemberTest> {
 
     @Override public boolean equals(Object o) {
         return o instanceof MemberTest t && t.place.equals(place) && Objects.equals(t.holds, holds)
-                && t.deposited == deposited && (fout == null ? t.fout == null
-                : t.fout != null && t.fout.getClass() == fout.getClass()
-                  && Objects.equals(t.fout.getMessage(), fout.getMessage()));
+                && t.deposited == deposited && (fault == null ? t.fault == null
+                : t.fault != null && t.fault.getClass() == fault.getClass()
+                  && Objects.equals(t.fault.getMessage(), fault.getMessage()));
     }
 
     @Override public int hashCode() {
-        return Objects.hash(place, holds, deposited, fout == null ? null : fout.getClass().getName(),
-                fout == null ? null : fout.getMessage());
+        return Objects.hash(place, holds, deposited, fault == null ? null : fault.getClass().getName(),
+                fault == null ? null : fault.getMessage());
     }
 
     @Override public String toString() {
-        return "Lidtoets(" + place + ", " + (fout != null ? "fout " + fout.getMessage() : holds ? "waar" : "onwaar")
+        return "Lidtoets(" + place + ", " + (fault != null ? "fout " + fault.getMessage() : holds ? "waar" : "onwaar")
                 + (deposited ? ", gedeponeerd" : "") + ")";
     }
 }

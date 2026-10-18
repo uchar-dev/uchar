@@ -37,9 +37,9 @@ class DecisionTableRowNameTest {
     }
 
     private static Diagnostic onlyError(RegelSpraakModel m) {
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
-        return fouten.get(0);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        return faults.get(0);
     }
 
     @Test void rows_without_number_are_refused_by_name() {
@@ -55,7 +55,7 @@ class DecisionTableRowNameTest {
     @Test void the_group_names_a_duplicate_row_name_one_time() {
         RegelSpraakModel m = Resolver.resolve(MODEL + "Regelgroep bonus\n" + table("1", "1"));
         onlyError(m);
-        assertEquals(List.of("Bonustabel 1"), m.regelGroepen.get(0).leden());
+        assertEquals(List.of("Bonustabel 1"), m.ruleGroups.get(0).members());
     }
 
     @Test void numbered_rows_stay_clean() {

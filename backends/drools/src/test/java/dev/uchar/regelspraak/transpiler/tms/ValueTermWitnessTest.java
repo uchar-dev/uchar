@@ -76,7 +76,7 @@ class ValueTermWitnessTest {
                 "sleeplengte van een sleepbaan 0 Restate bron '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0 Call bron '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.0 Const BigDecimal type Numeriek[geheel=false, decimalen=1, "
-                        + "teken=ONBEPAALD, eenheid=Eenheid[afkorting=km, stelsel=Afstand, canoniek=m, "
+                        + "teken=ONBEPAALD, eenheid=Unit[afkorting=km, stelsel=Afstand, canoniek=m, "
                         + "factorNaarCanoniek=1000, denominator=null]] bron '2,5 km'",
                 "sleeplengte van een sleepbaan 0.0.1 Restate bron 'de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.1.0 SlotValue bron 'de aanloop van de Sleepbaan'"), fields(plans));
@@ -142,43 +142,43 @@ class ValueTermWitnessTest {
     /** A rendering into DRL text names every function of the plan in an {@code import function}: each constant names a
      *  public static method of its class. */
     @Test void every_function_of_the_plan_is_a_public_static_method() {
-        List<String> fout = new ArrayList<>();
+        List<String> fault = new ArrayList<>();
         for (StaticFunction f : StaticFunction.values()) {
             boolean found = false;
             for (Method m : f.javaClass().getMethods())
-                if (m.getName().equals(f.methode()) && Modifier.isStatic(m.getModifiers())) found = true;
-            if (!found || !Modifier.isPublic(f.javaClass().getModifiers())) fout.add(f + " " + f.javaClass().getName() + "."
-                    + f.methode());
+                if (m.getName().equals(f.method()) && Modifier.isStatic(m.getModifiers())) found = true;
+            if (!found || !Modifier.isPublic(f.javaClass().getModifiers())) fault.add(f + " " + f.javaClass().getName() + "."
+                    + f.method());
         }
-        assertEquals(List.of(), fout);
+        assertEquals(List.of(), fault);
     }
 
     /** The plans of the rules of the forms of {@code golden}, in the order of the model. */
     private static List<RulePlan> plans(String golden) throws Exception {
         return DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL)
-                .execModelTranspiler().modelplan().rules().stream().filter(p -> p.vorm() != null).toList();
+                .execModelTranspiler().modelplan().rules().stream().filter(p -> p.form() != null).toList();
     }
 
     /** The values the consequence {@code g} writes: of a value, of each initialisation of a creation, of a decision. */
     private static List<Term> waarden(Consequence g) {
         return switch (g) {
-            case Consequence.Value w -> List.of(w.waarde());
-            case Consequence.Creation c -> c.initialisations().stream().map(Consequence.Initialisation::waarde).toList();
-            case Consequence.Decision a -> List.of(a.waarde());
+            case Consequence.Value w -> List.of(w.value());
+            case Consequence.Creation c -> c.initialisations().stream().map(Consequence.Initialisation::value).toList();
+            case Consequence.Decision a -> List.of(a.value());
             default -> List.of();
         };
     }
 
     private static List<String> trees(List<RulePlan> plans) {
         List<String> out = new ArrayList<>();
-        for (RulePlan p : plans) for (Term w : waarden(p.consequence())) out.add(p.vorm() + ": " + TermTree.tree(w));
+        for (RulePlan p : plans) for (Term w : waarden(p.consequence())) out.add(p.form() + ": " + TermTree.tree(w));
         return out;
     }
 
     /** Per value, every node of its tree in pre-order, with what the tree text leaves out ({@link TermTree#fields}). */
     private static List<String> fields(List<RulePlan> plans) {
         List<String> out = new ArrayList<>();
-        for (RulePlan p : plans) for (Term w : waarden(p.consequence())) TermTree.fields(p.vorm(), w, "0", out);
+        for (RulePlan p : plans) for (Term w : waarden(p.consequence())) TermTree.fields(p.form(), w, "0", out);
         return out;
     }
 }

@@ -78,23 +78,23 @@ class DrlAllocationDubbelbezetWitnessTest {
     @Test void every_order_of_the_rules_of_the_allocations() throws Exception {
         Path ir = MAP.resolve("ir.json");
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         List<Integer> places = new ArrayList<>();
         for (int i = 0; i < rules.size(); i++) if (rules.get(i).startsWith("verdeel de opbrengst")) places.add(i);
         assertEquals(4, places.size(), () -> "de regels van de twee verdelingen in " + rules);
         int orders = 0;
         for (List<Integer> p : TmsDocuments.permutations(places)) {
-            List<Rule> model = new ArrayList<>(gegenereerd);
+            List<Rule> model = new ArrayList<>(generated);
             List<String> text = new ArrayList<>(rules);
             for (int k = 0; k < places.size(); k++) {
-                model.set(places.get(k), gegenereerd.get(p.get(k)));
+                model.set(places.get(k), generated.get(p.get(k)));
                 text.set(places.get(k), rules.get(p.get(k)));
             }
-            vuur(b, TmsDocuments.kieBase(b, model), text);
-            vuur(t, TextOrder.kieBase(t, text), text);
+            fire(b, TmsDocuments.kieBase(b, model), text);
+            fire(t, TextOrder.kieBase(t, text), text);
             orders++;
         }
         assertEquals(24, orders);
@@ -102,7 +102,7 @@ class DrlAllocationDubbelbezetWitnessTest {
 
     /** Fires B1 and its three Bergers through {@code kieBase}, the rules of {@code b} in the order {@code namen}, and
      *  writes back: the shares, the rests and the two inconsistencies on D2 of the class comment. */
-    private static void vuur(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
+    private static void fire(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
         Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Berging", Map.of("opbrengst", "1000"), List.of());
         Object d1 = TmsDocuments.beanObject(b.beanLoader(), "Berger", Map.of("gewicht", "3", "jaar", "2019", "maximum", "600"),
                 List.of());
@@ -114,17 +114,17 @@ class DrlAllocationDubbelbezetWitnessTest {
                 List.of("B1", "D1", "D2", "D3"));
         List<String> channel = new ArrayList<>();
         String where = " op " + b.branch() + " in volgorde " + names;
-        TmsDocuments.vuur(b, kieBase, names, List.of(b1, d1, d2, d3), sessie -> { },
-                sessie -> channel.addAll(TmsDocuments.inconsistenties(sessie, labels)));
+        TmsDocuments.fire(b, kieBase, names, List.of(b1, d1, d2, d3), session -> { },
+                session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
         assertEquals(List.of("verdeel de opbrengst naar rato @ D2", "verdeel de opbrengst op jaar @ D2"), channel,
                 "de inconsistenties" + where);
-        TmsFaultWitnessTest.assertNumber("600", TmsDocuments.lees(d1, "bergingsaandeel"), "D1 bergingsaandeel" + where);
-        assertNull(TmsDocuments.lees(d2, "bergingsaandeel"), "D2 bergingsaandeel" + where);
-        TmsFaultWitnessTest.assertNumber("250", TmsDocuments.lees(d3, "bergingsaandeel"), "D3 bergingsaandeel" + where);
-        TmsFaultWitnessTest.assertNumber("150", TmsDocuments.lees(b1, "onverdeelde rest"), "B1 onverdeelde rest" + where);
-        TmsFaultWitnessTest.assertNumber("600", TmsDocuments.lees(d1, "rangaandeel"), "D1 rangaandeel" + where);
-        TmsFaultWitnessTest.assertNumber("0", TmsDocuments.lees(d2, "rangaandeel"), "D2 rangaandeel" + where);
-        TmsFaultWitnessTest.assertNumber("400", TmsDocuments.lees(d3, "rangaandeel"), "D3 rangaandeel" + where);
-        TmsFaultWitnessTest.assertNumber("0", TmsDocuments.lees(b1, "rangrest"), "B1 rangrest" + where);
+        TmsFaultWitnessTest.assertNumber("600", TmsDocuments.read(d1, "bergingsaandeel"), "D1 bergingsaandeel" + where);
+        assertNull(TmsDocuments.read(d2, "bergingsaandeel"), "D2 bergingsaandeel" + where);
+        TmsFaultWitnessTest.assertNumber("250", TmsDocuments.read(d3, "bergingsaandeel"), "D3 bergingsaandeel" + where);
+        TmsFaultWitnessTest.assertNumber("150", TmsDocuments.read(b1, "onverdeelde rest"), "B1 onverdeelde rest" + where);
+        TmsFaultWitnessTest.assertNumber("600", TmsDocuments.read(d1, "rangaandeel"), "D1 rangaandeel" + where);
+        TmsFaultWitnessTest.assertNumber("0", TmsDocuments.read(d2, "rangaandeel"), "D2 rangaandeel" + where);
+        TmsFaultWitnessTest.assertNumber("400", TmsDocuments.read(d3, "rangaandeel"), "D3 rangaandeel" + where);
+        TmsFaultWitnessTest.assertNumber("0", TmsDocuments.read(b1, "rangrest"), "B1 rangrest" + where);
     }
 }

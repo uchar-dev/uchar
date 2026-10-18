@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -33,8 +33,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsConsistencyWitnessTest {
 
-    private static final String INCONSISTENCY = FactModelGenerator.PAKKET + ".Inconsistentie";
+    private static final String INCONSISTENCY = FactModelGenerator.PACKAGE + ".Inconsistentie";
 
     /** The branches of the analysis: the executable model and its rendering as DRL text. */
     private static final List<DroolsBackend.Branch> BRANCHES = List.of(DroolsBackend.Branch.EXEC_MODEL,
@@ -110,8 +110,8 @@ class TmsConsistencyWitnessTest {
     private static final String CHECK = consistency("controle eindgewicht", "Vondst",
             comparison("greater", ownRead("eindgewicht", "Vondst"), number("10")));
 
-    private static final String CHAIN_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("gewicht", WHOLE), attribuut("tussengewicht", WHOLE), attribuut("eindgewicht", WHOLE)),
+    private static final String CHAIN_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("gewicht", WHOLE), attribute("tussengewicht", WHOLE), attribute("eindgewicht", WHOLE)),
             List.of())), List.of());
 
     @Test void a_consistency_over_a_chain_in_every_order_of_the_rules_in_the_document() throws Exception {
@@ -134,16 +134,16 @@ class TmsConsistencyWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         Path ir = TmsDocuments.document(CHAIN_MODEL, CHAIN, List.of(CHECK));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(7, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(7, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int intermediateState = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
             if (fireChain(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList()))
                 intermediateState++;
         assertTrue(intermediateState > 0, "geen volgorde vuurde de consistentie op V1");
         DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         int text = 0;
         for (List<String> order : TmsDocuments.sample(rules, 20261008L, 100))
             if (fireChain(t, TextOrder.kieBase(t, order), order)) text++;
@@ -156,54 +156,54 @@ class TmsConsistencyWitnessTest {
     private static boolean fireChain(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = kieBase.newKieSession();
+        KieSession session = kieBase.newKieSession();
         try {
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "12"), List.of());
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "5"), List.of());
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
             boolean[] intermediateState = {false};
-            sessie.addEventListener(new DefaultAgendaEventListener() {
+            session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("controle eindgewicht")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o == v1))
                         intermediateState[0] = true;
                 }
             });
-            for (Object v : List.of(v1, v2, v3)) sessie.insert(v);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(),
+            for (Object v : List.of(v1, v2, v3)) session.insert(v);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(),
                     () -> b.branch() + ": geen fixpunt in volgorde " + names);
             String where = " op " + b.branch() + " in volgorde " + names;
             assertEquals(List.of("controle eindgewicht @ V2", "controle eindgewicht @ V3"),
-                    errorFacts(sessie, Map.of(v1, "V1", v2, "V2", v3, "V3")), "foutfeiten" + where);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                    errorFacts(session, Map.of(v1, "V1", v2, "V2", v3, "V3")), "foutfeiten" + where);
+            DroolsBackend.setDerivedValues(b, session);
             endsOn(v1, "eindgewicht", "14", "V1" + where);
             endsOn(v2, "eindgewicht", "7", "V2" + where);
             endsOn(v3, "eindgewicht", "2", "V3" + where);
             return intermediateState[0];
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
     private static JsonNode chainWithoutViolation() throws Exception {
         return TmsDocuments.caseDocument(List.of(instance("V1", "Vondst", Map.of("gewicht", "12"), List.of(), Map.of())),
-                List.of(waarde("V1", "eindgewicht", "14"), consistent()));
+                List.of(value("V1", "eindgewicht", "14"), consistent()));
     }
 
     private static JsonNode chainWithViolation() throws Exception {
         return TmsDocuments.caseDocument(
                 List.of(instance("V2", "Vondst", Map.of("gewicht", "5"), List.of(), Map.of()),
                         instance("V3", "Vondst", Map.of(), List.of(), Map.of())),
-                List.of(waarde("V2", "eindgewicht", "7"), waarde("V3", "eindgewicht", "2"),
+                List.of(value("V2", "eindgewicht", "7"), value("V3", "eindgewicht", "2"),
                         inconsistent("controle eindgewicht", "V2"), inconsistent("controle eindgewicht", "V3")));
     }
 
     // ---------------- the worked example of RUNTIME-SEMANTICS ch. 5.6 ----------------
 
     private static final String BALANCE_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Rekeninghouder", List.of(attribuut("saldo", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Dossier", List.of(), List.of("onder verscherpt toezicht"))), List.of());
+            TmsDocuments.objectType("Rekeninghouder", List.of(attribute("saldo", WHOLE)), List.of()),
+            TmsDocuments.objectType("Dossier", List.of(), List.of("onder verscherpt toezicht"))), List.of());
 
     private static final String CHECK_BALANCE = consistency("controle saldo", "Rekeninghouder",
             comparison("greaterOrEqual", ownRead("saldo", "Rekeninghouder"), number("0")));
@@ -224,10 +224,10 @@ class TmsConsistencyWitnessTest {
     @Test void every_order_of_the_generated_rules_of_the_worked_example() throws Exception {
         Path ir = TmsDocuments.document(BALANCE_MODEL, List.of(TOEZICHT), List.of(CHECK_BALANCE));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(4, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(4, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int orders = 0;
-        for (List<Rule> order : TmsDocuments.permutations(gegenereerd)) {
+        for (List<Rule> order : TmsDocuments.permutations(generated)) {
             KieBase kieBase = TmsDocuments.kieBase(b, order);
             List<String> names = order.stream().map(Rule::getName).toList();
             fireBalance(b, kieBase, names, "-5");
@@ -236,7 +236,7 @@ class TmsConsistencyWitnessTest {
         }
         DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         for (List<String> order : TmsDocuments.permutations(rules)) {
             KieBase kieBase = TextOrder.kieBase(t, order);
             fireBalance(t, kieBase, order, "-5");
@@ -252,39 +252,39 @@ class TmsConsistencyWitnessTest {
             throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = kieBase.newKieSession();
+        KieSession session = kieBase.newKieSession();
         try {
             Object h1 = TmsDocuments.beanObject(b.beanLoader(), "Rekeninghouder", Map.of("saldo", balance), List.of());
             Object h2 = TmsDocuments.beanObject(b.beanLoader(), "Rekeninghouder", Map.of("saldo", "10"), List.of());
             Object d1 = TmsDocuments.beanObject(b.beanLoader(), "Dossier", Map.of(), List.of());
             Object d2 = TmsDocuments.beanObject(b.beanLoader(), "Dossier", Map.of(), List.of());
-            for (Object o : List.of(h1, h2, d1, d2)) sessie.insert(o);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(),
+            for (Object o : List.of(h1, h2, d1, d2)) session.insert(o);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(),
                     () -> b.branch() + ": geen fixpunt in volgorde " + names);
             String where = " bij saldo " + balance + " op " + b.branch() + " in volgorde " + names;
             boolean geschonden = balance.startsWith("-");
             assertEquals(geschonden ? List.of("controle saldo @ h1") : List.of(),
-                    errorFacts(sessie, Map.of(h1, "h1", h2, "h2", d1, "d1", d2, "d2")), "foutfeiten" + where);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                    errorFacts(session, Map.of(h1, "h1", h2, "h2", d1, "d1", d2, "d2")), "foutfeiten" + where);
+            DroolsBackend.setDerivedValues(b, session);
             assertEquals(List.of(geschonden, geschonden), List.of(TmsDocuments.has(d1, "onder verscherpt toezicht"),
                     TmsDocuments.has(d2, "onder verscherpt toezicht")), "d1 en d2" + where);
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
     private static JsonNode balanceCase(String balance) throws Exception {
         boolean geschonden = balance.startsWith("-");
-        List<String> verwachtingen = new ArrayList<>(List.of(verwacht("d1", "onder verscherpt toezicht", geschonden),
-                verwacht("d2", "onder verscherpt toezicht", geschonden)));
-        verwachtingen.add(geschonden ? inconsistent("controle saldo", "h1") : consistent());
+        List<String> expectations = new ArrayList<>(List.of(expected("d1", "onder verscherpt toezicht", geschonden),
+                expected("d2", "onder verscherpt toezicht", geschonden)));
+        expectations.add(geschonden ? inconsistent("controle saldo", "h1") : consistent());
         return TmsDocuments.caseDocument(
                 List.of(instance("h1", "Rekeninghouder", Map.of("saldo", balance), List.of(), Map.of()),
                         instance("h2", "Rekeninghouder", Map.of("saldo", "10"), List.of(), Map.of()),
                         instance("d1", "Dossier", Map.of(), List.of(), Map.of()),
                         instance("d2", "Dossier", Map.of(), List.of(), Map.of())),
-                verwachtingen);
+                expectations);
     }
 
     // ---------------- leeg in an assertion ----------------
@@ -296,10 +296,10 @@ class TmsConsistencyWitnessTest {
      *  consistent. Numbers: two leeg are equal, exactly one leeg is unequal, an ordering with a leeg operand does not
      *  hold. Texts: an equality with a leeg operand does not hold, an inequality holds where exactly one is leeg. */
     @Test void empty_under_equality_and_ordering_per_the_tables() throws Exception {
-        String numbers = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-                List.of(attribuut("a", WHOLE), attribuut("b", WHOLE)), List.of())), List.of());
-        String texts = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-                List.of(attribuut("s", TEKST), attribuut("t", TEKST)), List.of())), List.of());
+        String numbers = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+                List.of(attribute("a", WHOLE), attribute("b", WHOLE)), List.of())), List.of());
+        String texts = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+                List.of(attribute("s", TEKST), attribute("t", TEKST)), List.of())), List.of());
         int rows = 0;
         rows += rows(numbers, "equal", "a", "b", false, List.of(new Row(null, null, false), new Row(null, "5", true),
                 new Row("5", "5", false), new Row("5", "3", true)));
@@ -321,8 +321,8 @@ class TmsConsistencyWitnessTest {
                 comparison(op, ownRead(left, "Vondst"), ownRead(right, "Vondst")))));
         for (Row row : rows) {
             List<String> attributes = new ArrayList<>();
-            if (row.left() != null) attributes.add(invoer(left, row.left(), text));
-            if (row.right() != null) attributes.add(invoer(right, row.right(), text));
+            if (row.left() != null) attributes.add(input(left, row.left(), text));
+            if (row.right() != null) attributes.add(input(right, row.right(), text));
             JsonNode caseDocument = TmsDocuments.caseDocument(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{"
                     + String.join(",", attributes) + "},\"roles\":{},\"characteristics\":[]}"),
                     List.of(row.geschonden() ? inconsistent(naam, "V1") : consistent()));
@@ -334,8 +334,8 @@ class TmsConsistencyWitnessTest {
 
     private static final String TEKST = "{\"node\":\"Text\"}";
 
-    private static String invoer(String attribuut, String waarde, boolean text) {
-        return "\"" + attribuut + "\":{\"" + (text ? "text" : "number") + "\":\"" + waarde + "\"}";
+    private static String input(String attribute, String value, boolean text) {
+        return "\"" + attribute + "\":{\"" + (text ? "text" : "number") + "\":\"" + value + "\"}";
     }
 
     // ---------------- what the branch refuses ----------------
@@ -344,7 +344,7 @@ class TmsConsistencyWitnessTest {
      *  asserts "hij is verdacht": a cycle of odd length through the channel, which RUNTIME-SEMANTICS ch. 5.6 puts in the
      *  dependency graph. Under truth maintenance it alternates until the fire cap. */
     @Test void a_cycle_over_the_channel_is_refused_before_building() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(), List.of("verdacht"))),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(), List.of("verdacht"))),
                 List.of());
         Path ir = TmsDocuments.document(model,
                 List.of(characteristicRule("verdenking", "Vondst", "verdacht", channelTest("controle verdenking"))),
@@ -365,7 +365,7 @@ class TmsConsistencyWitnessTest {
             + " model, en een oneven ontkenningskring wisselt tot het vuurplafond";
 
     @Test void is_fired_and_a_channel_without_carried_producer_are_refused() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(),
                 List.of("gemeld", "geregistreerd", "nagekeken"))), List.of());
         String registratie = characteristicRule("registratie", "Vondst", "geregistreerd", check("gemeld", false));
         String fired = "{\"node\":\"Regelversie\",\"regel\":\"registratie\",\"inconsistent\":false,\"source\":"
@@ -395,21 +395,21 @@ class TmsConsistencyWitnessTest {
     // ---------------- helpers ----------------
 
     /** The §9.5 error facts of the session as "regel @ label", sorted, the subject named through {@code labels}. */
-    private static List<String> errorFacts(KieSession sessie, Map<Object, String> labels) throws Exception {
+    private static List<String> errorFacts(KieSession session, Map<Object, String> labels) throws Exception {
         Map<Object, String> perIdentity = new IdentityHashMap<>(labels);
         List<String> out = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o.getClass().getName().equals(INCONSISTENCY)))
+        for (Object f : session.getObjects(o -> o.getClass().getName().equals(INCONSISTENCY)))
             out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ "
                     + perIdentity.get(f.getClass().getMethod("getSubject").invoke(f)));
         out.sort(null);
         return out;
     }
 
-    /** Attribute {@code attribuut} of the bean ends at the number {@code lexeme}. */
-    private static void endsOn(Object beanObject, String attribuut, String lexeme, String where) throws Exception {
-        Object v = TmsDocuments.lees(beanObject, attribuut);
+    /** Attribute {@code attribute} of the bean ends at the number {@code lexeme}. */
+    private static void endsOn(Object beanObject, String attribute, String lexeme, String where) throws Exception {
+        Object v = TmsDocuments.read(beanObject, attribute);
         assertTrue(v instanceof BigDecimal d && new BigDecimal(lexeme).compareTo(d) == 0,
-                () -> attribuut + " van " + where + ": verwacht " + lexeme + ", werkelijk " + v);
+                () -> attribute + " van " + where + ": verwacht " + lexeme + ", werkelijk " + v);
     }
 
     private static List<String> names(List<String> rules) throws Exception {

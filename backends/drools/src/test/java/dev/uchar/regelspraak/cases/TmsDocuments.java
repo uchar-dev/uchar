@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,17 +35,17 @@ final class TmsDocuments {
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
     }
 
-    /** "Een Jutter is {@code doel} indien {@code voorwaarde}"; a voorwaarde of "null" writes none. */
-    static String characteristicRule(String naam, String doel, String voorwaarde) {
-        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"Jutter\","
-                + "\"source\":{\"snippet\":\"Een Jutter is " + doel + "\"}}";
-        return IrPath.regel(naam, "KENMERKTOEKENNING", target, WAAR, voorwaarde);
+    /** "Een Jutter is {@code doel} indien {@code condition}"; a voorwaarde of "null" writes none. */
+    static String characteristicRule(String naam, String targetName, String condition) {
+        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"Jutter\","
+                + "\"source\":{\"snippet\":\"Een Jutter is " + targetName + "\"}}";
+        return IrPath.regel(naam, "KENMERKTOEKENNING", target, WAAR, condition);
     }
 
     /** "hij is [niet] {@code kenmerk}": a check of the subject's own characteristic. */
-    static String check(String kenmerk, boolean negated) {
-        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + kenmerk + "\",\"negated\":" + negated
-                + ",\"source\":{\"snippet\":\"hij " + (negated ? "niet " : "") + kenmerk + " is\"}}";
+    static String check(String characteristic, boolean negated) {
+        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + characteristic + "\",\"negated\":" + negated
+                + ",\"source\":{\"snippet\":\"hij " + (negated ? "niet " : "") + characteristic + " is\"}}";
     }
 
     /** A composite of {@code parts} under the quantifier in its wire spelling. */
@@ -87,29 +87,29 @@ final class TmsDocuments {
     }
 
     /** The expectation that {@code label} carries {@code kenmerk} at the end, or does not. */
-    static String verwacht(String label, String kenmerk, boolean aanwezig) {
-        return "{\"kind\":\"" + (aanwezig ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
-                + "\",\"characteristic\":\"" + kenmerk + "\"}";
+    static String expected(String label, String characteristic, boolean present) {
+        return "{\"kind\":\"" + (present ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
+                + "\",\"characteristic\":\"" + characteristic + "\"}";
     }
 
-    static JsonNode caseDocument(List<String> instanties, List<String> verwachtingen) throws Exception {
-        return caseDocument(instanties, Map.of(), verwachtingen);
+    static JsonNode caseDocument(List<String> instances, List<String> expectations) throws Exception {
+        return caseDocument(instances, Map.of(), expectations);
     }
 
     /** A case with whole-number {@code parameters} by name. */
-    static JsonNode caseDocument(List<String> instanties, Map<String, String> parameters, List<String> verwachtingen)
+    static JsonNode caseDocument(List<String> instances, Map<String, String> parameters, List<String> expectations)
             throws Exception {
         List<String> p = new ArrayList<>();
         parameters.forEach((naam, lexeme) -> p.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
         return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
-                + String.join(",", instanties) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
-                + String.join(",", verwachtingen) + "]}");
+                + String.join(",", instances) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
+                + String.join(",", expectations) + "]}");
     }
 
     /** A Jutter bean of {@code beanLoader} with the characteristics of {@code kenmerken} set, as the case input sets
      *  them, for a witness that fires a session itself. */
     static Object jutterBean(ClassLoader beanLoader, List<String> kenmerken) throws Exception {
-        Object beanObject = Class.forName(FactModelGenerator.PAKKET + ".Jutter", true, beanLoader).getConstructor().newInstance();
+        Object beanObject = Class.forName(FactModelGenerator.PACKAGE + ".Jutter", true, beanLoader).getConstructor().newInstance();
         for (String k : kenmerken) beanObject.getClass().getMethod(Namen.setter(k), boolean.class).invoke(beanObject, true);
         return beanObject;
     }
@@ -117,7 +117,7 @@ final class TmsDocuments {
     /** A bean of {@code type} with whole-number attributes and characteristics set as the case input sets them. */
     static Object beanObject(ClassLoader beanLoader, String type, Map<String, String> numbers, List<String> kenmerken)
             throws Exception {
-        Object beanObject = Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(type, true), true, beanLoader)
+        Object beanObject = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(type, true), true, beanLoader)
                 .getConstructor().newInstance();
         for (Map.Entry<String, String> e : numbers.entrySet())
             beanObject.getClass().getMethod(Namen.setter(e.getKey()), java.math.BigDecimal.class)
@@ -126,35 +126,35 @@ final class TmsDocuments {
         return beanObject;
     }
 
-    /** The value of attribute {@code attribuut} on the bean. */
-    static Object lees(Object beanObject, String attribuut) throws Exception {
-        return beanObject.getClass().getMethod(Namen.getter(attribuut)).invoke(beanObject);
+    /** The value of attribute {@code attribute} on the bean. */
+    static Object read(Object beanObject, String attribute) throws Exception {
+        return beanObject.getClass().getMethod(Namen.getter(attribute)).invoke(beanObject);
     }
 
     /** Whether the bean carries {@code kenmerk}, read as the replay reads it. */
-    static boolean has(Object beanObject, String kenmerk) throws Exception {
-        return (Boolean) beanObject.getClass().getMethod("is" + Namen.ident(kenmerk, true)).invoke(beanObject);
+    static boolean has(Object beanObject, String characteristic) throws Exception {
+        return (Boolean) beanObject.getClass().getMethod("is" + Namen.ident(characteristic, true)).invoke(beanObject);
     }
 
     // ---------------- documents with attributes, fact types and paths ----------------
 
     static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    /** An object type with attributes ({@link #attribuut}) and characteristics. */
-    static String objecttype(String naam, List<String> attributes, List<String> kenmerken) {
+    /** An object type with attributes ({@link #attribute}) and characteristics. */
+    static String objectType(String naam, List<String> attributes, List<String> kenmerken) {
         List<String> k = new ArrayList<>();
-        for (String kenmerk : kenmerken)
-            k.add("{\"node\":\"Characteristic\",\"name\":\"" + kenmerk + "\",\"kind\":\"adjectival\"}");
+        for (String characteristic : kenmerken)
+            k.add("{\"node\":\"Characteristic\",\"name\":\"" + characteristic + "\",\"kind\":\"adjectival\"}");
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":true,\"plural\":\"" + naam + "s\","
                 + "\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", k) + "]}";
     }
 
-    static String attribuut(String naam, String datatype) {
+    static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
     /** A fact type of two to-one roles. */
-    static String feittype(String naam, String roleA, String typeA, String roleB, String typeB) {
+    static String factType(String naam, String roleA, String typeA, String roleB, String typeB) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
                 + roleA + "\",\"objectType\":\"" + typeA + "\",\"many\":false},{\"node\":\"Role\",\"name\":\"" + roleB
                 + "\",\"objectType\":\"" + typeB + "\",\"many\":false}]}";
@@ -169,9 +169,9 @@ final class TmsDocuments {
                 + "\",\"objectType\":\"" + typeMany + "\",\"plural\":\"" + plural + "\",\"many\":true}]}";
     }
 
-    /** A RoleBinding: the role {@code rol} of fact type {@code feittype}. */
-    static String roleBinding(String feittype, String rol) {
-        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    /** A RoleBinding: the role {@code role} of fact type {@code factType}. */
+    static String roleBinding(String factType, String role) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
     }
 
     static final String COUNTING = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
@@ -180,16 +180,16 @@ final class TmsDocuments {
      *  {@code argument}, the {@code elementType}, the range as {@code "sourceRole":…} or {@code "sourcePath":[…]}, a
      *  {@code filter} and an {@code emptyFallback} (each "null" for none), and the result {@code type}. */
     static String aggregation(String kind, String argument, String elementType, String range, String filter,
-                             String fallback, String type, String bron) {
+                             String fallback, String type, String source) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + argument + "],\"elementType\":\""
                 + elementType + "\"" + (filter.equals("null") ? "" : ",\"filter\":" + filter)
                 + (fallback.equals("null") ? "" : ",\"emptyFallback\":" + fallback) + "," + range + ",\"type\":" + type
-                + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** The range of a fold over one relation step. */
-    static String sourceRole(String feittype, String rol) {
-        return "\"sourceRole\":" + roleBinding(feittype, rol);
+    static String sourceRole(String factType, String role) {
+        return "\"sourceRole\":" + roleBinding(factType, role);
     }
 
     /** The range of a fold over two or more relation steps, each a RoleBinding. */
@@ -198,9 +198,9 @@ final class TmsDocuments {
     }
 
     /** A listed fold, "de eerste/laatste/minimale/maximale van A en B …", over the {@code operands}. */
-    static String listedFold(String kind, List<String> operands, String type, String bron) {
+    static String listedFold(String kind, List<String> operands, String type, String source) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + String.join(",", operands)
-                + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** An instance of the case whose roles may link several instances each, by role name. */
@@ -208,11 +208,11 @@ final class TmsDocuments {
                                      Map<String, List<String>> roles) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>(), r = new ArrayList<>();
         numbers.forEach((naam, lexeme) -> a.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
-        for (String kenmerk : kenmerken) k.add("\"" + kenmerk + "\"");
-        roles.forEach((rol, targets) -> {
+        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        roles.forEach((role, targets) -> {
             List<String> d = new ArrayList<>();
-            for (String doel : targets) d.add("\"" + doel + "\"");
-            r.add("\"" + rol + "\":[" + String.join(",", d) + "]");
+            for (String targetName : targets) d.add("\"" + targetName + "\"");
+            r.add("\"" + role + "\":[" + String.join(",", d) + "]");
         });
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{" + String.join(",", r) + "},\"characteristics\":[" + String.join(",", k) + "]}";
@@ -238,24 +238,24 @@ final class TmsDocuments {
                 + parameter + "\"}}";
     }
 
-    /** "zijn {@code attribuut}": a read of the subject's own attribute. */
-    static String ownRead(String attribuut, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    /** "zijn {@code attribute}": a read of the subject's own attribute. */
+    static String ownRead(String attribute, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
-    /** "de {@code attribuut} van zijn {@code rol}": a read one role away. */
-    static String pathRead(String attribuut, String type, String feittype, String rol) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"de " + attribuut + " van zijn " + rol + "\"},\"path\":[{\"node\":"
-                + "\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}]}";
+    /** "de {@code attribute} van zijn {@code role}": a read one role away. */
+    static String pathRead(String attribute, String type, String factType, String role) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"de " + attribute + " van zijn " + role + "\"},\"path\":[{\"node\":"
+                + "\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}]}";
     }
 
-    /** "zijn {@code rol} is [niet] {@code kenmerk}": a characteristic check one role away. */
-    static String pathCheck(String kenmerk, boolean negated, String feittype, String rol) {
-        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + kenmerk + "\",\"negated\":" + negated
-                + ",\"source\":{\"snippet\":\"zijn " + rol + " " + (negated ? "niet " : "") + kenmerk + " is\"},"
-                + "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}}";
+    /** "zijn {@code role} is [niet] {@code kenmerk}": a characteristic check one role away. */
+    static String pathCheck(String characteristic, boolean negated, String factType, String role) {
+        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + characteristic + "\",\"negated\":" + negated
+                + ",\"source\":{\"snippet\":\"zijn " + role + " " + (negated ? "niet " : "") + characteristic + " is\"},"
+                + "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}}";
     }
 
     static String number(String lexeme) {
@@ -281,17 +281,17 @@ final class TmsDocuments {
     }
 
     /** An assignment of attribute {@code doel} of {@code type} ({@code soort} as {@link IrPath#regel} names it). */
-    static String computingRule(String naam, String soort, String type, String doel, String waarde, String voorwaarde) {
-        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
-                + "\"source\":{\"snippet\":\"De " + doel + " van een " + type + "\"}}";
-        return IrPath.regel(naam, soort, target, waarde, voorwaarde);
+    static String computingRule(String naam, String category, String type, String targetName, String value, String condition) {
+        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
+                + "\"source\":{\"snippet\":\"De " + targetName + " van een " + type + "\"}}";
+        return IrPath.regel(naam, category, target, value, condition);
     }
 
-    /** "Een {@code type} is {@code doel} indien {@code voorwaarde}". */
-    static String characteristicRule(String naam, String type, String doel, String voorwaarde) {
-        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
-                + "\"source\":{\"snippet\":\"Een " + type + " is " + doel + "\"}}";
-        return IrPath.regel(naam, "KENMERKTOEKENNING", target, WAAR, voorwaarde);
+    /** "Een {@code type} is {@code doel} indien {@code condition}". */
+    static String characteristicRule(String naam, String type, String targetName, String condition) {
+        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
+                + "\"source\":{\"snippet\":\"Een " + type + " is " + targetName + "\"}}";
+        return IrPath.regel(naam, "KENMERKTOEKENNING", target, WAAR, condition);
     }
 
     /** An instance of the case: whole-number attributes by name, characteristics, and to-one roles by role name. */
@@ -299,17 +299,17 @@ final class TmsDocuments {
                             Map<String, String> roles) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>(), r = new ArrayList<>();
         numbers.forEach((naam, lexeme) -> a.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
-        for (String kenmerk : kenmerken) k.add("\"" + kenmerk + "\"");
-        roles.forEach((rol, doel) -> r.add("\"" + rol + "\":[\"" + doel + "\"]"));
+        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        roles.forEach((role, targetName) -> r.add("\"" + role + "\":[\"" + targetName + "\"]"));
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{" + String.join(",", r) + "},\"characteristics\":[" + String.join(",", k) + "]}";
     }
 
-    /** The expectation that attribute {@code attribuut} of {@code label} ends at the number {@code lexeme}, or leeg. */
-    static String waarde(String label, String attribuut, String lexeme) {
+    /** The expectation that attribute {@code attribute} of {@code label} ends at the number {@code lexeme}, or leeg. */
+    static String value(String label, String attribute, String lexeme) {
         return lexeme == null
-                ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\"}"
-                : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\",\"value\":"
+                ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\"}"
+                : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\",\"value\":"
                   + "{\"number\":\"" + lexeme + "\"}}";
     }
 
@@ -322,39 +322,39 @@ final class TmsDocuments {
 
     /** An object type that is a {@code supertype} (IR-SPEC ch. 2.2), with attributes and characteristics of its own. */
     static String subtype(String naam, String supertype, List<String> attributes, List<String> kenmerken) {
-        String t = objecttype(naam, attributes, kenmerken);
+        String t = objectType(naam, attributes, kenmerken);
         return t.replace("\"name\":\"" + naam + "\",", "\"name\":\"" + naam + "\",\"supertype\":\"" + supertype + "\",");
     }
 
     // ---------------- prioritized defaults ----------------
 
-    /** A defaults group on attribute {@code attribuut} of {@code type}, its {@code defaults} highest first. */
-    static String attributeGroup(String naam, String type, String attribuut, List<String> defaults) {
+    /** A defaults group on attribute {@code attribute} of {@code type}, its {@code defaults} highest first. */
+    static String attributeGroup(String naam, String type, String attribute, List<String> defaults) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":\""
-                + attribuut + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
+                + attribute + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
     /** A defaults group on characteristic {@code kenmerk} of {@code type}, its {@code defaults} highest first. */
-    static String characteristicGroup(String naam, String type, String kenmerk, List<String> defaults) {
+    static String characteristicGroup(String naam, String type, String characteristic, List<String> defaults) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type
-                + "\",\"characteristic\":\"" + kenmerk + "\",\"defaults\":[" + String.join(",", defaults)
+                + "\",\"characteristic\":\"" + characteristic + "\",\"defaults\":[" + String.join(",", defaults)
                 + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
     /** An attribute default: its justification and its consequence. */
-    static String standaard(String rechtvaardiging, String consequentie) {
-        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequentie + "}";
+    static String defaultEntry(String justification, String consequence) {
+        return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence + "}";
     }
 
     /** A characteristic default: its justification and its decision, attribute or do-not-attribute. */
-    static String decision(String rechtvaardiging, boolean decision) {
-        return "{\"node\":\"Default\",\"decision\":" + decision + ",\"justification\":" + rechtvaardiging + "}";
+    static String decision(String justification, boolean decision) {
+        return "{\"node\":\"Default\",\"decision\":" + decision + ",\"justification\":" + justification + "}";
     }
 
     /** A form-a default with exception groups: its own justification and consequence, and the members, each a chain of
      *  defaults highest first, reconciled as a declared-unordered group (RUNTIME-SEMANTICS ch. 7.9). */
-    static String withExceptions(String rechtvaardiging, String consequentie, List<List<String>> members) {
-        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequentie
+    static String withExceptions(String justification, String consequence, List<List<String>> members) {
+        return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence
                 + ",\"exceptions\":" + exceptions(members) + "}";
     }
 
@@ -388,14 +388,14 @@ final class TmsDocuments {
 
     /** A sample of the orders of {@code l} too long to try every order: {@code l} itself, its reverse, and
      *  {@code aantal} shuffles from {@code seed}, so a failing order can be replayed. */
-    static <T> List<List<T>> sample(List<T> l, long seed, int aantal) {
+    static <T> List<List<T>> sample(List<T> l, long seed, int count) {
         List<List<T>> out = new ArrayList<>();
         out.add(l);
         List<T> reversed = new ArrayList<>(l);
         java.util.Collections.reverse(reversed);
         out.add(reversed);
         java.util.Random chance = new java.util.Random(seed);
-        for (int i = 0; i < aantal; i++) {
+        for (int i = 0; i < count; i++) {
             List<T> v = new ArrayList<>(l);
             java.util.Collections.shuffle(v, chance);
             out.add(v);
@@ -434,7 +434,7 @@ final class TmsDocuments {
     /** The names of the rules of {@code b}, in the order in which its branch generates them: those of its executable
      *  model, or on {@code DRL_TEXT} those of its text, which must be the same in the same order, so that one sample
      *  gives both branches the same orders. */
-    static List<String> gegenereerd(DroolsBackend.Build b) {
+    static List<String> generated(DroolsBackend.Build b) {
         List<String> model = b.execModelTranspiler().model().getRules().stream().map(org.drools.model.Rule::getName)
                 .toList();
         if (b.branch() == DroolsBackend.Branch.EXEC_MODEL) return model;
@@ -467,38 +467,38 @@ final class TmsDocuments {
     /** Fires {@code beans} through the rules of {@code b} added in {@code order}: {@code voor} sees the session before
      *  the fire (to add a listener), the fire must reach its fixpoint below the cap, the derivations are written back,
      *  and {@code na} sees the session before it is disposed. */
-    static void vuur(DroolsBackend.Build b, List<org.drools.model.Rule> order, List<Object> beans,
+    static void fire(DroolsBackend.Build b, List<org.drools.model.Rule> order, List<Object> beans,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> before,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> after) {
-        vuur(b, kieBase(b, order), order.stream().map(org.drools.model.Rule::getName).toList(), beans, before, after);
+        fire(b, kieBase(b, order), order.stream().map(org.drools.model.Rule::getName).toList(), beans, before, after);
     }
 
-    /** As {@link #vuur(DroolsBackend.Build, List, List, java.util.function.Consumer, java.util.function.Consumer)}
+    /** As {@link #fire(DroolsBackend.Build, List, List, java.util.function.Consumer, java.util.function.Consumer)}
      *  through {@code kieBase}, which holds the rules of {@code b} in the order {@code namen}: those of the executable
      *  model ({@link #kieBase}) or those of the text ({@code TextOrder}). */
-    static void vuur(DroolsBackend.Build b, org.kie.api.KieBase kieBase, List<String> names, List<Object> beans,
+    static void fire(DroolsBackend.Build b, org.kie.api.KieBase kieBase, List<String> names, List<Object> beans,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> before,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> after) {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        org.kie.api.runtime.KieSession sessie = kieBase.newKieSession();
+        org.kie.api.runtime.KieSession session = kieBase.newKieSession();
         try {
-            before.accept(sessie);
-            for (Object beanObject : beans) sessie.insert(beanObject);
-            if (DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt() != null)
+            before.accept(session);
+            for (Object beanObject : beans) session.insert(beanObject);
+            if (DroolsBackend.fire(b, session, 100_000).noFixpoint() != null)
                 throw new AssertionError(b.branch() + ": geen fixpunt in volgorde " + names);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
-            after.accept(sessie);
+            DroolsBackend.setDerivedValues(b, session);
+            after.accept(session);
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
-    /** The §9.5 facts of {@code sessie} as "rule @ label", sorted, with {@code labels} naming the beans. */
-    static List<String> inconsistenties(org.kie.api.runtime.KieSession sessie, Map<Object, String> labels) {
+    /** The §9.5 facts of {@code session} as "rule @ label", sorted, with {@code labels} naming the beans. */
+    static List<String> inconsistencies(org.kie.api.runtime.KieSession session, Map<Object, String> labels) {
         List<String> out = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie"))) {
+        for (Object f : session.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie"))) {
             try {
                 Object regel = f.getClass().getMethod("getRegel").invoke(f);
                 Object subject = f.getClass().getMethod("getSubject").invoke(f);
@@ -588,14 +588,14 @@ final class TmsDocuments {
     }
 
     /** A BuiltinCall of {@code kind} in its wire spelling over {@code arguments}, with the result {@code type}. */
-    static String builtin(String kind, List<String> arguments, String type, String bron) {
+    static String builtin(String kind, List<String> arguments, String type, String source) {
         return "{\"node\":\"BuiltinCall\",\"kind\":\"" + kind + "\",\"arguments\":[" + String.join(",", arguments)
-                + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** "Daarbij geldt: {@code binder} is {@code waarde}" around {@code body}: a Let of the body's {@code type}. */
-    static String let(String binder, String waarde, String body, String type) {
-        return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + waarde + ",\"body\":"
+    static String let(String binder, String value, String body, String type) {
+        return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + value + ",\"body\":"
                 + body + ",\"source\":{\"snippet\":\"" + binder + " is …\"}}";
     }
 
@@ -604,9 +604,9 @@ final class TmsDocuments {
         return "{\"node\":\"BinderRef\",\"name\":\"" + binder + "\",\"source\":{\"snippet\":\"" + binder + "\"}}";
     }
 
-    /** "als {@code voorwaarde} dan {@code dan} anders {@code anders}" of {@code type}. */
-    static String keuze(String voorwaarde, String then, String otherwise, String type) {
-        return "{\"node\":\"IfThenElse\",\"type\":" + type + ",\"condition\":" + voorwaarde + ",\"then\":" + then
+    /** "als {@code condition} dan {@code dan} anders {@code anders}" of {@code type}. */
+    static String choice(String condition, String then, String otherwise, String type) {
+        return "{\"node\":\"IfThenElse\",\"type\":" + type + ",\"condition\":" + condition + ",\"then\":" + then
                 + ",\"else\":" + otherwise + ",\"source\":{\"snippet\":\"als … dan … anders …\"}}";
     }
 
@@ -644,10 +644,10 @@ final class TmsDocuments {
     }
 
     /** The case with the evaluation date {@code asOfDate} (null for a time-free session). */
-    static JsonNode caseOn(String asOfDate, List<String> instanties, List<String> verwachtingen) throws Exception {
+    static JsonNode caseOn(String asOfDate, List<String> instances, List<String> expectations) throws Exception {
         return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":"
                 + (asOfDate == null ? "null" : "\"" + asOfDate + "\"") + ",\"input\":{\"instances\":["
-                + String.join(",", instanties) + "],\"parameters\":{}},\"expected\":[" + String.join(",", verwachtingen)
+                + String.join(",", instances) + "],\"parameters\":{}},\"expected\":[" + String.join(",", expectations)
                 + "]}");
     }
 
@@ -655,16 +655,16 @@ final class TmsDocuments {
      *  {@code {"date":"2026-01-01"}}, {@code {"text":"…"}}), by attribute. */
     static String instanceWith(String label, String type, Map<String, String> waarden, List<String> kenmerken) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>();
-        waarden.forEach((naam, waarde) -> a.add("\"" + naam + "\":" + waarde));
-        for (String kenmerk : kenmerken) k.add("\"" + kenmerk + "\"");
+        waarden.forEach((naam, value) -> a.add("\"" + naam + "\":" + value));
+        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{},\"characteristics\":[" + String.join(",", k) + "]}";
     }
 
-    /** The expectation that attribute {@code attribuut} of {@code label} ends at a case value in the wire's shape. */
-    static String valueJson(String label, String attribuut, String waarde) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\",\"value\":"
-                + waarde + "}";
+    /** The expectation that attribute {@code attribute} of {@code label} ends at a case value in the wire's shape. */
+    static String valueJson(String label, String attribute, String value) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\",\"value\":"
+                + value + "}";
     }
 
     static String numberValue(String lexeme) {
@@ -683,30 +683,30 @@ final class TmsDocuments {
      *  before the fire (a listener, a global). The fire must reach its fixpoint below the cap without throwing: an
      *  evaluation fault is a fact of the session, not an exception out of the fire. Returns the fault the write-back
      *  raises at the fixpoint as "SimpleName: message", or null where it writes the derivations back. */
-    static String fixpunt(DroolsBackend.Build b, List<org.drools.model.Rule> order, List<Object> beans,
+    static String fixpoint(DroolsBackend.Build b, List<org.drools.model.Rule> order, List<Object> beans,
                           java.util.function.Consumer<org.kie.api.runtime.KieSession> before) {
         List<String> names = order.stream().map(org.drools.model.Rule::getName).toList();
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        org.kie.api.runtime.KieSession sessie = kieBase(b, order).newKieSession();
+        org.kie.api.runtime.KieSession session = kieBase(b, order).newKieSession();
         try {
-            before.accept(sessie);
-            for (Object beanObject : beans) sessie.insert(beanObject);
-            DroolsBackend.Vuring firing;
+            before.accept(session);
+            for (Object beanObject : beans) session.insert(beanObject);
+            DroolsBackend.Firing firing;
             try {
-                firing = DroolsBackend.vuur(b, sessie, 100_000);
+                firing = DroolsBackend.fire(b, session, 100_000);
             } catch (RuntimeException e) {
                 throw new AssertionError("de fire wierp in volgorde " + names + ": " + e, e);
             }
-            if (firing.geenFixpunt() != null) throw new AssertionError("geen fixpunt in volgorde " + names);
+            if (firing.noFixpoint() != null) throw new AssertionError("geen fixpunt in volgorde " + names);
             try {
-                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                DroolsBackend.setDerivedValues(b, session);
                 return null;
             } catch (RuntimeException e) {
                 return e.getClass().getSimpleName() + ": " + e.getMessage();
             }
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -717,10 +717,10 @@ final class TmsDocuments {
         List<List<T>> out = new ArrayList<>();
         for (int i = 0; i < l.size(); i++) {
             List<T> rest = new ArrayList<>(l);
-            T eerste = rest.remove(i);
+            T first = rest.remove(i);
             for (List<T> p : permutations(rest)) {
                 List<T> q = new ArrayList<>();
-                q.add(eerste);
+                q.add(first);
                 q.addAll(p);
                 out.add(q);
             }

@@ -91,8 +91,8 @@ class NonTemporalQuantifierFoldWitnessTest {
      * PLAYED hierboven niets over de kwantor.
      */
     @Test void a_mutant_on_the_vacuum_cell_is_rejected_by_both_branches() throws Exception {
-        Path bron = GOLDEN.resolve("case4-lege-ploeg.json");
-        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(bron));
+        Path source = GOLDEN.resolve("case4-lege-ploeg.json");
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(source));
         boolean touched = false;
         for (JsonNode e : doc.withArray("expected"))
             if ("characteristicPresent".equals(e.path("kind").asText())
@@ -147,8 +147,8 @@ class NonTemporalQuantifierFoldWitnessTest {
      * tak die de telling werkelijk uitrekent hem verwerpt.
      */
     @Test void a_mutant_on_the_count_is_rejected_by_both_branches() throws Exception {
-        Path bron = COUNT_GOLDEN.resolve("case3-lege-toren.json");
-        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(bron));
+        Path source = COUNT_GOLDEN.resolve("case3-lege-toren.json");
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(source));
         boolean touched = false;
         for (JsonNode e : doc.withArray("expected"))
             if ("characteristicPresent".equals(e.path("kind").asText())

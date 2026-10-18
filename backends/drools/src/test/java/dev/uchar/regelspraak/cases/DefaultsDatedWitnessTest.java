@@ -45,7 +45,7 @@ class DefaultsDatedWitnessTest {
     private static final Path GOLDEN = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-uitsluiting");
 
     /** The sentence of the fault of a case without an evaluation date, as the replay names it. */
-    private static final String WITHOUT_DATE = "Rekenfout: fout in de regel \"defaults K:Jutter.uitgesloten\": a"
+    private static final String WITHOUT_DATE = "ComputeFault: fout in de regel \"defaults K:Jutter.uitgesloten\": a"
             + " validity-bounded form needs an evaluation date; this session is time-free";
 
     @Test void the_document_is_the_golden_with_a_dated_group() throws Exception {

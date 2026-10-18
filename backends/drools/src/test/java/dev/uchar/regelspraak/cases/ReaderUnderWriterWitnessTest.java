@@ -83,7 +83,7 @@ class ReaderUnderWriterWitnessTest {
         String caseDocument = caseDocument(List.of(haven("H", "2026-01-01"), haven("H2", null), jutter("J", null, "H", ""),
                 jutter("J2", null, "H2", ""), jutter("J3", null, null, ""), vondst("V", "2026-09-15", "J", ""),
                 vondst("X", "2026-08-15", "J2", ""), vondst("Z", "2026-07-15", "J3", "")),
-                kenmerk("V", false) + "," + kenmerk("X", true) + "," + kenmerk("Z", true));
+                characteristic("V", false) + "," + characteristic("X", true) + "," + characteristic("Z", true));
         assertNull(play(ir, caseDocument), "een keten van twee rollen");
     }
 
@@ -97,7 +97,7 @@ class ReaderUnderWriterWitnessTest {
         String caseDocument = caseDocument(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, ""),
                 jutter("J3", "2026-04-01", null, ""), vondst("V", "2026-09-15", "J", ""), vondst("X", "2026-08-15", "J2", ""),
                 vondst("Z", "2026-07-15", "J3", "")),
-                kenmerk("V", false) + "," + kenmerk("X", true) + "," + kenmerk("Z", true));
+                characteristic("V", false) + "," + characteristic("X", true) + "," + characteristic("Z", true));
         assertNull(play(ir, caseDocument), "een vergelijking in een kenmerktoekenning");
     }
 
@@ -124,7 +124,7 @@ class ReaderUnderWriterWitnessTest {
         String caseDocument = caseDocument(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, ""),
                 jutter("J3", "2026-04-01", null, ""), vondst("V", "2026-09-15", "J", "\"controledag\":{\"date\":\"2026-03-01\"}"),
                 vondst("X", "2026-08-15", "J2", ""), vondst("Z", "2026-07-15", "J3", "")),
-                kenmerk("V", false) + "," + kenmerk("X", false) + "," + kenmerk("Z", true));
+                characteristic("V", false) + "," + characteristic("X", false) + "," + characteristic("Z", true));
         assertNull(play(ir, caseDocument), "twee later afgeleide operanden");
     }
 
@@ -170,8 +170,8 @@ class ReaderUnderWriterWitnessTest {
                 DERIVED_REGISTRATIEDAG));
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null, "\"registratiedag\":{\"date\":\"2026-06-01\"}"),
                 vondst("X", "2026-08-15", null, "")),
-                kenmerk("V", false) + "," + kenmerk("X", true) + "," + kenmerk("V", "gemeld", true) + ","
-                        + kenmerk("X", "gemeld", false));
+                characteristic("V", false) + "," + characteristic("X", true) + "," + characteristic("V", "gemeld", true) + ","
+                        + characteristic("X", "gemeld", false));
         assertNull(play(ir, caseDocument), "een ontkenning van een kenmerk op een leeg-toets");
     }
 
@@ -221,7 +221,7 @@ class ReaderUnderWriterWitnessTest {
         String ir = document(List.of(markedIf("Jutter", comparison("equal", count("bonnen", "Bon",
                 roleBinding("JutterHeeftBon", "bon")), number(0)))), List.of(bon), List.of(), List.of());
         String caseDocument = caseDocument(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, "")),
-                kenmerk("J", false) + "," + kenmerk("J2", true));
+                characteristic("J", false) + "," + characteristic("J2", true));
         assertNull(play(ir, caseDocument), "een telling over de gemaakte bonnen");
     }
 
@@ -229,14 +229,14 @@ class ReaderUnderWriterWitnessTest {
         // "Een Jutter is gemarkeerd indien het aantal gecontroleerde netten van de Jutter gelijk is aan 0", with "Een
         // gecontroleerd net van een Jutter is een net van de Jutter". ref and clingo: J (net N1) not gemarkeerd, J2
         // gemarkeerd.
-        String controleer = "{\"node\":\"FactCreation\",\"name\":\"controleer\",\"versions\":[{\"factType\":\"JutterControleertNet\","
+        String verifyOf = "{\"node\":\"FactCreation\",\"name\":\"controleer\",\"versions\":[{\"factType\":\"JutterControleertNet\","
                 + "\"anchorRole\":\"controleur\",\"targetRole\":\"gecontroleerd net\",\"anchor\":\"Jutter\",\"path\":["
                 + roleBinding("JutterHeeftNet", "net") + "],\"validity\":{\"node\":\"Validity\"}}]}";
         String ir = document(List.of(markedIf("Jutter", comparison("equal", count("gecontroleerde netten", "Net",
-                roleBinding("JutterControleertNet", "gecontroleerd net")), number(0)))), List.of(), List.of(controleer), List.of());
+                roleBinding("JutterControleertNet", "gecontroleerd net")), number(0)))), List.of(), List.of(verifyOf), List.of());
         String caseDocument = caseDocument(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, ""),
                 instance("N1", "Net", "", "\"eigenaar\":[\"J\"]")),
-                kenmerk("J", false) + "," + kenmerk("J2", true));
+                characteristic("J", false) + "," + characteristic("J2", true));
         assertNull(play(ir, caseDocument), "een telling over de koppelingen van een feitcreatie");
     }
 
@@ -266,7 +266,7 @@ class ReaderUnderWriterWitnessTest {
                 roleBinding("JutterHeeftBon", "bon")), number(0)))), List.of(bon), List.of(), List.of(GROUP_VERGUNNINGSDAG));
         String caseDocument = caseDocument(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, ""),
                 jutter("J4", null, null, "\"opgegeven vergunningsdag\":{\"date\":\"2026-05-01\"}")),
-                kenmerk("J", false) + "," + kenmerk("J2", true) + "," + kenmerk("J4", false));
+                characteristic("J", false) + "," + characteristic("J2", true) + "," + characteristic("J4", false));
         assertNull(play(ir, caseDocument), "een creatie onder een defaultsgroep");
     }
 
@@ -311,7 +311,7 @@ class ReaderUnderWriterWitnessTest {
         String caseDocument = caseDocument(List.of(instance("B", "Berging", "\"opbrengst\":{\"number\":\"100\"}", ""),
                 instance("B1", "Berger", "", "\"berging\":[\"B\"]"), instance("B2", "Berger", "", "\"berging\":[\"B\"]"),
                 instance("B3", "Berger", "", "")),
-                kenmerk("B1", false) + "," + kenmerk("B2", false) + "," + kenmerk("B3", true));
+                characteristic("B1", false) + "," + characteristic("B2", false) + "," + characteristic("B3", true));
         assertNull(play(ir, caseDocument), "een leeg-toets na een verdeling");
     }
 
@@ -359,27 +359,27 @@ class ReaderUnderWriterWitnessTest {
             + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
             + "{\"num\":1,\"den\":1}}}";
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
     private static String dates(String... names) {
         List<String> a = new ArrayList<>();
-        for (String n : names) a.add(attribuut(n, DATE));
+        for (String n : names) a.add(attribute(n, DATE));
         return String.join(",", a);
     }
 
-    private static String objecttype(String naam, String plural, boolean animate, String kenmerken, String attributes) {
+    private static String objectType(String naam, String plural, boolean animate, String kenmerken, String attributes) {
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + attributes + "],\"characteristics\":[" + kenmerken + "]}";
     }
 
-    private static String kenmerk(String naam) {
+    private static String characteristic(String naam) {
         return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
     }
 
     /** A fact type between one {@code oneType} and one ({@code manyPlural} null) or many {@code manyType}. */
-    private static String feittype(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\""
@@ -389,65 +389,65 @@ class ReaderUnderWriterWitnessTest {
     /** Haven, Jutter, Vondst, Afrekening, Bon, Net, Berging and Berger. A Vondst has one jutter, a Jutter one haven, one
      *  afrekening, many bonnen, many netten and many gecontroleerde netten, a Berging many bergers. */
     private static final String MODEL = "{\"objectTypes\":["
-            + objecttype("Haven", "Havens", false, "", dates("openingsdag", "afgeleide openingsdag")) + ","
-            + objecttype("Jutter", "Jutters", true, kenmerk("gemarkeerd"),
+            + objectType("Haven", "Havens", false, "", dates("openingsdag", "afgeleide openingsdag")) + ","
+            + objectType("Jutter", "Jutters", true, characteristic("gemarkeerd"),
                     dates("vergunningsdag", "opgegeven vergunningsdag", "afgeleide vergunningsdag", "uitkomst", "afrekendag")) + ","
-            + objecttype("Vondst", "Vondsten", false, kenmerk("gemarkeerd") + "," + kenmerk("gemeld"),
+            + objectType("Vondst", "Vondsten", false, characteristic("gemarkeerd") + "," + characteristic("gemeld"),
                     dates("vinddag", "registratiedag", "opgegeven registratiedag", "afgeleide registratiedag", "controledag",
                             "afgeleide controledag", "uitkomst")
-                    + "," + attribuut("waarde", WHOLE) + "," + attribuut("deler", WHOLE) + ","
-                    + attribuut("uitkomstwaarde", TWO_DECIMALS)) + ","
-            + objecttype("Afrekening", "Afrekeningen", false, "", dates("afrekendag")) + ","
-            + objecttype("Bon", "Bonnen", false, "", dates("bondag")) + ","
-            + objecttype("Net", "Netten", false, "", attribuut("maas", WHOLE)) + ","
-            + objecttype("Berging", "Bergingen", false, "", attribuut("opbrengst", EURO) + "," + attribuut("onverdeelde rest", EURO)) + ","
-            + objecttype("Berger", "Bergers", true, kenmerk("gemarkeerd"), attribuut("bergingsaandeel", EURO))
+                    + "," + attribute("waarde", WHOLE) + "," + attribute("deler", WHOLE) + ","
+                    + attribute("uitkomstwaarde", TWO_DECIMALS)) + ","
+            + objectType("Afrekening", "Afrekeningen", false, "", dates("afrekendag")) + ","
+            + objectType("Bon", "Bonnen", false, "", dates("bondag")) + ","
+            + objectType("Net", "Netten", false, "", attribute("maas", WHOLE)) + ","
+            + objectType("Berging", "Bergingen", false, "", attribute("opbrengst", EURO) + "," + attribute("onverdeelde rest", EURO)) + ","
+            + objectType("Berger", "Bergers", true, characteristic("gemarkeerd"), attribute("bergingsaandeel", EURO))
             + "],\"factTypes\":["
-            + feittype("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
-            + feittype("HavenHeeftJutter", "haven", "Haven", "havenjutter", "havenjutters", "Jutter") + ","
-            + feittype("JutterHeeftAfrekening", "afrekenaar", "Jutter", "afrekening", null, "Afrekening") + ","
-            + feittype("JutterHeeftBon", "bonhouder", "Jutter", "bon", "bonnen", "Bon") + ","
-            + feittype("JutterHeeftNet", "eigenaar", "Jutter", "net", "netten", "Net") + ","
-            + feittype("JutterControleertNet", "controleur", "Jutter", "gecontroleerd net", "gecontroleerde netten", "Net") + ","
-            + feittype("bergingsdeelname", "berging", "Berging", "berger", "bergers", "Berger")
+            + factType("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
+            + factType("HavenHeeftJutter", "haven", "Haven", "havenjutter", "havenjutters", "Jutter") + ","
+            + factType("JutterHeeftAfrekening", "afrekenaar", "Jutter", "afrekening", null, "Afrekening") + ","
+            + factType("JutterHeeftBon", "bonhouder", "Jutter", "bon", "bonnen", "Bon") + ","
+            + factType("JutterHeeftNet", "eigenaar", "Jutter", "net", "netten", "Net") + ","
+            + factType("JutterControleertNet", "controleur", "Jutter", "gecontroleerd net", "gecontroleerde netten", "Net") + ","
+            + factType("bergingsdeelname", "berging", "Berging", "berger", "bergers", "Berger")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"Munt\",\"units\":["
             + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
             + "{\"num\":1,\"den\":1},\"spellings\":[\"€\",\"euro\",\"euros\"]}]}],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String roleBinding(String feittype, String rol) {
-        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    private static String roleBinding(String factType, String role) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
     }
 
-    private static String own(String attribuut) { return own(attribuut, "Vondst"); }
+    private static String own(String attribute) { return own(attribute, "Vondst"); }
 
-    private static String own(String attribuut, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
-    /** A read of {@code attribuut} on {@code type} over the role hops {@code pad}. */
-    private static String navigated(String attribuut, String type, String snippet, String... pad) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"" + snippet + "\"},\"path\":[" + String.join(",", pad) + "]}";
+    /** A read of {@code attribute} on {@code type} over the role hops {@code path}. */
+    private static String navigated(String attribute, String type, String snippet, String... path) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"" + snippet + "\"},\"path\":[" + String.join(",", path) + "]}";
     }
 
     /** "de &lt;attribuut&gt; van de jutter van de Vondst": one hop. */
-    private static String viaJutter(String attribuut) {
-        return navigated(attribuut, "Jutter", "de " + attribuut + " van de jutter van de Vondst",
+    private static String viaJutter(String attribute) {
+        return navigated(attribute, "Jutter", "de " + attribute + " van de jutter van de Vondst",
                 roleBinding("JutterHeeftVondst", "jutter"));
     }
 
     /** "de &lt;attribuut&gt; van de haven van de jutter van de Vondst": two hops. */
-    private static String viaHaven(String attribuut) {
-        return navigated(attribuut, "Haven", "de " + attribuut + " van de haven van de jutter van de Vondst",
+    private static String viaHaven(String attribute) {
+        return navigated(attribute, "Haven", "de " + attribute + " van de haven van de jutter van de Vondst",
                 roleBinding("JutterHeeftVondst", "jutter"), roleBinding("HavenHeeftJutter", "haven"));
     }
 
     /** "het aantal &lt;meervoud&gt; van de Jutter" over the role {@code bron}. */
-    private static String count(String plural, String elementType, String bron) {
+    private static String count(String plural, String elementType, String source) {
         return "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\""
                 + plural + "\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"" + plural + " van de Jutter\"}}],"
-                + "\"elementType\":\"" + elementType + "\",\"sourceRole\":" + bron + ",\"type\":" + COUNT_NUMBER
+                + "\"elementType\":\"" + elementType + "\",\"sourceRole\":" + source + ",\"type\":" + COUNT_NUMBER
                 + ",\"source\":{\"snippet\":\"het aantal " + plural + " van de Jutter\"}}";
     }
 
@@ -464,42 +464,42 @@ class ReaderUnderWriterWitnessTest {
                 + ",\"source\":{\"snippet\":\"vergelijking " + op + "\"}}";
     }
 
-    private static String predicate(String soort, String operand) {
-        return "{\"node\":\"Predicate\",\"kind\":\"" + soort + "\",\"operand\":" + operand
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + soort + "\"}}";
+    private static String predicate(String category, String operand) {
+        return "{\"node\":\"Predicate\",\"kind\":\"" + category + "\",\"operand\":" + operand
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + category + "\"}}";
     }
 
-    /** One rule with one version; {@code voorwaarde} null for none. */
-    private static String regel(String naam, String type, String doel, String waarde, String voorwaarde) {
+    /** One rule with one version; {@code condition} null for none. */
+    private static String regel(String naam, String type, String target, String value, String condition) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
-                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
-                + "\"source\":{\"snippet\":\"De " + doel + "\"}},\"value\":" + waarde
-                + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
+                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
+                + "\"source\":{\"snippet\":\"De " + target + "\"}},\"value\":" + value
+                + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
     }
 
     /** "Een &lt;type&gt; is &lt;kenmerk&gt; indien &lt;voorwaarde&gt;." */
-    private static String characteristicRule(String kenmerk, String type, String voorwaarde) {
-        return "{\"node\":\"Rule\",\"name\":\"" + kenmerk + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
-                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + kenmerk + "\",\"subjectType\":\"" + type + "\",\"source\":"
-                + "{\"snippet\":\"Een " + type + " is " + kenmerk + "\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
-                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + voorwaarde
+    private static String characteristicRule(String characteristic, String type, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + characteristic + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + characteristic + "\",\"subjectType\":\"" + type + "\",\"source\":"
+                + "{\"snippet\":\"Een " + type + " is " + characteristic + "\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + condition
                 + ",\"initialisation\":false}]}";
     }
 
-    private static String markedIf(String type, String voorwaarde) {
-        return characteristicRule("gemarkeerd", type, voorwaarde);
+    private static String markedIf(String type, String condition) {
+        return characteristicRule("gemarkeerd", type, condition);
     }
 
     /** "De uitkomst van een Vondst moet gesteld worden op zijn vinddag indien &lt;voorwaarde&gt;." */
-    private static String outcomeIf(String voorwaarde) {
-        return regel("uitkomst", "Vondst", "uitkomst", own("vinddag"), voorwaarde);
+    private static String outcomeIf(String condition) {
+        return regel("uitkomst", "Vondst", "uitkomst", own("vinddag"), condition);
     }
 
     /** "Een Jutter heeft een &lt;type&gt; met &lt;lid&gt; gelijk aan &lt;waarde&gt; [indien &lt;voorwaarde&gt;]." */
-    private static String objectCreation(String naam, String type, String member, String waarde, String voorwaarde, String relationLink) {
+    private static String objectCreation(String naam, String type, String member, String value, String condition, String relationLink) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"createdType\":\"" + type + "\",\"subject\":"
-                + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + waarde
-                + ",\"characteristic\":false}]" + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde)
+                + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value
+                + ",\"characteristic\":false}]" + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + relationLink + "}]}";
     }
 
@@ -584,27 +584,27 @@ class ReaderUnderWriterWitnessTest {
         return instance(label, "Vondst", a, jutter == null ? "" : "\"jutter\":[\"" + jutter + "\"]");
     }
 
-    private static String day(String label, String attribuut, String iso) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\",\"value\":{\"date\":\""
+    private static String day(String label, String attribute, String iso) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\",\"value\":{\"date\":\""
                 + iso + "\"}}";
     }
 
-    private static String empty(String label, String attribuut) {
-        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\"}";
+    private static String empty(String label, String attribute) {
+        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\"}";
     }
 
-    private static String kenmerk(String label, boolean aanwezig) {
-        return kenmerk(label, "gemarkeerd", aanwezig);
+    private static String characteristic(String label, boolean present) {
+        return characteristic(label, "gemarkeerd", present);
     }
 
-    private static String kenmerk(String label, String kenmerk, boolean aanwezig) {
-        return "{\"kind\":\"" + (aanwezig ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
-                + "\",\"characteristic\":\"" + kenmerk + "\"}";
+    private static String characteristic(String label, String characteristic, boolean present) {
+        return "{\"kind\":\"" + (present ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
+                + "\",\"characteristic\":\"" + characteristic + "\"}";
     }
 
-    private static String caseDocument(List<String> instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(List<String> instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

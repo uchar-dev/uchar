@@ -3,9 +3,9 @@ package dev.uchar.regelspraak;
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
-import dev.uchar.regelspraak.model.RegelSpraakModel.GegenereerdUit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Herkomstvorm;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
+import dev.uchar.regelspraak.model.RegelSpraakModel.GeneratedFrom;
+import dev.uchar.regelspraak.model.RegelSpraakModel.OriginForm;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The origin on the wire (IR-SPEC ch. 2.13): on every declaration the frontend made itself
- * ({@link RegelSpraakModel#gegenereerd}) the emitter writes the field {@code origin} just before {@code designations} —
+ * ({@link RegelSpraakModel#generated}) the emitter writes the field {@code origin} just before {@code designations} —
  * the form in its wire spelling, and the declaration it comes from by kind, owner and name — and on no other. A
  * decision table, which the model records as a form because it is no element of the model, is the kind
  * {@code decisionTable} on the wire. The field adds itself and nothing else: the model with its table cleared emits the
@@ -30,8 +30,8 @@ class OriginOnTheWireTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.errors().stream().map(RegelSpraakModel.Diagnostic::toString).toList());
         return m;
     }
@@ -44,28 +44,28 @@ class OriginOnTheWireTest {
         return result;
     }
 
-    private static void loop(Object x, String eigenaar, List<String> result) {
+    private static void loop(Object x, String owner, List<String> result) {
         if (x instanceof Map<?, ?> m) {
             if (m.get("origin") instanceof Map<?, ?> o) {
                 Map<?, ?> van = (Map<?, ?>) o.get("from");
                 boolean member = "Attribute".equals(m.get("node")) || "Characteristic".equals(m.get("node"))
                         || "Role".equals(m.get("node"));
-                result.add(m.get("node") + " " + (member ? eigenaar + "." : "") + m.get("name") + ": " + o.get("form")
+                result.add(m.get("node") + " " + (member ? owner + "." : "") + m.get("name") + ": " + o.get("form")
                         + " <- " + van.get("kind") + " " + (van.containsKey("owner") ? van.get("owner") + "." : "")
                         + van.get("name"));
             }
             String within = "ObjectType".equals(m.get("node")) || "FactType".equals(m.get("node"))
-                    ? (String) m.get("name") : eigenaar;
+                    ? (String) m.get("name") : owner;
             for (Object v : m.values()) loop(v, within, result);
         } else if (x instanceof List<?> l) {
-            for (Object v : l) loop(v, eigenaar, result);
+            for (Object v : l) loop(v, owner, result);
         }
     }
 
     /** The emission of {@code m} holds one origin per entry of its table, no more. */
     private static List<String> emission(RegelSpraakModel m) {
         List<String> h = origins(IrEmitter.emit(m));
-        assertEquals(m.gegenereerd.size(), h.size(), () -> "een origin per gegenereerd element: " + h);
+        assertEquals(m.generated.size(), h.size(), () -> "een origin per gegenereerd element: " + h);
         return h;
     }
 
@@ -159,7 +159,7 @@ class OriginOnTheWireTest {
             | 1 | 10 | 5 |
             | 2 | 20 | 10 |
             """);
-        assertTrue(m.benoembaar().contains(Benoembaar.vorm("Bonustabel")));
+        assertTrue(m.designatable().contains(Designatable.form("Bonustabel")));
         assertEquals(List.of(
                 "Rule Bonustabel 1: decisionTableRow <- decisionTable Bonustabel",
                 "Rule Bonustabel 2: decisionTableRow <- decisionTable Bonustabel"),
@@ -270,19 +270,19 @@ class OriginOnTheWireTest {
         int with = 0, without = 0;
         try (var directories = Files.list(GOLDEN)) {
             for (Path map : directories.sorted().toList()) {
-                Path bron = map.resolve("bron.rgs");
-                if (!Files.exists(bron)) continue;
-                RegelSpraakModel m = Resolver.resolve(Files.readString(bron));
+                Path source = map.resolve("bron.rgs");
+                if (!Files.exists(source)) continue;
+                RegelSpraakModel m = Resolver.resolve(Files.readString(source));
                 assertTrue(m.isOk(), () -> map + " resolvet niet: " + m.diagnostics);
                 String ir = IrEmitter.emit(m);
-                if (m.gegenereerd.isEmpty()) {
+                if (m.generated.isEmpty()) {
                     assertFalse(ir.contains("\"origin\""), map::toString);
                     without++;
                     continue;
                 }
                 with++;
-                assertEquals(m.gegenereerd.size(), origins(ir).size(), map::toString);
-                m.gegenereerd.clear();
+                assertEquals(m.generated.size(), origins(ir).size(), map::toString);
+                m.generated.clear();
                 String plain = IrEmitter.emit(m);
                 assertFalse(plain.contains("\"origin\""), map::toString);
                 assertEquals(ORIGIN.matcher(ir).replaceAll(""), plain, map::toString);
@@ -297,28 +297,28 @@ class OriginOnTheWireTest {
     @Test void the_spelling_of_form_and_kind_is_that_of_the_schema() throws Exception {
         Map<?, ?> defs = (Map<?, ?>) ((Map<?, ?>) Report.json(Files.readString(
                 Path.of("..", "..", "spec", "schema", "uchar-ir-v1.schema.json")))).get("$defs");
-        List<?> vormen = (List<?>) ((Map<?, ?>) ((Map<?, ?>) ((Map<?, ?>) defs.get("Origin")).get("properties"))
+        List<?> forms = (List<?>) ((Map<?, ?>) ((Map<?, ?>) ((Map<?, ?>) defs.get("Origin")).get("properties"))
                 .get("form")).get("enum");
         List<?> kinds = (List<?>) ((Map<?, ?>) ((Map<?, ?>) ((Map<?, ?>) defs.get("OriginSource")).get("properties"))
                 .get("kind")).get("enum");
-        assertEquals(vormen, List.copyOf(Spelling.ORIGIN_FORM.rows().values()));
+        assertEquals(forms, List.copyOf(Spelling.ORIGIN_FORM.rows().values()));
         List<String> java = new ArrayList<>(Spelling.ORIGIN_KIND.rows().values());
         java.add(Spelling.ORIGIN_DECISION_TABLE);
         assertEquals(kinds, java);
         // the five forms of the frontend have a spelling; the backend's two manifest keys none
-        for (Herkomstvorm v : Herkomstvorm.values()) {
-            boolean frontend = v != Herkomstvorm.DEFAULTS_STACK && v != Herkomstvorm.VERSION;
+        for (OriginForm v : OriginForm.values()) {
+            boolean frontend = v != OriginForm.DEFAULTS_STACK && v != OriginForm.VERSION;
             assertEquals(frontend, Spelling.ORIGIN_FORM.rows().containsKey(v), v::toString);
             if (!frontend) assertThrows(IllegalArgumentException.class, () -> Spelling.ORIGIN_FORM.spelling(v));
         }
-        for (Benoembaar.Soort s : Benoembaar.Soort.values())
+        for (Designatable.Kind s : Designatable.Kind.values())
             assertEquals(s, Spelling.originKindFromWire(Spelling.ORIGIN_KIND.spelling(s)));
         // a decision table is a form in the model and its own kind on the wire
-        assertEquals(Benoembaar.Soort.VORM, Spelling.originKindFromWire("decisionTable"));
+        assertEquals(Designatable.Kind.VORM, Spelling.originKindFromWire("decisionTable"));
         assertEquals("decisionTable", Spelling.originKind(
-                new GegenereerdUit(Benoembaar.vorm("Bonustabel"), Herkomstvorm.BESLISTABELRIJ)));
+                new GeneratedFrom(Designatable.form("Bonustabel"), OriginForm.BESLISTABELRIJ)));
         assertEquals("namedForm", Spelling.originKind(
-                new GegenereerdUit(Benoembaar.vorm("meldtermijn"), Herkomstvorm.EXCEPTION_FOR_SUBTYPE)));
+                new GeneratedFrom(Designatable.form("meldtermijn"), OriginForm.EXCEPTION_FOR_SUBTYPE)));
         assertNull(Spelling.originKindFromWire("form"));
         assertNull(Spelling.originKindFromWire("VORM"));
     }

@@ -92,9 +92,9 @@ class FoldCompanionWitnessTest {
         // (no drempel) computes nothing. Without J2 the case is consistent: the companion carries the rule's condition.
         // ref and clingo: 9,09, leeg, leeg and 11,11, inconsistent; and 9,09, leeg and 11,11 for J1, J3 and J4,
         // consistent.
-        String voorwaarde = "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own("drempel")
+        String condition = "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own("drempel")
                 + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn drempel gevuld is\"}}";
-        String ir = document(regel(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), voorwaarde));
+        String ir = document(regel(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), condition));
         List<String> with = new ArrayList<>();
         for (String i : situation()) with.add(withThreshold(i, "J1", "J2", "J4"));
         String caseDocument = caseDocument(with, heffing("9.09", null, null, "11.11"), INCONSISTENT);
@@ -102,7 +102,7 @@ class FoldCompanionWitnessTest {
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak, J2 met drempel");
         List<String> withoutJ2 = new ArrayList<>();
         for (String i : situation()) if (!i.contains("\"J2\"")) withoutJ2.add(withThreshold(i, "J1", "J4"));
-        String consistent = caseDocument(withoutJ2, verwacht("J1", "9.09") + "," + verwacht("J3", null) + "," + verwacht("J4", "11.11"),
+        String consistent = caseDocument(withoutJ2, expected("J1", "9.09") + "," + expected("J3", null) + "," + expected("J4", "11.11"),
                 CONSISTENT);
         assertNull(play(ir, consistent), "exectak, J3 zonder drempel");
         assertNull(playDrl(ir, consistent), "DRL-teksttak, J3 zonder drempel");
@@ -135,7 +135,7 @@ class FoldCompanionWitnessTest {
         String ir = document(regel(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), null));
         List<String> only = new ArrayList<>();
         for (String i : situation()) if (!i.contains("\"J2\"") && !i.contains("\"J3\"")) only.add(i);
-        String caseDocument = caseDocument(only, verwacht("J1", "9.09") + "," + verwacht("J4", "11.11"), CONSISTENT);
+        String caseDocument = caseDocument(only, expected("J1", "9.09") + "," + expected("J4", "11.11"), CONSISTENT);
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
     }
@@ -159,17 +159,17 @@ class FoldCompanionWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
     private static final String DATE = "{\"node\":\"Date\",\"precision\":\"day\"}";
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
     /** Jutter and Vondst; one jutter has many vondsten. */
     private static final String MODEL = "{\"objectTypes\":["
             + "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\",\"attributes\":["
-            + attribuut("heffing", TWO_DECIMALS) + "," + attribuut("basis", WHOLE) + "," + attribuut("deler", WHOLE) + ","
-            + attribuut("drempel", WHOLE) + "],\"characteristics\":[]},"
+            + attribute("heffing", TWO_DECIMALS) + "," + attribute("basis", WHOLE) + "," + attribute("deler", WHOLE) + ","
+            + attribute("drempel", WHOLE) + "],\"characteristics\":[]},"
             + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\",\"attributes\":["
-            + attribuut("vinddag", DATE) + "," + attribuut("gewicht", WHOLE) + "],\"characteristics\":[]}"
+            + attribute("vinddag", DATE) + "," + attribute("gewicht", WHOLE) + "],\"characteristics\":[]}"
             + "],\"factTypes\":[{\"node\":\"FactType\",\"name\":\"JutterHeeftVondst\",\"reciprocal\":false,\"roles\":["
             + "{\"node\":\"Role\",\"name\":\"jutter\",\"objectType\":\"Jutter\",\"many\":false},"
             + "{\"node\":\"Role\",\"name\":\"vondst\",\"objectType\":\"Vondst\",\"plural\":\"vondsten\",\"many\":true}]}],"
@@ -179,13 +179,13 @@ class FoldCompanionWitnessTest {
         return "{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"}";
     }
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Jutter\",\"source\":"
-                + "{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Jutter\",\"source\":"
+                + "{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
-    private static String fold(String soort, String snippet) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"" + soort + "\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":"
+    private static String fold(String category, String snippet) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + category + "\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"gewicht\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":\"het gewicht van alle vondsten van de Jutter\"}}],"
                 + "\"elementType\":\"Vondst\",\"sourceRole\":" + roleBinding() + ",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\""
                 + snippet + "\"}}";
@@ -216,10 +216,10 @@ class FoldCompanionWitnessTest {
     }
 
     /** "De heffing van een Jutter moet berekend worden als &lt;waarde&gt; [indien &lt;voorwaarde&gt;]." */
-    private static String regel(String waarde, String voorwaarde) {
+    private static String regel(String value, String condition) {
         return "{\"node\":\"Rule\",\"name\":\"heffing\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"heffing\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
-                + "\"De heffing van een Jutter\"}},\"value\":" + waarde + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde)
+                + "\"De heffing van een Jutter\"}},\"value\":" + value + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     }
 
@@ -265,7 +265,7 @@ class FoldCompanionWitnessTest {
     private static final String INCONSISTENT = "{\"kind\":\"inconsistent\"}";
     private static final String CONSISTENT = "{\"kind\":\"consistent\"}";
 
-    private static String verwacht(String label, String heffing) {
+    private static String expected(String label, String heffing) {
         return heffing == null
                 ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"heffing\"}"
                 : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"heffing\",\"value\":{\"number\":\""
@@ -275,13 +275,13 @@ class FoldCompanionWitnessTest {
     /** The heffing of J1 to J4, a null value leeg. */
     private static String heffing(String... waarden) {
         List<String> out = new ArrayList<>();
-        for (int i = 0; i < waarden.length; i++) out.add(verwacht("J" + (i + 1), waarden[i]));
+        for (int i = 0; i < waarden.length; i++) out.add(expected("J" + (i + 1), waarden[i]));
         return String.join(",", out);
     }
 
-    private static String caseDocument(List<String> instanties, String... verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + String.join(",", verwacht) + "]}";
+    private static String caseDocument(List<String> instances, String... expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + String.join(",", expected) + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

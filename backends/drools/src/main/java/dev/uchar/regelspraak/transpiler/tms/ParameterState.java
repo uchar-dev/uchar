@@ -15,13 +15,13 @@ import java.util.Objects;
  * on this fact carries a constraint id of its own, as every pattern of the branch does. Compared by value: the
  * parameter's name and the value.
  */
-public record ParameterState(String parameter, Object waarde) {
+public record ParameterState(String parameter, Object value) {
 
     public ParameterState {
         Objects.requireNonNull(parameter, "parameter");
     }
 
     @Override public String toString() {
-        return "ParameterStand(" + parameter + ", " + (waarde == null ? "leeg" : waarde) + ")";
+        return "ParameterStand(" + parameter + ", " + (value == null ? "leeg" : value) + ")";
     }
 }

@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
@@ -68,33 +68,33 @@ class DeviationOnSubtypeTest {
     private static void baseGroup(PrioritizedDefaults g) {
         assertEquals("meldtermijn", g.naam());
         assertEquals("Jutter", g.onderwerp());
-        assertEquals("meldtermijn", g.attribuut());
+        assertEquals("meldtermijn", g.attribute());
         assertEquals(1, g.defaults().size(), "alleen de basis");
-        assertEquals("zijn vinddag gevuld is", g.defaults().get(0).voorwaarde().bron().snippet());
-        assertNotNull(g.defaults().get(0).consequentie());
+        assertEquals("zijn vinddag gevuld is", g.defaults().get(0).condition().source().snippet());
+        assertNotNull(g.defaults().get(0).consequence());
     }
 
     /** The subtype's group: one group-default whose one ordered exception group holds the subtype's blocks; the
      *  defaults of that group are returned. The group's source says the base is inherited. */
-    private static List<Default> subtypeGroup(PrioritizedDefaults g, PrioritizedDefaults basis, String head) {
+    private static List<Default> subtypeGroup(PrioritizedDefaults g, PrioritizedDefaults base, String head) {
         assertEquals("meldtermijn voor Strandjutter", g.naam());
         assertEquals("Strandjutter", g.onderwerp());
-        assertEquals("meldtermijn", g.attribuut());
-        assertFalse(g.ongeordend());
-        assertEquals(basis.geldigheid(), g.geldigheid(), "het venster van de basisregel");
-        assertEquals("eigen uitzonderingen van Strandjutter; de basis 'meldtermijn' is geërfd van Jutter", g.bron());
+        assertEquals("meldtermijn", g.attribute());
+        assertFalse(g.unordered());
+        assertEquals(base.validity(), g.validity(), "het venster van de basisregel");
+        assertEquals("eigen uitzonderingen van Strandjutter; de basis 'meldtermijn' is geërfd van Jutter", g.source());
         assertEquals(1, g.defaults().size(), "één groep-default");
         Default gd = g.defaults().get(0);
-        assertNull(gd.voorwaarde(), "een groep-default draagt geen rechtvaardiging (WF-075)");
-        assertNull(gd.consequentie(), "een groep-default draagt geen eigen consequentie: geen eigen basis");
+        assertNull(gd.condition(), "een groep-default draagt geen rechtvaardiging (WF-075)");
+        assertNull(gd.consequence(), "een groep-default draagt geen eigen consequentie: geen eigen basis");
         assertNull(gd.decision());
         assertFalse(gd.initialisatie());
-        assertEquals(head + " meldtermijn", gd.bron());
+        assertEquals(head + " meldtermijn", gd.source());
         assertNotNull(gd.exceptions());
-        assertFalse(gd.exceptions().ongeordend());
-        assertEquals(1, gd.exceptions().leden().size());
-        ExceptionGroup eg = gd.exceptions().leden().get(0);
-        assertEquals(head + " meldtermijn", eg.bron());
+        assertFalse(gd.exceptions().unordered());
+        assertEquals(1, gd.exceptions().members().size());
+        ExceptionGroup eg = gd.exceptions().members().get(0);
+        assertEquals(head + " meldtermijn", eg.source());
         return eg.defaults();
     }
 
@@ -105,8 +105,8 @@ class DeviationOnSubtypeTest {
         List<Default> own = subtypeGroup(groups.get(1), groups.get(0), "Afwijking van");
         assertEquals(1, own.size());
         // an 'Afwijking van' widens: its own condition only
-        assertEquals("zijn vergunningseinde gevuld is", own.get(0).voorwaarde().bron().snippet());
-        assertEquals("zijn vergunningseinde", own.get(0).consequentie().bron().snippet());
+        assertEquals("zijn vergunningseinde gevuld is", own.get(0).condition().source().snippet());
+        assertEquals("zijn vergunningseinde", own.get(0).consequence().source().snippet());
         String ir = IrEmitter.emit(m);
         assertTrue(ir.contains("\"name\": \"meldtermijn voor Strandjutter\""), ir);
     }
@@ -118,13 +118,13 @@ class DeviationOnSubtypeTest {
         List<Default> own = subtypeGroup(groups.get(1), groups.get(0), "Uitzondering op");
         assertEquals(1, own.size());
         // an 'Uitzondering op' is restrictive: the base's condition first, read on the subtype, then its own
-        Conditie.Samengesteld all = assertInstanceOf(Conditie.Samengesteld.class, own.get(0).voorwaarde());
-        assertEquals(Conditie.Kwantor.ALLE, all.kwantor());
+        Condition.Compound all = assertInstanceOf(Condition.Compound.class, own.get(0).condition());
+        assertEquals(Condition.Quantifier.ALLE, all.quantifier());
         assertEquals(List.of("zijn vinddag gevuld is", "zijn vergunningseinde gevuld is"),
-                all.onderdelen().stream().map(c -> c.bron().snippet()).toList());
-        Conditie.Predicaat vinddag = assertInstanceOf(Conditie.Predicaat.class, all.onderdelen().get(0));
-        Expr.AttribuutRef attributeRead = assertInstanceOf(Expr.AttribuutRef.class, vinddag.operand());
-        assertEquals("Strandjutter", attributeRead.objecttype().naam,
+                all.components().stream().map(c -> c.source().snippet()).toList());
+        Condition.Predicate vinddag = assertInstanceOf(Condition.Predicate.class, all.components().get(0));
+        Expr.AttributeReference attributeRead = assertInstanceOf(Expr.AttributeReference.class, vinddag.operand());
+        assertEquals("Strandjutter", attributeRead.objectType().naam,
                 "een eigen lezing in een default van Strandjutter noemt Strandjutter (WF-053)");
         String ir = IrEmitter.emit(m);
         String subtype = ir.substring(ir.indexOf("\"name\": \"meldtermijn voor Strandjutter\""));
@@ -150,8 +150,8 @@ class DeviationOnSubtypeTest {
                 + (condition == null ? "." : "\n        indien " + condition + ".") + "\n";
     }
 
-    private static String deviation(String basis, String naam, String sentence, String condition) {
-        return block("Afwijking van " + basis + ": ", naam, sentence, condition);
+    private static String deviation(String base, String naam, String sentence, String condition) {
+        return block("Afwijking van " + base + ": ", naam, sentence, condition);
     }
 
     private static String exception(String carrier, String naam, String sentence, String condition) {
@@ -180,7 +180,7 @@ class DeviationOnSubtypeTest {
     private static List<Default> ownExceptions(PrioritizedDefaults g) {
         assertEquals(1, g.defaults().size());
         assertNotNull(g.defaults().get(0).exceptions());
-        return g.defaults().get(0).exceptions().leden().get(0).defaults();
+        return g.defaults().get(0).exceptions().members().get(0).defaults();
     }
 
     @Test void a_grandchild_under_the_base_of_the_supertype() {
@@ -190,7 +190,7 @@ class DeviationOnSubtypeTest {
         assertEquals(List.of("meldtermijn", "meldtermijn voor Barnsteenjutter"), names(m));
         PrioritizedDefaults g = m.prioritizedDefaults.get(1);
         assertEquals("Barnsteenjutter", g.onderwerp());
-        assertEquals("eigen uitzonderingen van Barnsteenjutter; de basis 'meldtermijn' is geërfd van Jutter", g.bron());
+        assertEquals("eigen uitzonderingen van Barnsteenjutter; de basis 'meldtermijn' is geërfd van Jutter", g.source());
         assertEquals(1, ownExceptions(g).size());
     }
 
@@ -218,7 +218,7 @@ class DeviationOnSubtypeTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         List<Default> own = ownExceptions(m.prioritizedDefaults.get(1));
         assertEquals(List.of("hij gewaarschuwd is", "zijn vergunningseinde gevuld is"),
-                own.stream().map(d -> d.voorwaarde().bron().snippet()).toList());
+                own.stream().map(d -> d.condition().source().snippet()).toList());
     }
 
     @Test void both_heads_for_a_subtype() {
@@ -229,8 +229,8 @@ class DeviationOnSubtypeTest {
                         + "berekend worden als zijn vinddag plus 1 mnd", "hij gewaarschuwd is"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         Default gd = m.prioritizedDefaults.get(1).defaults().get(0);
-        assertEquals("Uitzondering op meldtermijn en Afwijking van meldtermijn", gd.bron());
-        assertEquals(gd.bron(), gd.exceptions().leden().get(0).bron());
+        assertEquals("Uitzondering op meldtermijn en Afwijking van meldtermijn", gd.source());
+        assertEquals(gd.source(), gd.exceptions().members().get(0).source());
     }
 
     @Test void a_characteristic_as_target() {
@@ -241,7 +241,7 @@ class DeviationOnSubtypeTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         PrioritizedDefaults g = m.prioritizedDefaults.get(1);
         assertEquals("meldplicht voor Strandjutter", g.naam());
-        assertEquals("meldplichtig", g.kenmerk());
+        assertEquals("meldplichtig", g.characteristic());
         assertEquals(Boolean.FALSE, ownExceptions(g).get(0).decision());
     }
 
@@ -260,17 +260,17 @@ class DeviationOnSubtypeTest {
                 + exception("meldtermijn", "meldtermijn tot het vergunningseinde", "De meldtermijn van een "
                 + "Strandjutter moet gesteld worden op zijn vergunningseinde", "zijn vergunningseinde gevuld is"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Conditie.Samengesteld basis = (Conditie.Samengesteld) m.prioritizedDefaults.get(0).defaults().get(0).voorwaarde();
-        Conditie.Samengesteld own = (Conditie.Samengesteld) ownExceptions(m.prioritizedDefaults.get(1)).get(0)
-                .voorwaarde();
-        assertEquals(4, own.onderdelen().size(), "drie conjuncten van de basis, dan de eigen voorwaarde");
-        Expr.AttribuutRef vinddag = (Expr.AttribuutRef) ((Conditie.Predicaat) own.onderdelen().get(0)).operand();
-        assertEquals("Strandjutter", vinddag.objecttype().naam, "een eigen lezing noemt het subtype");
-        Expr.AttribuutRef sluitdag = (Expr.AttribuutRef) ((Conditie.Predicaat) own.onderdelen().get(1)).operand();
-        assertEquals("Haven", sluitdag.objecttype().naam, "een genavigeerde lezing houdt haar eindpunt");
-        assertSame(basis.onderdelen().get(1), own.onderdelen().get(1), "geen eigen lezing: dezelfde knoop");
-        assertSame(basis.onderdelen().get(2), own.onderdelen().get(2), "een kenmerkcheck noemt geen type");
-        assertNotSame(basis.onderdelen().get(0), own.onderdelen().get(0));
+        Condition.Compound base = (Condition.Compound) m.prioritizedDefaults.get(0).defaults().get(0).condition();
+        Condition.Compound own = (Condition.Compound) ownExceptions(m.prioritizedDefaults.get(1)).get(0)
+                .condition();
+        assertEquals(4, own.components().size(), "drie conjuncten van de basis, dan de eigen voorwaarde");
+        Expr.AttributeReference vinddag = (Expr.AttributeReference) ((Condition.Predicate) own.components().get(0)).operand();
+        assertEquals("Strandjutter", vinddag.objectType().naam, "een eigen lezing noemt het subtype");
+        Expr.AttributeReference sluitdag = (Expr.AttributeReference) ((Condition.Predicate) own.components().get(1)).operand();
+        assertEquals("Haven", sluitdag.objectType().naam, "een genavigeerde lezing houdt haar eindpunt");
+        assertSame(base.components().get(1), own.components().get(1), "geen eigen lezing: dezelfde knoop");
+        assertSame(base.components().get(2), own.components().get(2), "een kenmerkcheck noemt geen type");
+        assertNotSame(base.components().get(0), own.components().get(0));
         String ir = IrEmitter.emit(m);
         String subtype = ir.substring(ir.indexOf("\"name\": \"meldtermijn voor Strandjutter\""));
         assertFalse(subtype.contains("\"subjectType\": \"Jutter\""), subtype);
@@ -282,7 +282,7 @@ class DeviationOnSubtypeTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         PrioritizedDefaults sub = m.prioritizedDefaults.stream()
                 .filter(g -> g.naam().equals("meldtermijn voor Strandjutter")).findFirst().orElseThrow();
-        assertEquals("berekende meldtermijn", sub.attribuut());
+        assertEquals("berekende meldtermijn", sub.attribute());
     }
 
     @Test void its_own_base_on_the_subtype_stays_playing() {
@@ -349,12 +349,12 @@ class DeviationOnSubtypeTest {
     }
 
     @Test void an_unordered_block_for_a_subtype_is_refused() {
-        String leden = "\nUitzonderingen ongeordend op %s:" + block("Regel ", "lid vergunning",
+        String members = "\nUitzonderingen ongeordend op %s:" + block("Regel ", "lid vergunning",
                 "De meldtermijn van een Strandjutter moet gesteld worden op zijn vergunningseinde",
                 "zijn vergunningseinde gevuld is") + block("Regel ", "lid waarschuwing",
                 "De meldtermijn van een Strandjutter moet berekend worden als zijn vinddag plus 1 mnd",
                 "hij gewaarschuwd is");
-        Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE + leden.formatted("meldtermijn")));
+        Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE + members.formatted("meldtermijn")));
         assertEquals("Uitzonderingen ongeordend op 'meldtermijn': groepslid 'lid vergunning' schrijft voor het subtype "
                 + "Strandjutter onder de basisregel 'meldtermijn' van Jutter — een 'Uitzonderingen ongeordend op'-blok "
                 + "in de eigen uitzonderingen van een subtype onder de basisregel van zijn supertype lowert deze frontend "
@@ -364,7 +364,7 @@ class DeviationOnSubtypeTest {
                 d.message());
         // under the subtype's own block as well
         Diagnostic e = onlyError(Resolver.resolve(MODEL + BASE + VERGUNNINGSEINDE
-                + leden.formatted("meldtermijn tot het vergunningseinde")));
+                + members.formatted("meldtermijn tot het vergunningseinde")));
         assertTrue(e.message().startsWith("Uitzonderingen ongeordend op 'meldtermijn tot het vergunningseinde': "
                 + "groepslid 'lid vergunning' schrijft voor het subtype Strandjutter onder de basisregel 'meldtermijn' "
                 + "van Jutter"), e.message());
@@ -399,11 +399,11 @@ class DeviationOnSubtypeTest {
         assertTrue(sister.message().startsWith("Afwijking van 'meldtermijn van de strandjutter': afwijking 'meldtermijn "
                 + "na de bergdag' schrijft een ander doel (Wrakjutter.meldtermijn (attribuut)) dan de basisregel "
                 + "(Strandjutter.meldtermijn (attribuut))"), sister.message());
-        Diagnostic attribuut = onlyError(Resolver.resolve(MODEL + BASE + deviation("meldtermijn",
+        Diagnostic attribute = onlyError(Resolver.resolve(MODEL + BASE + deviation("meldtermijn",
                 "vinddag tot het vergunningseinde", "De vinddag van een Strandjutter moet gesteld worden op zijn "
                 + "vergunningseinde", "zijn vergunningseinde gevuld is")));
-        assertTrue(attribuut.message().startsWith("Afwijking van 'meldtermijn': afwijking 'vinddag tot het "
+        assertTrue(attribute.message().startsWith("Afwijking van 'meldtermijn': afwijking 'vinddag tot het "
                 + "vergunningseinde' schrijft een ander doel (Strandjutter.vinddag (attribuut)) dan de basisregel "
-                + "(Jutter.meldtermijn (attribuut))"), attribuut.message());
+                + "(Jutter.meldtermijn (attribuut))"), attribute.message());
     }
 }

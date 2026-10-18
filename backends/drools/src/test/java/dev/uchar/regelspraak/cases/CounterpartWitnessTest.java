@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,14 +39,14 @@ class CounterpartWitnessTest {
 
     @Test void the_narrowing_on_the_other_side_plays_in_both_branches() throws Exception {
         // wachtjutter is to-many, so the link is Jutter's reference back at the post; the golden's own three cases
-        for (Path casePath : cases()) BothBranches.green(temporary(lees()), JSON.readTree(Files.readString(casePath)),
+        for (Path casePath : cases()) BothBranches.green(temporary(read()), JSON.readTree(Files.readString(casePath)),
                 "the narrowed far-side check, " + casePath.getFileName());
     }
 
     @Test void without_narrowing_every_jutter_counts_on_the_other_side() throws Exception {
         // case1: W1's only jutter is a plain Jutter. Without the narrowing "hij een strandjutter heeft" reads as
         // "hij een wachtjutter heeft", and W1 becomes strandbemand.
-        ObjectNode ir = lees();
+        ObjectNode ir = read();
         for (int r : new int[] { 2, 3 }) regel(ir, r).remove("counterpartType");
         BothBranches.red(temporary(ir), JSON.readTree(Files.readString(cases().get(0))),
                 "kenmerk strandbemand: verwacht afwezig, werkelijk aanwezig", "the check without its narrowing");
@@ -56,7 +56,7 @@ class CounterpartWitnessTest {
         // A role is named as every declared name is compared (WF-001): case and runs of blanks folded. The
         // verifier passes "Toegewezen  wachtpost" for the declared "toegewezen wachtpost"; until L2's advisory
         // round this backend compared case alone and called the document malformed.
-        ObjectNode ir = lees();
+        ObjectNode ir = read();
         for (int r : new int[] { 0, 1, 2, 3 }) regel(ir, r).put("role", "Toegewezen  wachtpost");
         for (Path casePath : cases()) BothBranches.green(temporary(ir), JSON.readTree(Files.readString(casePath)),
                 "the role named with another case and a doubled blank, " + casePath.getFileName());
@@ -71,7 +71,7 @@ class CounterpartWitnessTest {
         // types (measured; a limit of the case input, not of the check). The analysis lowers all four rules, and the
         // text of the DRL-text branch tests the narrowed class exactly where the document narrows.
         DroolsBackend.Build b = DroolsBackend.build(oneToOne(), DroolsBackend.Branch.DRL_TEXT);
-        for (String regel : RULES) assertTrue(coverageOf(b.dekking(), regel).lowered(), "de analyse lowert " + regel);
+        for (String regel : RULES) assertTrue(coverageOf(b.coverage(), regel).lowered(), "de analyse lowert " + regel);
         assertTrue(b.drl().contains("Strandjutter"), "de vernauwde check toetst de klasse:\n" + b.drl());
 
         ObjectNode without = oneToOne();
@@ -83,17 +83,17 @@ class CounterpartWitnessTest {
     private static final List<String> RULES = List.of("regel: bemande wachtpost", "regel: onbemande wachtpost",
             "regel: strandbemande wachtpost", "regel: strandvrije wachtpost");
 
-    private static Dekking coverageOf(List<Dekking> dekking, String sleutel) {
-        for (Dekking d : dekking) if (sleutel.equals(d.sleutel())) return d;
-        throw new AssertionError("geen manifestregel " + sleutel + " in " + dekking);
+    private static Coverage coverageOf(List<Coverage> coverage, String key) {
+        for (Coverage d : coverage) if (key.equals(d.key())) return d;
+        throw new AssertionError("geen manifestregel " + key + " in " + coverage);
     }
 
     // ---------------- fixtures ----------------
 
     /** The golden with wachtjutter to-one, so the bean model stores the link on the Wachtpost. */
     private static ObjectNode oneToOne() throws Exception {
-        ObjectNode ir = lees();
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "wachtindeling").get("roles"))
+        ObjectNode ir = read();
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "wachtindeling").get("roles"))
             if ("wachtjutter".equals(r.get("name").asText())) ((ObjectNode) r).put("many", false);
         return ir;
     }
@@ -102,7 +102,7 @@ class CounterpartWitnessTest {
         return (ObjectNode) IrPath.version(ir, "rules", i, 0).get("condition");
     }
 
-    private static ObjectNode lees() throws Exception {
+    private static ObjectNode read() throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
     }
 

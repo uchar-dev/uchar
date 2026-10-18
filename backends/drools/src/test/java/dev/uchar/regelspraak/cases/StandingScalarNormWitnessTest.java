@@ -48,7 +48,7 @@ class StandingScalarNormWitnessTest {
     @Test void standing_target_with_empty_opbrengst_leaves_the_input_value_standing() throws Exception {
         // the rule FIRES (gemeld) but its source is leeg: it decides nothing, so the input value stands.
         play("anchor/jutterswet-waardestelling",
-                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("77.00")),
+                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", value("77.00")),
                 "a leeg computed value must not displace the case input");
     }
 
@@ -57,7 +57,7 @@ class StandingScalarNormWitnessTest {
         // degenerate into "a standing target is never written".
         play("anchor/jutterswet-waardestelling",
                 vondst("\"taxatiewaarde\": { \"number\": \"51.00\" }, \"geschatte waarde\": { \"number\": \"77.00\" }",
-                        "\"gemeld\"", waarde("51.00")),
+                        "\"gemeld\"", value("51.00")),
                 "a gevuld computed value displaces the case input");
     }
 
@@ -112,7 +112,7 @@ class StandingScalarNormWitnessTest {
         // passing on a comparator that ignores absence. This is the row a classification "every null write
         // is skipped" turns green in BOTH branches — the boundary, not the guard, is what is pinned here.
         BothBranches.red(ir, JSON.readTree(
-                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("77.00"))),
+                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", value("77.00"))),
                 "geschatte waarde", "the input must be observably GONE, not merely unasserted");
     }
 
@@ -130,7 +130,7 @@ class StandingScalarNormWitnessTest {
                 "a VERSIONED sole writer is outside the norm: its leeg result wipes the input");
 
         // the standing outcome is observably NOT what happened, in both branches.
-        BothBranches.red(ir, JSON.readTree(versionCase(waarde("77.00"))),
+        BothBranches.red(ir, JSON.readTree(versionCase(value("77.00"))),
                 "geschatte waarde", "a versioned target must not silently acquire the standing arm");
     }
 
@@ -182,7 +182,7 @@ class StandingScalarNormWitnessTest {
             // drl-teksttak-op-truth-maintenance, before which the DRL-text branch refused every prioritizedDefaults
             // document whole ("… the DRL-text branch has no defaults lowering"), the one row that did not mirror.
             BothBranches.refused(tmp, JSON.readTree(vondst("\"geschatte waarde\": { \"number\": \"77.00\" }",
-                    "\"gemeld\"", waarde("12.00"))), "een regel naast een defaultsgroep van hetzelfde type op hetzelfde"
+                    "\"gemeld\"", value("12.00"))), "een regel naast een defaultsgroep van hetzelfde type op hetzelfde"
                     + " doel ('geschatte waarde' van Vondst): een doel heeft één schrijver, de groep of de regel (WF-050)",
                     "a rule beside a defaults group on one target");
         } finally {
@@ -224,7 +224,7 @@ class StandingScalarNormWitnessTest {
                 """.formatted(attributes, kenmerken, expectedNode);
     }
 
-    private static String waarde(String number) {
+    private static String value(String number) {
         return """
                 { "kind": "attributeValue", "label": "v1", "attribute": "geschatte waarde",
                   "value": { "number": "%s" } }""".formatted(number);
@@ -275,12 +275,12 @@ class StandingScalarNormWitnessTest {
         IrPath.addAttribute(IrPath.objectType(ir, "Vondst"), "tweede taxatie", number);
 
         ArrayNode rules = IrPath.rulesList(ir, "rules");
-        ObjectNode tweede = rules.get(0).deepCopy();
-        tweede.put("name", "Waardestelling tweede");
-        ObjectNode bron = (ObjectNode) tweede.get("versions").get(0).get("value");
-        bron.put("attribute", "tweede taxatie")
+        ObjectNode second = rules.get(0).deepCopy();
+        second.put("name", "Waardestelling tweede");
+        ObjectNode source = (ObjectNode) second.get("versions").get(0).get("value");
+        source.put("attribute", "tweede taxatie")
                 .set("source", IrPath.sourceReference("de tweede taxatie van de Vondst"));
-        rules.add(tweede);
+        rules.add(second);
 
         Path out = Files.createTempFile("tweede-schrijver", ".json");
         out.toFile().deleteOnExit();

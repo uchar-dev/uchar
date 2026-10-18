@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
@@ -42,9 +42,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Object and fact creation on the exec-model branch (RUNTIME-SEMANTICS ch. 5.5): a creation fires only at a
  * fixpoint of the rule layer, what it makes is stated and never lapses, and the driver fires in generations
- * ({@code DroolsBackend.vuur}). Each document runs once through the replay and then in a sample of orders of the rules
+ * ({@code DroolsBackend.fire}). Each document runs once through the replay and then in a sample of orders of the rules
  * the branch generates (the order of the model, its reverse and a hundred shuffles), through the driver.
  *
  * <ul>
@@ -138,9 +138,9 @@ class TmsCreationWitnessTest {
             + "\"Jutter\",\"source\":{\"snippet\":\"meldingen van de Jutter\"}}";
 
     private static final String MODEL_A = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("klasse", WHOLE), attribuut("vangst", WHOLE),
-                    attribuut("meldingaantal", WHOLE), attribuut("meldingswaarde", WHOLE)), List.of("gemeld")),
-            TmsDocuments.objecttype("Melding", List.of(attribuut("waarde", WHOLE)), List.of())),
+            TmsDocuments.objectType("Jutter", List.of(attribute("klasse", WHOLE), attribute("vangst", WHOLE),
+                    attribute("meldingaantal", WHOLE), attribute("meldingswaarde", WHOLE)), List.of("gemeld")),
+            TmsDocuments.objectType("Melding", List.of(attribute("waarde", WHOLE)), List.of())),
             List.of(factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen")));
 
     private static final List<String> RULES_A = List.of(
@@ -155,19 +155,19 @@ class TmsCreationWitnessTest {
     /** The vangst: 7 where the klasse, which a rule sets, is 1, and else 3 for a gemeld Jutter; the lower default can
      *  decide before the rule has set the klasse. */
     private static final String VANGST = attributeGroup("vangst van een jutter", "Jutter", "vangst", List.of(
-            standaard(comparison("equal", ownRead("klasse", "Jutter"), number("1")), number("7")),
-            standaard(check("gemeld", false), number("3"))));
+            defaultEntry(comparison("equal", ownRead("klasse", "Jutter"), number("1")), number("7")),
+            defaultEntry(check("gemeld", false), number("3"))));
 
-    static Path documentA(String voorwaarde) throws Exception {
-        String naam = voorwaarde.equals("null") ? "meld de vangst" : "meld een lage vangst";
+    static Path documentA(String condition) throws Exception {
+        String naam = condition.equals("null") ? "meld de vangst" : "meld een lage vangst";
         return document(MODEL_A, RULES_A, List.of(VANGST),
                 List.of(objectCreation(naam, "Jutter", "Melding", List.of(init("waarde", ownRead("vangst", "Jutter"))),
-                        voorwaarde, "jutmelding", "melding")), List.of(), List.of());
+                        condition, "jutmelding", "melding")), List.of(), List.of());
     }
 
-    static JsonNode caseA(String aantal, String sum) throws Exception {
+    static JsonNode caseA(String count, String sum) throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(), List.of("gemeld"), Map.of())),
-                List.of(waarde("J1", "meldingaantal", aantal), waarde("J1", "meldingswaarde", sum)));
+                List.of(value("J1", "meldingaantal", count), value("J1", "meldingswaarde", sum)));
     }
 
     private static final String LAGE_VANGST = comparison("less", ownRead("vangst", "Jutter"), number("5"));
@@ -178,16 +178,16 @@ class TmsCreationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int intermediateState = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L, 100)) {
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L, 100)) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
                 int[] lower = {0};
                 List<Object[]> made = new ArrayList<>();
                 assertNull(fireInOrder(b, names, List.of(j1),
-                        sessie -> sessie.addEventListener(valueCounter("vangst", "3", lower)),
-                        sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
-                assertNumber("1", TmsDocuments.lees(j1, "meldingaantal"), "meldingaantal" + where);
-                assertNumber("7", TmsDocuments.lees(j1, "meldingswaarde"), "meldingswaarde" + where);
+                        session -> session.addEventListener(valueCounter("vangst", "3", lower)),
+                        session -> made.addAll(made(session))), () -> "de vuring" + where);
+                assertNumber("1", TmsDocuments.read(j1, "meldingaantal"), "meldingaantal" + where);
+                assertNumber("7", TmsDocuments.read(j1, "meldingswaarde"), "meldingswaarde" + where);
                 assertEquals(1, made.size(), () -> "objecten" + where);
                 assertTrue(made.get(0)[0] == j1, () -> "onderwerp" + where);
                 if (lower[0] > 0) intermediateState++;
@@ -202,15 +202,15 @@ class TmsCreationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int intermediateState = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L, 100)) {
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L, 100)) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
                 int[] lower = {0};
                 List<Object[]> made = new ArrayList<>();
                 assertNull(fireInOrder(b, names, List.of(j1),
-                        sessie -> sessie.addEventListener(valueCounter("vangst", "3", lower)),
-                        sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
-                assertNumber("0", TmsDocuments.lees(j1, "meldingaantal"), "meldingaantal" + where);
+                        session -> session.addEventListener(valueCounter("vangst", "3", lower)),
+                        session -> made.addAll(made(session))), () -> "de vuring" + where);
+                assertNumber("0", TmsDocuments.read(j1, "meldingaantal"), "meldingaantal" + where);
                 assertEquals(0, made.size(), () -> "objecten" + where);
                 if (lower[0] > 0) intermediateState++;
             }
@@ -230,26 +230,26 @@ class TmsCreationWitnessTest {
      *  where the rang is not 5, or where the Wachter has an opvolger already. At the fixpoint the rang is 5 and there
      *  is no opvolger; a lower default gives the rang 0 first in some orders. */
     static Path documentB() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Wachter", List.of(attribuut("code", WHOLE),
-                attribuut("rang", WHOLE), attribuut("opvolgeraantal", WHOLE)), List.of("startwachter"))),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Wachter", List.of(attribute("code", WHOLE),
+                attribute("rang", WHOLE), attribute("opvolgeraantal", WHOLE)), List.of("startwachter"))),
                 List.of(factTypeOneToMany("opvolging", "voorganger", "Wachter", "opvolger", "Wachter", "opvolgers")));
         List<String> rules = List.of(
                 computingRule("code van een wachter", "GELIJKSTELLING", "Wachter", "code", number("1"), "null"),
                 computingRule("opvolgeraantal", "BEREKENING", "Wachter", "opvolgeraantal", COUNT_OPVOLGERS, "null"));
         String rank = attributeGroup("rang van een wachter", "Wachter", "rang", List.of(
-                standaard(comparison("equal", ownRead("code", "Wachter"), number("1")), number("5")),
-                standaard(check("startwachter", false), number("0"))));
-        String voorwaarde = compound("all", 0, List.of(check("startwachter", false), compound("atLeast", 1,
+                defaultEntry(comparison("equal", ownRead("code", "Wachter"), number("1")), number("5")),
+                defaultEntry(check("startwachter", false), number("0"))));
+        String condition = compound("all", 0, List.of(check("startwachter", false), compound("atLeast", 1,
                 List.of(comparison("notEqual", ownRead("rang", "Wachter"), number("5")),
                         comparison("greater", COUNT_OPVOLGERS, number("0"))))));
         return document(model, rules, List.of(rank),
-                List.of(objectCreation("werf", "Wachter", "Wachter", List.of(), voorwaarde, "opvolging", "opvolger")),
+                List.of(objectCreation("werf", "Wachter", "Wachter", List.of(), condition, "opvolging", "opvolger")),
                 List.of(), List.of(ruleGroup("estafette", List.of("werf"))));
     }
 
     static JsonNode caseB() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of(), List.of("startwachter"), Map.of())),
-                List.of(waarde("W1", "opvolgeraantal", "0")));
+                List.of(value("W1", "opvolgeraantal", "0")));
     }
 
     @Test void a_creation_that_reads_its_own_output_does_not_sustain_itself() throws Exception {
@@ -258,17 +258,17 @@ class TmsCreationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int intermediateState = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of(), List.of("startwachter"));
                 int[] lower = {0};
                 List<Object[]> made = new ArrayList<>();
                 assertNull(fireInOrder(b, names, List.of(w1),
-                        sessie -> sessie.addEventListener(valueCounter("rang", "0", lower)),
-                        sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
-                assertNumber("0", TmsDocuments.lees(w1, "opvolgeraantal"), "opvolgeraantal" + where);
-                assertNumber("5", TmsDocuments.lees(w1, "rang"), "rang" + where);
+                        session -> session.addEventListener(valueCounter("rang", "0", lower)),
+                        session -> made.addAll(made(session))), () -> "de vuring" + where);
+                assertNumber("0", TmsDocuments.read(w1, "opvolgeraantal"), "opvolgeraantal" + where);
+                assertNumber("5", TmsDocuments.read(w1, "rang"), "rang" + where);
                 assertEquals(0, made.size(), () -> "objecten" + where);
                 if (lower[0] > 0) intermediateState++;
             }
@@ -288,13 +288,13 @@ class TmsCreationWitnessTest {
         return warnDocument(comparison("notEqual", ownRead("aantal", "Jutter"), ownRead("kopie", "Jutter")));
     }
 
-    /** The model and rules of G, with {@code voorwaarde} as the condition of "waarschuw". */
-    private static Path warnDocument(String voorwaarde) throws Exception {
+    /** The model and rules of G, with {@code condition} as the condition of "waarschuw". */
+    private static Path warnDocument(String condition) throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objecttype("Jutter", List.of(attribuut("aantal", WHOLE), attribuut("kopie", WHOLE),
-                        attribuut("waarschuwingaantal", WHOLE)), List.of()),
-                TmsDocuments.objecttype("Melding", List.of(), List.of()),
-                TmsDocuments.objecttype("Waarschuwing", List.of(), List.of())), List.of(
+                TmsDocuments.objectType("Jutter", List.of(attribute("aantal", WHOLE), attribute("kopie", WHOLE),
+                        attribute("waarschuwingaantal", WHOLE)), List.of()),
+                TmsDocuments.objectType("Melding", List.of(), List.of()),
+                TmsDocuments.objectType("Waarschuwing", List.of(), List.of())), List.of(
                 factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen"),
                 factTypeOneToMany("jutwaarschuwing", "gewaarschuwde", "Jutter", "waarschuwing", "Waarschuwing",
                         "waarschuwingen")));
@@ -308,13 +308,13 @@ class TmsCreationWitnessTest {
                         COUNTING, "het aantal waarschuwingen van de Jutter"), "null"));
         return document(model, rules, List.of(), List.of(
                 objectCreation("meld", "Jutter", "Melding", List.of(), "null", "jutmelding", "melding"),
-                objectCreation("waarschuw", "Jutter", "Waarschuwing", List.of(), voorwaarde, "jutwaarschuwing",
+                objectCreation("waarschuw", "Jutter", "Waarschuwing", List.of(), condition, "jutwaarschuwing",
                         "waarschuwing")), List.of(), List.of());
     }
 
     static JsonNode caseG() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of())),
-                List.of(waarde("J1", "aantal", "1"), waarde("J1", "kopie", "1"), waarde("J1", "waarschuwingaantal", "0")));
+                List.of(value("J1", "aantal", "1"), value("J1", "kopie", "1"), value("J1", "waarschuwingaantal", "0")));
     }
 
     @Test void a_creation_does_not_fire_while_the_rule_layer_reacts_to_a_creation() throws Exception {
@@ -323,21 +323,21 @@ class TmsCreationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int intermediateState = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
                 List<String> valuesOrder = new ArrayList<>();
                 List<Object[]> made = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(j1), sessie -> sessie.addEventListener(
+                assertNull(fireInOrder(b, names, List.of(j1), session -> session.addEventListener(
                         new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
-                                if (e.getObject() instanceof Value w && w.waarde() instanceof BigDecimal x
+                                if (e.getObject() instanceof Value w && w.value() instanceof BigDecimal x
                                         && x.compareTo(BigDecimal.ONE) == 0)
-                                    valuesOrder.add(w.attribuut().naam().toLowerCase(java.util.Locale.ROOT));
+                                    valuesOrder.add(w.attribute().naam().toLowerCase(java.util.Locale.ROOT));
                             }
-                        }), sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
-                assertNumber("0", TmsDocuments.lees(j1, "waarschuwingaantal"), "waarschuwingaantal" + where);
+                        }), session -> made.addAll(made(session))), () -> "de vuring" + where);
+                assertNumber("0", TmsDocuments.read(j1, "waarschuwingaantal"), "waarschuwingaantal" + where);
                 assertEquals(1, made.size(), () -> "objecten" + where);
                 // the aantal became 1 while the kopie was still 0: the state on which "waarschuw" would hold
                 if (valuesOrder.indexOf("aantal") >= 0 && valuesOrder.indexOf("aantal")
@@ -364,7 +364,7 @@ class TmsCreationWitnessTest {
      * "waarschuw". In every order the state stood with a {@code CreationPhase} in the session, no Waarschuwing is made, and
      * "waarschuw" does not even get a match: Drools 8.44 evaluates a rule lazily, when the agenda takes it from the group
      * that has the focus, and the object creations' group has the focus only when the driver gives it, at a fixpoint of
-     * the rule layer ({@code DroolsBackend.vuur}).
+     * the rule layer ({@code DroolsBackend.fire}).
      *
      * <p>This is the witness for auto-focus on the object creations, which G does not see. Auto-focus makes a rule eager
      * ({@code RuleImpl.setAutoFocus} sets the eager flag) and gives its group the focus where an evaluation creates a
@@ -393,25 +393,25 @@ class TmsCreationWitnessTest {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             assertTrue(b.execModelTranspiler().creationRules().contains("waarschuw"), () -> "creatieregels "
                     + b.execModelTranspiler().creationRules());
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
                 IntermediateState state = new IntermediateState(j1);
                 List<String> matches = new ArrayList<>();
                 List<Object[]> made = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(j1), sessie -> {
-                    sessie.addEventListener(state);
-                    sessie.addEventListener(new DefaultAgendaEventListener() {
+                assertNull(fireInOrder(b, names, List.of(j1), session -> {
+                    session.addEventListener(state);
+                    session.addEventListener(new DefaultAgendaEventListener() {
                         @Override public void matchCreated(MatchCreatedEvent e) {
                             if (e.getMatch().getRule().getName().equals("waarschuw"))
                                 matches.add(state.states.toString());
                         }
                     });
-                }, sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
+                }, session -> made.addAll(made(session))), () -> "de vuring" + where);
                 assertEquals(1, made.size(), () -> "objecten" + where);
-                assertNumber("0", TmsDocuments.lees(j1, "waarschuwingaantal"), "waarschuwingaantal" + where);
-                assertNumber("1", TmsDocuments.lees(j1, "kopie"), "kopie" + where);
+                assertNumber("0", TmsDocuments.read(j1, "waarschuwingaantal"), "waarschuwingaantal" + where);
+                assertNumber("1", TmsDocuments.read(j1, "kopie"), "kopie" + where);
                 assertEquals(List.of(), matches, () -> "matches van waarschuw, met de standen," + where);
                 assertTrue(state.seen, () -> "geen aantal boven de kopie terwijl een Creatiefase stond," + where);
             }
@@ -431,14 +431,14 @@ class TmsCreationWitnessTest {
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
             if (e.getObject() instanceof CreationPhase) phases++;
-            else if (e.getObject() instanceof State s && s.onderwerp() == onderwerp) states.put(naam(s), s.waarde());
+            else if (e.getObject() instanceof State s && s.onderwerp() == onderwerp) states.put(naam(s), s.value());
             look();
         }
 
         @Override public void objectDeleted(ObjectDeletedEvent e) {
             if (e.getOldObject() instanceof CreationPhase) phases--;
             else if (e.getOldObject() instanceof State s && s.onderwerp() == onderwerp
-                    && java.util.Objects.equals(states.get(naam(s)), s.waarde())) states.remove(naam(s));
+                    && java.util.Objects.equals(states.get(naam(s)), s.value())) states.remove(naam(s));
             look();
         }
 
@@ -448,7 +448,7 @@ class TmsCreationWitnessTest {
         }
 
         private static String naam(State s) {
-            return s.attribuut().naam().toLowerCase(java.util.Locale.ROOT);
+            return s.attribute().naam().toLowerCase(java.util.Locale.ROOT);
         }
     }
 
@@ -464,8 +464,8 @@ class TmsCreationWitnessTest {
      *  the beginstand the stand of the voorganger when it makes the opvolger; the stand counts the opvolgers, so the
      *  voorganger's stand becomes 1 right after, and opvolgerbegin reads the beginstand through the created link. */
     static Path documentC() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Wachter", List.of(attribuut("rang", WHOLE),
-                attribuut("stand", WHOLE), attribuut("beginstand", WHOLE), attribuut("opvolgerbegin", WHOLE)),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Wachter", List.of(attribute("rang", WHOLE),
+                attribute("stand", WHOLE), attribute("beginstand", WHOLE), attribute("opvolgerbegin", WHOLE)),
                 List.of())), List.of(ONE_SUCCESSOR));
         List<String> rules = List.of(
                 computingRule("stand van een wachter", "BEREKENING", "Wachter", "stand", COUNT_OPVOLGERS, "null"),
@@ -481,7 +481,7 @@ class TmsCreationWitnessTest {
 
     static JsonNode caseC() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(), Map.of())),
-                List.of(waarde("W1", "stand", "1"), waarde("W1", "opvolgerbegin", "0")));
+                List.of(value("W1", "stand", "1"), value("W1", "opvolgerbegin", "0")));
     }
 
     @Test void recursive_chain_stops_where_the_condition_not_more_applies() throws Exception {
@@ -489,15 +489,15 @@ class TmsCreationWitnessTest {
         assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(ir, caseC()));
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
                 List<Object[]> made = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(w1), sessie -> { },
-                        sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
-                assertNumber("1", TmsDocuments.lees(w1, "stand"), "stand van W1" + where);
-                assertNumber("0", TmsDocuments.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1" + where);
+                assertNull(fireInOrder(b, names, List.of(w1), session -> { },
+                        session -> made.addAll(made(session))), () -> "de vuring" + where);
+                assertNumber("1", TmsDocuments.read(w1, "stand"), "stand van W1" + where);
+                assertNumber("0", TmsDocuments.read(w1, "opvolgerbegin"), "opvolgerbegin van W1" + where);
                 // one phase per generation: W1 makes W2 in phase 1, W2 makes W3 in phase 2, W3 makes W4 in phase 3,
                 // and W4, of rang 4, makes nothing
                 assertEquals(3, made.size(), () -> "objecten" + where);
@@ -507,8 +507,8 @@ class TmsCreationWitnessTest {
                     int phase = i + 1;
                     assertTrue(g[0] == onderwerp, () -> "keten" + where);
                     assertEquals(phase, g[2], () -> "fase" + where);
-                    assertNumber(String.valueOf(i + 2), TmsDocuments.lees(g[1], "rang"), "rang" + where);
-                    assertNumber("0", TmsDocuments.lees(g[1], "beginstand"), "beginstand" + where);
+                    assertNumber(String.valueOf(i + 2), TmsDocuments.read(g[1], "rang"), "rang" + where);
+                    assertNumber("0", TmsDocuments.read(g[1], "beginstand"), "beginstand" + where);
                     onderwerp = g[1];
                 }
             }
@@ -521,9 +521,9 @@ class TmsCreationWitnessTest {
      *  one haven, so a Jutter that the kustwacht of two havens recruits gets two. */
     static Path documentD() throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objecttype("Kustwacht", List.of(), List.of()),
-                TmsDocuments.objecttype("Haven", List.of(attribuut("jutteraantal", WHOLE)), List.of()),
-                TmsDocuments.objecttype("Jutter", List.of(), List.of())), List.of(
+                TmsDocuments.objectType("Kustwacht", List.of(), List.of()),
+                TmsDocuments.objectType("Haven", List.of(attribute("jutteraantal", WHOLE)), List.of()),
+                TmsDocuments.objectType("Jutter", List.of(), List.of())), List.of(
                 factTypeOneToMany("bewaking", "kustwacht", "Kustwacht", "bewaakte haven", "Haven", "bewaakte havens"),
                 factTypeOneToMany("werving", "werver", "Kustwacht", "geworven jutter", "Jutter", "geworven jutters"),
                 factTypeOneToMany("havenlid", "haven", "Haven", "havenjutter", "Jutter", "havenjutters")));
@@ -545,7 +545,7 @@ class TmsCreationWitnessTest {
                 instanceWithRoles("H1", "Haven", Map.of(), List.of(), Map.of("havenjutters", List.of("J1"))),
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of()),
                 instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of())),
-                List.of(waarde("H1", "jutteraantal", "2")));
+                List.of(value("H1", "jutteraantal", "2")));
     }
 
     /** K1 guards H1 and H2 and recruits J1: J1 would be a havenjutter of both. */
@@ -556,7 +556,7 @@ class TmsCreationWitnessTest {
                 instanceWithRoles("H1", "Haven", Map.of(), List.of(), Map.of()),
                 instanceWithRoles("H2", "Haven", Map.of(), List.of(), Map.of()),
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of())),
-                List.of(waarde("H1", "jutteraantal", "1")));
+                List.of(value("H1", "jutteraantal", "1")));
     }
 
     @Test void a_fact_creation_lays_every_link_one_time() throws Exception {
@@ -564,7 +564,7 @@ class TmsCreationWitnessTest {
         assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(ir, caseD1()));
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object k1 = TmsDocuments.beanObject(b.beanLoader(), "Kustwacht", Map.of(), List.of());
@@ -576,9 +576,9 @@ class TmsCreationWitnessTest {
                 setRole(j2, "werver", k1);
                 setRole(j1, "haven", h1);
                 List<Object[]> left = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(k1, h1, j1, j2), sessie -> { },
-                        sessie -> left.addAll(koppelingen(sessie, "havenlid"))), () -> "de vuring" + where);
-                assertNumber("2", TmsDocuments.lees(h1, "jutteraantal"), "jutteraantal" + where);
+                assertNull(fireInOrder(b, names, List.of(k1, h1, j1, j2), session -> { },
+                        session -> left.addAll(links(session, "havenlid"))), () -> "de vuring" + where);
+                assertNumber("2", TmsDocuments.read(h1, "jutteraantal"), "jutteraantal" + where);
                 // the link of the input, and the one link the creation made, in the phase of generation 1; the
                 // creation fired once
                 assertEquals(2, left.size(), () -> "links" + where);
@@ -597,7 +597,7 @@ class TmsCreationWitnessTest {
         assertEquals(sentence, TmsFaultWitnessTest.playBoth(ir, caseD2()));
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 Object k1 = TmsDocuments.beanObject(b.beanLoader(), "Kustwacht", Map.of(), List.of());
                 Object h1 = TmsDocuments.beanObject(b.beanLoader(), "Haven", Map.of(), List.of());
@@ -606,13 +606,13 @@ class TmsCreationWitnessTest {
                 setRole(h1, "kustwacht", k1);
                 setRole(h2, "kustwacht", k1);
                 setRole(j1, "werver", k1);
-                String fout = null;
+                String fault = null;
                 try {
-                    fireInOrder(b, names, List.of(k1, h1, h2, j1), sessie -> { }, sessie -> { });
+                    fireInOrder(b, names, List.of(k1, h1, h2, j1), session -> { }, session -> { });
                 } catch (IllegalStateException e) {
-                    fout = "IllegalStateException: " + e.getMessage();
+                    fault = "IllegalStateException: " + e.getMessage();
                 }
-                assertEquals(sentence, fout, () -> "op " + branch + " in volgorde " + names);
+                assertEquals(sentence, fault, () -> "op " + branch + " in volgorde " + names);
             }
         }
     }
@@ -625,8 +625,8 @@ class TmsCreationWitnessTest {
      *  101st generation would make one at depth 101, and there the creation budget ends the run, at the making
      *  (RUNTIME-SEMANTICS ch. 5.5). */
     static Path documentF() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Wachter", List.of(
-                attribuut("opvolgeraantal", WHOLE)), List.of())),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Wachter", List.of(
+                attribute("opvolgeraantal", WHOLE)), List.of())),
                 List.of(factTypeOneToMany("opvolging", "voorganger", "Wachter", "opvolger", "Wachter", "opvolgers")));
         List<String> rules = List.of(
                 computingRule("opvolgeraantal", "BEREKENING", "Wachter", "opvolgeraantal", COUNT_OPVOLGERS, "null"));
@@ -637,7 +637,7 @@ class TmsCreationWitnessTest {
 
     static JsonNode caseF() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of(), List.of(), Map.of())),
-                List.of(waarde("W1", "opvolgeraantal", "1")));
+                List.of(value("W1", "opvolgeraantal", "1")));
     }
 
     private static final String BUDGET = TmsCreationStratumWitnessTest.budget("werf", 0, "Wachter");
@@ -650,13 +650,13 @@ class TmsCreationWitnessTest {
         assertEquals("case: " + BUDGET, TmsFaultWitnessTest.playBoth(ir, caseF()));
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of(), List.of());
                 List<Object[]> made = new ArrayList<>();
-                assertEquals(BUDGET, fireInOrder(b, names, List.of(w1), sessie -> { },
-                        sessie -> made.addAll(made(sessie))), () -> "de vuring" + where);
+                assertEquals(BUDGET, fireInOrder(b, names, List.of(w1), session -> { },
+                        session -> made.addAll(made(session))), () -> "de vuring" + where);
                 // one object in each phase, the subject of each the object of the one before
                 assertEquals(100, made.size(), () -> "objecten" + where);
                 Object onderwerp = w1;
@@ -688,7 +688,7 @@ class TmsCreationWitnessTest {
         assertEquals("PLAYED", CaseRunner.viaDrlText(d.resolve("ir.json"), List.of(d.resolve("case.json"))).status());
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(d.resolve("ir.json"), branch);
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261008L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261008L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 List<Object> w = new ArrayList<>();
@@ -698,8 +698,8 @@ class TmsCreationWitnessTest {
                     setRole(w.get(i + 1), "voorganger", w.get(i));
                 }
                 List<Object[]> left = new ArrayList<>();
-                assertNull(fireInOrder(b, names, w, sessie -> { },
-                        sessie -> left.addAll(koppelingen(sessie, "erflijn"))), () -> "de vuring" + where);
+                assertNull(fireInOrder(b, names, w, session -> { },
+                        session -> left.addAll(links(session, "erflijn"))), () -> "de vuring" + where);
                 assertEquals(6, left.size(), () -> "links" + where);
                 for (Object[] l : left) {
                     int afstand = w.indexOf(l[1]) - w.indexOf(l[0]);
@@ -707,7 +707,7 @@ class TmsCreationWitnessTest {
                             () -> "fase van een link over " + afstand + where);
                 }
                 for (int i = 0; i < 4; i++)
-                    assertNumber(String.valueOf(3 - i), TmsDocuments.lees(w.get(i), "erfvolgeraantal"),
+                    assertNumber(String.valueOf(3 - i), TmsDocuments.read(w.get(i), "erfvolgeraantal"),
                             "erfvolgeraantal van W" + (i + 1) + where);
             }
         }
@@ -772,29 +772,29 @@ class TmsCreationWitnessTest {
         return Files.writeString(tmp, ir);
     }
 
-    /** "Een {@code subject} heeft een {@code rol} met …": an object creation of one always-valid version, its
-     *  {@code connectingRole} the role {@code rol} of {@code feittype}, the role the created object plays. */
-    static String objectCreation(String naam, String subject, String fresh, List<String> inits, String voorwaarde,
-                                String feittype, String rol) {
+    /** "Een {@code subject} heeft een {@code role} met …": an object creation of one always-valid version, its
+     *  {@code connectingRole} the role {@code role} of {@code factType}, the role the created object plays. */
+    static String objectCreation(String naam, String subject, String fresh, List<String> inits, String condition,
+                                String factType, String role) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"createdType\":\"" + fresh
                 + "\",\"subject\":\"" + subject + "\",\"initialisations\":[" + String.join(",", inits) + "]"
-                + (voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde)
-                + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(feittype, rol) + "}]}";
+                + (condition.equals("null") ? "" : ",\"condition\":" + condition)
+                + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(factType, role) + "}]}";
     }
 
     /** An initialisation of attribute {@code lid} of the created object. */
-    static String init(String member, String waarde) {
-        return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + waarde + ",\"characteristic\":false}";
+    static String init(String member, String value) {
+        return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
     }
 
     /** "Een {@code targetRole} van een {@code anchor} is een … van …": a fact creation of one always-valid version over
-     *  {@code pad}, each step a RoleBinding. */
-    static String factCreation(String naam, String feittype, String anchorRole, String targetRole, String anchor, List<String> pad,
-                              String voorwaarde) {
-        return "{\"node\":\"FactCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"factType\":\"" + feittype
+     *  {@code path}, each step a RoleBinding. */
+    static String factCreation(String naam, String factType, String anchorRole, String targetRole, String anchor, List<String> path,
+                              String condition) {
+        return "{\"node\":\"FactCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"factType\":\"" + factType
                 + "\",\"anchorRole\":\"" + anchorRole + "\",\"targetRole\":\"" + targetRole + "\",\"anchor\":\"" + anchor
-                + "\",\"path\":[" + String.join(",", pad) + "]"
-                + (voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde) + ",\"validity\":{\"node\":\"Validity\"}}]}";
+                + "\",\"path\":[" + String.join(",", path) + "]"
+                + (condition.equals("null") ? "" : ",\"condition\":" + condition) + ",\"validity\":{\"node\":\"Validity\"}}]}";
     }
 
     /** A recursive rule group of {@code leden}. */
@@ -809,78 +809,78 @@ class TmsCreationWitnessTest {
 
     /**
      * Fires {@code beans} through the rules of {@code b} added in {@code order}, with the backend's own driver
-     * ({@code DroolsBackend.vuur}, reached by name: this witness also compiles against the code before creation was
+     * ({@code DroolsBackend.fire}, reached by name: this witness also compiles against the code before creation was
      * carried, whose build refuses these documents before any fire). {@code voor} sees the session before the fire. The
      * fire must stay below the cap. At a fixpoint the derivations are written back and null is returned; at the
      * generation budget the driver's sentence. {@code na} sees the session either way, before it is disposed.
      */
-    static String vuur(DroolsBackend.Build b, List<Rule> order, List<Object> beans, Consumer<KieSession> before,
+    static String fire(DroolsBackend.Build b, List<Rule> order, List<Object> beans, Consumer<KieSession> before,
                        Consumer<KieSession> after) throws Exception {
-        return vuur(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList(), beans, before,
+        return fire(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList(), beans, before,
                 after);
     }
 
-    /** {@link #vuur(DroolsBackend.Build, List, List, Consumer, Consumer)} through the rules of {@code b} named in
+    /** {@link #fire(DroolsBackend.Build, List, List, Consumer, Consumer)} through the rules of {@code b} named in
      *  {@code namen}, in that order, as its branch builds them ({@link TmsDocuments#kieBaseOf}): on the exec-model
      *  branch the rules of its executable model, on {@code DRL_TEXT} those of its text (round 5b). */
     static String fireInOrder(DroolsBackend.Build b, List<String> names, List<Object> beans,
                                  Consumer<KieSession> before, Consumer<KieSession> after) throws Exception {
-        return vuur(b, TmsDocuments.kieBaseOf(b, names), names, beans, before, after);
+        return fire(b, TmsDocuments.kieBaseOf(b, names), names, beans, before, after);
     }
 
-    private static String vuur(DroolsBackend.Build b, KieBase kieBase, List<String> names, List<Object> beans,
+    private static String fire(DroolsBackend.Build b, KieBase kieBase, List<String> names, List<Object> beans,
                                Consumer<KieSession> before, Consumer<KieSession> after) throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = kieBase.newKieSession();
+        KieSession session = kieBase.newKieSession();
         try {
-            before.accept(sessie);
-            for (Object beanObject : beans) sessie.insert(beanObject);
-            Method m = DroolsBackend.class.getDeclaredMethod("vuur", DroolsBackend.Build.class, KieSession.class, int.class);
+            before.accept(session);
+            for (Object beanObject : beans) session.insert(beanObject);
+            Method m = DroolsBackend.class.getDeclaredMethod("fire", DroolsBackend.Build.class, KieSession.class, int.class);
             m.setAccessible(true);
             Object firing;
             try {
-                firing = m.invoke(null, b, sessie, 100_000);
+                firing = m.invoke(null, b, session, 100_000);
             } catch (InvocationTargetException e) {
                 if (e.getCause() instanceof RuntimeException r) throw r;
                 throw e;
             }
-            Method vuringen = firing.getClass().getDeclaredMethod("vuringen");
-            Method geenFixpunt = firing.getClass().getDeclaredMethod("geenFixpunt");
-            vuringen.setAccessible(true);
-            geenFixpunt.setAccessible(true);
-            int n = (Integer) vuringen.invoke(firing);
-            String sentence = (String) geenFixpunt.invoke(firing);
+            Method firings = firing.getClass().getDeclaredMethod("firings");
+            Method noFixpoint = firing.getClass().getDeclaredMethod("noFixpoint");
+            firings.setAccessible(true);
+            noFixpoint.setAccessible(true);
+            int n = (Integer) firings.invoke(firing);
+            String sentence = (String) noFixpoint.invoke(firing);
             if (n >= 100_000)
                 throw new AssertionError(b.branch() + ": vuurplafond in volgorde " + names);
-            if (sentence == null) DroolsBackend.zetAfgeleideWaarden(b, sessie);
-            after.accept(sessie);
+            if (sentence == null) DroolsBackend.setDerivedValues(b, session);
+            after.accept(session);
             return sentence;
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
-    /** The marks of the object creations in {@code sessie} ({@code CreationStamp}, read by name), as {subject, object,
+    /** The marks of the object creations in {@code session} ({@code CreationStamp}, read by name), as {subject, object,
      *  phase}, in the order of their phase. */
-    static List<Object[]> made(KieSession sessie) {
+    static List<Object[]> made(KieSession session) {
         List<Object[]> out = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o.getClass().getSimpleName().equals("CreationStamp")))
-            out.add(new Object[]{veld(f, "onderwerp"), veld(f, "object"), veld(f, "phase")});
+        for (Object f : session.getObjects(o -> o.getClass().getSimpleName().equals("CreationStamp")))
+            out.add(new Object[]{field(f, "onderwerp"), field(f, "object"), field(f, "phase")});
         out.sort(java.util.Comparator.comparingInt(g -> (Integer) g[2]));
         return out;
     }
 
-    /** The links of {@code relation} in {@code sessie} ({@code RelationLink}, read by name), as {first, second, phase}. */
-    static List<Object[]> koppelingen(KieSession sessie, String relation) {
+    /** The links of {@code relation} in {@code session} ({@code RelationLink}, read by name), as {first, second, phase}. */
+    static List<Object[]> links(KieSession session, String relation) {
         List<Object[]> out = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o.getClass().getSimpleName().equals("RelationLink")))
-            if (relation.equals(veld(f, "relation"))) out.add(new Object[]{veld(f, "eerste"), veld(f, "tweede"), veld(f, "phase")});
+        for (Object f : session.getObjects(o -> o.getClass().getSimpleName().equals("RelationLink")))
+            if (relation.equals(field(f, "relation"))) out.add(new Object[]{field(f, "first"), field(f, "second"), field(f, "phase")});
         return out;
     }
 
-    private static Object veld(Object fact, String naam) {
+    private static Object field(Object fact, String naam) {
         try {
             return fact.getClass().getMethod(naam).invoke(fact);
         } catch (ReflectiveOperationException e) {
@@ -888,29 +888,29 @@ class TmsCreationWitnessTest {
         }
     }
 
-    /** Counts into {@code teller} every {@link Value} of attribute {@code attribuut} with value {@code lexeme} that is
+    /** Counts into {@code teller} every {@link Value} of attribute {@code attribute} with value {@code lexeme} that is
      *  inserted: an intermediate state of the defaults group of that attribute passing. */
-    private static DefaultRuleRuntimeEventListener valueCounter(String attribuut, String lexeme, int[] counter) {
+    private static DefaultRuleRuntimeEventListener valueCounter(String attribute, String lexeme, int[] counter) {
         BigDecimal v = new BigDecimal(lexeme);
         return new DefaultRuleRuntimeEventListener() {
             @Override public void objectInserted(ObjectInsertedEvent e) {
-                if (e.getObject() instanceof Value w && w.attribuut().naam().equalsIgnoreCase(attribuut)
-                        && w.waarde() instanceof BigDecimal x && x.compareTo(v) == 0) counter[0]++;
+                if (e.getObject() instanceof Value w && w.attribute().naam().equalsIgnoreCase(attribute)
+                        && w.value() instanceof BigDecimal x && x.compareTo(v) == 0) counter[0]++;
             }
         };
     }
 
-    private static void setRole(Object beanObject, String rol, Object doel) throws Exception {
+    private static void setRole(Object beanObject, String role, Object target) throws Exception {
         for (Method m : beanObject.getClass().getMethods())
-            if (m.getName().equals(dev.uchar.regelspraak.transpiler.kern.Namen.setter(rol)) && m.getParameterCount() == 1) {
-                m.invoke(beanObject, doel);
+            if (m.getName().equals(dev.uchar.regelspraak.transpiler.core.Namen.setter(role)) && m.getParameterCount() == 1) {
+                m.invoke(beanObject, target);
                 return;
             }
-        throw new AssertionError("geen setter voor " + rol + " op " + beanObject.getClass());
+        throw new AssertionError("geen setter voor " + role + " op " + beanObject.getClass());
     }
 
-    private static void assertNumber(String verwacht, Object werkelijk, String description) {
-        assertTrue(werkelijk instanceof BigDecimal w && new BigDecimal(verwacht).compareTo(w) == 0,
-                () -> description + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    private static void assertNumber(String expected, Object actual, String description) {
+        assertTrue(actual instanceof BigDecimal w && new BigDecimal(expected).compareTo(w) == 0,
+                () -> description + ": verwacht " + expected + ", werkelijk " + actual);
     }
 }

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ClampUnitTest {
 
-    private static String bron(String eenheid, String limit, String extraMember) {
+    private static String source(String eenheid, String limit, String extraMember) {
         return """
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
@@ -44,25 +44,25 @@ class ClampUnitTest {
 
     @Test void a_bound_with_a_unit_over_a_unitless_base() {
         assertEquals(List.of("WARNING 11 clamp minimum and base have incompatible units"),
-                meldingen(bron("", "met een minimum van 0 €", "")));
+                meldingen(source("", "met een minimum van 0 €", "")));
         assertEquals(List.of("WARNING 11 clamp maximum and base have incompatible units"),
-                meldingen(bron("", "met een maximum van 100 €", "")));
+                meldingen(source("", "met een maximum van 100 €", "")));
         assertEquals(List.of("WARNING 11 clamp minimum and base have incompatible units",
                         "WARNING 11 clamp maximum and base have incompatible units"),
-                meldingen(bron("", "met een minimum van 0 € en een maximum van 100 €", "")));
+                meldingen(source("", "met een minimum van 0 € en een maximum van 100 €", "")));
     }
 
     @Test void a_unitless_attribute_bound_over_a_base_with_a_unit() {
         // only a LITERAL adopts the other side's unit; an attribute declared without one does not
         assertEquals(List.of("WARNING 12 clamp minimum and base have incompatible units"),
-                meldingen(bron(" met eenheid €", "met een minimum van zijn ondergrens",
+                meldingen(source(" met eenheid €", "met een minimum van zijn ondergrens",
                         "\n    de ondergrens Numeriek (getal met 2 decimalen);")));
     }
 
     @Test void a_unitless_literal_takes_over_the_unit_and_equal_units_fit() {
-        assertEquals(List.of(), meldingen(bron("", "met een minimum van 0", "")));
-        assertEquals(List.of(), meldingen(bron(" met eenheid €", "met een minimum van 0", "")));
-        assertEquals(List.of(), meldingen(bron(" met eenheid €", "met een minimum van 0 €", "")));
+        assertEquals(List.of(), meldingen(source("", "met een minimum van 0", "")));
+        assertEquals(List.of(), meldingen(source(" met eenheid €", "met een minimum van 0", "")));
+        assertEquals(List.of(), meldingen(source(" met eenheid €", "met een minimum van 0 €", "")));
     }
 
     /** Two units that do not convert are the same WF-099 defect as a unit on one side alone, and the resolver has
@@ -90,7 +90,7 @@ class ClampUnitTest {
     }
 
     @Test void the_warning_keeps_the_document() {
-        RegelSpraakModel m = Resolver.resolve(bron("", "met een minimum van 0 €", ""));
+        RegelSpraakModel m = Resolver.resolve(source("", "met een minimum van 0 €", ""));
         assertTrue(m.isOk(), () -> "een WARNING blokkeert het document niet: " + m.diagnostics);
         assertEquals(Severity.WARNING, m.diagnostics.stream().map(Diagnostic::severity).findFirst().orElseThrow());
     }

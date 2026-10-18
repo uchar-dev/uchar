@@ -51,15 +51,15 @@ class SelfReadCycleTest {
         return "\nRegel " + naam + "\n    geldig altijd\n        " + sentence + "\n";
     }
 
-    /** The diagnostics of one cycle: first its WARNING, which is returned, then exactly the ERRORs {@code fouten}. */
-    private static Diagnostic warningAndErrors(RegelSpraakModel m, String... fouten) {
-        assertEquals(1 + fouten.length, m.diagnostics.size(),
-                () -> "verwachtte de WARNING en " + fouten.length + " ERROR(s), kreeg: " + m.diagnostics);
+    /** The diagnostics of one cycle: first its WARNING, which is returned, then exactly the ERRORs {@code faults}. */
+    private static Diagnostic warningAndErrors(RegelSpraakModel m, String... faults) {
+        assertEquals(1 + faults.length, m.diagnostics.size(),
+                () -> "verwachtte de WARNING en " + faults.length + " ERROR(s), kreeg: " + m.diagnostics);
         Diagnostic d = m.diagnostics.get(0);
         assertEquals(Severity.WARNING, d.severity(), () -> "verwachtte eerst de WARNING: " + d);
         List<Diagnostic> rest = m.diagnostics.subList(1, m.diagnostics.size());
         assertTrue(rest.stream().allMatch(Diagnostic::isError), () -> "verwachtte daarna alleen ERRORs: " + rest);
-        assertEquals(List.of(fouten), rest.stream().map(Diagnostic::message).toList());
+        assertEquals(List.of(faults), rest.stream().map(Diagnostic::message).toList());
         return d;
     }
 

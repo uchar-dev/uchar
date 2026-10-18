@@ -31,7 +31,7 @@ class WholePeriodChainWitnessTest {
 
     private static final String GETAL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    private static Path document(String soort) throws Exception {
+    private static Path document(String category) throws Exception {
         String operand = "{\"node\":\"AttributeReference\",\"attribute\":\"havengeld\",\"subjectType\":\"Haven\","
                 + "\"source\":{\"snippet\":\"het havengeld van de thuishaven van de werf\"},\"path\":["
                 + "{\"node\":\"RoleBinding\",\"factType\":\"ligplaats\",\"role\":\"werf\"},"
@@ -57,7 +57,7 @@ class WholePeriodChainWitnessTest {
                 + "\"initialisation\":false,\"presentation\":\"calculation\",\"target\":{\"node\":\"AttributeReference\","
                 + "\"attribute\":\"meldpremie\",\"subjectType\":\"Schuit\",\"source\":{\"snippet\":\"De meldpremie\"}},"
                 + "\"value\":{\"node\":\"Literal\",\"value\":{\"number\":\"40\"},\"type\":" + GETAL
-                + ",\"source\":{\"snippet\":\"40\"}},\"condition\":{\"node\":\"Predicate\",\"kind\":\"" + soort + "\","
+                + ",\"source\":{\"snippet\":\"40\"}},\"condition\":{\"node\":\"Predicate\",\"kind\":\"" + category + "\","
                 + "\"operand\":" + operand + ",\"negated\":false,\"digits\":0,\"wholePeriod\":{\"node\":\"WholePeriod\","
                 + "\"granularity\":\"year\",\"negated\":false},\"source\":{\"snippet\":\"leeg-toets\"}},"
                 + "\"validity\":{\"node\":\"Validity\"}}]}],"

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
@@ -18,8 +18,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.parameterRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -61,8 +61,8 @@ class TmsParameterWitnessTest {
             computingRule("korting van een vondst", "BEREKENING", "Vondst", "korting",
                     binary("plus", parameterRead("tarief"), parameterRead("drempel")), "null"));
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("gewicht", WHOLE), attribuut("toeslag", WHOLE), attribuut("korting", WHOLE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("gewicht", WHOLE), attribute("toeslag", WHOLE), attribute("korting", WHOLE)),
             List.of("zwaar", "goedkoop"))), List.of(), List.of("drempel", "tarief"));
 
     @Test void every_order_of_the_rules_in_the_document() throws Exception {
@@ -90,14 +90,14 @@ class TmsParameterWitnessTest {
 
     /** The case; {@code cheap} says whether the document carries the rule that compares the two parameters. */
     private static JsonNode caseDocument(boolean cheap) throws Exception {
-        List<String> verwachtingen = new ArrayList<>(List.of(verwacht("V1", "zwaar", true), waarde("V1", "toeslag", "15"),
-                waarde("V1", "korting", "13"), verwacht("V2", "zwaar", false), waarde("V2", "toeslag", "8"),
-                waarde("V2", "korting", "13"), consistent()));
-        if (cheap) verwachtingen.addAll(List.of(verwacht("V1", "goedkoop", true), verwacht("V2", "goedkoop", true)));
+        List<String> expectations = new ArrayList<>(List.of(expected("V1", "zwaar", true), value("V1", "toeslag", "15"),
+                value("V1", "korting", "13"), expected("V2", "zwaar", false), value("V2", "toeslag", "8"),
+                value("V2", "korting", "13"), consistent()));
+        if (cheap) expectations.addAll(List.of(expected("V1", "goedkoop", true), expected("V2", "goedkoop", true)));
         return TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("gewicht", "12"), List.of(), Map.of()),
                         instance("V2", "Vondst", Map.of("gewicht", "5"), List.of(), Map.of())),
-                Map.of("drempel", "10", "tarief", "3"), verwachtingen);
+                Map.of("drempel", "10", "tarief", "3"), expectations);
     }
 
     private static List<String> names(List<String> rules) throws Exception {

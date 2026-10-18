@@ -41,13 +41,13 @@ final class PluralMatcher {
         String exact = ot.attributeName(written);                     // singular, exact — preferred
         if (exact != null) return exact;
         String only = null;
-        for (Objecttype t : ot.keten())
+        for (Objecttype t : ot.chain())
             for (String attr : t.attributen.keySet()) {
                 String mv = t.attributePlural.get(attr);               // declared (mv: …), §3.3 — spec-sanctioned
                 boolean matches = mv != null && mv.equalsIgnoreCase(written);
                 if (!matches)                                             // else the synthesised regular plural
-                    for (String vorm : pluralForms(attr))
-                        if (vorm.equalsIgnoreCase(written)) { matches = true; break; }
+                    for (String form : pluralForms(attr))
+                        if (form.equalsIgnoreCase(written)) { matches = true; break; }
                 if (matches) {
                     if (only != null && !only.equalsIgnoreCase(attr)) return null;  // ambiguous → marker
                     only = attr;
@@ -100,8 +100,8 @@ final class PluralMatcher {
         if (takesS(b)) result.add(b + "s");
         if (n >= 3) {
             char last = b.charAt(n - 1), v2 = b.charAt(n - 2), v1 = b.charAt(n - 3);
-            boolean digraf = v1 == v2 && (v1 == 'a' || v1 == 'e' || v1 == 'o' || v1 == 'u');
-            if (digraf && isConsonant(last)) {
+            boolean digraph = v1 == v2 && (v1 == 'a' || v1 == 'e' || v1 == 'o' || v1 == 'u');
+            if (digraph && isConsonant(last)) {
                 result.add(b.substring(0, n - 3) + v1 + last + "en");   // naam→namen, persoon→personen
                 return result;
             }

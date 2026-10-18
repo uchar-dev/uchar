@@ -47,12 +47,12 @@ class OnlyWriterTest {
 
     private static Diagnostic onlyError(String src) {
         RegelSpraakModel m = Resolver.resolve(src);
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
         // one of WF-050's two clauses, in the verifier's sentence
-        assertTrue(fouten.get(0).message().contains("a rule also writes defaults target '")
-                || fouten.get(0).message().contains("multiple defaults groups on target '"), fouten.get(0).message());
-        return fouten.get(0);
+        assertTrue(faults.get(0).message().contains("a rule also writes defaults target '")
+                || faults.get(0).message().contains("multiple defaults groups on target '"), faults.get(0).message());
+        return faults.get(0);
     }
 
     @Test void another_ordinary_rule_on_the_target_is_refused() {

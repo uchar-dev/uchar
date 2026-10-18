@@ -79,23 +79,23 @@ class RejectionAfterTheDecisionWitnessTest {
     @Test void every_order_of_the_creation_rules_also_in_the_text() throws Exception {
         Path ir = MAP.resolve("ir.json");
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         DroolsBackend.Build t = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         List<Integer> places = new ArrayList<>();
         for (int i = 0; i < rules.size(); i++) if (CREATIONS.contains(rules.get(i))) places.add(i);
         assertEquals(2, places.size(), () -> "de twee creatieregels in " + rules);
         int orders = 0;
         for (List<Integer> p : TmsDocuments.permutations(places)) {
-            List<Rule> model = new ArrayList<>(gegenereerd);
+            List<Rule> model = new ArrayList<>(generated);
             List<String> text = new ArrayList<>(rules);
             for (int k = 0; k < places.size(); k++) {
-                model.set(places.get(k), gegenereerd.get(p.get(k)));
+                model.set(places.get(k), generated.get(p.get(k)));
                 text.set(places.get(k), rules.get(p.get(k)));
             }
-            vuur(b, TmsDocuments.kieBase(b, model), text);
-            vuur(t, TextOrder.kieBase(t, text), text);
+            fire(b, TmsDocuments.kieBase(b, model), text);
+            fire(t, TextOrder.kieBase(t, text), text);
             orders++;
         }
         assertEquals(2, orders);
@@ -103,19 +103,19 @@ class RejectionAfterTheDecisionWitnessTest {
 
     /** Fires J1 and J2 of the case through {@code kieBase}, the rules of {@code b} in the order {@code namen}, with the
      *  parameters of the case, and writes back: J1 penninggerechtigd without an Afwijzing, J2 with one. */
-    private static void vuur(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
+    private static void fire(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
         Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("aantal aangemelde vondsten", "14",
                 "penningjaar", "2025"), List.of());
         Object j2 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("aantal aangemelde vondsten", "11",
                 "penningjaar", "2025"), List.of());
         String where = " op " + b.branch() + " in volgorde " + names;
-        TmsDocuments.vuur(b, kieBase, names, List.of(j1, j2), sessie -> {
-            sessie.setGlobal("vondstdrempel", new BigDecimal("12"));
-            sessie.setGlobal("penningbedrag", new BigDecimal("250"));
-        }, sessie -> { });
+        TmsDocuments.fire(b, kieBase, names, List.of(j1, j2), session -> {
+            session.setGlobal("vondstdrempel", new BigDecimal("12"));
+            session.setGlobal("penningbedrag", new BigDecimal("250"));
+        }, session -> { });
         assertTrue(TmsDocuments.has(j1, "penninggerechtigd"), "J1 penninggerechtigd" + where);
         assertFalse(TmsDocuments.has(j2, "penninggerechtigd"), "J2 penninggerechtigd" + where);
-        TmsFaultWitnessTest.assertNumber("0", TmsDocuments.lees(j1, "aantal afwijzingen"), "J1 aantal afwijzingen" + where);
-        TmsFaultWitnessTest.assertNumber("1", TmsDocuments.lees(j2, "aantal afwijzingen"), "J2 aantal afwijzingen" + where);
+        TmsFaultWitnessTest.assertNumber("0", TmsDocuments.read(j1, "aantal afwijzingen"), "J1 aantal afwijzingen" + where);
+        TmsFaultWitnessTest.assertNumber("1", TmsDocuments.read(j2, "aantal afwijzingen"), "J2 aantal afwijzingen" + where);
     }
 }

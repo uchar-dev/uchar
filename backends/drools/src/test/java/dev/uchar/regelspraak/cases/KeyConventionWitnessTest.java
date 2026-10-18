@@ -71,7 +71,7 @@ class KeyConventionWitnessTest {
         // clingo agrees. Before the convention was pulled straight the backend answered "consistent":
         // "Vondstnummer" missed the granulariteit map, the scalar branch compared two List<Segment> with
         // equals, and a Segment carries no equals — so not even the instance's own key matched itself.
-        Path ir = withKeys(STRANDREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
+        Path ir = withKeys(STRANDREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
         assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
                 flags(ir, twoStrandvondsten()),
                 "a differently capitalised key names the SAME declared attribute (ref's Checks.norm)");
@@ -92,7 +92,7 @@ class KeyConventionWitnessTest {
         // play the mis-read source still counts ITSELF (equals on the identical list object) and the sum
         // crosses 1 anyway, so the gap hides. ref, measured on this model: PASS (2 expectations); clingo
         // agrees. Before the fix the backend answered "consistent".
-        Path ir = withKeys(NUMMERREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
+        Path ir = withKeys(NUMMERREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
         assertEquals(Set.of("eenmalig vondstnummer @ S1", "eenmalig vondstnummer @ S2"),
                 flags(ir, twoStrandvondsten()),
                 "a union source's key is the same declared attribute in another capitalisation");
@@ -112,7 +112,7 @@ class KeyConventionWitnessTest {
         // model: "EVALUATION FAULT: a uniqueness key list carries at most one temporal key component (…)";
         // clingo raises the same wording at translation. The exec-model branch refuses the shape by name when
         // it lowers the uniqueness (UniquenessKeyFormWitnessTest), so its count shows in the refusal.
-        Path ir = withKeys(TWO_TEMPORAL, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer").add("kavelnummer")));
+        Path ir = withKeys(TWO_TEMPORAL, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer").add("kavelnummer")));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(ir, twoTemporalKeys(), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains(TOO_MANY),
@@ -181,14 +181,14 @@ class KeyConventionWitnessTest {
      * and cases of the rows above (Takdumps: the verdict, the input, what lees gives and the facts at the fixpoint). */
 
     @Test void the_drl_text_reads_a_differently_capitalised_key_temporally() throws Exception {
-        Path ir = withKeys(STRANDREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
+        Path ir = withKeys(STRANDREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
         BranchDumps.equal(ir, twoStrandvondsten(), "the mis-capitalised key");
         String drl = drl(ir);
         assertTrue(!drl.contains("Vondstnummer"), "the written spelling must not reach the DRL text: " + drl);
     }
 
     @Test void the_drl_text_also_normalises_the_union_key() throws Exception {
-        Path ir = withKeys(NUMMERREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
+        Path ir = withKeys(NUMMERREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
         BranchDumps.equal(ir, twoStrandvondsten(), "the mis-capitalised key of a union");
         String drl = drl(ir);
         assertTrue(!drl.contains("Vondstnummer"), "the written spelling must not reach the DRL text: " + drl);
@@ -214,8 +214,8 @@ class KeyConventionWitnessTest {
 
     /** A corpus {@code ir.json} with one authored edit, written to a temp file — the corpus file itself is
      *  never touched (the mutation lives in this test, not in the shared zone). */
-    private static Path withKeys(Path bron, Consumer<ObjectNode> edit) throws Exception {
-        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(bron));
+    private static Path withKeys(Path source, Consumer<ObjectNode> edit) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(source));
         edit.accept(ir);
         Path out = Files.createTempFile(tmp, "sleutelconventie", ".json");
         Files.writeString(out, ir.toString());
@@ -286,16 +286,16 @@ class KeyConventionWitnessTest {
         Set<String> out = new LinkedHashSet<>();
         for (Object f : after.sessionFacts()) {
             if (!"Inconsistentie".equals(f.getClass().getSimpleName())) continue;
-            Object subject = lees(f, "getSubject");
+            Object subject = read(f, "getSubject");
             String label = "?";
-            for (var e : after.invoer().entrySet()) if (e.getValue() == subject) label = e.getKey();
-            out.add(lees(f, "getRegel") + " @ " + label);
+            for (var e : after.input().entrySet()) if (e.getValue() == subject) label = e.getKey();
+            out.add(read(f, "getRegel") + " @ " + label);
         }
         return out;
     }
 
     /** A no-arg read on a CHILD-loaded bean (the fact classes are not on this test's classpath). */
-    private static Object lees(Object bean, String getter) throws Exception {
+    private static Object read(Object bean, String getter) throws Exception {
         return bean.getClass().getMethod(getter).invoke(bean);
     }
 }

@@ -5,7 +5,7 @@ package dev.uchar.regelspraak.transpiler.tms;
  * 1, and exactly one stands while the session fires a phase; {@code stratum} is the evaluation stratum the phase
  * belongs to. A generation is one phase, in which the fact creations fire and then the object creations, both on the
  * fixpoint the rule layer reached before the phase; the driver runs the generations of a stratum until one creates
- * nothing, and then those of the next ({@code DroolsBackend.vuur}). Every creation rule binds this fact, only in a
+ * nothing, and then those of the next ({@code DroolsBackend.fire}). Every creation rule binds this fact, only in a
  * phase of its own stratum or one above, as a pass of the reference interpreter over stratum k runs the forms of
  * stratum k and below (RUNTIME-SEMANTICS ch. 6.3, {@code TmsTranspiler.creationStrata}). What a creation made carries
  * the number of its phase ({@link CreationStamp}, {@link RelationLink}): a creation rule does not take an object or a link of

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
@@ -38,8 +38,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -111,9 +111,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class TmsFaultWitnessTest {
 
-    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("taxatie", WHOLE), attribuut("opbrengst", WHOLE), attribuut("deelnemers", WHOLE),
-                    attribuut("bergloon", WHOLE), attribuut("aandeel", WHOLE), attribuut("verhouding", WHOLE)),
+    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("taxatie", WHOLE), attribute("opbrengst", WHOLE), attribute("deelnemers", WHOLE),
+                    attribute("bergloon", WHOLE), attribute("aandeel", WHOLE), attribute("verhouding", WHOLE)),
             List.of("gemeld", "erkend"))), List.of());
 
     private static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
@@ -126,13 +126,13 @@ class TmsFaultWitnessTest {
                     predicate("filled", ownRead("bergloon", "Vondst"))));
 
     static final String GROUP = attributeGroup("bergloon van een vondst", "Vondst", "bergloon", List.of(
-            standaard(check("erkend", false), ownRead("taxatie", "Vondst")),
-            standaard(check("gemeld", false), number("0"))));
+            defaultEntry(check("erkend", false), ownRead("taxatie", "Vondst")),
+            defaultEntry(check("gemeld", false), number("0"))));
 
     static JsonNode temporaryCase() throws Exception {
         return TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "90"), List.of("gemeld"), Map.of())),
-                List.of(waarde("V1", "bergloon", "30"), waarde("V1", "aandeel", "3"), consistent()));
+                List.of(value("V1", "bergloon", "30"), value("V1", "aandeel", "3"), consistent()));
     }
 
     static Path temporary(List<String> rules) throws Exception {
@@ -141,13 +141,13 @@ class TmsFaultWitnessTest {
 
     @Test void a_temporary_division_by_zero_disappears_at_the_fixpoint_in_every_order_of_the_document()
             throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TEMPORARY)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + play(temporary(order), temporaryCase(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(2, outcomes.size());
     }
 
@@ -155,26 +155,26 @@ class TmsFaultWitnessTest {
      *  orders, at least one of which must let the reader divide by the transient 0 of the lower default. */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(temporary(TEMPORARY), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int onTheIntermediateState = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100)) {
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30", "opbrengst", "90"),
                     List.of("gemeld"));
             boolean[] intermediateState = {false};
             FaultFacts facts = new FaultFacts();
-            String fout = vuur(b, order, List.of(v1), new DefaultAgendaEventListener() {
+            String fault = fire(b, order, List.of(v1), new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("aandeel")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s
-                                    && s.waarde() instanceof BigDecimal d && d.signum() == 0))
+                                    && s.value() instanceof BigDecimal d && d.signum() == 0))
                         intermediateState[0] = true;
                 }
             }, facts);
-            assertNull(fout, () -> "volgorde " + names);
+            assertNull(fault, () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertNumber("30", TmsDocuments.lees(v1, "bergloon"), "bergloon in volgorde " + names);
-            assertNumber("3", TmsDocuments.lees(v1, "aandeel"), "aandeel in volgorde " + names);
+            assertNumber("30", TmsDocuments.read(v1, "bergloon"), "bergloon in volgorde " + names);
+            assertNumber("3", TmsDocuments.read(v1, "aandeel"), "aandeel in volgorde " + names);
             if (intermediateState[0]) {
                 assertTrue(facts.inserted > 0, () -> "de deling door de tijdelijke 0 gaf geen foutfeit, volgorde " + names);
                 onTheIntermediateState++;
@@ -194,7 +194,7 @@ class TmsFaultWitnessTest {
         return TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"), List.of("gemeld"),
                         Map.of())),
-                List.of(waarde("V1", "aandeel", null), consistent()));
+                List.of(value("V1", "aandeel", null), consistent()));
     }
 
     static Path persistent(List<String> rules) throws Exception {
@@ -206,13 +206,13 @@ class TmsFaultWitnessTest {
 
     @Test void a_persistent_division_by_zero_gives_in_every_order_the_same_message_as_the_exec_model_branch()
             throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(PERSISTENT)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + play(persistent(order), persistentCase(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " " + AANDEEL_BY_ZERO);
+            expected.add(names + " " + AANDEEL_BY_ZERO);
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(2, outcomes.size());
     }
 
@@ -226,9 +226,9 @@ class TmsFaultWitnessTest {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"),
                     List.of("gemeld"));
-            assertEquals(AANDEEL_BY_ZERO, vuur(b, order, List.of(v1), new DefaultAgendaEventListener() {},
+            assertEquals(AANDEEL_BY_ZERO, fire(b, order, List.of(v1), new DefaultAgendaEventListener() {},
                     new FaultFacts()), () -> "volgorde " + names);
-            assertNull(TmsDocuments.lees(v1, "aandeel"), () -> "een fout schrijft niets terug, volgorde " + names);
+            assertNull(TmsDocuments.read(v1, "aandeel"), () -> "een fout schrijft niets terug, volgorde " + names);
             orders++;
         }
         assertEquals(120, orders);
@@ -248,7 +248,7 @@ class TmsFaultWitnessTest {
         return TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"),
                         List.of("gemeld"), Map.of())),
-                List.of(waarde("V1", "aandeel", null), waarde("V1", "verhouding", null), consistent()));
+                List.of(value("V1", "aandeel", null), value("V1", "verhouding", null), consistent()));
     }
 
     static Path two(List<String> rules) throws Exception {
@@ -259,19 +259,19 @@ class TmsFaultWitnessTest {
     private static final String TWO_HEAD = "aan het fixpunt staan 2 evaluatiefouten, in de regels \"aandeel\","
             + " \"verhouding\"";
 
-    private static final String TWO_FAULTS = "Evaluatiefouten: " + TWO_HEAD + ": deling door nul in de regel"
+    private static final String TWO_FAULTS = "EvaluationFaults: " + TWO_HEAD + ": deling door nul in de regel"
             + " \"aandeel\": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS"
             + " ch. 1.4, punt 4); deling door nul in de regel \"verhouding\": 30 gedeeld door 0 — een numerieke nul als"
             + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     @Test void two_persistent_faults_are_in_every_order_in_the_same_fixed_order() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TWO)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + play(two(order), twoCase(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " " + TWO_FAULTS);
+            expected.add(names + " " + TWO_FAULTS);
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(6, outcomes.size());
     }
 
@@ -283,7 +283,7 @@ class TmsFaultWitnessTest {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst",
                     Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"), List.of("gemeld"));
-            assertEquals(TWO_FAULTS, vuur(b, order, List.of(v1), new DefaultAgendaEventListener() {},
+            assertEquals(TWO_FAULTS, fire(b, order, List.of(v1), new DefaultAgendaEventListener() {},
                     new FaultFacts()), () -> "volgorde " + names);
             orders++;
         }
@@ -325,15 +325,15 @@ class TmsFaultWitnessTest {
      *  rules by {@link #two_persistent_faults_in_every_order_of_the_generated_rules}. */
     @Test void the_error_line_of_the_cli_names_both_standing_faults_in_every_order() throws Exception {
         Path casePath = caseFile(twoCase());
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TWO)) {
             List<String> names = TmsDocuments.ruleNames(order);
             String regel = cli(two(order).toString(), casePath.toString());
             List<String> mis = defects(regel, TWO_HEAD, List.of("aandeel", "verhouding"));
             outcomes.add(names + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
-            verwacht.add(names + " in orde");
+            expected.add(names + " in orde");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(6, outcomes.size());
     }
 
@@ -370,15 +370,15 @@ class TmsFaultWitnessTest {
                 + LONG_AANDEEL + "\" (2×)";
         assertTrue(head.length() > 200, () -> "de kop past binnen de grens: " + head.length() + " tekens");
         Map<String, String> shortQuote = Map.of(LONG_AANDEEL, "aandeel …", LONG_RATIO, "verhouding …");
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(LONG)) {
             List<String> names = TmsDocuments.ruleNames(order).stream().map(n -> shortQuote.getOrDefault(n, n)).toList();
             String regel = cli(TmsDocuments.document(MODEL, order).toString(), casePath.toString());
             List<String> mis = defects(regel, head, List.of(LONG_RATIO, LONG_AANDEEL));
             outcomes.add(names + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
-            verwacht.add(names + " in orde");
+            expected.add(names + " in orde");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(6, outcomes.size());
     }
 
@@ -389,7 +389,7 @@ class TmsFaultWitnessTest {
         List<String> mis = new ArrayList<>();
         for (String naam : rules)
             if (!regel.contains("\"" + naam + "\"")) mis.add("noemt \"" + naam + "\" niet");
-        if (!regel.startsWith("3 ERROR Evaluatiefouten: " + head + ": ")) mis.add("opent niet met exit 3 en de kop");
+        if (!regel.startsWith("3 ERROR EvaluationFaults: " + head + ": ")) mis.add("opent niet met exit 3 en de kop");
         if (!regel.endsWith("…")) mis.add("de grens kortte de zinnen niet in");
         return mis;
     }
@@ -433,10 +433,10 @@ class TmsFaultWitnessTest {
     }
 
     /** {@link #fixpointFault} as "SimpleName: message", or null where the write-back raises nothing. */
-    static String vuur(DroolsBackend.Build b, List<Rule> order, List<Object> beans, AgendaEventListener agenda,
+    static String fire(DroolsBackend.Build b, List<Rule> order, List<Object> beans, AgendaEventListener agenda,
                        FaultFacts facts) {
-        RuntimeException fout = fixpointFault(b, order, beans, agenda, facts);
-        return fout == null ? null : fout.getClass().getSimpleName() + ": " + fout.getMessage();
+        RuntimeException fault = fixpointFault(b, order, beans, agenda, facts);
+        return fault == null ? null : fault.getClass().getSimpleName() + ": " + fault.getMessage();
     }
 
     /** Fires {@code beans} through the rules of {@code b} added in {@code order}, with {@code agenda} on the agenda
@@ -448,26 +448,26 @@ class TmsFaultWitnessTest {
         List<String> names = order.stream().map(Rule::getName).toList();
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocuments.kieBase(b, order).newKieSession();
+        KieSession session = TmsDocuments.kieBase(b, order).newKieSession();
         try {
-            sessie.addEventListener(agenda);
-            sessie.addEventListener(facts);
-            for (Object beanObject : beans) sessie.insert(beanObject);
-            DroolsBackend.Vuring firing;
+            session.addEventListener(agenda);
+            session.addEventListener(facts);
+            for (Object beanObject : beans) session.insert(beanObject);
+            DroolsBackend.Firing firing;
             try {
-                firing = DroolsBackend.vuur(b, sessie, 100_000);
+                firing = DroolsBackend.fire(b, session, 100_000);
             } catch (RuntimeException e) {
                 return fail("de fire wierp in volgorde " + names + ": " + e);
             }
-            assertNull(firing.geenFixpunt(), () -> "geen fixpunt in volgorde " + names);
+            assertNull(firing.noFixpoint(), () -> "geen fixpunt in volgorde " + names);
             try {
-                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                DroolsBackend.setDerivedValues(b, session);
                 return null;
             } catch (RuntimeException e) {
                 return e;
             }
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -477,18 +477,18 @@ class TmsFaultWitnessTest {
         int inserted, withdrawn;
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
-            if (e.getObject().getClass().getSimpleName().equals("Fout")) inserted++;
+            if (e.getObject().getClass().getSimpleName().equals("Fault")) inserted++;
         }
 
         @Override public void objectUpdated(ObjectUpdatedEvent e) {}
 
         @Override public void objectDeleted(ObjectDeletedEvent e) {
-            if (e.getOldObject().getClass().getSimpleName().equals("Fout")) withdrawn++;
+            if (e.getOldObject().getClass().getSimpleName().equals("Fault")) withdrawn++;
         }
     }
 
-    static void assertNumber(String verwacht, Object werkelijk, String description) {
-        assertTrue(werkelijk instanceof BigDecimal w && new BigDecimal(verwacht).compareTo(w) == 0,
-                () -> description + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    static void assertNumber(String expected, Object actual, String description) {
+        assertTrue(actual instanceof BigDecimal w && new BigDecimal(expected).compareTo(w) == 0,
+                () -> description + ": verwacht " + expected + ", werkelijk " + actual);
     }
 }

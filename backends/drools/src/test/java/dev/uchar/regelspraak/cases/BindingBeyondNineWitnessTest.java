@@ -45,17 +45,17 @@ class BindingBeyondNineWitnessTest {
         // counts and two parameters: thirteen. ref and clingo: J 10-09-2026, S 20-10-2026 (the last lading), T 01-06-2026
         // (the vergunningseinde, written last and so highest), U 10-09-2026 (the inherited base), W 01-05-2026 (the
         // exception: 13 is above 10), X leeg; consistent.
-        String meldtermijn = group("meldtermijn", "Jutter", standaard(all(filled(own("vinddag", "Jutter")),
+        String meldtermijn = group("meldtermijn", "Jutter", defaultEntry(all(filled(own("vinddag", "Jutter")),
                 greaterThan(count("Jutter", "wrakhout"), number(0))), plus(own("vinddag", "Jutter"), parameter("meldduur"))));
         String lading = all(filled(own("vinddag", "Strandjutter")), greaterThan(count("Strandjutter", "lading"), number(0)));
-        String zwaar = standaard(all(filled(own("vinddag", "Strandjutter")),
+        String zwaar = defaultEntry(all(filled(own("vinddag", "Strandjutter")),
                         greaterThan(count("Strandjutter", "lading"), number(0)),
                         greaterThan(fold("sum", "gewicht", WHOLE, null), parameter("gewichtsdrempel"))),
                 plus(fold("first", "bergdag", DATE, null), MAAND));
         String afterLading = "{\"node\":\"Default\",\"justification\":" + lading + ",\"consequence\":"
                 + plus(fold("last", "bergdag", DATE, "lading"), parameter("meldduur")) + ",\"exceptions\":"
                 + exceptions(zwaar) + "}";
-        String toVergunning = standaard(all(filled(own("vergunningseinde", "Strandjutter")),
+        String toVergunning = defaultEntry(all(filled(own("vergunningseinde", "Strandjutter")),
                 greaterThan(count("Strandjutter", "anker"), number(0))), own("vergunningseinde", "Strandjutter"));
         String forStrandjutter = group("meldtermijn voor Strandjutter", "Strandjutter",
                 "{\"node\":\"Default\",\"exceptions\":" + exceptions(toVergunning, afterLading) + "}");
@@ -81,10 +81,10 @@ class BindingBeyondNineWitnessTest {
         List<String> five = List.of(fold("last", "bergdag", DATE, "lading"), fold("first", "bergdag", DATE, "anker"),
                 fold("last", "bergdag", DATE, "anker"), fold("first", "bergdag", DATE, "wrakhout"),
                 fold("last", "bergdag", DATE, "wrakhout"));
-        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"last\",\"arguments\":[" + String.join(",", five)
+        String value = "{\"node\":\"Aggregation\",\"kind\":\"last\",\"arguments\":[" + String.join(",", five)
                 + "],\"type\":" + DATE + "}";
         String regel = "{\"node\":\"Rule\",\"name\":\"meldtermijn\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
-                + "\"target\":" + own("meldtermijn", "Jutter") + ",\"value\":" + waarde
+                + "\"target\":" + own("meldtermijn", "Jutter") + ",\"value\":" + value
                 + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
         String caseDocument = caseDocument(List.of(jutter("J", "Jutter", null), jutter("S", "Strandjutter", null),
                         jutter("T", "Strandjutter", null), jutter("X", "Strandjutter", null),
@@ -103,13 +103,13 @@ class BindingBeyondNineWitnessTest {
         // after: past eight sources the counts were folded pairwise into one running total, which this binding replaces.
         List<String> kinds = List.of("Strandvondst", "Wrakvondst", "Ankervondst", "Netvondst", "Tonvondst", "Kistvondst",
                 "Flesvondst", "Touwvondst", "Plankvondst");
-        List<String> typen = new ArrayList<>(), sources = new ArrayList<>();
+        List<String> types = new ArrayList<>(), sources = new ArrayList<>();
         for (String t : kinds) {
-            typen.add("{\"node\":\"ObjectType\",\"name\":\"" + t + "\",\"animate\":false,\"plural\":\"" + t + "en\","
-                    + "\"attributes\":[" + attribuut("vondstnummer", WHOLE) + "],\"characteristics\":[]}");
+            types.add("{\"node\":\"ObjectType\",\"name\":\"" + t + "\",\"animate\":false,\"plural\":\"" + t + "en\","
+                    + "\"attributes\":[" + attribute("vondstnummer", WHOLE) + "],\"characteristics\":[]}");
             sources.add("{\"node\":\"Source\",\"objectType\":\"" + t + "\",\"keys\":[\"vondstnummer\"]}");
         }
-        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[" + String.join(",", typen) + "],\"factTypes\":[],"
+        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[" + String.join(",", types) + "],\"factTypes\":[],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"rules\":[],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],"
                 + "\"consistencies\":[],\"uniquenesses\":[{\"node\":\"Uniqueness\",\"name\":\"eenmalig vondstnummer\","
@@ -135,8 +135,8 @@ class BindingBeyondNineWitnessTest {
     private static final String MAAND = "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + MAANDEN + "}";
     private static final String VONDSTROL = "{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"}";
 
-    private static String own(String attribuut, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type + "\"}";
+    private static String own(String attribute, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type + "\"}";
     }
 
     private static String parameter(String naam) {
@@ -164,27 +164,27 @@ class BindingBeyondNineWitnessTest {
     }
 
     /** "die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan "&lt;soort&gt;"", or no filter for null. */
-    private static String kindFilter(String soort) {
-        return soort == null ? "" : ",\"filter\":{\"node\":\"Compound\",\"quantifier\":\"the\",\"threshold\":0,\"parts\":["
+    private static String kindFilter(String category) {
+        return category == null ? "" : ",\"filter\":{\"node\":\"Compound\",\"quantifier\":\"the\",\"threshold\":0,\"parts\":["
                 + "{\"node\":\"Comparison\",\"op\":\"equal\",\"left\":" + own("soort", "Vondst") + ",\"right\":{\"node\":"
-                + "\"Literal\",\"value\":{\"text\":\"" + soort + "\"},\"type\":{\"node\":\"Text\"}}}]}";
+                + "\"Literal\",\"value\":{\"text\":\"" + category + "\"},\"type\":{\"node\":\"Text\"}}}]}";
     }
 
     /** "de &lt;kind&gt; van de &lt;lid&gt; van alle vondsten van de Jutter [die … &lt;soort&gt;]". */
-    private static String fold(String kind, String member, String type, String soort) {
+    private static String fold(String kind, String member, String type, String category) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + own(member, "Vondst")
-                + "],\"elementType\":\"Vondst\"" + kindFilter(soort) + ",\"sourceRole\":" + VONDSTROL + ",\"type\":" + type + "}";
+                + "],\"elementType\":\"Vondst\"" + kindFilter(category) + ",\"sourceRole\":" + VONDSTROL + ",\"type\":" + type + "}";
     }
 
     /** "het aantal vondsten van de &lt;type&gt; die … &lt;soort&gt;". */
-    private static String count(String type, String soort) {
+    private static String count(String type, String category) {
         return "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[" + own("vondsten", type)
-                + "],\"elementType\":\"Vondst\"" + kindFilter(soort) + ",\"sourceRole\":" + VONDSTROL + ",\"type\":"
+                + "],\"elementType\":\"Vondst\"" + kindFilter(category) + ",\"sourceRole\":" + VONDSTROL + ",\"type\":"
                 + NIET_NEGATIEF + "}";
     }
 
-    private static String standaard(String rechtvaardiging, String consequence) {
-        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequence + "}";
+    private static String defaultEntry(String justification, String consequence) {
+        return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence + "}";
     }
 
     /** One ordered exception group, highest first. */
@@ -198,7 +198,7 @@ class BindingBeyondNineWitnessTest {
                 + "\"meldtermijn\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
@@ -206,11 +206,11 @@ class BindingBeyondNineWitnessTest {
      *  gewichtsdrempel, and the unit system Tijd. */
     private static String document(List<String> rules, String... groups) {
         String model = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
-                + "\"attributes\":[" + attribuut("vinddag", DATE) + "," + attribuut("meldtermijn", DATE) + "],\"characteristics\":[]},"
+                + "\"attributes\":[" + attribute("vinddag", DATE) + "," + attribute("meldtermijn", DATE) + "],\"characteristics\":[]},"
                 + "{\"node\":\"ObjectType\",\"name\":\"Strandjutter\",\"supertype\":\"Jutter\",\"animate\":false,\"plural\":"
-                + "\"Strandjutters\",\"attributes\":[" + attribuut("vergunningseinde", DATE) + "],\"characteristics\":[]},"
+                + "\"Strandjutters\",\"attributes\":[" + attribute("vergunningseinde", DATE) + "],\"characteristics\":[]},"
                 + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\",\"attributes\":["
-                + attribuut("soort", "{\"node\":\"Text\"}") + "," + attribuut("bergdag", DATE) + "," + attribuut("gewicht", WHOLE)
+                + attribute("soort", "{\"node\":\"Text\"}") + "," + attribute("bergdag", DATE) + "," + attribute("gewicht", WHOLE)
                 + "],\"characteristics\":[]}],"
                 + "\"factTypes\":[{\"node\":\"FactType\",\"name\":\"JutterHeeftVondst\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"jutter\",\"objectType\":\"Jutter\",\"many\":false},"
@@ -237,8 +237,8 @@ class BindingBeyondNineWitnessTest {
                 + "},\"roles\":{},\"characteristics\":[]}";
     }
 
-    private static String vondst(String label, String jutter, String soort, String bergdag, int weight) {
-        return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{\"soort\":{\"text\":\"" + soort + "\"}"
+    private static String vondst(String label, String jutter, String category, String bergdag, int weight) {
+        return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{\"soort\":{\"text\":\"" + category + "\"}"
                 + (bergdag == null ? "" : ",\"bergdag\":{\"date\":\"" + bergdag + "\"}") + ",\"gewicht\":{\"number\":\""
                 + weight + "\"}},\"roles\":{\"jutter\":[\"" + jutter + "\"]},\"characteristics\":[]}";
     }
@@ -252,18 +252,18 @@ class BindingBeyondNineWitnessTest {
         return "{\"kind\":\"inconsistent\",\"rule\":\"eenmalig vondstnummer\",\"label\":\"" + label + "\"}";
     }
 
-    private static String date(String label, String attribuut, String iso) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut
+    private static String date(String label, String attribute, String iso) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute
                 + "\",\"value\":{\"date\":\"" + iso + "\"}}";
     }
 
-    private static String empty(String label, String attribuut) {
-        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\"}";
+    private static String empty(String label, String attribute) {
+        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\"}";
     }
 
-    private static String caseDocument(List<String> instanties, String parameters, List<String> verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{" + parameters + "}},\"expected\":[" + String.join(",", verwacht) + "]}";
+    private static String caseDocument(List<String> instances, String parameters, List<String> expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{" + parameters + "}},\"expected\":[" + String.join(",", expected) + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

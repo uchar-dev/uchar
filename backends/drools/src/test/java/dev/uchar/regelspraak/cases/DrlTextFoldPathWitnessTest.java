@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * and the fault of a member ({@code MemberFault}). The documents are those of the witnesses of the exec-model branch that
  * make these facts, {@link TmsFilterDepositWitnessTest} and part E of {@link TmsInputFormWitnessTest}, here fired
  * through both branches: each case gets the same verdict, and the dump of its session ({@link SessionDump}) is the same
- * in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint ({@link BranchDumps}), and holds
+ * in its input, in what {@code DroolsBackend.read} gives and in the facts at the fixpoint ({@link BranchDumps}), and holds
  * the fact. The third path the lens named, a member's place over two steps, the corpus fires on the DRL-text branch
  * (measured at fix round 3a: in five goldens a contribution or the fault of a filter with such a place, the same as on
  * the exec-model branch).
@@ -53,7 +53,7 @@ class DrlTextFoldPathWitnessTest {
     @Test void the_fault_of_a_member_is_equal_on_both_branches() throws Exception {
         Path ir = TmsTimelineDocuments.document(TmsInputFormWitnessTest.MODEL_E, TmsInputFormWitnessTest.RULES_E,
                 List.of());
-        List<String> instanties = new ArrayList<>(List.of(TmsInputFormWitnessTest.jutter("J1", List.of("V1", "V2")),
+        List<String> instances = new ArrayList<>(List.of(TmsInputFormWitnessTest.jutter("J1", List.of("V1", "V2")),
                 TmsInputFormWitnessTest.jutter("J4", List.of("V6", "V5")),
                 TmsInputFormWitnessTest.vondst("V1", "8", Map.of("jaartarief", TmsInputFormWitnessTest.JAARTARIEF_12),
                         TmsInputFormWitnessTest.KEPT_Q1),
@@ -63,8 +63,8 @@ class DrlTextFoldPathWitnessTest {
                         Map.of()),
                 TmsInputFormWitnessTest.vondst("V6", "9", Map.of("tarief", TmsDocuments.numberValue("6")),
                         Map.of())));
-        instanties.addAll(TmsInputFormWitnessTest.playingE());
-        JsonNode caseDocument = TmsTimelineDocuments.caseDocument(TmsInputFormWitnessTest.DATE, instanties, List.of(consistent()));
+        instances.addAll(TmsInputFormWitnessTest.playingE());
+        JsonNode caseDocument = TmsTimelineDocuments.caseDocument(TmsInputFormWitnessTest.DATE, instances, List.of(consistent()));
         String dump = BranchDumps.equal(ir, caseDocument, "de zaak van deel E");
         assertEquals(3, Stream.of(dump.split("\n")).filter(r -> r.startsWith("feit MemberFault(")).count(),
                 () -> "drie lidfouten, op V2, V5 en V6:\n" + dump);

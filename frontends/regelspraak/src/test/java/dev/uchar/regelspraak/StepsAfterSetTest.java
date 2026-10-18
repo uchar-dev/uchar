@@ -2,7 +2,7 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
@@ -67,40 +67,40 @@ class StepsAfterSetTest {
             + "        Het zwaarste gewicht van een Ploeg moet berekend worden als de maximale waarde van het gewicht "
             + "van de weging van de vondst van alle jutters van de Ploeg.\n";
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::toString).toList());
         return m;
     }
 
-    private static ResolvedRegel regel(RegelSpraakModel m, String naam) {
+    private static ResolvedRule regel(RegelSpraakModel m, String naam) {
         return m.resolvedRegels.stream().filter(r -> r.naam().equals(naam)).findFirst()
                 .orElseThrow(() -> new AssertionError("geen regel '" + naam + "' in "
-                        + m.resolvedRegels.stream().map(ResolvedRegel::naam).toList()));
+                        + m.resolvedRegels.stream().map(ResolvedRule::naam).toList()));
     }
 
     /** The fold of a rule's value and its one argument, a set read of {@code lid} on Jutter. */
     private static Expr.FunctionCall foldOver(RegelSpraakModel m, String regel, Expr.FunctionKind kind, String member) {
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, regel(m, regel).waarde());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, regel(m, regel).value());
         assertEquals(kind, f.kind());
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, f.arguments().get(0));
-        assertEquals(member, a.attribuut());
-        assertEquals("Jutter", a.objecttype().naam);
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, f.arguments().get(0));
+        assertEquals(member, a.attribute());
+        assertEquals("Jutter", a.objectType().naam);
         assertTrue(a.set());
         return f;
     }
 
     /** The generated rule: the member on Jutter, set from the chain of to-one steps the sentence wrote. */
-    private static void helperRule(RegelSpraakModel m, String member, String targetMember, String targetType, List<String> pad) {
-        ResolvedRegel r = regel(m, member);
-        Expr.AttribuutRef doel = assertInstanceOf(Expr.AttribuutRef.class, r.doel());
-        assertEquals(member, doel.attribuut());
-        assertEquals("Jutter", doel.objecttype().naam);
-        Expr.AttribuutRef w = assertInstanceOf(Expr.AttribuutRef.class, r.waarde());
-        assertEquals(targetMember, w.attribuut());
-        assertEquals(targetType, w.objecttype().naam);
-        assertEquals(pad, w.navigationPath());
-        assertNull(r.voorwaarde());
+    private static void helperRule(RegelSpraakModel m, String member, String targetMember, String targetType, List<String> path) {
+        ResolvedRule r = regel(m, member);
+        Expr.AttributeReference target = assertInstanceOf(Expr.AttributeReference.class, r.target());
+        assertEquals(member, target.attribute());
+        assertEquals("Jutter", target.objectType().naam);
+        Expr.AttributeReference w = assertInstanceOf(Expr.AttributeReference.class, r.value());
+        assertEquals(targetMember, w.attribute());
+        assertEquals(targetType, w.objectType().naam);
+        assertEquals(path, w.navigationPath());
+        assertNull(r.condition());
     }
 
     // ---- the three forms of the reproduction
@@ -110,7 +110,7 @@ class StepsAfterSetTest {
         // Jutter — de aggregatie blijft onopgelost (§13.4.17) — …", the value a marker
         RegelSpraakModel m = clean(MODEL + ZWAARSTE);
         foldOver(m, "zwaarste gewicht", Expr.FunctionKind.MAXIMUM, "gewicht via vondst en weging");
-        assertInstanceOf(Datatype.Numeriek.class, m.objecttypen.get("Jutter").attribuut("gewicht via vondst en weging"));
+        assertInstanceOf(Datatype.Numeriek.class, m.objecttypen.get("Jutter").attribute("gewicht via vondst en weging"));
         helperRule(m, "gewicht via vondst en weging", "gewicht", "Weging", List.of("vondst", "weging"));
     }
 
@@ -129,7 +129,7 @@ class StepsAfterSetTest {
         RegelSpraakModel m = clean(MODEL + "Regel eerste vinddag\n    geldig altijd\n        De eerste vinddag van een "
                 + "Ploeg moet berekend worden als de eerste van de vinddag van de vondst van alle jutters van de Ploeg.\n");
         foldOver(m, "eerste vinddag", Expr.FunctionKind.EERSTE, "vinddag via vondst");
-        assertInstanceOf(Datatype.DatumInDagen.class, m.objecttypen.get("Jutter").attribuut("vinddag via vondst"));
+        assertInstanceOf(Datatype.DatumInDagen.class, m.objecttypen.get("Jutter").attribute("vinddag via vondst"));
         helperRule(m, "vinddag via vondst", "vinddag", "Vondst", List.of("vondst"));
     }
 
@@ -145,8 +145,8 @@ class StepsAfterSetTest {
                 + "worden op het gewicht van de weging van de vondst van de Jutter.\n\n"
                 + "Regel zwaarste gewicht\n    geldig altijd\n        Het zwaarste gewicht van een Ploeg moet berekend "
                 + "worden als de maximale waarde van het bereikte gewicht van alle jutters van de Ploeg.\n";
-        String gelowerd = IrEmitter.emit(clean(MODEL + ZWAARSTE)).replace("gewicht via vondst en weging", "bereikte gewicht");
-        assertEquals(withoutSource(IrEmitter.emit(clean(hand))), withoutSource(gelowerd));
+        String lowered = IrEmitter.emit(clean(MODEL + ZWAARSTE)).replace("gewicht via vondst en weging", "bereikte gewicht");
+        assertEquals(withoutSource(IrEmitter.emit(clean(hand))), withoutSource(lowered));
     }
 
     /** The emitted document without its source anchors and its origins, and with the rules in name order: what the
@@ -209,15 +209,15 @@ class StepsAfterSetTest {
                 + "als de maximale waarde van het gewicht van de weging van de vondst van alle strandjutters van de Ploeg.\n\n";
         String all = "Regel alle\n    geldig altijd\n        Het vondstgewicht van een Ploeg moet berekend worden als de "
                 + "som van het gewicht van de weging van de vondst van alle jutters van de Ploeg.\n\n";
-        for (String bron : List.of(model + strand + all, model + all + strand)) {
-            RegelSpraakModel m = clean(bron);
+        for (String source : List.of(model + strand + all, model + all + strand)) {
+            RegelSpraakModel m = clean(source);
             assertNotNull(m.objecttypen.get("Jutter").attributen.get("gewicht via vondst en weging"));
             assertNull(m.objecttypen.get("Strandjutter").attributen.get("gewicht via vondst en weging"));
             assertEquals(1, m.resolvedRegels.stream().filter(r -> r.naam().equals("gewicht via vondst en weging")).count());
-            Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class,
-                    assertInstanceOf(Expr.FunctionCall.class, regel(m, "strand").waarde()).arguments().get(0));
-            assertEquals("gewicht via vondst en weging", a.attribuut());
-            assertEquals("Strandjutter", a.objecttype().naam);
+            Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class,
+                    assertInstanceOf(Expr.FunctionCall.class, regel(m, "strand").value()).arguments().get(0));
+            assertEquals("gewicht via vondst en weging", a.attribute());
+            assertEquals("Strandjutter", a.objectType().naam);
         }
     }
 
@@ -226,8 +226,8 @@ class StepsAfterSetTest {
     @Test void a_read_of_the_same_chain_outside_the_fold_stays_a_chain() {
         RegelSpraakModel m = clean(MODEL + ZWAARSTE + "\nRegel eigen gewicht\n    geldig altijd\n        Het eigen "
                 + "gewicht van een Jutter moet gesteld worden op het gewicht van de weging van de vondst van de Jutter.\n");
-        Expr.AttribuutRef w = assertInstanceOf(Expr.AttribuutRef.class, regel(m, "eigen gewicht").waarde());
-        assertEquals("gewicht", w.attribuut());
+        Expr.AttributeReference w = assertInstanceOf(Expr.AttributeReference.class, regel(m, "eigen gewicht").value());
+        assertEquals("gewicht", w.attribute());
         assertEquals(List.of("vondst", "weging"), w.navigationPath());
     }
 
@@ -236,9 +236,9 @@ class StepsAfterSetTest {
                 "    het eigen gewicht Numeriek (geheel getal);\n    de eerste startdag in de ploeg Datum in dagen;\n")
                 + "Regel eerste startdag in de ploeg\n    geldig altijd\n        De eerste startdag in de ploeg van een "
                 + "Jutter moet berekend worden als de eerste van de startdag van alle jutters van de ploeg van de Jutter.\n");
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class,
-                assertInstanceOf(Expr.FunctionCall.class, regel(m, "eerste startdag in de ploeg").waarde()).arguments().get(0));
-        assertEquals("startdag", a.attribuut());
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class,
+                assertInstanceOf(Expr.FunctionCall.class, regel(m, "eerste startdag in de ploeg").value()).arguments().get(0));
+        assertEquals("startdag", a.attribute());
         assertEquals(2, a.rangePath().size());
         assertEquals(List.of("startdag", "eigen gewicht", "eerste startdag in de ploeg"),
                 List.copyOf(m.objecttypen.get("Jutter").attributen.keySet()));

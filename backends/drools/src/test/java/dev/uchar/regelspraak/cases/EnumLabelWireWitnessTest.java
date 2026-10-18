@@ -180,18 +180,18 @@ class EnumLabelWireWitnessTest {
 
     /** De casus met ÉÉN enumverwachting vervangen — de populatie blijft onaangeroerd, zodat een verschil
      *  alleen van de geschreven of teruggelezen waarde kan komen. */
-    private JsonNode withEnumExpectation(String naam, String caseName, String attribuut, String waarde)
+    private JsonNode withEnumExpectation(String naam, String caseName, String attribute, String value)
             throws Exception {
         ObjectNode c = (ObjectNode) caseOf(naam, caseName);
         boolean touched = false;
         for (JsonNode e : c.withArray("expected"))
             if ("attributeValue".equals(e.path("kind").asText())
-                    && attribuut.equals(e.path("attribute").asText())
+                    && attribute.equals(e.path("attribute").asText())
                     && e.path("value").has("enumeration")) {
-                ((ObjectNode) e.get("value")).put("enumeration", waarde);
+                ((ObjectNode) e.get("value")).put("enumeration", value);
                 touched = true;
             }
-        assertTrue(touched, naam + "/" + caseName + " hoort een enumverwachting op '" + attribuut
+        assertTrue(touched, naam + "/" + caseName + " hoort een enumverwachting op '" + attribute
                 + "' te dragen — anders muteert deze rij niets");
         return c;
     }
@@ -205,11 +205,11 @@ class EnumLabelWireWitnessTest {
         throw new IllegalStateException("de casus draagt geen tekstverwachting");
     }
 
-    private JsonNode withTextExpectation(JsonNode original, String waarde) {
+    private JsonNode withTextExpectation(JsonNode original, String value) {
         ObjectNode c = original.deepCopy();
         for (JsonNode e : c.withArray("expected"))
             if ("attributeValue".equals(e.path("kind").asText()) && e.path("value").has("text")) {
-                ((ObjectNode) e.get("value")).put("text", waarde);
+                ((ObjectNode) e.get("value")).put("text", value);
                 return c;
             }
         throw new IllegalStateException("de casus draagt geen tekstverwachting");

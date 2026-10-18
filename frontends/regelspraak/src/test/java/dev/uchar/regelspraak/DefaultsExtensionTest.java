@@ -67,8 +67,8 @@ class DefaultsExtensionTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "een uitzondering op een ander doel hoort de resolver te laten falen");
-        String fout = onlyError(m);
-        assertTrue(fout.contains("ander doel") && fout.contains("sloopbevoegd"),
+        String error = onlyError(m);
+        assertTrue(error.contains("ander doel") && error.contains("sloopbevoegd"),
                 () -> "diagnostiek benoemt het afwijkende doel niet: " + m.errors());
     }
 
@@ -187,13 +187,13 @@ class DefaultsExtensionTest {
         assertEquals(0, m.resolvedRegels.size(), "basis + uitzondering horen uit resolvedRegels te zijn gelicht");
         var l = m.prioritizedDefaults.get(0);
         assertEquals("Jutter", l.onderwerp());
-        assertEquals("bergingsbevoegd", l.kenmerk());
-        assertNull(l.attribuut());
-        assertFalse(l.ongeordend());
+        assertEquals("bergingsbevoegd", l.characteristic());
+        assertNull(l.attribute());
+        assertFalse(l.unordered());
         assertEquals(2, l.defaults().size(), "verwachtte een uitzonderingsdefault boven een basisdefault");
         // the exception default (a Samengesteld voorwaarde) sits ABOVE the base default (a bare Vergelijking)
-        assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Samengesteld.class, l.defaults().get(0).voorwaarde());
-        assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Vergelijking.class, l.defaults().get(1).voorwaarde());
+        assertInstanceOf(dev.uchar.regelspraak.ir.Condition.Compound.class, l.defaults().get(0).condition());
+        assertInstanceOf(dev.uchar.regelspraak.ir.Condition.Comparison.class, l.defaults().get(1).condition());
         assertEquals(Boolean.TRUE, l.defaults().get(0).decision());
         assertEquals(Boolean.TRUE, l.defaults().get(1).decision());
     }
@@ -221,12 +221,12 @@ class DefaultsExtensionTest {
         assertEquals(2, m.prioritizedDefaults.size(), "verwachtte twee zuster-defaults-groepen");
         assertEquals(0, m.resolvedRegels.size(), "alle groepsleden horen uit resolvedRegels te zijn gelicht");
         for (var l : m.prioritizedDefaults) {
-            assertEquals("wachtgeld", l.attribuut(), "elke zuster-defaults-groep schrijft het gedeelde attribuut");
-            assertNull(l.kenmerk());
-            assertTrue(l.ongeordend(), "elke zuster-defaults-groep van de groep is declared-unordered (WF-050)");
+            assertEquals("wachtgeld", l.attribute(), "elke zuster-defaults-groep schrijft het gedeelde attribuut");
+            assertNull(l.characteristic());
+            assertTrue(l.unordered(), "elke zuster-defaults-groep van de groep is declared-unordered (WF-050)");
             assertEquals(1, l.defaults().size());
             assertNull(l.defaults().get(0).decision(), "een attribuut-default heeft geen besluit");
-            assertNotNull(l.defaults().get(0).consequentie(), "een attribuut-default draagt zijn waarde als consequentie");
+            assertNotNull(l.defaults().get(0).consequence(), "een attribuut-default draagt zijn waarde als consequentie");
         }
         // the §9.5 conflict channel is only reachable via this form: distinct written values on one target
         String c = emitCompact(m);

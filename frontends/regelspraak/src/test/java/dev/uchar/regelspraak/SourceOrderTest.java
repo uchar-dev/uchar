@@ -5,7 +5,7 @@ import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -118,8 +118,8 @@ class SourceOrderTest {
         - J4 is niet premiegerechtigd
         """;
 
-    private static String emit(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String emit(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         return IrEmitter.emit(m);
     }
@@ -135,12 +135,12 @@ class SourceOrderTest {
     }
 
     @Test void the_scenario_route_writes_in_both_orders_the_same_cases_and_the_same_document() {
-        ScenarioBundel a = ScenarioResolver.resolve(PREMIEPOT_MODEL + OBJECT_CREATION + FACT_CREATION + READERS + SCENARIO);
-        ScenarioBundel b = ScenarioResolver.resolve(PREMIEPOT_MODEL + FACT_CREATION + OBJECT_CREATION + READERS + SCENARIO);
+        ScenarioBundle a = ScenarioResolver.resolve(PREMIEPOT_MODEL + OBJECT_CREATION + FACT_CREATION + READERS + SCENARIO);
+        ScenarioBundle b = ScenarioResolver.resolve(PREMIEPOT_MODEL + FACT_CREATION + OBJECT_CREATION + READERS + SCENARIO);
         assertTrue(a.model().diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + a.model().diagnostics);
         assertTrue(b.model().diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + b.model().diagnostics);
-        assertEquals(IrEmitter.emit(CaseEmitter.metScope(a.model(), a.scenarios().get(0).scope())),
-                IrEmitter.emit(CaseEmitter.metScope(b.model(), b.scenarios().get(0).scope())));
+        assertEquals(IrEmitter.emit(CaseEmitter.withScope(a.model(), a.scenarios().get(0).scope())),
+                IrEmitter.emit(CaseEmitter.withScope(b.model(), b.scenarios().get(0).scope())));
         assertEquals(CaseEmitter.emit(a.scenarios().get(0)), CaseEmitter.emit(b.scenarios().get(0)));
     }
 
@@ -212,8 +212,8 @@ class SourceOrderTest {
     /** The document without its list of rules, the one list the two orders above write in another order. */
     private static String withoutRules(String ir) {
         int van = ir.indexOf("\"rules\": [");
-        int tot = ir.indexOf("\"dayKindDefinitions\"");
-        assertTrue(van >= 0 && tot > van, ir);
-        return ir.substring(0, van) + ir.substring(tot);
+        int until = ir.indexOf("\"dayKindDefinitions\"");
+        assertTrue(van >= 0 && until > van, ir);
+        return ir.substring(0, van) + ir.substring(until);
     }
 }

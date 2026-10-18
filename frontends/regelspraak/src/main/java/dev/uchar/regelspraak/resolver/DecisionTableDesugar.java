@@ -65,8 +65,8 @@ public final class DecisionTableDesugar {
             String nr = row.isEmpty() ? "" : row.get(0).trim();
             for (int ci = 0; ci < conclusionKol.size(); ci++) {
                 int cc = conclusionKol.get(ci);
-                String resultaat = resultPart(headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
-                if (resultaat == null) continue;   // a forbidden / un-renderable conclusie — resultaatdeel already warned
+                String resultClause = resultPart(headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
+                if (resultClause == null) continue;   // a forbidden / un-renderable conclusie — resultaatdeel already warned
 
                 // each non-n.v.t. conditie cell -> a Voorwaarde (a predicate kop + its 0..n alternative values).
                 List<Condition> conditions = new ArrayList<>();
@@ -95,7 +95,7 @@ public final class DecisionTableDesugar {
                 if (clause == null) continue;   // un-renderable (>1 disjunction in one EN-row) — warned + skipped
                 // name: "<naam> <rij>" (+ a conclusie-column suffix only when a row yields more than one regel).
                 String regelNaam = naam + (nr.isEmpty() ? "" : " " + nr) + (conclusionKol.size() > 1 ? " (" + (ci + 1) + ")" : "");
-                result.add("Regel " + regelNaam + "\n  geldig " + valid + "\n    " + resultaat + clause + ".\n");
+                result.add("Regel " + regelNaam + "\n  geldig " + valid + "\n    " + resultClause + clause + ".\n");
             }
         }
         return result;

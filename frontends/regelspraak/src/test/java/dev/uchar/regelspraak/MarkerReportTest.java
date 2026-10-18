@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code markerWithMessage}, which runs {@link Report#assertAccountedFor} on the emission. A marker whose {@code reden} is
  * null is spoken for by its own route, and {@link MarkerReasonPinTest} lists each such family with the diagnostic that
  * speaks: where that is a WARNING, the route is pinned here with a sentence that reaches it; where it is an ERROR,
- * the frontend writes no document at all (irModus writes nothing, and {@code IrEmitter.emit} refuses the model under
+ * the frontend writes no document at all (irMode writes nothing, and {@code IrEmitter.emit} refuses the model under
  * WF-113 (a)), so there is no wire for (b) to hold on. {@link #every_sanctioned_family_is_classified()} keeps
  * that split complete: a new family on the pin list fails here until it is placed.
  */
@@ -54,7 +54,7 @@ class MarkerReportTest {
         Eén jutter heeft meerdere strandmaten
         """;
 
-    /** Each null-reden family of {@link MarkerReasonPinTest#GESANCTIONEERD}, placed: the WARNING routes it has and
+    /** Each null-reden family of {@link MarkerReasonPinTest#SANCTIONED}, placed: the WARNING routes it has and
      *  the test here that holds (b) on each, or the ERROR that keeps its document from being written. */
     private static final Map<String, String> CLASSIFICATION = new LinkedHashMap<>();
     static {
@@ -83,15 +83,15 @@ class MarkerReportTest {
         String otherSource = document(marker, "{\"node\": \"Diagnostic\", \"severity\": \"warning\", "
                 + "\"message\": \"onopgelost: x \\u2014 'de som van een lid' blijft\", \"line\": 3}");
         assertThrows(AssertionError.class, () -> Report.assertAccountedFor(otherSource), "(b): een melding over iets anders");
-        String fout = document("null", "{\"node\": \"Diagnostic\", \"severity\": \"error\", \"message\": \"x\", \"line\": 1}");
-        assertThrows(AssertionError.class, () -> Report.assertAccountedFor(fout), "(a): severity error op de wire");
+        String error = document("null", "{\"node\": \"Diagnostic\", \"severity\": \"error\", \"message\": \"x\", \"line\": 1}");
+        assertThrows(AssertionError.class, () -> Report.assertAccountedFor(error), "(a): severity error op de wire");
 
         // (b) counts a blank snippet as absent: an empty one is contained in every message, so the warning beside it
         // would account for it under a literal reading, and a marker without a source record is contained in none
         String message = "{\"node\": \"Diagnostic\", \"severity\": \"warning\", \"message\": \"iets\", \"line\": 1}";
-        for (String bron : new String[] { ", \"source\": {\"snippet\": \"\"}", ", \"source\": {\"snippet\": \"   \"}", "" }) {
-            String withoutSource = document("{\"node\": \"Unresolved\"" + bron + "}", message);
-            assertThrows(AssertionError.class, () -> Report.assertAccountedFor(withoutSource), "(b): een marker" + bron);
+        for (String source : new String[] { ", \"source\": {\"snippet\": \"\"}", ", \"source\": {\"snippet\": \"   \"}", "" }) {
+            String withoutSource = document("{\"node\": \"Unresolved\"" + source + "}", message);
+            assertThrows(AssertionError.class, () -> Report.assertAccountedFor(withoutSource), "(b): een marker" + source);
         }
     }
 
@@ -169,8 +169,8 @@ class MarkerReportTest {
     // ---------------- completeness ----------------
 
     @Test void every_sanctioned_family_is_classified() {
-        Set<String> families = MarkerReasonPinTest.GESANCTIONEERD.stream()
-                .map(p -> p.file() + "#" + p.methode()).collect(Collectors.toCollection(TreeSet::new));
+        Set<String> families = MarkerReasonPinTest.SANCTIONED.stream()
+                .map(p -> p.file() + "#" + p.method()).collect(Collectors.toCollection(TreeSet::new));
         assertEquals(families, new TreeSet<>(CLASSIFICATION.keySet()),
                 "elke null-reden-familie van MarkerRedenPinTest hoort hier als WARNING-route met een zin of als "
                         + "ERROR-route zonder document ingedeeld te staan");
@@ -180,8 +180,8 @@ class MarkerReportTest {
 
     /** The route is reached (its own WARNING is there), the model carries no ERROR so the document is written, a
      *  marker is on the wire, and WF-113 holds on the JSON. */
-    private static void written(String bron, String route) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static void written(String source, String route) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.isOk(), () -> "een ERROR houdt het document tegen, dus de route wordt hier niet bereikt: "
                 + m.diagnostics);
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains(route)),

@@ -27,37 +27,37 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
  * @param joinField      the reference field on {@code doel} for the EXISTING final-hop relation (joined in the when)
  * @param tussenstappen the intermediate objects on the navigation path anker &rarr; … &rarr; doel-parent (empty = 1-hop)
  * @param voorwaarde    the condition guarding the creation (on the anker or doel), or null
- * @param geldigheid    the §13.4.2.5 validity window ({@link Geldigheid#ALTIJD} if always)
+ * @param geldigheid    the §13.4.2.5 validity window ({@link Validity#ALTIJD} if always)
  * @param feittype      the uchar symbolic form: the created fact type's name (null unless the whole
  *                      symbolic form is derivable — WF-028 all-or-nothing)
  * @param anchorRole      the created fact type's role filled by {@code anchor} (== {@code setField}), symbolic
  * @param targetRole       the created fact type's role filled by {@code doel}, symbolic
  * @param path       the RolBinding of the FINAL hop onto {@code doel} (the existing relation), symbolic
  */
-public record ResolvedFactCreation(String naam, Objecttype anchor, Objecttype doel,
+public record ResolvedFactCreation(String naam, Objecttype anchor, Objecttype target,
                                   String setField, String joinField,
                                   java.util.List<PathStep> pathSteps,
-                                  Conditie voorwaarde, Geldigheid geldigheid,
-                                  String feittype, String anchorRole, String targetRole,
+                                  Condition condition, Validity validity,
+                                  String factType, String anchorRole, String targetRole,
                                   RegelSpraakModel.RoleBindingRef path) {
 
     /** The v0 bean-field-only form, without the symbolic creation fields (they stay absent unless the
      *  whole symbolic form — created relation, both ends, join, and every tussenstap — is derivable). */
-    public ResolvedFactCreation(String naam, Objecttype anchor, Objecttype doel, String setField, String joinField,
-                               java.util.List<PathStep> pathSteps, Conditie voorwaarde, Geldigheid geldigheid) {
-        this(naam, anchor, doel, setField, joinField, pathSteps, voorwaarde, geldigheid, null, null, null, null);
+    public ResolvedFactCreation(String naam, Objecttype anchor, Objecttype target, String setField, String joinField,
+                               java.util.List<PathStep> pathSteps, Condition condition, Validity validity) {
+        this(naam, anchor, target, setField, joinField, pathSteps, condition, validity, null, null, null, null);
     }
 
     /** One intermediate object on the §9.4 multi-hop navigation path from {@code anchor} to {@code doel}.
      *  The reference field lives on the many side (§13.3.9.1): for a TO-MANY hop the CHILD ({@code type})
      *  holds it, joined {@code type( veld == $prev )}; for a TO-ONE hop the PARENT holds it (the side
-     *  objectcreatie set it on), joined {@code type( this == $prev.veld )} — {@code viaParentField} selects
+     *  objectcreatie set it on), joined {@code type( this == $prev.field )} — {@code viaParentField} selects
      *  which. {@code $prev} is the anker for the first step, the prior step otherwise. {@code roleBinding}
      *  is this hop's symbolic RolBinding (null unless the whole feitcreatie symbolic form is derivable). */
-    public record PathStep(Objecttype type, String veld, boolean viaParentField,
+    public record PathStep(Objecttype type, String field, boolean viaParentField,
                              RegelSpraakModel.RoleBindingRef roleBinding) {
-        public PathStep(Objecttype type, String veld, boolean viaParentField) {
-            this(type, veld, viaParentField, null);
+        public PathStep(Objecttype type, String field, boolean viaParentField) {
+            this(type, field, viaParentField, null);
         }
     }
 }

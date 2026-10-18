@@ -169,12 +169,12 @@ class CountRangeTest {
     @Test
     void the_ambiguous_count_guesses_no_relation() {
         RegelSpraakModel m = Resolver.resolve(AMBIGUOUS_MODEL + TYPE_PLURAL_RULE);
-        assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.FunctionCall f
+        assertTrue(m.resolvedRegels.get(0).value() instanceof Expr.FunctionCall f
                         && f.elementObjectType() != null && f.elementObjectType().naam.equals("Munt"),
                 () -> "het elementtype blijft gebonden; de meerduidigheid zit in de RELATIE");
         assertEquals(List.of("vouw 'het aantal Munten van de Jutter' zonder bereik (2 relaties verbinden Jutter met "
                         + "Munt, en 'Munten' noemt geen rol die er precies één aanwijst): " + WITHOUT_RANGE),
-                fouten(m));
+                faults(m));
     }
 
     // ---------------- the boundaries of the lookup ----------------
@@ -227,34 +227,34 @@ class CountRangeTest {
     @Test
     void an_unconnected_type_pair_yields_the_same_refusal() {
         RegelSpraakModel m = Resolver.resolve(UNCONNECTED_MODEL + TYPE_PLURAL_RULE);
-        assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.FunctionCall f
+        assertTrue(m.resolvedRegels.get(0).value() instanceof Expr.FunctionCall f
                         && f.kind() == Expr.FunctionKind.AANTAL
                         && f.elementObjectType() != null && f.elementObjectType().naam.equals("Munt"),
                 () -> "het elementtype bindt ook zonder verbindend feittype, en de telling is opgelost");
         assertEquals(List.of("vouw 'het aantal Munten van de Jutter' zonder bereik (geen relatie verbindt Jutter met "
-                + "Munt): " + WITHOUT_RANGE), fouten(m));
+                + "Munt): " + WITHOUT_RANGE), faults(m));
     }
 
     /** The loader's sentence for the document the emitter would write without the range. */
     private static final String WITHOUT_RANGE = "a single-argument fold with an elementType carries its range "
             + "(sourceRole or sourcePath) under every kind but total: the range is written, never derived";
 
-    private static List<String> fouten(RegelSpraakModel m) {
+    private static List<String> faults(RegelSpraakModel m) {
         return m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();
     }
 
     /** The raw emission, keys spelled as the wire spells them — whitespace is NOT stripped, because
      *  every name this suite asserts on ("gevonden munt") carries a space of its own. */
-    private static String ir(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String ir(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         return IrEmitter.emit(m);
     }
 
     /** A count that binds no element type: exactly one ERROR, the count-source refusal, and the model
      *  emitted anyway with that ERROR set aside ({@link Emission}), so the caller can read what was (not) bound. */
-    private static String irWithSourcelessError(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String irWithSourcelessError(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(1, m.errors().size(), () -> "verwacht één fout, kreeg: " + m.errors());
         assertTrue(m.errors().get(0).message().startsWith("telling zonder bron"),
                 () -> "verwacht de bronloze-tellingfout, kreeg: " + m.errors());

@@ -28,10 +28,10 @@ class VariablePartLoweringTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    /** How often {@code needle} occurs in {@code hooi}. */
-    private static int count(String hooi, String needle) {
+    /** How often {@code needle} occurs in {@code haystack}. */
+    private static int count(String haystack, String needle) {
         int n = 0;
-        for (int i = hooi.indexOf(needle); i >= 0; i = hooi.indexOf(needle, i + 1)) n++;
+        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + 1)) n++;
         return n;
     }
 
@@ -126,9 +126,9 @@ class VariablePartLoweringTest {
         String c = emitCompact(src);
         assertEquals(2, count(c, "\"node\":\"Let\""), () -> "twee Lets verwacht:\n" + c);
         // outermost = first declared: "basis" opens, and "totaal" sits inside its body.
-        int basis = c.indexOf("\"binder\":\"basis\"");
+        int base = c.indexOf("\"binder\":\"basis\"");
         int total = c.indexOf("\"binder\":\"totaal\"");
-        assertTrue(basis >= 0 && total > basis, () -> "declaratievolgorde: basis moet de buitenste Let zijn:\n" + c);
+        assertTrue(base >= 0 && total > base, () -> "declaratievolgorde: basis moet de buitenste Let zijn:\n" + c);
         assertEquals(1, count(c, "\"node\":\"BinderRef\",\"name\":\"basis\""),
                 () -> "de latere definitie moet de eerdere als binder lezen:\n" + c);
         assertEquals(2, count(c, "\"node\":\"BinderRef\",\"name\":\"totaal\""), () -> "twee lezingen verwacht:\n" + c);
@@ -203,7 +203,7 @@ class VariablePartLoweringTest {
         // ch. 4.10 boundary (c). The RHS of a §5.6 subselectie comparison is resolved on the SHAPE of the read
         // subtree — only a Literal or a ParameterRef may stand there, because an attribute would mis-bind
         // against the aggregated element. A BinderRef is an opaque leaf, so lowering the read would fail that
-        // shape test and degrade the whole aggregation to a Conditie.Unresolved marker: a WRONG ANSWER, not a
+        // shape test and degrade the whole aggregation to a Condition.Unresolved marker: a WRONG ANSWER, not a
         // lost optimisation. The variable is therefore substituted AT THAT USE SITE, exactly as v0 did.
         String src = """
             Objecttype de Jutter (mv: Jutters) (bezield)
@@ -252,10 +252,10 @@ class VariablePartLoweringTest {
             """;
         String c = emitCompact(src);
         assertEquals(3, count(c, "\"node\":\"Let\""), () -> "drie gelezen variabelen, drie Lets:\n" + c);
-        int basis = c.indexOf("\"binder\":\"basis\"");
+        int base = c.indexOf("\"binder\":\"basis\"");
         int total = c.indexOf("\"binder\":\"totaal\"");
         int surcharge = c.indexOf("\"binder\":\"opslag\"");
-        assertTrue(basis >= 0 && total > basis && surcharge > total,
+        assertTrue(base >= 0 && total > base && surcharge > total,
                 () -> "declaratievolgorde: basis ⊃ totaal ⊃ opslag:\n" + c);
         // every BinderRef the wire carries names one of the three binders — nothing is left unbound (WF-064).
         assertEquals(4, count(c, "\"node\":\"BinderRef\""), () -> "vier lezingen verwacht (3 in de body, 1 in een value):\n" + c);

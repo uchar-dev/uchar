@@ -30,7 +30,7 @@ class WindowQuantifierTest {
 
         """;
 
-    private static String under(String kwantor) {
+    private static String under(String quantifier) {
         return MODEL + """
             Regel premie
                 geldig altijd
@@ -38,13 +38,13 @@ class WindowQuantifierTest {
                     indien hij aan %s volgende voorwaarden voldoet:
                     - het is de periode vanaf dd. 01-01-2024
                     - hij is gemeld.
-            """.formatted(kwantor);
+            """.formatted(quantifier);
     }
 
     private static Diagnostic onlyError(RegelSpraakModel m) {
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
-        return fouten.get(0);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        return faults.get(0);
     }
 
     @ParameterizedTest
@@ -54,8 +54,8 @@ class WindowQuantifierTest {
             "ten hoogste één van de | ten hoogste 1",
             "precies één van de     | precies 1"
     })
-    void a_window_under_no_or_a_counting_quantifier_is_refused(String kwantor, String words) {
-        RegelSpraakModel m = Resolver.resolve(under(kwantor));
+    void a_window_under_no_or_a_counting_quantifier_is_refused(String quantifier, String words) {
+        RegelSpraakModel m = Resolver.resolve(under(quantifier));
         Diagnostic d = onlyError(m);
         assertTrue(d.message().contains("a time window under none or a counting quantifier")
                 && d.message().contains("'" + words + "'"), d.message());

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A resolved §8.1.6 cross-type uniqueness "verenigd met" ("de namen van alle Cirkels verenigd met de
  * namen van alle Vierkanten moeten uniek zijn"): the value — or combination of values — must be unique
- * across the UNION of the key spaces of two or more {@link Bron sources}. The spec (§8.1.6) reads this
+ * across the UNION of the key spaces of two or more {@link Source sources}. The spec (§8.1.6) reads this
  * as: no two instances within one source share the key, AND no instance of one source shares it with an
  * instance of another.
  *
@@ -16,8 +16,8 @@ import java.util.List;
  * when the total count, summed over every source, of instances whose key equals the subject's exceeds
  * one.
  */
-public record ResolvedUniquenessUnion(String naam, List<Bron> sources,
-                                    dev.uchar.regelspraak.ir.Bron bron, Geldigheid geldigheid) {
+public record ResolvedUniquenessUnion(String naam, List<Source> sources,
+                                    dev.uchar.regelspraak.ir.Source source, Validity validity) {
     /** One side of the union: an object type and the key attribute(s) whose values join the shared space. */
-    public record Bron(Objecttype type, List<String> keys) {}
+    public record Source(Objecttype type, List<String> keys) {}
 }

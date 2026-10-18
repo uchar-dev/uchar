@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code QuantifierFoldRangeWitnessTest}, {@code InstanceUnionWitnessTest}).
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
- * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: these are not
+ * refusal is an {@link IrLoader.DocumentError} at a JSON pointer, never an {@link IrLoader.Refusal}: these are not
  * forms this backend declines but documents that are not {@code uchar-ir-v1}, and a malformed document filed in the
  * gate's auto-excluded channel would leave it green over a document nobody read.
  */
@@ -96,7 +96,7 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode ir = golden(POSTBEZETTING);
         condition(ir, 0, "{\"node\":\"Rollidmaatschap\",\"rol\":\"wachtjutter\",\"anderTeFiller\":\"Jutter\","
                 + "\"negatie\":false,\"source\":{\"snippet\":\"hij een wachtjutter heeft\"}}");
-        IrLoader.Documentfout e = refuses(ir, vw + "/node");
+        IrLoader.DocumentError e = refuses(ir, vw + "/node");
         assertTrue(e.getMessage().contains("unknown condition node \"Rollidmaatschap\""), e.getMessage());
 
         condition(ir, 0, "{\"node\":\"VerreRollidmaatschap\",\"filler\":\"Jutter\",\"backref\":"
@@ -110,7 +110,7 @@ class ReferenceLayerRefusalWitnessTest {
         for (String field : new String[] { "factType", "role", "negated" }) {
             ObjectNode ir = golden(POSTBEZETTING);
             ((ObjectNode) IrPath.version(ir, "rules", 0, 0).get("condition")).remove(field);
-            IrLoader.Documentfout e = refuses(ir, vw);
+            IrLoader.DocumentError e = refuses(ir, vw);
             assertTrue(e.getMessage().contains("missing field '" + field + "'"), e.getMessage());
         }
     }
@@ -132,7 +132,7 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode rm = (ObjectNode) IrPath.version(ir, "rules", 2, 0).get("condition");
         assertEquals("Strandjutter", rm.get("counterpartType").asText(), "de golden vernauwt regel 2");
         rm.putNull("counterpartType");
-        IrLoader.Documentfout e = refuses(ir, vw + "/counterpartType");
+        IrLoader.DocumentError e = refuses(ir, vw + "/counterpartType");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
 
         rm.put("counterpartType", "Kustwacht");
@@ -174,15 +174,15 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
-        Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde();
+        Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).value();
         assertTrue(w instanceof Expr.Unresolved, String.valueOf(w));
         assertNull(w.type(), "een marker zonder type draagt geen type — nooit een gok");
 
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"x\"}}"));
-        assertNotNull(IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde().type(), "een echt datatype blijft");
+        assertNotNull(IrLoader.loadAll(ir).model().resolvedRegels.get(0).value().type(), "een echt datatype blijft");
 
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/type");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/value/type");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
     }
 
@@ -195,7 +195,7 @@ class ReferenceLayerRefusalWitnessTest {
         String vw = "/rules/rules/0/versions/0/condition";
         ObjectNode ir = golden(POSTBEZETTING);
         roleCheck(ir, 0).put("factType", "wachtrooster");
-        IrLoader.Documentfout e = refuses(ir, vw + "/factType");
+        IrLoader.DocumentError e = refuses(ir, vw + "/factType");
         assertTrue(e.getMessage().contains("role check names fact type 'wachtrooster', which is not declared"),
                 e.getMessage());
 
@@ -210,7 +210,7 @@ class ReferenceLayerRefusalWitnessTest {
         // "hij een wachtjutter heeft" read with the role the OTHER end plays: a Wachtpost never fills wachtjutter
         ObjectNode ir = golden(POSTBEZETTING);
         roleCheck(ir, 0).put("role", "wachtjutter");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/condition/role");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/condition/role");
         assertTrue(e.getMessage().contains("role check: the subject \"Wachtpost\" does not fill the role"
                 + " \"wachtjutter\" of \"wachtindeling\", so no link of it can hold the subject there"),
                 e.getMessage());
@@ -219,7 +219,7 @@ class ReferenceLayerRefusalWitnessTest {
     @Test void a_counterpart_outside_the_filler_of_the_other_role_is_refused() throws Exception {
         ObjectNode ir = golden(POSTBEZETTING);
         roleCheck(ir, 2).put("counterpartType", "Wachtpost");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/2/versions/0/condition/counterpartType");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/2/versions/0/condition/counterpartType");
         assertTrue(e.getMessage().contains("role check: the counterpart type \"Wachtpost\" is no subtype of"
                 + " \"Jutter\", the filler the role \"wachtjutter\" declares"), e.getMessage());
         // ⊑ admits the declared filler itself: the check then narrows nothing, and it loads
@@ -236,7 +236,7 @@ class ReferenceLayerRefusalWitnessTest {
     @Test void a_count_over_an_attribute_of_the_element_type_is_refused() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
         source(ir, 0).put("attribute", "gewicht").put("subjectType", "Munt");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/arguments/0");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/value/arguments/0");
         assertTrue(e.getMessage().endsWith(": the source of this count aggregation reads 'gewicht', a member of the"
                 + " element type 'Munt': a count folds INSTANCES, so its source is a count source naming the relation's"
                 + " role, never a value read per contributor"), e.getMessage());
@@ -245,7 +245,7 @@ class ReferenceLayerRefusalWitnessTest {
     @Test void a_value_fold_over_a_role_name_is_refused() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
         source(ir, 1).put("attribute", "vondsten").put("subjectType", "Jutter");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("value aggregation over \"vondsten\", which is no attribute of \"Munt\":"
                 + " a value fold reads an attribute per contributor, and a role name is a count source only a count"
                 + " folds"), e.getMessage());
@@ -263,7 +263,7 @@ class ReferenceLayerRefusalWitnessTest {
         // verifier's source reading judges it. Until the fix round's second pass any declared role name counted.
         ObjectNode ir = golden(MUNTTELLING);
         source(ir, 1).put("attribute", "aanmelder").put("subjectType", "Jutter");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'aanmelder' is not a declared attribute of 'Munt': a value fold's source"
                 + " reads an attribute of each contributor"), e.getMessage());
     }
@@ -278,7 +278,7 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode w = (ObjectNode) IrPath.version(ir, "rules", 2, 0).get("value");
         assertEquals("Jutter", w.get("elementType").asText(), "de golden totaliseert de eigen tijdlijn");
         w.put("elementType", "Vondst");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/2/versions/0/value/elementType");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/2/versions/0/value/elementType");
         assertTrue(e.getMessage().contains("the elementType 'Vondst' of a total without a range is not the fold"
                 + " subject 'Jutter': without a range the fold is the subject's own read, so its elementType must"
                 + " name the subject type"), e.getMessage());
@@ -289,7 +289,7 @@ class ReferenceLayerRefusalWitnessTest {
         IrPath.objectType(ir, "Munt").withArray("characteristics").addObject().put("node", "Characteristic")
                 .put("name", "gangbaar").put("kind", "adjectival");
         source(ir, 1).put("attribute", "gangbaar");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'gangbaar' is a characteristic of 'Munt', not an attribute — a"
                 + " characteristic endpoint is ill-formed in an aggregation source position"), e.getMessage());
     }
@@ -301,7 +301,7 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode w = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value");
         w.put("kind", "count");
         source(ir, 0).put("attribute", "geborgen vondsten").put("subjectType", "Jutter");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/sourcePath");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/value/sourcePath");
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
                 + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
 
@@ -324,7 +324,7 @@ class ReferenceLayerRefusalWitnessTest {
                 + "\"bemand\",\"subjectType\":\"Wachtpost\",\"source\":{\"snippet\":\"bemand\"}},\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"boolean\":false},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"onwaar\"}},"
                 + "\"source\":{\"snippet\":\"hij bemand gelijk is aan onwaar\"}}"));
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/1/versions/0/condition/left");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/1/versions/0/condition/left");
         assertTrue(e.getMessage().contains("'bemand' is a characteristic of 'Wachtpost', not an attribute — a"
                 + " characteristic endpoint is ill-formed in a value position"), e.getMessage());
     }
@@ -376,22 +376,22 @@ class ReferenceLayerRefusalWitnessTest {
         throw new AssertionError("geen " + name + " in de lijst");
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+    private static IrLoader.DocumentError refuses(JsonNode ir, String site) {
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
         assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 
     private static void unknownField(JsonNode ir, String site, String node) {
-        IrLoader.Documentfout e = refuses(ir, site);
+        IrLoader.DocumentError e = refuses(ir, site);
         assertTrue(e.getMessage().contains("unknown field on " + node), e.getMessage());
     }
 
     /** The shared loader's refusal of the node at the datatype position {@code site}: at its discriminator, in its
      *  sentence. */
     private static void unknownDatatype(JsonNode ir, String site) {
-        IrLoader.Documentfout e = refuses(ir, site + "/node");
+        IrLoader.DocumentError e = refuses(ir, site + "/node");
         assertTrue(e.getMessage().endsWith(": unknown datatype node \"Onbekend\""), e.getMessage());
     }
 

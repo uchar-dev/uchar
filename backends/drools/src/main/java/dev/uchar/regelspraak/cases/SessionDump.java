@@ -1,13 +1,13 @@
 package dev.uchar.regelspraak.cases;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
-import dev.uchar.regelspraak.transpiler.tms.Fout;
+import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
-import dev.uchar.regelspraak.transpiler.tms.Invoervormfout;
-import dev.uchar.regelspraak.transpiler.tms.Schrijversconflict;
+import dev.uchar.regelspraak.transpiler.tms.InputFormFault;
+import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
 import org.kie.api.definition.KiePackage;
 import org.kie.api.definition.rule.Global;
@@ -38,7 +38,7 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 /**
- * The canonical text of one session fired through {@link DroolsBackend#vuur}: the guard of the exec-model branch while
+ * The canonical text of one session fired through {@link DroolsBackend#fire}: the guard of the exec-model branch while
  * card drl-teksttak-op-truth-maintenance rebuilds its lowering into one analysis with two renderings. The harness
  * {@code FireTrace} in the test tree writes it per case of every golden the branch plays, and the seam in
  * {@link CaseRunner} per session the suite fires through the replay, where the property {@value #PROPERTY} names a
@@ -46,12 +46,12 @@ import java.util.function.Predicate;
  * {@code diff -r}.
  *
  * <p>Every line starts with its section, so a diff counts its lines per section ({@code awk '{print $2}'} over the
- * changed lines): {@code invoer} (every object in working memory and every global right before the fire: the input of
+ * changed lines): {@code input} (every object in working memory and every global right before the fire: the input of
  * the session, so that a comparison couples a session to its case and not only to its document),
  * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint), {@code fixpunt} (the outcome
  * of the fire in one line: {@code ja}, {@code nee} with the sentence of the cap or the budget, or {@code gooit} with
  * the exception the fire threw), {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the
- * order they fired), {@code lees} (everything {@link DroolsBackend#lees} gives) and {@code facts}/{@code feit}
+ * order they fired), {@code lees} (everything {@link DroolsBackend#read} gives) and {@code facts}/{@code feit}
  * (every object in working memory at the fixpoint, the beans with their fields among them, so that a write on a bean
  * during the fire shows).
  * The order and the count of the firings depend on the order in which a rendering adds the rules, so a step reports
@@ -85,23 +85,23 @@ final class SessionDump {
 
     private final List<String> trace = new ArrayList<>();
     private final AgendaEventListener listener;
-    private final KieSession sessie;
-    /** The lines of the section {@code invoer}, written when the dump starts, before the fire changes anything. */
-    private final List<String> invoer;
+    private final KieSession session;
+    /** The lines of the section {@code input}, written when the dump starts, before the fire changes anything. */
+    private final List<String> input;
 
-    private SessionDump(KieSession sessie, Map<String, Object> labels) {
-        this.sessie = sessie;
-        this.invoer = invoer(sessie, labels);
+    private SessionDump(KieSession session, Map<String, Object> labels) {
+        this.session = session;
+        this.input = input(session, labels);
         this.listener = new DefaultAgendaEventListener() {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) { trace.add(e.getMatch().getRule().getName()); }
         };
-        sessie.addEventListener(listener);
+        session.addEventListener(listener);
     }
 
-    /** Records the input of {@code sessie}, whose input beans {@code labels} names by their case labels, and its
+    /** Records the input of {@code session}, whose input beans {@code labels} names by their case labels, and its
      *  firings from now on, in order: call it right before the fire. */
-    static SessionDump op(KieSession sessie, Map<String, Object> labels) {
-        return new SessionDump(sessie, labels);
+    static SessionDump op(KieSession session, Map<String, Object> labels) {
+        return new SessionDump(session, labels);
     }
 
     /** The input of a session right before its fire: every object in working memory, named and with its fields as
@@ -109,14 +109,14 @@ final class SessionDump {
      *  with an equal input are two firings of one case. A global that is a predicate, the compiled day kind of the
      *  document, is left out: it is the same for every case, only the DRL text holds it in a global, and it prints an
      *  identity of the JVM otherwise. */
-    private static List<String> invoer(KieSession sessie, Map<String, Object> labels) {
-        Naming n = new Naming(sessie, labels, List.of());
+    private static List<String> input(KieSession session, Map<String, Object> labels) {
+        Naming n = new Naming(session, labels, List.of());
         List<String> rules = new ArrayList<>();
-        for (Object o : sessie.getObjects()) rules.add(n.fact(o));
+        for (Object o : session.getObjects()) rules.add(n.fact(o));
         TreeMap<String, String> globals = new TreeMap<>();
-        for (KiePackage p : sessie.getKieBase().getKiePackages())
+        for (KiePackage p : session.getKieBase().getKiePackages())
             for (Global g : p.getGlobalVariables()) {
-                Object w = sessie.getGlobal(g.getName());
+                Object w = session.getGlobal(g.getName());
                 // the predicate of a day kind is a constant of the document, which the DRL text holds in a global and
                 // the executable model closes over; no input of the case, so the input of the two renderings compares
                 if (w instanceof Predicate<?>) continue;
@@ -141,82 +141,82 @@ final class SessionDump {
     }
 
     /** The seam: writes the dump of a session that {@code vuur} fired to the next file of {@code hash} and the branch. */
-    void seam(String hash, DroolsBackend.Build bouw, DroolsBackend.Vuring firing, Map<String, Object> labels) {
+    void seam(String hash, DroolsBackend.Build build, DroolsBackend.Firing firing, Map<String, Object> labels) {
         StringBuilder out = new StringBuilder();
-        write(out, bouw, firing, labels);
-        keep(hash, bouw, out);
+        write(out, build, firing, labels);
+        keep(hash, build, out);
     }
 
     /** The seam: writes the dump of a session whose {@code vuur} threw {@code e} to the next file of {@code hash}. */
-    void seam(String hash, DroolsBackend.Build bouw, RuntimeException e, Map<String, Object> labels) {
+    void seam(String hash, DroolsBackend.Build build, RuntimeException e, Map<String, Object> labels) {
         StringBuilder out = new StringBuilder();
         write(out, e, labels);
-        keep(hash, bouw, out);
+        keep(hash, build, out);
     }
 
-    private static void keep(String hash, DroolsBackend.Build bouw, StringBuilder out) {
-        String sleutel = hash + "." + bouw.branch().name().toLowerCase(java.util.Locale.ROOT);
+    private static void keep(String hash, DroolsBackend.Build build, StringBuilder out) {
+        String key = hash + "." + build.branch().name().toLowerCase(java.util.Locale.ROOT);
         int n;
         synchronized (SEQUENCE_NUMBERS) {
-            n = SEQUENCE_NUMBERS.merge(sleutel, 1, Integer::sum);
+            n = SEQUENCE_NUMBERS.merge(key, 1, Integer::sum);
         }
         Path map = Path.of(SEAM_DIRECTORY);
         try {
             Files.createDirectories(map);
-            Files.writeString(map.resolve(sleutel + "." + n + ".txt"), out.toString());
+            Files.writeString(map.resolve(key + "." + n + ".txt"), out.toString());
         } catch (IOException e) {
             throw new UncheckedIOException("de naad " + PROPERTY + " schrijft niet in " + map, e);
         }
     }
 
     /** Appends the dump of a session whose {@code vuur} returned {@code v}: its input, the firings, at a fixpoint what
-     *  {@link DroolsBackend#lees} gives, and every object in working memory. A session without a fixpoint gets its
+     *  {@link DroolsBackend#read} gives, and every object in working memory. A session without a fixpoint gets its
      *  objects too, as they stand where the fire stopped: {@code lees} refuses such a session, and without them a
      *  rebuild that changes what a capped session derives would pass the comparison unseen. {@code labels} maps each
      *  case label to its input bean. */
-    void write(StringBuilder out, DroolsBackend.Build bouw, DroolsBackend.Vuring v, Map<String, Object> labels) {
-        sessie.removeEventListener(listener);
+    void write(StringBuilder out, DroolsBackend.Build build, DroolsBackend.Firing v, Map<String, Object> labels) {
+        session.removeEventListener(listener);
         Naming n = naming(labels);
-        for (String r : invoer) out.append("invoer ").append(r).append('\n');
-        out.append("vuringen ").append(v.vuringen()).append(" plafond ").append(v.cap()).append(" geenFixpunt ")
-                .append(v.geenFixpunt() == null ? "null" : n.sentence(v.geenFixpunt())).append('\n');
+        for (String r : input) out.append("invoer ").append(r).append('\n');
+        out.append("vuringen ").append(v.firings()).append(" plafond ").append(v.cap()).append(" geenFixpunt ")
+                .append(v.noFixpoint() == null ? "null" : n.sentence(v.noFixpoint())).append('\n');
         // the count of the firings differs between two renderings that reach the same fixpoint, so the comparison only
         // reports the line above; whether there is a fixpoint at all it holds strictly, in a line of its own
-        out.append("fixpunt ").append(v.geenFixpunt() == null ? "ja" : "nee " + n.sentence(v.geenFixpunt())).append('\n');
+        out.append("fixpunt ").append(v.noFixpoint() == null ? "ja" : "nee " + n.sentence(v.noFixpoint())).append('\n');
         trace(out);
-        if (v.geenFixpunt() != null) {
+        if (v.noFixpoint() != null) {
             facts(out, n);
             return;
         }
         Map<Object, String> label = new IdentityHashMap<>();
         labels.forEach((l, b) -> label.put(b, l));
-        Fixpunt fp = DroolsBackend.lees(bouw, sessie, label::get);
-        List<String> lees = new ArrayList<>();
-        for (Fixpunt.AfgeleideWaarde w : fp.waarden())
-            lees.add("waarde " + n.nameOf(w.object()) + "." + citeer(w.attribuut()) + " = " + n.render(w.waarde()));
-        for (Fixpunt.AfgeleidKenmerk k : fp.kenmerken())
-            lees.add("kenmerk " + n.nameOf(k.object()) + " " + citeer(k.kenmerk()));
-        for (Fixpunt.GemaaktObject g : fp.objecten())
-            lees.add("object " + n.nameOf(g.object()) + " door " + citeer(g.creatie()) + " voor "
+        Fixpoint fp = DroolsBackend.fixpointOf(build, session, label::get);
+        List<String> read = new ArrayList<>();
+        for (Fixpoint.DerivedValue w : fp.waarden())
+            read.add("waarde " + n.nameOf(w.object()) + "." + citeer(w.attribute()) + " = " + n.render(w.value()));
+        for (Fixpoint.DerivedCharacteristic k : fp.kenmerken())
+            read.add("kenmerk " + n.nameOf(k.object()) + " " + citeer(k.characteristic()));
+        for (Fixpoint.MadeObject g : fp.objects())
+            read.add("object " + n.nameOf(g.object()) + " door " + citeer(g.creation()) + " voor "
                     + n.nameOf(g.onderwerp()));
-        for (Fixpunt.GemaakteKoppeling k : fp.koppelingen())
-            lees.add("koppeling " + citeer(k.feittype()) + " " + citeer(k.eersteRol()) + "=" + n.nameOf(k.eerste())
-                    + " " + citeer(k.tweedeRol()) + "=" + n.nameOf(k.tweede()));
-        for (Fout f : fp.fouten())
-            lees.add("fout " + n.nameOf(f.onderwerp()) + " " + citeer(f.regel()) + ": " + n.sentence(f.fout()));
-        for (Object i : fp.inconsistenties()) lees.add("inconsistentie " + n.render(i));
-        rules(out, "lees", lees);
+        for (Fixpoint.MadeLink k : fp.links())
+            read.add("koppeling " + citeer(k.factType()) + " " + citeer(k.firstRole()) + "=" + n.nameOf(k.first())
+                    + " " + citeer(k.secondRole()) + "=" + n.nameOf(k.second()));
+        for (Fault f : fp.faults())
+            read.add("fout " + n.nameOf(f.onderwerp()) + " " + citeer(f.regel()) + ": " + n.sentence(f.fault()));
+        for (Object i : fp.inconsistencies()) read.add("inconsistentie " + n.render(i));
+        rules(out, "lees", read);
         facts(out, n);
     }
 
     /** Appends the dump of a session whose {@code vuur} threw {@code e}: its input, the exception, the firings before
      *  it, and every object in working memory as it stands where the fire stopped. */
     void write(StringBuilder out, RuntimeException e, Map<String, Object> labels) {
-        sessie.removeEventListener(listener);
+        session.removeEventListener(listener);
         Naming n = naming(labels);
-        for (String r : invoer) out.append("invoer ").append(r).append('\n');
-        out.append("vuringen gooit ").append(n.fout(e)).append('\n');
-        out.append("fixpunt gooit ").append(n.fout(e)).append('\n');
+        for (String r : input) out.append("invoer ").append(r).append('\n');
+        out.append("vuringen gooit ").append(n.fault(e)).append('\n');
+        out.append("fixpunt gooit ").append(n.fault(e)).append('\n');
         trace(out);
         facts(out, n);
     }
@@ -224,7 +224,7 @@ final class SessionDump {
     /** Appends every object in working memory, sorted and named. */
     private void facts(StringBuilder out, Naming n) {
         List<String> facts = new ArrayList<>();
-        for (Object o : sessie.getObjects()) facts.add(n.fact(o));
+        for (Object o : session.getObjects()) facts.add(n.fact(o));
         out.append("feiten ").append(facts.size()).append('\n');
         rules(out, "feit", facts);
     }
@@ -252,9 +252,9 @@ final class SessionDump {
      *  of a made object counts the phases in which its creation made one for that subject. */
     private Naming naming(Map<String, Object> labels) {
         List<CreationStamp> marks = new ArrayList<>();
-        for (Object o : sessie.getObjects(o -> o instanceof CreationStamp)) marks.add((CreationStamp) o);
+        for (Object o : session.getObjects(o -> o instanceof CreationStamp)) marks.add((CreationStamp) o);
         marks.sort(Comparator.comparingInt(CreationStamp::phase));
-        return new Naming(sessie, labels, marks);
+        return new Naming(session, labels, marks);
     }
 
     /**
@@ -262,32 +262,32 @@ final class SessionDump {
      * {@code creatie} that made it, the name of its subject {@code onderwerp} and its number {@code nummer} among the
      * objects that creation made for that subject.
      */
-    private record Name(String label, String creatie, Name onderwerp, int number) {
+    private record Name(String label, String creation, Name onderwerp, int number) {
 
         /** As the dump writes it: a case label quoted and escaped; a made object as {@code «"creatie"»(subject)#k},
          *  which no quoted label can be read as. */
         String inTheDump() {
-            return label != null ? citeer(label) : "«" + citeer(creatie) + "»(" + onderwerp.inTheDump() + ")#" + number;
+            return label != null ? citeer(label) : "«" + citeer(creation) + "»(" + onderwerp.inTheDump() + ")#" + number;
         }
 
         /** As a sentence of the branch names the object where it is given a label ({@code named}): the case label
          *  itself, as the replay names an input object, or {@code «creatie»(subject)#k}. */
         String inASentence() {
-            return label != null ? label : "«" + creatie + "»(" + onderwerp.inASentence() + ")#" + number;
+            return label != null ? label : "«" + creation + "»(" + onderwerp.inASentence() + ")#" + number;
         }
     }
 
     /** The names of one moment of a session and the rendering of its objects, values and sentences with them. */
     private static final class Naming {
-        private final KieSession sessie;
+        private final KieSession session;
         private final Map<Object, Name> naam = new IdentityHashMap<>();
         /** What a sentence of the branch prints for each object the dump knows ({@code FactNames.object}): its type and
          *  identity; made at the first sentence. */
         private Map<String, Object> identities;
 
         /** The input beans of {@code labels}, and the objects of {@code marks}, ordered by phase. */
-        Naming(KieSession sessie, Map<String, Object> labels, List<CreationStamp> marks) {
-            this.sessie = sessie;
+        Naming(KieSession session, Map<String, Object> labels, List<CreationStamp> marks) {
+            this.session = session;
             labels.forEach((l, b) -> naam.put(b, new Name(l, null, null, 0)));
             Map<String, Integer> counter = new HashMap<>();
             int i = 0;
@@ -295,10 +295,10 @@ final class SessionDump {
                 int j = i;
                 while (j < marks.size() && marks.get(j).phase() == marks.get(i).phase()) j++;
                 List<CreationStamp> phase = new ArrayList<>(marks.subList(i, j));
-                phase.sort(Comparator.comparing((CreationStamp g) -> sleutel(g)));
+                phase.sort(Comparator.comparing((CreationStamp g) -> key(g)));
                 for (CreationStamp g : phase)
                     naam.putIfAbsent(g.object(), new Name(null, g.regel(), onderwerp(g),
-                            counter.merge(sleutel(g), 1, Integer::sum)));
+                            counter.merge(key(g), 1, Integer::sum)));
                 i = j;
             }
         }
@@ -311,7 +311,7 @@ final class SessionDump {
             return n;
         }
 
-        private String sleutel(CreationStamp g) {
+        private String key(CreationStamp g) {
             return "«" + citeer(g.regel()) + "»(" + onderwerp(g).inTheDump() + ")";
         }
 
@@ -325,7 +325,7 @@ final class SessionDump {
         String fact(Object o) {
             if (!isBean(o) || o.getClass().getSimpleName().equals("Inconsistentie")) return render(o);
             List<String> fields = new ArrayList<>();
-            for (Class<?> k = o.getClass(); k != null && k.getName().startsWith(FactModelGenerator.PAKKET + ".");
+            for (Class<?> k = o.getClass(); k != null && k.getName().startsWith(FactModelGenerator.PACKAGE + ".");
                  k = k.getSuperclass())
                 for (Field f : k.getDeclaredFields()) {
                     if (Modifier.isStatic(f.getModifiers())) continue;
@@ -341,15 +341,15 @@ final class SessionDump {
         }
 
         /** An exception as its class and its sentence ({@link #sentence(Throwable)}). */
-        String fout(Throwable e) {
+        String fault(Throwable e) {
             return e.getClass().getSimpleName() + ": " + sentence(e);
         }
 
         /** The sentence of {@code e}, quoted: formed again with the names of the dump where the fault carries its
          *  object, the fault of two writers and the fault of the form of an input; any other sentence as it is. */
         String sentence(Throwable e) {
-            Throwable named = e instanceof Schrijversconflict c ? c.named(this::inASentence)
-                    : e instanceof Invoervormfout i ? i.named(this::inASentence) : e;
+            Throwable named = e instanceof WritersConflict c ? c.named(this::inASentence)
+                    : e instanceof InputFormFault i ? i.named(this::inASentence) : e;
             return sentence(named.getMessage());
         }
 
@@ -359,7 +359,7 @@ final class SessionDump {
             if (sentence == null) return "leeg";
             if (identities == null) {
                 identities = new HashMap<>();
-                for (Object o : sessie.getObjects()) identities.put(identity(o), o);
+                for (Object o : session.getObjects()) identities.put(identity(o), o);
                 for (Object o : naam.keySet()) identities.put(identity(o), o);
             }
             for (Map.Entry<String, Object> i : identities.entrySet())
@@ -409,9 +409,9 @@ final class SessionDump {
             if (o instanceof BigDecimal d) return "BigDecimal(" + d + ")";
             if (o instanceof String s) return "String(" + citeer(s) + ")";
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
-            if (o instanceof ElementSleutel k)
-                return citeer(k.objecttype()) + "." + citeer(k.naam()) + (k.kenmerk() ? " (kenmerk)" : "");
-            if (o instanceof Throwable e) return fout(e);
+            if (o instanceof ElementKey k)
+                return citeer(k.objectType()) + "." + citeer(k.naam()) + (k.characteristic() ? " (kenmerk)" : "");
+            if (o instanceof Throwable e) return fault(e);
             if (o instanceof List<?> l) {
                 List<String> r = new ArrayList<>();
                 for (Object x : l) r.add(render(x));
@@ -473,7 +473,7 @@ final class SessionDump {
     }
 
     private static boolean isBean(Object o) {
-        return o.getClass().getName().startsWith(FactModelGenerator.PAKKET + ".");
+        return o.getClass().getName().startsWith(FactModelGenerator.PACKAGE + ".");
     }
 
     /** {@code s} between double quotes, with a quote, a backslash and a line break escaped, so that a text stays on its

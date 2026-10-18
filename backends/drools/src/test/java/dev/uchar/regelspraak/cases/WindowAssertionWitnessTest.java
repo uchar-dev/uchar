@@ -116,7 +116,7 @@ class WindowAssertionWitnessTest {
     private Path document(String assertion) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PREMIEVENSTER.resolve("ir.json")));
         ArrayNode out = JSON.createArrayNode();
-        out.add(IrPath.vorm(doc, "rules", "basispremie van een vondst"));
+        out.add(IrPath.form(doc, "rules", "basispremie van een vondst"));
         IrPath.rules(doc).set("rules", out);
         ArrayNode cons = JSON.createArrayNode();
         cons.add(JSON.readTree("{ \"node\": \"Consistency\", \"name\": \"" + REGEL + "\", \"versions\": [ {"
@@ -149,13 +149,13 @@ class WindowAssertionWitnessTest {
         ObjectNode input = c.putObject("input");
         input.set("instances", JSON.readTree("[ " + String.join(", ", vondsten) + " ]"));
         input.putObject("parameters");
-        ArrayNode verwacht = c.putArray("expected");
+        ArrayNode expected = c.putArray("expected");
         for (JsonNode v : input.get("instances"))
-            verwacht.addObject().put("kind", "attributeValue").put("label", v.get("label").asText())
+            expected.addObject().put("kind", "attributeValue").put("label", v.get("label").asText())
                     .put("attribute", "basispremie").set("value", JSON.createObjectNode().put("number", "1"));
         for (String label : inconsistent)
-            verwacht.addObject().put("kind", "inconsistent").put("rule", REGEL).put("label", label);
-        if (inconsistent.length == 0) verwacht.addObject().put("kind", "consistent");
+            expected.addObject().put("kind", "inconsistent").put("rule", REGEL).put("label", label);
+        if (inconsistent.length == 0) expected.addObject().put("kind", "consistent");
         return c;
     }
 }

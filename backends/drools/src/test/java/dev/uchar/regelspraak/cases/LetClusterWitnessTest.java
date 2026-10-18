@@ -49,14 +49,14 @@ class LetClusterWitnessTest {
     @Test void a_let_binds_its_value_and_the_body_computes_with_it() throws Exception {
         // ref on this model+case: basis = 1100.00 (Let ink = inkomen in ink plus 100,00, inkomen 1000.00).
         assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
-                waarde("basis", "1100.00"))));
+                valueJson("basis", "1100.00"))));
     }
 
     @Test void the_same_binder_read_two_times_yields_two_times_the_value() throws Exception {
         // ref: dubbelop = 2000.00 (Let ink = inkomen in ink plus ink). A second read answering leeg would
         // coalesce to 0 inside plus and quietly write 1000.00 — this pin is what catches it.
         assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
-                waarde("dubbelop", "2000.00"))));
+                valueJson("dubbelop", "2000.00"))));
     }
 
     // ---------------- 2. nested Lets: shadowing in, restoration out ----------------
@@ -67,7 +67,7 @@ class LetClusterWitnessTest {
         // (1000,00). Reading the outer binder inside would give 2000.00; binding the inner x IN PLACE of the
         // outer — the in-place-mutation bug — leaves x = 5,00 for the trailing read and gives 10.00.
         assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
-                waarde("geschaduwd", "1005.00"))));
+                valueJson("geschaduwd", "1005.00"))));
     }
 
     // ---------------- 3. IfThenElse in a Let body — both branches ----------------
@@ -77,13 +77,13 @@ class LetClusterWitnessTest {
         // both condition operands are BINDERS (WF-077). inkomen 100.00, kindertal 7 -> b=700.00 > a=100.00.
         // ref: tak = 1.00.
         assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"100.00\" }, \"kindertal\": { \"number\": \"7\" }",
-                waarde("tak", "1.00"))));
+                valueJson("tak", "1.00"))));
     }
 
     @Test void ifthenelse_in_a_letbody_chooses_the_else_arm() throws Exception {
         // the other side of the same guard: inkomen 1000.00 -> b=700.00 is NOT > a=1000.00. ref: tak = 2.00.
         assertNull(play(computingModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
-                waarde("tak", "2.00"))));
+                valueJson("tak", "2.00"))));
     }
 
     // ---------------- 4. the leeg-barrier, beside its contrast ----------------
@@ -97,21 +97,21 @@ class LetClusterWitnessTest {
         // A Let lowered as plain substitution would write 0.0000 on BOTH.
         assertNull(play(barrierModel(), jutter("",
                 "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"metlet\" }, "
-                        + waarde("zonderlet", "0.0000"))));
+                        + valueJson("zonderlet", "0.0000"))));
     }
 
     @Test void the_barrier_is_not_always_empty_the_filled_input_does_compute() throws Exception {
         // the other side: with `inkomen` present BOTH compute, and to the same value — so the assertion above
         // is not passing on an arm that never writes a Let result at all. ref: 210.0000 each.
         assertNull(play(barrierModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
-                waarde("metlet", "210.0000") + ", " + waarde("zonderlet", "210.0000"))));
+                valueJson("metlet", "210.0000") + ", " + valueJson("zonderlet", "210.0000"))));
     }
 
     @Test void the_empty_target_is_observable_and_absent_not_only_unasserted() throws Exception {
         // the comparator must SEE the absence: the same case with a value expectation on `metlet` must MISMATCH.
-        String fout = play(barrierModel(), jutter("", waarde("metlet", "0.0000")));
-        assertNotNull(fout, "de leeg-barriere moet observeerbaar zijn, niet slechts niet-geasserteerd");
-        assertTrue(fout.contains("metlet"), "de mismatch noemt het doel: " + fout);
+        String fault = play(barrierModel(), jutter("", valueJson("metlet", "0.0000")));
+        assertNotNull(fault, "de leeg-barriere moet observeerbaar zijn, niet slechts niet-geasserteerd");
+        assertTrue(fault.contains("metlet"), "de mismatch noemt het doel: " + fault);
     }
 
     // ---------------- 5. a Let inside a prioritizedDefaults consequence ----------------
@@ -120,21 +120,21 @@ class LetClusterWitnessTest {
         // the ch. 7 group's first default is justified (kindertal >= 2) and its CONSEQUENCE is a Let over an
         // attribute: Let g = grondslag in g plus 100,00. ref: toeslag = 300.00 at grondslag 200.00.
         assertNull(play(defaultsModel(), jutter("\"kindertal\": { \"number\": \"3\" }, \"grondslag\": { \"number\": \"200.00\" }",
-                waarde("toeslag", "300.00"))));
+                valueJson("toeslag", "300.00"))));
     }
 
     @Test void an_unjustified_default_lets_the_let_value_untouched() throws Exception {
         // justification false (kindertal 1 < 2): the group falls through to the unconditional 0,00, so the Let
         // value is never the decision. ref: toeslag = 0.00.
         assertNull(play(defaultsModel(), jutter("\"kindertal\": { \"number\": \"1\" }, \"grondslag\": { \"number\": \"200.00\" }",
-                waarde("toeslag", "0.00"))));
+                valueJson("toeslag", "0.00"))));
     }
 
     @Test void an_empty_let_value_in_a_default_falls_through_to_the_next() throws Exception {
         // justified, but `grondslag` is ABSENT so the Let is leeg (the barrier again) — ch. 7's leeg
         // fall-through hands the decision to the next default. ref: toeslag = 0.00.
         assertNull(play(defaultsModel(), jutter("\"kindertal\": { \"number\": \"3\" }",
-                waarde("toeslag", "0.00"))));
+                valueJson("toeslag", "0.00"))));
     }
 
     // ---------------- 6. the reads a ch. 4.10 node hides: the freshness watch ----------------
@@ -151,7 +151,7 @@ class LetClusterWitnessTest {
         // model+case: factor 3.0000, gewogen 3000.000000 (the fixpoint). Without the walk descending the Let
         // the replay writes 0.00 — verified by mutation.
         assertNull(play(reactivityModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
-                waarde("factor", "3.0000") + ", " + waarde("gewogen", "3000.000000"))));
+                valueJson("factor", "3.0000") + ", " + valueJson("gewogen", "3000.000000"))));
     }
 
     // ---------------- helpers: replay ----------------
@@ -167,7 +167,7 @@ class LetClusterWitnessTest {
         }
     }
 
-    private static String jutter(String attributes, String verwacht) {
+    private static String jutter(String attributes, String expected) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -176,13 +176,13 @@ class LetClusterWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s, { "kind": "consistent" } ] }
-                """.formatted(attributes, verwacht);
+                """.formatted(attributes, expected);
     }
 
-    private static String waarde(String attribuut, String number) {
+    private static String valueJson(String attribute, String number) {
         return """
                 { "kind": "attributeValue", "label": "J1", "attribute": "%s", "value": { "number": "%s" } }"""
-                .formatted(attribuut, number);
+                .formatted(attribute, number);
     }
 
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10) ----------------
@@ -199,10 +199,10 @@ class LetClusterWitnessTest {
                 .formatted(naam, naam);
     }
 
-    private static String lit(String waarde, int dec, boolean whole) {
-        return IrPath.literal(waarde, num(dec, whole, "unspecified"), waarde);
+    private static String lit(String valueJson, int dec, boolean whole) {
+        return IrPath.literal(valueJson, num(dec, whole, "unspecified"), valueJson);
     }
-    private static String lit(String waarde, int dec) { return lit(waarde, dec, false); }
+    private static String lit(String valueJson, int dec) { return lit(valueJson, dec, false); }
 
     private static String binary(String op, String left, String right, int dec) {
         return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
@@ -225,16 +225,16 @@ class LetClusterWitnessTest {
                 + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(dec), condition, then, otherwise);
     }
 
-    private static String verg(String op, String left, String right) {
+    private static String compare(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, left, right, op.toLowerCase());
     }
 
-    private static String regel(String naam, String doel, String waarde) {
-        return regel(naam, "BEREKENING", doel, waarde, "null");
+    private static String regel(String naam, String target, String valueJson) {
+        return regel(naam, "BEREKENING", target, valueJson, "null");
     }
-    private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return IrPath.regel(naam, soort, doel, waarde, voorwaarde);
+    private static String regel(String naam, String category, String target, String valueJson, String conditionJson) {
+        return IrPath.regel(naam, category, target, valueJson, conditionJson);
     }
 
     /** A one-objecttype document: the declared attributes and kenmerken, the rules, and an optional defaults
@@ -254,7 +254,7 @@ class LetClusterWitnessTest {
     }
 
     /** One entry of the Jutter's attribute list. */
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
@@ -271,10 +271,10 @@ class LetClusterWitnessTest {
                         binary("plus", bref("y", 2), bref("x", 2), 2), 2), 2);
         String branch = let("a", inkomen,
                 let("b", binary("times", kindertal, lit("100.00", 2), 2),
-                        ite(verg("greater", bref("b", 2), bref("a", 2)), lit("1.00", 2), lit("2.00", 2), 2), 2), 2);
-        return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
-                        attribuut("kindertal", num(0, true, "nonNegative")), attribuut("basis", num(2)),
-                        attribuut("dubbelop", num(2)), attribuut("geschaduwd", num(2)), attribuut("tak", num(2))), "",
+                        ite(compare("greater", bref("b", 2), bref("a", 2)), lit("1.00", 2), lit("2.00", 2), 2), 2), 2);
+        return model(String.join(",", attribute("inkomen", num(2, false, "nonNegative")),
+                        attribute("kindertal", num(0, true, "nonNegative")), attribute("basis", num(2)),
+                        attribute("dubbelop", num(2)), attribute("geschaduwd", num(2)), attribute("tak", num(2))), "",
                 new String[]{regel("basis van een jutter", attr("basis", 2, false, "unspecified"), base),
                         regel("dubbelop van een jutter", attr("dubbelop", 2, false, "unspecified"), redundant),
                         regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "unspecified"), shadowed),
@@ -285,8 +285,8 @@ class LetClusterWitnessTest {
     /** ch. 10.6's contrast: the same product with and without the Let binding, on one subject. */
     private static String barrierModel() {
         String inkomen = attr("inkomen", 2, false, "nonNegative");
-        return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
-                        attribuut("metlet", num(4)), attribuut("zonderlet", num(4))), "",
+        return model(String.join(",", attribute("inkomen", num(2, false, "nonNegative")),
+                        attribute("metlet", num(4)), attribute("zonderlet", num(4))), "",
                 new String[]{
                         regel("met let van een jutter", attr("metlet", 4, false, "unspecified"),
                                 let("ink", inkomen, binary("times", bref("ink", 2), lit("0.21", 2), 4), 4)),
@@ -297,7 +297,7 @@ class LetClusterWitnessTest {
 
     /** A ch. 7 prioritizedDefaults group whose first default's CONSEQUENCE is a Let over an attribute. */
     private static String defaultsModel() {
-        String consequentie = let("g", attr("grondslag", 2, false, "nonNegative"),
+        String consequence = let("g", attr("grondslag", 2, false, "nonNegative"),
                 binary("plus", bref("g", 2), lit("100.00", 2), 2), 2);
         String group = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\","
                 + "\"subject\":\"Jutter\",\"attribute\":\"toeslag\",\"defaults\":["
@@ -306,10 +306,10 @@ class LetClusterWitnessTest {
                 + "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}},"
                 + "\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
                 + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}]")
-                .formatted(verg("greaterOrEqual", attr("kindertal", 0, true, "nonNegative"), lit("2", 0, true)),
-                        consequentie, lit("0.00", 2));
-        return model(String.join(",", attribuut("kindertal", num(0, true, "nonNegative")),
-                        attribuut("grondslag", num(2, false, "nonNegative")), attribuut("toeslag", num(2))), "",
+                .formatted(compare("greaterOrEqual", attr("kindertal", 0, true, "nonNegative"), lit("2", 0, true)),
+                        consequence, lit("0.00", 2));
+        return model(String.join(",", attribute("kindertal", num(0, true, "nonNegative")),
+                        attribute("grondslag", num(2, false, "nonNegative")), attribute("toeslag", num(2))), "",
                 new String[]{}, group);
     }
 
@@ -325,14 +325,14 @@ class LetClusterWitnessTest {
                 + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String gewogen = let("x", inkomen,
                 binary("times", bref("x", 2), attr("factor", 4, false, "unspecified"), 6), 6);
-        return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
-                        attribuut("factor", num(4)), attribuut("gewogen", num(6))),
+        return model(String.join(",", attribute("inkomen", num(2, false, "nonNegative")),
+                        attribute("factor", num(4)), attribute("gewogen", num(6))),
                 "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"adjectival\"}",
                 new String[]{
                         // never true for the case input — its only job is to BE a producer of `vermist`, which
                         // is what sinks the factor rule's stratum below this consumer's.
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
-                                verg("greater", inkomen, lit("999999.00", 2))),
+                                compare("greater", inkomen, lit("999999.00", 2))),
                         regel("factor van een jutter", "BEREKENING", attr("factor", 4, false, "unspecified"),
                                 lit("3.0000", 4), notVermist),
                         regel("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), gewogen)},

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -44,7 +44,7 @@ final class TmsTimelineDocuments {
     }
 
     /** A characteristic that holds one truth value. */
-    static String kenmerk(String naam) {
+    static String characteristic(String naam) {
         return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
     }
 
@@ -54,8 +54,8 @@ final class TmsTimelineDocuments {
                 + facet(granularity, null) + "}";
     }
 
-    /** An object type with its attributes and characteristics as written ({@link #timeAttribute}, {@link #kenmerk}). */
-    static String objecttype(String naam, List<String> attributes, List<String> kenmerken) {
+    /** An object type with its attributes and characteristics as written ({@link #timeAttribute}, {@link #characteristic}). */
+    static String objectType(String naam, List<String> attributes, List<String> kenmerken) {
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":true,\"plural\":\"" + naam + "s\","
                 + "\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", kenmerken)
                 + "]}";
@@ -76,12 +76,12 @@ final class TmsTimelineDocuments {
                 + granularity + "\"}}";
     }
 
-    /** "het totaal van zijn {@code attribuut}", optionally "gedurende" {@code filter} ("null" for none): the total of the
+    /** "het totaal van zijn {@code attribute}", optionally "gedurende" {@code filter} ("null" for none): the total of the
      *  subject's own timeline (RUNTIME-SEMANTICS ch. 3.6), a fold without a range. */
-    static String ownTotal(String attribuut, String type, String filter) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + TmsDocuments.ownRead(attribuut, type)
+    static String ownTotal(String attribute, String type, String filter) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + TmsDocuments.ownRead(attribute, type)
                 + "],\"elementType\":\"" + type + "\"" + (filter.equals("null") ? "" : ",\"filter\":" + filter)
-                + ",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"het totaal van zijn " + attribuut + "\"}}";
+                + ",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"het totaal van zijn " + attribute + "\"}}";
     }
 
     /** The document of {@code model} with {@code rules} and {@code uniquenesses}, each in its order. */
@@ -119,37 +119,37 @@ final class TmsTimelineDocuments {
     static String instance(String label, String type, Map<String, String> waarden, List<String> kenmerken,
                             Map<String, List<String>> periods, Map<String, List<String>> roles) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>(), p = new ArrayList<>(), r = new ArrayList<>();
-        waarden.forEach((naam, waarde) -> a.add("\"" + naam + "\":" + waarde));
-        for (String kenmerk : kenmerken) k.add("\"" + kenmerk + "\"");
-        periods.forEach((kenmerk, lijst) -> p.add("\"" + kenmerk + "\":[" + String.join(",", lijst) + "]"));
-        roles.forEach((rol, targets) -> {
+        waarden.forEach((naam, value) -> a.add("\"" + naam + "\":" + value));
+        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        periods.forEach((characteristic, list) -> p.add("\"" + characteristic + "\":[" + String.join(",", list) + "]"));
+        roles.forEach((role, targets) -> {
             List<String> d = new ArrayList<>();
-            for (String doel : targets) d.add("\"" + doel + "\"");
-            r.add("\"" + rol + "\":[" + String.join(",", d) + "]");
+            for (String target : targets) d.add("\"" + target + "\"");
+            r.add("\"" + role + "\":[" + String.join(",", d) + "]");
         });
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{" + String.join(",", r) + "},\"characteristics\":[" + String.join(",", k) + "]"
                 + (p.isEmpty() ? "" : ",\"characteristicTimelines\":{" + String.join(",", p) + "}") + "}";
     }
 
-    /** The expectation that attribute {@code attribuut} of {@code label} ends at the timeline of {@code segments}
+    /** The expectation that attribute {@code attribute} of {@code label} ends at the timeline of {@code segments}
      *  ({@link #segment}); an empty list expects no segment, which a never-written target meets as well. */
-    static String expectedTimeline(String label, String attribuut, List<String> segments) {
-        return "{\"kind\":\"attributeTimeline\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut
+    static String expectedTimeline(String label, String attribute, List<String> segments) {
+        return "{\"kind\":\"attributeTimeline\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute
                 + "\",\"timeline\":[" + String.join(",", segments) + "]}";
     }
 
     /** The case with the evaluation date {@code asOfDate} (null for a time-free session). */
-    static JsonNode caseDocument(String asOfDate, List<String> instanties, List<String> verwachtingen) throws Exception {
-        return TmsDocuments.caseOn(asOfDate, instanties, verwachtingen);
+    static JsonNode caseDocument(String asOfDate, List<String> instances, List<String> expectations) throws Exception {
+        return TmsDocuments.caseOn(asOfDate, instances, expectations);
     }
 
     /** The months {@code [van, tot)} from the first of month {@code vanaf} of {@code jaar}, {@code aantal} of them, each
      *  a segment with the number {@code lexeme}. */
-    static List<String> months(int year, int from, int aantal, String lexeme) {
+    static List<String> months(int year, int from, int count, String lexeme) {
         List<String> out = new ArrayList<>();
         LocalDate d = LocalDate.of(year, from, 1);
-        for (int i = 0; i < aantal; i++, d = d.plusMonths(1))
+        for (int i = 0; i < count; i++, d = d.plusMonths(1))
             out.add(segment(d.toString(), d.plusMonths(1).toString(), lexeme));
         return out;
     }
@@ -158,7 +158,7 @@ final class TmsTimelineDocuments {
 
     /** A segment of the bean model of {@code beanLoader}, as the case runner lays one. */
     static Object beanSegment(ClassLoader beanLoader, String van, String to, String lexeme) throws Exception {
-        return RegelSpraakRuntime.newSegment(Class.forName(FactModelGenerator.PAKKET + ".Segment", true, beanLoader),
+        return RegelSpraakRuntime.newSegment(Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, beanLoader),
                 LocalDate.parse(van), LocalDate.parse(to), lexeme == null ? null : new BigDecimal(lexeme));
     }
 

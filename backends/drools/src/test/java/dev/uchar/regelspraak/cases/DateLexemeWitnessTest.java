@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.kern.Literals;
+import dev.uchar.regelspraak.core.Literals;
 import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
@@ -236,7 +236,7 @@ class DateLexemeWitnessTest {
      *  shared, and each branch is asked on its own so neither can stop reaching it unseen. */
     private static void refusedAtLoad(String ir, String caseDocument, String site, String lexeme) {
         for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                     () -> { if (viaDrl) drl(ir, caseDocument); else play(ir, caseDocument); },
                     (viaDrl ? "drl-tekst" : "exec-model") + " refuses '" + lexeme + "' at load");
             assertEquals(site, e.site(), e.getMessage());

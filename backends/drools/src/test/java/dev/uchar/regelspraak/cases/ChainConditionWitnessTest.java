@@ -171,16 +171,16 @@ class ChainConditionWitnessTest {
     private static final String MND = "{\"node\":\"Unit\",\"abbreviation\":\"mnd\",\"system\":\"Tijd\",\"canonical\":\"mnd\","
             + "\"factorToCanonical\":{\"num\":1,\"den\":1}}";
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String objecttype(String naam, String plural, boolean animate, String... attributes) {
+    private static String objectType(String naam, String plural, boolean animate, String... attributes) {
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[]}";
     }
 
-    private static String feittype(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\",\"plural\":\"" + manyPlural
@@ -190,16 +190,16 @@ class ChainConditionWitnessTest {
     /** Kustwacht, Haven, Jutter and Vondst; a Vondst has one jutter, a Jutter one haven and one werver, a Haven one
      *  kustwacht. */
     private static final String MODEL = "{\"objectTypes\":["
-            + objecttype("Kustwacht", "Kustwachten", false, attribuut("sluitingsdag", DATE), attribuut("afgeleide sluitingsdag", DATE)) + ","
-            + objecttype("Haven", "Havens", false, attribuut("openingsdag", DATE), attribuut("afgeleide openingsdag", DATE)) + ","
-            + objecttype("Jutter", "Jutters", true, attribuut("vergunningsdag", DATE)) + ","
-            + objecttype("Vondst", "Vondsten", false, attribuut("vinddag", DATE), attribuut("uitkomst", DATE),
-                    attribuut("waarde", WHOLE), attribuut("deler", WHOLE), attribuut("uitkomstwaarde", TWO_DECIMALS))
+            + objectType("Kustwacht", "Kustwachten", false, attribute("sluitingsdag", DATE), attribute("afgeleide sluitingsdag", DATE)) + ","
+            + objectType("Haven", "Havens", false, attribute("openingsdag", DATE), attribute("afgeleide openingsdag", DATE)) + ","
+            + objectType("Jutter", "Jutters", true, attribute("vergunningsdag", DATE)) + ","
+            + objectType("Vondst", "Vondsten", false, attribute("vinddag", DATE), attribute("uitkomst", DATE),
+                    attribute("waarde", WHOLE), attribute("deler", WHOLE), attribute("uitkomstwaarde", TWO_DECIMALS))
             + "],\"factTypes\":["
-            + feittype("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
-            + feittype("HavenHeeftJutter", "haven", "Haven", "havenjutter", "havenjutters", "Jutter") + ","
-            + feittype("KustwachtBewaaktHaven", "kustwacht", "Kustwacht", "bewaakte haven", "bewaakte havens", "Haven") + ","
-            + feittype("Werving", "werver", "Kustwacht", "geworven jutter", "geworven jutters", "Jutter")
+            + factType("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
+            + factType("HavenHeeftJutter", "haven", "Haven", "havenjutter", "havenjutters", "Jutter") + ","
+            + factType("KustwachtBewaaktHaven", "kustwacht", "Kustwacht", "bewaakte haven", "bewaakte havens", "Haven") + ","
+            + factType("Werving", "werver", "Kustwacht", "geworven jutter", "geworven jutters", "Jutter")
             + "],\"parameters\":[{\"node\":\"Parameter\",\"name\":\"wachttijd\",\"datatype\":{\"node\":\"Number\",\"whole\":true,"
             + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":" + MND + "}}],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\","
             + "\"name\":\"Tijd\",\"units\":[{\"node\":\"Unit\",\"abbreviation\":\"dg\",\"system\":\"Tijd\",\"canonical\":\"dg\","
@@ -207,38 +207,38 @@ class ChainConditionWitnessTest {
             + "\"system\":\"Tijd\",\"canonical\":\"mnd\",\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"maand\"]}]}],"
             + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String roleBinding(String feittype, String rol) {
-        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    private static String roleBinding(String factType, String role) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
     }
 
-    private static String own(String attribuut) { return own(attribuut, "Vondst"); }
+    private static String own(String attribute) { return own(attribute, "Vondst"); }
 
-    private static String own(String attribuut, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
-    /** A read of {@code attribuut} on {@code type} over the role hops {@code pad}, from the Vondst. */
-    private static String navigated(String attribuut, String type, String snippet, String... pad) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"" + snippet + "\"},\"path\":[" + String.join(",", pad) + "]}";
+    /** A read of {@code attribute} on {@code type} over the role hops {@code path}, from the Vondst. */
+    private static String navigated(String attribute, String type, String snippet, String... path) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"" + snippet + "\"},\"path\":[" + String.join(",", path) + "]}";
     }
 
     /** "de &lt;attribuut&gt; van de jutter van de Vondst": one hop. */
-    private static String viaJutter(String attribuut) {
-        return navigated(attribuut, "Jutter", "de " + attribuut + " van de jutter van de Vondst",
+    private static String viaJutter(String attribute) {
+        return navigated(attribute, "Jutter", "de " + attribute + " van de jutter van de Vondst",
                 roleBinding("JutterHeeftVondst", "jutter"));
     }
 
     /** "de &lt;attribuut&gt; van de haven van de jutter van de Vondst": two hops. */
-    private static String viaHaven(String attribuut) {
-        return navigated(attribuut, "Haven", "de " + attribuut + " van de haven van de jutter van de Vondst",
+    private static String viaHaven(String attribute) {
+        return navigated(attribute, "Haven", "de " + attribute + " van de haven van de jutter van de Vondst",
                 roleBinding("JutterHeeftVondst", "jutter"), roleBinding("HavenHeeftJutter", "haven"));
     }
 
     /** "de &lt;attribuut&gt; van de kustwacht van de haven van de jutter van de Vondst": three hops. */
-    private static String viaKustwacht(String attribuut) {
-        return navigated(attribuut, "Kustwacht", "de " + attribuut + " van de kustwacht van de haven van de jutter van de Vondst",
+    private static String viaKustwacht(String attribute) {
+        return navigated(attribute, "Kustwacht", "de " + attribute + " van de kustwacht van de haven van de jutter van de Vondst",
                 roleBinding("JutterHeeftVondst", "jutter"), roleBinding("HavenHeeftJutter", "haven"),
                 roleBinding("KustwachtBewaaktHaven", "kustwacht"));
     }
@@ -260,22 +260,22 @@ class ChainConditionWitnessTest {
                 + ",\"source\":{\"snippet\":\"vergelijking " + op + "\"}}";
     }
 
-    private static String predicate(String soort, String operand) {
-        return "{\"node\":\"Predicate\",\"kind\":\"" + soort + "\",\"operand\":" + operand
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + soort + "\"}}";
+    private static String predicate(String category, String operand) {
+        return "{\"node\":\"Predicate\",\"kind\":\"" + category + "\",\"operand\":" + operand
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + category + "\"}}";
     }
 
-    /** One rule with one version; {@code voorwaarde} null for none. */
-    private static String regel(String naam, String type, String doel, String waarde, String voorwaarde) {
+    /** One rule with one version; {@code condition} null for none. */
+    private static String regel(String naam, String type, String target, String value, String condition) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
-                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
-                + "\"source\":{\"snippet\":\"De " + doel + "\"}},\"value\":" + waarde
-                + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
+                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
+                + "\"source\":{\"snippet\":\"De " + target + "\"}},\"value\":" + value
+                + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
     }
 
     /** "De uitkomst van een Vondst moet gesteld worden op zijn vinddag indien &lt;voorwaarde&gt;." */
-    private static String outcomeIf(String voorwaarde) {
-        return regel("uitkomst", "Vondst", "uitkomst", own("vinddag"), voorwaarde);
+    private static String outcomeIf(String condition) {
+        return regel("uitkomst", "Vondst", "uitkomst", own("vinddag"), condition);
     }
 
     /** "Een havenjutter van een Haven is een geworven jutter van de kustwacht van de Haven." */
@@ -311,12 +311,12 @@ class ChainConditionWitnessTest {
                 + roles + "},\"characteristics\":[]}";
     }
 
-    private static String dayAttribute(String attribuut, String iso) {
-        return iso == null ? "" : "\"" + attribuut + "\":{\"date\":\"" + iso + "\"}";
+    private static String dayAttribute(String attribute, String iso) {
+        return iso == null ? "" : "\"" + attribute + "\":{\"date\":\"" + iso + "\"}";
     }
 
-    private static String rol(String rol, String label) {
-        return label == null ? "" : "\"" + rol + "\":[\"" + label + "\"]";
+    private static String role(String role, String label) {
+        return label == null ? "" : "\"" + role + "\":[\"" + label + "\"]";
     }
 
     private static String kustwacht(String label, String sluitingsdag) {
@@ -324,15 +324,15 @@ class ChainConditionWitnessTest {
     }
 
     private static String haven(String label, String openingsdag, String kustwacht) {
-        return instance(label, "Haven", dayAttribute("openingsdag", openingsdag), rol("kustwacht", kustwacht));
+        return instance(label, "Haven", dayAttribute("openingsdag", openingsdag), role("kustwacht", kustwacht));
     }
 
     private static String jutter(String label, String vergunningsdag, String haven) {
-        return instance(label, "Jutter", dayAttribute("vergunningsdag", vergunningsdag), rol("haven", haven));
+        return instance(label, "Jutter", dayAttribute("vergunningsdag", vergunningsdag), role("haven", haven));
     }
 
     private static String vondst(String label, String vinddag, String jutter) {
-        return instance(label, "Vondst", dayAttribute("vinddag", vinddag), rol("jutter", jutter));
+        return instance(label, "Vondst", dayAttribute("vinddag", vinddag), role("jutter", jutter));
     }
 
     /** The uitkomst of {@code label} is {@code iso}. */
@@ -345,9 +345,9 @@ class ChainConditionWitnessTest {
         return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"uitkomst\"}";
     }
 
-    private static String caseDocument(List<String> instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(List<String> instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

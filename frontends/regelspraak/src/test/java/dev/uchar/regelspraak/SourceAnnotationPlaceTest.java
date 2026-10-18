@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak;
 
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
@@ -51,7 +51,7 @@ class SourceAnnotationPlaceTest {
         assertTrue(d.message().contains("hoort bij geen regel") && d.message().contains("§9.10"), d.message());
         assertTrue(m.resolvedRegels.get(0).statuteAnnotations().isEmpty(),
                 "de kopannotatie wordt niet stil aan het eerste lid gehangen");
-        assertEquals("berging", m.regelGroepen.get(0).bron().snippet(), "de bron van de groep blijft de naam");
+        assertEquals("berging", m.ruleGroups.get(0).source().snippet(), "de bron van de groep blijft de naam");
     }
 
     @Test void annotation_above_a_decision_table_lands_on_every_row() {
@@ -71,7 +71,7 @@ class SourceAnnotationPlaceTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(2, m.resolvedRegels.size(), "een regel per rij");
-        for (ResolvedRegel r : m.resolvedRegels)
+        for (ResolvedRule r : m.resolvedRegels)
             assertEquals(List.of("art. 8 Jutterswet"), r.statuteAnnotations(), () -> "rij '" + r.naam() + "' mist de annotatie");
     }
 

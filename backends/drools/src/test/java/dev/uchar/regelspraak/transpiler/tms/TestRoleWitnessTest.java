@@ -75,14 +75,14 @@ class TestRoleWitnessTest {
         List<String> out = new ArrayList<>();
         for (RulePlan p : DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"),
                 DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler().modelplan().rules()) {
-            if (p.vorm() == null) continue;
+            if (p.form() == null) continue;
             boolean tested = false;
             for (LhsItem item : p.leftSide())
                 if (item instanceof TestItem t) {
-                    out.add(p.vorm() + ": " + t.rol() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag()));
+                    out.add(p.form() + ": " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag()));
                     tested = true;
                 }
-            if (!tested) out.add(p.vorm() + ": geen toets");
+            if (!tested) out.add(p.form() + ": geen toets");
         }
         return out;
     }

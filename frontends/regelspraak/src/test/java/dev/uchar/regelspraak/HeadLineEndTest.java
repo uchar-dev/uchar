@@ -25,8 +25,8 @@ class HeadLineEndTest {
 
         """;
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::toString).toList());
         return m;
     }
@@ -67,7 +67,7 @@ class HeadLineEndTest {
         RegelSpraakModel m = clean(extension("laatste vinddag Datum in dagen;", "Regel laatste vinddag\n    geldig altijd\n"
                 + "        De laatste vinddag van een Vondst moet gesteld worden op 01-03-2026.\n"));
         onlyVondst(m);
-        assertNotNull(m.objecttypen.get("Vondst").attribuut("laatste vinddag"));
+        assertNotNull(m.objecttypen.get("Vondst").attribute("laatste vinddag"));
     }
 
     @Test void o2_f6_a_characteristic_after_an_object_type_head_without_plural() {
@@ -90,7 +90,7 @@ class HeadLineEndTest {
                 .objecttypen.get("Vondst").kenmerken.contains("boven de maat"));
         assertNotNull(clean(extension("de laatste vinddag Datum in dagen;", "Regel laatste vinddag\n    geldig altijd\n"
                 + "        De laatste vinddag van een Vondst moet gesteld worden op 01-03-2026.\n"))
-                .objecttypen.get("Vondst").attribuut("laatste vinddag"));
+                .objecttypen.get("Vondst").attribute("laatste vinddag"));
         assertTrue(clean("Objecttype de Vondst (mv: Vondsten)\n    boven de maat kenmerk;\n    het gewicht Numeriek "
                 + "(geheel getal);\n\nRegel kenmerk\n    geldig altijd\n        Een Vondst is boven de maat\n"
                 + "        indien zijn gewicht groter is dan 10.\n").objecttypen.get("Vondst").kenmerken.contains("boven de maat"));

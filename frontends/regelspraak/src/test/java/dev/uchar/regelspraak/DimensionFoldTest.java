@@ -34,8 +34,8 @@ class DimensionFoldTest {
             geldig altijd
                 Het jaargewicht van een Jutter moet berekend worden als\s""";
 
-    private static String emitCompact(String waarde) {
-        RegelSpraakModel m = Resolver.resolve(HEAD + waarde + "\n");
+    private static String emitCompact(String value) {
+        RegelSpraakModel m = Resolver.resolve(HEAD + value + "\n");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }

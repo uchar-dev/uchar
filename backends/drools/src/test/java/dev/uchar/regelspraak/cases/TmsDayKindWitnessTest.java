@@ -16,7 +16,7 @@ import java.util.Map;
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE_TIME;
 import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.dateValue;
@@ -28,7 +28,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsDocuments.valueJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -116,9 +116,9 @@ class TmsDayKindWitnessTest {
         return "{\"node\":\"DayKind\",\"name\":\"" + naam + "\",\"plural\":\"" + plural + "\"}";
     }
 
-    /** "Een dag is een {@code naam} indien {@code voorwaarde}", always valid. */
-    static String definition(String naam, String voorwaarde) {
-        return "{\"node\":\"DayKindDefinition\",\"dayKind\":\"" + naam + "\",\"condition\":" + voorwaarde
+    /** "Een dag is een {@code naam} indien {@code condition}", always valid. */
+    static String definition(String naam, String condition) {
+        return "{\"node\":\"DayKindDefinition\",\"dayKind\":\"" + naam + "\",\"condition\":" + condition
                 + ",\"validity\":{\"node\":\"Validity\"}}";
     }
 
@@ -147,14 +147,14 @@ class TmsDayKindWitnessTest {
     }
 
     /** A date step, {@code op} plus or minus, of {@code datum} by {@code duur}, with the result {@code type}. */
-    static String dateStep(String op, String date, String duration, String type, String bron) {
+    static String dateStep(String op, String date, String duration, String type, String source) {
         return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + date + ",\"right\":" + duration + ",\"type\":" + type
-                + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** A duration, {@code kind} {@code duration} or {@code absoluteDuration}, from {@code van} to {@code tot}. */
-    static String duration(String kind, String van, String to, String type, String bron) {
-        return TmsDocuments.builtin(kind, List.of(van, to), type, bron);
+    static String duration(String kind, String van, String to, String type, String source) {
+        return TmsDocuments.builtin(kind, List.of(van, to), type, source);
     }
 
     /** A model of {@code objectTypes} with {@code parameters} and the day kinds {@code dayKinds}. */
@@ -178,14 +178,14 @@ class TmsDayKindWitnessTest {
         return Files.writeString(tmp, ir(model, rules, definitions));
     }
 
-    /** The case of {@code instanties} with the parameters {@code parameters}, wire values by name. */
-    static JsonNode caseDocument(List<String> instanties, Map<String, String> parameters, List<String> verwachtingen)
+    /** The case of {@code instances} with the parameters {@code parameters}, wire values by name. */
+    static JsonNode caseDocument(List<String> instances, Map<String, String> parameters, List<String> expectations)
             throws Exception {
         List<String> p = new ArrayList<>();
-        parameters.forEach((naam, waarde) -> p.add("\"" + naam + "\":" + waarde));
+        parameters.forEach((naam, value) -> p.add("\"" + naam + "\":" + value));
         return TmsDocuments.JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
-                + String.join(",", instanties) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
-                + String.join(",", verwachtingen) + "]}");
+                + String.join(",", instances) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
+                + String.join(",", expectations) + "]}");
     }
 
     static String tijdstip(String iso) {
@@ -225,14 +225,14 @@ class TmsDayKindWitnessTest {
             List.of(dayNumber("1"), dayNumber("15"))));
     static final String SPRINGTIJ = dayKindNumber("springtijdagen");
 
-    static final String MODEL_A = model(List.of(TmsDocuments.objecttype("Bergingsploeg", List.of(
-            attribuut("vinddatum", DATE), attribuut("meldingsdatum", DATE), attribuut("bestek", SPRINGTIJ),
-            attribuut("opleverdatum", DATE), attribuut("uiterste datum", DATE), attribuut("vroegste datum", DATE),
-            attribuut("spanne", SPRINGTIJ), attribuut("afstand", SPRINGTIJ)), List.of())), List.of(),
+    static final String MODEL_A = model(List.of(TmsDocuments.objectType("Bergingsploeg", List.of(
+            attribute("vinddatum", DATE), attribute("meldingsdatum", DATE), attribute("bestek", SPRINGTIJ),
+            attribute("opleverdatum", DATE), attribute("uiterste datum", DATE), attribute("vroegste datum", DATE),
+            attribute("spanne", SPRINGTIJ), attribute("afstand", SPRINGTIJ)), List.of())), List.of(),
             List.of(dayKind("springtijdag", "springtijdagen")));
 
-    static String ploegRead(String attribuut) {
-        return ownRead(attribuut, "Bergingsploeg");
+    static String ploegRead(String attribute) {
+        return ownRead(attribute, "Bergingsploeg");
     }
 
     static final String MELDINGSDATUM = computingRule("meldingsdatum", "BEREKENING", "Bergingsploeg", "meldingsdatum",
@@ -254,7 +254,7 @@ class TmsDayKindWitnessTest {
     static final List<String> RULES_A = List.of(MELDINGSDATUM, UITERSTE, VROEGSTE, SPANNE, AFSTAND);
 
     static JsonNode caseA() throws Exception {
-        List<String> verwacht = new ArrayList<>();
+        List<String> expected = new ArrayList<>();
         Map<String, String[]> data = new LinkedHashMap<>();
         // label: meldingsdatum, uiterste, vroegste, spanne, afstand
         data.put("P1", new String[]{"2026-03-12", "2026-04-15", "2026-02-01", "5", "5"});
@@ -262,15 +262,15 @@ class TmsDayKindWitnessTest {
         data.put("P3", new String[]{null, null, null, null, null});
         data.put("P4", new String[]{"2026-01-15", "2026-01-15", "2026-01-15", "-1", "1"});
         data.forEach((p, v) -> {
-            verwacht.add(v[0] == null ? waarde(p, "meldingsdatum", null) : valueJson(p, "meldingsdatum", dateValue(v[0])));
-            verwacht.add(v[1] == null ? waarde(p, "uiterste datum", null)
+            expected.add(v[0] == null ? value(p, "meldingsdatum", null) : valueJson(p, "meldingsdatum", dateValue(v[0])));
+            expected.add(v[1] == null ? value(p, "uiterste datum", null)
                     : valueJson(p, "uiterste datum", dateValue(v[1])));
-            verwacht.add(v[2] == null ? waarde(p, "vroegste datum", null)
+            expected.add(v[2] == null ? value(p, "vroegste datum", null)
                     : valueJson(p, "vroegste datum", dateValue(v[2])));
-            verwacht.add(waarde(p, "spanne", v[3]));
-            verwacht.add(waarde(p, "afstand", v[4]));
+            expected.add(value(p, "spanne", v[3]));
+            expected.add(value(p, "afstand", v[4]));
         });
-        verwacht.add(consistent());
+        expected.add(consistent());
         return caseDocument(List.of(
                 instanceWith("P1", "Bergingsploeg", Map.of("vinddatum", dateValue("2026-03-10"), "meldingsdatum",
                         dateValue("2026-06-01"), "bestek", numberValue("3"), "opleverdatum", dateValue("2026-05-20")),
@@ -281,7 +281,7 @@ class TmsDayKindWitnessTest {
                         dateValue("2026-05-20")), List.of()),
                 instanceWith("P4", "Bergingsploeg", Map.of("vinddatum", dateValue("2026-01-13"), "bestek",
                         numberValue("0"), "opleverdatum", dateValue("2026-01-01")), List.of())),
-                Map.of(), verwacht);
+                Map.of(), expected);
     }
 
     @Test void a_step_and_a_duration_over_a_later_derived_date_in_every_order() throws Exception {
@@ -292,10 +292,10 @@ class TmsDayKindWitnessTest {
 
     // ---------------- A2: a date-time derived later ----------------
 
-    static final String MODEL_A2 = model(List.of(TmsDocuments.objecttype("Getijpost", List.of(
-            attribuut("aanvraagtijdstip", DATE_TIME), attribuut("meldtijdstip", DATE_TIME),
-            attribuut("wachttermijn", SPRINGTIJ), attribuut("sluittijdstip", DATE_TIME),
-            attribuut("openingstijdstip", DATE_TIME)), List.of())), List.of(),
+    static final String MODEL_A2 = model(List.of(TmsDocuments.objectType("Getijpost", List.of(
+            attribute("aanvraagtijdstip", DATE_TIME), attribute("meldtijdstip", DATE_TIME),
+            attribute("wachttermijn", SPRINGTIJ), attribute("sluittijdstip", DATE_TIME),
+            attribute("openingstijdstip", DATE_TIME)), List.of())), List.of(),
             List.of(dayKind("springtijdag", "springtijdagen")));
 
     static final String MELDTIJDSTIP = computingRule("meldtijdstip", "BEREKENING", "Getijpost", "meldtijdstip",
@@ -337,9 +337,9 @@ class TmsDayKindWitnessTest {
     static final String SEIZOENSDAG = definition("seizoensdag", TmsDocuments.compound("all", 0,
             List.of(dayComparison("later", "2025-12-31"), dayComparison("earlier", "2027-01-01"))));
 
-    static final String MODEL_B = model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("vinddatum", DATE), attribuut("wachttijd", dayKindNumber("seizoensdagen")),
-            attribuut("termijn", DATE)), List.of("gemeld", "erkend"))), List.of(),
+    static final String MODEL_B = model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("vinddatum", DATE), attribute("wachttijd", dayKindNumber("seizoensdagen")),
+            attribute("termijn", DATE)), List.of("gemeld", "erkend"))), List.of(),
             List.of(dayKind("seizoensdag", "seizoensdagen")));
 
     static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
@@ -349,7 +349,7 @@ class TmsDayKindWitnessTest {
 
     static final List<String> RULES_B = List.of(ERKENNING, TERM);
 
-    static final String OUTSIDE_RANGE = "Rekenfout: fout in de regel \"termijn\": day-kind walk: no day of the kind"
+    static final String OUTSIDE_RANGE = "ComputeFault: fout in de regel \"termijn\": day-kind walk: no day of the kind"
             + " within 40000 calendar days of 2027-06-01 (the walk reaches no further; a day kind whose next occurrence"
             + " lies beyond the reach is refused, not diagnosed)";
 
@@ -359,7 +359,7 @@ class TmsDayKindWitnessTest {
                         List.of("gemeld")),
                 instanceWith("V2", "Vondst", Map.of("vinddatum", dateValue("2026-03-01"), "wachttijd", numberValue("5")),
                         List.of())),
-                Map.of(), List.of(waarde("V1", "termijn", null),
+                Map.of(), List.of(value("V1", "termijn", null),
                         valueJson("V2", "termijn", dateValue("2026-03-06")), consistent()));
     }
 
@@ -382,14 +382,14 @@ class TmsDayKindWitnessTest {
         for (List<Rule> order : TmsDocuments.sample(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("wachttijd", "5"), List.of("gemeld"));
-            v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.kern.Namen.setter("vinddatum"), LocalDate.class)
+            v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.core.Namen.setter("vinddatum"), LocalDate.class)
                     .invoke(v1, LocalDate.of(2027, 6, 1));
             TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(v1), sessie -> sessie.addEventListener(facts)),
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(v1), session -> session.addEventListener(facts)),
                     () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertNull(TmsDocuments.lees(v1, "termijn"), () -> "termijn in volgorde " + names);
-            if (facts.fouten > 0) intermediateState++;
+            assertNull(TmsDocuments.read(v1, "termijn"), () -> "termijn in volgorde " + names);
+            if (facts.faults > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet de termijn vóór de erkenning rekenen");
     }
@@ -406,17 +406,17 @@ class TmsDayKindWitnessTest {
                     + TmsDocuments.parameterRead("openingsdatum") + ",\"source\":{\"snippet\":\"de dag later is dan"
                     + " de openingsdatum\"}}", dayNumber("1"))));
 
-    static final String MODEL_C = model(List.of(TmsDocuments.objecttype("Schouwer", List.of(
-            attribuut("vinddatum", DATE), attribuut("wachttijd", dayKindNumber("schouwdagen")),
-            attribuut("hoogwachttijd", dayKindNumber("hoogschouwdagen")),
-            attribuut("doorlooptijd", dayKindNumber("havendagen")), attribuut("termijn", DATE),
-            attribuut("hoogtermijn", DATE), attribuut("streefdatum", DATE)), List.of())),
+    static final String MODEL_C = model(List.of(TmsDocuments.objectType("Schouwer", List.of(
+            attribute("vinddatum", DATE), attribute("wachttijd", dayKindNumber("schouwdagen")),
+            attribute("hoogwachttijd", dayKindNumber("hoogschouwdagen")),
+            attribute("doorlooptijd", dayKindNumber("havendagen")), attribute("termijn", DATE),
+            attribute("hoogtermijn", DATE), attribute("streefdatum", DATE)), List.of())),
             List.of(TmsDocuments.parameter("openingsdatum", DATE)),
             List.of(dayKind("schouwdag", "schouwdagen"), dayKind("hoogschouwdag", "hoogschouwdagen"),
                     dayKind("havendag", "havendagen")));
 
-    static String schouwerStep(String naam, String doel, String duration) {
-        return computingRule(naam, "BEREKENING", "Schouwer", doel, dateStep("plus", ownRead("vinddatum", "Schouwer"),
+    static String schouwerStep(String naam, String target, String duration) {
+        return computingRule(naam, "BEREKENING", "Schouwer", target, dateStep("plus", ownRead("vinddatum", "Schouwer"),
                 ownRead(duration, "Schouwer"), DATE, "zijn vinddatum plus zijn " + duration), "null");
     }
 
@@ -456,8 +456,8 @@ class TmsDayKindWitnessTest {
 
     // ---------------- D: a duration in a day kind between two date-times ----------------
 
-    static final String MODEL_D = model(List.of(TmsDocuments.objecttype("Getijpost", List.of(
-            attribuut("meldtijdstip", DATE_TIME), attribuut("sluittijdstip", DATE_TIME), attribuut("getijspanne", SPRINGTIJ)),
+    static final String MODEL_D = model(List.of(TmsDocuments.objectType("Getijpost", List.of(
+            attribute("meldtijdstip", DATE_TIME), attribute("sluittijdstip", DATE_TIME), attribute("getijspanne", SPRINGTIJ)),
             List.of())), List.of(), List.of(dayKind("springtijdag", "springtijdagen")));
     static final String GETIJSPANNE = computingRule("getijspanne", "BEREKENING", "Getijpost", "getijspanne",
             duration("duration", ownRead("meldtijdstip", "Getijpost"), ownRead("sluittijdstip", "Getijpost"), SPRINGTIJ,

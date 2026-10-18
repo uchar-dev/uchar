@@ -15,3 +15,11 @@ cf57789eae9eed1f9bff577e01466da614863ce3
 3fc9e1c40507318969a4c2db628ff542aa45dd46
 # rename-ocaml: ASP-predicaten en vlag (handwerk volgens lijst in de kaart)
 a6184ed8e68ca1847aec340a792c67d418bd3f2e
+# rename-public-api: inhoud hernoemd met rename.py (tabel public-api)
+e0fced3fc2d6cb0ba8adb6025bfe526e3660dbd8
+# rename-public-api: pakketten kern en graaf (git mv en importregels, handwerk)
+ceb9aab333ceaba132a29752690cd77df83c4d3b
+# rename-public-api: inhoud hernoemd met rename.py (tabel public-api-visible)
+b092a30a7abfcb2e296d5c031dd10fa75d0b8fd1
+# rename-public-api: package- en importregels van graaf (handwerk)
+778bb7b2877fcfa1d3ad9596b8a04ed899e4f1d8

@@ -83,7 +83,7 @@ class LetResultArmWitnessTest {
         // "de dubbel is het inkomen maal 2" is read by the voorwaarde (dubbel > 10,00 — SUBSTITUTED there,
         // since no Let can span the wire's separate condition and value fields) AND by the result
         // (dubbel plus dubbel — a Let with two BinderRefs). ref: aandeel = 160.00 at inkomen 40,00.
-        playBoth(jutter(GEVULD, waarde("aandeel", "160.00")));
+        playBoth(jutter(GEVULD, valueJson("aandeel", "160.00")));
     }
 
     @Test void the_condition_that_does_not_hold_lets_the_target_empty() throws Exception {
@@ -99,7 +99,7 @@ class LetResultArmWitnessTest {
         // `opslag`'s DEFINITION reads `basis`, which is in scope because the chain nests in declaration order
         // (§11.1 rule 1, outermost first). A branch that bound only the innermost binder lowers that read to an
         // unbound-read marker and refuses the whole rule. ref: 120.00 at inkomen 40,00 (40,00 + 80,00).
-        playBoth(jutter(GEVULD, waarde("gestaffeld", "120.00")));
+        playBoth(jutter(GEVULD, valueJson("gestaffeld", "120.00")));
     }
 
     // ---------------- 3. the zero guard: an unentered route evaluates nothing ----------------
@@ -110,13 +110,13 @@ class LetResultArmWitnessTest {
         // target stays leeg and the run is CONSISTENT. Evaluating the need regardless is not a silent wrong
         // here — rsGedeeld throws "Breuk deling door 0" and the fire aborts — which is exactly what makes this
         // case a witness rather than a formality. ref: quotient leeg, consistent.
-        playBoth(jutter(ZERO_DIVISOR, empty("quotient") + ", " + waarde("aandeel", "160.00")));
+        playBoth(jutter(ZERO_DIVISOR, empty("quotient") + ", " + valueJson("aandeel", "160.00")));
     }
 
     @Test void the_filled_division_route_yields_the_original_outcome() throws Exception {
         // the route ENTERED, so the same need is forced and the division really runs. ref: 11.00 (40,00 / 4,
         // plus 1,00) — the absolute value, not merely "something non-empty".
-        playBoth(jutter(GEVULD, waarde("quotient", "11.00")));
+        playBoth(jutter(GEVULD, valueJson("quotient", "11.00")));
     }
 
     @Test void an_empty_outside_need_keeps_the_innermost_division_unforced() throws Exception {
@@ -136,7 +136,7 @@ class LetResultArmWitnessTest {
         // ref answers INCONSISTENT. The DRL branch surfaces it through a SEPARATE companion rule built from a
         // walk over the rule value — a walk that stops at a Let sees no division at all and leaves the run
         // silently CONSISTENT, which is the direction that cannot be noticed from the outside.
-        playBoth(jutterWith(EMPTY_HEFFINGS_DIVISOR, empty("heffing") + ", " + waarde("bescherm", "50.00")
+        playBoth(jutterWith(EMPTY_HEFFINGS_DIVISOR, empty("heffing") + ", " + valueJson("bescherm", "50.00")
                 + ", { \"kind\": \"inconsistent\", \"rule\": \"heffing van een jutter\", \"label\": \"J1\" }"));
     }
 
@@ -146,7 +146,7 @@ class LetResultArmWitnessTest {
         // the divisor absent. The read of `veilig` empties the Let before `r` is ever forced, so no division
         // runs and there is nothing to report — ref: bescherm leeg, CONSISTENT. A companion that fired on the
         // bare "dividend vol, divisor leeg" pattern would invent an Inconsistentie on a path that never ran.
-        playBoth(jutter(EMPTY_DIVISOR_BEHIND_THE_BARRIER, waarde("heffing", "11.00") + ", " + empty("bescherm")));
+        playBoth(jutter(EMPTY_DIVISOR_BEHIND_THE_BARRIER, valueJson("heffing", "11.00") + ", " + empty("bescherm")));
     }
 
     // ---------------- 4. leeg beside gevuld: both mutants go red ----------------
@@ -157,19 +157,19 @@ class LetResultArmWitnessTest {
         //                barrier, so the whole Let is leeg and nothing is written (ref: leeg);
         //   zonderlet := inkomen maal 2                   -> the bare maal COALESCES leeg to 0 (ref: 0.00).
         // An ALWAYS-WRITING lowering (the barrier dropped) writes 0.00 on both and fails here — measured.
-        playBoth(jutter(LEEG, empty("metlet") + ", " + waarde("zonderlet", "0.00")));
+        playBoth(jutter(LEEG, empty("metlet") + ", " + valueJson("zonderlet", "0.00")));
     }
 
     @Test void the_filled_input_indeed_writes_and_both_forms_come_out_at_the_same() throws Exception {
         // the other mutant's red: a NEVER-WRITING lowering (the Let always leeg) passes every emptiness pin
         // above and fails here — measured. ref: 80.00 for both forms at inkomen 40,00.
-        playBoth(jutter(GEVULD, waarde("metlet", "80.00") + ", " + waarde("zonderlet", "80.00")));
+        playBoth(jutter(GEVULD, valueJson("metlet", "80.00") + ", " + valueJson("zonderlet", "80.00")));
     }
 
     @Test void the_empty_target_is_observable_and_absent_in_both_branches() throws Exception {
         // the comparator must SEE the absence rather than leave it unasserted: the same input with a VALUE
         // expectation on `metlet` must MISMATCH in both branches, and name the target.
-        String caseJson = jutter(LEEG, waarde("metlet", "0.00"));
+        String caseJson = jutter(LEEG, valueJson("metlet", "0.00"));
         for (String branch : List.of("exec", "drl")) {
             CaseRunner.Result r = play(branch, caseJson);
             assertEquals("FAIL", r.status(), branch + ": de leeg-barriere moet observeerbaar zijn, niet slechts niet-geasserteerd");
@@ -182,7 +182,7 @@ class LetResultArmWitnessTest {
     @Test void the_same_binder_read_two_times_yields_the_same_need() throws Exception {
         // dubbelop := Let ink = inkomen in ink plus ink. A second read that answered leeg would coalesce to 0
         // inside plus and quietly halve the result. ref: 80.00 at inkomen 40,00.
-        playBoth(jutter(GEVULD, waarde("dubbelop", "80.00")));
+        playBoth(jutter(GEVULD, valueJson("dubbelop", "80.00")));
     }
 
     @Test void name_equality_shadows_within_and_does_not_leak_outside() throws Exception {
@@ -191,7 +191,7 @@ class LetResultArmWitnessTest {
         // binding the inner x IN PLACE of the outer (a mutated environment instead of a scoped one) leaves
         // x = 5,00 for the trailing read and gives 10.00. Two same-named binders also may not collapse onto
         // one emitted variable. ref: 45.00 (5,00 + 40,00).
-        playBoth(jutter(GEVULD, waarde("schaduw", "45.00")));
+        playBoth(jutter(GEVULD, valueJson("schaduw", "45.00")));
     }
 
     @Test void a_sister_binding_keeps_its_own_answer_if_the_neighbour_runs_empty() throws Exception {
@@ -199,13 +199,13 @@ class LetResultArmWitnessTest {
         // to the Let that bound the binder that was read, so only the LEFT one empties; the §6.2 leegwaarde
         // table then coalesces it to 0 inside the plus and the right one still answers. A guard hung on the
         // whole consequence instead of on each Let node would empty the rule value and write leeg. ref: 5.00.
-        playBoth(jutter(LEEG, waarde("zusters", "5.00")));
+        playBoth(jutter(LEEG, valueJson("zusters", "5.00")));
     }
 
     @Test void the_sister_binding_simply_computes_along_once_filled() throws Exception {
         // the same pair with both sides gevuld, so the pin above is not passing on an arm that never adds.
         // ref: 45.00 (40,00 + 5,00).
-        playBoth(jutter(GEVULD, waarde("zusters", "45.00")));
+        playBoth(jutter(GEVULD, valueJson("zusters", "45.00")));
     }
 
     // ---------------- 5b. ch. 10.2: the value-level conditional ----------------
@@ -213,13 +213,13 @@ class LetResultArmWitnessTest {
     @Test void the_then_arm_is_taken_and_the_else_arm_is_not() throws Exception {
         // tak := Let k = inkomen in (als k groter dan 10,00 dan k maal 2 anders 2,00). ref: 80.00 at inkomen
         // 40,00 — the guard holds, so the DAN arm is the value and the anders arm is not evaluated at all.
-        playBoth(jutter(GEVULD, waarde("tak", "80.00")));
+        playBoth(jutter(GEVULD, valueJson("tak", "80.00")));
     }
 
     @Test void the_else_arm_is_taken_and_the_then_arm_is_not() throws Exception {
         // the same rule at inkomen 2,00: the guard fails, so the ANDERS arm decides. ref: 2.00. An
         // implementation with the arms swapped passes neither this test nor the one above.
-        playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, waarde("tak", "2.00")));
+        playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, valueJson("tak", "2.00")));
     }
 
     @Test void an_empty_need_in_the_arm_guard_ends_the_let_before_the_choice() throws Exception {
@@ -236,8 +236,8 @@ class LetResultArmWitnessTest {
         // the jutterswet-tariefstelling shape, isolated: takketen := Let a = inkomen in Let b = a maal 2 in
         // (als a groter dan 10,00 dan b anders 0,00). The guard reads the EARLIER binder and the chosen arm reads
         // the LATER one — the chain and the branch in one value. ref: 80.00 at inkomen 40,00, 0.00 at 2,00.
-        playBoth(jutter(GEVULD, waarde("takketen", "80.00")));
-        playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, waarde("takketen", "0.00")));
+        playBoth(jutter(GEVULD, valueJson("takketen", "80.00")));
+        playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, valueJson("takketen", "0.00")));
     }
 
     @Test void a_need_that_only_reads_the_not_taken_arm_is_not_forced() throws Exception {
@@ -246,20 +246,20 @@ class LetResultArmWitnessTest {
         // arm: the dan arm never reads `o`, so its need is never forced and its barrier never fires — the target
         // is WRITTEN. ref: 3.00. An eager forcing (the need computed whatever the guard says) makes `o` leeg and
         // the barrier empties the whole Let: the corpus pins the same flank in synth3-takbarriere.
-        playBoth(jutter(UNREAD_TAKOPSLAG, waarde("takopslag", "3.00")));
+        playBoth(jutter(UNREAD_TAKOPSLAG, valueJson("takopslag", "3.00")));
     }
 
     @Test void the_same_need_indeed_counts_along_once_its_arm_is_taken() throws Exception {
         // the other side, so the pin above is not passing on an arm that never adds: at inkomen 2,00 the ANDERS
         // arm runs, `o` IS read and its need is forced. ref: 9.00 (3,00 + 6,00).
-        playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, waarde("takopslag", "9.00")));
+        playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, valueJson("takopslag", "9.00")));
     }
 
     @Test void a_division_in_the_taken_arm_reports_itself() throws Exception {
         // takdeling := Let k = inkomen in (als k groter dan 10,00 dan teller gedeeld door takdeler anders 7,00),
         // guard HOLDING and the divisor ABSENT: the §6.5 site really runs, so ref answers INCONSISTENT and the
         // target stays leeg. The DRL companion carries the need gate AND the branch guard, and must still fire.
-        playBoth(jutterWith(EMPTY_THEN_ARM_DIVISOR, empty("takdeling") + ", " + waarde("tak", "80.00")
+        playBoth(jutterWith(EMPTY_THEN_ARM_DIVISOR, empty("takdeling") + ", " + valueJson("tak", "80.00")
                 + ", { \"kind\": \"inconsistent\", \"rule\": \"takdeling van een jutter\", \"label\": \"J1\" }"));
     }
 
@@ -274,7 +274,7 @@ class LetResultArmWitnessTest {
         // ref-vs-clingo question in a backend this card may not touch, so the shape is witnessed here (where ref
         // is the arbiter and BOTH Drools branches agree with it) and never proposed as a corpus golden, which
         // gate 6 would rightly reject.
-        playBoth(jutter(EMPTY_ARM_DIVISOR_ELSE, waarde("takdeling", "7.00") + ", " + waarde("tak", "2.00")));
+        playBoth(jutter(EMPTY_ARM_DIVISOR_ELSE, valueJson("takdeling", "7.00") + ", " + valueJson("tak", "2.00")));
     }
 
     // ---------------- 5c. the two shapes the adversarial lens found (2026-09-18) ----------------
@@ -292,7 +292,7 @@ class LetResultArmWitnessTest {
         // clingo on this shape: UNSATISFIABLE — a fail-fast guard fired: viol("division by numeric zero","J1"),
         // where ref reaches a model. A second divergence in the same family as the one below, in a backend this
         // card may not touch; recorded, not pinned away.
-        playBoth(jutter(ZERO_IN_THE_NOT_TAKEN_ARM, waarde("sprong", "5.00") + ", " + waarde("takgat", "4.00")));
+        playBoth(jutter(ZERO_IN_THE_NOT_TAKEN_ARM, valueJson("sprong", "5.00") + ", " + valueJson("takgat", "4.00")));
     }
 
     @Test void a_division_in_an_unread_need_does_not_report_itself() throws Exception {
@@ -307,14 +307,14 @@ class LetResultArmWitnessTest {
         // PLAYED, --drl FAIL "verwacht consistent, werkelijk inconsistent".
         //
         // clingo here: MISMATCH, expected consistent — the same non-path-following §6.5 fence recorded above.
-        playBoth(jutter(GAP_IN_A_UNREAD_NEED, waarde("takgat", "4.00") + ", " + waarde("sprong", "5.00")));
+        playBoth(jutter(GAP_IN_A_UNREAD_NEED, valueJson("takgat", "4.00") + ", " + valueJson("sprong", "5.00")));
     }
 
     @Test void both_forms_simply_compute_once_their_arm_is_taken() throws Exception {
         // the other side of both, so neither pin passes on an arm that never computes: at inkomen 2,00 the
         // ANDERS arm runs in both rules, so both needs ARE forced. ref: sprong 11.00 (40/4 + 1), takgat 10.00.
         playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST,
-                waarde("sprong", "11.00") + ", " + waarde("takgat", "10.00")));
+                valueJson("sprong", "11.00") + ", " + valueJson("takgat", "10.00")));
     }
 
     @Test void two_different_arm_guards_play_on_a_read_in_both_branches() throws Exception {
@@ -343,7 +343,7 @@ class LetResultArmWitnessTest {
         // "de dubbel is het inkomen maal 2" read ONLY in the voorwaarde gets no Let at all (ch. 10.6: an
         // unread binder would be a guaranteed no-op) — the frontend substitutes it, and both branches have
         // carried that shape all along. ref: premie 7.00 at inkomen 40,00 (80 > 50), leeg at inkomen 2,00.
-        playBoth(jutter(GEVULD, waarde("premie", "7.00")));
+        playBoth(jutter(GEVULD, valueJson("premie", "7.00")));
         playBoth(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INPUT_REST, empty("premie")));
     }
 
@@ -442,11 +442,11 @@ class LetResultArmWitnessTest {
             + "\"takdeler\": { \"number\": \"4\" }, \"takopslaggrond\": { \"number\": \"6.00\" }, "
             + "\"nuldeler\": { \"number\": \"4\" }";
 
-    private static String jutter(String attributes, String verwacht) {
-        return jutterWith(attributes, verwacht + ", { \"kind\": \"consistent\" }");
+    private static String jutter(String attributes, String expected) {
+        return jutterWith(attributes, expected + ", { \"kind\": \"consistent\" }");
     }
 
-    private static String jutterWith(String attributes, String verwacht) {
+    private static String jutterWith(String attributes, String expected) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -455,17 +455,17 @@ class LetResultArmWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(attributes, verwacht);
+                """.formatted(attributes, expected);
     }
 
-    private static String waarde(String attribuut, String number) {
+    private static String valueJson(String attribute, String number) {
         return """
                 { "kind": "attributeValue", "label": "J1", "attribute": "%s", "value": { "number": "%s" } }"""
-                .formatted(attribuut, number);
+                .formatted(attribute, number);
     }
 
-    private static String empty(String attribuut) {
-        return "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"%s\" }".formatted(attribuut);
+    private static String empty(String attribute) {
+        return "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"%s\" }".formatted(attribute);
     }
 
     // ---------------- the wire shapes (IR-SPEC ch. 4.10) ----------------
@@ -483,9 +483,9 @@ class LetResultArmWitnessTest {
                 .formatted(naam, naam);
     }
 
-    private static String lit(String waarde, int dec, boolean whole) {
+    private static String lit(String valueJson, int dec, boolean whole) {
         return "{\"node\":\"Literal\",\"value\":{\"number\":\"%s\"},\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
-                .formatted(waarde, num(dec, whole, UNSPECIFIED), waarde);
+                .formatted(valueJson, num(dec, whole, UNSPECIFIED), valueJson);
     }
 
     private static String binary(String op, String left, String right) {
@@ -514,21 +514,21 @@ class LetResultArmWitnessTest {
                 + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(2, false, sign), condition, then, otherwise);
     }
 
-    private static String verg(String op, String left, String right) {
+    private static String compare(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, left, right, op.toLowerCase());
     }
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
-    /** A rule of one always-valid computing version; {@code voorwaarde} "null" writes no condition. */
-    private static String regel(String naam, String doel, String waarde, String voorwaarde) {
+    /** A rule of one always-valid computing version; {@code conditionJson} "null" writes no condition. */
+    private static String regel(String naam, String target, String valueJson, String conditionJson) {
         return ("{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{\"validity\":{\"node\":\"Validity\""
                 + "},\"target\":%s,\"value\":%s%s,\"initialisation\":false,"
                 + "\"presentation\":\"calculation\"}]}")
-                .formatted(naam, doel, waarde, voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde);
+                .formatted(naam, target, valueJson, conditionJson.equals("null") ? "" : ",\"condition\":" + conditionJson);
     }
 
     // ---------------- the one document (verifier-clean, ref- and clingo-replayed before pinning) ----------
@@ -542,7 +542,7 @@ class LetResultArmWitnessTest {
     private static final String DOUBLE_GUARD_MODEL = buildDoubleGuard();
 
     private static final String DOUBLE_GUARD_CASE = jutter("\"inkomen\": { \"number\": \"40.00\" }",
-            waarde("dubbelgarde", "160.00"));
+            valueJson("dubbelgarde", "160.00"));
 
     private static String buildDoubleGuard() {
         String inkomen = attr("inkomen", 2, false, NN);
@@ -550,9 +550,9 @@ class LetResultArmWitnessTest {
         String w = let("k", inkomen,
                 let("z", binary("times", bref("k", NN), lit("2", 0, true)),
                         binary("plus",
-                                ite(verg("greater", bref("k", NN), lit("10.00", 2, false)), z,
+                                ite(compare("greater", bref("k", NN), lit("10.00", 2, false)), z,
                                         lit("0.00", 2, false), UNSPECIFIED),
-                                ite(verg("less", bref("k", NN), lit("99.00", 2, false)), z,
+                                ite(compare("less", bref("k", NN), lit("99.00", 2, false)), z,
                                         lit("0.00", 2, false), UNSPECIFIED)),
                         UNSPECIFIED), UNSPECIFIED);
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
@@ -564,7 +564,7 @@ class LetResultArmWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
-                .formatted(attribuut("inkomen", num(2, false, NN)), attribuut("dubbelgarde", num(2, false, UNSPECIFIED)),
+                .formatted(attribute("inkomen", num(2, false, NN)), attribute("dubbelgarde", num(2, false, UNSPECIFIED)),
                         regel("dubbelgarde van een jutter", attr("dubbelgarde", 2, false, UNSPECIFIED), w, "null"));
     }
 
@@ -572,21 +572,21 @@ class LetResultArmWitnessTest {
         String inkomen = attr("inkomen", 2, false, NN);
         String counter = attr("teller", 2, false, NN);
         String divisor = attr("deler", 0, true, NN);
-        String staffel = attr("staffel", 0, true, NN);
+        String tier = attr("staffel", 0, true, NN);
         String heffingsDivisor = attr("heffingsdeler", 0, true, NN);
         String protectedDivisor = attr("beschermdeler", 0, true, NN);
         String armDivisor = attr("takdeler", 0, true, NN);
         String takopslagGround = attr("takopslaggrond", 2, false, NN);
         String zeroDivisor = attr("nuldeler", 0, true, NN);
         String gapDivisor = attr("gatdeler", 0, true, NN);
-        String above10 = verg("greater", bref("k", NN), lit("10.00", 2, false));
+        String above10 = compare("greater", bref("k", NN), lit("10.00", 2, false));
         String doubleDef = binary("times", inkomen, lit("2", 0, true));
 
         String[][] rs = {
             // the variable read in the voorwaarde (substituted) AND in the result (bound)
             {"aandeel van een jutter", attr("aandeel", 2, false, UNSPECIFIED),
              let("dubbel", doubleDef, binary("plus", bref("dubbel", UNSPECIFIED), bref("dubbel", UNSPECIFIED)), UNSPECIFIED),
-             verg("greater", doubleDef, lit("10.00", 2, false))},
+             compare("greater", doubleDef, lit("10.00", 2, false))},
             // a later binder reading an earlier one
             {"gestaffeld van een jutter", attr("gestaffeld", 2, false, UNSPECIFIED),
              let("basis", inkomen,
@@ -597,11 +597,11 @@ class LetResultArmWitnessTest {
             {"quotient van een jutter", attr("quotient", 2, false, UNSPECIFIED),
              let("q", binary("dividedBy", counter, divisor),
                  binary("plus", bref("q", UNSPECIFIED), lit("1.00", 2, false)), UNSPECIFIED),
-             verg("notEqual", divisor, lit("0", 0, true))},
+             compare("notEqual", divisor, lit("0", 0, true))},
             // an outer need that empties must keep the inner (zero-dividing) need unforced
             {"garde van een jutter", attr("garde", 2, false, UNSPECIFIED),
              let("veilig", inkomen,
-                 let("q", binary("dividedBy", counter, staffel),
+                 let("q", binary("dividedBy", counter, tier),
                      binary("plus", bref("veilig", NN), bref("q", UNSPECIFIED)), UNSPECIFIED), UNSPECIFIED),
              "null"},
             // the barrier beside its contrast
@@ -623,7 +623,7 @@ class LetResultArmWitnessTest {
                     let("b", lit("5.00", 2, false), bref("b", UNSPECIFIED), UNSPECIFIED)), "null"},
             // the non-regression flank: a variable NO result read reaches gets no Let at all
             {"premie van een jutter", attr("premie", 2, false, UNSPECIFIED), lit("7.00", 2, false),
-             verg("greater", doubleDef, lit("50.00", 2, false))},
+             compare("greater", doubleDef, lit("50.00", 2, false))},
             // a §6.5 site inside a NEED's own value — the companion must still be built for it
             {"heffing van een jutter", attr("heffing", 2, false, UNSPECIFIED),
              let("q", binary("dividedBy", counter, heffingsDivisor),
@@ -646,18 +646,18 @@ class LetResultArmWitnessTest {
             {"takopslag van een jutter", attr("takopslag", 2, false, UNSPECIFIED),
              let("g", inkomen,
                  let("o", takopslagGround,
-                     ite(verg("greater", bref("g", NN), lit("10.00", 2, false)), lit("3.00", 2, false),
+                     ite(compare("greater", bref("g", NN), lit("10.00", 2, false)), lit("3.00", 2, false),
                          binary("plus", lit("3.00", 2, false), bref("o", NN)), UNSPECIFIED), UNSPECIFIED), UNSPECIFIED), "null"},
             // the tariefstelling shape: a LATER need read by one arm, the guard reading the earlier binder
             {"takketen van een jutter", attr("takketen", 2, false, UNSPECIFIED),
              let("a", inkomen,
                  let("b", binary("times", bref("a", NN), lit("2", 0, true)),
-                     ite(verg("greater", bref("a", NN), lit("10.00", 2, false)), bref("b", UNSPECIFIED),
+                     ite(compare("greater", bref("a", NN), lit("10.00", 2, false)), bref("b", UNSPECIFIED),
                          lit("0.00", 2, false), UNSPECIFIED), UNSPECIFIED), UNSPECIFIED), "null"},
             // a Let INSIDE an arm: its need may not be forced when that arm is not chosen
             {"sprong van een jutter", attr("sprong", 2, false, UNSPECIFIED),
              let("k", inkomen,
-                 ite(verg("greater", bref("k", NN), lit("10.00", 2, false)), lit("5.00", 2, false),
+                 ite(compare("greater", bref("k", NN), lit("10.00", 2, false)), lit("5.00", 2, false),
                      let("z", binary("dividedBy", counter, zeroDivisor),
                          binary("plus", bref("z", UNSPECIFIED), lit("1.00", 2, false)), UNSPECIFIED),
                      UNSPECIFIED), UNSPECIFIED), "null"},
@@ -665,7 +665,7 @@ class LetResultArmWitnessTest {
             {"takgat van een jutter", attr("takgat", 2, false, UNSPECIFIED),
              let("k", inkomen,
                  let("z", binary("dividedBy", counter, gapDivisor),
-                     ite(verg("greater", bref("k", NN), lit("10.00", 2, false)), lit("4.00", 2, false),
+                     ite(compare("greater", bref("k", NN), lit("10.00", 2, false)), lit("4.00", 2, false),
                          bref("z", UNSPECIFIED), UNSPECIFIED), UNSPECIFIED), UNSPECIFIED), "null"},
         };
 
@@ -675,15 +675,15 @@ class LetResultArmWitnessTest {
             rules.append(regel(r[0], r[1], r[2], r[3]));
         }
         StringBuilder attributes = new StringBuilder(String.join(",",
-                attribuut("inkomen", num(2, false, NN)), attribuut("teller", num(2, false, NN)),
-                attribuut("deler", num(0, true, NN)), attribuut("staffel", num(0, true, NN)),
-                attribuut("heffingsdeler", num(0, true, NN)), attribuut("beschermdeler", num(0, true, NN)),
-                attribuut("takdeler", num(0, true, NN)), attribuut("takopslaggrond", num(2, false, NN)),
-                attribuut("nuldeler", num(0, true, NN)), attribuut("gatdeler", num(0, true, NN))));
+                attribute("inkomen", num(2, false, NN)), attribute("teller", num(2, false, NN)),
+                attribute("deler", num(0, true, NN)), attribute("staffel", num(0, true, NN)),
+                attribute("heffingsdeler", num(0, true, NN)), attribute("beschermdeler", num(0, true, NN)),
+                attribute("takdeler", num(0, true, NN)), attribute("takopslaggrond", num(2, false, NN)),
+                attribute("nuldeler", num(0, true, NN)), attribute("gatdeler", num(0, true, NN))));
         for (String naam : new String[]{"aandeel", "gestaffeld", "quotient", "garde", "metlet", "zonderlet",
                                         "dubbelop", "schaduw", "zusters", "premie", "heffing", "bescherm",
                                         "tak", "takdeling", "takopslag", "takketen", "sprong", "takgat"})
-            attributes.append(',').append(attribuut(naam, num(2, false, UNSPECIFIED)));
+            attributes.append(',').append(attribute(naam, num(2, false, UNSPECIFIED)));
 
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
                 + "\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","

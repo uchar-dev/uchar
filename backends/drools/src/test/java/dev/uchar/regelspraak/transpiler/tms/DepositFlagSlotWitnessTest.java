@@ -56,7 +56,7 @@ class DepositFlagSlotWitnessTest {
             DroolsBackend.Build b;
             try {
                 b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-            } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded refused) {
+            } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded refused) {
                 continue;
             }
             String golden = GOLDEN.relativize(ir.getParent()).toString();
@@ -65,8 +65,8 @@ class DepositFlagSlotWitnessTest {
                     if (!(i instanceof TestItem t)) continue;
                     Set<Integer> s = sondes(t.test());
                     if (s.isEmpty()) continue;
-                    if (t.rol() == TestItem.Role.DEPOSIT && s.equals(Set.of(t.depositFlag()))) filled++;
-                    else unfilled.add(golden + " | " + p.naam() + " | toets " + t.rol() + " " + s);
+                    if (t.role() == TestItem.Role.DEPOSIT && s.equals(Set.of(t.depositFlag()))) filled++;
+                    else unfilled.add(golden + " | " + p.naam() + " | toets " + t.role() + " " + s);
                 }
                 Set<Integer> s = sondes(p.consequence());
                 if (s.isEmpty()) continue;

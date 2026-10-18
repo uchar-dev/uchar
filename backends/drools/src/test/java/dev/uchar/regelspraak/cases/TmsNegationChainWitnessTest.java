@@ -19,7 +19,7 @@ import java.util.Random;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,13 +62,13 @@ class TmsNegationChainWitnessTest {
 
     private static final String ERKEND = characteristicRule("erkend indien aangemeld", "erkend", check("aangemeld", false));
     private static final String VERGUND = characteristicRule("vergund indien erkend", "vergund", check("erkend", false));
-    private static final String ONVERGUND = characteristicRule("onvergund indien niet vergund", "onvergund", check("vergund", true));
+    private static final String UNPERMITTED = characteristicRule("onvergund indien niet vergund", "onvergund", check("vergund", true));
     private static final String BEVOEGD = characteristicRule("bevoegd indien niet onvergund", "bevoegd", check("onvergund", true));
 
     /** erkend as case input: three rules. */
-    private static final List<String> INVOER = List.of(VERGUND, ONVERGUND, BEVOEGD);
+    private static final List<String> INVOER = List.of(VERGUND, UNPERMITTED, BEVOEGD);
     /** erkend derived from aangemeld: four rules. */
-    private static final List<String> DERIVED = List.of(ERKEND, VERGUND, ONVERGUND, BEVOEGD);
+    private static final List<String> DERIVED = List.of(ERKEND, VERGUND, UNPERMITTED, BEVOEGD);
 
     // ---------------- every order of the rules in the document ----------------
 
@@ -107,18 +107,18 @@ class TmsNegationChainWitnessTest {
 
     /** The generated rule list in its own order, reversed, and in 100 orders drawn with a fixed seed, each in a fresh
      *  KieBase in EQUALITY mode, fired to its fixpoint under the replay's cap and written back as the replay does. */
-    private static void sample(Path ir, String invoer, int rules) throws Exception {
+    private static void sample(Path ir, String input, int rules) throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(rules, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(rules, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         List<List<Rule>> orders = new ArrayList<>();
-        orders.add(gegenereerd);
-        List<Rule> reversed = new ArrayList<>(gegenereerd);
+        orders.add(generated);
+        List<Rule> reversed = new ArrayList<>(generated);
         Collections.reverse(reversed);
         orders.add(reversed);
         Random chance = new Random(20261008L);
         for (int i = 0; i < 100; i++) {
-            List<Rule> v = new ArrayList<>(gegenereerd);
+            List<Rule> v = new ArrayList<>(generated);
             Collections.shuffle(v, chance);
             orders.add(v);
         }
@@ -129,16 +129,16 @@ class TmsNegationChainWitnessTest {
             KieBase kb = KieBaseBuilder.createKieBaseFromModel(m, EqualityBehaviorOption.EQUALITY);
             ClassLoader previous = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(b.beanLoader());
-            KieSession sessie = kb.newKieSession();
+            KieSession session = kb.newKieSession();
             try {
-                Object j1 = TmsDocuments.jutterBean(b.beanLoader(), List.of(invoer));
+                Object j1 = TmsDocuments.jutterBean(b.beanLoader(), List.of(input));
                 Object j2 = TmsDocuments.jutterBean(b.beanLoader(), List.of());
-                sessie.insert(j1);
-                sessie.insert(j2);
-                DroolsBackend.Vuring firing = DroolsBackend.vuur(b, sessie, 100_000);
+                session.insert(j1);
+                session.insert(j2);
+                DroolsBackend.Firing firing = DroolsBackend.fire(b, session, 100_000);
                 List<String> names = order.stream().map(Rule::getName).toList();
-                assertNull(firing.geenFixpunt(), () -> "geen fixpunt in volgorde " + names);
-                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                assertNull(firing.noFixpoint(), () -> "geen fixpunt in volgorde " + names);
+                DroolsBackend.setDerivedValues(b, session);
                 Map<String, Boolean> end1 = Map.of("erkend", true, "vergund", true, "onvergund", false, "bevoegd", true);
                 Map<String, Boolean> end2 = Map.of("erkend", false, "vergund", false, "onvergund", true, "bevoegd", false);
                 for (String k : end1.keySet()) {
@@ -146,7 +146,7 @@ class TmsNegationChainWitnessTest {
                     assertEquals(end2.get(k), TmsDocuments.has(j2, k), () -> "J2 " + k + " in volgorde " + names);
                 }
             } finally {
-                sessie.dispose();
+                session.dispose();
                 Thread.currentThread().setContextClassLoader(previous);
             }
         }
@@ -154,22 +154,22 @@ class TmsNegationChainWitnessTest {
 
     // ---------------- the documents and the case ----------------
 
-    private static String play(List<String> order, String invoer) throws Exception {
-        return CaseRunner.playCase(document(order), caseDocument(invoer), DroolsBackend.Branch.EXEC_MODEL);
+    private static String play(List<String> order, String input) throws Exception {
+        return CaseRunner.playCase(document(order), caseDocument(input), DroolsBackend.Branch.EXEC_MODEL);
     }
 
     private static Path document(List<String> rules) throws Exception {
         return TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), rules);
     }
 
-    /** J1 with {@code invoer} set, J2 with nothing; erkend ends present on J1 in both documents. */
-    private static JsonNode caseDocument(String invoer) throws Exception {
+    /** J1 with {@code input} set, J2 with nothing; erkend ends present on J1 in both documents. */
+    private static JsonNode caseDocument(String input) throws Exception {
         return TmsDocuments.caseDocument(
-                List.of(TmsDocuments.jutter("J1", List.of(invoer)), TmsDocuments.jutter("J2", List.of())),
-                List.of(verwacht("J1", "erkend", true), verwacht("J1", "vergund", true),
-                        verwacht("J1", "onvergund", false), verwacht("J1", "bevoegd", true),
-                        verwacht("J2", "erkend", false), verwacht("J2", "vergund", false),
-                        verwacht("J2", "onvergund", true), verwacht("J2", "bevoegd", false)));
+                List.of(TmsDocuments.jutter("J1", List.of(input)), TmsDocuments.jutter("J2", List.of())),
+                List.of(expected("J1", "erkend", true), expected("J1", "vergund", true),
+                        expected("J1", "onvergund", false), expected("J1", "bevoegd", true),
+                        expected("J2", "erkend", false), expected("J2", "vergund", false),
+                        expected("J2", "onvergund", true), expected("J2", "bevoegd", false)));
     }
 
     private static List<String> names(List<String> rules) throws Exception {

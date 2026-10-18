@@ -126,7 +126,7 @@ public final class RegelSpraakRuntime {
     }
 
     /** An enumeration value read as the DECLARED NAME it is: ref's {@code Checks.norm} through
-     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#norm}, the one definition the case comparator
+     *  {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}, the one definition the case comparator
      *  already reads it by. Both branches apply it to BOTH sides of every enumeration equality and of an enumeration
      *  uniqueness-key join, because ref and clingo compare two labels up to that normalisation and a byte comparison
      *  here split the square on a case input spelled "Gaaf" against a declared "gaaf" (maintainer decision
@@ -136,7 +136,7 @@ public final class RegelSpraakRuntime {
      *  compared as something else. */
     public static Object rsEnumNaam(Object waarde) {
         if (waarde == null) return null;
-        if (waarde instanceof String s) return dev.uchar.regelspraak.transpiler.kern.Namen.norm(s);
+        if (waarde instanceof String s) return dev.uchar.regelspraak.transpiler.core.Namen.norm(s);
         throw new IllegalStateException("enumeratiewaarde is geen String maar " + waarde.getClass().getName());
     }
 
@@ -1109,7 +1109,7 @@ public final class RegelSpraakRuntime {
 
     // ---- identifier convention: delegates to kern.Namen.ident ----
     /** The PascalCase form of a RegelSpraak name — a thin delegate to
-     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#ident(String, boolean)}, from which the fact-model generator
+     *  {@link dev.uchar.regelspraak.transpiler.core.Namen#ident(String, boolean)}, from which the fact-model generator
      *  derives a class name and a member's bean property. It splits a name on EVERY non-letter/digit run, as the beans
      *  were generated, so a koppelteken attribute ("de datum-tijd voor het berekenen…" ->
      *  {@code DatumTijdVoorHetBerekenen…}) keeps its words; the old {@code \s+}-only split left the "-" in and
@@ -1117,13 +1117,13 @@ public final class RegelSpraakRuntime {
      *  resolver already delivers declared names bare.
      *
      *  <p>It is not the authority for the getter and the setter of a member: the generator writes those with
-     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#lidnamen} of the member's property, and every reader and
+     *  {@link dev.uchar.regelspraak.transpiler.core.Namen#lidnamen} of the member's property, and every reader and
      *  writer of both branches takes them from there. The reflective bridge here ({@link #get}, {@link #set}) still
      *  puts this form after {@code get}, {@code is} and {@code set} (as the destructive DRL-text lowering did until
      *  card drl-teksttak-op-truth-maintenance), which misses the generator's name where the first letter of a declared
      *  name, put in lower case and back in upper case, is another letter ("İş": {@code getİş}, where the generator
      *  writes {@code getIş}). */
     public static String pascal(String naam) {
-        return dev.uchar.regelspraak.transpiler.kern.Namen.ident(naam, true);
+        return dev.uchar.regelspraak.transpiler.core.Namen.ident(naam, true);
     }
 }

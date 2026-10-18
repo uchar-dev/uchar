@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
@@ -65,12 +65,12 @@ class ExceptionOnExceptionTest {
         return block("Uitzondering op " + carrier + ": ", naam, sentence, condition);
     }
 
-    private static String deviation(String basis, String naam, String sentence, String condition) {
-        return block("Afwijking van " + basis + ": ", naam, sentence, condition);
+    private static String deviation(String base, String naam, String sentence, String condition) {
+        return block("Afwijking van " + base + ": ", naam, sentence, condition);
     }
 
-    private static String unorderedOn(String carrier, String... leden) {
-        return "\nUitzonderingen ongeordend op " + carrier + ":" + String.join("", leden);
+    private static String unorderedOn(String carrier, String... members) {
+        return "\nUitzonderingen ongeordend op " + carrier + ":" + String.join("", members);
     }
 
     private static final String UIT = "Een Jutter is uitgesloten";
@@ -92,26 +92,26 @@ class ExceptionOnExceptionTest {
 
     /** The written text of each conjunct of a default's justification: the parts of an 'all', else the condition. */
     private static List<String> conjuncts(Default d) {
-        Conditie c = d.voorwaarde();
-        if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE)
-            return s.onderdelen().stream().map(o -> o.bron().snippet()).toList();
-        return List.of(c.bron().snippet());
+        Condition c = d.condition();
+        if (c instanceof Condition.Compound s && s.quantifier() == Condition.Quantifier.ALLE)
+            return s.components().stream().map(o -> o.source().snippet()).toList();
+        return List.of(c.source().snippet());
     }
 
     /** The defaults of the one exception group an ordered carrier holds. */
     private static List<Default> ordered(Default carrier) {
         assertNotNull(carrier.exceptions(), "de drager hoort een uitzonderingsgroep te dragen");
-        assertFalse(carrier.exceptions().ongeordend(), "geordende kinderen: unordered false");
-        assertEquals(1, carrier.exceptions().leden().size(), "geordende kinderen vormen één uitzonderingsgroep");
-        return carrier.exceptions().leden().get(0).defaults();
+        assertFalse(carrier.exceptions().unordered(), "geordende kinderen: unordered false");
+        assertEquals(1, carrier.exceptions().members().size(), "geordende kinderen vormen één uitzonderingsgroep");
+        return carrier.exceptions().members().get(0).defaults();
     }
 
     /** The single default of each exception group of an unordered carrier, in written order. */
-    private static List<Default> ongeordend(Default carrier) {
+    private static List<Default> unordered(Default carrier) {
         assertNotNull(carrier.exceptions(), "de drager hoort uitzonderingsgroepen te dragen");
-        assertTrue(carrier.exceptions().ongeordend(), "een ongeordend blok: unordered true");
+        assertTrue(carrier.exceptions().unordered(), "een ongeordend blok: unordered true");
         List<Default> result = new ArrayList<>();
-        for (ExceptionGroup g : carrier.exceptions().leden()) {
+        for (ExceptionGroup g : carrier.exceptions().members()) {
             assertEquals(1, g.defaults().size(), "één lid per uitzonderingsgroep");
             result.add(g.defaults().get(0));
         }
@@ -130,15 +130,15 @@ class ExceptionOnExceptionTest {
                 + op("herroeping", "verval van de herroeping", UIT, "hij vervallen is")));
         assertEquals("uitsluiting", g.naam(), "de groep heet naar de basisregel");
         assertEquals(2, g.defaults().size(), "het eerste niveau is een ketenpositie boven de basis");
-        Default herroeping = g.defaults().get(0), basis = g.defaults().get(1);
+        Default herroeping = g.defaults().get(0), base = g.defaults().get(1);
         assertEquals(Boolean.FALSE, herroeping.decision());
-        assertEquals(Boolean.TRUE, basis.decision());
-        assertNull(basis.exceptions(), "de basis draagt geen uitzonderingen: die staan boven haar in de keten");
+        assertEquals(Boolean.TRUE, base.decision());
+        assertNull(base.exceptions(), "de basis draagt geen uitzonderingen: die staan boven haar in de keten");
         List<Default> verval = ordered(herroeping);
         assertEquals(1, verval.size());
         assertEquals(Boolean.TRUE, verval.get(0).decision());
         assertNull(verval.get(0).exceptions());
-        assertEquals(List.of("hij geweigerd is"), conjuncts(basis));
+        assertEquals(List.of("hij geweigerd is"), conjuncts(base));
         assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(herroeping));
         assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij vervallen is"), conjuncts(verval.get(0)));
     }
@@ -151,16 +151,16 @@ class ExceptionOnExceptionTest {
                 + op("niveau drie", "niveau vier", UIT, "hij betwist is")));
         assertEquals(2, g.defaults().size());
         Default d = g.defaults().get(0);
-        List<String> verwacht = new ArrayList<>(List.of("hij geweigerd is", "hij herroepen is"));
+        List<String> expected = new ArrayList<>(List.of("hij geweigerd is", "hij herroepen is"));
         List<Boolean> besluiten = new ArrayList<>(List.of(d.decision()));
-        assertEquals(verwacht, conjuncts(d));
+        assertEquals(expected, conjuncts(d));
         for (String own : List.of("hij vervallen is", "hij hersteld is", "hij betwist is")) {
             List<Default> kind = ordered(d);
             assertEquals(1, kind.size());
             d = kind.get(0);
-            verwacht.add(own);
+            expected.add(own);
             besluiten.add(d.decision());
-            assertEquals(verwacht, conjuncts(d), "elk niveau draagt de conjuncten van zijn dragers voorop");
+            assertEquals(expected, conjuncts(d), "elk niveau draagt de conjuncten van zijn dragers voorop");
         }
         assertNull(d.exceptions(), "het vierde niveau is een blad");
         assertEquals(List.of(false, true, false, true), besluiten);
@@ -209,7 +209,7 @@ class ExceptionOnExceptionTest {
         assertEquals(List.of("zijn aantal geborgen wrakken groter of gelijk is aan 20", "hij is noodweer verklaard",
                         "zijn aantal geborgen wrakken is groter of gelijk aan 8"), conjuncts(exception),
                 "de eigen 'alle'-voorwaarde wordt platgeslagen achter de voorwaarde van de basis");
-        assertInstanceOf(Conditie.Vergelijking.class, g.defaults().get(1).voorwaarde(), "de basis houdt haar eigen voorwaarde");
+        assertInstanceOf(Condition.Comparison.class, g.defaults().get(1).condition(), "de basis houdt haar eigen voorwaarde");
     }
 
     @Test void an_unconditional_base_adds_no_conjunct() {
@@ -217,9 +217,9 @@ class ExceptionOnExceptionTest {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL
                 + regel("uitsluiting altijd", UIT, null)
                 + op("uitsluiting altijd", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
-        assertInstanceOf(Conditie.Kenmerk.class, g.defaults().get(0).voorwaarde());
-        Conditie basis = g.defaults().get(1).voorwaarde();
-        assertTrue(basis instanceof Conditie.Samengesteld s && s.onderdelen().isEmpty(),
+        assertInstanceOf(Condition.CharacteristicCheck.class, g.defaults().get(0).condition());
+        Condition base = g.defaults().get(1).condition();
+        assertTrue(base instanceof Condition.Compound s && s.components().isEmpty(),
                 "een onvoorwaardelijke basis draagt de lege 'alle'");
     }
 
@@ -228,7 +228,7 @@ class ExceptionOnExceptionTest {
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")
                 + op("herroeping", "altijd weer uitgesloten", UIT, null)));
         Default leaf = ordered(g.defaults().get(0)).get(0);
-        assertInstanceOf(Conditie.Samengesteld.class, leaf.voorwaarde());
+        assertInstanceOf(Condition.Compound.class, leaf.condition());
         assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(leaf));
     }
 
@@ -238,12 +238,12 @@ class ExceptionOnExceptionTest {
                         + "        - hij is geweigerd\n        - hij is geschorst")
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
         Default exception = g.defaults().get(0);
-        assertTrue(exception.voorwaarde() instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE
-                && s.onderdelen().size() == 2, "één 'alle' over twee conjuncten");
-        Conditie.Samengesteld s = (Conditie.Samengesteld) exception.voorwaarde();
-        assertTrue(s.onderdelen().get(0) instanceof Conditie.Samengesteld t && t.kwantor() == Conditie.Kwantor.TEN_MINSTE,
+        assertTrue(exception.condition() instanceof Condition.Compound s && s.quantifier() == Condition.Quantifier.ALLE
+                && s.components().size() == 2, "één 'alle' over twee conjuncten");
+        Condition.Compound s = (Condition.Compound) exception.condition();
+        assertTrue(s.components().get(0) instanceof Condition.Compound t && t.quantifier() == Condition.Quantifier.TEN_MINSTE,
                 "de 'ten minste'-voorwaarde van de basis blijft één conjunct");
-        assertInstanceOf(Conditie.Kenmerk.class, s.onderdelen().get(1));
+        assertInstanceOf(Condition.CharacteristicCheck.class, s.components().get(1));
     }
 
     @Test void the_conjunction_stands_on_the_wire_as_a_flat_all() {
@@ -272,10 +272,10 @@ class ExceptionOnExceptionTest {
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
         Default herroeping = g.defaults().get(0);
         assertEquals("hij geweigerd is en hij aan ten minste één van de volgende voorwaarden voldoet: - hij is "
-                + "herroepen - hij is betwist.", herroeping.voorwaarde().bron().snippet());
+                + "herroepen - hij is betwist.", herroeping.condition().source().snippet());
         assertEquals("hij geweigerd is en hij aan ten minste één van de volgende voorwaarden voldoet: - hij is "
                 + "herroepen - hij is betwist en hij vervallen is",
-                ordered(herroeping).get(0).voorwaarde().bron().snippet());
+                ordered(herroeping).get(0).condition().source().snippet());
     }
 
     // -------------------------------------------------------------------- Afwijking van
@@ -293,15 +293,15 @@ class ExceptionOnExceptionTest {
         assertEquals(List.of("hij is noodweer verklaard", "zijn aantal geborgen wrakken is groter of gelijk aan 8"),
                 conjuncts(deviation), "geen conjunct van de basis");
         assertEquals("hij aan alle volgende voorwaarden voldoet: - hij is noodweer verklaard - zijn aantal geborgen "
-                + "wrakken is groter of gelijk aan 8.", deviation.voorwaarde().bron().snippet(),
+                + "wrakken is groter of gelijk aan 8.", deviation.condition().source().snippet(),
                 "de voorwaarde zoals geschreven, niet opnieuw samengesteld");
     }
 
     @Test void an_unconditional_deviation_carries_the_empty_all() {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + QUOTUM
                 + deviation("bevoegd bij quotum", "altijd bevoegd", "Een Jutter is bergingsbevoegd", null)));
-        assertTrue(g.defaults().get(0).voorwaarde() instanceof Conditie.Samengesteld s && s.onderdelen().isEmpty()
-                && s.kwantor() == Conditie.Kwantor.ALLE);
+        assertTrue(g.defaults().get(0).condition() instanceof Condition.Compound s && s.components().isEmpty()
+                && s.quantifier() == Condition.Quantifier.ALLE);
     }
 
     @Test void deviations_and_exceptions_on_a_base_form_a_chain_in_writing_order() {
@@ -335,18 +335,18 @@ class ExceptionOnExceptionTest {
                         regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
                         regel("herstel", NOT_EXCLUDED, "hij hersteld is")));
         PrioritizedDefaults g = onlyGroup(m);
-        assertFalse(g.ongeordend(), "de groep zelf is geordend: het blok hangt onder één basis");
+        assertFalse(g.unordered(), "de groep zelf is geordend: het blok hangt onder één basis");
         assertEquals(2, g.defaults().size(), "een groepsdefault boven de basis");
         Default groupDefault = g.defaults().get(0);
         assertNull(groupDefault.decision(), "een groepsdefault beslist niet zelf");
-        assertNull(groupDefault.voorwaarde(), "een groepsdefault draagt geen eigen rechtvaardiging (WF-075)");
-        assertNull(groupDefault.consequentie());
-        List<Default> leden = ongeordend(groupDefault);
-        assertEquals(2, leden.size(), "één uitzonderingsgroep per lid");
-        assertEquals(List.of(false, false), leden.stream().map(Default::decision).toList(), "gelijke besluiten");
-        assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(leden.get(0)),
+        assertNull(groupDefault.condition(), "een groepsdefault draagt geen eigen rechtvaardiging (WF-075)");
+        assertNull(groupDefault.consequence());
+        List<Default> members = unordered(groupDefault);
+        assertEquals(2, members.size(), "één uitzonderingsgroep per lid");
+        assertEquals(List.of(false, false), members.stream().map(Default::decision).toList(), "gelijke besluiten");
+        assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(members.get(0)),
                 "een lid erft de voorwaarde van de drager");
-        assertEquals(List.of("hij geweigerd is", "hij hersteld is"), conjuncts(leden.get(1)));
+        assertEquals(List.of("hij geweigerd is", "hij hersteld is"), conjuncts(members.get(1)));
         String ir = compact(m);
         assertTrue(ir.contains("\"defaults\":[{\"node\":\"Default\",\"exceptions\":{\"unordered\":true,\"members\":[{\"node\":\"ExceptionGroup\""),
                 () -> "de groepsdefault staat niet als eerste ketenpositie op de wire:\n" + ir);
@@ -357,10 +357,10 @@ class ExceptionOnExceptionTest {
                 + unorderedOn("uitsluiting",
                         regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
                         regel("betwisting", UIT, "hij betwist is"))));
-        List<Default> leden = ongeordend(g.defaults().get(0));
-        assertEquals(List.of(false, true), leden.stream().map(Default::decision).toList(), "verschillende besluiten");
-        assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(leden.get(0)));
-        assertEquals(List.of("hij geweigerd is", "hij betwist is"), conjuncts(leden.get(1)));
+        List<Default> members = unordered(g.defaults().get(0));
+        assertEquals(List.of(false, true), members.stream().map(Default::decision).toList(), "verschillende besluiten");
+        assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(members.get(0)));
+        assertEquals(List.of("hij geweigerd is", "hij betwist is"), conjuncts(members.get(1)));
     }
 
     @Test void unordered_on_an_exception_fills_its_exception_groups() {
@@ -372,10 +372,10 @@ class ExceptionOnExceptionTest {
         assertEquals(2, g.defaults().size(), "het blok nest in 'herroeping', niet in de keten");
         Default herroeping = g.defaults().get(0);
         assertEquals(Boolean.FALSE, herroeping.decision(), "de drager houdt haar eigen besluit als terugval (form-a)");
-        List<Default> leden = ongeordend(herroeping);
-        assertEquals(List.of(true, false), leden.stream().map(Default::decision).toList());
-        assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij vervallen is"), conjuncts(leden.get(0)));
-        assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij betwist is"), conjuncts(leden.get(1)));
+        List<Default> members = unordered(herroeping);
+        assertEquals(List.of(true, false), members.stream().map(Default::decision).toList());
+        assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij vervallen is"), conjuncts(members.get(0)));
+        assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij betwist is"), conjuncts(members.get(1)));
     }
 
     @Test void an_exception_on_a_member_nest_in_that_member() {
@@ -384,7 +384,7 @@ class ExceptionOnExceptionTest {
                         regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
                         regel("herstel", NOT_EXCLUDED, "hij hersteld is"))
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
-        Default herroeping = ongeordend(g.defaults().get(0)).get(0);
+        Default herroeping = unordered(g.defaults().get(0)).get(0);
         assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij vervallen is"),
                 conjuncts(ordered(herroeping).get(0)));
     }
@@ -671,9 +671,9 @@ class ExceptionOnExceptionTest {
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")
                 + "\n// Bron: art. 4, derde laag"
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
-        ExceptionGroup group = g.defaults().get(0).exceptions().leden().get(0);
-        assertEquals("art. 4, derde laag", group.defaults().get(0).bron());
-        assertEquals("Uitzondering op herroeping", group.bron(),
+        ExceptionGroup group = g.defaults().get(0).exceptions().members().get(0);
+        assertEquals("art. 4, derde laag", group.defaults().get(0).source());
+        assertEquals("Uitzondering op herroeping", group.source(),
                 "een kop maakt de uitzonderingsgroep: zij draagt de tekst van de kop, de annotatie staat op de default");
     }
 
@@ -688,12 +688,12 @@ class ExceptionOnExceptionTest {
                 + op("betwisting", "bevestiging", UIT, "hij hersteld is")
                 + op("betwisting", "tweede bevestiging", UIT, "hij geschorst is")));
         Default groupDefault = g.defaults().get(0);
-        assertEquals("Uitzonderingen ongeordend op uitsluiting", groupDefault.bron());
-        for (ExceptionGroup member : groupDefault.exceptions().leden())
-            assertEquals("Uitzonderingen ongeordend op uitsluiting", member.bron());
-        List<Default> leden = ongeordend(groupDefault);
-        assertEquals("Uitzonderingen ongeordend op herroeping", leden.get(0).exceptions().leden().get(0).bron());
-        assertEquals("Uitzondering op betwisting", leden.get(1).exceptions().leden().get(0).bron(),
+        assertEquals("Uitzonderingen ongeordend op uitsluiting", groupDefault.source());
+        for (ExceptionGroup member : groupDefault.exceptions().members())
+            assertEquals("Uitzonderingen ongeordend op uitsluiting", member.source());
+        List<Default> members = unordered(groupDefault);
+        assertEquals("Uitzonderingen ongeordend op herroeping", members.get(0).exceptions().members().get(0).source());
+        assertEquals("Uitzondering op betwisting", members.get(1).exceptions().members().get(0).source(),
                 "de geordende groep van twee blokken draagt de kop die zij delen");
         assertTrue(compact(Resolver.resolve(MODEL + BASE
                 + unorderedOn("uitsluiting", regel("herroeping", NOT_EXCLUDED, "hij herroepen is"))))
@@ -707,14 +707,14 @@ class ExceptionOnExceptionTest {
                 + unorderedOn("bevoegd bij noodweer",
                         regel("niet bij schorsing", "Een Jutter is niet bergingsbevoegd", "hij geschorst is"));
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(new RegelSpraakLexer(CharStreams.fromString(src))));
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         parser.removeErrorListeners();
         parser.addErrorListener(new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col, String msg,
-                                              RecognitionException e) { fouten.add(line + ": " + msg); }
+                                              RecognitionException e) { faults.add(line + ": " + msg); }
         });
         RegelSpraak.TestDocumentContext doc = parser.testDocument();
-        assertTrue(fouten.isEmpty(), () -> "syntaxfouten: " + fouten);
+        assertTrue(faults.isEmpty(), () -> "syntaxfouten: " + faults);
         assertEquals(1, doc.children.stream().filter(c -> c instanceof RegelSpraak.UitzonderingRegelContext).count());
         assertEquals(1, doc.children.stream().filter(c -> c instanceof RegelSpraak.UitzonderingGroepContext).count());
     }

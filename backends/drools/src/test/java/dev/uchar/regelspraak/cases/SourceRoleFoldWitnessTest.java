@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 
 import org.junit.jupiter.api.Test;
 
@@ -139,7 +139,7 @@ class SourceRoleFoldWitnessTest {
         // fix reached only the arm it was meant to.
         ObjectNode ir = sumModel();
         ArrayNode fts = JSON.createArrayNode();
-        fts.add(IrPath.declaratie(ir, "factTypes", "thuisligging"));
+        fts.add(IrPath.declaration(ir, "factTypes", "thuisligging"));
         IrPath.model(ir).set("factTypes", fts);
         // the three sister relations are gone from the model, so the input may not spell them either.
         BothBranches.green(temporary("bronrol-uniek", ir),
@@ -157,7 +157,7 @@ class SourceRoleFoldWitnessTest {
         Path p = temporary("bronrol-geen-binding", ir);
         JsonNode c = JSON.readTree(caseDocument("liggertal", "19", "20", null));
         for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                     () -> CaseRunner.playCase(p, c, viaDrl), "a fold without its range is no document");
             assertTrue(e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
         }
@@ -169,7 +169,7 @@ class SourceRoleFoldWitnessTest {
         // both branches refuse — the §13.3.9 storage-direction half, unchanged by this card. (The document
         // itself is well-formed: verifier PASS, ref PASS, clingo PASS on the very same expectations.)
         ObjectNode ir = sumModel();
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "thuisligging").get("roles"))
             ((ObjectNode) r).put("many", true);
         Path p = temporary("bronrol-beide-meervoudig", ir);
         JsonNode c = JSON.readTree(caseDocument("liggertal", "19", "20", null));
@@ -190,7 +190,7 @@ class SourceRoleFoldWitnessTest {
         // FactModelGenerator.noJoinFieldReason. No corpus golden reaches this arm (measured, whole corpus, both
         // branches), which is exactly why the branches were free to drift here.
         ObjectNode ir = sumModel();
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "thuisligging").get("roles"))
             ((ObjectNode) r).put("many", true);
         BothBranches.refused(temporary("bronrol-gedeelde-zin", ir),
                 JSON.readTree(caseDocument("liggertal", "19", "20", null)),
@@ -212,16 +212,16 @@ class SourceRoleFoldWitnessTest {
         // with that lowering.
         Path ir = ir("anchor/jutterswet-wachtersketen");
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
-            Dekking d = coverageOf(DroolsBackend.build(ir, branch).dekking(), "regel: opvolgerrang van een wachter");
-            assertTrue(d.lowered(), branch + ": the self-typed fold lowers: " + d.verdict() + " — " + d.reden());
+            Coverage d = coverageOf(DroolsBackend.build(ir, branch).coverage(), "regel: opvolgerrang van een wachter");
+            assertTrue(d.lowered(), branch + ": the self-typed fold lowers: " + d.verdict() + " — " + d.reason());
         }
     }
 
     // ---------------- fixtures ----------------
 
-    private static Dekking coverageOf(List<Dekking> dekking, String sleutel) {
-        for (Dekking d : dekking) if (sleutel.equals(d.sleutel())) return d;
-        throw new AssertionError("no manifest entry " + sleutel);
+    private static Coverage coverageOf(List<Coverage> coverage, String key) {
+        for (Coverage d : coverage) if (key.equals(d.key())) return d;
+        throw new AssertionError("no manifest entry " + key);
     }
 
     private static Path ir(String golden) {
@@ -230,26 +230,26 @@ class SourceRoleFoldWitnessTest {
         return p;
     }
 
-    private static ObjectNode lees() throws Exception {
+    private static ObjectNode read() throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(ir(DUBBELVERBINDING)));
     }
 
     /** The golden reduced to ONE rule whose value is a {@code kind} fold of romplengte over the range the
      *  wire names, written into {@code targetAttribute}. No creations, no navigated reads: a supplied relation
      *  is read exactly as supplied and no rule writes a role field. */
-    private static Path foldDocument(String kind, String targetAttribute, String plural, String feittype, String rol)
+    private static Path foldDocument(String kind, String targetAttribute, String plural, String factType, String role)
             throws Exception {
-        ObjectNode ir = lees();
+        ObjectNode ir = read();
         IrPath.rules(ir).putArray("factCreations");
         String regel = ruleFor(targetAttribute);
         keepRules(ir, regel);
-        IrPath.version(ir, "rules", 0, 0).set("value", fold(kind, plural, feittype, rol));
+        IrPath.version(ir, "rules", 0, 0).set("value", fold(kind, plural, factType, role));
         return temporary("bronrol-" + kind.toLowerCase(), ir);
     }
 
     /** All three folds in one document, each over its own feittype. */
     private static Path threeFolds() throws Exception {
-        ObjectNode ir = lees();
+        ObjectNode ir = read();
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven", "wintertal van een haven", "keurtal van een haven");
         for (JsonNode n : IrPath.rulesList(ir, "rules")) {
@@ -267,7 +267,7 @@ class SourceRoleFoldWitnessTest {
 
     /** The single-SOM model every mutation row starts from. */
     private static ObjectNode sumModel() throws Exception {
-        ObjectNode ir = lees();
+        ObjectNode ir = read();
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven");
         IrPath.version(ir, "rules", 0, 0).set("value", fold("sum", "liggers", "thuisligging", "ligger"));
@@ -286,7 +286,7 @@ class SourceRoleFoldWitnessTest {
 
     /** The §5.8 instance fold: {@code kind} of the element's romplengte over the range the wire NAMES —
      *  {@code elementType} plus one {@code sourceRole}, the ch. 4.3 one-step form. */
-    private static ObjectNode fold(String kind, String plural, String feittype, String rol) {
+    private static ObjectNode fold(String kind, String plural, String factType, String role) {
         ObjectNode arg = JSON.createObjectNode();
         arg.put("node", "AttributeReference").put("attribute", "romplengte").put("subjectType", "Schuit");
         arg.set("source", IrPath.sourceReference("de romplengte van alle " + plural + " van de Haven"));
@@ -294,7 +294,7 @@ class SourceRoleFoldWitnessTest {
         f.put("node", "Aggregation").put("kind", kind);
         f.putArray("arguments").add(arg);
         f.put("elementType", "Schuit");
-        f.set("sourceRole", roleBinding(feittype, rol));
+        f.set("sourceRole", roleBinding(factType, role));
         f.set("type", number());
         f.set("source", IrPath.sourceReference(sentence(kind) + " de romplengte van alle " + plural + " van de Haven"));
         return f;
@@ -308,15 +308,15 @@ class SourceRoleFoldWitnessTest {
         };
     }
 
-    private static ObjectNode roleBinding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
+    private static ObjectNode roleBinding(String factType, String role) {
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", factType).put("role", role);
     }
 
-    private static ObjectNode literal(String waarde) {
+    private static ObjectNode literal(String value) {
         ObjectNode l = JSON.createObjectNode().put("node", "Literal");
-        l.putObject("value").put("number", waarde);
+        l.putObject("value").put("number", value);
         l.set("type", number());
-        return l.set("source", IrPath.sourceReference(waarde));
+        return l.set("source", IrPath.sourceReference(value));
     }
 
     private static ObjectNode number() {
@@ -334,14 +334,14 @@ class SourceRoleFoldWitnessTest {
     /** The shared world with ONE attribute pinned per haven; a null cell is an {@code attributeEmpty}.
      *  {@code roleNames} is the subset of the three relation spellings the input supplies — all of them,
      *  except where the model has been reduced to a single feittype and the others no longer exist. */
-    private static String caseDocument(String attribuut, String h1, String h2, String h3, String... roleNames) {
-        StringBuilder verwacht = new StringBuilder();
+    private static String caseDocument(String attribute, String h1, String h2, String h3, String... roleNames) {
+        StringBuilder expected = new StringBuilder();
         String[] labels = { "H1", "H2", "H3" }, waarden = { h1, h2, h3 };
         for (int i = 0; i < 3; i++) {
-            if (i > 0) verwacht.append(",\n");
-            verwacht.append(cell(labels[i], attribuut, waarden[i]));
+            if (i > 0) expected.append(",\n");
+            expected.append(cell(labels[i], attribute, waarden[i]));
         }
-        return world(verwacht.toString(), roleNames);
+        return world(expected.toString(), roleNames);
     }
 
     private static String nineCells() {
@@ -351,17 +351,17 @@ class SourceRoleFoldWitnessTest {
                 cell("H1", "keurtal", "20"), cell("H2", "keurtal", null), cell("H3", "keurtal", null)));
     }
 
-    private static String cell(String label, String attribuut, String waarde) {
-        return waarde == null
-                ? "{ \"kind\": \"attributeEmpty\", \"label\": \"" + label + "\", \"attribute\": \"" + attribuut + "\" }"
-                : "{ \"kind\": \"attributeValue\", \"label\": \"" + label + "\", \"attribute\": \"" + attribuut
-                  + "\", \"value\": { \"number\": \"" + waarde + "\" } }";
+    private static String cell(String label, String attribute, String value) {
+        return value == null
+                ? "{ \"kind\": \"attributeEmpty\", \"label\": \"" + label + "\", \"attribute\": \"" + attribute + "\" }"
+                : "{ \"kind\": \"attributeValue\", \"label\": \"" + label + "\", \"attribute\": \"" + attribute
+                  + "\", \"value\": { \"number\": \"" + value + "\" } }";
     }
 
     /** Three havens and the four schuiten of {@link #WORLD}, each schuit in the roles its row names —
      *  restricted to {@code allowed} when the model under test declares fewer feittypen (an empty list
      *  means all three). */
-    private static String world(String verwacht, String... allowed) {
+    private static String world(String expected, String... allowed) {
         List<String> permitted = allowed.length == 0
                 ? List.of("thuishaven", "winterhaven", "keurhaven") : List.of(allowed);
         StringBuilder in = new StringBuilder();
@@ -385,7 +385,7 @@ class SourceRoleFoldWitnessTest {
         }
         return "{ \"format\": \"uchar-case-v0\", \"asOfDate\": null,\n"
              + "  \"input\": { \"instances\": [\n" + in + "], \"parameters\": {} },\n"
-             + "  \"expected\": [\n" + verwacht + " ] }";
+             + "  \"expected\": [\n" + expected + " ] }";
     }
 
     private static Path temporary(String naam, ObjectNode ir) throws Exception {

@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,9 +68,9 @@ class TmsCreationInputWitnessTest {
     // ---------------- the member values of a creation are the input of the made object ----------------
 
     private static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("vangst", WHOLE), attribuut("bonus", WHOLE),
-                    attribuut("terug", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Melding", List.of(attribuut("waarde", WHOLE), attribuut("toeslag", WHOLE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("vangst", WHOLE), attribute("bonus", WHOLE),
+                    attribute("terug", WHOLE)), List.of()),
+            TmsDocuments.objectType("Melding", List.of(attribute("waarde", WHOLE), attribute("toeslag", WHOLE)),
                     List.of()),
             TmsDocuments.subtype("Jutmelding", "Melding", List.of(), List.of())),
             List.of(TmsDocuments.factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Jutmelding",
@@ -100,26 +100,26 @@ class TmsCreationInputWitnessTest {
             computingRule("waarde volgens het tarief", "GELIJKSTELLING", "Jutmelding", "waarde", number("97"), "null"));
 
     /** The creation, its waarde the vangst of its subject, or the bonus, which no case sets. */
-    private static String creatie(String bron) {
+    private static String creation(String source) {
         return TmsCreationWitnessTest.objectCreation("meld de vangst", "Jutter", "Jutmelding",
-                List.of(TmsCreationWitnessTest.init("waarde", ownRead(bron, "Jutter"))), "null", "jutmelding", "melding");
+                List.of(TmsCreationWitnessTest.init("waarde", ownRead(source, "Jutter"))), "null", "jutmelding", "melding");
     }
 
-    private static Path document(List<String> rules, String bron) throws Exception {
-        return TmsCreationWitnessTest.document(MODEL, rules, List.of(), List.of(creatie(bron)), List.of(), List.of());
+    private static Path document(List<String> rules, String source) throws Exception {
+        return TmsCreationWitnessTest.document(MODEL, rules, List.of(), List.of(creation(source)), List.of(), List.of());
     }
 
     private static JsonNode caseDocument(String refund) throws Exception {
         return TmsDocuments.caseDocument(List.of(instance("J1", "Jutter", Map.of("vangst", "7"), List.of(), Map.of())),
-                List.of(waarde("J1", "terug", refund)));
+                List.of(value("J1", "terug", refund)));
     }
 
     /** Every order of {@code rules} in the document plays {@code caseDocument(terug)}. */
-    private static void plays(List<String> rules, String bron, String refund) throws Exception {
+    private static void plays(List<String> rules, String source, String refund) throws Exception {
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(rules)) {
             List<String> names = TmsDocuments.ruleNames(order);
-            assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(document(order, bron), caseDocument(refund)),
+            assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(document(order, source), caseDocument(refund)),
                     () -> "volgorde " + names);
             orders++;
         }
@@ -169,8 +169,8 @@ class TmsCreationInputWitnessTest {
     // ---------------- a division in an initialisation, and a writer on a sister subtype ----------------
 
     private static final String SISTER_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("a", WHOLE), attribuut("c", WHOLE),
-                    attribuut("doel", WHOLE)), List.of()),
+            TmsDocuments.objectType("Vondst", List.of(attribute("a", WHOLE), attribute("c", WHOLE),
+                    attribute("doel", WHOLE)), List.of()),
             TmsDocuments.subtype("Drijfgoed", "Vondst", List.of(), List.of()),
             TmsDocuments.subtype("Wrakgoed", "Vondst", List.of(), List.of())), List.of());
 
@@ -185,7 +185,7 @@ class TmsCreationInputWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("D1", "Drijfgoed", Map.of("c", "2"), List.of(), Map.of()),
                         instance("W1", "Wrakgoed", Map.of(), List.of(), Map.of())),
-                List.of(waarde("D1", "doel", "2"), waarde("W1", "doel", "7"), TmsDocuments.consistent()));
+                List.of(value("D1", "doel", "2"), value("W1", "doel", "7"), TmsDocuments.consistent()));
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(SISTERS)) {
             List<String> names = TmsDocuments.ruleNames(order);

@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The structured {@link Bron} on a resolved form carries file/line/column back to the source,
+ * The structured {@link Source} on a resolved form carries file/line/column back to the source,
  * and a {@code // Bron:} statuutannotatie directly above a rule is retrievable from its
- * {@link ResolvedRegel}. Byte-identity of the wire (the source snippet) is proven elsewhere
+ * {@link ResolvedRule}. Byte-identity of the wire (the source snippet) is proven elsewhere
  * (the emitter goldens); here we prove the ADDED coordinates and annotations.
  */
 class SourceTest {
@@ -35,22 +35,22 @@ class SourceTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.resolvedRegels.size());
 
-        ResolvedRegel rr = m.resolvedRegels.get(0);
-        Bron bron = rr.doel().bron();
-        assertNotNull(bron, "doel draagt geen Bron");
-        assertEquals("Jutterswet.rgs", bron.file(), "de bestandsnaam moet doorgegeven zijn");
-        assertEquals(lineOf(SRC, "De uitkomst van een Som moet"), bron.line(), "regelnummer van het doel");
-        assertTrue(bron.column() >= 0, "kolom is 0-gebaseerd");
-        assertTrue(bron.snippet().contains("uitkomst"), () -> "snippet: " + bron.snippet());
+        ResolvedRule rr = m.resolvedRegels.get(0);
+        Source source = rr.target().source();
+        assertNotNull(source, "doel draagt geen Bron");
+        assertEquals("Jutterswet.rgs", source.file(), "de bestandsnaam moet doorgegeven zijn");
+        assertEquals(lineOf(SRC, "De uitkomst van een Som moet"), source.line(), "regelnummer van het doel");
+        assertTrue(source.column() >= 0, "kolom is 0-gebaseerd");
+        assertTrue(source.snippet().contains("uitkomst"), () -> "snippet: " + source.snippet());
         // toString() levert de snippet (minimaliseert de diff op plekken die de bron als tekst gebruiken)
-        assertEquals(bron.snippet(), bron.toString());
+        assertEquals(source.snippet(), source.toString());
     }
 
     @Test void sourceAnnotationRetrievableFromResolvedRule() {
         RegelSpraakModel m = Resolver.resolve(SRC, "Jutterswet.rgs");
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
 
-        ResolvedRegel rr = m.resolvedRegels.get(0);
+        ResolvedRule rr = m.resolvedRegels.get(0);
         assertTrue(rr.statuteAnnotations().contains("art. 3 Jutterswet"),
                 () -> "verwachtte de // Bron:-annotatie boven de regel, kreeg: " + rr.statuteAnnotations());
     }

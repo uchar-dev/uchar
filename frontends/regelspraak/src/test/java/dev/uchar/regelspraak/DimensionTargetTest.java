@@ -32,12 +32,12 @@ class DimensionTargetTest {
 
         """;
 
-    private static String regel(String resultaat) {
+    private static String regel(String result) {
         return MODEL + """
             Regel doel
                 geldig altijd
                     %s
-            """.formatted(resultaat);
+            """.formatted(result);
     }
 
     @ParameterizedTest
@@ -45,11 +45,11 @@ class DimensionTargetTest {
             "De premie van een Jutter in voorjaar moet gesteld worden op 10.",
             "De premie in voorjaar van een Jutter moet gesteld worden op 10."
     })
-    void a_cell_assignment_refuses_with_the_dimension(String resultaat) {
-        RegelSpraakModel m = Resolver.resolve(regel(resultaat));
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
-        String t = fouten.get(0).message();
+    void a_cell_assignment_refuses_with_the_dimension(String result) {
+        RegelSpraakModel m = Resolver.resolve(regel(result));
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        String t = faults.get(0).message();
         assertTrue(t.contains("cel van het gedimensioneerde attribuut 'premie' (dimensie seizoen, label 'voorjaar')"), t);
         assertTrue(t.contains("WF-022"), t);
     }

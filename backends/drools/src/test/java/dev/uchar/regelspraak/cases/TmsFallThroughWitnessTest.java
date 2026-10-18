@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -28,8 +28,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,8 +72,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsFallThroughWitnessTest {
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("bron1", WHOLE), attribuut("bron2", WHOLE), attribuut("doel", WHOLE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("bron1", WHOLE), attribute("bron2", WHOLE), attribute("doel", WHOLE)),
             List.of("b", "c", "d", "f", "tussen", "afgewezen"))), List.of());
 
     private static final List<String> RULES = List.of(
@@ -83,9 +83,9 @@ class TmsFallThroughWitnessTest {
             characteristicRule("afwijzing", "Vondst", "afgewezen", check("f", false)));
 
     private static final String GROUP = attributeGroup("doel van een vondst", "Vondst", "doel", List.of(
-            standaard(compound("all", 0, List.of(check("c", false), check("afgewezen", true))),
+            defaultEntry(compound("all", 0, List.of(check("c", false), check("afgewezen", true))),
                     ownRead("bron1", "Vondst")),
-            standaard(check("d", false), ownRead("bron2", "Vondst"))));
+            defaultEntry(check("d", false), ownRead("bron2", "Vondst"))));
 
     /** The input characteristics of object {@code bits}: b, c, d and f by its four bits. */
     private static List<String> kenmerken(int bits) {
@@ -104,19 +104,19 @@ class TmsFallThroughWitnessTest {
 
     /** RUNTIME-SEMANTICS ch. 7.1 by hand: the higher default where it is justified and bron1 is filled, else the lower
      *  where it is justified (bron2 is always filled), else leeg. */
-    private static String verwacht(int bits) {
+    private static String expected(int bits) {
         boolean b = (bits & 1) != 0, c = (bits & 2) != 0, d = (bits & 4) != 0, f = (bits & 8) != 0;
         return c && !f && b ? "100" : d ? "200" : null;
     }
 
     private static JsonNode caseDocument() throws Exception {
-        List<String> instanties = new ArrayList<>(), verwachtingen = new ArrayList<>();
+        List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
         for (int bits = 0; bits < 16; bits++) {
-            instanties.add(instance(label(bits), "Vondst", Map.of(), kenmerken(bits), Map.of()));
-            verwachtingen.add(waarde(label(bits), "doel", verwacht(bits)));
+            instances.add(instance(label(bits), "Vondst", Map.of(), kenmerken(bits), Map.of()));
+            expectations.add(value(label(bits), "doel", expected(bits)));
         }
-        verwachtingen.add(consistent());
-        return TmsDocuments.caseDocument(instanties, verwachtingen);
+        expectations.add(consistent());
+        return TmsDocuments.caseDocument(instances, expectations);
     }
 
     private static Path document(List<String> rules) throws Exception {
@@ -139,18 +139,18 @@ class TmsFallThroughWitnessTest {
      *  order, so a seeded sample, which must take the takeover and the give-back each at least once. */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(RULES), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(16, gegenereerd.size(),
-                () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(16, generated.size(),
+                () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int[] adoption = {0}, returns = {0};
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
             fireSample(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList(), adoption,
                     returns);
         assertTrue(adoption[0] > 0, "geen volgorde liet de lagere default eerst beslissen en de hogere overnemen");
         assertTrue(returns[0] > 0, "geen volgorde liet de hogere default beslissen en zijn besluit weer verliezen");
         DroolsBackend.Build t = DroolsBackend.build(document(RULES), DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         int[] textAdoption = {0}, textReturn = {0};
         for (List<String> order : TmsDocuments.sample(rules, 20261008L, 100))
             fireSample(t, TextOrder.kieBase(t, order), order, textAdoption, textReturn);
@@ -168,22 +168,22 @@ class TmsFallThroughWitnessTest {
             for (int bits = 0; bits < 16; bits++)
                 beans.add(TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), kenmerken(bits)));
             Map<Object, List<String>> fired = new IdentityHashMap<>();
-            TmsDocuments.vuur(b, kieBase, names, beans, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocuments.fire(b, kieBase, names, beans, session -> session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     String regel = e.getMatch().getRule().getName();
                     for (Object o : e.getMatch().getObjects())
                         if (beans.stream().anyMatch(x -> x == o))
                             fired.computeIfAbsent(o, x -> new ArrayList<>()).add(regel);
                 }
-            }), sessie -> {
-                for (Object f : sessie.getObjects(o -> o instanceof ControlFact))
+            }), session -> {
+                for (Object f : session.getObjects(o -> o instanceof ControlFact))
                     assertTrue(f instanceof Decides, () -> "een eenvoudige groep zet alleen Beslist in: " + f);
             });
             for (int bits = 0; bits < 16; bits++) {
                 Object beanObject = beans.get(bits);
                 String where = label(bits) + " doel op " + b.branch() + " in volgorde " + names;
-                String v = verwacht(bits);
-                assertEquals(v == null ? null : new BigDecimal(v), TmsDocuments.lees(beanObject, "doel"), where);
+                String v = expected(bits);
+                assertEquals(v == null ? null : new BigDecimal(v), TmsDocuments.read(beanObject, "doel"), where);
                 List<String> rules = fired.getOrDefault(beanObject, List.of());
                 if ("100".equals(v) && rules.stream().anyMatch(r -> r.endsWith("default 1"))) adoption[0]++;
                 if ("200".equals(v) && rules.stream().anyMatch(r -> r.endsWith("default 0"))) returns[0]++;

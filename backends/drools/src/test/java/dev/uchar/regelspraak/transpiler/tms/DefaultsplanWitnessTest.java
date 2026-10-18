@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulation;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
 import dev.uchar.regelspraak.transpiler.tms.plan.Exists;
@@ -93,9 +93,9 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults A:Jutter.waardering: default 0 | vorm defaults A:Jutter.waardering |"
                         + " groep null",
-                "  lezingen [0 INVOER $erkend (eigen ElementSleutel[objecttype=jutter, naam=erkend, kenmerk=true]),"
-                        + " 1 INVOER $basisbedrag (eigen ElementSleutel[objecttype=jutter, naam=basisbedrag,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $erkend (eigen ElementKey[objectType=jutter, naam=erkend, characteristic=true]),"
+                        + " 1 INVOER $basisbedrag (eigen ElementKey[objectType=jutter, naam=basisbedrag,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$erkend = [] Jutter.erkend WAAR, $basisbedrag = [] Jutter.basisbedrag"
                         + " VALUE]",
@@ -104,17 +104,17 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij erkend is'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 1, slots=[1], size=2,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.waardering, regel=defaults"
-                        + " A:Jutter.waardering], facts=[Value[doel=ElementSleutel[objecttype=jutter,"
-                        + " naam=waardering, kenmerk=false], writer=defaults A:Jutter.waardering],"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 1, slots=[1], size=2,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, regel=defaults"
+                        + " A:Jutter.waardering], facts=[Value[target=ElementKey[objectType=jutter,"
+                        + " naam=waardering, characteristic=false], writer=defaults A:Jutter.waardering],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=0]], insertion=LOGICAL]",
-                "    waarde 0 SlotValue bron 'zijn basisbedrag'",
+                "    value 0 SlotValue bron 'zijn basisbedrag'",
                 "regel defaults A:Jutter.waardering: default 1 | vorm defaults A:Jutter.waardering |"
                         + " groep null",
-                "  lezingen [0 INVOER $kandidaat (eigen ElementSleutel[objecttype=jutter, naam=kandidaat,"
-                        + " kenmerk=true]), 1 INVOER $kandidaatbedrag (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=kandidaatbedrag, kenmerk=false])]",
+                "  lezingen [0 INVOER $kandidaat (eigen ElementKey[objectType=jutter, naam=kandidaat,"
+                        + " characteristic=true]), 1 INVOER $kandidaatbedrag (eigen ElementKey[objectType=jutter,"
+                        + " naam=kandidaatbedrag, characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$kandidaat = [] Jutter.kandidaat WAAR, $kandidaatbedrag = []"
                         + " Jutter.kandidaatbedrag VALUE]",
@@ -127,12 +127,12 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij kandidaat is'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 1, slots=[1], size=2,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.waardering, regel=defaults"
-                        + " A:Jutter.waardering], facts=[Value[doel=ElementSleutel[objecttype=jutter,"
-                        + " naam=waardering, kenmerk=false], writer=defaults A:Jutter.waardering],"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 1, slots=[1], size=2,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, regel=defaults"
+                        + " A:Jutter.waardering], facts=[Value[target=ElementKey[objectType=jutter,"
+                        + " naam=waardering, characteristic=false], writer=defaults A:Jutter.waardering],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=1]], insertion=LOGICAL]",
-                "    waarde 0 SlotValue bron 'zijn kandidaatbedrag'",
+                "    value 0 SlotValue bron 'zijn kandidaatbedrag'",
                 "regel defaults A:Jutter.waardering: default 2 | vorm defaults A:Jutter.waardering |"
                         + " groep null",
                 "  lezingen []",
@@ -143,12 +143,12 @@ class DefaultsplanWitnessTest {
                         + " [[] stack VALUE GELIJK defaults A:Jutter.waardering {String}, [] index VALUE UNDER"
                         + " 2 {Integer}]] join [hoger-beslist-onderwerp_9: onderwerp = $onderwerp] beta [] na []"
                         + " bind []]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 25, slots=[], size=0,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.waardering, regel=defaults"
-                        + " A:Jutter.waardering], facts=[Value[doel=ElementSleutel[objecttype=jutter,"
-                        + " naam=waardering, kenmerk=false], writer=defaults A:Jutter.waardering]],"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const 25, slots=[], size=0,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, regel=defaults"
+                        + " A:Jutter.waardering], facts=[Value[target=ElementKey[objectType=jutter,"
+                        + " naam=waardering, characteristic=false], writer=defaults A:Jutter.waardering]],"
                         + " insertion=LOGICAL]",
-                "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                "    value 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '25'"), plans(golden("anchor/jutterswet-vondstwaardering")));
     }
 
@@ -156,17 +156,17 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults K:Jutter.uitgesloten: default 0 | vorm defaults K:Jutter.uitgesloten |"
                         + " groep null",
-                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
-                        + " geweigerd, kenmerk=true]), 1 INVOER $weigeringHerroepen (eigen"
-                        + " ElementSleutel[objecttype=jutter, naam=weigering herroepen, kenmerk=true]), 2 INVOER"
-                        + " $herroepingVervallen (eigen ElementSleutel[objecttype=jutter, naam=herroeping"
-                        + " vervallen, kenmerk=true])]",
+                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementKey[objectType=jutter, naam=vergunning"
+                        + " geweigerd, characteristic=true]), 1 INVOER $weigeringHerroepen (eigen"
+                        + " ElementKey[objectType=jutter, naam=weigering herroepen, characteristic=true]), 2 INVOER"
+                        + " $herroepingVervallen (eigen ElementKey[objectType=jutter, naam=herroeping"
+                        + " vervallen, characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_3: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$vergunningGeweigerd = [] Jutter.vergunning geweigerd WAAR,"
                         + " $weigeringHerroepen = [] Jutter.weigering herroepen WAAR, $herroepingVervallen = []"
                         + " Jutter.herroeping vervallen WAAR]",
                 "  patroon EvaluationDate $geldigheid_0 alfa [geldig_4: [[] date VALUE WITHIN"
-                        + " Geldigheid[vanaf=2026-01-01, tot=null] {Geldigheid}]] join [] beta [] na [] bind []",
+                        + " Validity[from=2026-01-01, until=null] {Validity}]] join [] beta [] na [] bind []",
                 "  toets voorwaarde_5 CONDITION sonde -1 slots [0, 1, 2] grootte 3: Samengesteld ALLE"
                         + " 0(KENMERK(Lees 0, Const true), KENMERK(Lees 1, Const true), KENMERK(Lees 2, Const"
                         + " true))",
@@ -181,21 +181,21 @@ class DefaultsplanWitnessTest {
                 "    toets 0.2 Call bron 'de herroeping is vervallen'",
                 "    toets 0.2.0 SlotValue",
                 "    toets 0.2.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=3,"
-                        + " collapse=false, fout=null, facts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=uitgesloten, kenmerk=true]], Decides[stack=defaults K:Jutter.uitgesloten,"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const true, slots=[], size=3,"
+                        + " collapse=false, fault=null, facts=[Characteristic[characteristic=ElementKey[objectType=jutter,"
+                        + " naam=uitgesloten, characteristic=true]], Decides[stack=defaults K:Jutter.uitgesloten,"
                         + " index=0]], insertion=LOGICAL]",
-                "    waarde 0 Const Boolean",
+                "    value 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: default 1 | vorm defaults K:Jutter.uitgesloten |"
                         + " groep null",
-                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
-                        + " geweigerd, kenmerk=true]), 1 INVOER $weigeringHerroepen (eigen"
-                        + " ElementSleutel[objecttype=jutter, naam=weigering herroepen, kenmerk=true])]",
+                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementKey[objectType=jutter, naam=vergunning"
+                        + " geweigerd, characteristic=true]), 1 INVOER $weigeringHerroepen (eigen"
+                        + " ElementKey[objectType=jutter, naam=weigering herroepen, characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_6: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$vergunningGeweigerd = [] Jutter.vergunning geweigerd WAAR,"
                         + " $weigeringHerroepen = [] Jutter.weigering herroepen WAAR]",
                 "  patroon EvaluationDate $geldigheid_0 alfa [geldig_7: [[] date VALUE WITHIN"
-                        + " Geldigheid[vanaf=2026-01-01, tot=null] {Geldigheid}]] join [] beta [] na [] bind []",
+                        + " Validity[from=2026-01-01, until=null] {Validity}]] join [] beta [] na [] bind []",
                 "  niet binnen [$hoger_8] buiten [$onderwerp] [Decides $hoger_8 alfa [hoger-beslist_8:"
                         + " [[] stack VALUE GELIJK defaults K:Jutter.uitgesloten {String}, [] index VALUE UNDER"
                         + " 1 {Integer}]] join [hoger-beslist-onderwerp_9: onderwerp = $onderwerp] beta [] na []"
@@ -209,18 +209,18 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Call bron 'de weigering is herroepen'",
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const false, slots=[], size=2,"
-                        + " collapse=false, fout=null, facts=[Decides[stack=defaults K:Jutter.uitgesloten,"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const false, slots=[], size=2,"
+                        + " collapse=false, fault=null, facts=[Decides[stack=defaults K:Jutter.uitgesloten,"
                         + " index=1]], insertion=LOGICAL]",
-                "    waarde 0 Const Boolean",
+                "    value 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: default 2 | vorm defaults K:Jutter.uitgesloten |"
                         + " groep null",
-                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
-                        + " geweigerd, kenmerk=true])]",
+                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementKey[objectType=jutter, naam=vergunning"
+                        + " geweigerd, characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_11: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$vergunningGeweigerd = [] Jutter.vergunning geweigerd WAAR]",
                 "  patroon EvaluationDate $geldigheid_0 alfa [geldig_12: [[] date VALUE WITHIN"
-                        + " Geldigheid[vanaf=2026-01-01, tot=null] {Geldigheid}]] join [] beta [] na [] bind []",
+                        + " Validity[from=2026-01-01, until=null] {Validity}]] join [] beta [] na [] bind []",
                 "  niet binnen [$hoger_13] buiten [$onderwerp] [Decides $hoger_13 alfa"
                         + " [hoger-beslist_13: [[] stack VALUE GELIJK defaults K:Jutter.uitgesloten {String}, []"
                         + " index VALUE UNDER 2 {Integer}]] join [hoger-beslist-onderwerp_14: onderwerp ="
@@ -230,10 +230,10 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'zijn raapvergunning is geweigerd'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=1,"
-                        + " collapse=false, fout=null, facts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=uitgesloten, kenmerk=true]]], insertion=LOGICAL]",
-                "    waarde 0 Const Boolean",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const true, slots=[], size=1,"
+                        + " collapse=false, fault=null, facts=[Characteristic[characteristic=ElementKey[objectType=jutter,"
+                        + " naam=uitgesloten, characteristic=true]]], insertion=LOGICAL]",
+                "    value 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: geen rekendatum | vorm defaults"
                         + " K:Jutter.uitgesloten | groep null",
                 "  lezingen []",
@@ -241,8 +241,8 @@ class DefaultsplanWitnessTest {
                         + " Jutter]] join [] beta [] bind []",
                 "  patroon EvaluationDate $rekendatum alfa [geen-rekendatum_17: [[] date VALUE LEEG]] join"
                         + " [] beta [] na [] bind []",
-                "  gevolg Fout [onderwerp=$onderwerp, sentence=a validity-bounded form needs an evaluation"
-                        + " date; this session is time-free, fout=FaultName[vorm=defaults K:Jutter.uitgesloten,"
+                "  gevolg Fault [onderwerp=$onderwerp, sentence=a validity-bounded form needs an evaluation"
+                        + " date; this session is time-free, fault=FaultName[form=defaults K:Jutter.uitgesloten,"
                         + " regel=defaults K:Jutter.uitgesloten], insertion=LOGICAL]"), plans(exclusionDated()));
     }
 
@@ -250,9 +250,9 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults A:Jutter.korting: default 0.0.0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $grondP (eigen ElementSleutel[objecttype=jutter, naam=grondp, kenmerk=true]),"
-                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $grondP (eigen ElementKey[objectType=jutter, naam=grondp, characteristic=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementKey[objectType=jutter, naam=grondslag,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$grondP = [] Jutter.grondP WAAR, $grondslag = [] Jutter.grondslag VALUE]",
                 "  toets voorwaarde_1 CONDITION sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
@@ -260,19 +260,19 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij grondP heeft'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(Lees 1, Const 20), slots=[1],"
-                        + " size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=RS_PLUS(Lees 1, Const 20), slots=[1],"
+                        + " size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting, regel=defaults"
                         + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=1,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Call bron 'de grondslag plus 20.00'",
-                "    waarde 0.0 SlotValue bron 'de grondslag van de Jutter'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Call bron 'de grondslag plus 20.00'",
+                "    value 0.0 SlotValue bron 'de grondslag van de Jutter'",
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
                         + " teken=ONBEPAALD, eenheid=null] bron '20.00'",
                 "regel defaults A:Jutter.korting: default 0.1.0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $grondQ (eigen ElementSleutel[objecttype=jutter, naam=grondq, kenmerk=true]),"
-                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $grondQ (eigen ElementKey[objectType=jutter, naam=grondq, characteristic=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementKey[objectType=jutter, naam=grondslag,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$grondQ = [] Jutter.grondQ WAAR, $grondslag = [] Jutter.grondslag VALUE]",
                 "  toets voorwaarde_3 CONDITION sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
@@ -280,19 +280,19 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij grondQ heeft'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(Lees 1, Const 35), slots=[1],"
-                        + " size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=RS_PLUS(Lees 1, Const 35), slots=[1],"
+                        + " size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting, regel=defaults"
                         + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=2,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Call bron 'de grondslag plus 35.00'",
-                "    waarde 0.0 SlotValue bron 'de grondslag van de Jutter'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Call bron 'de grondslag plus 35.00'",
+                "    value 0.0 SlotValue bron 'de grondslag van de Jutter'",
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
                         + " teken=ONBEPAALD, eenheid=null] bron '35.00'",
                 "regel defaults A:Jutter.korting: default 0.2.0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $grondR (eigen ElementSleutel[objecttype=jutter, naam=grondr, kenmerk=true]),"
-                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $grondR (eigen ElementKey[objectType=jutter, naam=grondr, characteristic=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementKey[objectType=jutter, naam=grondslag,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_4: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$grondR = [] Jutter.grondR WAAR, $grondslag = [] Jutter.grondslag VALUE]",
                 "  toets voorwaarde_5 CONDITION sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
@@ -300,63 +300,63 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij grondR heeft'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(RS_PLUS(Lees 1, Const 15), Const"
-                        + " 5), slots=[1], size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting,"
+                "  gevolg Decision [onderwerp=$onderwerp, value=RS_PLUS(RS_PLUS(Lees 1, Const 15), Const"
+                        + " 5), slots=[1], size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting,"
                         + " regel=defaults A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting,"
-                        + " chain=3, positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Call bron 'die som plus 5.00'",
-                "    waarde 0.0 Call bron 'de grondslag plus 15.00'",
-                "    waarde 0.0.0 SlotValue bron 'de grondslag van de Jutter'",
-                "    waarde 0.0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
+                        + " chain=3, position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Call bron 'die som plus 5.00'",
+                "    value 0.0 Call bron 'de grondslag plus 15.00'",
+                "    value 0.0.0 SlotValue bron 'de grondslag van de Jutter'",
+                "    value 0.0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
                         + " teken=ONBEPAALD, eenheid=null] bron '15.00'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
                         + " teken=ONBEPAALD, eenheid=null] bron '5.00'",
                 "regel defaults A:Jutter.korting: verschil 0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
                 "  lezingen []",
                 "  patroon Outcome $besluit alfa [lid-besluit_6: [[] stack VALUE GELIJK defaults"
-                        + " A:Jutter.korting {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " A:Jutter.korting {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}]] join [] beta [] na [] bind"
                         + " [$onderwerp = [] Outcome.onderwerp VALUE]",
                 "  niet binnen [$uitkomst_7] buiten [$onderwerp, $besluit] [Outcome $uitkomst_7 alfa"
                         + " [uitkomst_7: [[] stack VALUE GELIJK defaults A:Jutter.korting {String}, [] chain"
-                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_8: onderwerp = $onderwerp] beta"
                         + " [eerder-lid_9: EARLIER_MEMBER $besluit] na [] bind []]",
                 "  bestaat binnen [$uitkomst_10] buiten [$onderwerp, $besluit] [Outcome $uitkomst_10"
                         + " alfa [uitkomst_10: [[] stack VALUE GELIJK defaults A:Jutter.korting {String}, []"
-                        + " chain VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] soort VALUE"
+                        + " chain VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] category VALUE"
                         + " GELIJK DECIDED {Kind}]] join [uitkomst-onderwerp_11: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_12: OTHER_DECISION $besluit] na [] bind []]",
-                "  gevolg Conflict [onderwerp=$onderwerp, sleutel=Const Jutter.korting/0, slots=[],"
-                        + " size=0, fact=Outcome[stack=defaults A:Jutter.korting, chain=0, positie=0,"
-                        + " soort=CONFLICT], insertion=LOGICAL]",
-                "    sleutel 0 Const String",
+                "  gevolg Conflict [onderwerp=$onderwerp, key=Const Jutter.korting/0, slots=[],"
+                        + " size=0, fact=Outcome[stack=defaults A:Jutter.korting, chain=0, position=0,"
+                        + " category=CONFLICT], insertion=LOGICAL]",
+                "    key 0 Const String",
                 "regel defaults A:Jutter.korting: eens 0 | vorm defaults A:Jutter.korting | groep null",
                 "  lezingen [0 DECISION $waarde (besluit)]",
                 "  patroon Outcome $besluit alfa [lid-besluit_13: [[] stack VALUE GELIJK defaults"
-                        + " A:Jutter.korting {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " A:Jutter.korting {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}]] join [] beta [] na [] bind"
-                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.waarde VALUE]",
+                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.value VALUE]",
                 "  niet binnen [$uitkomst_14] buiten [$onderwerp, $besluit] [Outcome $uitkomst_14 alfa"
                         + " [uitkomst_14: [[] stack VALUE GELIJK defaults A:Jutter.korting {String}, [] chain"
-                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_15: onderwerp = $onderwerp] beta"
                         + " [eerder-lid_16: EARLIER_MEMBER $besluit] na [] bind []]",
                 "  niet binnen [$uitkomst_17] buiten [$onderwerp, $besluit] [Outcome $uitkomst_17 alfa"
                         + " [uitkomst_17: [[] stack VALUE GELIJK defaults A:Jutter.korting {String}, [] chain"
-                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 4 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_18: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_19: OTHER_DECISION $besluit] na [] bind []]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 SlotValue",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 0, slots=[0], size=1,"
+                        + " collapse=false, fault=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 SlotValue",
                 "regel defaults A:Jutter.korting: terugval 0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $rechtA (eigen ElementSleutel[objecttype=jutter, naam=rechta, kenmerk=true]),"
-                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $rechtA (eigen ElementKey[objectType=jutter, naam=rechta, characteristic=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementKey[objectType=jutter, naam=grondslag,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_20: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$rechtA = [] Jutter.rechtA WAAR, $grondslag = [] Jutter.grondslag VALUE]",
                 "  niet binnen [$uitkomst_21] buiten [$onderwerp] [Outcome $uitkomst_21 alfa"
@@ -368,13 +368,13 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij rechtA heeft'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(Lees 1, Const 90), slots=[1],"
-                        + " size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=RS_PLUS(Lees 1, Const 90), slots=[1],"
+                        + " size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting, regel=defaults"
                         + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Call bron 'de grondslag plus 90.00'",
-                "    waarde 0.0 SlotValue bron 'de grondslag van de Jutter'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Call bron 'de grondslag plus 90.00'",
+                "    value 0.0 SlotValue bron 'de grondslag van de Jutter'",
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=false, decimalen=2,"
                         + " teken=ONBEPAALD, eenheid=null] bron '90.00'",
                 "regel defaults A:Jutter.korting: default 1 | vorm defaults A:Jutter.korting | groep null",
                 "  lezingen []",
@@ -383,43 +383,43 @@ class DefaultsplanWitnessTest {
                         + " [] bind []",
                 "  niet binnen [$hoger_26] buiten [$onderwerp] [Outcome $hoger_26 alfa"
                         + " [hoger-uitkomst_26: [[] stack VALUE GELIJK defaults A:Jutter.korting {String}, []"
-                        + " chain VALUE GELIJK 0 {Integer}, [] positie VALUE UNDER 1 {Integer}]] join"
+                        + " chain VALUE GELIJK 0 {Integer}, [] position VALUE UNDER 1 {Integer}]] join"
                         + " [hoger-uitkomst-onderwerp_27: onderwerp = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 5, slots=[], size=0,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const 5, slots=[], size=0,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.korting, regel=defaults"
                         + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
-                        + " positie=1, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const BigDecimal type Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD,"
+                        + " position=1, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const BigDecimal type Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD,"
                         + " eenheid=null] bron '5.00'",
                 "regel defaults A:Jutter.korting: doorgeven wortel | vorm defaults A:Jutter.korting |"
                         + " groep null",
                 "  lezingen [0 CONFLICT_KEY $sleutel (conflictsleutel)]",
                 "  patroon Outcome $conflict alfa [lid-conflict_28: [[] stack VALUE GELIJK defaults"
-                        + " A:Jutter.korting {String}, [] soort VALUE GELIJK CONFLICT {Kind}, [] chain VALUE"
+                        + " A:Jutter.korting {String}, [] category VALUE GELIJK CONFLICT {Kind}, [] chain VALUE"
                         + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}]] join [] beta [] na [] bind"
-                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $sleutel = [] Outcome.sleutel VALUE]",
-                "  gevolg Conflict [onderwerp=$onderwerp, sleutel=Lees 0, slots=[0], size=1,"
+                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $sleutel = [] Outcome.key VALUE]",
+                "  gevolg Conflict [onderwerp=$onderwerp, key=Lees 0, slots=[0], size=1,"
                         + " fact=Inconsistency[], insertion=LOGICAL]",
-                "    sleutel 0 SlotValue",
+                "    key 0 SlotValue",
                 "regel defaults A:Jutter.korting: eens wortel | vorm defaults A:Jutter.korting | groep"
                         + " null",
                 "  lezingen [0 DECISION $waarde (besluit)]",
                 "  patroon Outcome $besluit alfa [lid-besluit_29: [[] stack VALUE GELIJK defaults"
-                        + " A:Jutter.korting {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " A:Jutter.korting {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}]] join [] beta [] na [] bind"
-                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.waarde VALUE]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, facts=[Value[doel=ElementSleutel[objecttype=jutter,"
-                        + " naam=korting, kenmerk=false], writer=defaults A:Jutter.korting]], insertion=LOGICAL]",
-                "    waarde 0 SlotValue"), plans(golden("synth3-nestkorting")));
+                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.value VALUE]",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 0, slots=[0], size=1,"
+                        + " collapse=false, fault=null, facts=[Value[target=ElementKey[objectType=jutter,"
+                        + " naam=korting, characteristic=false], writer=defaults A:Jutter.korting]], insertion=LOGICAL]",
+                "    value 0 SlotValue"), plans(golden("synth3-nestkorting")));
     }
 
     @Test void the_general_form_on_a_characteristic() throws Exception {
         assertEquals(List.of(
                 "regel defaults K:Jutter.vrijgesteld: default 0.0.0 | vorm defaults K:Jutter.vrijgesteld"
                         + " | groep null",
-                "  lezingen [0 INVOER $nx (eigen ElementSleutel[objecttype=jutter, naam=nx, kenmerk=true]), 1"
-                        + " INVOER $ny (eigen ElementSleutel[objecttype=jutter, naam=ny, kenmerk=true])]",
+                "  lezingen [0 INVOER $nx (eigen ElementKey[objectType=jutter, naam=nx, characteristic=true]), 1"
+                        + " INVOER $ny (eigen ElementKey[objectType=jutter, naam=ny, characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$nx = [] Jutter.nx WAAR, $ny = [] Jutter.ny WAAR]",
                 "  toets voorwaarde_1 CONDITION sonde -1 slots [0, 1] grootte 2: Samengesteld ALLE"
@@ -431,14 +431,14 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Call bron 'hij ny heeft'",
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const false, slots=[], size=2,"
-                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
-                        + " chain=1, positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const Boolean",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const false, slots=[], size=2,"
+                        + " collapse=false, fault=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " chain=1, position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: default 0.1.0 | vorm defaults K:Jutter.vrijgesteld"
                         + " | groep null",
-                "  lezingen [0 INVOER $nx (eigen ElementSleutel[objecttype=jutter, naam=nx, kenmerk=true]), 1"
-                        + " INVOER $nz (eigen ElementSleutel[objecttype=jutter, naam=nz, kenmerk=true])]",
+                "  lezingen [0 INVOER $nx (eigen ElementKey[objectType=jutter, naam=nx, characteristic=true]), 1"
+                        + " INVOER $nz (eigen ElementKey[objectType=jutter, naam=nz, characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$nx = [] Jutter.nx WAAR, $nz = [] Jutter.nz WAAR]",
                 "  toets voorwaarde_3 CONDITION sonde -1 slots [0, 1] grootte 2: Samengesteld ALLE"
@@ -450,55 +450,55 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Call bron 'hij nz heeft'",
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=2,"
-                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
-                        + " chain=2, positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const Boolean",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const true, slots=[], size=2,"
+                        + " collapse=false, fault=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " chain=2, position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: verschil 0 | vorm defaults K:Jutter.vrijgesteld |"
                         + " groep null",
                 "  lezingen []",
                 "  patroon Outcome $besluit alfa [lid-besluit_4: [[] stack VALUE GELIJK defaults"
-                        + " K:Jutter.vrijgesteld {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " K:Jutter.vrijgesteld {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}]] join [] beta [] na [] bind"
                         + " [$onderwerp = [] Outcome.onderwerp VALUE]",
                 "  niet binnen [$uitkomst_5] buiten [$onderwerp, $besluit] [Outcome $uitkomst_5 alfa"
                         + " [uitkomst_5: [[] stack VALUE GELIJK defaults K:Jutter.vrijgesteld {String}, [] chain"
-                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_6: onderwerp = $onderwerp] beta"
                         + " [eerder-lid_7: EARLIER_MEMBER $besluit] na [] bind []]",
                 "  bestaat binnen [$uitkomst_8] buiten [$onderwerp, $besluit] [Outcome $uitkomst_8 alfa"
                         + " [uitkomst_8: [[] stack VALUE GELIJK defaults K:Jutter.vrijgesteld {String}, [] chain"
-                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_9: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_10: OTHER_DECISION $besluit] na [] bind []]",
-                "  gevolg Conflict [onderwerp=$onderwerp, sleutel=Const Jutter.vrijgesteld/0, slots=[],"
-                        + " size=0, fact=Outcome[stack=defaults K:Jutter.vrijgesteld, chain=0, positie=0,"
-                        + " soort=CONFLICT], insertion=LOGICAL]",
-                "    sleutel 0 Const String",
+                "  gevolg Conflict [onderwerp=$onderwerp, key=Const Jutter.vrijgesteld/0, slots=[],"
+                        + " size=0, fact=Outcome[stack=defaults K:Jutter.vrijgesteld, chain=0, position=0,"
+                        + " category=CONFLICT], insertion=LOGICAL]",
+                "    key 0 Const String",
                 "regel defaults K:Jutter.vrijgesteld: eens 0 | vorm defaults K:Jutter.vrijgesteld |"
                         + " groep null",
                 "  lezingen [0 DECISION $waarde (besluit)]",
                 "  patroon Outcome $besluit alfa [lid-besluit_11: [[] stack VALUE GELIJK defaults"
-                        + " K:Jutter.vrijgesteld {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " K:Jutter.vrijgesteld {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}]] join [] beta [] na [] bind"
-                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.waarde VALUE]",
+                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.value VALUE]",
                 "  niet binnen [$uitkomst_12] buiten [$onderwerp, $besluit] [Outcome $uitkomst_12 alfa"
                         + " [uitkomst_12: [[] stack VALUE GELIJK defaults K:Jutter.vrijgesteld {String}, []"
-                        + " chain VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE"
+                        + " chain VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE"
                         + " GELIJK DECIDED {Kind}]] join [uitkomst-onderwerp_13: onderwerp = $onderwerp] beta"
                         + " [eerder-lid_14: EARLIER_MEMBER $besluit] na [] bind []]",
                 "  niet binnen [$uitkomst_15] buiten [$onderwerp, $besluit] [Outcome $uitkomst_15 alfa"
                         + " [uitkomst_15: [[] stack VALUE GELIJK defaults K:Jutter.vrijgesteld {String}, []"
-                        + " chain VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE"
+                        + " chain VALUE AT_LEAST 1 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE"
                         + " GELIJK DECIDED {Kind}]] join [uitkomst-onderwerp_16: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_17: OTHER_DECISION $besluit] na [] bind []]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
-                        + " chain=0, positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 SlotValue",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 0, slots=[0], size=1,"
+                        + " collapse=false, fault=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " chain=0, position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 SlotValue",
                 "regel defaults K:Jutter.vrijgesteld: terugval 0 | vorm defaults K:Jutter.vrijgesteld |"
                         + " groep null",
-                "  lezingen [0 INVOER $nx (eigen ElementSleutel[objecttype=jutter, naam=nx, kenmerk=true])]",
+                "  lezingen [0 INVOER $nx (eigen ElementKey[objectType=jutter, naam=nx, characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_18: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$nx = [] Jutter.nx WAAR]",
                 "  niet binnen [$uitkomst_19] buiten [$onderwerp] [Outcome $uitkomst_19 alfa"
@@ -510,40 +510,40 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij nx heeft'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=1,"
-                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
-                        + " chain=0, positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const Boolean",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const true, slots=[], size=1,"
+                        + " collapse=false, fault=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " chain=0, position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: doorgeven wortel | vorm defaults"
                         + " K:Jutter.vrijgesteld | groep null",
                 "  lezingen [0 CONFLICT_KEY $sleutel (conflictsleutel)]",
                 "  patroon Outcome $conflict alfa [lid-conflict_22: [[] stack VALUE GELIJK defaults"
-                        + " K:Jutter.vrijgesteld {String}, [] soort VALUE GELIJK CONFLICT {Kind}, [] chain"
+                        + " K:Jutter.vrijgesteld {String}, [] category VALUE GELIJK CONFLICT {Kind}, [] chain"
                         + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}]] join [] beta [] na []"
-                        + " bind [$onderwerp = [] Outcome.onderwerp VALUE, $sleutel = [] Outcome.sleutel VALUE]",
-                "  gevolg Conflict [onderwerp=$onderwerp, sleutel=Lees 0, slots=[0], size=1,"
+                        + " bind [$onderwerp = [] Outcome.onderwerp VALUE, $sleutel = [] Outcome.key VALUE]",
+                "  gevolg Conflict [onderwerp=$onderwerp, key=Lees 0, slots=[0], size=1,"
                         + " fact=Inconsistency[], insertion=LOGICAL]",
-                "    sleutel 0 SlotValue",
+                "    key 0 SlotValue",
                 "regel defaults K:Jutter.vrijgesteld: eens wortel | vorm defaults K:Jutter.vrijgesteld |"
                         + " groep null",
                 "  lezingen [0 DECISION $waarde (besluit)]",
                 "  patroon Outcome $besluit alfa [lid-besluit_23: [[] stack VALUE GELIJK defaults"
-                        + " K:Jutter.vrijgesteld {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
-                        + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}, [] waarde VALUE GELIJK true"
+                        + " K:Jutter.vrijgesteld {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}, [] value VALUE GELIJK true"
                         + " {Boolean}]] join [] beta [] na [] bind [$onderwerp = [] Outcome.onderwerp VALUE,"
-                        + " $waarde = [] Outcome.waarde VALUE]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, facts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=vrijgesteld, kenmerk=true]]], insertion=LOGICAL]",
-                "    waarde 0 SlotValue"), plans(golden("anchor/jutterswet-nestkenmerk")));
+                        + " $waarde = [] Outcome.value VALUE]",
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 0, slots=[0], size=1,"
+                        + " collapse=false, fault=null, facts=[Characteristic[characteristic=ElementKey[objectType=jutter,"
+                        + " naam=vrijgesteld, characteristic=true]]], insertion=LOGICAL]",
+                "    value 0 SlotValue"), plans(golden("anchor/jutterswet-nestkenmerk")));
     }
 
     @Test void the_general_form_with_more_groups_to_the_root() throws Exception {
         assertEquals(List.of(
                 "regel defaults A:Jutter.wachtgeld: default 0:0 | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
-                "  lezingen [0 INVOER $kustwacht (eigen ElementSleutel[objecttype=jutter, naam=kustwacht,"
-                        + " kenmerk=true])]",
+                "  lezingen [0 INVOER $kustwacht (eigen ElementKey[objectType=jutter, naam=kustwacht,"
+                        + " characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$kustwacht = [] Jutter.kustwacht WAAR]",
                 "  toets voorwaarde_1 CONDITION sonde -1 slots [0] grootte 1: KENMERK(Lees 0, Const"
@@ -551,16 +551,16 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij kustwacht is'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 30, slots=[], size=1,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.wachtgeld, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const 30, slots=[], size=1,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.wachtgeld, regel=defaults"
                         + " A:Jutter.wachtgeld], facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=0,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '30'",
                 "regel defaults A:Jutter.wachtgeld: default 1:0 | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
-                "  lezingen [0 INVOER $havenmeester (eigen ElementSleutel[objecttype=jutter, naam=havenmeester,"
-                        + " kenmerk=true])]",
+                "  lezingen [0 INVOER $havenmeester (eigen ElementKey[objectType=jutter, naam=havenmeester,"
+                        + " characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$havenmeester = [] Jutter.havenmeester WAAR]",
                 "  toets voorwaarde_3 CONDITION sonde -1 slots [0] grootte 1: KENMERK(Lees 0, Const"
@@ -568,16 +568,16 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij havenmeester is'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 45, slots=[], size=1,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.wachtgeld, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const 45, slots=[], size=1,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.wachtgeld, regel=defaults"
                         + " A:Jutter.wachtgeld], facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=1,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '45'",
                 "regel defaults A:Jutter.wachtgeld: default 2:0 | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
-                "  lezingen [0 INVOER $strandvoogd (eigen ElementSleutel[objecttype=jutter, naam=strandvoogd,"
-                        + " kenmerk=true])]",
+                "  lezingen [0 INVOER $strandvoogd (eigen ElementKey[objectType=jutter, naam=strandvoogd,"
+                        + " characteristic=true])]",
                 "  onderwerp Jutter $onderwerp alfa [concreet-type_4: [[] null VALUE CLASS_IS Jutter]] join []"
                         + " beta [] bind [$strandvoogd = [] Jutter.strandvoogd WAAR]",
                 "  toets voorwaarde_5 CONDITION sonde -1 slots [0] grootte 1: KENMERK(Lees 0, Const"
@@ -585,54 +585,54 @@ class DefaultsplanWitnessTest {
                 "    toets 0 Call bron 'hij strandvoogd is'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 30, slots=[], size=1,"
-                        + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.wachtgeld, regel=defaults"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Const 30, slots=[], size=1,"
+                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.wachtgeld, regel=defaults"
                         + " A:Jutter.wachtgeld], facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=2,"
-                        + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
-                "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " position=0, category=DECIDED]], insertion=LOGICAL]",
+                "    value 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '30'",
                 "regel defaults A:Jutter.wachtgeld: verschil wortel | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
                 "  lezingen []",
                 "  patroon Outcome $besluit alfa [lid-besluit_6: [[] stack VALUE GELIJK defaults"
-                        + " A:Jutter.wachtgeld {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " A:Jutter.wachtgeld {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}]] join [] beta [] na [] bind"
                         + " [$onderwerp = [] Outcome.onderwerp VALUE]",
                 "  niet binnen [$uitkomst_7] buiten [$onderwerp, $besluit] [Outcome $uitkomst_7 alfa"
                         + " [uitkomst_7: [[] stack VALUE GELIJK defaults A:Jutter.wachtgeld {String}, [] chain"
-                        + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_8: onderwerp = $onderwerp] beta"
                         + " [eerder-lid_9: EARLIER_MEMBER $besluit] na [] bind []]",
                 "  bestaat binnen [$uitkomst_10] buiten [$onderwerp, $besluit] [Outcome $uitkomst_10"
                         + " alfa [uitkomst_10: [[] stack VALUE GELIJK defaults A:Jutter.wachtgeld {String}, []"
-                        + " chain VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE"
+                        + " chain VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE"
                         + " GELIJK DECIDED {Kind}]] join [uitkomst-onderwerp_11: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_12: OTHER_DECISION $besluit] na [] bind []]",
-                "  gevolg Conflict [onderwerp=$onderwerp, sleutel=Const Jutter.wachtgeld, slots=[],"
+                "  gevolg Conflict [onderwerp=$onderwerp, key=Const Jutter.wachtgeld, slots=[],"
                         + " size=0, fact=Inconsistency[], insertion=LOGICAL]",
-                "    sleutel 0 Const String",
+                "    key 0 Const String",
                 "regel defaults A:Jutter.wachtgeld: eens wortel | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
                 "  lezingen [0 DECISION $waarde (besluit)]",
                 "  patroon Outcome $besluit alfa [lid-besluit_13: [[] stack VALUE GELIJK defaults"
-                        + " A:Jutter.wachtgeld {String}, [] soort VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
+                        + " A:Jutter.wachtgeld {String}, [] category VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}]] join [] beta [] na [] bind"
-                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.waarde VALUE]",
+                        + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.value VALUE]",
                 "  niet binnen [$uitkomst_14] buiten [$onderwerp, $besluit] [Outcome $uitkomst_14 alfa"
                         + " [uitkomst_14: [[] stack VALUE GELIJK defaults A:Jutter.wachtgeld {String}, [] chain"
-                        + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_15: onderwerp = $onderwerp] beta"
                         + " [eerder-lid_16: EARLIER_MEMBER $besluit] na [] bind []]",
                 "  niet binnen [$uitkomst_17] buiten [$onderwerp, $besluit] [Outcome $uitkomst_17 alfa"
                         + " [uitkomst_17: [[] stack VALUE GELIJK defaults A:Jutter.wachtgeld {String}, [] chain"
-                        + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] soort VALUE GELIJK"
+                        + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] category VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_18: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_19: OTHER_DECISION $besluit] na [] bind []]",
-                "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, facts=[Value[doel=ElementSleutel[objecttype=jutter,"
-                        + " naam=wachtgeld, kenmerk=false], writer=defaults A:Jutter.wachtgeld]],"
+                "  gevolg Decision [onderwerp=$onderwerp, value=Lees 0, slots=[0], size=1,"
+                        + " collapse=false, fault=null, facts=[Value[target=ElementKey[objectType=jutter,"
+                        + " naam=wachtgeld, characteristic=false], writer=defaults A:Jutter.wachtgeld]],"
                         + " insertion=LOGICAL]",
-                "    waarde 0 SlotValue"), plans(golden("jutterswet-wachtgeld")));
+                "    value 0 SlotValue"), plans(golden("jutterswet-wachtgeld")));
     }
 
     /**
@@ -641,8 +641,8 @@ class DefaultsplanWitnessTest {
      * mixes them, which a rendering would carry out as listed, a key written as a value or a value as a key.
      */
     @Test void a_decision_and_a_conflict_each_insert_their_own_facts() {
-        ElementSleutel doel = ElementSleutel.van("Jutter", "korting", false);
-        Consequence.StackFact waarde = new Consequence.StackFact.Value(doel, "defaults A:Jutter.korting");
+        ElementKey target = ElementKey.van("Jutter", "korting", false);
+        Consequence.StackFact value = new Consequence.StackFact.Value(target, "defaults A:Jutter.korting");
         Consequence.StackFact decides = new Consequence.StackFact.Outcome("defaults A:Jutter.korting", 0, 0,
                 Outcome.Kind.DECIDED);
         Consequence.StackFact conflict = new Consequence.StackFact.Outcome("defaults A:Jutter.korting", 0, 0,
@@ -654,10 +654,10 @@ class DefaultsplanWitnessTest {
                         "een besluit voegt geen conflict in: Inconsistency[]",
                         "ok", "ok",
                         "een conflict voegt zijn uitkomst of de inconsistentie in, niet " + decides,
-                        "een conflict voegt zijn uitkomst of de inconsistentie in, niet " + waarde),
-                List.of(decision(List.of(waarde)), decision(List.of(decides)), decision(List.of()),
-                        decision(List.of(waarde, conflict)), decision(List.of(inconsistency)),
-                        conflict(conflict), conflict(inconsistency), conflict(decides), conflict(waarde)));
+                        "een conflict voegt zijn uitkomst of de inconsistentie in, niet " + value),
+                List.of(decision(List.of(value)), decision(List.of(decides)), decision(List.of()),
+                        decision(List.of(value, conflict)), decision(List.of(inconsistency)),
+                        conflict(conflict), conflict(inconsistency), conflict(decides), conflict(value)));
     }
 
     /** "ok" where the constructor of {@link Consequence.Decision} takes a decision that inserts {@code facts}, else its
@@ -704,11 +704,11 @@ class DefaultsplanWitnessTest {
         List<String> out = new ArrayList<>();
         for (RulePlan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .modelplan().rules()) {
-            if (p.vorm() == null || !p.vorm().startsWith("defaults ")) continue;
-            out.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendaGroup());
+            if (p.form() == null || !p.form().startsWith("defaults ")) continue;
+            out.add("regel " + p.naam() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
-            for (Read l : p.lezingen().slots())
-                slots.add(l.slot() + " " + l.soort() + " " + l.naam() + " (" + l.sleutel() + ")");
+            for (Read l : p.readings().slots())
+                slots.add(l.slot() + " " + l.category() + " " + l.naam() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -736,9 +736,9 @@ class DefaultsplanWitnessTest {
                     + n.patterns().stream().map(DefaultsplanWitnessTest::pattern).toList();
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(DefaultsplanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
+            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+                    + a.aggregations().stream().map(f -> f.category() + " " + f.source() + " -> " + f.target()).toList();
+            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
@@ -752,13 +752,13 @@ class DefaultsplanWitnessTest {
     /** Each constraint between two objects with its id, its function, the variable on the other side and each of its
      *  constants with its value and its class. */
     private static List<String> beta(List<BetaTest> beta) {
-        return beta.stream().map(t -> t.id() + ": " + t.function() + " " + t.doel()
-                + t.constants().stream().map(c -> " " + waarde(c.waarde())).reduce("", String::concat)).toList();
+        return beta.stream().map(t -> t.id() + ": " + t.function() + " " + t.target()
+                + t.constants().stream().map(c -> " " + value(c.value())).reduce("", String::concat)).toList();
     }
 
     private static List<String> joins(List<Join> joins) {
-        return joins.stream().map(j -> j.id() + ": " + j.veld() + " = " + j.doel()
-                + (j.targetField() == null ? "" : "." + veld(j.targetField()))).toList();
+        return joins.stream().map(j -> j.id() + ": " + j.field() + " = " + j.target()
+                + (j.targetField() == null ? "" : "." + field(j.targetField()))).toList();
     }
 
     /** Each constraint on the object alone with its id and its field tests: the path, the field, the form of reading,
@@ -767,29 +767,29 @@ class DefaultsplanWitnessTest {
     private static List<String> alpha(List<Alpha> alpha) {
         List<String> out = new ArrayList<>();
         for (Alpha a : alpha)
-            out.add(a.id() + ": " + a.tests().stream().map(t -> fields(t.pad()) + " " + t.veld() + " " + t.vorm()
-                    + " " + t.op() + (t.waarde() == null ? "" : " " + waarde(t.waarde()))
+            out.add(a.id() + ": " + a.tests().stream().map(t -> fields(t.path()) + " " + t.field() + " " + t.form()
+                    + " " + t.op() + (t.value() == null ? "" : " " + value(t.value()))
                     + (t.declarant() == null ? "" : " via " + t.declarant().getSimpleName())).toList());
         return out;
     }
 
     /** A value of the analysis with its class: a class by its name, anything else by its text and the simple name of
      *  its class, so that an {@code Integer} and a {@code Long} of one number differ. */
-    private static String waarde(Object w) {
+    private static String value(Object w) {
         if (w instanceof Class<?> k) return k.getSimpleName();
         return w + " {" + w.getClass().getSimpleName() + "}";
     }
 
     private static List<String> bindings(List<Binding> bindings) {
-        return bindings.stream().map(b -> b.doel() + " = " + fields(b.pad()) + " " + veld(b.veld()) + " " + b.vorm()
-                + (b.soort() == null ? "" : " " + b.soort().getSimpleName())).toList();
+        return bindings.stream().map(b -> b.target() + " = " + fields(b.path()) + " " + field(b.field()) + " " + b.form()
+                + (b.category() == null ? "" : " " + b.category().getSimpleName())).toList();
     }
 
-    private static String fields(List<Binding.Field> pad) {
-        return pad.stream().map(DefaultsplanWitnessTest::veld).toList().toString();
+    private static String fields(List<Binding.Field> path) {
+        return path.stream().map(DefaultsplanWitnessTest::field).toList().toString();
     }
 
-    private static String veld(Binding.Field v) {
+    private static String field(Binding.Field v) {
         return v.javaClass().getSimpleName() + "." + v.naam();
     }
 

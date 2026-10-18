@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binderRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -21,13 +21,13 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
-import static dev.uchar.regelspraak.cases.TmsDocuments.keuze;
+import static dev.uchar.regelspraak.cases.TmsDocuments.choice;
 import static dev.uchar.regelspraak.cases.TmsDocuments.let;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,15 +68,15 @@ class TmsLetWitnessTest {
 
     private static final String TWO = numberType(false, 2, null);
 
-    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
-            attribuut("inkomen", TWO), attribuut("grondslag", TWO), attribuut("restpost", TWO),
-            attribuut("heffing", TWO)), List.of())), List.of());
+    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+            attribute("inkomen", TWO), attribute("grondslag", TWO), attribute("restpost", TWO),
+            attribute("heffing", TWO)), List.of())), List.of());
 
     static final String BASE = computingRule("grondslag van een jutter", "BEREKENING", "Jutter", "grondslag",
             ownRead("inkomen", "Jutter"), "null");
 
     static final String HEFFING = computingRule("heffing van een jutter", "BEREKENING", "Jutter", "heffing",
-            let("k", ownRead("grondslag", "Jutter"), keuze(
+            let("k", ownRead("grondslag", "Jutter"), choice(
                     comparison("greater", binderRead("k"), literal("10.00", TWO)),
                     literal("5.00", TWO),
                     binary("dividedBy", binderRead("k"), ownRead("restpost", "Jutter"), TWO), TWO), TWO), "null");
@@ -90,21 +90,21 @@ class TmsLetWitnessTest {
                 instanceWith("J4", "Jutter", Map.of("inkomen", numberValue("6.00"), "restpost", numberValue("3.00")),
                         List.of()),
                 instanceWith("J6", "Jutter", Map.of(), List.of())),
-                List.of(waarde("J1", "heffing", "5.00"), waarde("J4", "heffing", "2.00"), waarde("J6", "heffing", null),
+                List.of(value("J1", "heffing", "5.00"), value("J4", "heffing", "2.00"), value("J6", "heffing", null),
                         consistent()));
     }
 
     static JsonNode caseB() throws Exception {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J3", "Jutter", Map.of("inkomen", numberValue("6.00")), List.of())),
-                List.of(waarde("J3", "heffing", null), inconsistent("heffing van een jutter", "J3")));
+                List.of(value("J3", "heffing", null), inconsistent("heffing van een jutter", "J3")));
     }
 
     static JsonNode caseC() throws Exception {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J2", "Jutter", Map.of("inkomen", numberValue("40.00"), "grondslag", numberValue("6.00"),
                         "restpost", numberValue("0.00")), List.of())),
-                List.of(waarde("J2", "heffing", "5.00"), consistent()));
+                List.of(value("J2", "heffing", "5.00"), consistent()));
     }
 
     static JsonNode caseD() throws Exception {
@@ -118,30 +118,30 @@ class TmsLetWitnessTest {
             + " door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     @Test void the_taken_branch_computes_and_the_other_does_not_in_every_order() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             java.nio.file.Path ir = TmsDocuments.document(MODEL, order);
             for (JsonNode caseDocument : List.of(caseA(), caseB(), caseC()))
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseD(), DroolsBackend.Branch.EXEC_MODEL));
-            for (int i = 0; i < 3; i++) verwacht.add(names + " gespeeld");
-            verwacht.add(names + " " + J5_BY_ZERO);
+            for (int i = 0; i < 3; i++) expected.add(names + " gespeeld");
+            expected.add(names + " " + J5_BY_ZERO);
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- clause 3 and the barrier of a nested Let ----------------
 
-    static final String MODEL_WITH_RATE = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
-            attribuut("inkomen", TWO), attribuut("grondslag", TWO), attribuut("restpost", TWO),
-            attribuut("tarief", TWO), attribuut("saldo", TWO)), List.of())), List.of());
+    static final String MODEL_WITH_RATE = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+            attribute("inkomen", TWO), attribute("grondslag", TWO), attribute("restpost", TWO),
+            attribute("tarief", TWO), attribute("saldo", TWO)), List.of())), List.of());
 
     /** "Het tarief van een Jutter moet berekend worden als: q is zijn inkomen gedeeld door zijn restpost; k is zijn
      *  grondslag; als k groter is dan 10,00 dan 5,00, anders q". */
     static final String RATE = computingRule("tarief van een jutter", "BEREKENING", "Jutter", "tarief",
             let("q", binary("dividedBy", ownRead("inkomen", "Jutter"), ownRead("restpost", "Jutter"), TWO),
-                    let("k", ownRead("grondslag", "Jutter"), keuze(
+                    let("k", ownRead("grondslag", "Jutter"), choice(
                             comparison("greater", binderRead("k"), literal("10.00", TWO)),
                             literal("5.00", TWO), binderRead("q"), TWO), TWO), TWO), "null");
 
@@ -156,14 +156,14 @@ class TmsLetWitnessTest {
                 instanceWith("J2", "Jutter", Map.of("inkomen", numberValue("40.00"), "grondslag", numberValue("6.00"),
                         "restpost", numberValue("0.00")), List.of()),
                 instanceWith("J7", "Jutter", Map.of("inkomen", numberValue("40.00")), List.of())),
-                List.of(waarde("J2", "tarief", "5.00"), waarde("J2", "saldo", "40.00"), waarde("J7", "tarief", "5.00"),
-                        waarde("J7", "saldo", "40.00"), consistent()));
+                List.of(value("J2", "tarief", "5.00"), value("J2", "saldo", "40.00"), value("J7", "tarief", "5.00"),
+                        value("J7", "saldo", "40.00"), consistent()));
     }
 
     static JsonNode caseF() throws Exception {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J8", "Jutter", Map.of("inkomen", numberValue("6.00")), List.of())),
-                List.of(waarde("J8", "tarief", null), waarde("J8", "saldo", "6.00"),
+                List.of(value("J8", "tarief", null), value("J8", "saldo", "6.00"),
                         inconsistent("tarief van een jutter", "J8")));
     }
 
@@ -184,19 +184,19 @@ class TmsLetWitnessTest {
      *  never the enclosing one (clause 2), and "plus" counts the leeg operand as 0 (ch. 1.2): J7 and J8 get their
      *  grondslag. */
     @Test void an_unread_binder_does_not_compute_and_a_nested_barrier_stays_within() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(BASE, RATE, BALANCE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             java.nio.file.Path ir = TmsDocuments.document(MODEL_WITH_RATE, order);
             for (JsonNode caseDocument : List.of(caseE(), caseF())) {
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " gespeeld");
+                expected.add(names + " gespeeld");
             }
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseG(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " DelingDoorNul: deling door nul in de regel \"tarief van een jutter\": 6 gedeeld door 0"
+            expected.add(names + " DelingDoorNul: deling door nul in de regel \"tarief van een jutter\": 6 gedeeld door 0"
                     + " — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /** Every order of the generated rules, on the beans of case A's J1 and case C's J2: the fixpoint has no fault and no
@@ -205,7 +205,7 @@ class TmsLetWitnessTest {
     @Test void the_intermediate_state_in_every_order_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES),
                 DroolsBackend.Branch.EXEC_MODEL);
-        int orders = 0, deposit = 0, fout = 0;
+        int orders = 0, deposit = 0, fault = 0;
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("inkomen", "40.00", "grondslag", "6.00"),
@@ -213,35 +213,35 @@ class TmsLetWitnessTest {
             Object j2 = TmsDocuments.beanObject(b.beanLoader(), "Jutter",
                     Map.of("inkomen", "40.00", "grondslag", "6.00", "restpost", "0.00"), List.of());
             Facts facts = new Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, j2), sessie -> sessie.addEventListener(facts)),
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(j1, j2), session -> session.addEventListener(facts)),
                     () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten en deponeringen in volgorde " + names);
-            TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.lees(j1, "heffing"), "heffing van J1 in volgorde " + names);
-            TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.lees(j2, "heffing"), "heffing van J2 in volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.read(j1, "heffing"), "heffing van J1 in volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.read(j2, "heffing"), "heffing van J2 in volgorde " + names);
             if (facts.depositCount > 0) deposit++;
-            if (facts.fouten > 0) fout++;
+            if (facts.faults > 0) fault++;
             orders++;
         }
         assertTrue(deposit > 0, "geen volgorde deponeerde op de tijdelijke grondslag");
-        assertTrue(fout > 0, "geen volgorde deelde door de tijdelijke nul");
+        assertTrue(fault > 0, "geen volgorde deelde door de tijdelijke nul");
         assertEquals(24, orders);
     }
 
     /** Counts the fault facts and the §9.5 inconsistencies a session inserts and withdraws. */
     static final class Facts implements RuleRuntimeEventListener {
-        int inserted, withdrawn, fouten, depositCount;
+        int inserted, withdrawn, faults, depositCount;
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
-            String soort = e.getObject().getClass().getSimpleName();
-            if (soort.equals("Fout")) { inserted++; fouten++; }
-            if (soort.equals("Inconsistentie")) { inserted++; depositCount++; }
+            String category = e.getObject().getClass().getSimpleName();
+            if (category.equals("Fault")) { inserted++; faults++; }
+            if (category.equals("Inconsistentie")) { inserted++; depositCount++; }
         }
 
         @Override public void objectUpdated(ObjectUpdatedEvent e) {}
 
         @Override public void objectDeleted(ObjectDeletedEvent e) {
-            String soort = e.getOldObject().getClass().getSimpleName();
-            if (soort.equals("Fout") || soort.equals("Inconsistentie")) withdrawn++;
+            String category = e.getOldObject().getClass().getSimpleName();
+            if (category.equals("Fault") || category.equals("Inconsistentie")) withdrawn++;
         }
     }
 }

@@ -158,7 +158,7 @@ class CountEnumeratedTest {
     }
 
     @Test void the_ill_formed_count_does_not_reach_the_wire() {
-        // The leak, stated as the property that closes it: an ERROR stops irModus writing at all, so
+        // The leak, stated as the property that closes it: an ERROR stops irMode writing at all, so
         // the document the verifier rejects under WF-037 is never produced. Before this arm the same
         // source emitted with `diagnostics: []`. Since WF-113 (a) the emitter refuses the model by
         // itself as well, so no emission route reaches the wire with it.
@@ -174,7 +174,7 @@ class CountEnumeratedTest {
         // in the four corpus zones and every rgs golden that counts writes this shape.
         RegelSpraakModel m = Resolver.resolve(MODEL + ORDINARY_COUNT);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de gewone telling: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals(1, f.arguments().size());
         assertNotNull(f.elementObjectType(), "de gewone telling bindt geen elementtype meer");
@@ -186,7 +186,7 @@ class CountEnumeratedTest {
         // same two operands, a different kind.
         RegelSpraakModel m = Resolver.resolve(MODEL + ENUMERATED_VALUE_FOLD);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de waardevouw: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
         assertEquals(Expr.FunctionKind.MAXIMUM, f.kind());
         assertEquals(2, f.arguments().size(), "de opgesomde waardevouw verloor haar operandenlijst");
     }

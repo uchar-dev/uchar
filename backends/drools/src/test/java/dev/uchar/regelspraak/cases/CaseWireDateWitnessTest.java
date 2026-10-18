@@ -182,10 +182,10 @@ class CaseWireDateWitnessTest {
         // The position where the leak was worst: this date IS the evaluation date, so a misread here moves
         // every vintage selection, every bucket and every Rekendatum read at once — and the case still
         // replayed as PLAYED. The refusal names the property, which is the only handle a producer has.
-        String melding = refusalAsOf("+012026-03-15");
-        assertTrue(melding.contains("'asOfDate'"), "the refusal names the property it arrived on: " + melding);
-        assertTrue(melding.contains(LEXEME_FORM), "and states the form it expected: " + melding);
-        assertFalse(melding.contains(CALENDAR), "and does not blame the calendar: " + melding);
+        String message = refusalAsOf("+012026-03-15");
+        assertTrue(message.contains("'asOfDate'"), "the refusal names the property it arrived on: " + message);
+        assertTrue(message.contains(LEXEME_FORM), "and states the form it expected: " + message);
+        assertFalse(message.contains(CALENDAR), "and does not blame the calendar: " + message);
         refusalAsOf("-0500-01-01");
     }
 
@@ -204,11 +204,11 @@ class CaseWireDateWitnessTest {
         // The second measured leak: a boundary read as year −500 silently rewrites the bucket grid the whole
         // timeline hangs on, and the golden still replayed. The refusal names the position — which timeline
         // and which of its two boundaries — because a case may carry many, and a bare parse error names none.
-        String melding = refusalPeriod("-0500-01-01", "2025-04-16", "-0500-01-01");
-        assertTrue(melding.contains("dienstdoend") && melding.contains("from"),
-                "the refusal names the timeline and the boundary it arrived on: " + melding);
-        assertTrue(melding.contains(LEXEME_FORM), "and states the form it expected: " + melding);
-        assertFalse(melding.contains(CALENDAR), "and does not blame the calendar: " + melding);
+        String message = refusalPeriod("-0500-01-01", "2025-04-16", "-0500-01-01");
+        assertTrue(message.contains("dienstdoend") && message.contains("from"),
+                "the refusal names the timeline and the boundary it arrived on: " + message);
+        assertTrue(message.contains(LEXEME_FORM), "and states the form it expected: " + message);
+        assertFalse(message.contains(CALENDAR), "and does not blame the calendar: " + message);
 
         String to = refusalPeriod("2025-03-01", "+012026-01-01", "+012026-01-01");
         assertTrue(to.contains("dienstdoend") && to.contains("to"),
@@ -279,15 +279,15 @@ class CaseWireDateWitnessTest {
     /** The refusal message {@code lexeme} must raise on a route — or an assertion failure naming what the
      *  reader did instead: the value it accepted, the bare exception it let through, or the exclusion it
      *  filed. {@code lees} performs the read; {@code toon} renders what a read returned. */
-    private static String refusal(ThrowingRead lees, String lexeme, String why) throws Exception {
+    private static String refusal(ThrowingRead readOf, String lexeme, String why) throws Exception {
         Object read;
         try {
-            read = lees.lees();
+            read = readOf.readOf();
         } catch (IllegalArgumentException refusal) {
-            String melding = refusal.getMessage();
-            assertTrue(melding.contains("'" + lexeme + "'"),
-                    why + " — the refusal quotes the value it refused: " + melding);
-            return melding;
+            String message = refusal.getMessage();
+            assertTrue(message.contains("'" + lexeme + "'"),
+                    why + " — the refusal quotes the value it refused: " + message);
+            return message;
         } catch (CaseRunner.Excluded uitgesloten) {
             throw new AssertionError(why + " — but the reader EXCLUDED it (" + uitgesloten.getMessage()
                     + "), which files a malformed case under 'not carried' and leaves the gate green");
@@ -298,24 +298,24 @@ class CaseWireDateWitnessTest {
         throw new AssertionError(why + " — but the reader ACCEPTED it and read " + read);
     }
 
-    private interface ThrowingRead { Object lees() throws Exception; }
+    private interface ThrowingRead { Object readOf() throws Exception; }
 
     /** The value route's refusal, with the field it arrived on asserted as well. */
     private static String refusalValue(String lexeme, String why) throws Exception {
-        String melding = refusal(() -> vondstdatum(lexeme), lexeme, why);
-        assertTrue(melding.contains("'vondstdatum'"),
-                why + " — and names the field it arrived on: " + melding);
-        return melding;
+        String message = refusal(() -> vondstdatum(lexeme), lexeme, why);
+        assertTrue(message.contains("'vondstdatum'"),
+                why + " — and names the field it arrived on: " + message);
+        return message;
     }
 
     private static String refusalAsOf(String lexeme) throws Exception {
         return refusal(() -> bucketOf(lexeme), lexeme, "an asOfDate outside the lexeme");
     }
 
-    /** {@code fout} is whichever of the two boundaries is the malformed one — the refusal must quote THAT
+    /** {@code fault} is whichever of the two boundaries is the malformed one — the refusal must quote THAT
      *  one, not the well-formed boundary beside it. */
-    private static String refusalPeriod(String van, String to, String fout) throws Exception {
-        return refusal(() -> period(van, to), fout, "a segment boundary outside the lexeme");
+    private static String refusalPeriod(String van, String to, String fault) throws Exception {
+        return refusal(() -> period(van, to), fault, "a segment boundary outside the lexeme");
     }
 
     /** Refused by the pattern, with the expected FORM in the message and the calendar left out of it. The
@@ -323,19 +323,19 @@ class CaseWireDateWitnessTest {
      *  form branch that ALSO carries the calendar wording passes every case here, and the two branches this
      *  reader deliberately splits become indistinguishable to a producer reading the message. */
     private static void refusesByForm(String lexeme, String why) throws Exception {
-        String melding = refusalValue(lexeme, why);
-        assertTrue(melding.contains(LEXEME_FORM),
-                why + " — a refusal a producer can act on states the form it expected: " + melding);
-        assertFalse(melding.contains(CALENDAR),
-                why + " — and does not also blame the calendar, which was never read here: " + melding);
+        String message = refusalValue(lexeme, why);
+        assertTrue(message.contains(LEXEME_FORM),
+                why + " — a refusal a producer can act on states the form it expected: " + message);
+        assertFalse(message.contains(CALENDAR),
+                why + " — and does not also blame the calendar, which was never read here: " + message);
     }
 
     /** Refused by the calendar, with the calendar in the message and the field widths left alone. */
     private static void refusesByCalendar(String lexeme, String why) throws Exception {
-        String melding = refusalValue(lexeme, why);
-        assertTrue(melding.contains(CALENDAR),
-                why + " — the refusal names the calendar: " + melding);
-        assertFalse(melding.contains(LEXEME_FORM),
-                why + " — and does not blame the field widths, which are right here: " + melding);
+        String message = refusalValue(lexeme, why);
+        assertTrue(message.contains(CALENDAR),
+                why + " — the refusal names the calendar: " + message);
+        assertFalse(message.contains(LEXEME_FORM),
+                why + " — and does not blame the field widths, which are right here: " + message);
     }
 }

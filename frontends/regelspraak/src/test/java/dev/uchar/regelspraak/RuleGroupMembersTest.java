@@ -12,9 +12,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * A {@code Regelgroep}'s members on the wire are RULE names (IR-SPEC ch. 3.9, WF-033: every member resolves to a
  * rule form). A decision table is no rule form — it desugars to one rule per row — so a group that holds one lists
  * the rules of its rows. Measured on the frontend before this fix (a8ab1639): the table's own name went out as
- * the member, silently, and the verifier refused every such document ({@code WF-033 FAIL /regelGroepen/0: group
+ * the member, silently, and the verifier refused every such document ({@code WF-033 FAIL /ruleGroups/0: group
  * member 'Bergingspremie' does not resolve to a rule form}), with or without anything else in it. That path is the
- * pre-M1 spelling of the measurement; since M1 (2026-09-23) the verifier names the position /rules/regelGroepen/0.
+ * pre-M1 spelling of the measurement; since M1 (2026-09-23) the verifier names the position /rules/ruleGroups/0.
  */
 class RuleGroupMembersTest {
 
@@ -40,10 +40,10 @@ class RuleGroupMembersTest {
     @Test void a_grouped_decision_table_names_its_rows_as_members() {
         RegelSpraakModel m = Resolver.resolve(GROUP);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(List.of("bergingsbonus", "Bergingspremie 1", "Bergingspremie 2"), m.regelGroepen.get(0).leden(),
+        assertEquals(List.of("bergingsbonus", "Bergingspremie 1", "Bergingspremie 2"), m.ruleGroups.get(0).members(),
                 "de leden zijn regelnamen, in geschreven volgorde; de tabel staat voor haar rijen");
         // every member names a rule the model carries, which is what WF-033 asks of the wire
-        for (String member : m.regelGroepen.get(0).leden())
+        for (String member : m.ruleGroups.get(0).members())
             assertTrue(m.resolvedRegels.stream().anyMatch(r -> r.naam().equals(member)), () -> "lid '" + member + "' is geen regel");
     }
 
@@ -95,10 +95,10 @@ class RuleGroupMembersTest {
         java.util.function.BiFunction<String, String, List<String>> meldingen = (v1, v2) ->
                 Resolver.resolve(group.formatted(v1, v2)).diagnostics.stream()
                         .map(d -> d.severity() + " " + d.message()).toList();
-        String onbewaakt = "ERROR recursieve regelgroep 'estafette': unguarded object creation 'werf de opvolger #%d' in a "
+        String unguarded = "ERROR recursieve regelgroep 'estafette': unguarded object creation 'werf de opvolger #%d' in a "
                 + "recursive group";
         assertEquals(List.of(), meldingen.apply(bewaakt, bewaakt));
-        assertEquals(List.of(onbewaakt.formatted(2)), meldingen.apply(bewaakt, ""));
-        assertEquals(List.of(onbewaakt.formatted(1), onbewaakt.formatted(2)), meldingen.apply("", ""));
+        assertEquals(List.of(unguarded.formatted(2)), meldingen.apply(bewaakt, ""));
+        assertEquals(List.of(unguarded.formatted(1), unguarded.formatted(2)), meldingen.apply("", ""));
     }
 }

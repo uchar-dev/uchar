@@ -37,13 +37,13 @@ class FixedStartPointTest {
             Objecttype de Vlucht (mv: Vluchten)
             """;
 
-    private static String attribuut(String tijdlijn) {
+    private static String attribute(String tijdlijn) {
         return HEAD + "    de waarde Bedrag " + tijdlijn + ";\n";
     }
 
     /** The emitted document without whitespace, as the other emission witnesses read it. */
-    private static String wire(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String wire(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.isOk(), () -> "de bron lost foutloos op: " + m.diagnostics);
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
@@ -53,14 +53,14 @@ class FixedStartPointTest {
                 + ",\"fixedStart\":\"" + fixed + "\"";
     }
 
-    private static void emits(String bron, String verwacht) {
-        String ir = wire(bron);
-        assertTrue(ir.contains(verwacht), () -> "verwacht " + verwacht + " in:\n" + ir);
+    private static void emits(String source, String expected) {
+        String ir = wire(source);
+        assertTrue(ir.contains(expected), () -> "verwacht " + expected + " in:\n" + ir);
     }
 
     /** A source that names no day is refused at resolution, by section and clause, and no document is written. */
-    private static void refuses(String bron, String section, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static void refuses(String source, String section, String fragment) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.errors().stream().anyMatch(d -> d.message().contains(section) && d.message().contains(fragment)),
                 () -> "verwacht een ERROR met " + section + " en '" + fragment + "', kreeg: " + m.diagnostics);
         assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m), "een geweigerde bron wordt niet geschreven");
@@ -69,53 +69,53 @@ class FixedStartPointTest {
     // ---------------- the date form, §13.3.6.3 ----------------
 
     @Test void week_starting_on_a_date() {
-        emits(attribuut("voor elke week startend op 5-1-2026"), facet("week", 1, "2026-01-05"));
+        emits(attribute("voor elke week startend op 5-1-2026"), facet("week", 1, "2026-01-05"));
     }
 
     @Test void multiple_period_starting_on_a_date() {
-        emits(attribuut("voor elke 5 maanden startend op 1-4-2026"), facet("month", 5, "2026-04-01"));
+        emits(attribute("voor elke 5 maanden startend op 1-4-2026"), facet("month", 5, "2026-04-01"));
     }
 
     @Test void a_date_on_a_grid_of_a_month_becomes_its_day_month() {
         // "elke 1 maanden" is a month grid of one unit, whose start point is the day of the month the date names
-        emits(attribuut("voor elke 1 maanden startend op 15-3-2026"), facet("month", 1, "--01-15"));
+        emits(attribute("voor elke 1 maanden startend op 15-3-2026"), facet("month", 1, "--01-15"));
     }
 
     @Test void a_date_with_a_time_of_day_is_refused() {
-        refuses(attribuut("voor elke week startend op 5-1-2026 12:00:00.000"), "§13.3.6.3", "draagt een tijdstip");
+        refuses(attribute("voor elke week startend op 5-1-2026 12:00:00.000"), "§13.3.6.3", "draagt een tijdstip");
     }
 
     @Test void a_date_that_does_not_exist_is_refused() {
-        refuses(attribuut("voor elke week startend op 30-2-2026"), "§13.3.6.3", "noemt geen dag van de kalender");
+        refuses(attribute("voor elke week startend op 30-2-2026"), "§13.3.6.3", "noemt geen dag van de kalender");
     }
 
     // ---------------- the day-of forms, §13.3.6.4–.6 ----------------
 
     @Test void month_starting_on_a_day() {
-        emits(attribuut("voor elke maand startend op dag 15 van de maand"), facet("month", 1, "--01-15"));
-        emits(attribuut("voor elke maand startend op dag 31 van de maand"), facet("month", 1, "--01-31"));
-        refuses(attribuut("voor elke maand startend op dag 32 van de maand"), "§13.3.6.4", "noemt geen dag van de maand");
+        emits(attribute("voor elke maand startend op dag 15 van de maand"), facet("month", 1, "--01-15"));
+        emits(attribute("voor elke maand startend op dag 31 van de maand"), facet("month", 1, "--01-31"));
+        refuses(attribute("voor elke maand startend op dag 32 van de maand"), "§13.3.6.4", "noemt geen dag van de maand");
     }
 
     @Test void quarter_starting_on_a_day() {
-        emits(attribuut("voor elk kwartaal startend op dag 1 van maand 2, 5, 8 en 11"), facet("quarter", 1, "--02-01"));
-        emits(attribuut("voor elk kwartaal startend op dag 10 van maand 1, 4, 7 en 10"), facet("quarter", 1, "--01-10"));
+        emits(attribute("voor elk kwartaal startend op dag 1 van maand 2, 5, 8 en 11"), facet("quarter", 1, "--02-01"));
+        emits(attribute("voor elk kwartaal startend op dag 10 van maand 1, 4, 7 en 10"), facet("quarter", 1, "--01-10"));
         // day 31 is not in February: the earliest month of the cycle that has it is May
-        emits(attribuut("voor elk kwartaal startend op dag 31 van maand 2, 5, 8 en 11"), facet("quarter", 1, "--05-31"));
+        emits(attribute("voor elk kwartaal startend op dag 31 van maand 2, 5, 8 en 11"), facet("quarter", 1, "--05-31"));
     }
 
     @Test void a_quarter_group_that_is_no_quarter_sequence_is_refused() {
         // the grammar admits any four numbers; the source language admits three groups
-        refuses(attribuut("voor elk kwartaal startend op dag 1 van maand 1, 5, 8 en 11"), "§13.3.6.5",
+        refuses(attribute("voor elk kwartaal startend op dag 1 van maand 1, 5, 8 en 11"), "§13.3.6.5",
                 "noemt geen reeks kwartaalmaanden");
     }
 
     @Test void year_starting_on_a_day_of_a_month() {
-        emits(attribuut("voor elk jaar startend op dag 15 van maand 10"), facet("year", 1, "--10-15"));
-        emits(attribuut("voor elk jaar startend op dag 15 van maand 1"), facet("year", 1, "--01-15"));
-        emits(attribuut("voor elk jaar startend op dag 29 van maand 2"), facet("year", 1, "--02-29"));
-        refuses(attribuut("voor elk jaar startend op dag 30 van maand 2"), "§13.3.6.6", "noemt een dag die maand 2 niet heeft");
-        refuses(attribuut("voor elk jaar startend op dag 1 van maand 13"), "§13.3.6.6", "noemt geen maand");
+        emits(attribute("voor elk jaar startend op dag 15 van maand 10"), facet("year", 1, "--10-15"));
+        emits(attribute("voor elk jaar startend op dag 15 van maand 1"), facet("year", 1, "--01-15"));
+        emits(attribute("voor elk jaar startend op dag 29 van maand 2"), facet("year", 1, "--02-29"));
+        refuses(attribute("voor elk jaar startend op dag 30 van maand 2"), "§13.3.6.6", "noemt een dag die maand 2 niet heeft");
+        refuses(attribute("voor elk jaar startend op dag 1 van maand 13"), "§13.3.6.6", "noemt geen maand");
     }
 
     // ---------------- the other positions ----------------
@@ -169,16 +169,16 @@ class FixedStartPointTest {
     // ---------------- the lossless omission: the calendar start point ----------------
 
     /** Emitted through the real CLI path; the bytes of the document it wrote. */
-    private static String emission(String bron) throws Exception {
+    private static String emission(String source) throws Exception {
         Path dir = Files.createTempDirectory("vaststartpunt");
         Path rgs = dir.resolve("bron.rgs");
         Path out = dir.resolve("ir.json");
-        Files.writeString(rgs, bron, StandardCharsets.UTF_8);
+        Files.writeString(rgs, source, StandardCharsets.UTF_8);
         PrintStream oud = System.out;
         int rc;
         try {
             System.setOut(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
-            rc = Resolver.irModus(new java.util.ArrayList<>(List.of(out.toString(), rgs.toString())));
+            rc = Resolver.irMode(new java.util.ArrayList<>(List.of(out.toString(), rgs.toString())));
         } finally {
             System.setOut(oud);
         }
@@ -189,12 +189,12 @@ class FixedStartPointTest {
     }
 
     @Test void the_calendar_start_point_falls_away_deliberately_and_losslessly() throws Exception {
-        assertEquals(emission(attribuut("voor elke maand")),
-                emission(attribuut("voor elke maand startend op dag 1 van de maand")));
-        assertEquals(emission(attribuut("voor elk kwartaal")),
-                emission(attribuut("voor elk kwartaal startend op dag 1 van maand 1, 4, 7 en 10")));
-        assertEquals(emission(attribuut("voor elk jaar")),
-                emission(attribuut("voor elk jaar startend op dag 1 van maand 1")));
+        assertEquals(emission(attribute("voor elke maand")),
+                emission(attribute("voor elke maand startend op dag 1 van de maand")));
+        assertEquals(emission(attribute("voor elk kwartaal")),
+                emission(attribute("voor elk kwartaal startend op dag 1 van maand 1, 4, 7 en 10")));
+        assertEquals(emission(attribute("voor elk jaar")),
+                emission(attribute("voor elk jaar startend op dag 1 van maand 1")));
     }
 
     /** A multi-period timeline names its start date (§13.3.6.7); written without one, "voor elke 2 maanden" parses
@@ -218,7 +218,7 @@ class FixedStartPointTest {
                                 + "('Tijdlijn zeejaar heeft tijdvakken van …', §13.3.6.10)",
                         "ERROR (line 7): tijdlijn 'voor elke 2 maanden': " + withoutStart),
                 m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::toString).toList());
-        emits(attribuut("voor elke 2 maanden startend op 01-01-2024"), facet("month", 2, "2024-01-01"));
+        emits(attribute("voor elke 2 maanden startend op 01-01-2024"), facet("month", 2, "2024-01-01"));
     }
 
     /** WF-032: a start point determination anchors a timeline declared with a VARIABLE start (§9.9), and the verifier

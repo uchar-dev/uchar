@@ -56,7 +56,7 @@ class ReciprocalSelfPairWitnessTest {
 
     @Test void the_self_pair_role_yields_a_scalar_field_with_the_single_role_name() throws Exception {
         RegelSpraakModel model = model("anchor/jutterswet-maatschap");
-        var jutter = model.objecttypeOpNaam("Jutter");
+        var jutter = model.objectTypeByName("Jutter");
 
         assertEquals("maat", FactModelGenerator.selfPairRole(model, jutter),
                 "the DECLARED SINGULAR role name, never the declared plural 'maten'");
@@ -71,19 +71,19 @@ class ReciprocalSelfPairWitnessTest {
     @Test void the_field_carries_the_getter_and_setter_that_the_rules_read() throws Exception {
         // the accessor pair the transpilers assume (Namen.getter/setter over the role name) must exist on the
         // GENERATED source, self-typed on both sides — this is the contract the exec-model build resolves.
-        String bron = FactModelGenerator.genereer(model("anchor/jutterswet-maatschap")).get("Jutter");
-        assertTrue(bron.contains("private Jutter maat;"), bron);
-        assertTrue(bron.contains("public Jutter getMaat()"), bron);
-        assertTrue(bron.contains("public void setMaat(Jutter v)"), bron);
+        String source = FactModelGenerator.generate(model("anchor/jutterswet-maatschap")).get("Jutter");
+        assertTrue(source.contains("private Jutter maat;"), source);
+        assertTrue(source.contains("public Jutter getMaat()"), source);
+        assertTrue(source.contains("public void setMaat(Jutter v)"), source);
     }
 
     @Test void an_object_type_without_reciprocal_fact_type_derives_no_self_field() throws Exception {
         // under-implied, never over-implied: the derivation claims the wederkerig shape and nothing else, so
         // an objecttype with no reciprocal feittype gains no self-reference at all.
         RegelSpraakModel model = model("jutterswet-aanmelderkrediet");
-        assertNull(FactModelGenerator.selfPairRole(model, model.objecttypeOpNaam("Vondst")),
+        assertNull(FactModelGenerator.selfPairRole(model, model.objectTypeByName("Vondst")),
                 "Vondst plays no reciprocal role — it must derive no self-pair field");
-        assertEquals("strandmaat", FactModelGenerator.selfPairRole(model, model.objecttypeOpNaam("Jutter")),
+        assertEquals("strandmaat", FactModelGenerator.selfPairRole(model, model.objectTypeByName("Jutter")),
                 "while the Jutter, which does, derives its role name");
     }
 
@@ -172,7 +172,7 @@ class ReciprocalSelfPairWitnessTest {
         // fire-time ERROR. Authored on an in-memory ir copy, the corpus untouched.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
-        com.fasterxml.jackson.databind.node.ObjectNode ft2 = IrPath.declaratie(ir, "factTypes", "maatschap").deepCopy();
+        com.fasterxml.jackson.databind.node.ObjectNode ft2 = IrPath.declaration(ir, "factTypes", "maatschap").deepCopy();
         ft2.put("name", "maatschap2");
         ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("roles").get(0)).put("name", "tweedemaat");
         ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("roles").get(0)).put("plural", "tweedematen");
@@ -200,9 +200,9 @@ class ReciprocalSelfPairWitnessTest {
                 { "kind": "attributeEmpty", "label": "J3", "attribute": "maatdeling" }"""));
 
         // and the mirror is what makes J2's side non-empty: asserting leeg there must FAIL.
-        String fout = playCredit(
+        String fault = playCredit(
                 "{ \"kind\": \"attributeEmpty\", \"label\": \"J2\", \"attribute\": \"maatdeling\" }");
-        assertTrue(fout != null, "J2 reads its materialised leg, so an empty expectation is a named mismatch");
+        assertTrue(fault != null, "J2 reads its materialised leg, so an empty expectation is a named mismatch");
     }
 
     // ---------------- helpers ----------------
@@ -261,7 +261,7 @@ class ReciprocalSelfPairWitnessTest {
         // the self-pair derivation sits OUTSIDE the per-doelwit loop, so it cannot depend on how many
         // objecttypen the model happens to carry; a duplicate would make the generated bean uncompilable.
         RegelSpraakModel model = model("anchor/jutterswet-maatschap");
-        List<FactModelGenerator.Member> members = FactModelGenerator.members(model, model.objecttypeOpNaam("Jutter"));
+        List<FactModelGenerator.Member> members = FactModelGenerator.members(model, model.objectTypeByName("Jutter"));
         assertEquals(1, members.stream().filter(l -> l.property().equals("maat")).count(),
                 "one bean property per name — the self-pair field is derived once, not per objecttype visited");
     }

@@ -57,9 +57,9 @@ class RegisterLintRuleTest {
         | 1 | 2 | waar |
         """;
 
-    private static String sentence(String soort, String kenmerk, String written, String required, String bron) {
-        return "het " + soort + " kenmerk '" + kenmerk + "' wordt ontkend met het werkwoord '" + written
-                + "', maar Tabel 16 vereist '" + required + "' bij dit soort kenmerk (§8.1.8): " + bron;
+    private static String sentence(String category, String characteristic, String written, String required, String source) {
+        return "het " + category + " kenmerk '" + characteristic + "' wordt ontkend met het werkwoord '" + written
+                + "', maar Tabel 16 vereist '" + required + "' bij dit soort kenmerk (§8.1.8): " + source;
     }
 
     @Test void the_warning_stands_on_the_line_of_the_sentence() {

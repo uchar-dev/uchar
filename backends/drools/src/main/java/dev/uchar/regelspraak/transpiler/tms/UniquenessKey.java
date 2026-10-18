@@ -23,14 +23,14 @@ import java.util.Objects;
 public final class UniquenessKey {
 
     private final String uniqueness;
-    private final int bron;
+    private final int source;
     private final Object element;
     private final Object scope;
     private final List<Object> waarden;
 
-    public UniquenessKey(String uniqueness, int bron, Object element, Object scope, List<Object> waarden) {
+    public UniquenessKey(String uniqueness, int source, Object element, Object scope, List<Object> waarden) {
         this.uniqueness = Objects.requireNonNull(uniqueness, "uniciteit");
-        this.bron = bron;
+        this.source = source;
         this.element = Objects.requireNonNull(element, "element");
         this.scope = scope;
         this.waarden = new ArrayList<>(waarden);
@@ -53,17 +53,17 @@ public final class UniquenessKey {
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof UniquenessKey k && k.element == element && k.bron == bron && collidesWith(k);
+        return o instanceof UniquenessKey k && k.element == element && k.source == source && collidesWith(k);
     }
 
     @Override public int hashCode() {
         List<Object> h = new ArrayList<>(waarden.size());
         for (Object w : waarden) h.add(w instanceof BigDecimal d ? d.stripTrailingZeros() : w);
-        return Objects.hash(uniqueness, bron, System.identityHashCode(element), System.identityHashCode(scope), h);
+        return Objects.hash(uniqueness, source, System.identityHashCode(element), System.identityHashCode(scope), h);
     }
 
     @Override public String toString() {
-        return "Uniciteitssleutel(" + uniqueness + " " + bron + ", " + FactNames.object(element)
+        return "Uniciteitssleutel(" + uniqueness + " " + source + ", " + FactNames.object(element)
                 + (scope == null ? "" : ", " + FactNames.object(scope)) + ", " + waarden + ")";
     }
 }

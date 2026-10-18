@@ -80,14 +80,14 @@ class CountWithoutSourceTest {
         assertEquals(Severity.ERROR, ds.get(0).severity());
         assertTrue(ds.get(0).message().contains("the count is an INSTANCE fold and MUST carry an element type"),
                 ds.get(0).message());
-        // ERROR is what keeps the document off disk: irModus writes nothing when the model has one
+        // ERROR is what keeps the document off disk: irMode writes nothing when the model has one
         assertFalse(m.errors().isEmpty());
     }
 
     @Test void the_ordinary_count_stays_clean() {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal vondsten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertNotNull(f.elementObjectType());
     }
@@ -97,6 +97,6 @@ class CountWithoutSourceTest {
         // declared parameter, read back with its article. It returns before the fence.
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal werkdagen"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertInstanceOf(Expr.ParameterRef.class, m.resolvedRegels.get(0).waarde());
+        assertInstanceOf(Expr.ParameterRef.class, m.resolvedRegels.get(0).value());
     }
 }

@@ -81,22 +81,22 @@ class FoldKindsBoundaryTest {
     }
 
     @Test void the_frontend_boundary_carries_exactly_the_value_folds_of_the_verifier() throws IOException {
-        String bron = Files.readString(verifierSource(), StandardCharsets.UTF_8);
-        int start = bron.indexOf("let value_fold_name = function");
+        String source = Files.readString(verifierSource(), StandardCharsets.UTF_8);
+        int start = source.indexOf("let value_fold_name = function");
         assertTrue(start >= 0, () -> "value_fold_name staat niet meer in " + CHECKS
                 + " — de grens is verplaatst en deze getuige moet mee verhuizen");
 
         // The kinds are the constructors in the pattern of every arm that returns Some, one constructor per arm or
         // several in an or-pattern. The arms are read by their constructors, not by the strings they return: those
         // spell the kind as the verifier's messages do, which follows the wire (lowerCamel since the L5 landing).
-        String function = bron.substring(start + "let value_fold_name = function".length());
+        String function = source.substring(start + "let value_fold_name = function".length());
         int end = function.indexOf("\n\n");
         assertTrue(end >= 0, "value_fold_name heeft geen einde (een lege regel) meer — de getuige leest haar niet");
         List<String> kinds = new ArrayList<>();
         for (String arm : function.substring(0, end).split("\n\\s*\\|")) {    // an arm opens a line with '|'
-            int pijl = arm.indexOf("->");
-            if (pijl < 0 || !arm.substring(pijl + 2).strip().startsWith("Some")) continue;   // the None catch-all
-            Matcher m = CONSTRUCTOR.matcher(arm.substring(0, pijl).replaceAll("\\bas\\s+\\w+", ""));
+            int arrow = arm.indexOf("->");
+            if (arrow < 0 || !arm.substring(arrow + 2).strip().startsWith("Some")) continue;   // the None catch-all
+            Matcher m = CONSTRUCTOR.matcher(arm.substring(0, arrow).replaceAll("\\bas\\s+\\w+", ""));
             while (m.find()) kinds.add(kind(m.group()));
         }
         assertFalse(kinds.isEmpty(), "geen enkele arm gelezen — het patroon sluit niet meer aan op de bron");
@@ -111,15 +111,15 @@ class FoldKindsBoundaryTest {
         // The split itself, so a boundary silently redrawn on another set cannot pass the check above by
         // leaving value_fold_name untouched: source_reading keys the instance reading on Aantal alone, and
         // the aggregation kinds without Aantal are exactly the frontend's fold kinds.
-        String bron = Files.readString(verifierSource(), StandardCharsets.UTF_8);
-        assertTrue(COUNT_ARM_MEMBER.matcher(bron).find() && COUNT_ARM_ROLE.matcher(bron).find(),
+        String source = Files.readString(verifierSource(), StandardCharsets.UTF_8);
+        assertTrue(COUNT_ARM_MEMBER.matcher(source).find() && COUNT_ARM_ROLE.matcher(source).find(),
                 "source_reading keyt de instantielezing niet meer op `Aantal` — de grens is elders getrokken "
                 + "en de frontendkopie hierboven bewijst sindsdien niets meer");
-        Matcher m = AGGREGATION_KINDS.matcher(bron);
+        Matcher m = AGGREGATION_KINDS.matcher(source);
         assertTrue(m.find(), "aggregation_kinds staat niet meer in " + CHECKS);
         List<String> valueFolds = new ArrayList<>();
-        for (String soort : m.group(1).split(";")) {
-            String naam = soort.strip();
+        for (String category : m.group(1).split(";")) {
+            String naam = category.strip();
             if (!naam.isEmpty() && !naam.equals("Count")) valueFolds.add(kind(naam));
         }
         assertEquals(valueFolds.stream().sorted().toList(),

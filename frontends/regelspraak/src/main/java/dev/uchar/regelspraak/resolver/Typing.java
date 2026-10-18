@@ -1,8 +1,8 @@
 package dev.uchar.regelspraak.resolver;
 
 import dev.uchar.regelspraak.model.Datatype;
-import dev.uchar.regelspraak.model.Eenheid;
-import dev.uchar.regelspraak.kern.TimeCalculation;
+import dev.uchar.regelspraak.model.Unit;
+import dev.uchar.regelspraak.core.TimeCalculation;
 
 /**
  * The RegelSpraak v2.3.0 typeringen matrix (the "typeringen" specification),
@@ -18,10 +18,10 @@ public final class Typing {
     private Typing() {}
 
     /** Outcome of a typeringen check: a result datatype, or an error message. */
-    public record Result(Datatype type, String fout) {
-        public boolean ok() { return fout == null; }
+    public record Result(Datatype type, String error) {
+        public boolean ok() { return error == null; }
         static Result ok(Datatype t) { return new Result(t, null); }
-        static Result fout(String f) { return new Result(null, f); }
+        static Result error(String f) { return new Result(null, f); }
     }
 
     public enum BinOp { PLUS, MIN, VERMINDERD_MET, MAAL, GEDEELD_DOOR, TOT_DE_MACHT }
@@ -49,7 +49,7 @@ public final class Typing {
      *  ({@link #unitsCompatible}). */
     public static Result compute(BinOp op, Datatype l, Datatype r, boolean dayKindUnitRight,
                                   boolean lLit, boolean rLit) {
-        if (l.isUnknown() || r.isUnknown()) return Result.ok(new Datatype.Onbekend("operand"));
+        if (l.isUnknown() || r.isUnknown()) return Result.ok(new Datatype.Unknown("operand"));
         return switch (op) {
             // §4.1 / §4.2: numeriek±numeriek (units convertible), OR datum ± a numerieke
             // tijdsWAARDE -> datum (Tabel 2/5 scenario 2): the right operand must carry a TIJDseenheid
@@ -62,10 +62,10 @@ public final class Typing {
                 String onName = op == BinOp.PLUS ? "plus" : "min";
                 if (l.isDate() && r instanceof Datatype.Numeriek rn && rn.hasUnit()) {
                     if (l instanceof Datatype.DatumInDagen && subDayUnit(TimeCalculation.chronoUnit(r)))
-                        yield Result.fout(onName + ": sub-day time unit on a day-precision date (millisecond "
+                        yield Result.error(onName + ": sub-day time unit on a day-precision date (millisecond "
                                 + "precision required)");
                     if (dayKindUnitRight || TimeCalculation.chronoUnit(r) != null) yield Result.ok(l);
-                    yield Result.fout(onName + ": " + unknownDurationUnit(rn.eenheidOf().afkorting()));
+                    yield Result.error(onName + ": " + unknownDurationUnit(rn.unitOf().afkorting()));
                 }
                 yield numericBinary(l, r, onName, lLit, rLit);
             }
@@ -80,8 +80,8 @@ public final class Typing {
                 if (!l.isNumber() || !r.isNumber()) {
                     // WF-035 per operand that is no number; a percentage is a number to the verifier, which
                     // admits the product with it, so that refusal is RegelSpraak's own (Tabel 11/14)
-                    String sentence = perSide("operand of a numeric operator is ", l, r, Datatype::isGetalachtig);
-                    yield Result.fout(sentence != null ? naam(op) + ": " + sentence
+                    String sentence = perSide("operand of a numeric operator is ", l, r, Datatype::isNumberLike);
+                    yield Result.error(sentence != null ? naam(op) + ": " + sentence
                             : naam(op) + " vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
                 }
                 // §4.4 Tabel 13: a product gets the SUM of the operands' decimals ("X,X maal X,XX = X,XXX"),
@@ -90,7 +90,7 @@ public final class Typing {
                 // fraction (no decimal precision of its own); maxDec under-reports it, but that errs
                 // safe (a false negative, never a false positive) and is carded separately.
                 int dec = op == BinOp.MAAL ? decimalsOf(l) + decimalsOf(r) : maxDec(l, r);
-                Eenheid el = l.eenheidOf(), rightUnit = r.eenheidOf();
+                Unit el = l.unitOf(), rightUnit = r.unitOf();
                 if (el == null && rightUnit == null)                                       // Tabel 11/14 rij 5: (none) ⋆ (none) -> (none)
                     yield Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, null));
                 if (rightUnit == null)                                                     // Tabel 11 rij 3 / Tabel 14 rij 3: E ⋆ (none) -> E
@@ -107,38 +107,38 @@ public final class Typing {
                 // dimensionally UNSOUND — a unitless numerator over a unit denominator is a reciprocal 1/E (a rate the
                 // Eenheid model cannot spell), NOT E. Besluit 17b KNOWINGLY diverges from the arbiter here: a LOUD
                 // error, never a wire type.
-                yield Result.fout("gedeeld door: een eenheidloze teller gedeeld door de eenheid '" + rightUnit.weergave()
-                        + "' geeft een omgekeerde eenheid (1/" + rightUnit.weergave() + ") die het Eenheid-model niet kan uitdrukken");
+                yield Result.error("gedeeld door: een eenheidloze teller gedeeld door de eenheid '" + rightUnit.rendering()
+                        + "' geeft een omgekeerde eenheid (1/" + rightUnit.rendering() + ") die het Eenheid-model niet kan uitdrukken");
             }
             // §4.7 tot de macht: Numeriek without a unit on either side; result without a unit.
             case TOT_DE_MACHT -> {
                 if (!l.isNumber() || !r.isNumber()) {
                     // WF-035 per operand that is no number; a percentage's '%' is a unit to the verifier
-                    String sentence = perSide("operand of a numeric operator is ", l, r, Datatype::isGetalachtig);
-                    yield Result.fout("tot de macht: " + (sentence != null ? sentence : "power operands must be unitless"));
+                    String sentence = perSide("operand of a numeric operator is ", l, r, Datatype::isNumberLike);
+                    yield Result.error("tot de macht: " + (sentence != null ? sentence : "power operands must be unitless"));
                 }
-                if (l.eenheidOf() != null || r.eenheidOf() != null)
-                    yield Result.fout("tot de macht: power operands must be unitless");   // the verifier's WF-035
+                if (l.unitOf() != null || r.unitOf() != null)
+                    yield Result.error("tot de macht: power operands must be unitless");   // the verifier's WF-035
                 yield Result.ok(new Datatype.Numeriek(false, maxDec(l, r), Datatype.Teken.ONBEPAALD, null));
             }
         };
     }
 
     private static Result numericBinary(Datatype l, Datatype r, String op, boolean lLit, boolean rLit) {
-        if (!l.isGetalachtig() || !r.isGetalachtig()) {
+        if (!l.isNumberLike() || !r.isNumberLike()) {
             String sentence = op.equals("plus") || op.equals("min") ? dateComputeSentence(op, l, r)
-                    : perSide("operand of a numeric operator is ", l, r, Datatype::isGetalachtig);
-            return Result.fout(sentence != null ? op + ": " + sentence
+                    : perSide("operand of a numeric operator is ", l, r, Datatype::isNumberLike);
+            return Result.error(sentence != null ? op + ": " + sentence
                     : "operator '" + op + "' vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
         }
         String unitMismatch = unitsCompatible(l, r, op, lLit, rLit, "additive operands have incompatible units");
-        if (unitMismatch != null) return Result.fout(unitMismatch);
+        if (unitMismatch != null) return Result.error(unitMismatch);
         // §4.1/§4.2/§4.3 (plus/min/verminderd met — the only callers): geheel ± geheel IS geheel, so the
         // result keeps geheel-ness instead of erasing it — a geheel-demanding gate downstream (§5.13
         // elfproef, §4.19 paasdag, min/max allWhole) must not falsely reject whole-number arithmetic.
         // An unbounded "getal" operand (geheel=false, dec=0) correctly yields a non-geheel result.
         // decimalen stays maxDec per Tabellen 4/7/10; §6.1.2 checks read decimalen(), never geheel().
-        return Result.ok(new Datatype.Numeriek(wholeOf(l) && wholeOf(r), maxDec(l, r), Datatype.Teken.ONBEPAALD, l.eenheidOf()));
+        return Result.ok(new Datatype.Numeriek(wholeOf(l) && wholeOf(r), maxDec(l, r), Datatype.Teken.ONBEPAALD, l.unitOf()));
     }
 
     private static boolean wholeOf(Datatype t) {
@@ -153,39 +153,39 @@ public final class Typing {
 
     /** As {@link #compare(CmpOp, Datatype, Datatype)}, knowing which operand is a unitless numeric literal. */
     public static Result compare(CmpOp op, Datatype l, Datatype r, boolean lLit, boolean rLit) {
-        if (l.isUnknown() || r.isUnknown()) return Result.ok(new Datatype.Booleaan());
+        if (l.isUnknown() || r.isUnknown()) return Result.ok(new Datatype.BooleanType());
         return switch (op) {
             case KLEINER, KLEINER_OF_GELIJK, GROTER, GROTER_OF_GELIJK -> {
-                if (!l.isGetalachtig() || !r.isGetalachtig())
-                    yield Result.fout("vergelijking: " + perSide("ordering operand is ", l, r, Datatype::isGetalachtig));
+                if (!l.isNumberLike() || !r.isNumberLike())
+                    yield Result.error("vergelijking: " + perSide("ordering operand is ", l, r, Datatype::isNumberLike));
                 String u = unitsCompatible(l, r, "vergelijking", lLit, rLit, "ordering operands have incompatible units");
-                yield u != null ? Result.fout(u) : Result.ok(new Datatype.Booleaan());
+                yield u != null ? Result.error(u) : Result.ok(new Datatype.BooleanType());
             }
             // The ordering comparisons deliberately do NOT require equal tijd-precisie: Tabellen 45-52 list
             // only "Datum-tijd" operands with no precision restriction (unlike tijdsduur/eerste/laatste,
             // whose prose demands "dezelfde tijd-precisie") — the asymmetry is the spec's, kept as-is.
             case EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK -> {
                 if (!l.isDate() || !r.isDate())
-                    yield Result.fout("vergelijking: " + perSide("date-ordering operand is ", l, r, Datatype::isDate));
-                yield Result.ok(new Datatype.Booleaan());
+                    yield Result.error("vergelijking: " + perSide("date-ordering operand is ", l, r, Datatype::isDate));
+                yield Result.ok(new Datatype.BooleanType());
             }
             case GELIJK, ONGELIJK -> {
                 if (!sameFamily(l, r)) {
                     // two kinds are WF-036's family sentence; a number beside a percentage is one kind to the verifier,
                     // which reads the percentage's '%' as a unit and refuses the pair on units where no literal adopts it
-                    if (!(l.isGetalachtig() && r.isGetalachtig()))
-                        yield Result.fout("gelijk: equality across families: " + kindWord(l) + " vs " + kindWord(r));
+                    if (!(l.isNumberLike() && r.isNumberLike()))
+                        yield Result.error("gelijk: equality across families: " + kindWord(l) + " vs " + kindWord(r));
                     if (verifierRefusesUnits(l, r, lLit, rLit))
-                        yield Result.fout("gelijk: equality operands have incompatible units");
-                    yield Result.fout("gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg " + l.naam() + " en " + r.naam());
+                        yield Result.error("gelijk: equality operands have incompatible units");
+                    yield Result.error("gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg " + l.naam() + " en " + r.naam());
                 }
-                if (otherPrecision(l, r)) yield Result.fout("gelijk: equality across date precisions");
-                if (anotherDomain(l, r)) yield Result.fout("gelijk: equality across different enumeration domains");
-                if (l.isGetalachtig()) {
+                if (otherPrecision(l, r)) yield Result.error("gelijk: equality across date precisions");
+                if (anotherDomain(l, r)) yield Result.error("gelijk: equality across different enumeration domains");
+                if (l.isNumberLike()) {
                     String u = unitsCompatible(l, r, "gelijk", lLit, rLit, "equality operands have incompatible units");
-                    if (u != null) yield Result.fout(u);
+                    if (u != null) yield Result.error(u);
                 }
-                yield Result.ok(new Datatype.Booleaan());
+                yield Result.ok(new Datatype.BooleanType());
             }
         };
     }
@@ -202,13 +202,13 @@ public final class Typing {
      *  defect and carry the verifier's sentence, naming the bound as the wire does ({@code which}:
      *  {@code minimum} or {@code maximum}). Returns the diagnostic, or null when ok / either
      *  side is Onbekend (no claim). */
-    public static String begrenzing(Datatype basis, Datatype limit, String which) {
-        if (basis.isUnknown() || limit.isUnknown()) return null;
-        String baseError = clampBase(basis);
+    public static String begrenzing(Datatype base, Datatype limit, String which) {
+        if (base.isUnknown() || limit.isUnknown()) return null;
+        String baseError = clampBase(base);
         if (baseError != null) return baseError;
-        if (!limit.isGetalachtig())
+        if (!limit.isNumberLike())
             return clampNonNumeric(which, limit);
-        Eenheid eb = basis.eenheidOf(), eg = limit.eenheidOf();
+        Unit eb = base.unitOf(), eg = limit.unitOf();
         if (eb != null && eg != null && !eb.convertibleTo(eg))
             return "clamp " + which + " and base have incompatible units";
         return null;
@@ -216,9 +216,9 @@ public final class Typing {
 
     /** §6.1.4 the bounded value must be Numeriek/Percentage: the verifier's WF-035 sentence for the clamp's base, or
      *  null. The base is one position whatever the number of bounds, so a caller reports it once. */
-    public static String clampBase(Datatype basis) {
-        if (basis.isUnknown() || basis.isGetalachtig()) return null;
-        return clampNonNumeric("base", basis);
+    public static String clampBase(Datatype base) {
+        if (base.isUnknown() || base.isNumberLike()) return null;
+        return clampNonNumeric("base", base);
     }
 
     /** WF-035's sentence for a clamp position (base, minimum or maximum) that holds no number, one template for the
@@ -238,17 +238,17 @@ public final class Typing {
      *  here (its lone max is single-operand). Onbekend operands make no claim (skipped); a single
      *  operand is trivially well-typed. Returns the diagnostic, or null when ok. */
     public static String numberAggregation(String function, java.util.List<Datatype> operands) {
-        Eenheid ref = null; boolean refSet = false;
+        Unit ref = null; boolean refSet = false;
         for (Datatype d : operands) {
             if (d.isUnknown()) continue;
             if (!d.isNumber())
                 return function + " vereist numerieke operanden, kreeg " + d.naam();
-            Eenheid e = d.eenheidOf();
+            Unit e = d.unitOf();
             if (!refSet) { ref = e; refSet = true; continue; }
             if ((ref == null) != (e == null))
                 return function + ": als één operand een eenheid heeft, moeten alle operanden er een hebben";
             if (ref != null && !ref.convertibleTo(e))
-                return function + ": eenheden '" + ref.weergave() + "' en '" + e.weergave()
+                return function + ": eenheden '" + ref.rendering() + "' en '" + e.rendering()
                         + "' zijn niet in elkaar om te rekenen";
         }
         return null;
@@ -257,7 +257,7 @@ public final class Typing {
     /** §4.14/4.15 Tabel 24/25 — eerste/laatste van (datumaggregatiefunctie): every operand must
      *  be a datumexpressie, and "alle expressies dezelfde tijd-precisie bevatten" — modelled as
      *  the same concrete date kind (all {@link Datatype.DatumInDagen} or all {@link
-     *  Datatype.DatumTijd}). The equal-precision rule is normative and twice-stated (§4.14/4.15
+     *  Datatype.DateTime}). The equal-precision rule is normative and twice-stated (§4.14/4.15
      *  prose AND §5.8.4: "Deze moeten namelijk allemaal gelijk zijn") with no coercion path — so
      *  this is strict equality. NOTE a spec tension: the §5.8.4 "Bevestigingstijdstip" worked
      *  example mixes a Datum-tijd operand with a Datum-in-dagen one, violating its own rule; we
@@ -280,61 +280,61 @@ public final class Typing {
 
     /** §5.11-5.16 one-sided predicates. */
     public static Result predicaat(UnairePred p, Datatype operand) {
-        if (operand.isUnknown()) return Result.ok(new Datatype.Booleaan());
+        if (operand.isUnknown()) return Result.ok(new Datatype.BooleanType());
         return switch (p) {
-            case LEEG, GEVULD -> Result.ok(new Datatype.Booleaan()); // §5.11/5.12 any datatype
+            case LEEG, GEVULD -> Result.ok(new Datatype.BooleanType()); // §5.11/5.12 any datatype
             case ELFPROEF -> // §5.13 Tabel 55: Numeriek (geheel getal, geen eenheid) OR Tekst
                     operand.isText()
                         || (operand instanceof Datatype.Numeriek n && n.geheel() && !n.hasUnit())
-                    ? Result.ok(new Datatype.Booleaan())
-                    : Result.fout("elfproef: elevenTest operand is " + kindWord(operand)
+                    ? Result.ok(new Datatype.BooleanType())
+                    : Result.error("elfproef: elevenTest operand is " + kindWord(operand)
                             + ", must be text or a whole unitless number");   // the verifier's WF-036
             case NUMERIEK_MET_EXACT -> operand.isText()                 // §5.16 Tekst only
-                    ? Result.ok(new Datatype.Booleaan())
-                    : Result.fout("numeriek met exact: exactDigits operand is " + kindWord(operand) + ", must be text");
+                    ? Result.ok(new Datatype.BooleanType())
+                    : Result.error("numeriek met exact: exactDigits operand is " + kindWord(operand) + ", must be text");
             case DAGSOORT -> operand.isDate()                           // §5.15 Datum only
-                    ? Result.ok(new Datatype.Booleaan())
-                    : Result.fout("dagsoort: day-kind predicate operand is " + kindWord(operand) + ", must be a date");
+                    ? Result.ok(new Datatype.BooleanType())
+                    : Result.error("dagsoort: day-kind predicate operand is " + kindWord(operand) + ", must be a date");
         };
     }
 
     /** §6.1/§6.2 assignment / initialisation: value must fit the target attribute. */
-    public static String assignment(Datatype doel, Datatype waarde) {
-        return assignment(doel, waarde, false);
+    public static String assignment(Datatype target, Datatype value) {
+        return assignment(target, value, false);
     }
 
     /** As {@link #assignment(Datatype, Datatype)}, knowing whether the value is a unitless numeric literal. */
-    public static String assignment(Datatype doel, Datatype waarde, boolean valueLit) {
-        if (doel.isUnknown() || waarde.isUnknown()) return null;
-        if (!sameFamily(doel, waarde)) {
+    public static String assignment(Datatype target, Datatype value, boolean valueLit) {
+        if (target.isUnknown() || value.isUnknown()) return null;
+        if (!sameFamily(target, value)) {
             // as in the equality arm of vergelijk: two kinds are WF-023's family sentence, a number beside a
             // percentage its units sentence where no literal adopts the '%'
-            if (!(doel.isGetalachtig() && waarde.isGetalachtig()))
-                return "toekenning: a " + kindWord(waarde) + " value is assigned to a " + kindWord(doel) + " target";
-            if (verifierRefusesUnits(doel, waarde, false, valueLit))
+            if (!(target.isNumberLike() && value.isNumberLike()))
+                return "toekenning: a " + kindWord(value) + " value is assigned to a " + kindWord(target) + " target";
+            if (verifierRefusesUnits(target, value, false, valueLit))
                 return "toekenning: assignment across incompatible units";
-            return "kan een waarde van type " + waarde.naam() + " niet toekennen aan een " + doel.naam();
+            return "kan een waarde van type " + value.naam() + " niet toekennen aan een " + target.naam();
         }
-        if (otherPrecision(doel, waarde))
-            return "toekenning: a " + kindWord(waarde) + " value is assigned to a " + kindWord(doel) + " target";
-        if (anotherDomain(doel, waarde))
+        if (otherPrecision(target, value))
+            return "toekenning: a " + kindWord(value) + " value is assigned to a " + kindWord(target) + " target";
+        if (anotherDomain(target, value))
             // the verifier's WF-023 domain clause, its format string with its variant word
             return "toekenning: " + String.format("a value of the %s '%s' is assigned to a target of the %s '%s'",
-                    "enumeration domain", ((Datatype.Enumeratie) waarde).domein(), "enumeration domain",
-                    ((Datatype.Enumeratie) doel).domein());
-        if (!doel.isGetalachtig()) return null;
-        String unitError = unitsCompatible(doel, waarde, "toekenning", false, valueLit,
+                    "enumeration domain", ((Datatype.Enumeratie) value).domain(), "enumeration domain",
+                    ((Datatype.Enumeratie) target).domain());
+        if (!target.isNumberLike()) return null;
+        String unitError = unitsCompatible(target, value, "toekenning", false, valueLit,
                 "assignment across incompatible units");
         if (unitError != null) return unitError;
         // §6.1.2: a result may be assigned only when its decimal count does not exceed the
         // attribute's; a higher-precision result must first be explicitly rounded (§6.1.3). The
-        // value's precision already reflects any afronding wrapper (Expr.Afgerond.type()).
+        // value's precision already reflects any afronding wrapper (Expr.Rounding.type()).
         // An UNBOUNDED target (§13.3.3 form (c) "getal") has no precision ceiling — it accepts any
         // number of decimals — so the check does not apply. Without this, an unbounded target reads
         // decimalsOf == 0 (the sentinel) and is wrongly treated like a "geheel getal" (cap 0),
         // rejecting any decimal value as over-precise (the false positive p33 reproduced).
-        if (doel.onbeperkt()) return null;
-        int dv = decimalsOf(waarde), dd = decimalsOf(doel);
+        if (target.unbounded()) return null;
+        int dv = decimalsOf(value), dd = decimalsOf(target);
         if (dv > dd)
             return "het toe te kennen resultaat heeft meer decimalen (" + dv + ") dan het attribuut toelaat ("
                     + dd + "); rond het resultaat eerst expliciet af (§6.1.2)";
@@ -346,34 +346,34 @@ public final class Typing {
      *  rekentabel model as the equivalent expression: equal-shares is {@code total / count} — a division, and
      *  {@code count} is a whole count, so {@code maxDec} = the total's decimals; naar rato is
      *  {@code total · weight / Σweight} — the multiply contributes {@code total+weight} decimals and the
-     *  division by {@code Σweight} does not raise that. An afronding to {@code afrDec} decimals caps the share
-     *  at {@code afrDec} (exactly as an {@code Expr.Afgerond} wrapper caps the value for {@link #assignment}),
+     *  division by {@code Σweight} does not raise that. An afronding to {@code roundDec} decimals caps the share
+     *  at {@code roundDec} (exactly as an {@code Expr.Rounding} wrapper caps the value for {@link #assignment}),
      *  so a rounded verdeling fits a bounded target. An unbounded ({@code getal}) target has no ceiling.
      *  Returns the §6.1.2 message when the share is over-precise, else null. For all-integer operands
      *  the share is 0 decimals and this is a no-op — it only flags a decimal-typed bron/weight
      *  distributed into a narrower target, the case the ordinary {@code regel} assignment already flags. */
-    public static String allocationAssignment(Datatype doel, Datatype bron, Datatype weight, Integer afrDec) {
+    public static String allocationAssignment(Datatype target, Datatype source, Datatype weight, Integer roundDec) {
         // An Onbekend bron/doel carries no type claim — the assignment check no-ops.
-        if (doel == null || bron == null || doel.isUnknown() || bron.isUnknown())
+        if (target == null || source == null || target.isUnknown() || source.isUnknown())
             return null;
         // §13.4.10 the share is assigned to the doel like a regel assignment, so it must satisfy the SAME
         // family + unit rule as toekenning. The FAMILY check runs first, BEFORE the getalachtig guard, so a
         // numeric verdeelplafond distributed over a non-numeric recipient (a Numeriek bron into a Tekst/Datum
         // doel) is flagged as the family mismatch it is — exactly the fout the ordinary regel raises — instead
         // of slipping through to an uncompilable numeric setter.
-        if (!sameFamily(doel, bron))
-            return "kan een waarde van type " + bron.naam() + " niet verdelen over een " + doel.naam();
+        if (!sameFamily(target, source))
+            return "kan een waarde van type " + source.naam() + " niet verdelen over een " + target.naam();
         // Same family but not getalachtig (e.g. both Datum/Tekst) — no unit/precision rule applies.
-        if (!doel.isGetalachtig()) return null;
+        if (!target.isNumberLike()) return null;
         // The share carries the BRON's eenheid: equal-shares (total/count) and naar rato (total·w/Σw) both keep
         // it — the count is a plain number and the weight ratio w/Σw is dimensionless, so the weight's unit
         // cancels. An inconvertible unit (€ distributed over a metre target) is the same fout regel raises.
-        String unitError = unitsCompatible(doel, bron, "", false, false, null);   // RuleChecker prepends "verdeling: "
+        String unitError = unitsCompatible(target, source, "", false, false, null);   // RuleChecker prepends "verdeling: "
         if (unitError != null) return unitError;
-        if (doel.onbeperkt()) return null;   // an unbounded (getal) target has no precision ceiling
-        int share = afrDec != null ? afrDec
-                : decimalsOf(bron) + (weight != null ? decimalsOf(weight) : 0);
-        int dd = decimalsOf(doel);
+        if (target.unbounded()) return null;   // an unbounded (getal) target has no precision ceiling
+        int share = roundDec != null ? roundDec
+                : decimalsOf(source) + (weight != null ? decimalsOf(weight) : 0);
+        int dd = decimalsOf(target);
         return share > dd
                 ? "het toe te kennen aandeel heeft meer decimalen (" + share + ") dan het attribuut toelaat ("
                   + dd + "); rond de verdeling eerst expliciet af (§6.1.2/§9.7.4)"
@@ -390,7 +390,7 @@ public final class Typing {
      *  GEDEELD: two plain units divide to a rate ("€ gedeeld door jr = €/jr"), or to a dimensionless number when
      *  the units are convertible ("€ gedeeld door € = een getal"); a rate divisor (a second denominator / "1/jr")
      *  is unspellable. */
-    private static Result compoundUnit(BinOp op, int dec, Eenheid el, Eenheid rightUnit) {
+    private static Result compoundUnit(BinOp op, int dec, Unit el, Unit rightUnit) {
         if (op == BinOp.MAAL) {
             if (el.denominator() != null && rightUnit.denominator() == null && rightUnit.convertibleTo(el.denominator()))
                 return Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, el.numerator()));
@@ -400,17 +400,17 @@ public final class Typing {
             // composite (no canonical, IR-SPEC ch. 2.5), convertible only to an identical product, so a €·m result
             // assigned to a € target now flags a unit mismatch (it used to degrade to Onbekend and pass silently).
             if (el.denominator() == null && rightUnit.denominator() == null)
-                return Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Eenheid.product(el, rightUnit)));
+                return Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Unit.product(el, rightUnit)));
             // a rate factor (a second denominator / "€·m/jr") is UNSPELLABLE — besluit 17c: a loud error, not Onbekend.
-            return Result.fout("maal: de samengestelde eenheid van '" + el.weergave() + "' en '" + rightUnit.weergave()
+            return Result.error("maal: de samengestelde eenheid van '" + el.rendering() + "' en '" + rightUnit.rendering()
                     + "' (een producteenheid met een noemer) kan het Eenheid-model niet uitdrukken");
         }
         if (el.denominator() == null && rightUnit.denominator() == null)   // GEDEELD: only two plain units are representable
             return el.convertibleTo(rightUnit)
                     ? Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, null))                        // €/€ -> getal
-                    : Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Eenheid.compound(el, rightUnit))); // €/jr
+                    : Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Unit.compound(el, rightUnit))); // €/jr
         // a rate divisor (its result needs a second denominator / "1/jr") is UNSPELLABLE — besluit 17c: a loud error.
-        return Result.fout("gedeeld door: het quotiënt van '" + el.weergave() + "' en '" + rightUnit.weergave()
+        return Result.error("gedeeld door: het quotiënt van '" + el.rendering() + "' en '" + rightUnit.rendering()
                 + "' (een eenheid met een omgekeerde noemer) kan het Eenheid-model niet uitdrukken");
     }
 
@@ -443,7 +443,7 @@ public final class Typing {
      *  sentences. */
     private static boolean anotherDomain(Datatype a, Datatype b) {
         return a instanceof Datatype.Enumeratie ea && b instanceof Datatype.Enumeratie eb
-                && !ea.domein().equals(eb.domein());
+                && !ea.domain().equals(eb.domain());
     }
 
     /** Unit rule (§4 note): both unitless, or both present and inter-convertible. {@code where} is the
@@ -455,7 +455,7 @@ public final class Typing {
      *  ({@code lLit}, {@code rLit}), which adopts it there; that refusal is RegelSpraak's own and keeps its words. */
     private static String unitsCompatible(Datatype l, Datatype r, String where, boolean lLit, boolean rLit,
                                              String verifierSentence) {
-        Eenheid el = l.eenheidOf(), rightUnit = r.eenheidOf();
+        Unit el = l.unitOf(), rightUnit = r.unitOf();
         if (el == null && rightUnit == null) return null;
         String pre = where.isEmpty() ? "" : where + ": ";
         if (el == null || rightUnit == null) {
@@ -465,7 +465,7 @@ public final class Typing {
         }
         if (!el.convertibleTo(rightUnit))
             return pre + (verifierSentence != null ? verifierSentence
-                    : "eenheden '" + el.weergave() + "' en '" + rightUnit.weergave() + "' zijn niet in elkaar om te rekenen");
+                    : "eenheden '" + el.rendering() + "' en '" + rightUnit.rendering() + "' zijn niet in elkaar om te rekenen");
         return null;
     }
 
@@ -488,9 +488,9 @@ public final class Typing {
             return op.equals("min") ? "duration \u2212 date is ill-formed (subtraction admits the date on the left only)"
                     : "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)";
         if (!l.isDate()) return null;
-        if (!r.isGetalachtig())
+        if (!r.isNumberLike())
             return "date \u00b1 duration: the duration operand is " + kindWord(r) + ", must be a number carrying a time unit";
-        Eenheid e = r.eenheidOf();
+        Unit e = r.unitOf();
         if (e == null) return "date \u00b1 duration: the duration operand carries no time unit";
         return unknownDurationUnit(e.afkorting());
     }
@@ -515,9 +515,9 @@ public final class Typing {
         java.util.Set<String> families = new java.util.LinkedHashSet<>();
         for (Datatype d : types) {
             if (d.isUnknown()) continue;
-            if (d.isGetalachtig()) families.add("getal");
+            if (d.isNumberLike()) families.add("getal");
             else if (d instanceof Datatype.DatumInDagen) families.add("dag");
-            else if (d instanceof Datatype.DatumTijd) families.add("milliseconde");
+            else if (d instanceof Datatype.DateTime) families.add("milliseconde");
             else sentences.add("operand of the " + fold + " ordering fold is " + kindWord(d) + ", must be a number or a date");
         }
         if (families.size() > 1)
@@ -533,11 +533,11 @@ public final class Typing {
             case Datatype.Numeriek n -> "Number";
             case Datatype.Percentage p -> "Number";
             case Datatype.Tekst x -> "Text";
-            case Datatype.Booleaan b -> "Boolean";
+            case Datatype.BooleanType b -> "Boolean";
             case Datatype.DatumInDagen d -> "Date";
-            case Datatype.DatumTijd d -> "Date";
+            case Datatype.DateTime d -> "Date";
             case Datatype.Enumeratie e -> "Enumeration";
-            case Datatype.Onbekend o -> throw new IllegalStateException("Typering: een onbekend type heeft geen typenaam");
+            case Datatype.Unknown o -> throw new IllegalStateException("Typering: een onbekend type heeft geen typenaam");
         };
     }
 
@@ -546,7 +546,7 @@ public final class Typing {
      *  both sides are unitless or carry convertible units. */
     private static boolean verifierRefusesUnits(Datatype l, Datatype r, boolean lLit, boolean rLit) {
         if (lLit || rLit) return false;
-        Eenheid el = l.eenheidOf(), rightUnit = r.eenheidOf();
+        Unit el = l.unitOf(), rightUnit = r.unitOf();
         if (el == null && rightUnit == null) return false;
         return el == null || rightUnit == null || !el.convertibleTo(rightUnit);
     }
@@ -558,11 +558,11 @@ public final class Typing {
             case Datatype.Numeriek n -> "number";
             case Datatype.Percentage p -> "percentage";
             case Datatype.Tekst x -> "text";
-            case Datatype.Booleaan b -> "boolean";
+            case Datatype.BooleanType b -> "boolean";
             case Datatype.DatumInDagen d -> "date-day";
-            case Datatype.DatumTijd d -> "date-ms";
+            case Datatype.DateTime d -> "date-ms";
             case Datatype.Enumeratie e -> "enumeration";
-            case Datatype.Onbekend o -> throw new IllegalStateException("Typering: een onbekend type heeft geen soortwoord");
+            case Datatype.Unknown o -> throw new IllegalStateException("Typering: een onbekend type heeft geen soortwoord");
         };
     }
 

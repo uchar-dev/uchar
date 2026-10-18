@@ -177,7 +177,7 @@ class RoleFieldReaderWitnessTest {
         //     verifier: PASS   ref: oracle: PASS (2 expectations)   clingo: clingo: PASS (2 expectations)
         //     Drools exec-model : ERROR ConsequenceException … ClassCastException: Cannot cast …facts.Kustvak to
         //                         java.math.BigDecimal   (rule "vakbeseining door het kustvak")
-        //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression $doel.setSeinvak( $subject )
+        //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression $target.setSeinvak( $subject )
         Path ir = factCreationWithDisplacer("Sein", "seinvak"), c = caseOf(postwachtCase());
         // The destructive exec-model branch refused the creation by name once it was gated. The truth-maintenance
         // branch lays the link as a fact while it fires and answers as ref on this case (TmsLikeRefWitnessTest,
@@ -218,11 +218,11 @@ class RoleFieldReaderWitnessTest {
         keepRules(m, Set.of("berging door de kustgemeente"));
         IrPath.addAttribute(IrPath.objectType(m, "Jutter"), "gemeente van inschrijving", number());
         Path ir = model("feitcreatie-verdrongen-hop", m), c = caseOf(gemeenteCaseWithoutRoles());
-        String reden = "de rol 'gemeente van inschrijving' op Jutter deelt haar naam met een gedeclareerd lid";
+        String reason = "de rol 'gemeente van inschrijving' op Jutter deelt haar naam met een gedeclareerd lid";
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("feitcreatie: berging door de kustgemeente — het pad van de feitcreatie"
-                + " 'berging door de kustgemeente': " + reden), e.getMessage());
+                + " 'berging door de kustgemeente': " + reason), e.getMessage());
         assertEquals(e.getMessage(), drlReason(ir, c));
     }
 
@@ -238,7 +238,7 @@ class RoleFieldReaderWitnessTest {
     // ---------------- 6. the §9.5 presence count: one derivation, one question ----------------
 
     @Test void the_count_assertion_reads_the_resolved_role_not_the_written_name() throws Exception {
-        // toOneAantalReader tested the name-sharing itself — `subject.hasMember(a.attribuut())` — instead of asking
+        // toOneAantalReader tested the name-sharing itself — `subject.hasMember(a.attribute())` — instead of asking
         // the shared question. That is a second reading of leden()'s law, and it reads the WRONG NAME whenever the
         // written element name and the resolved role name differ. They differ in the ordinary case: the AANTAL's
         // argument NAMES the element role as written ("het aantal penningen"), which resolves through the role's
@@ -318,22 +318,22 @@ class RoleFieldReaderWitnessTest {
     private static Path farSideRoleCheck() throws Exception {
         ObjectNode ir = goldenIr(NAVIGATION_PREMIE);
         IrPath.addAttribute(IrPath.objectType(ir, "Werf"), "wachtgeld", number());
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "ligplaats").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "ligplaats").get("roles"))
             if ("werf".equals(r.get("name").asText())) {
                 ((ObjectNode) r).put("many", true);
                 ((ObjectNode) r).put("plural", "werven");
             }
-        ObjectNode vorm = IrPath.rules(ir).putArray("rules").addObject();
-        vorm.put("node", "Rule").put("name", "wachtgeld van een werf");
-        ObjectNode regel = vorm.putArray("versions").addObject();
+        ObjectNode form = IrPath.rules(ir).putArray("rules").addObject();
+        form.put("node", "Rule").put("name", "wachtgeld van een werf");
+        ObjectNode regel = form.putArray("versions").addObject();
         regel.putObject("validity").put("node", "Validity");
-        ObjectNode doel = regel.putObject("target");
-        doel.put("node", "AttributeReference").put("attribute", "wachtgeld").put("subjectType", "Werf")
+        ObjectNode target = regel.putObject("target");
+        target.put("node", "AttributeReference").put("attribute", "wachtgeld").put("subjectType", "Werf")
             .set("source", IrPath.sourceReference("Het wachtgeld van een Werf"));
-        ObjectNode waarde = regel.putObject("value");
-        waarde.put("node", "Literal").putObject("value").put("number", "8");
-        waarde.set("type", number());
-        waarde.set("source", IrPath.sourceReference("8"));
+        ObjectNode value = regel.putObject("value");
+        value.put("node", "Literal").putObject("value").put("number", "8");
+        value.set("type", number());
+        value.set("source", IrPath.sourceReference("8"));
         // "de Werf heeft een schuit": the subject Werf fills `werf` in ligplaats
         regel.putObject("condition").put("node", "RoleMembership").put("factType", "ligplaats")
              .put("role", "werf").put("negated", false).set("source", IrPath.sourceReference("de Werf een schuit heeft"));
@@ -368,7 +368,7 @@ class RoleFieldReaderWitnessTest {
     }
 
     /** One Werf (tarief 312) and one Schuit (lengte 8), the Schuit optionally filling the DISPLACING attribute. */
-    private static String werfAndSchuit(boolean displacerFilled, String schuitRoles, String verwacht) {
+    private static String werfAndSchuit(boolean displacerFilled, String schuitRoles, String expected) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -378,7 +378,7 @@ class RoleFieldReaderWitnessTest {
                         "roles": %s, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(displacerFilled ? ", \"werf\": { \"number\": \"5\" }" : "", schuitRoles, verwacht);
+                """.formatted(displacerFilled ? ", \"werf\": { \"number\": \"5\" }" : "", schuitRoles, expected);
     }
 
     /** jutterswet-tempovouw with the doel made TEMPORAL (MAAND, the element's own type) and the fold a §5.8.2 SOM,
@@ -390,12 +390,12 @@ class RoleFieldReaderWitnessTest {
         ObjectNode bewaarlast = IrPath.attribute(IrPath.objectType(ir, "Jutter"), "bewaarlast");
         bewaarlast.set("datatype", elemType.deepCopy());
         IrPath.timeline(bewaarlast, "month");
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "bewaring").get("roles")) {
-            ObjectNode rol = (ObjectNode) r;
-            if ("bewarende jutter".equals(rol.get("name").asText())) {
-                rol.put("many", true); rol.put("plural", "bewarende jutters");
-            } else if ("vondst".equals(rol.get("name").asText())) {
-                rol.put("many", false);
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "bewaring").get("roles")) {
+            ObjectNode role = (ObjectNode) r;
+            if ("bewarende jutter".equals(role.get("name").asText())) {
+                role.put("many", true); role.put("plural", "bewarende jutters");
+            } else if ("vondst".equals(role.get("name").asText())) {
+                role.put("many", false);
             }
         }
         ObjectNode regel = IrPath.version(ir, "rules", 0, 0);
@@ -425,12 +425,12 @@ class RoleFieldReaderWitnessTest {
      *  bean field sits at the SOURCE end and Berger derives none. Verifier-clean and ref-clean. */
     private static Path allocationWithoutField() throws Exception {
         ObjectNode ir = goldenIr(BERGING);
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "bergingsdeelname").get("roles")) {
-            ObjectNode rol = (ObjectNode) r;
-            if ("berging".equals(rol.get("name").asText())) {
-                rol.put("many", true); rol.put("plural", "bergingen");
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "bergingsdeelname").get("roles")) {
+            ObjectNode role = (ObjectNode) r;
+            if ("berging".equals(role.get("name").asText())) {
+                role.put("many", true); role.put("plural", "bergingen");
             } else {
-                rol.put("many", false);
+                role.put("many", false);
             }
         }
         return model("verdeling-join-zonder-veld", ir);
@@ -456,9 +456,9 @@ class RoleFieldReaderWitnessTest {
 
     /** jutterswet-postwacht reduced to its feitcreatie, with a Numeriek attribute of the given name on the given
      *  objecttype. Verifier-clean and ref-clean in both spellings. */
-    private static Path factCreationWithDisplacer(String objecttype, String member) throws Exception {
+    private static Path factCreationWithDisplacer(String objectType, String member) throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        IrPath.addAttribute(IrPath.objectType(ir, objecttype), member, number());
+        IrPath.addAttribute(IrPath.objectType(ir, objectType), member, number());
         keepRules(ir, Set.of("vakbeseining door het kustvak"));
         IrPath.rules(ir).putArray("uniquenesses");
         return model("feitcreatie-" + member, ir);
@@ -511,7 +511,7 @@ class RoleFieldReaderWitnessTest {
      *  the field that count reads. Verifier-clean and ref-clean (ref reports the violation). */
     private static Path countNameDrift() throws Exception {
         ObjectNode ir = goldenIr(PENNINGUITGIFTE);
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "penningbezit").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "penningbezit").get("roles"))
             if ("penning".equals(r.get("name").asText())) ((ObjectNode) r).put("many", false);
         IrPath.addAttribute(IrPath.objectType(ir, "Jutter"), "penning", number());
         ObjectNode rules = IrPath.rules(ir);
@@ -521,26 +521,26 @@ class RoleFieldReaderWitnessTest {
         // the count source: its written name is the element role's declared plural, read at the fold subject
         arg.put("node", "AttributeReference").put("attribute", "penningen").put("subjectType", "Jutter")
            .set("source", IrPath.sourceReference("penningen van de Jutter"));
-        ObjectNode aantal = JSON.createObjectNode();
-        aantal.put("node", "Aggregation").put("kind", "count");
-        aantal.putArray("arguments").add(arg);
-        aantal.put("elementType", "Penning");
-        aantal.putObject("sourceRole").put("node", "RoleBinding").put("factType", "penningbezit").put("role", "penning");
-        aantal.set("type", number().put("sign", "nonNegative"));
-        aantal.set("source", IrPath.sourceReference("het aantal penningen van de Jutter"));
+        ObjectNode count = JSON.createObjectNode();
+        count.put("node", "Aggregation").put("kind", "count");
+        count.putArray("arguments").add(arg);
+        count.put("elementType", "Penning");
+        count.putObject("sourceRole").put("node", "RoleBinding").put("factType", "penningbezit").put("role", "penning");
+        count.set("type", number().put("sign", "nonNegative"));
+        count.set("source", IrPath.sourceReference("het aantal penningen van de Jutter"));
         ObjectNode right = JSON.createObjectNode();
         right.put("node", "Literal").putObject("value").put("number", "1");
         right.set("type", number());
         right.set("source", IrPath.sourceReference("1"));
         ObjectNode assertion = JSON.createObjectNode();
         assertion.put("node", "Comparison").put("op", "greaterOrEqual");
-        assertion.set("left", aantal);
+        assertion.set("left", count);
         assertion.set("right", right);
         assertion
                 .set("source", IrPath.sourceReference("het aantal penningen van de Jutter is groter of gelijk aan 1"));
-        ObjectNode vorm = rules.putArray("consistencies").addObject();
-        vorm.put("node", "Consistency").put("name", "penningtelcontrole");
-        ObjectNode con = vorm.putArray("versions").addObject();
+        ObjectNode form = rules.putArray("consistencies").addObject();
+        form.put("node", "Consistency").put("name", "penningtelcontrole");
+        ObjectNode con = form.putArray("versions").addObject();
         con.put("subject", "Jutter");
         con.set("assertion", assertion);
         con.putObject("validity").put("node", "Validity");

@@ -47,7 +47,7 @@ class OwnReadWitnessTest {
 
     /** The load refusal, for either branch: nothing is lowered from a document that names another type there. */
     private static void refuses(ObjectNode ir, String type) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), type);
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir), type);
         assertEquals("/rules/rules/0/versions/0/value", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": an attribute reference without a path is the subject's own"
                 + " read, so its subjectType is the subject type 'Munt' — '" + type + "' names another type, which only"
@@ -69,18 +69,18 @@ class OwnReadWitnessTest {
             """;
 
     /** The golden reduced to one rule, "De muntwaarde van een Munt moet berekend worden als het gewicht", whose read
-     *  names {@code objecttype} as its subjectType. */
-    private static ObjectNode withMuntwaarde(String objecttype) throws Exception {
+     *  names {@code objectType} as its subjectType. */
+    private static ObjectNode withMuntwaarde(String objectType) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
         JsonNode weight = IrPath.attribute(IrPath.objectType(ir, "Vondst"), "gewicht").get("datatype");
         IrPath.addAttribute(IrPath.objectType(ir, "Munt"), "muntwaarde", weight.deepCopy());
-        ObjectNode vorm = IrPath.rules(ir).putArray("rules").addObject();
-        vorm.put("node", "Rule").put("name", "muntwaarde");
-        ObjectNode regel = vorm.putArray("versions").addObject();
+        ObjectNode form = IrPath.rules(ir).putArray("rules").addObject();
+        form.put("node", "Rule").put("name", "muntwaarde");
+        ObjectNode regel = form.putArray("versions").addObject();
         regel.putObject("validity").put("node", "Validity");
         regel.putObject("target").put("node", "AttributeReference").put("attribute", "muntwaarde").put("subjectType", "Munt")
              .set("source", IrPath.sourceReference("De muntwaarde van een Munt"));
-        regel.putObject("value").put("node", "AttributeReference").put("attribute", "gewicht").put("subjectType", objecttype)
+        regel.putObject("value").put("node", "AttributeReference").put("attribute", "gewicht").put("subjectType", objectType)
              .set("source", IrPath.sourceReference("het gewicht"));
         regel.put("initialisation", false).put("presentation", "calculation");
         return ir;

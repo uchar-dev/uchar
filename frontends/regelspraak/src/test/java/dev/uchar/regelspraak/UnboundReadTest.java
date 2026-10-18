@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class UnboundReadTest {
 
-    private static List<String> fouten(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static List<String> faults(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         return m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();
     }
 
@@ -66,12 +66,12 @@ class UnboundReadTest {
 
         """;
 
-    private static String waarde(String attributeRead) {
+    private static String value(String attributeRead) {
         return JUTTERS + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                 + attributeRead + " plus 1.\n";
     }
 
-    private static String voorwaarde(String attributeRead) {
+    private static String condition(String attributeRead) {
         return JUTTERS + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld worden op 1\n"
                 + "        indien " + attributeRead + " groter is dan 2.\n";
     }
@@ -94,15 +94,15 @@ class UnboundReadTest {
                 + "voldoen: " + attributeRead + " is groter dan 2.\n";
     }
 
-    private static String opSubtype(String attributeRead, String member, String fillerType, String rol, String subtype) {
+    private static String opSubtype(String attributeRead, String member, String fillerType, String role, String subtype) {
         return "genavigeerde lezing '" + attributeRead + "': het lid '" + member + "' bestaat niet op '" + fillerType
-                + "', de vuller van de rol '" + rol + "', wel op het subtype '" + subtype + "': the navigation reaches '"
+                + "', de vuller van de rol '" + role + "', wel op het subtype '" + subtype + "': the navigation reaches '"
                 + fillerType + "', not the endpoint '" + subtype + "'";
     }
 
-    private static String nowhere(String attributeRead, String member, String fillerType, String rol) {
+    private static String nowhere(String attributeRead, String member, String fillerType, String role) {
         return "genavigeerde lezing '" + attributeRead + "': het lid '" + member + "' bestaat niet op '" + fillerType
-                + "', de vuller van de rol '" + rol + "', en op geen ander objecttype: '" + member
+                + "', de vuller van de rol '" + role + "', en op geen ander objecttype: '" + member
                 + "' is neither an attribute nor a characteristic of '" + fillerType + "'";
     }
 
@@ -111,13 +111,13 @@ class UnboundReadTest {
     @Test void r1_the_member_stands_on_a_subtype_of_the_role_filler() {
         // before: check exit 0, IR '"attribute": "toeslag van de jutter"' on Vondst, diagnostics []
         assertEquals(List.of(opSubtype("de toeslag van de jutter van de Vondst", "toeslag", "Jutter", "jutter",
-                "Strandjutter")), fouten(waarde("de toeslag van de jutter van de Vondst")));
+                "Strandjutter")), faults(value("de toeslag van de jutter van de Vondst")));
     }
 
     @Test void r2_the_member_exists_nowhere() {
         // before: check exit 0, IR '"attribute": "rang van de jutter"' on Vondst, diagnostics []
         assertEquals(List.of(nowhere("de rang van de jutter van de Vondst", "rang", "Jutter", "jutter")),
-                fouten(waarde("de rang van de jutter van de Vondst")));
+                faults(value("de rang van de jutter van de Vondst")));
     }
 
     // ---- the positions: a value, a condition, the justification of a default, the subselection of a fold
@@ -125,9 +125,9 @@ class UnboundReadTest {
     @Test void every_position_ends_in_a_diagnostic() {
         for (String attributeRead : List.of("de toeslag van de jutter van de Vondst", "de toeslag van zijn jutter")) {
             List<String> sentence = List.of(opSubtype(attributeRead, "toeslag", "Jutter", "jutter", "Strandjutter"));
-            assertEquals(sentence, fouten(voorwaarde(attributeRead)), attributeRead);
-            assertEquals(sentence, fouten(justification(attributeRead)), attributeRead);
-            assertEquals(sentence, fouten(subselection(attributeRead)), attributeRead);
+            assertEquals(sentence, faults(condition(attributeRead)), attributeRead);
+            assertEquals(sentence, faults(justification(attributeRead)), attributeRead);
+            assertEquals(sentence, faults(subselection(attributeRead)), attributeRead);
         }
     }
 
@@ -137,20 +137,20 @@ class UnboundReadTest {
         for (String attributeRead : List.of("de toeslag van de jutter van de Vondst", "de toeslag van zijn jutter",
                 "de toeslag van de jutter"))
             assertEquals(List.of(opSubtype(attributeRead, "toeslag", "Jutter", "jutter", "Strandjutter")),
-                    fouten(waarde(attributeRead)), attributeRead);
+                    faults(value(attributeRead)), attributeRead);
         // by the type's name, the one relation between the two types
         assertEquals(List.of(opSubtype("de toeslag van de Jutter", "toeslag", "Jutter", "jutter", "Strandjutter")),
-                fouten(waarde("de toeslag van de Jutter")));
+                faults(value("de toeslag van de Jutter")));
     }
 
     @Test void two_roles_far_in_three_spellings() {
         for (String attributeRead : List.of("de toeslag van de beheerder van de berging van de Vondst",
                 "de toeslag van de beheerder van zijn berging", "de toeslag van de beheerder van de berging"))
             assertEquals(List.of(opSubtype(attributeRead, "toeslag", "Jutter", "beheerder", "Strandjutter")),
-                    fouten(waarde(attributeRead)), attributeRead);
+                    faults(value(attributeRead)), attributeRead);
         for (String attributeRead : List.of("de rang van de beheerder van de berging van de Vondst",
                 "de rang van de beheerder van zijn berging"))
-            assertEquals(List.of(nowhere(attributeRead, "rang", "Jutter", "beheerder")), fouten(waarde(attributeRead)), attributeRead);
+            assertEquals(List.of(nowhere(attributeRead, "rang", "Jutter", "beheerder")), faults(value(attributeRead)), attributeRead);
     }
 
     // ---- where the member does stand
@@ -159,7 +159,7 @@ class UnboundReadTest {
         assertEquals(List.of("genavigeerde lezing 'het havengeld van de jutter van de Vondst': het lid 'havengeld' "
                         + "bestaat niet op 'Jutter', de vuller van de rol 'jutter', wel op 'Haven', dat geen subtype van "
                         + "'Jutter' is: 'havengeld' is neither an attribute nor a characteristic of 'Jutter'"),
-                fouten(waarde("het havengeld van de jutter van de Vondst")));
+                faults(value("het havengeld van de jutter van de Vondst")));
     }
 
     @Test void the_member_stands_on_two_subtypes_or_on_one_subtype_further() {
@@ -171,7 +171,7 @@ class UnboundReadTest {
         assertEquals(List.of("genavigeerde lezing 'de toeslag van de jutter van de Vondst': het lid 'toeslag' bestaat "
                         + "niet op 'Jutter', de vuller van de rol 'jutter', wel op de subtypen 'Strandjutter' en "
                         + "'Wadjutter': 'toeslag' is neither an attribute nor a characteristic of 'Jutter'"),
-                fouten(wad + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
+                faults(wad + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                         + "de toeslag van de jutter van de Vondst plus 1.\n"));
         String kust = JUTTERS.replace("Objecttype de Haven", """
             Objecttype de Kustjutter is een Strandjutter (mv: Kustjutters)
@@ -180,10 +180,10 @@ class UnboundReadTest {
             Objecttype de Haven""");
         assertEquals(List.of(opSubtype("het kustgeld van de jutter van de Vondst", "kustgeld", "Jutter", "jutter",
                         "Kustjutter")),
-                fouten(kust + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
+                faults(kust + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                         + "het kustgeld van de jutter van de Vondst plus 1.\n"));
         // a role filled by the subtype itself, the member on its sister type
-        String zus = JUTTERS.replace("Objecttype de Haven", """
+        String sister = JUTTERS.replace("Objecttype de Haven", """
             Objecttype de Wadjutter is een Jutter (mv: Wadjutters)
                 het wadgeld Numeriek (geheel getal);
 
@@ -192,7 +192,7 @@ class UnboundReadTest {
                         + "niet op 'Strandjutter', de vuller van de rol 'melder', wel op 'Wadjutter', dat geen subtype "
                         + "van 'Strandjutter' is: 'wadgeld' is neither an attribute nor a characteristic of "
                         + "'Strandjutter'"),
-                fouten(zus + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
+                faults(sister + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                         + "het wadgeld van de melder van de Vondst plus 1.\n"));
     }
 
@@ -221,7 +221,7 @@ class UnboundReadTest {
             assertEquals(List.of("genavigeerde lezing '" + attributeRead + "' noemt het subtype 'Strandjutter', maar de rol "
                             + "'jutter' komt uit op 'Jutter': the navigation reaches 'Jutter', not the endpoint "
                             + "'Strandjutter'"),
-                    fouten(model + "        De bonus van een Vondst moet berekend worden als " + attributeRead + " plus 1.\n"),
+                    faults(model + "        De bonus van een Vondst moet berekend worden als " + attributeRead + " plus 1.\n"),
                     attributeRead);
     }
 
@@ -230,13 +230,13 @@ class UnboundReadTest {
     @Test void a_wrong_role_name() {
         // two roles far, the second written wrong: the walk stands on the Berging and finds no such member there
         assertEquals(List.of(nowhere("de premie van de visser van de berging van de Vondst", "premie van de visser",
-                "Berging", "berging")), fouten(waarde("de premie van de visser van de berging van de Vondst")));
+                "Berging", "berging")), faults(value("de premie van de visser van de berging van de Vondst")));
         // a possessive or definite noun that names no role and no type: the read has no type at all
         for (String attributeRead : List.of("de premie van zijn visser", "de premie van de visser"))
             assertEquals(List.of("lezing '" + attributeRead + "': '" + attributeRead.substring("de premie van ".length())
                             + "' noemt vanaf 'Vondst' geen rol en geen objecttype: attribute reference 'premie' without "
                             + "a subjectType: it resolves against no declaration"),
-                    fouten(waarde(attributeRead)), attributeRead);
+                    faults(value(attributeRead)), attributeRead);
     }
 
     // ---- a herlezing whose roles bind, but not as the author wrote them
@@ -246,7 +246,7 @@ class UnboundReadTest {
         assertEquals(List.of("genavigeerde lezing 'de bonus van de vondst van de Jutter' over een meervoudige rol: "
                         + "hop 0 reaches the to-many role 'vondst' in a scalar slot — a to-many step needs an "
                         + "aggregation, never a silent first pick"),
-                fouten(JUTTERS + "Regel premie\n    geldig altijd\n        De premie van een Jutter moet berekend "
+                faults(JUTTERS + "Regel premie\n    geldig altijd\n        De premie van een Jutter moet berekend "
                         + "worden als de bonus van de vondst van de Jutter plus 1.\n"));
     }
 
@@ -256,11 +256,11 @@ class UnboundReadTest {
                         + "gelegd: 'premie' staat op 'Jutter', de vuller van de rol 'jutter', maar zij is gelezen als "
                         + "het attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is neither an "
                         + "attribute nor a characteristic of 'Vondst'"),
-                fouten(JUTTERS + "Regel premiegrens\n    geldig altijd\n        De premie van de jutter van een Vondst "
+                faults(JUTTERS + "Regel premiegrens\n    geldig altijd\n        De premie van de jutter van een Vondst "
                         + "moet groter zijn dan 2.\n"));
         assertEquals(List.of(opSubtype("De toeslag van de jutter van een Vondst", "toeslag", "Jutter", "jutter",
                         "Strandjutter")),
-                fouten(JUTTERS + "Regel toeslaggrens\n    geldig altijd\n        De toeslag van de jutter van een "
+                faults(JUTTERS + "Regel toeslaggrens\n    geldig altijd\n        De toeslag van de jutter van een "
                         + "Vondst moet groter zijn dan 2.\n"));
     }
 
@@ -270,7 +270,7 @@ class UnboundReadTest {
                         + "'beheerder' wijst vanaf 'Vondst' niet precies één relatie aan), dus zij is gelezen als het "
                         + "attribuut 'premie van de beheerder' van 'Vondst': 'premie van de beheerder' is neither an "
                         + "attribute nor a characteristic of 'Vondst'"),
-                fouten(waarde("de premie van de beheerder van de Vondst")));
+                faults(value("de premie van de beheerder van de Vondst")));
         // two relations between Vondst and Jutter: the chain reads 'jutter' as the type, and the pair decides nothing;
         // the possessive binds by the written role (grammar/DIVERGENCES.md, §13.4.1, case 2)
         String vinder = JUTTERS + """
@@ -284,9 +284,9 @@ class UnboundReadTest {
                         + "als het objecttype 'Jutter', en 2 relaties verbinden 'Vondst' met 'Jutter'), dus zij is gelezen "
                         + "als het attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is neither an "
                         + "attribute nor a characteristic of 'Vondst'"),
-                fouten(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden "
+                faults(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden "
                         + "als de premie van de jutter van de Vondst plus 1.\n"));
-        assertEquals(List.of(), fouten(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet "
+        assertEquals(List.of(), faults(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet "
                 + "berekend worden als de premie van zijn jutter plus 1.\n"));
     }
 
@@ -297,13 +297,13 @@ class UnboundReadTest {
             assertEquals(List.of("genavigeerde lezing '" + attributeRead + "': het lid 'geschorst' van 'Jutter', de vuller van "
                             + "de rol 'jutter', is een kenmerk en geen attribuut: 'geschorst' is a characteristic of "
                             + "'Jutter', not an attribute — a characteristic endpoint is ill-formed in a value position"),
-                    fouten(geschorst + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld "
+                    faults(geschorst + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld "
                             + "worden op " + attributeRead + ".\n"), attributeRead);
     }
 
     @Test void a_window_bound_that_carries_a_role_in_its_name() {
         assertEquals(List.of(nowhere("de vinddatum van de jutter van de Vondst", "vinddatum", "Jutter", "jutter")),
-                fouten(JUTTERS + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld worden "
+                faults(JUTTERS + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld worden "
                         + "op 1\n        vanaf de vinddatum van de jutter van de Vondst.\n"));
     }
 
@@ -314,26 +314,26 @@ class UnboundReadTest {
                 "de premie van de jutter", "de premie van de Jutter", "de premie van de beheerder van de berging van de Vondst",
                 "de premie van de beheerder van zijn berging", "de toeslag van de melder van de Vondst",
                 "de premie van de melder van de Vondst")) {
-            assertEquals(List.of(), fouten(waarde(attributeRead)), attributeRead);
-            assertEquals(List.of(), fouten(voorwaarde(attributeRead)), attributeRead);
-            assertEquals(List.of(), fouten(justification(attributeRead)), attributeRead);
+            assertEquals(List.of(), faults(value(attributeRead)), attributeRead);
+            assertEquals(List.of(), faults(condition(attributeRead)), attributeRead);
+            assertEquals(List.of(), faults(justification(attributeRead)), attributeRead);
         }
-        assertEquals(List.of(), fouten(subselection("de premie van zijn jutter")));
-        assertEquals(List.of(), fouten(subselection("de premie van de jutter van de Vondst")));
+        assertEquals(List.of(), faults(subselection("de premie van zijn jutter")));
+        assertEquals(List.of(), faults(subselection("de premie van de jutter van de Vondst")));
     }
 
     @Test void a_declared_attribute_with_a_preposition_in_the_name_wins_over_the_navigation() {
-        String bron = JUTTERS.replace("    het gewicht Numeriek (geheel getal);\n",
+        String source = JUTTERS.replace("    het gewicht Numeriek (geheel getal);\n",
                 "    het gewicht Numeriek (geheel getal);\n    de premie van de jutter Numeriek (geheel getal);\n")
                 + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als de premie van "
                 + "de jutter van de Vondst plus 1.\n";
-        RegelSpraakModel m = Resolver.resolve(bron);
+        RegelSpraakModel m = Resolver.resolve(source);
         // no refusal; the WARNING that names both readings (maintainer decision 2026-10-01) is DoubleReadingTest's
         assertEquals(List.of(), m.errors());
-        Expr.AttribuutRef a = (Expr.AttribuutRef) ((Expr.Binair) m.resolvedRegels.get(0).waarde()).links();
-        assertEquals("premie van de jutter", a.attribuut());
-        assertEquals("Vondst", a.objecttype().naam);
-        assertNull(a.navigatieRol());
+        Expr.AttributeReference a = (Expr.AttributeReference) ((Expr.Binary) m.resolvedRegels.get(0).value()).left();
+        assertEquals("premie van de jutter", a.attribute());
+        assertEquals("Vondst", a.objectType().naam);
+        assertNull(a.navigationRole());
     }
 
     // ---- what stays with the verifier: an own read of an undeclared name with no role in it
@@ -342,6 +342,6 @@ class UnboundReadTest {
         // the parity zone reads names like these, which only its replay slices declare
         for (String attributeRead : List.of("de datum van aanmelding van de Vondst", "de rang van de Vondst",
                 "de premie van de visser van de Vondst"))
-            assertEquals(List.of(), fouten(waarde(attributeRead)), attributeRead);
+            assertEquals(List.of(), faults(value(attributeRead)), attributeRead);
     }
 }

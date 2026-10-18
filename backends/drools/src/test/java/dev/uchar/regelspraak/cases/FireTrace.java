@@ -16,8 +16,8 @@ import java.util.stream.Stream;
  * The guard harness of card drl-teksttak-op-truth-maintenance: while the card rebuilds the exec-model branch's
  * lowering into one analysis with two renderings, the branch must not change. For every golden the exec-model branch
  * plays and every case of it, the harness sets the case up as the replay does ({@link CaseRunner#withSession}), fires it
- * through {@link DroolsBackend#vuur} and writes the dump of the session ({@link SessionDump}): its input, the firings, the
- * order and the count per rule, everything {@link DroolsBackend#lees} gives, and every object in working memory at the
+ * through {@link DroolsBackend#fire} and writes the dump of the session ({@link SessionDump}): its input, the firings, the
+ * order and the count per rule, everything {@link DroolsBackend#read} gives, and every object in working memory at the
  * fixpoint.
  * One file per golden, its cases in the order of their names. Gate 12 pins only the expectations of a case; this pins
  * every fact and every firing. A step of the card compares the dump of its code with the one before it with
@@ -76,7 +76,7 @@ public final class FireTrace {
             if (columns.length == 2 && columns[1].startsWith("PLAYED")) played.add(columns[0]);
         }
         long begin = System.nanoTime();
-        int cases = 0, fouten = 0, refused = 0;
+        int cases = 0, faults = 0, refused = 0;
         for (String g : played) {
             StringBuilder out = new StringBuilder();
             try {
@@ -85,7 +85,7 @@ public final class FireTrace {
                 // only DRL_TEXT can refuse here, for a form its rendering does not carry: on the exec-model branch
                 // every golden of the table plays
                 if (branch == DroolsBackend.Branch.EXEC_MODEL) {
-                    fouten++;
+                    faults++;
                     out.append("FOUT ").append(e).append('\n');
                 } else {
                     refused++;
@@ -94,15 +94,15 @@ public final class FireTrace {
                             .append(e.getMessage().replace('\n', ' ')).append('\n');
                 }
             } catch (RuntimeException | IOException e) {
-                fouten++;
+                faults++;
                 out.append("FOUT ").append(e).append('\n');
             }
             Files.writeString(outputDirectory.resolve(g.replace('/', '_') + ".txt"), out.toString());
         }
-        System.out.println("vuurspoor: " + played.size() + " goldens, " + cases + " cases, " + fouten + " fouten, "
+        System.out.println("vuurspoor: " + played.size() + " goldens, " + cases + " cases, " + faults + " fouten, "
                 + (branch == DroolsBackend.Branch.EXEC_MODEL ? "" : refused + " geweigerd op " + branch + ", ")
                 + (System.nanoTime() - begin) / 1_000_000 + " ms");
-        if (fouten > 0) System.exit(1);
+        if (faults > 0) System.exit(1);
     }
 
     /** Appends the dump on {@code branch} of every case of the golden in {@code map} that is no red case, and returns their
@@ -115,21 +115,21 @@ public final class FireTrace {
         }
         CaseRunner runner = CaseRunner.forMeasurement(map.resolve("ir.json"), branch);
         int n = 0;
-        for (Path pad : paths) {
-            JsonNode c = JSON.readTree(Files.readString(pad));
+        for (Path path : paths) {
+            JsonNode c = JSON.readTree(Files.readString(path));
             if (c.has("expectedFault")) continue;
             n++;
-            out.append("### ").append(pad.getFileName()).append('\n');
-            runner.withSession(c, (bouw, sessie, labels) -> {
-                SessionDump d = SessionDump.op(sessie, labels);
-                DroolsBackend.Vuring v;
+            out.append("### ").append(path.getFileName()).append('\n');
+            runner.withSession(c, (build, session, labels) -> {
+                SessionDump d = SessionDump.op(session, labels);
+                DroolsBackend.Firing v;
                 try {
-                    v = DroolsBackend.vuur(bouw, sessie);
+                    v = DroolsBackend.fire(build, session);
                 } catch (RuntimeException e) {
                     d.write(out, e, labels);
                     return null;
                 }
-                d.write(out, bouw, v, labels);
+                d.write(out, build, v, labels);
                 return null;
             });
         }

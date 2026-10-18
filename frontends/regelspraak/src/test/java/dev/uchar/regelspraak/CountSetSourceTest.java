@@ -114,7 +114,7 @@ class CountSetSourceTest {
     }
 
     @Test void the_ill_formed_count_does_not_reach_the_wire() {
-        // The leak, stated as the property that closes it: an ERROR stops irModus writing at all, so
+        // The leak, stated as the property that closes it: an ERROR stops irMode writing at all, so
         // the document the verifier rejects (WF-093 (b) since L2, WF-096 before) is never produced.
         // Before the narrowing this same source emitted with `diagnostics: []`. Since WF-113 (a) the emitter
         // refuses the model by itself as well, so no emission route reaches the wire with it.
@@ -130,9 +130,9 @@ class CountSetSourceTest {
         // were: the same set source under a SOM is the legitimate fold source the fence exempts.
         RegelSpraakModel m = Resolver.resolve(MODEL + SOM);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de waardevouw: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
         assertEquals(Expr.FunctionKind.SOM, f.kind());
-        assertTrue(((Expr.AttribuutRef) f.arguments().get(0)).set(), "de SOM-bron is geen setlezing meer");
+        assertTrue(((Expr.AttributeReference) f.arguments().get(0)).set(), "de SOM-bron is geen setlezing meer");
     }
 
     @Test void the_bare_count_wart_stays_clean() {
@@ -141,8 +141,8 @@ class CountSetSourceTest {
         // across the four zones.
         RegelSpraakModel m = Resolver.resolve(MODEL + WRAT);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de wrat: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
-        assertFalse(((Expr.AttribuutRef) f.arguments().get(0)).set(), "de wrat draagt een setlezing");
+        assertFalse(((Expr.AttributeReference) f.arguments().get(0)).set(), "de wrat draagt een setlezing");
     }
 }

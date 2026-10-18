@@ -77,10 +77,10 @@ class TmsLikeRefWitnessTest {
     private static final int COUNT = 26;
 
     @Test void each_document_plays_like_ref() throws Exception {
-        List<String> afwijkend = new ArrayList<>();
+        List<String> deviating = new ArrayList<>();
         List<Path> directories;
-        try (var lijst = Files.list(MAP)) {
-            directories = lijst.filter(Files::isDirectory).sorted().toList();
+        try (var list = Files.list(MAP)) {
+            directories = list.filter(Files::isDirectory).sorted().toList();
         }
         for (Path m : directories) {
             String outcome;
@@ -92,9 +92,9 @@ class TmsLikeRefWitnessTest {
             } catch (RuntimeException e) {
                 outcome = e.getClass().getSimpleName() + ": " + e.getMessage();
             }
-            if (outcome != null) afwijkend.add(m.getFileName() + ": " + outcome);
+            if (outcome != null) deviating.add(m.getFileName() + ": " + outcome);
         }
-        assertEquals(List.of(), afwijkend);
+        assertEquals(List.of(), deviating);
         assertEquals(COUNT, directories.size(), "documents under " + MAP);
     }
 }

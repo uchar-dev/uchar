@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * On the two in-memory documents below, which clingo refuses at translation (a navigated or parameter
  * enumeration operand, an enumeration union key) and ref plays: both branches FAILED every name-identity
  * expectation (the navigated row was an exec-model FAIL too once the rule was written with a
- * {@code navigatieRol}, the written step of the time; since L2 the row is written with its binding, which both
+ * {@code navigationRole}, the written step of the time; since L2 the row is written with its binding, which both
  * branches read).
  *
  * <p><b>Why a class beside the golden.</b> Gate 12 replays the golden and pins its channel, but only as a
@@ -251,7 +251,7 @@ class EnumNameIdentityWitnessTest {
     }
 
     /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}". */
-    private static ObjectNode characteristicRule(String naam, String kenmerk, String op,
+    private static ObjectNode characteristicRule(String naam, String characteristic, String op,
                                            JsonNode left, JsonNode right) throws Exception {
         ObjectNode r = (ObjectNode) JSON.readTree("""
                 {"node": "Rule", "name": "", "versions": [ {
@@ -262,8 +262,8 @@ class EnumNameIdentityWitnessTest {
                 """);
         r.put("name", naam);
         ObjectNode version = (ObjectNode) r.get("versions").get(0);
-        ((ObjectNode) version.get("target")).put("attribute", kenmerk)
-                .set("source", IrPath.sourceReference("Een Vondst is " + kenmerk));
+        ((ObjectNode) version.get("target")).put("attribute", characteristic)
+                .set("source", IrPath.sourceReference("Een Vondst is " + characteristic));
         ObjectNode v = JSON.createObjectNode();
         v.put("node", "Comparison").put("op", op);
         v.set("left", left);

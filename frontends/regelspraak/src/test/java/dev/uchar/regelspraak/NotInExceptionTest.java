@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
@@ -49,16 +49,16 @@ class NotInExceptionTest {
         """;
 
     private static Diagnostic onlyError(RegelSpraakModel m) {
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
-        return fouten.get(0);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        return faults.get(0);
     }
 
     private static List<Boolean> besluiten(PrioritizedDefaults g) {
         return g.defaults().stream().map(Default::decision).toList();
     }
 
-    private static String family(String basis, String exception) {
+    private static String family(String base, String exception) {
         return MODEL + """
 
             Regel basis
@@ -70,7 +70,7 @@ class NotInExceptionTest {
                 geldig altijd
                     %s
                     indien hij geschorst is.
-            """.formatted(basis, exception);
+            """.formatted(base, exception);
     }
 
     // -------------------------------------------------------------------- admitted: the body of an Uitzondering op
@@ -82,14 +82,14 @@ class NotInExceptionTest {
             "zelfstandig is-geen        | Een Jutter is een vaste ingezetene   | Een Jutter is geen vaste ingezetene       | vaste ingezetene",
             "zelfstandig is-niet-een    | Een Jutter is een vaste ingezetene   | Een Jutter is niet een vaste ingezetene   | vaste ingezetene"
     })
-    void a_negated_exception_decides_false_on_the_target_of_the_base(String vorm, String basis,
-                                                                          String exception, String kenmerk) {
-        RegelSpraakModel m = Resolver.resolve(family(basis, exception));
-        assertTrue(m.diagnostics.isEmpty(), () -> vorm + ": onverwachte diagnostiek: " + m.diagnostics);
+    void a_negated_exception_decides_false_on_the_target_of_the_base(String form, String base,
+                                                                          String exception, String characteristic) {
+        RegelSpraakModel m = Resolver.resolve(family(base, exception));
+        assertTrue(m.diagnostics.isEmpty(), () -> form + ": onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(1, m.prioritizedDefaults.size(), "één defaults-groep over basis en uitzondering");
         assertEquals(0, m.resolvedRegels.size(), "basis en uitzondering horen uit resolvedRegels gelift te zijn");
         PrioritizedDefaults g = m.prioritizedDefaults.get(0);
-        assertEquals(kenmerk, g.kenmerk(), "de ontkenning schrijft het doel van de basis, niet 'niet …'/'geen …'");
+        assertEquals(characteristic, g.characteristic(), "de ontkenning schrijft het doel van de basis, niet 'niet …'/'geen …'");
         assertEquals(List.of(Boolean.FALSE, Boolean.TRUE), besluiten(g),
                 "de uitzondering beslist onwaar boven de basis die waar beslist");
         String ir = IrEmitter.emit(m).replaceAll("\\s+", "");
@@ -112,9 +112,9 @@ class NotInExceptionTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         PrioritizedDefaults g = m.prioritizedDefaults.get(0);
-        assertEquals("recht op de penning", g.kenmerk());
+        assertEquals("recht op de penning", g.characteristic());
         assertEquals(List.of(Boolean.TRUE, Boolean.FALSE), besluiten(g), "de basis is de laagste default en beslist onwaar");
-        assertInstanceOf(Conditie.Samengesteld.class, g.defaults().get(1).voorwaarde(),
+        assertInstanceOf(Condition.Compound.class, g.defaults().get(1).condition(),
                 "een onvoorwaardelijke basis draagt de lege ALLE-rechtvaardiging, zoals elke onvoorwaardelijke basis");
     }
 
@@ -137,8 +137,8 @@ class NotInExceptionTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(2, m.prioritizedDefaults.size(), "twee zustergroepen op één doel");
         for (PrioritizedDefaults g : m.prioritizedDefaults) {
-            assertEquals("uitgesloten", g.kenmerk());
-            assertTrue(g.ongeordend());
+            assertEquals("uitgesloten", g.characteristic());
+            assertTrue(g.unordered());
         }
         assertEquals(List.of(Boolean.TRUE), besluiten(m.prioritizedDefaults.get(0)));
         assertEquals(List.of(Boolean.FALSE), besluiten(m.prioritizedDefaults.get(1)));
@@ -153,14 +153,14 @@ class NotInExceptionTest {
             "Een Jutter is geen vaste ingezetene",
             "Een Jutter is niet een vaste ingezetene"
     })
-    void a_negation_in_a_flat_rule_is_refused_directed(String resultaat) {
+    void a_negation_in_a_flat_rule_is_refused_directed(String result) {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
 
             Regel vlak
                 geldig altijd
                     %s
                     indien hij geschorst is.
-            """.formatted(resultaat));
+            """.formatted(result));
         Diagnostic d = onlyError(m);
         // the lowered rule writes false into the characteristic, which the verifier refuses in these words
         assertEquals("regel 'vlak': characteristic target's value must be the boolean constant true", d.message());
@@ -246,11 +246,11 @@ class NotInExceptionTest {
             "Een Jutter is niet een vaste gast       | vaste gast",
             "Een Jutter is geen vaste gast           | vaste gast"
     })
-    void a_negated_undeclared_characteristic_is_refused(String resultaat, String kenmerk) {
-        RegelSpraakModel m = Resolver.resolve(family("Een Jutter is uitgesloten", resultaat));
+    void a_negated_undeclared_characteristic_is_refused(String result, String characteristic) {
+        RegelSpraakModel m = Resolver.resolve(family("Een Jutter is uitgesloten", result));
         Diagnostic d = onlyError(m);
         assertTrue(d.message().contains("ontkent geen kenmerk van Jutter")
-                        && d.message().contains("'" + kenmerk + "' is geen kenmerk van Jutter"),
+                        && d.message().contains("'" + characteristic + "' is geen kenmerk van Jutter"),
                 () -> "de weigering noemt het ongedeclareerde kenmerk niet: " + d.message());
         assertFalse(d.message().contains("ander doel"), "niet de misleidende doelmelding van meting 1");
     }
@@ -272,12 +272,12 @@ class NotInExceptionTest {
             "Een Jutter heeft recht op de penning | Een Jutter heeft een geen recht op de penning | 'heeft een geen recht op de penning' ontkent niets | schrijf 'heeft geen recht op de penning'",
             "Een Jutter is een vaste ingezetene   | Een Jutter is een geen vaste ingezetene      | 'is een geen vaste ingezetene' ontkent niets      | schrijf 'is geen vaste ingezetene' of 'is niet een vaste ingezetene'"
     })
-    void a_negation_behind_a_is_refused_like_the_condition_does_not_read_it(String basis, String exception,
+    void a_negation_behind_a_is_refused_like_the_condition_does_not_read_it(String base, String exception,
                                                                              String fragment, String spelling) {
         // After 'een' the condition side binds the name whole (the EEN-form) and reads no negation: 'hij is een niet
         // uitgesloten' stays a marker there. The result side reads it the same way and refuses, naming the spelling
         // Tabel 16 gives the kind.
-        Diagnostic d = onlyError(Resolver.resolve(family(basis, exception)));
+        Diagnostic d = onlyError(Resolver.resolve(family(base, exception)));
         assertTrue(d.message().contains(fragment) && d.message().contains(spelling), d.message());
     }
 
@@ -307,10 +307,10 @@ class NotInExceptionTest {
             "Een Jutter is uitgesloten            | Een Jutter is niet een uitgesloten         | bijvoeglijk; schrijf 'is niet uitgesloten'",
             "Een Jutter heeft recht op de penning | Een Jutter is niet een recht op de penning | bezittelijk; schrijf 'heeft geen recht op de penning'"
     })
-    void is_not_one_that_negates_only_a_nominal_characteristic(String basis, String exception, String fragment) {
+    void is_not_one_that_negates_only_a_nominal_characteristic(String base, String exception, String fragment) {
         // Tabel 16: under 'is niet een' the condition side binds a zelfstandig kenmerk only; a result cannot stay a
         // marker, so the sentence is refused and the message names the spelling of the kind.
-        Diagnostic d = onlyError(Resolver.resolve(family(basis, exception)));
+        Diagnostic d = onlyError(Resolver.resolve(family(base, exception)));
         assertTrue(d.message().contains("ontkent een zelfstandig kenmerk (Tabel 16)") && d.message().contains(fragment),
                 d.message());
     }
@@ -342,7 +342,7 @@ class NotInExceptionTest {
             "is erkend kenmerk (bijvoeglijk);      | is niet erkend kenmerk (bijvoeglijk);      | Een Jutter is niet erkend        | niet erkend",
             "het bezwaar kenmerk (bezittelijk);    | het geen bezwaar kenmerk (bezittelijk);    | Een Jutter heeft geen bezwaar    | geen bezwaar"
     })
-    void verbatim_first_also_in_an_exception(String plain, String withPrefix, String sentence, String kenmerk) {
+    void verbatim_first_also_in_an_exception(String plain, String withPrefix, String sentence, String characteristic) {
         // Both the bare and the prefixed name are declared. Read verbatim first, the sentence binds the prefixed
         // characteristic positively, in the base and in the exception alike: one group on that characteristic, two
         // decisions 'waar', and no negation of the bare one.
@@ -365,7 +365,7 @@ class NotInExceptionTest {
             """.formatted(plain, withPrefix, sentence, sentence));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         PrioritizedDefaults g = m.prioritizedDefaults.get(0);
-        assertEquals(kenmerk, g.kenmerk());
+        assertEquals(characteristic, g.characteristic());
         assertEquals(List.of(Boolean.TRUE, Boolean.TRUE), besluiten(g));
     }
 
@@ -384,8 +384,8 @@ class NotInExceptionTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(1, m.resolvedRegels.size());
-        Expr.AttribuutRef doel = (Expr.AttribuutRef) m.resolvedRegels.get(0).doel();
-        assertEquals("niet erkend", doel.attribuut());
+        Expr.AttributeReference target = (Expr.AttributeReference) m.resolvedRegels.get(0).target();
+        assertEquals("niet erkend", target.attribute());
     }
 
     // -------------------------------------------------------------------- no negated gelijkstelling
@@ -409,11 +409,11 @@ class NotInExceptionTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         PrioritizedDefaults g = m.prioritizedDefaults.get(0);
-        assertEquals("penningwaardigheid", g.attribuut());
-        assertNull(g.kenmerk());
+        assertEquals("penningwaardigheid", g.attribute());
+        assertNull(g.characteristic());
         for (Default d : g.defaults()) assertNull(d.decision(), "een attribuutdefault draagt geen besluit");
-        assertInstanceOf(Expr.Literal.class, g.defaults().get(0).consequentie());
-        assertEquals("onwaar", ((Expr.Literal) g.defaults().get(0).consequentie()).waarde());
+        assertInstanceOf(Expr.Literal.class, g.defaults().get(0).consequence());
+        assertEquals("onwaar", ((Expr.Literal) g.defaults().get(0).consequence()).valueText());
     }
 
     @Test void not_in_an_attribute_name_is_no_negation() {
@@ -652,14 +652,14 @@ class NotInExceptionTest {
             "Een Jutter heeft recht op de penning | Een Jutter heeft niet recht op de penning | recht op de penning",
             "Een Jutter is uitgesloten            | Een Jutter is geen uitgesloten           | uitgesloten"
     })
-    void the_negation_word_is_like_in_a_condition_not_tested_against_the_kind(String basis, String exception,
-                                                                                   String kenmerk) {
+    void the_negation_word_is_like_in_a_condition_not_tested_against_the_kind(String base, String exception,
+                                                                                   String characteristic) {
         // The Tabel 16 lint checks the VERB against the kind, not niet versus geen — in a condition as in a result.
         // Both spellings lower to 'onwaar' without a message, as 'hij heeft niet …' and 'hij is geen …' do in a
         // condition.
-        RegelSpraakModel m = Resolver.resolve(family(basis, exception));
+        RegelSpraakModel m = Resolver.resolve(family(base, exception));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(kenmerk, m.prioritizedDefaults.get(0).kenmerk());
+        assertEquals(characteristic, m.prioritizedDefaults.get(0).characteristic());
         assertEquals(List.of(Boolean.FALSE, Boolean.TRUE), besluiten(m.prioritizedDefaults.get(0)));
     }
 
@@ -675,14 +675,14 @@ class NotInExceptionTest {
                     indien zijn aantal aangemelde vondsten groter of gelijk is aan 12.
             """;
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(new RegelSpraakLexer(CharStreams.fromString(src))));
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         parser.removeErrorListeners();
         parser.addErrorListener(new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col, String msg,
-                                              RecognitionException e) { fouten.add(line + ": " + msg); }
+                                              RecognitionException e) { faults.add(line + ": " + msg); }
         });
         RegelSpraak.TestDocumentContext doc = parser.testDocument();
-        assertTrue(fouten.isEmpty(), () -> "syntaxfouten: " + fouten);
+        assertTrue(faults.isEmpty(), () -> "syntaxfouten: " + faults);
         assertEquals(1, doc.children.stream().filter(c -> c instanceof RegelSpraak.UitzonderingRegelContext).count());
         assertEquals(1, doc.children.stream().filter(c -> c instanceof RegelSpraak.UitzonderingGroepContext).count());
     }

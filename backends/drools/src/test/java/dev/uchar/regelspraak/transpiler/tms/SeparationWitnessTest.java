@@ -158,7 +158,7 @@ class SeparationWitnessTest {
             DroolsBackend.Build b;
             try {
                 b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-            } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded refused) {
+            } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded refused) {
                 // a document the branch does not build has no plan; the floor counts the ones it builds
                 continue;
             }

@@ -25,7 +25,7 @@ import java.util.Set;
  *                    its id
  * @param gevolg      what the rule does when it fires
  */
-public record RulePlan(String naam, String vorm, String agendaGroup, ReadTable lezingen, List<LhsItem> leftSide,
+public record RulePlan(String naam, String form, String agendaGroup, ReadTable readings, List<LhsItem> leftSide,
                         Consequence consequence) {
 
     public RulePlan {
@@ -35,13 +35,13 @@ public record RulePlan(String naam, String vorm, String agendaGroup, ReadTable l
             switch (item) {
                 case Subject o -> {
                     declare(naam, o.naam(), inScope);
-                    for (Binding b : o.bindings()) declare(naam, b.doel(), inScope);
+                    for (Binding b : o.bindings()) declare(naam, b.target(), inScope);
                 }
                 case FactPattern p -> declare(naam, p, inScope);
                 case Accumulation a -> {
                     // the source's variables stay in scope, as the rendering into the executable model keeps them
-                    declare(naam, a.bron(), inScope);
-                    for (Accumulation.Aggregation f : a.aggregations()) declare(naam, f.doel(), inScope);
+                    declare(naam, a.source(), inScope);
+                    for (Accumulation.Aggregation f : a.aggregations()) declare(naam, f.target(), inScope);
                 }
                 case Not n -> inside(naam, n.inside(), inScope);
                 case Exists b -> inside(naam, b.inside(), inScope);
@@ -49,14 +49,14 @@ public record RulePlan(String naam, String vorm, String agendaGroup, ReadTable l
             }
         }
         Set<String> slotNames = new HashSet<>();
-        for (Read l : lezingen.slots())
+        for (Read l : readings.slots())
             if (l.naam() != null && !slotNames.add(l.naam()))
                 throw new IllegalArgumentException("de regel " + naam + " geeft twee slots de variabele " + l.naam());
     }
 
     private static void declare(String regel, FactPattern p, Set<String> inScope) {
         declare(regel, p.naam(), inScope);
-        for (Binding b : p.bindings()) declare(regel, b.doel(), inScope);
+        for (Binding b : p.bindings()) declare(regel, b.target(), inScope);
     }
 
     private static void declare(String regel, String variable, Set<String> inScope) {

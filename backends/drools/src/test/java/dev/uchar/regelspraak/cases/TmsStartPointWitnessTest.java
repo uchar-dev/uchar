@@ -64,16 +64,16 @@ class TmsStartPointWitnessTest {
      *  year grid, a whole jaarloon and the characteristic actief per month; with {@code onGrid} also the vergoeding on
      *  the grid of 'boekjaar'. */
     static String model(boolean onGrid) {
-        List<String> attributes = new ArrayList<>(List.of(TmsDocuments.attribuut("aanmelddatum", DATE),
-                TmsDocuments.attribuut("startdatum", DATE),
+        List<String> attributes = new ArrayList<>(List.of(TmsDocuments.attribute("aanmelddatum", DATE),
+                TmsDocuments.attribute("startdatum", DATE),
                 TmsTimelineDocuments.timeAttribute("maandloon", WHOLE, "month"),
                 TmsTimelineDocuments.timeAttribute("maanddeel", WHOLE, "month"),
                 TmsTimelineDocuments.timeAttribute("jaarbedrag", WHOLE, "year"),
-                TmsDocuments.attribuut("jaarloon", WHOLE)));
+                TmsDocuments.attribute("jaarloon", WHOLE)));
         if (onGrid)
             attributes.add("{\"node\":\"Attribute\",\"name\":\"vergoeding\",\"datatype\":" + WHOLE + ",\"timeline\":"
                     + BOEKJAAR_FACET + "}");
-        return TmsDocuments.model(List.of(TmsTimelineDocuments.objecttype("Jutter", attributes,
+        return TmsDocuments.model(List.of(TmsTimelineDocuments.objectType("Jutter", attributes,
                         List.of(TmsTimelineDocuments.timeCharacteristic("actief", "month")))), List.of())
                 // the model builder declares no named timeline; these documents need the one with a variable start
                 .replace("\"timelines\":[]", "\"timelines\":[{\"node\":\"Timeline\",\"name\":\"boekjaar\","
@@ -178,13 +178,13 @@ class TmsStartPointWitnessTest {
     }
 
     @Test void every_form_that_reads_or_writes_the_grid_is_refused_by_name() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Row r : rows()) {
             outcomes.add(r.naam() + ": " + String.join(" | ",
                     TmsTimelineRefusalWitnessTest.refusals(temporary(document(model(true), r.rules())))));
-            verwacht.add(r.naam() + ": " + r.sentence());
+            expected.add(r.naam() + ": " + r.sentence());
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         for (String u : outcomes) assertEquals(-1, u.indexOf(OLD_REFUSAL), u);
     }
 

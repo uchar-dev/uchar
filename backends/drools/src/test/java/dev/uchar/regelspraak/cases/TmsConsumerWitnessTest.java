@@ -3,9 +3,9 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
-import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
-import dev.uchar.regelspraak.transpiler.tms.Fout;
-import dev.uchar.regelspraak.transpiler.tms.Schrijversconflict;
+import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
 import org.junit.jupiter.api.Test;
 import org.kie.api.event.rule.AgendaEventListener;
@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The entry for a consumer of the exec-model branch (card tms-omschakeling, point 12): a model with a creation
- * fires through {@link DroolsBackend#vuur} in generations, {@link DroolsBackend#lees} gives what the creations made, and
- * {@link DroolsBackend#zetAfgeleideWaarden} puts the links they laid on the reference fields of the beans, so that a
+ * fires through {@link DroolsBackend#fire} in generations, {@link DroolsBackend#read} gives what the creations made, and
+ * {@link DroolsBackend#setDerivedValues} puts the links they laid on the reference fields of the beans, so that a
  * consumer that reads the beans reaches a made object as it reaches an object of the input.
  *
  * <ul>
@@ -48,13 +48,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       S4, whose H3 is not veilig, has none: the row {@code RepeatedTypePairWitnessTest} plays on the exec-model
  *       branch, "the creation wrote the winterberging leg".</li>
  *   <li>A session of that model fired with a plain {@code fireAllRules} holds no creation: {@code lees} and
- *       {@code zetAfgeleideWaarden} refuse it, and the sentence names the creations.</li>
+ *       {@code setDerivedValues} refuse it, and the sentence names the creations.</li>
  *   <li>So on every model of the branch (the fix round of step 3, point 4): on the values document of
  *       {@link TmsRepeatedFireWitnessTest} both refuse a session that did not fire, or fired with a plain
  *       {@code fireAllRules}, and write nothing; both refuse a session whose last {@code vuur} stopped at the cap, with
  *       the sentence of that {@code vuur}, and read the next {@code vuur} that reaches the fixpoint; and {@code lees}
  *       refuses a session whose last {@code vuur} broke off with an exception, here the filter document of
- *       {@link TmsFilterFaultWitnessTest} with its beans inserted without {@code voegIn}, so that the filter fault rule
+ *       {@link TmsFilterFaultWitnessTest} with its beans inserted without {@code insert}, so that the filter fault rule
  *       finds no place. What {@code lees} gives is thus always a fixpoint.</li>
  *   <li>And after a {@code vuur} that reached its fixpoint (the second fix round of step 3, point 1), both refuse a
  *       session in which something happened outside {@code vuur}, naming what happened and the way on, and write
@@ -96,70 +96,70 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * by the {@code CreationPhase} the driver leaves): each of the three new rows failed on "Expected
  * java.lang.IllegalStateException to be thrown, but nothing was thrown.", the reading handing out what stood, and the
  * row of the plain fire on "expected: &lt;geen fixpunt om te lezen of terug te zetten: deze sessie is niet via
- * DroolsBackend.vuur gevuurd, …&gt; but was: &lt;dit model heeft creatieregels en vuurt in generaties
- * (DroolsBackend.vuur); de sessie is zonder creatiefase gevuurd, dus zonder de creaties&gt;".
+ * DroolsBackend.fire gevuurd, …&gt; but was: &lt;dit model heeft creatieregels en vuurt in generaties
+ * (DroolsBackend.fire); de sessie is zonder creatiefase gevuurd, dus zonder de creaties&gt;".
  */
 class TmsConsumerWitnessTest {
 
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
     @Test void an_object_creation_stands_after_the_write_back_on_both_sides_on_the_beans() throws Exception {
-        play("anchor/jutterswet-rekenkamer", "case1-berekend.json", (bouw, sessie, labels) -> {
+        play("anchor/jutterswet-rekenkamer", "case1-berekend.json", (build, session, labels) -> {
             Object j1 = labels.get("J1");
-            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
-            Fixpunt f = DroolsBackend.lees(bouw, sessie);
-            assertEquals(1, f.objecten().size(), () -> "one made object: " + f.objecten());
-            Fixpunt.GemaaktObject r = f.objecten().get(0);
-            assertEquals("richt de rekenkamer op", r.creatie());
+            assertNull(DroolsBackend.fire(build, session).noFixpoint(), "the fixpoint");
+            Fixpoint f = DroolsBackend.fixpointOf(build, session);
+            assertEquals(1, f.objects().size(), () -> "one made object: " + f.objects());
+            Fixpoint.MadeObject r = f.objects().get(0);
+            assertEquals("richt de rekenkamer op", r.creation());
             assertSame(j1, r.onderwerp());
             assertEquals("Rekenkamer", r.object().getClass().getSimpleName());
-            assertEquals(List.of(new Fixpunt.GemaakteKoppeling("taxatieopdracht", "opdrachtgever", j1, "rekenkamer",
-                    r.object())), f.koppelingen());
-            assertTrue(f.waarden().stream().anyMatch(w -> w.object() == j1 && w.attribuut().equals("heffing")
-                    && w.waarde() instanceof BigDecimal d && d.compareTo(new BigDecimal("70")) == 0),
+            assertEquals(List.of(new Fixpoint.MadeLink("taxatieopdracht", "opdrachtgever", j1, "rekenkamer",
+                    r.object())), f.links());
+            assertTrue(f.waarden().stream().anyMatch(w -> w.object() == j1 && w.attribute().equals("heffing")
+                    && w.value() instanceof BigDecimal d && d.compareTo(new BigDecimal("70")) == 0),
                     () -> "J1 heffing 70: " + f.waarden());
             assertNull(RegelSpraakRuntime.get(j1, "rekenkamer"), "before the write-back J1's bean holds the input alone");
             assertNull(RegelSpraakRuntime.get(j1, "heffing"), "before the write-back J1's bean holds the input alone");
-            DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+            DroolsBackend.setDerivedValues(build, session);
             assertSame(r.object(), RegelSpraakRuntime.get(j1, "rekenkamer"), "J1's field rekenkamer holds the made Rekenkamer");
             assertSame(j1, RegelSpraakRuntime.get(r.object(), "opdrachtgever"), "R's field opdrachtgever holds J1");
             assertEquals(0, new BigDecimal("70").compareTo((BigDecimal) RegelSpraakRuntime.get(j1, "heffing")), "J1 heffing");
             // the write-back set a reference field of a bean of the input, its own work, which the watch does not count
             // as a changed relation
-            assertEquals(f.koppelingen(), DroolsBackend.lees(bouw, sessie).koppelingen(),
+            assertEquals(f.links(), DroolsBackend.fixpointOf(build, session).links(),
                     "the reading after the write-back");
             return null;
         });
     }
 
     @Test void a_fact_creation_stands_after_the_write_back_on_the_field_of_its_own_fact_type() throws Exception {
-        play("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (bouw, sessie, labels) -> {
+        play("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (build, session, labels) -> {
             Object h1 = labels.get("H1"), s1 = labels.get("S1"), s4 = labels.get("S4");
-            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
-            Fixpunt f = DroolsBackend.lees(bouw, sessie);
-            assertTrue(f.koppelingen().contains(new Fixpunt.GemaakteKoppeling("winterberging", "winterhaven", h1,
-                    "winterschuit", s1)), () -> "the link of S1 to H1 over winterberging: " + f.koppelingen());
+            assertNull(DroolsBackend.fire(build, session).noFixpoint(), "the fixpoint");
+            Fixpoint f = DroolsBackend.fixpointOf(build, session);
+            assertTrue(f.links().contains(new Fixpoint.MadeLink("winterberging", "winterhaven", h1,
+                    "winterschuit", s1)), () -> "the link of S1 to H1 over winterberging: " + f.links());
             assertNull(RegelSpraakRuntime.get(s1, "winterhaven"), "before the write-back S1's bean holds the input alone");
-            DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+            DroolsBackend.setDerivedValues(build, session);
             assertSame(h1, RegelSpraakRuntime.get(s1, "winterhaven"), "the creation wrote the winterberging leg");
             assertSame(h1, RegelSpraakRuntime.get(s1, "thuishaven"),
                     "and the joined-over thuisligging leg still says what the case said");
             assertNull(RegelSpraakRuntime.get(s4, "winterhaven"), "H3 is not veilig, so its ligger got nothing");
-            assertEquals(f.koppelingen(), DroolsBackend.lees(bouw, sessie).koppelingen(),
+            assertEquals(f.links(), DroolsBackend.fixpointOf(build, session).links(),
                     "the reading after the write-back");
             return null;
         });
     }
 
     @Test void a_model_with_creation_fires_via_fire_and_not_with_a_bare_fire() throws Exception {
-        play("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (bouw, sessie, labels) -> {
-            sessie.fireAllRules();
+        play("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (build, session, labels) -> {
+            session.fireAllRules();
             String sentence = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur gevuurd,"
                     + " dat tot het fixpunt vuurt en de creaties van dit model in generaties laat vuren";
-            assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+            assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(build, session))
                     .getMessage());
             assertEquals(sentence, assertThrows(IllegalStateException.class,
-                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage());
+                    () -> DroolsBackend.setDerivedValues(build, session)).getMessage());
             return null;
         });
     }
@@ -169,21 +169,21 @@ class TmsConsumerWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             Map<String, Object> beans = TmsRepeatedFireWitnessTest.valueBeans(b, "10");
-            KieSession sessie = b.kieBase().newKieSession();
+            KieSession session = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().beans(beans.values()));
+                DroolsBackend.insert(b, session, new Input().beans(beans.values()));
                 String sentence = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur"
                         + " gevuurd, dat tot het fixpunt vuurt";
-                assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "a session that did not fire");
-                sessie.fireAllRules();
-                assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                session.fireAllRules();
+                assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "a session fired with a plain fireAllRules");
                 assertEquals(sentence, assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
-                assertNull(TmsDocuments.lees(beans.get("V1"), "uitkering"), "the write-back wrote nothing");
+                        () -> DroolsBackend.setDerivedValues(b, session)).getMessage(), "the write-back");
+                assertNull(TmsDocuments.read(beans.get("V1"), "uitkering"), "the write-back wrote nothing");
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
@@ -193,23 +193,23 @@ class TmsConsumerWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             Map<String, Object> beans = TmsRepeatedFireWitnessTest.valueBeans(b, "10");
-            KieSession sessie = b.kieBase().newKieSession();
+            KieSession session = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().beans(beans.values()));
-                DroolsBackend.Vuring truncated = DroolsBackend.vuur(b, sessie, 0.01, 1);
-                assertNotNull(truncated.geenFixpunt(), "the run stops at a cap of a few firings");
+                DroolsBackend.insert(b, session, new Input().beans(beans.values()));
+                DroolsBackend.Firing truncated = DroolsBackend.fire(b, session, 0.01, 1);
+                assertNotNull(truncated.noFixpoint(), "the run stops at a cap of a few firings");
                 String sentence = "geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van deze sessie"
-                        + " bereikte er geen — " + truncated.geenFixpunt();
-                assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                        + " bereikte er geen — " + truncated.noFixpoint();
+                assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "the reading");
                 assertEquals(sentence, assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
-                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "a further fire under the public cap");
+                        () -> DroolsBackend.setDerivedValues(b, session)).getMessage(), "the write-back");
+                assertNull(DroolsBackend.fire(b, session).noFixpoint(), "a further fire under the public cap");
                 assertEquals(TmsRepeatedFireWitnessTest.FIRST_VALUES,
-                        TmsRepeatedFireWitnessTest.describe(DroolsBackend.lees(b, sessie), beans),
+                        TmsRepeatedFireWitnessTest.describe(DroolsBackend.fixpointOf(b, session), beans),
                         "the reading of the last fire, which reached the fixpoint");
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
@@ -221,36 +221,36 @@ class TmsConsumerWitnessTest {
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
             TmsRepeatedFireWitnessTest.setRole(v1, "aanmelder", j1);
-            KieSession sessie = b.kieBase().newKieSession();
+            KieSession session = b.kieBase().newKieSession();
             try {
-                // inserted without voegIn, so the member has no place, and the filter fault rule stops the fire
-                sessie.insert(j1);
-                sessie.insert(v1);
-                RuntimeException e = assertThrows(RuntimeException.class, () -> DroolsBackend.vuur(b, sessie));
-                String sentence = assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage();
+                // inserted without insert, so the member has no place, and the filter fault rule stops the fire
+                session.insert(j1);
+                session.insert(v1);
+                RuntimeException e = assertThrows(RuntimeException.class, () -> DroolsBackend.fire(b, session));
+                String sentence = assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage();
                 assertTrue(sentence.startsWith("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van"
                         + " deze sessie bereikte er geen — de fire brak af met " + e.getClass().getSimpleName() + ": "), sentence);
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
 
     @Test void a_change_and_a_bare_fire_after_fire_refuse_read_and_write_back_on_a_model_with_creation()
             throws Exception {
-        play("anchor/jutterswet-rekenkamer", "case1-berekend.json", (bouw, sessie, labels) -> {
+        play("anchor/jutterswet-rekenkamer", "case1-berekend.json", (build, session, labels) -> {
             Object j1 = labels.get("J1");
-            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
-            assertEquals("70", heffing(DroolsBackend.lees(bouw, sessie), j1), "J1 heffing at the fixpoint");
+            assertNull(DroolsBackend.fire(build, session).noFixpoint(), "the fixpoint");
+            assertEquals("70", heffing(DroolsBackend.fixpointOf(build, session), j1), "J1 heffing at the fixpoint");
             RegelSpraakRuntime.set(j1, "grondslag", new BigDecimal("150"));
-            sessie.update(sessie.getFactHandle(j1), j1);
-            String regel = bareFire(sessie);
+            session.update(session.getFactHandle(j1), j1);
+            String regel = bareFire(session);
             String sentence = outsideFire(naam(j1) + " werd gewijzigd met update"
                     + (regel == null ? "" : " en de regel \"" + regel + "\" vuurde"), FRESH_AT_CREATION);
-            assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+            assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(build, session))
                     .getMessage(), "the reading");
             assertEquals(sentence, assertThrows(IllegalStateException.class,
-                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
+                    () -> DroolsBackend.setDerivedValues(build, session)).getMessage(), "the write-back");
             assertNull(RegelSpraakRuntime.get(j1, "heffing"), "the write-back wrote nothing");
             return null;
         });
@@ -261,25 +261,25 @@ class TmsConsumerWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             Map<String, Object> beans = TmsRepeatedFireWitnessTest.valueBeans(b, "10");
-            KieSession sessie = b.kieBase().newKieSession();
+            KieSession session = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().beans(beans.values()));
-                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the first fire");
+                DroolsBackend.insert(b, session, new Input().beans(beans.values()));
+                assertNull(DroolsBackend.fire(b, session).noFixpoint(), "the first fire");
                 Object v1 = beans.get("V1");
                 TmsRepeatedFireWitnessTest.set(v1, "gewicht", "3");
-                sessie.update(sessie.getFactHandle(v1), v1);
+                session.update(session.getFactHandle(v1), v1);
                 String changed = naam(v1) + " werd gewijzigd met update";
                 assertEquals(outsideFire(changed, FIRE_FIRST), assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.lees(b, sessie)).getMessage(), "the reading after the update");
+                        () -> DroolsBackend.fixpointOf(b, session)).getMessage(), "the reading after the update");
                 assertEquals(outsideFire(changed, FIRE_FIRST), assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back after the update");
-                assertNull(TmsDocuments.lees(v1, "uitkering"), "the write-back wrote nothing");
-                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fire the sentence asks for");
+                        () -> DroolsBackend.setDerivedValues(b, session)).getMessage(), "the write-back after the update");
+                assertNull(TmsDocuments.read(v1, "uitkering"), "the write-back wrote nothing");
+                assertNull(DroolsBackend.fire(b, session).noFixpoint(), "the fire the sentence asks for");
                 assertEquals(TmsRepeatedFireWitnessTest.SECOND_VALUES,
-                        TmsRepeatedFireWitnessTest.describe(DroolsBackend.lees(b, sessie), beans),
+                        TmsRepeatedFireWitnessTest.describe(DroolsBackend.fixpointOf(b, session), beans),
                         "the reading after that fire, that of a fresh session of the changed input");
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
@@ -289,22 +289,22 @@ class TmsConsumerWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             Map<String, Object> beans = TmsRepeatedFireWitnessTest.valueBeans(b, "10");
-            KieSession sessie = b.kieBase().newKieSession();
+            KieSession session = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().beans(beans.values()));
-                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fire");
-                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                DroolsBackend.insert(b, session, new Input().beans(beans.values()));
+                assertNull(DroolsBackend.fire(b, session).noFixpoint(), "the fire");
+                DroolsBackend.setDerivedValues(b, session);
                 assertEquals(TmsRepeatedFireWitnessTest.FIRST_VALUES,
-                        TmsRepeatedFireWitnessTest.describe(DroolsBackend.lees(b, sessie), beans),
+                        TmsRepeatedFireWitnessTest.describe(DroolsBackend.fixpointOf(b, session), beans),
                         "the write-back is the entry's own: the session reads after it as before it");
                 Object v1 = beans.get("V1");
                 TmsRepeatedFireWitnessTest.set(v1, "gewicht", "3");
-                sessie.update(sessie.getFactHandle(v1), v1);
+                session.update(session.getFactHandle(v1), v1);
                 assertEquals(outsideFire(naam(v1) + " werd gewijzigd met update", FRESH_AFTER_WRITE_BACK),
-                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage(),
                         "the reading after an update of a written-back session");
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
@@ -312,22 +312,22 @@ class TmsConsumerWitnessTest {
     @Test void read_with_labels_names_the_object_of_a_fault_at_its_label() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding", "ir.json");
         JsonNode c = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling("case1-beide-schrijvers-gelden.json")));
-        CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL).withSession(c, (bouw, sessie, labels) -> {
+        CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL).withSession(c, (build, session, labels) -> {
             Map<Object, String> toLabel = new IdentityHashMap<>();
             labels.forEach((l, beanObject) -> toLabel.put(beanObject, l));
             Object v = labels.get("V");
-            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint, at which the fault stands");
+            assertNull(DroolsBackend.fire(build, session).noFixpoint(), "the fixpoint, at which the fault stands");
             String sentence = "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"melding op"
                     + " vinddag\" schrijft 2026-03-04 en de regel \"melding op aanspoeldag\" schrijft 2026-03-01 in het"
                     + " attribuut meldingsdatum van %s; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)";
-            List<Fout> labelled = DroolsBackend.lees(bouw, sessie, toLabel::get).fouten();
+            List<Fault> labelled = DroolsBackend.fixpointOf(build, session, toLabel::get).faults();
             assertEquals(1, labelled.size(), () -> "one fault: " + labelled);
-            assertEquals(String.format(sentence, "V, een Vondst"), labelled.get(0).melding(), "named by its label");
+            assertEquals(String.format(sentence, "V, een Vondst"), labelled.get(0).message(), "named by its label");
             assertEquals(String.format(sentence, "een Vondst (" + v.getClass().getSimpleName() + "@"
                     + Integer.toHexString(System.identityHashCode(v)) + ")"),
-                    DroolsBackend.lees(bouw, sessie).fouten().get(0).melding(), "without labels, by type and identity");
-            assertEquals(labelled.get(0).melding(), assertThrows(Schrijversconflict.class,
-                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie, toLabel::get)).getMessage(),
+                    DroolsBackend.fixpointOf(build, session).faults().get(0).message(), "without labels, by type and identity");
+            assertEquals(labelled.get(0).message(), assertThrows(WritersConflict.class,
+                    () -> DroolsBackend.setDerivedValues(build, session, toLabel::get)).getMessage(),
                     "the fault the write-back throws, named alike");
             return null;
         });
@@ -336,25 +336,25 @@ class TmsConsumerWitnessTest {
     @Test void the_entry_is_public_and_the_seams_are_not() throws Exception {
         Class<?> d = DroolsBackend.class;
         for (Method m : List.of(
-                d.getDeclaredMethod("voegIn", DroolsBackend.Build.class, KieSession.class, Invoer.class),
-                d.getDeclaredMethod("vuur", DroolsBackend.Build.class, KieSession.class),
-                d.getDeclaredMethod("lees", DroolsBackend.Build.class, KieSession.class),
-                d.getDeclaredMethod("lees", DroolsBackend.Build.class, KieSession.class, Function.class),
-                d.getDeclaredMethod("zetAfgeleideWaarden", DroolsBackend.Build.class, KieSession.class),
-                d.getDeclaredMethod("zetAfgeleideWaarden", DroolsBackend.Build.class, KieSession.class, Function.class)))
+                d.getDeclaredMethod("insert", DroolsBackend.Build.class, KieSession.class, Input.class),
+                d.getDeclaredMethod("fire", DroolsBackend.Build.class, KieSession.class),
+                d.getDeclaredMethod("fixpointOf", DroolsBackend.Build.class, KieSession.class),
+                d.getDeclaredMethod("fixpointOf", DroolsBackend.Build.class, KieSession.class, Function.class),
+                d.getDeclaredMethod("setDerivedValues", DroolsBackend.Build.class, KieSession.class),
+                d.getDeclaredMethod("setDerivedValues", DroolsBackend.Build.class, KieSession.class, Function.class)))
             assertTrue(Modifier.isPublic(m.getModifiers()) && Modifier.isStatic(m.getModifiers()), m.toString());
-        for (Class<?> c : List.of(DroolsBackend.Vuring.class, Invoer.class, Fixpunt.class))
+        for (Class<?> c : List.of(DroolsBackend.Firing.class, Input.class, Fixpoint.class))
             assertTrue(Modifier.isPublic(c.getModifiers()), c.toString());
         for (Method m : List.of(
-                d.getDeclaredMethod("vuur", DroolsBackend.Build.class, KieSession.class, int.class),
-                d.getDeclaredMethod("vuur", DroolsBackend.Build.class, KieSession.class, double.class, int.class)))
+                d.getDeclaredMethod("fire", DroolsBackend.Build.class, KieSession.class, int.class),
+                d.getDeclaredMethod("fire", DroolsBackend.Build.class, KieSession.class, double.class, int.class)))
             assertFalse(Modifier.isPublic(m.getModifiers()), m.toString());
     }
 
     // ---------------- helpers ----------------
 
     /** Sets up case {@code caseFileName} of golden {@code golden} on the exec-model branch as the replay does, through
-     *  {@link DroolsBackend#voegIn}, and hands the session, not yet fired, to {@code meting}. */
+     *  {@link DroolsBackend#insert}, and hands the session, not yet fired, to {@code meting}. */
     private static void play(String golden, String caseFileName, CaseRunner.SessionMeasurement<Void> measurement) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         JsonNode c = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling(caseFileName)));
@@ -369,29 +369,29 @@ class TmsConsumerWitnessTest {
     static final String FRESH_AFTER_WRITE_BACK = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
             + " verse sessie met beans die alleen invoer dragen";
 
-    /** The sentence of {@code lees} and {@code zetAfgeleideWaarden} where {@code description} happened outside {@code vuur}
+    /** The sentence of {@code lees} and {@code setDerivedValues} where {@code description} happened outside {@code vuur}
      *  after the last one, with {@code way} the way on. */
     static String outsideFire(String description, String way) {
         return "geen fixpunt om te lezen of terug te zetten: sinds de laatste DroolsBackend.vuur van deze sessie gebeurde"
                 + " er iets buiten vuur om, wat het fixpunt van die vuur kan veranderen (" + description + "); " + way;
     }
 
-    /** Fires {@code sessie} with a plain {@code fireAllRules}, as a consumer can, and gives the name of the first rule
+    /** Fires {@code session} with a plain {@code fireAllRules}, as a consumer can, and gives the name of the first rule
      *  that fired, or null. */
-    static String bareFire(KieSession sessie) {
-        String[] eerste = {null};
+    static String bareFire(KieSession session) {
+        String[] first = {null};
         AgendaEventListener l = new DefaultAgendaEventListener() {
             @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
-                if (eerste[0] == null) eerste[0] = e.getMatch().getRule().getName();
+                if (first[0] == null) first[0] = e.getMatch().getRule().getName();
             }
         };
-        sessie.addEventListener(l);
+        session.addEventListener(l);
         try {
-            sessie.fireAllRules();
+            session.fireAllRules();
         } finally {
-            sessie.removeEventListener(l);
+            session.removeEventListener(l);
         }
-        return eerste[0];
+        return first[0];
     }
 
     /** An object as the sentences of the entry name it: its type and its identity. */
@@ -400,10 +400,10 @@ class TmsConsumerWitnessTest {
     }
 
     /** The heffing {@code f} derives for {@code jutter}, as a plain number, or null. */
-    private static String heffing(Fixpunt f, Object jutter) {
-        for (Fixpunt.AfgeleideWaarde w : f.waarden())
-            if (w.object() == jutter && w.attribuut().equals("heffing"))
-                return ((BigDecimal) w.waarde()).stripTrailingZeros().toPlainString();
+    private static String heffing(Fixpoint f, Object jutter) {
+        for (Fixpoint.DerivedValue w : f.waarden())
+            if (w.object() == jutter && w.attribute().equals("heffing"))
+                return ((BigDecimal) w.value()).stripTrailingZeros().toPlainString();
         return null;
     }
 }

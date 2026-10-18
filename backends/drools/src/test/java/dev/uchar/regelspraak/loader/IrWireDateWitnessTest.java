@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.IrPath;
-import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import org.junit.jupiter.api.Test;
@@ -179,9 +179,9 @@ class IrWireDateWitnessTest {
     @Test void the_untwisted_window_is_read_as_it_stands_on_the_wire() throws Exception {
         // The baseline every twist below is measured against: a clamp that refuses too much is as wrong as
         // one that refuses nothing.
-        Geldigheid g = window(load(WINDOW));
-        assertEquals(LocalDate.of(2026, 1, 1), g.vanaf(), "the golden's own lower bound");
-        assertEquals(LocalDate.of(2026, 12, 31), g.tot(), "the golden's own upper bound");
+        Validity g = window(load(WINDOW));
+        assertEquals(LocalDate.of(2026, 1, 1), g.from(), "the golden's own lower bound");
+        assertEquals(LocalDate.of(2026, 12, 31), g.until(), "the golden's own upper bound");
     }
 
     @Test void the_year_edges_the_pattern_admits_are_read() throws Exception {
@@ -203,9 +203,9 @@ class IrWireDateWitnessTest {
         // null is the open bound and must reach the clamp as null, not as a lexeme to parse: the second rule
         // version of this golden has an open lower bound and is the corpus witness for it.
         RegelSpraakModel m = load(WINDOW);
-        Geldigheid open = m.resolvedRegels.get(1).geldigheid();
-        assertEquals(null, open.vanaf(), "an absent lower bound stays absent");
-        assertEquals(LocalDate.of(2025, 12, 31), open.tot(), "and the bound beside it is still read");
+        Validity open = m.resolvedRegels.get(1).validity();
+        assertEquals(null, open.from(), "an absent lower bound stays absent");
+        assertEquals(LocalDate.of(2025, 12, 31), open.until(), "and the bound beside it is still read");
     }
 
     // ---------------- both bounds name themselves ----------------
@@ -286,12 +286,12 @@ class IrWireDateWitnessTest {
     }
 
     /** The window of the first rule version of {@link #WINDOW} — the one the twists land on. */
-    private static Geldigheid window(RegelSpraakModel m) {
-        return m.resolvedRegels.get(0).geldigheid();
+    private static Validity window(RegelSpraakModel m) {
+        return m.resolvedRegels.get(0).validity();
     }
 
     /** {@link #WINDOW} with one bound of its first rule version replaced, loaded. */
-    private static Geldigheid boundRead(String bound, String lexeme) throws Exception {
+    private static Validity boundRead(String bound, String lexeme) throws Exception {
         JsonNode root = wire(WINDOW);
         JsonNode g = IrPath.version(root, "rules", 0, 0).path("validity");
         assertTrue(g.isObject(), "the twisted rule version carries a Validity node");
@@ -300,11 +300,11 @@ class IrWireDateWitnessTest {
     }
 
     private static LocalDate fromRead(String lexeme) throws Exception {
-        return boundRead("from", lexeme).vanaf();
+        return boundRead("from", lexeme).from();
     }
 
     private static LocalDate toRead(String lexeme) throws Exception {
-        return boundRead("to", lexeme).tot();
+        return boundRead("to", lexeme).until();
     }
 
     /** The kinds of carrier in {@code golden} a validity window stands on, in document order: the versions of a

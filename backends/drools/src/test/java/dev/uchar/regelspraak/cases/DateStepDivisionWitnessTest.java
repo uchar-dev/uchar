@@ -75,10 +75,10 @@ class DateStepDivisionWitnessTest {
 
     /** {@code bron} with the duration operand X of the rule {@code regel} replaced by "X gedeeld door 3", typed as the
      *  quotient of X's unit, written to a temporary file. */
-    private static Path divided(Path bron, String regel) throws Exception {
-        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(bron));
-        ObjectNode waarde = (ObjectNode) IrPath.version(ir, "rules", regel).get("value");
-        JsonNode duration = waarde.get("right");
+    private static Path divided(Path source, String regel) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(source));
+        ObjectNode value = (ObjectNode) IrPath.version(ir, "rules", regel).get("value");
+        JsonNode duration = value.get("right");
         JsonNode unit = IrPath.attribute(IrPath.objectType(ir, duration.get("subjectType").asText()),
                 duration.get("attribute").asText()).get("datatype").get("unit");
         ObjectNode division = JSON.createObjectNode();
@@ -90,20 +90,20 @@ class DateStepDivisionWitnessTest {
         type.put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "unspecified");
         type.set("unit", unit);
         division.set("source", IrPath.sourceReference(duration.get("source").get("snippet").asText() + " gedeeld door 3"));
-        waarde.set("right", division);
+        value.set("right", division);
         Path tmp = Files.createTempFile("datumstap-deling", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;
     }
 
-    private static JsonNode caseDocument(String objecttype, String label, String attributes, String doel, String waarde)
+    private static JsonNode caseDocument(String objectType, String label, String attributes, String target, String value)
             throws Exception {
         return JSON.readTree("""
             { "format": "uchar-case-v0", "asOfDate": null,
               "input": { "instances": [ { "label": "%2$s", "objectType": "%1$s", "attributes": %3$s, "roles": {},
                   "characteristics": [] } ], "parameters": {} },
               "expected": [ { "kind": "attributeValue", "label": "%2$s", "attribute": "%4$s", "value": %5$s } ] }
-            """.formatted(objecttype, label, attributes, doel, waarde));
+            """.formatted(objectType, label, attributes, target, value));
     }
 }

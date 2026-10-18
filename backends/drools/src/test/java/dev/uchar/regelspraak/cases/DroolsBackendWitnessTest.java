@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.drools.modelcompiler.KieBaseBuilder;
@@ -64,9 +64,9 @@ class DroolsBackendWitnessTest {
                 "kenmerkstand Jutter.uitgesloten: waar uit een afleiding", "penninggerechtigd tenzij uitgesloten"),
                 rules(b.kieBase()));
         assertEquals(List.of("defaults: defaults K:Jutter.uitgesloten", "regel: penninggerechtigd tenzij uitgesloten"),
-                b.dekking().stream().map(Dekking::sleutel).sorted().toList());
-        assertTrue(b.dekking().stream().allMatch(Dekking::lowered), "every entry lowered: " + b.dekking());
-        assertTrue(b.dagsoortGlobalen().isEmpty(), "the exec-model branch declares no day-kind globals");
+                b.coverage().stream().map(Coverage::key).sorted().toList());
+        assertTrue(b.coverage().stream().allMatch(Coverage::lowered), "every entry lowered: " + b.coverage());
+        assertTrue(b.dayKindGlobals().isEmpty(), "the exec-model branch declares no day-kind globals");
     }
 
     /** What the build without the side tables handed out: the same model through the same transpiler with the
@@ -74,7 +74,7 @@ class DroolsBackendWitnessTest {
      *  everything lowered, so nothing in the result said the family was missing. */
     @Test void without_the_defaults_the_family_misses_and_the_manifest_says_nothing() throws Exception {
         IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
-        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.genereer(l.model()));
+        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(l.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
@@ -83,8 +83,8 @@ class DroolsBackendWitnessTest {
             assertEquals(List.of("penninggerechtigd tenzij uitgesloten"),
                     rules(KieBaseBuilder.createKieBaseFromModel(et.model())));
             assertEquals(List.of("regel: penninggerechtigd tenzij uitgesloten"),
-                    et.dekking().stream().map(Dekking::sleutel).toList());
-            assertTrue(et.dekking().stream().allMatch(Dekking::lowered), "the manifest says nothing: " + et.dekking());
+                    et.coverage().stream().map(Coverage::key).toList());
+            assertTrue(et.coverage().stream().allMatch(Coverage::lowered), "the manifest says nothing: " + et.coverage());
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }
@@ -115,7 +115,7 @@ class DroolsBackendWitnessTest {
     @Test void a_build_always_carries_the_analysis_of_its_document() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(EXCLUSION.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new DroolsBackend.Build(
-                b.model(), b.beanLoader(), null, null, b.dekking(), b.kieBase()));
+                b.model(), b.beanLoader(), null, null, b.coverage(), b.kieBase()));
         assertEquals("a Build carries the analysis of its document", e.getMessage());
     }
 
@@ -155,9 +155,9 @@ class DroolsBackendWitnessTest {
                 if (kinds[i] != List.class && kinds[i] != java.util.Map.class) continue;
                 Object[] arguments = arguments(build, l);
                 arguments[i] = null;
-                InvocationTargetException fout = assertThrows(InvocationTargetException.class,
+                InvocationTargetException fault = assertThrows(InvocationTargetException.class,
                         () -> build.invoke(null, arguments));
-                NullPointerException npe = assertInstanceOf(NullPointerException.class, fout.getCause());
+                NullPointerException npe = assertInstanceOf(NullPointerException.class, fault.getCause());
                 assertTrue(npe.getMessage().startsWith("side table '") && npe.getMessage().endsWith("' is null — pass an "
                         + (kinds[i] == List.class ? "empty list" : "empty map") + " for a document without one"),
                         t.getSimpleName() + " parameter " + i + ": " + npe.getMessage());
@@ -191,12 +191,12 @@ class DroolsBackendWitnessTest {
      *  the bean loader, which is no side table, is null (the transpiler then uses its own). */
     private static Object[] arguments(Method build, IrLoader.Loaded l) throws Exception {
         List<RecordComponent> free = new ArrayList<>(Arrays.asList(IrLoader.Loaded.class.getRecordComponents()));
-        Type[] typen = build.getGenericParameterTypes();
-        Object[] out = new Object[typen.length];
-        for (int i = 0; i < typen.length; i++) {
-            if (typen[i] == ClassLoader.class) continue;
+        Type[] types = build.getGenericParameterTypes();
+        Object[] out = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] == ClassLoader.class) continue;
             for (RecordComponent c : free) {
-                if (!c.getGenericType().equals(typen[i])) continue;
+                if (!c.getGenericType().equals(types[i])) continue;
                 out[i] = c.getAccessor().invoke(l);
                 free.remove(c);
                 break;

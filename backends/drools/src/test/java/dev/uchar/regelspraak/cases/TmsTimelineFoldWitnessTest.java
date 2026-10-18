@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.State;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
@@ -27,11 +27,11 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.months;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.period;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.segment;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.timeAttribute;
@@ -84,9 +84,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsTimelineFoldWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
-            objecttype("Jutter", List.of(TmsDocuments.attribuut("last", WHOLE), TmsDocuments.attribuut("som", WHOLE)),
+            objectType("Jutter", List.of(TmsDocuments.attribute("last", WHOLE), TmsDocuments.attribute("som", WHOLE)),
                     List.of()),
-            objecttype("Vondst", List.of(timeAttribute("jaartarief", WHOLE, "year"),
+            objectType("Vondst", List.of(timeAttribute("jaartarief", WHOLE, "year"),
                     timeAttribute("tarief", WHOLE, "month")), List.of(timeCharacteristic("bewaard", "month")))),
             List.of(factTypeOneToMany("bewaring", "jutter", "Jutter", "vondst", "Vondst", "vondsten")));
 
@@ -119,22 +119,22 @@ class TmsTimelineFoldWitnessTest {
                 List.of(expectedTimeline("V1", "tarief", months(2024, 1, 3, "12")),
                         expectedTimeline("V2", "tarief", List.of(segment("2024-01-01", "2024-03-01", "5"))),
                         expectedTimeline("V3", "tarief", List.of()), expectedTimeline("V4", "tarief", List.of()),
-                        waarde("J1", "last", "46"), waarde("J1", "som", "46"),
-                        waarde("J2", "last", "0"), waarde("J2", "som", null),
-                        waarde("J3", "last", "0"), waarde("J3", "som", null), consistent()));
+                        value("J1", "last", "46"), value("J1", "som", "46"),
+                        value("J2", "last", "0"), value("J2", "som", null),
+                        value("J3", "last", "0"), value("J3", "som", null), consistent()));
     }
 
     @Test void a_total_and_a_sum_per_member_over_a_derived_timeline_in_every_order_of_the_rules()
             throws Exception {
         JsonNode caseDocument = caseDocument();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void at_the_fixpoint_at_most_one_value_per_target_and_the_last_intermediate_without_the_derived_rate()
@@ -163,19 +163,19 @@ class TmsTimelineFoldWitnessTest {
             int[] intermediate = {0};
             Map<String, Integer> waarden = new TreeMap<>();
             List<String> states = new ArrayList<>();
-            TmsDocuments.vuur(b, order, List.of(j1, j2, v1, v2, v3), sessie -> sessie.addEventListener(
+            TmsDocuments.fire(b, order, List.of(j1, j2, v1, v2, v3), session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
                             if (e.getObject() instanceof Value w && w.onderwerp() == j1
-                                    && w.attribuut().naam().equals("last")
-                                    && ((BigDecimal) w.waarde()).compareTo(new BigDecimal("10")) == 0) intermediate[0]++;
+                                    && w.attribute().naam().equals("last")
+                                    && ((BigDecimal) w.value()).compareTo(new BigDecimal("10")) == 0) intermediate[0]++;
                         }
-                    }), sessie -> {
-                for (Object f : sessie.getObjects(o -> o instanceof Value))
-                    waarden.merge(labels.get(((Value) f).onderwerp()) + "." + ((Value) f).attribuut().naam(), 1,
+                    }), session -> {
+                for (Object f : session.getObjects(o -> o instanceof Value))
+                    waarden.merge(labels.get(((Value) f).onderwerp()) + "." + ((Value) f).attribute().naam(), 1,
                             Integer::sum);
-                for (Object f : sessie.getObjects(o -> o instanceof State))
-                    states.add(labels.get(((State) f).onderwerp()) + "." + ((State) f).attribuut().naam());
+                for (Object f : session.getObjects(o -> o instanceof State))
+                    states.add(labels.get(((State) f).onderwerp()) + "." + ((State) f).attribute().naam());
             });
             assertEquals(Map.of("J1.last", 1, "J1.som", 1, "J2.last", 1, "V1.tarief", 1), waarden,
                     () -> "waarden in volgorde " + names);
@@ -184,19 +184,19 @@ class TmsTimelineFoldWitnessTest {
             // which carries its input in the convention the case gives it (RUNTIME-SEMANTICS ch. 8.4)
             assertEquals(List.of("V1.jaartarief", "V1.tarief", "V2.jaartarief", "V2.tarief", "V3.jaartarief",
                     "V3.tarief"), states, () -> "standen in volgorde " + names);
-            assertEquals(0, new BigDecimal("46").compareTo((BigDecimal) TmsDocuments.lees(j1, "last")),
+            assertEquals(0, new BigDecimal("46").compareTo((BigDecimal) TmsDocuments.read(j1, "last")),
                     () -> "last van J1 in volgorde " + names);
-            assertEquals(0, new BigDecimal("46").compareTo((BigDecimal) TmsDocuments.lees(j1, "som")),
+            assertEquals(0, new BigDecimal("46").compareTo((BigDecimal) TmsDocuments.read(j1, "som")),
                     () -> "som van J1 in volgorde " + names);
-            assertEquals(0, BigDecimal.ZERO.compareTo((BigDecimal) TmsDocuments.lees(j2, "last")),
+            assertEquals(0, BigDecimal.ZERO.compareTo((BigDecimal) TmsDocuments.read(j2, "last")),
                     () -> "last van J2 in volgorde " + names);
-            assertNull(TmsDocuments.lees(j2, "som"), () -> "som van J2 in volgorde " + names);
+            assertNull(TmsDocuments.read(j2, "som"), () -> "som van J2 in volgorde " + names);
             assertEquals(List.of("[2024-01-01, 2024-02-01)=12", "[2024-02-01, 2024-03-01)=12",
                     "[2024-03-01, 2024-04-01)=12"), TmsTimelineWitnessTest.timelineOf(v1, "tarief"),
                     () -> "tarief van V1 in volgorde " + names);
             assertEquals(List.of("[2024-01-01, 2024-03-01)=5"), TmsTimelineWitnessTest.timelineOf(v2, "tarief"),
                     () -> "tarief van V2 in volgorde " + names);
-            assertNull(TmsDocuments.lees(v3, "tarief"), () -> "tarief van V3 in volgorde " + names);
+            assertNull(TmsDocuments.read(v3, "tarief"), () -> "tarief van V3 in volgorde " + names);
             if (intermediate[0] > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde gaf J1 onderweg de last 10, zonder het tarief van V1");

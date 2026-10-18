@@ -38,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the cap, R and N0.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}): the witness does not compile there, since
- * {@code Vuring} had no {@code plafond} and {@code vuur} neither a public form nor a factor; the cap was the fixed
- * 100 000 the caller passed, and at the cap {@code geenFixpunt} was null. <b>Red by mutation</b> (measured 2026-10-10
+ * {@code Firing} had no {@code plafond} and {@code vuur} neither a public form nor a factor; the cap was the fixed
+ * 100 000 the caller passed, and at the cap {@code noFixpoint} was null. <b>Red by mutation</b> (measured 2026-10-10
  * on the code of the fix round, the mutants not committed): with the floor alone the public row failed on "the
  * public cap is FACTOR × R × N0, not the floor ==&gt; expected: &lt;24040&gt; but was: &lt;10000&gt;"; with the cap
  * computed again at the first phase only, the row of the phases failed on "the cap is FACTOR × R × N for the N of phase
@@ -54,17 +54,17 @@ class TmsFireCapWitnessTest {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
-            KieSession sessie = filled(b, VONDSTEN);
+            KieSession session = filled(b, VONDSTEN);
             try {
-                long r = rules(b.kieBase()), n0 = sessie.getFactCount();
+                long r = rules(b.kieBase()), n0 = session.getFactCount();
                 long product = DroolsBackend.FACTOR * r * n0;
                 assertTrue(product > DroolsBackend.FLOOR, () -> "FACTOR × R × N0 = " + DroolsBackend.FACTOR + " × " + r
                         + " × " + n0 + " lies above the floor " + DroolsBackend.FLOOR);
-                DroolsBackend.Vuring firing = DroolsBackend.vuur(b, sessie);
-                assertNull(firing.geenFixpunt(), "the fixpoint under the public cap");
+                DroolsBackend.Firing firing = DroolsBackend.fire(b, session);
+                assertNull(firing.noFixpoint(), "the fixpoint under the public cap");
                 assertEquals(product, firing.cap(), "the public cap is FACTOR × R × N0, not the floor");
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
@@ -73,19 +73,19 @@ class TmsFireCapWitnessTest {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
-            KieSession sessie = filled(b);
+            KieSession session = filled(b);
             try {
-                long r = rules(b.kieBase()), n0 = sessie.getFactCount();
+                long r = rules(b.kieBase()), n0 = session.getFactCount();
                 int cap = (int) Math.max(1, Math.ceil(0.01 * r * n0));
-                DroolsBackend.Vuring firing = DroolsBackend.vuur(b, sessie, 0.01, 1);
+                DroolsBackend.Firing firing = DroolsBackend.fire(b, session, 0.01, 1);
                 assertEquals(cap, firing.cap(), "max(1, 0.01 × R × N0), rounded up");
-                assertEquals(cap, firing.vuringen(), "the run stops at the cap");
+                assertEquals(cap, firing.firings(), "the run stops at the cap");
                 assertEquals("geen fixpunt: het vuurplafond van " + cap + " vuringen is bereikt, het grootste van 1"
                         + " en 0.01 × " + r + " regels × " + n0 + " feiten vlak vóór het vuren; zonder kring vuurt de tak"
                         + " per regel en feit een begrensd aantal keren, dus dit is een fout van de verlaging",
-                        firing.geenFixpunt());
+                        firing.noFixpoint());
             } finally {
-                sessie.dispose();
+                session.dispose();
             }
         });
     }
@@ -94,17 +94,17 @@ class TmsFireCapWitnessTest {
         Path ir = Path.of("..", "..", "corpus", "golden", "jutterswet-dubbelverbinding", "ir.json");
         JsonNode caseDocument = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling("case1-binnen-venster.json")));
         CaseRunner runner = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL);
-        runner.withSession(caseDocument, (bouw, sessie, labels) -> {
-            long r = rules(bouw.kieBase()), n0 = sessie.getFactCount();
+        runner.withSession(caseDocument, (build, session, labels) -> {
+            long r = rules(build.kieBase()), n0 = session.getFactCount();
             // the facts at the start of each phase: the driver computes the cap right after it inserts the phase
             List<Long> phases = new ArrayList<>();
-            sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+            session.addEventListener(new DefaultRuleRuntimeEventListener() {
                 @Override public void objectInserted(ObjectInsertedEvent e) {
-                    if (e.getObject() instanceof CreationPhase) phases.add(sessie.getFactCount());
+                    if (e.getObject() instanceof CreationPhase) phases.add(session.getFactCount());
                 }
             });
-            DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie, DroolsBackend.FACTOR, 1);
-            assertNull(firing.geenFixpunt(), "the fixpoint");
+            DroolsBackend.Firing firing = DroolsBackend.fire(build, session, DroolsBackend.FACTOR, 1);
+            assertNull(firing.noFixpoint(), "the fixpoint");
             assertTrue(phases.size() >= 2, () -> "two phases or more: " + phases);
             long largest = Math.max(n0, phases.stream().mapToLong(Long::longValue).max().orElseThrow());
             int where = phases.indexOf(largest);
@@ -135,9 +135,9 @@ class TmsFireCapWitnessTest {
             TmsRepeatedFireWitnessTest.setRole(v, "vinder", j1);
             beans.add(v);
         }
-        KieSession sessie = b.kieBase().newKieSession();
-        DroolsBackend.voegIn(b, sessie, new Invoer().beans(beans));
-        return sessie;
+        KieSession session = b.kieBase().newKieSession();
+        DroolsBackend.insert(b, session, new Input().beans(beans));
+        return session;
     }
 
     /** The rules of {@code kieBase}, the R of the cap. */

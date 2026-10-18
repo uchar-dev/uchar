@@ -2,7 +2,7 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -20,28 +20,28 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GeneratedDesignationsTest {
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.errors().stream().map(Diagnostic::toString).toList());
         return m;
     }
 
     /** The six elements of the marker on 'meldingsdatum' of Vondst, in the order of the origin table. */
-    private static final List<Benoembaar> FAMILY = List.of(
-            Benoembaar.attribuut("Vondst", "opgegeven meldingsdatum"),
-            Benoembaar.attribuut("Vondst", "berekende meldingsdatum"),
-            Benoembaar.kenmerk("Vondst", "afwijkende opgave meldingsdatum"),
-            Benoembaar.vorm("afwijking opgave meldingsdatum"),
-            Benoembaar.vorm("controle opgave meldingsdatum"),
-            Benoembaar.vorm("opgave boven berekening meldingsdatum"));
+    private static final List<Designatable> FAMILY = List.of(
+            Designatable.attribute("Vondst", "opgegeven meldingsdatum"),
+            Designatable.attribute("Vondst", "berekende meldingsdatum"),
+            Designatable.characteristic("Vondst", "afwijkende opgave meldingsdatum"),
+            Designatable.form("afwijking opgave meldingsdatum"),
+            Designatable.form("controle opgave meldingsdatum"),
+            Designatable.form("opgave boven berekening meldingsdatum"));
 
     /** The wire node of each element of {@link #FAMILY}. */
     private static final List<String> NODES = List.of("Attribute", "Attribute", "Characteristic", "Rule", "Consistency",
             "PrioritizedDefaults");
 
-    /** The designation of each element in {@code vocabulaire}, "-" where it carries none. */
-    private static List<String> designations(RegelSpraakModel m, String vocabulaire, List<Benoembaar> elements) {
-        return elements.stream().map(e -> m.benaming(vocabulaire, e).orElse("-")).toList();
+    /** The designation of each element in {@code vocabulary}, "-" where it carries none. */
+    private static List<String> designations(RegelSpraakModel m, String vocabulary, List<Designatable> elements) {
+        return elements.stream().map(e -> m.benaming(vocabulary, e).orElse("-")).toList();
     }
 
     /** The designations the IR writes as the last field of the node {@code node} named {@code naam}, each
@@ -54,14 +54,14 @@ class GeneratedDesignationsTest {
             String indent = r[i].substring(0, r[i].indexOf('"'));
             String closingLine = indent.substring(2) + "}";
             List<String> result = new ArrayList<>();
-            String vocabulaire = null;
+            String vocabulary = null;
             boolean within = false;
             for (int j = i; j < r.length && !r[j].equals(closingLine) && !r[j].equals(closingLine + ","); j++) {
                 String t = r[j].trim();
                 if (r[j].equals(indent + "\"designations\": [")) within = true;
                 else if (!within) continue;
-                else if (t.startsWith("\"vocabulary\": ")) vocabulaire = t.substring(15, t.length() - 2);
-                else if (t.startsWith("\"designation\": ")) result.add(vocabulaire + ": " + t.substring(16, t.length() - 1));
+                else if (t.startsWith("\"vocabulary\": ")) vocabulary = t.substring(15, t.length() - 2);
+                else if (t.startsWith("\"designation\": ")) result.add(vocabulary + ": " + t.substring(16, t.length() - 1));
             }
             return result;
         }
@@ -83,7 +83,7 @@ class GeneratedDesignationsTest {
 
     @Test void each_member_carries_in_both_vocabularies_the_compound_designation() {
         RegelSpraakModel m = clean(MESSAGE.formatted("(cgm: Datum melding vondst) (handboek: dag van de melding)"));
-        assertEquals(FAMILY, List.copyOf(m.gegenereerd.keySet()));
+        assertEquals(FAMILY, List.copyOf(m.generated.keySet()));
         // the designation of the source is taken over literally, the capital in the middle of the name included
         assertEquals(List.of("opgegeven Datum melding vondst", "berekende Datum melding vondst",
                 "afwijkende opgave Datum melding vondst", "afwijking opgave Datum melding vondst",
@@ -94,8 +94,8 @@ class GeneratedDesignationsTest {
                 "controle opgave dag van de melding", "opgave boven berekening dag van de melding"),
                 designations(m, "handboek", FAMILY));
         // the way back from the composed designation finds the generated element
-        assertEquals(Benoembaar.attribuut("Vondst", "opgegeven meldingsdatum"),
-                m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Vondst", "Opgegeven datum melding vondst").orElseThrow());
+        assertEquals(Designatable.attribute("Vondst", "opgegeven meldingsdatum"),
+                m.namedElement("cgm", Designatable.Kind.ATTRIBUUT, "Vondst", "Opgegeven datum melding vondst").orElseThrow());
         // on the wire, as the last field of each generated declaration, in the declaration order of the vocabularies
         String ir = IrEmitter.emit(m);
         for (int i = 0; i < FAMILY.size(); i++) {
@@ -117,7 +117,7 @@ class GeneratedDesignationsTest {
                 designations(m, "cgm", FAMILY));
         assertEquals(List.of("-", "-", "-", "-", "-", "-"), designations(m, "handboek", FAMILY));
         // the effective name there is the canonical name
-        assertEquals(FAMILY.stream().map(Benoembaar::naam).toList(),
+        assertEquals(FAMILY.stream().map(Designatable::naam).toList(),
                 FAMILY.stream().map(e -> m.effectiveName("handboek", e)).toList());
         String ir = IrEmitter.emit(m);
         for (int i = 0; i < FAMILY.size(); i++) {
@@ -131,20 +131,20 @@ class GeneratedDesignationsTest {
     }
 
     /** The ERROR {@code fragment} stands on the first line of {@code bron} that carries {@code merker}. */
-    private static void fout(String bron, String merker, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(bron);
-        String[] regels = bron.split("\n", -1);
+    private static void error(String source, String merker, String fragment) {
+        RegelSpraakModel m = Resolver.resolve(source);
+        String[] regels = source.split("\n", -1);
         int regel = 0;
         for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) { regel = i + 1; break; }
         assertTrue(regel > 0, "merker '" + merker + "' niet in de bron");
         final int r = regel;
-        List<Diagnostic> fouten = m.errors();
-        assertTrue(fouten.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
-                () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + fouten);
+        List<Diagnostic> faults = m.errors();
+        assertTrue(faults.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
+                () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + faults);
     }
 
     @Test void two_marked_attributes_with_a_designation_collide_with_their_forms() {
-        String bron = """
+        String source = """
             Vocabulaire handboek
 
             Objecttype de Vondst (mv: Vondsten)
@@ -165,7 +165,7 @@ class GeneratedDesignationsTest {
             """;
         // the three forms share one namespace; the members stand each on their own type and do not collide
         for (String words : List.of("afwijking opgave ", "controle opgave ", "opgave boven berekening "))
-            fout(bron, "de aangiftedatum", "De regel '" + words + "meldingsdatum' en de regel '" + words
+            error(source, "de aangiftedatum", "De regel '" + words + "meldingsdatum' en de regel '" + words
                     + "aangiftedatum' hebben in het vocabulaire 'handboek' dezelfde effectieve naam '" + words
                     + "dag van de melding'; binnen hun reikwijdte is die uniek, hoofdletterongevoelig, zodat de weg "
                     + "terug naar de declaratie één antwoord heeft (WF-118); de frontend stelde de benaming van de "
@@ -173,12 +173,12 @@ class GeneratedDesignationsTest {
                     + "attribuut 'meldingsdatum' van 'Vondst'; de frontend stelde de benaming van de regel '"
                     + words + "aangiftedatum' samen uit de benaming 'dag van de melding' van het attribuut "
                     + "'aangiftedatum' van 'Schuit'");
-        RegelSpraakModel m = Resolver.resolve(bron);
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(3, m.errors().size(), m.errors()::toString);
     }
 
     @Test void a_compound_designation_collides_with_a_written_name() {
-        String bron = """
+        String source = """
             Vocabulaire handboek
 
             Objecttype de Vondst (mv: Vondsten)
@@ -190,13 +190,13 @@ class GeneratedDesignationsTest {
                 geldig altijd
                     De meldingsdatum van een Vondst moet berekend worden als de vinddag van de Vondst plus 3 dagen.
             """;
-        fout(bron, "de opgegeven melddag", "Het attribuut 'opgegeven meldingsdatum' van 'Vondst' en het attribuut "
+        error(source, "de opgegeven melddag", "Het attribuut 'opgegeven meldingsdatum' van 'Vondst' en het attribuut "
                 + "'opgegeven melddag' van 'Vondst' hebben in het vocabulaire 'handboek' dezelfde effectieve naam "
                 + "'opgegeven melddag'; binnen hun reikwijdte is die uniek, hoofdletterongevoelig, zodat de weg terug "
                 + "naar de declaratie één antwoord heeft (WF-118); de frontend stelde de benaming van het attribuut "
                 + "'opgegeven meldingsdatum' van 'Vondst' samen uit de benaming 'melddag' van het attribuut "
                 + "'meldingsdatum' van 'Vondst'");
-        assertEquals(1, Resolver.resolve(bron).errors().size());
+        assertEquals(1, Resolver.resolve(source).errors().size());
     }
 
     private static final String STANDAARD = """
@@ -218,16 +218,16 @@ class GeneratedDesignationsTest {
                 "afwijking opgave MELDDATUM", "controle opgave MELDDATUM", "opgave boven berekening MELDDATUM"),
                 designations(m, "cgm", FAMILY));
         // without a designation of the source, the source and each generated element are refused on the source's line
-        String bron = STANDAARD.formatted("");
-        fout(bron, "de meldingsdatum", "Het attribuut 'meldingsdatum' van 'Vondst' draagt geen benaming in het "
+        String source = STANDAARD.formatted("");
+        error(source, "de meldingsdatum", "Het attribuut 'meldingsdatum' van 'Vondst' draagt geen benaming in het "
                 + "standaardvocabulaire 'cgm', dat elke declaratie noemt (WF-119)");
-        for (Benoembaar e : FAMILY)
-            fout(bron, "de meldingsdatum", (e.soort() == Benoembaar.Soort.VORM ? "De regel '" + e.naam() + "'"
-                    : "Het " + (e.soort() == Benoembaar.Soort.KENMERK ? "kenmerk" : "attribuut") + " '" + e.naam()
+        for (Designatable e : FAMILY)
+            error(source, "de meldingsdatum", (e.category() == Designatable.Kind.VORM ? "De regel '" + e.naam() + "'"
+                    : "Het " + (e.category() == Designatable.Kind.KENMERK ? "kenmerk" : "attribuut") + " '" + e.naam()
                     + "' van 'Vondst'") + " draagt geen benaming in het standaardvocabulaire 'cgm', dat elke "
                     + "declaratie noemt (WF-119); de frontend stelt de benaming van deze declaratie samen uit die van "
                     + "het attribuut 'meldingsdatum' van 'Vondst', en dat draagt er geen");
-        assertEquals(7, Resolver.resolve(bron).errors().size());
+        assertEquals(7, Resolver.resolve(source).errors().size());
     }
 
     @Test void a_redundant_designation_of_the_source_is_not_compounded() {
@@ -269,11 +269,11 @@ class GeneratedDesignationsTest {
                     De meldtermijn van een Strandjutter moet gesteld worden op zijn vergunningseinde
                     indien zijn vergunningseinde gevuld is.
             """);
-        assertTrue(group.gegenereerdUit(Benoembaar.vorm("meldtermijn voor Strandjutter")).isPresent());
+        assertTrue(group.generatedFrom(Designatable.form("meldtermijn voor Strandjutter")).isPresent());
         assertEquals("termijn van melding voor strandloper",
-                group.benaming("handboek", Benoembaar.vorm("meldtermijn voor Strandjutter")).orElse("-"));
+                group.benaming("handboek", Designatable.form("meldtermijn voor Strandjutter")).orElse("-"));
         // the group of the tree carries its base rule's name, and so its designation
-        assertEquals("termijn van melding", group.benaming("handboek", Benoembaar.vorm("meldtermijn")).orElseThrow());
+        assertEquals("termijn van melding", group.benaming("handboek", Designatable.form("meldtermijn")).orElseThrow());
 
         // the member of a fold with steps after the set: the member and each role are parts of its name
         RegelSpraakModel fold = clean("""
@@ -302,9 +302,9 @@ class GeneratedDesignationsTest {
                 geldig altijd
                     Het zwaarste gewicht van een Ploeg moet berekend worden als de maximale waarde van het gewicht van de vondst van alle jutters van de Ploeg.
             """);
-        Benoembaar member = Benoembaar.attribuut("Jutter", "gewicht via vondst");
-        assertTrue(fold.gegenereerdUit(member).isPresent(), () -> fold.gegenereerd.toString());
+        Designatable member = Designatable.attribute("Jutter", "gewicht via vondst");
+        assertTrue(fold.generatedFrom(member).isPresent(), () -> fold.generated.toString());
         assertEquals("massa via vangst", fold.benaming("handboek", member).orElse("-"));
-        assertEquals("massa via vangst", fold.benaming("handboek", Benoembaar.vorm("gewicht via vondst")).orElse("-"));
+        assertEquals("massa via vangst", fold.benaming("handboek", Designatable.form("gewicht via vondst")).orElse("-"));
     }
 }

@@ -208,11 +208,11 @@ class TemporalFixpointWitnessTest {
                 """.formatted(characteristicPeriods, expectedNode);
     }
 
-    /** The {@code List<Segment>} the input layer placed on {@code label}'s {@code veld} bean member. */
-    private static List<?> timelineSegments(Path ir, String caseJson, String label, String veld) throws Exception {
+    /** The {@code List<Segment>} the input layer placed on {@code label}'s {@code field} bean member. */
+    private static List<?> timelineSegments(Path ir, String caseJson, String label, String field) throws Exception {
         Map<String, Object> beans = CaseRunner.inputBeans(ir, JSON.readTree(caseJson));
         Object bean = beans.get(label);
         assertNotNull(bean, "the case's instance " + label + " produced a bean");
-        return (List<?>) RegelSpraakRuntime.get(bean, veld);
+        return (List<?>) RegelSpraakRuntime.get(bean, field);
     }
 }

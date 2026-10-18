@@ -57,12 +57,12 @@ class DoubleReadingTest {
 
         """;
 
-    private static String waarde(String attributeRead) {
+    private static String value(String attributeRead) {
         return JUTTERS + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als "
                 + attributeRead + " plus 1.\n";
     }
 
-    private static String voorwaarde(String attributeRead) {
+    private static String condition(String attributeRead) {
         return JUTTERS + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet gesteld worden op 1\n"
                 + "        indien " + attributeRead + " groter is dan 2.\n";
     }
@@ -84,17 +84,17 @@ class DoubleReadingTest {
             + "van 'Jutter' over de rol 'jutter', en die lezing geldt hier niet";
 
     @Test void the_declaration_wins_and_the_warning_names_both_readings() {
-        RegelSpraakModel m = Resolver.resolve(waarde("de premie van de jutter van de Vondst"));
+        RegelSpraakModel m = Resolver.resolve(value("de premie van de jutter van de Vondst"));
         assertEquals(List.of(), m.errors());
         assertEquals(List.of(JUTTER_SENTENCE), warnings(m));
-        Expr.Binair sum = (Expr.Binair) m.resolvedRegels.get(0).waarde();
-        Expr.AttribuutRef attributeRead = (Expr.AttribuutRef) sum.links();
-        assertEquals("premie van de jutter", attributeRead.attribuut(), "the declaration is what is read");
-        assertEquals("Vondst", attributeRead.objecttype().naam);
+        Expr.Binary sum = (Expr.Binary) m.resolvedRegels.get(0).value();
+        Expr.AttributeReference attributeRead = (Expr.AttributeReference) sum.left();
+        assertEquals("premie van de jutter", attributeRead.attribute(), "the declaration is what is read");
+        assertEquals("Vondst", attributeRead.objectType().naam);
     }
 
     @Test void two_roles_far() {
-        RegelSpraakModel m = Resolver.resolve(waarde("de premie van de beheerder van de berging van de Vondst"));
+        RegelSpraakModel m = Resolver.resolve(value("de premie van de beheerder van de berging van de Vondst"));
         assertEquals(List.of(), m.errors());
         assertEquals(List.of("lezing 'de premie van de beheerder van de berging van de Vondst': het gedeclareerde "
                 + "attribuut 'premie van de beheerder' van 'Berging' wint; dezelfde woorden lezen ook als het attribuut "
@@ -102,9 +102,9 @@ class DoubleReadingTest {
     }
 
     @Test void every_position() {
-        for (String bron : List.of(voorwaarde("de premie van de jutter van de Vondst"),
+        for (String source : List.of(condition("de premie van de jutter van de Vondst"),
                 justification("de premie van de jutter van de Vondst"))) {
-            RegelSpraakModel m = Resolver.resolve(bron);
+            RegelSpraakModel m = Resolver.resolve(source);
             assertEquals(List.of(), m.errors());
             assertEquals(List.of(JUTTER_SENTENCE), warnings(m));
         }
@@ -115,10 +115,10 @@ class DoubleReadingTest {
         assertEquals(List.of(), warnings(Resolver.resolve(JUTTERS + "Regel keurdag\n    geldig altijd\n"
                 + "        De keurdag van een Vondst moet gesteld worden op de datum van keuring van de Vondst.\n")));
         // the role is walked, but its filler declares no such member
-        assertEquals(List.of(), warnings(Resolver.resolve(waarde("de premie van de jutter van de Vondst")
+        assertEquals(List.of(), warnings(Resolver.resolve(value("de premie van de jutter van de Vondst")
                 .replace("    de premie Numeriek (geheel getal);\n", ""))));
         // the navigation itself: no declaration is read, so there is nothing to choose between
-        assertEquals(List.of(), warnings(Resolver.resolve(waarde("de premie van zijn jutter"))));
+        assertEquals(List.of(), warnings(Resolver.resolve(value("de premie van zijn jutter"))));
         // a to-many step ends the walk: that navigation reads no single value
         assertEquals(List.of(), warnings(Resolver.resolve(JUTTERS + "Regel score\n    geldig altijd\n"
                 + "        De score van een Jutter moet berekend worden als de bonus van de vondst van de Jutter plus 1.\n")));

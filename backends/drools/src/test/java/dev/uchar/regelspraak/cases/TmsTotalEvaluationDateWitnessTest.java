@@ -17,12 +17,12 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.ownTotal;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.kenmerk;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.characteristic;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.timeAttribute;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -55,9 +55,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsTotalEvaluationDateWitnessTest {
 
-    static final String MODEL = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-            TmsDocuments.attribuut("score", WHOLE), timeAttribute("bedrag", WHOLE, "month"),
-            TmsDocuments.attribuut("topsom", WHOLE)), List.of(kenmerk("vrijgesteld")))), List.of());
+    static final String MODEL = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            TmsDocuments.attribute("score", WHOLE), timeAttribute("bedrag", WHOLE, "month"),
+            TmsDocuments.attribute("topsom", WHOLE)), List.of(characteristic("vrijgesteld")))), List.of());
 
     static final String VRIJSTELLING = TmsDocuments.characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
             comparison("less", ownRead("score", "Jutter"), number("5")));
@@ -66,15 +66,15 @@ class TmsTotalEvaluationDateWitnessTest {
 
     static final List<String> RULES = List.of(VRIJSTELLING, TOPSOM);
 
-    static final String WITHOUT_DATE = "Rekenfout: fout in de regel \"topsom\": the temporal total of \"bedrag\" needs"
+    static final String WITHOUT_DATE = "ComputeFault: fout in de regel \"topsom\": the temporal total of \"bedrag\" needs"
             + " the evaluation date: the case carries the asOfDate bucket's value";
 
-    static JsonNode vrijgesteld() throws Exception {
+    static JsonNode exempt() throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("score", numberValue("3")),
-                List.of(), Map.of(), Map.of())), List.of(waarde("J1", "topsom", null), consistent()));
+                List.of(), Map.of(), Map.of())), List.of(value("J1", "topsom", null), consistent()));
     }
 
-    static JsonNode notVrijgesteld() throws Exception {
+    static JsonNode notExempt() throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(instance("J2", "Jutter", Map.of("score", numberValue("10")),
                 List.of(), Map.of(), Map.of())), List.of(consistent()));
     }
@@ -86,26 +86,26 @@ class TmsTotalEvaluationDateWitnessTest {
                         instance("J2", "Jutter", Map.of("score", numberValue("10"), "bedrag", numberValue("7")), List.of(),
                                 Map.of(), Map.of()),
                         instance("J3", "Jutter", Map.of("score", numberValue("10")), List.of(), Map.of(), Map.of())),
-                List.of(waarde("J1", "topsom", null), waarde("J2", "topsom", "7"), waarde("J3", "topsom", null),
+                List.of(value("J1", "topsom", null), value("J2", "topsom", "7"), value("J3", "topsom", null),
                         consistent()));
     }
 
     @Test void the_total_without_clip_fails_without_evaluation_date_where_the_evaluation_reaches_it() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL, order, List.of());
-            outcomes.add(names + " vrijgesteld " + TmsFaultWitnessTest.play(ir, vrijgesteld(),
+            outcomes.add(names + " vrijgesteld " + TmsFaultWitnessTest.play(ir, exempt(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            outcomes.add(names + " niet vrijgesteld " + TmsFaultWitnessTest.play(ir, notVrijgesteld(),
+            outcomes.add(names + " niet vrijgesteld " + TmsFaultWitnessTest.play(ir, notExempt(),
                     DroolsBackend.Branch.EXEC_MODEL));
             outcomes.add(names + " met datum " + TmsFaultWitnessTest.play(ir, withDate(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " vrijgesteld gespeeld");
-            verwacht.add(names + " niet vrijgesteld " + WITHOUT_DATE);
-            verwacht.add(names + " met datum gespeeld");
+            expected.add(names + " vrijgesteld gespeeld");
+            expected.add(names + " niet vrijgesteld " + WITHOUT_DATE);
+            expected.add(names + " met datum gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_fault_of_an_intermediate_state_is_withdrawn() throws Exception {
@@ -116,11 +116,11 @@ class TmsTotalEvaluationDateWitnessTest {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("score", "3"), List.of());
             TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1), sessie -> sessie.addEventListener(facts)),
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(j1), session -> session.addEventListener(facts)),
                     () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertNull(TmsDocuments.lees(j1, "topsom"), () -> "topsom in volgorde " + names);
-            if (facts.fouten > 0) intermediateState++;
+            assertNull(TmsDocuments.read(j1, "topsom"), () -> "topsom in volgorde " + names);
+            if (facts.faults > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet het totaal vóór de vrijstelling rekenen");
     }
@@ -131,10 +131,10 @@ class TmsTotalEvaluationDateWitnessTest {
         int n = 0;
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             Path map = out.resolve(String.format("v%03d", n++));
-            TmsTimelineWitnessTest.write(map, TmsTimelineDocuments.ir(MODEL, order, List.of()), vrijgesteld());
+            TmsTimelineWitnessTest.write(map, TmsTimelineDocuments.ir(MODEL, order, List.of()), exempt());
             java.nio.file.Files.move(map.resolve("case.json"), map.resolve("case1-vrijgesteld.json"));
             java.nio.file.Files.writeString(map.resolve("case2-niet-vrijgesteld.json"), TmsDocuments.JSON
-                    .writerWithDefaultPrettyPrinter().writeValueAsString(notVrijgesteld()));
+                    .writerWithDefaultPrettyPrinter().writeValueAsString(notExempt()));
             java.nio.file.Files.writeString(map.resolve("case3-met-datum.json"), TmsDocuments.JSON
                     .writerWithDefaultPrettyPrinter().writeValueAsString(withDate()));
         }

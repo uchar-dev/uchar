@@ -2,9 +2,9 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.parser.RegelSpraak;
@@ -36,19 +36,19 @@ class VocabularyDialectTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-vocabulaires");
 
-    private static String bron() throws Exception { return Files.readString(GOLDEN.resolve("bron.rgs")); }
+    private static String source() throws Exception { return Files.readString(GOLDEN.resolve("bron.rgs")); }
 
     // ---------------- the tokens and the grammar ----------------
 
-    private static List<String> tokens(String bron) {
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(bron));
+    private static List<String> tokens(String source) {
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         List<String> result = new ArrayList<>();
         for (Token t : lexer.getAllTokens())
             if (t.getChannel() == Token.DEFAULT_CHANNEL) result.add(RegelSpraakLexer.VOCABULARY.getSymbolicName(t.getType()));
         return result;
     }
 
-    private static int syntaxErrors(String bron) {
+    private static int syntaxErrors(String source) {
         List<String> meldingen = new ArrayList<>();
         BaseErrorListener l = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col, String msg,
@@ -56,7 +56,7 @@ class VocabularyDialectTest {
                 meldingen.add(line + ":" + col + " " + msg);
             }
         };
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(bron));
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         lexer.removeErrorListeners(); lexer.addErrorListener(l);
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(lexer));
         parser.removeErrorListeners(); parser.addErrorListener(l);
@@ -106,19 +106,19 @@ class VocabularyDialectTest {
     // ---------------- the side table ----------------
 
     @Test void the_golden_fills_the_side_table() throws Exception {
-        RegelSpraakModel m = Resolver.resolve(bron());
+        RegelSpraakModel m = Resolver.resolve(source());
         assertTrue(m.errors().isEmpty(), () -> m.errors().toString());
-        assertEquals(List.of(new RegelSpraakModel.Vocabulaire("handboek", false, "nl"),
-                new RegelSpraakModel.Vocabulaire("cgm", true, "nl")), m.vocabulaires);
-        assertEquals(Optional.of("totale premie"), m.benaming("handboek", Benoembaar.attribuut("Jutter", "vondstbedrag")));
-        assertEquals(Optional.of("BARNSTEEN"), m.benaming("cgm", Benoembaar.enumeratiewaarde("Vondstsoort", "barnsteen")));
-        assertEquals(Optional.of("GEMELDE_VONDST"), m.benaming("cgm", Benoembaar.rol("vondstaanmelding", "vondst")));
+        assertEquals(List.of(new RegelSpraakModel.Vocabulary("handboek", false, "nl"),
+                new RegelSpraakModel.Vocabulary("cgm", true, "nl")), m.vocabularies);
+        assertEquals(Optional.of("totale premie"), m.benaming("handboek", Designatable.attribute("Jutter", "vondstbedrag")));
+        assertEquals(Optional.of("BARNSTEEN"), m.benaming("cgm", Designatable.enumerationValue("Vondstsoort", "barnsteen")));
+        assertEquals(Optional.of("GEMELDE_VONDST"), m.benaming("cgm", Designatable.role("vondstaanmelding", "vondst")));
         assertEquals(Optional.of("premie per strandjutter"),
-                m.benaming("handboek", Benoembaar.vorm("vondstbedrag van een jutter")));
-        assertEquals(Optional.of("PREMIEBEREKENING"), m.benaming("cgm", Benoembaar.regelgroep("premieberekening")));
-        assertEquals(Optional.of(Benoembaar.parameter("premietarief")),
-                m.benoemd("handboek", Benoembaar.Soort.PARAMETER, null, "Premie per kilogram"));
-        assertEquals(23, m.benoembaar().size());
+                m.benaming("handboek", Designatable.form("vondstbedrag van een jutter")));
+        assertEquals(Optional.of("PREMIEBEREKENING"), m.benaming("cgm", Designatable.ruleGroup("premieberekening")));
+        assertEquals(Optional.of(Designatable.parameter("premietarief")),
+                m.namedElement("handboek", Designatable.Kind.PARAMETER, null, "Premie per kilogram"));
+        assertEquals(23, m.designatable().size());
     }
 
     /** The emitter writes a declaration's designations in the declaration order of the vocabularies, however the
@@ -142,7 +142,7 @@ class VocabularyDialectTest {
      *  nothing else. Over the 99 older rgs goldens and the parity zone the same holds by gates 10 and 11. */
     @Test void without_the_extension_the_document_is_the_same() throws Exception {
         // a vocabulary line becomes an empty one, so every other line keeps the number its source records carry
-        String plain = bron().lines().map(l -> l.startsWith("Vocabulaire ") ? ""
+        String plain = source().lines().map(l -> l.startsWith("Vocabulaire ") ? ""
                         : l.replaceAll(" \\((handboek|cgm): [^)]*\\)", ""))
                 .reduce("", (a, b) -> a + b + "\n");
         assertFalse(plain.contains("handboek") || plain.contains("cgm"), plain);
@@ -151,8 +151,8 @@ class VocabularyDialectTest {
         String ir = IrEmitter.emit(without);
         assertFalse(ir.contains("vocabularies") || ir.contains("designations"), ir);
 
-        RegelSpraakModel with = Resolver.resolve(bron());
-        with.vocabulaires.clear();
+        RegelSpraakModel with = Resolver.resolve(source());
+        with.vocabularies.clear();
         with.designations.clear();
         assertTrue(with.diagnostics.removeIf(d -> d.message().endsWith("(WF-120)")));
         assertEquals(ir, IrEmitter.emit(with));
@@ -170,13 +170,13 @@ class VocabularyDialectTest {
         """;
 
     @Test void a_designation_as_rule_target_is_an_undeclared_name() {
-        String bron = HEAD + """
+        String source = HEAD + """
 
             Regel totaal
                 geldig altijd
                     De totale premie van een Jutter moet berekend worden als 5.
             """;
-        fout(bron, "De totale premie", "regeldoel 'De totale premie van een Jutter': 'totale premie' is geen "
+        error(source, "De totale premie", "regeldoel 'De totale premie van een Jutter': 'totale premie' is geen "
                 + "gedeclareerd attribuut van Jutter (WF-022, IR-SPEC ch. 3.1)");
     }
 
@@ -196,7 +196,7 @@ class VocabularyDialectTest {
      *  ANOTHER type, Vondst: a Jutter rule that writes 'gewicht' names nothing on Jutter and gets the existing refusal of
      *  an undeclared name, the designation resolving neither to 'toeslag' nor, across the scope, to Vondst's attribute. */
     @Test void a_designation_that_spells_the_name_of_another_type_does_not_resolve() {
-        String bron = """
+        String source = """
             Vocabulaire handboek
 
             Objecttype de Jutter (mv: Jutters) (bezield)
@@ -209,7 +209,7 @@ class VocabularyDialectTest {
                 geldig altijd
                     Het gewicht van een Jutter moet berekend worden als 5.
             """;
-        fout(bron, "Het gewicht van een Jutter", "regeldoel 'Het gewicht van een Jutter': 'gewicht' is geen "
+        error(source, "Het gewicht van een Jutter", "regeldoel 'Het gewicht van een Jutter': 'gewicht' is geen "
                 + "gedeclareerd attribuut van Jutter (WF-022, IR-SPEC ch. 3.1)");
     }
 
@@ -223,24 +223,24 @@ class VocabularyDialectTest {
                     Het vondstbedrag van een Jutter moet berekend worden als zijn tegoed plus 1.
             """);
         assertTrue(m.errors().isEmpty(), () -> m.errors().toString());
-        ResolvedRegel r = m.resolvedRegels.get(0);
-        Expr.Binair plus = (Expr.Binair) r.waarde();
-        assertEquals("tegoed", ((Expr.AttribuutRef) plus.links()).attribuut());
+        ResolvedRule r = m.resolvedRegels.get(0);
+        Expr.Binary plus = (Expr.Binary) r.value();
+        assertEquals("tegoed", ((Expr.AttributeReference) plus.left()).attribute());
     }
 
     // ---------------- the refusals, each on its line ----------------
 
     /** The ERROR {@code fragment} stands on the first line of {@code bron} that carries {@code merker}. */
-    private static void fout(String bron, String merker, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(bron);
-        String[] regels = bron.split("\n", -1);
+    private static void error(String source, String merker, String fragment) {
+        RegelSpraakModel m = Resolver.resolve(source);
+        String[] regels = source.split("\n", -1);
         int regel = 0;
         for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) { regel = i + 1; break; }
         assertTrue(regel > 0, "merker '" + merker + "' niet in de bron");
         final int r = regel;
-        List<Diagnostic> fouten = m.errors();
-        assertTrue(fouten.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
-                () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + fouten);
+        List<Diagnostic> faults = m.errors();
+        assertTrue(faults.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
+                () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + faults);
     }
 
     private static final String JUTTER = """
@@ -249,54 +249,54 @@ class VocabularyDialectTest {
         """;
 
     @Test void the_head_of_a_vocabulary() {
-        fout("Vocabulaire mv\n" + JUTTER, "Vocabulaire mv",
+        error("Vocabulaire mv\n" + JUTTER, "Vocabulaire mv",
                 "vocabulaire 'mv': die naam is gereserveerd, want '(mv:' opent de meervoudsvorm van een naam");
-        fout("Vocabulaire handboek\nVocabulaire Handboek\n" + JUTTER, "Vocabulaire Handboek",
+        error("Vocabulaire handboek\nVocabulaire Handboek\n" + JUTTER, "Vocabulaire Handboek",
                 "vocabulaire 'Handboek' is al gedeclareerd als 'handboek'; de namen van de vocabulaires zijn uniek, "
                         + "hoofdletterongevoelig (WF-116)");
-        fout("Vocabulaire cgm (standaard) (standaard)\n" + JUTTER, "Vocabulaire cgm",
+        error("Vocabulaire cgm (standaard) (standaard)\n" + JUTTER, "Vocabulaire cgm",
                 "vocabulaire 'cgm' draagt '(standaard)' twee keer");
-        fout("Vocabulaire cgm (soort: code)\n" + JUTTER, "Vocabulaire cgm",
+        error("Vocabulaire cgm (soort: code)\n" + JUTTER, "Vocabulaire cgm",
                 "vocabulaire 'cgm': '(soort: …)' is geen eigenschap van een vocabulaire; een vocabulairekop kent "
                         + "'(standaard)' en '(taal: <code>)'");
-        fout("Vocabulaire cgm (taal: nl) (taal: en)\n" + JUTTER, "Vocabulaire cgm",
+        error("Vocabulaire cgm (taal: nl) (taal: en)\n" + JUTTER, "Vocabulaire cgm",
                 "vocabulaire 'cgm' draagt '(taal: …)' twee keer");
-        fout("Vocabulaire cgm (taal: nl NL)\n" + JUTTER, "Vocabulaire cgm",
+        error("Vocabulaire cgm (taal: nl NL)\n" + JUTTER, "Vocabulaire cgm",
                 "vocabulaire 'cgm': de taalcode 'nl NL' is leeg of bevat witruimte; een taalcode is één woord (WF-116)");
-        fout("Vocabulaire cgm (standaard)\nVocabulaire wet (standaard)\n" + JUTTER, "Vocabulaire wet",
+        error("Vocabulaire cgm (standaard)\nVocabulaire wet (standaard)\n" + JUTTER, "Vocabulaire wet",
                 "de vocabulaires 'cgm' en 'wet' zijn allebei het standaardvocabulaire; een document heeft er hooguit "
                         + "één (WF-116)");
     }
 
     @Test void the_form_of_a_designation() {
-        fout("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: strand\n    de naam Tekst;\n",
+        error("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: strand\n    de naam Tekst;\n",
                 "(handboek: strand", "de annotatie '(handboek: strand' bij het objecttype 'Jutter' is niet op haar "
                         + "regel gesloten; een benaming staat tussen haakjes op één regel");
-        fout("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: )\n    de naam Tekst;\n",
+        error("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: )\n    de naam Tekst;\n",
                 "(handboek: )", "de benaming van het objecttype 'Jutter' in het vocabulaire 'handboek' is leeg; "
                         + "een benaming is tekst tussen de dubbele punt en het sluithaakje (WF-117)");
-        fout("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: strand (jutter)\n    de naam Tekst;\n",
+        error("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: strand (jutter)\n    de naam Tekst;\n",
                 "(handboek: strand", "de benaming 'strand (jutter' van het objecttype 'Jutter' in het vocabulaire "
                         + "'handboek' bevat een haakje; een benaming is tekst zonder haakjes, want het sluithaakje sluit "
                         + "de annotatie (WF-117)");
-        fout("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (wet: jutter)\n    de naam Tekst;\n",
+        error("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (wet: jutter)\n    de naam Tekst;\n",
                 "(wet: jutter)", "de benaming 'jutter' van het objecttype 'Jutter' noemt het vocabulaire 'wet', dat "
                         + "het document niet declareert ('Vocabulaire wet', WF-117)");
-        fout("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: jutter) (Handboek: strandjutter)\n"
+        error("Vocabulaire handboek\nObjecttype de Jutter (mv: Jutters) (handboek: jutter) (Handboek: strandjutter)\n"
                         + "    de naam Tekst;\n", "(handboek: jutter)",
                 "Het objecttype 'Jutter' draagt twee benamingen in het vocabulaire 'handboek', 'jutter' en "
                         + "'strandjutter'; een declaratie heeft hooguit één benaming per vocabulaire (WF-117)");
     }
 
     @Test void no_designation_on_a_table_or_an_exception_block() {
-        fout("Vocabulaire handboek\n" + JUTTER + """
+        error("Vocabulaire handboek\n" + JUTTER + """
             Beslistabel naamtabel (handboek: tabel)
             | | de naam van een Jutter |
             |---|---|
             | 1 | "a" |
             """, "Beslistabel naamtabel", "beslistabel 'naamtabel' draagt een benaming, en een beslistabel heeft er "
                         + "geen: zij staat voor de regels van haar rijen");
-        fout("""
+        error("""
             Vocabulaire handboek
             Objecttype de Jutter (mv: Jutters) (bezield)
                 is gerechtigd kenmerk (bijvoeglijk);
@@ -313,7 +313,7 @@ class VocabularyDialectTest {
     }
 
     @Test void a_rule_that_becomes_no_named_form() {
-        fout("""
+        error("""
             Vocabulaire handboek
             Dagsoort de havendag (mv: havendagen);
             Regel havendagdefinitie (handboek: definitie havendag)
@@ -325,7 +325,7 @@ class VocabularyDialectTest {
     }
 
     @Test void the_default_vocabulary_is_complete() {
-        fout("""
+        error("""
             Vocabulaire cgm (standaard)
             Objecttype de Jutter (mv: Jutters) (bezield) (cgm: JUTTER)
                 de naam (cgm: NAAM) Tekst;
@@ -336,7 +336,7 @@ class VocabularyDialectTest {
 
     @Test void the_effective_names_are_unique_per_scope() {
         // two object types, the second's designation the first's name in another case
-        fout("""
+        error("""
             Vocabulaire handboek
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de naam Tekst;
@@ -345,7 +345,7 @@ class VocabularyDialectTest {
             """, "Objecttype de Vondst", "Het objecttype 'Jutter' en het objecttype 'Vondst' hebben in het "
                         + "vocabulaire 'handboek' dezelfde effectieve naam 'jutter'");
         // an inherited attribute's canonical name, taken by a subtype's own attribute
-        fout("""
+        error("""
             Vocabulaire handboek
             Objecttype de Vondst (mv: Vondsten)
                 het gewicht Numeriek (geheel getal);
@@ -354,7 +354,7 @@ class VocabularyDialectTest {
             """, "de diepte", "Het attribuut 'diepte' van 'Wrakvondst' en het attribuut 'gewicht' van 'Vondst' hebben "
                         + "in het vocabulaire 'handboek' dezelfde effectieve naam 'gewicht'");
         // two roles of one fact type
-        fout("""
+        error("""
             Vocabulaire handboek
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de naam Tekst;
@@ -367,7 +367,7 @@ class VocabularyDialectTest {
             """, "de vondst (mv: vondsten)", "De rol 'aanmelder' van 'vondstaanmelding' en de rol 'vondst' van "
                         + "'vondstaanmelding' hebben in het vocabulaire 'handboek' dezelfde effectieve naam 'Melder'");
         // two values of one domain
-        fout("""
+        error("""
             Vocabulaire handboek
             Domein Vondstsoort is van het type Enumeratie
                 'wrakhout' (handboek: hout)

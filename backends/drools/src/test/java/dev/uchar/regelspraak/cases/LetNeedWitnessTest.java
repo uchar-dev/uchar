@@ -47,17 +47,17 @@ class LetNeedWitnessTest {
         // clause 3 never evaluates the value: no fault, no leeg, no §9.5 reason, and the Let's outcome IS the
         // body's. ref on this exact model+case: uitkomst = 42.00, CONSISTENT. Under the strict binding the
         // value ran first and the run died on the division.
-        assertNull(play(zeroDivisionModel(false), jutter("", waarde("uitkomst", "42.00"))));
+        assertNull(play(zeroDivisionModel(false), jutter("", valueJson("uitkomst", "42.00"))));
     }
 
     @Test void the_same_value_under_a_read_binder_keeps_the_fault() throws Exception {
         // the twin that keeps the first honest: the SAME value, now read. The read forces the need, so the
         // division by numeric zero happens and fails fast. ref: EVALUATION FAULT "division by numeric zero";
         // here the mirror is the runtime's own ArithmeticException, surfacing out of fire.
-        RuntimeException fout = assertThrows(RuntimeException.class,
-                () -> play(zeroDivisionModel(true), jutter("", waarde("uitkomst", "42.00"))));
-        assertTrue(causeText(fout).contains("deling door 0"),
-                "de gelezen behoefte draagt de deling-door-nul: " + causeText(fout));
+        RuntimeException fault = assertThrows(RuntimeException.class,
+                () -> play(zeroDivisionModel(true), jutter("", valueJson("uitkomst", "42.00"))));
+        assertTrue(causeText(fault).contains("deling door 0"),
+                "de gelezen behoefte draagt de deling-door-nul: " + causeText(fault));
     }
 
     // ---------------- clause 2: the leeg-barrier fires at the READ, not at the bind ----------------
@@ -70,7 +70,7 @@ class LetNeedWitnessTest {
         // evaluates its leeg value and no barrier fires. ref on this exact model+case: uitkomst = 7.00,
         // CONSISTENT. Under the strict binding the leeg value emptied the inner Let at its BIND place and the
         // target was never written.
-        assertNull(play(probeModel(), jutter("\"kindertal\": { \"number\": \"2\" }", waarde("uitkomst", "7.00"))));
+        assertNull(play(probeModel(), jutter("\"kindertal\": { \"number\": \"2\" }", valueJson("uitkomst", "7.00"))));
     }
 
     @Test void the_same_empty_value_read_on_the_indeed_chosen_arm_makes_the_let_empty() throws Exception {
@@ -125,7 +125,7 @@ class LetNeedWitnessTest {
 
     /** One Jutter, the given input attributes, the given expectations. The consistency verdict is part of each
      *  expectation list, so it is never left unasserted. */
-    private static String jutter(String attributes, String verwacht) {
+    private static String jutter(String attributes, String expected) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -134,14 +134,14 @@ class LetNeedWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(attributes, verwacht);
+                """.formatted(attributes, expected);
     }
 
     /** A value expectation plus the consistent verdict — the shape the three non-§6.5 witnesses use. */
-    private static String waarde(String attribuut, String number) {
+    private static String valueJson(String attribute, String number) {
         return """
                 { "kind": "attributeValue", "label": "J1", "attribute": "%s", "value": { "number": "%s" } },
-                { "kind": "consistent" }""".formatted(attribuut, number);
+                { "kind": "consistent" }""".formatted(attribute, number);
     }
 
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10) ----------------
@@ -159,8 +159,8 @@ class LetNeedWitnessTest {
                 .formatted(naam, naam);
     }
 
-    private static String lit(String waarde, String type) {
-        return IrPath.literal(waarde, type, waarde);
+    private static String lit(String valueJson, String type) {
+        return IrPath.literal(valueJson, type, valueJson);
     }
 
     private static String binary(String op, String left, String right, String type) {
@@ -184,13 +184,13 @@ class LetNeedWitnessTest {
                 + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(type, condition, then, otherwise);
     }
 
-    private static String verg(String op, String left, String right) {
+    private static String compare(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, left, right, op.toLowerCase(java.util.Locale.ROOT));
     }
 
-    private static String regel(String naam, String doel, String waarde) {
-        return IrPath.regel(naam, "BEREKENING", doel, waarde, "null");
+    private static String regel(String naam, String target, String valueJson) {
+        return IrPath.regel(naam, "BEREKENING", target, valueJson, "null");
     }
 
     /** A one-objecttype document over {@code Jutter}. */
@@ -210,10 +210,10 @@ class LetNeedWitnessTest {
     /** The {@code attributes} list of {@code Jutter}, from alternating name / datatype arguments. */
     private static String attributes(String... nameAndType) {
         if (nameAndType.length % 2 != 0) throw new IllegalArgumentException("a name without a datatype");
-        java.util.StringJoiner lijst = new java.util.StringJoiner(",");
+        java.util.StringJoiner list = new java.util.StringJoiner(",");
         for (int i = 0; i < nameAndType.length; i += 2)
-            lijst.add("{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(nameAndType[i], nameAndType[i + 1]));
-        return lijst.toString();
+            list.add("{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(nameAndType[i], nameAndType[i + 1]));
+        return list.toString();
     }
 
     // ---------------- the models (each ref-replayed before its values were pinned) ----------------
@@ -232,7 +232,7 @@ class LetNeedWitnessTest {
      *  need is ever read at all. */
     private static String probeModel() {
         String inside = let("x", attr("leegwaarde", num(2)),
-                ite(verg("greater", bref("k", WHOLE_POS), lit("1", WHOLE_POS)),
+                ite(compare("greater", bref("k", WHOLE_POS), lit("1", WHOLE_POS)),
                         lit("7.00", num(2)),
                         binary("times", bref("x", num(2)), lit("2.00", num(2)), num(2)),
                         num(2)),

@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE_TIME;
 import static dev.uchar.regelspraak.cases.TmsDocuments.TEKST;
 import static dev.uchar.regelspraak.cases.TmsDocuments.rounding;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binderRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.builtin;
@@ -28,7 +28,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
-import static dev.uchar.regelspraak.cases.TmsDocuments.keuze;
+import static dev.uchar.regelspraak.cases.TmsDocuments.choice;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.let;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
@@ -39,9 +39,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.textPart;
 import static dev.uchar.regelspraak.cases.TmsDocuments.textExpression;
 import static dev.uchar.regelspraak.cases.TmsDocuments.textComposition;
 import static dev.uchar.regelspraak.cases.TmsDocuments.textValue;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsDocuments.valueJson;
 import static dev.uchar.regelspraak.cases.TmsComputeFormWitnessTest.assertEveryOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -97,11 +97,11 @@ class TmsBuiltinWitnessTest {
 
     // ---------------- the date builtins ----------------
 
-    private static final String DATE_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("vinddatum", DATE), attribuut("peildatum", DATE), attribuut("peiljaar", WHOLE),
-            attribuut("peilmaand", WHOLE), attribuut("peildag", WHOLE),
-            attribuut("weken", numberType(true, 0, unit("weken"))),
-            attribuut("dagen", numberType(true, 0, unit("dagen"))), attribuut("paasdatum", DATE)), List.of())), List.of());
+    private static final String DATE_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("vinddatum", DATE), attribute("peildatum", DATE), attribute("peiljaar", WHOLE),
+            attribute("peilmaand", WHOLE), attribute("peildag", WHOLE),
+            attribute("weken", numberType(true, 0, unit("weken"))),
+            attribute("dagen", numberType(true, 0, unit("dagen"))), attribute("paasdatum", DATE)), List.of())), List.of());
 
     private static final String AS_OF_DATE = ownRead("peildatum", "Vondst"), VINDDATUM = ownRead("vinddatum", "Vondst");
 
@@ -109,17 +109,17 @@ class TmsBuiltinWitnessTest {
     static final String AS_OF = computingRule("peildatum van een vondst", "BEREKENING", "Vondst", "peildatum",
             binary("plus", VINDDATUM, literal("10", numberType(true, 0, unit("dagen"))), DATE), "null");
 
-    static JsonNode dateCase(String doel, String v1, String v2) throws Exception {
+    static JsonNode dateCase(String target, String v1, String v2) throws Exception {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("vinddatum", dateValue("2026-03-25"),
                         "peildatum", dateValue("2000-01-01")), List.of()),
                 instanceWith("V2", "Vondst", Map.of("vinddatum", dateValue("2024-12-28")), List.of()),
                 instanceWith("V3", "Vondst", Map.of(), List.of())),
-                List.of(valueJson("V1", doel, v1), valueJson("V2", doel, v2), waarde("V3", doel, null), consistent()));
+                List.of(valueJson("V1", target, v1), valueJson("V2", target, v2), value("V3", target, null), consistent()));
     }
 
-    private static String extractor(String naam, String kind, String doel) {
-        return computingRule(naam, "BEREKENING", "Vondst", doel, builtin(kind, List.of(AS_OF_DATE), WHOLE,
+    private static String extractor(String naam, String kind, String target) {
+        return computingRule(naam, "BEREKENING", "Vondst", target, builtin(kind, List.of(AS_OF_DATE), WHOLE,
                 kind + " van zijn peildatum"), "null");
     }
 
@@ -153,9 +153,9 @@ class TmsBuiltinWitnessTest {
 
     // ---------------- the absolute value and the square root ----------------
 
-    private static final String NUMBER_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("basis", TWO), attribuut("saldo", TWO), attribuut("afstand", TWO), attribuut("oppervlak", TWO),
-            attribuut("zijde", TWO)), List.of())), List.of());
+    private static final String NUMBER_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("basis", TWO), attribute("saldo", TWO), attribute("afstand", TWO), attribute("oppervlak", TWO),
+            attribute("zijde", TWO)), List.of())), List.of());
 
     @Test void the_absolute_value_of_a_later_derived_balance() throws Exception {
         String balance = computingRule("saldo van een vondst", "BEREKENING", "Vondst", "saldo",
@@ -167,8 +167,8 @@ class TmsBuiltinWitnessTest {
                 instanceWith("V1", "Vondst", Map.of("basis", numberValue("20.00"), "saldo", numberValue("7.00")), List.of()),
                 instanceWith("V2", "Vondst", Map.of("basis", numberValue("80.00")), List.of()),
                 instanceWith("V3", "Vondst", Map.of(), List.of())),
-                List.of(waarde("V1", "afstand", "30.00"), waarde("V2", "afstand", "30.00"),
-                        waarde("V3", "afstand", "50.00"), consistent())));
+                List.of(value("V1", "afstand", "30.00"), value("V2", "afstand", "30.00"),
+                        value("V3", "afstand", "50.00"), consistent())));
     }
 
     static final String OPPERVLAK = computingRule("oppervlak van een vondst", "BEREKENING", "Vondst", "oppervlak",
@@ -183,10 +183,10 @@ class TmsBuiltinWitnessTest {
                 instanceWith("V1", "Vondst", Map.of("basis", numberValue("20.00"), "oppervlak", numberValue("-9.00")),
                         List.of()),
                 instanceWith("V2", "Vondst", Map.of("basis", numberValue("8.00")), List.of())),
-                List.of(waarde("V1", "zijde", "6.32"), waarde("V2", "zijde", "4.00"), consistent())));
+                List.of(value("V1", "zijde", "6.32"), value("V2", "zijde", "4.00"), consistent())));
         assertEveryOrder(NUMBER_MODEL, List.of(OPPERVLAK, SIDE), TmsDocuments.caseOn(null, List.of(
                 instanceWith("V3", "Vondst", Map.of("basis", numberValue("-2.00")), List.of())),
-                List.of(waarde("V3", "zijde", null), inconsistent("zijde van een vondst", "V3"))));
+                List.of(value("V3", "zijde", null), inconsistent("zijde van een vondst", "V3"))));
     }
 
     /** "De zijde van een Vondst moet berekend worden als de wortel van zijn oppervlak", without a rounding: exact where
@@ -209,41 +209,41 @@ class TmsBuiltinWitnessTest {
                         List.of()),
                 instanceWith("V2", "Vondst", Map.of("basis", numberValue("8.00")), List.of()),
                 instanceWith("V3", "Vondst", Map.of("basis", numberValue("0.08")), List.of())),
-                List.of(waarde("V1", "zijde", "2"), waarde("V2", "zijde", "4"), waarde("V3", "zijde", "0.4"),
+                List.of(value("V1", "zijde", "2"), value("V2", "zijde", "4"), value("V3", "zijde", "0.4"),
                         consistent()));
         JsonNode irrational = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V4", "Vondst", Map.of("basis", numberValue("1.00")), List.of())), List.of(consistent()));
         JsonNode negative = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V5", "Vondst", Map.of("basis", numberValue("-2.00")), List.of())),
-                List.of(waarde("V5", "zijde", null), inconsistent("zijde van een vondst", "V5")));
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+                List.of(value("V5", "zijde", null), inconsistent("zijde van een vondst", "V5")));
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(OPPERVLAK, side))) {
             List<String> names = TmsDocuments.ruleNames(order);
             java.nio.file.Path ir = TmsDocuments.document(NUMBER_MODEL, order);
             for (JsonNode caseDocument : List.of(exact, irrational, negative))
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
-            verwacht.add(names + " Rekenfout: fout in de regel \"zijde van een vondst\": irrational square root of 2"
+            expected.add(names + " gespeeld");
+            expected.add(names + " ComputeFault: fout in de regel \"zijde van een vondst\": irrational square root of 2"
                     + " reached without an explicit rounding (§13.4.17.13 mandates one)");
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- text ----------------
 
-    private static final String TEXT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("naam", TEKST), attribuut("titel", TEKST), attribuut("omschrijving", TEKST), attribuut("code", TEKST),
-            attribuut("basis", TWO)), List.of())), List.of());
+    private static final String TEXT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("naam", TEKST), attribute("titel", TEKST), attribute("omschrijving", TEKST), attribute("code", TEKST),
+            attribute("basis", TWO)), List.of())), List.of());
 
     static final String TITLE = computingRule("titel van een vondst", "BEREKENING", "Vondst", "titel",
             ownRead("naam", "Vondst"), "null");
 
-    static JsonNode textCase(String doel, String v1, String v2) throws Exception {
+    static JsonNode textCase(String target, String v1, String v2) throws Exception {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("naam", textValue("anker"), "titel", textValue("oud")), List.of()),
                 instanceWith("V2", "Vondst", Map.of(), List.of())),
-                List.of(valueJson("V1", doel, textValue(v1)), valueJson("V2", doel, textValue(v2)), consistent()));
+                List.of(valueJson("V1", target, textValue(v1)), valueJson("V2", target, textValue(v2)), consistent()));
     }
 
     @Test void a_text_sequence_and_a_concatenation_over_a_later_derived_title() throws Exception {
@@ -272,9 +272,9 @@ class TmsBuiltinWitnessTest {
 
     // ---------------- the eleven test and the exact digits ----------------
 
-    private static final String TRIAL_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("grondnummer", WHOLE), attribuut("nummer", WHOLE), attribuut("grondcode", TEKST),
-            attribuut("postcode", TEKST)), List.of("geldig", "viercijferig"))), List.of());
+    private static final String TRIAL_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("grondnummer", WHOLE), attribute("nummer", WHOLE), attribute("grondcode", TEKST),
+            attribute("postcode", TEKST)), List.of("geldig", "viercijferig"))), List.of());
 
     private static String trial(String kind, String operand, int digits) {
         return "{\"node\":\"Predicate\",\"kind\":\"" + kind + "\",\"operand\":" + operand + ",\"negated\":false,\"digits\":"
@@ -296,8 +296,8 @@ class TmsBuiltinWitnessTest {
                         List.of()),
                 instanceWith("V2", "Vondst", Map.of("grondnummer", numberValue("111111111"), "grondcode",
                         textValue("12a4")), List.of())),
-                List.of(verwacht("V1", "geldig", true), verwacht("V2", "geldig", false), verwacht("V1", "viercijferig", true),
-                        verwacht("V2", "viercijferig", false), consistent()));
+                List.of(expected("V1", "geldig", true), expected("V2", "geldig", false), expected("V1", "viercijferig", true),
+                        expected("V2", "viercijferig", false), consistent()));
         assertEveryOrder(TRIAL_MODEL, List.of(number, valid, postcode, four), caseDocument);
     }
 
@@ -306,8 +306,8 @@ class TmsBuiltinWitnessTest {
      *  rule 1), so it cannot tell an absent link from a leeg nummer; it refuses the form by name. */
     @Test void the_eleven_test_over_a_path_is_refused_by_name() throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objecttype("Jutter", List.of(attribuut("nummer", WHOLE)), List.of()),
-                TmsDocuments.objecttype("Vondst", List.of(), List.of("geldig"))),
+                TmsDocuments.objectType("Jutter", List.of(attribute("nummer", WHOLE)), List.of()),
+                TmsDocuments.objectType("Vondst", List.of(), List.of("geldig"))),
                 List.of(TmsDocuments.factTypeOneToMany("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten")));
         String valid = characteristicRule("geldig bij elfproef", "Vondst", "geldig",
                 trial("elevenTest", TmsDocuments.pathRead("nummer", "Jutter", "vinding", "vinder"), 0));
@@ -321,10 +321,10 @@ class TmsBuiltinWitnessTest {
 
     // ---------------- the sub-day extractors, dateWith and dateTimeWith ----------------
 
-    private static final String GETIJMODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Getij", List.of(
-            attribuut("vertrek", DATE_TIME), attribuut("aankomst", DATE_TIME), attribuut("uur", WHOLE),
-            attribuut("minuut", WHOLE), attribuut("seconde", WHOLE), attribuut("milliseconde", WHOLE),
-            attribuut("einddatum", DATE), attribuut("eindtijd", DATE_TIME)), List.of())), List.of());
+    private static final String GETIJMODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Getij", List.of(
+            attribute("vertrek", DATE_TIME), attribute("aankomst", DATE_TIME), attribute("uur", WHOLE),
+            attribute("minuut", WHOLE), attribute("seconde", WHOLE), attribute("milliseconde", WHOLE),
+            attribute("einddatum", DATE), attribute("eindtijd", DATE_TIME)), List.of())), List.of());
 
     private static final String AANKOMST = ownRead("aankomst", "Getij");
 
@@ -349,8 +349,8 @@ class TmsBuiltinWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(instanceWith("G1", "Getij", Map.of(
                 "vertrek", "{\"dateTime\":\"2026-03-01T22:30:15.250\"}",
                 "aankomst", "{\"dateTime\":\"2000-01-01T00:00:00.000\"}"), List.of())),
-                List.of(waarde("G1", "uur", "0"), waarde("G1", "minuut", "30"), waarde("G1", "seconde", "15"),
-                        waarde("G1", "milliseconde", "250"), valueJson("G1", "einddatum", dateValue("2026-12-31")),
+                List.of(value("G1", "uur", "0"), value("G1", "minuut", "30"), value("G1", "seconde", "15"),
+                        value("G1", "milliseconde", "250"), valueJson("G1", "einddatum", dateValue("2026-12-31")),
                         valueJson("G1", "eindtijd", "{\"dateTime\":\"2026-12-31T23:59:59.999\"}"), consistent()));
         for (int i = 1; i < rules.size(); i++)
             assertEveryOrder(GETIJMODEL, List.of(rules.get(0), rules.get(i)), caseDocument(caseDocument, i));
@@ -359,19 +359,19 @@ class TmsBuiltinWitnessTest {
     /** {@code caseDocument} with only the expectation of reader {@code i} (1-based: uur first) and the channel. */
     private static JsonNode caseDocument(JsonNode caseDocument, int i) {
         JsonNode copy = caseDocument.deepCopy();
-        com.fasterxml.jackson.databind.node.ArrayNode verwacht = (com.fasterxml.jackson.databind.node.ArrayNode)
+        com.fasterxml.jackson.databind.node.ArrayNode expected = (com.fasterxml.jackson.databind.node.ArrayNode)
                 copy.get("expected");
-        JsonNode own = verwacht.get(i - 1), channel = verwacht.get(verwacht.size() - 1);
-        verwacht.removeAll();
-        verwacht.add(own);
-        verwacht.add(channel);
+        JsonNode own = expected.get(i - 1), channel = expected.get(expected.size() - 1);
+        expected.removeAll();
+        expected.add(own);
+        expected.add(channel);
         return copy;
     }
 
     // ---------------- an Unresolved node ----------------
 
-    private static final String UNRESOLVED_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("basis", TWO), attribuut("waarde", THREE), attribuut("heffing", TWO)), List.of("duur"))),
+    private static final String UNRESOLVED_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("basis", TWO), attribute("waarde", THREE), attribute("heffing", TWO)), List.of("duur"))),
             List.of());
 
     private static final String VALUE = computingRule("waarde van een vondst", "BEREKENING", "Vondst", "waarde",
@@ -384,7 +384,7 @@ class TmsBuiltinWitnessTest {
 
     @Test void an_unresolved_marker_fails_only_where_the_evaluation_reaches_it() throws Exception {
         String heffing = computingRule("heffing van een vondst", "BEREKENING", "Vondst", "heffing", let("k",
-                ownRead("waarde", "Vondst"), keuze(comparison("greater", binderRead("k"), literal("10", WHOLE)),
+                ownRead("waarde", "Vondst"), choice(comparison("greater", binderRead("k"), literal("10", WHOLE)),
                         literal("5.00", TWO), UNRESOLVED_VALUE, TWO), TWO), "null");
         String duration = characteristicRule("duur bij waarde", "Vondst", "duur", compound("all", 0, List.of(
                 comparison("greater", ownRead("waarde", "Vondst"), literal("100", WHOLE)), UNRESOLVED_CONDITION)));
@@ -393,8 +393,8 @@ class TmsBuiltinWitnessTest {
             assertEveryOrder(UNRESOLVED_MODEL, List.of(VALUE, heffing, duration), TmsDocuments.caseOn(null, List.of(
                     instanceWith("V1", "Vondst", Map.of("basis", numberValue("12.34"), "waarde", numberValue(intermediateState)),
                             List.of())),
-                    List.of(waarde("V1", "heffing", "5.00"), verwacht("V1", "duur", false), consistent())));
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+                    List.of(value("V1", "heffing", "5.00"), expected("V1", "duur", false), consistent())));
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         JsonNode low = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V2", "Vondst", Map.of("basis", numberValue("4.00")), List.of())), List.of(consistent()));
         JsonNode high = TmsDocuments.caseOn(null, List.of(
@@ -403,25 +403,25 @@ class TmsBuiltinWitnessTest {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(UNRESOLVED_MODEL, order), low,
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " Rekenfout: fout in de regel \"heffing van een vondst\": Unresolved reached in"
+            expected.add(names + " ComputeFault: fout in de regel \"heffing van een vondst\": Unresolved reached in"
                     + " evaluation: this rule fails observably");
         }
         for (List<String> order : TmsDocuments.permutations(List.of(VALUE, duration))) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(UNRESOLVED_MODEL, order), high,
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " Rekenfout: fout in de regel \"duur bij waarde\": Unresolved condition reached in"
+            expected.add(names + " ComputeFault: fout in de regel \"duur bij waarde\": Unresolved condition reached in"
                     + " evaluation");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- a dimension cell and a fold over a dimension selection ----------------
 
     private static final String DIMENSION_MODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\","
             + "\"animate\":true,\"plural\":\"Jutters\",\"attributes\":[{\"node\":\"Attribute\",\"name\":\"omzet\","
-            + "\"datatype\":" + TWO + ",\"dimensions\":[\"kwartaal\"]}," + attribuut("grondtoeslag", TWO) + ","
-            + attribuut("toeslag", TWO) + "," + attribuut("tweede kwartaal", TWO) + "," + attribuut("jaaromzet", TWO)
+            + "\"datatype\":" + TWO + ",\"dimensions\":[\"kwartaal\"]}," + attribute("grondtoeslag", TWO) + ","
+            + attribute("toeslag", TWO) + "," + attribute("tweede kwartaal", TWO) + "," + attribute("jaaromzet", TWO)
             + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],"
             + "\"dimensions\":[{\"node\":\"Dimension\",\"name\":\"kwartaal\",\"plural\":\"kwartalen\",\"preposition\":"
             + "\"in\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}],\"timelines\":[],\"dayKinds\":[]}";
@@ -442,9 +442,9 @@ class TmsBuiltinWitnessTest {
                         + "\"labels\":[\"noord\",\"zuid\"]}]");
         String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\",\"noord\"],"
                 + "\"source\":{\"snippet\":\"zijn omzet in k2 in noord\"}}";
-        String tweede = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal", cell, "null");
+        String second = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal", cell, "null");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocuments.document(model, List.of(tweede)), DroolsBackend.Branch.EXEC_MODEL));
+                TmsDocuments.document(model, List.of(second)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: tweede kwartaal van een jutter — een DimensionCellRead over 2 dimensies"
                 + " ('zijn omzet in k2 in noord'): deze tak leest alleen een cel van één dimensie", e.getMessage());
     }
@@ -454,14 +454,14 @@ class TmsBuiltinWitnessTest {
                 ownRead("grondtoeslag", "Jutter"), "null");
         String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\"],\"source\":"
                 + "{\"snippet\":\"zijn omzet in k2\"}}";
-        String tweede = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal",
+        String second = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal",
                 binary("plus", cell, ownRead("toeslag", "Jutter"), TWO), "null");
         String fold = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + OMZET + "],\"dimensionSelection\":"
                 + "{\"node\":\"DimensionSelection\",\"dimension\":\"kwartaal\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
                 + "\"type\":" + TWO + ",\"source\":{\"snippet\":\"de som van zijn omzet over alle kwartalen\"}}";
         String year = computingRule("jaaromzet van een jutter", "BEREKENING", "Jutter", "jaaromzet",
                 binary("plus", fold, ownRead("toeslag", "Jutter"), TWO), "null");
-        DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(DIMENSION_MODEL, List.of(toeslag, tweede, year)),
+        DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(DIMENSION_MODEL, List.of(toeslag, second, year)),
                 DroolsBackend.Branch.EXEC_MODEL);
         int orders = 0;
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
@@ -473,9 +473,9 @@ class TmsBuiltinWitnessTest {
             omzet.put("k2", new BigDecimal("20"));
             omzet.put("k4", new BigDecimal("5"));
             j1.getClass().getMethod(Namen.setter("omzet"), Map.class).invoke(j1, omzet);
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1), sessie -> { }), () -> "volgorde " + names);
-            TmsFaultWitnessTest.assertNumber("21", TmsDocuments.lees(j1, "tweede kwartaal"), "tweede kwartaal, " + names);
-            TmsFaultWitnessTest.assertNumber("36", TmsDocuments.lees(j1, "jaaromzet"), "jaaromzet, " + names);
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(j1), session -> { }), () -> "volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("21", TmsDocuments.read(j1, "tweede kwartaal"), "tweede kwartaal, " + names);
+            TmsFaultWitnessTest.assertNumber("36", TmsDocuments.read(j1, "jaaromzet"), "jaaromzet, " + names);
             orders++;
         }
         assertEquals(120, orders);

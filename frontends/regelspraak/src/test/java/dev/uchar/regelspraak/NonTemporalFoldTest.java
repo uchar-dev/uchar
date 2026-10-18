@@ -92,7 +92,7 @@ class NonTemporalFoldTest {
     }
 
     /** The emitted condition of the single rule's version, compacted. */
-    private static String voorwaarde(RegelSpraakModel m) {
+    private static String condition(RegelSpraakModel m) {
         String c = emitCompact(m);
         int van = c.indexOf("\"condition\":");
         assertTrue(van >= 0, () -> "geen voorwaarde in de emissie:\n" + c);
@@ -111,7 +111,7 @@ class NonTemporalFoldTest {
      * never what selected the quantifier, which is the whole content of the widening.
      */
     @Test void all_five_quantifiers_lowered_without_qualification() {
-        record Row(String written, String kwantor, String threshold) {}
+        record Row(String written, String quantifier, String threshold) {}
         for (Row r : new Row[]{new Row("alle", "all", ""),
                                new Row("geen van de", "none", ""),
                                new Row("ten minste 2 van de", "atLeast", "\"threshold\":2,"),
@@ -120,9 +120,9 @@ class NonTemporalFoldTest {
             RegelSpraakModel m = resolve(COMPARISON.formatted(r.written()));
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.written() + " — onverwachte diagnostiek: " + m.diagnostics);
-            String v = voorwaarde(m);
+            String v = condition(m);
             assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\""
-                            + r.kwantor() + "\"," + r.threshold() + "\"elementType\":\"Strandwacht\","),
+                            + r.quantifier() + "\"," + r.threshold() + "\"elementType\":\"Strandwacht\","),
                     () -> r.written() + " hoort de kwantor (en zijn telwoord) te dragen:\n" + v);
         }
     }
@@ -130,7 +130,7 @@ class NonTemporalFoldTest {
     /** The one field that differs from the qualified sentence, and the reason this widening is a
      *  widening and not a rewrite: the matrix carries NO period. */
     @Test void the_test_carries_no_period() {
-        String v = voorwaarde(resolve(COMPARISON.formatted("alle")));
+        String v = condition(resolve(COMPARISON.formatted("alle")));
         assertTrue(v.contains("\"test\":{\"node\":\"Comparison\",\"op\":\"greater\","),
                 () -> "de toets hoort de gewone vergelijking te zijn:\n" + v);
         assertFalse(v.contains("\"wholePeriod\""),
@@ -142,7 +142,7 @@ class NonTemporalFoldTest {
     /** Everything else is the qualified sentence's own lowering, unchanged: the element-own read, no fold
      *  left in the matrix, and the range spelled as the instance fold spells it. */
     @Test void the_quantified_operand_comes_back_as_own_read_of_the_element() {
-        String v = voorwaarde(resolve(COMPARISON.formatted("alle")));
+        String v = condition(resolve(COMPARISON.formatted("alle")));
         assertTrue(v.contains("\"left\":{\"node\":\"AttributeReference\",\"attribute\":\"dienstjaren\","
                         + "\"subjectType\":\"Strandwacht\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
@@ -164,7 +164,7 @@ class NonTemporalFoldTest {
                     indien de dienstjaren van ten minste 2 van de wachten van de Schouwploeg die gediplomeerd zijn groter zijn dan 5.
             """);
         clean(m);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\""),
                 () -> "de geschreven deelselectie hoort het filter te worden:\n" + v);
         assertTrue(v.contains("\"quantifier\":\"atLeast\",\"threshold\":2,"),
@@ -187,7 +187,7 @@ class NonTemporalFoldTest {
                     indien de dienstjaren van alle wachten van de Schouwploeg die groter zijn dan 2 groter zijn dan 5.
             """);
         clean(m);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"filter\":{\"node\":\"Comparison\",\"op\":\"greater\","),
                 () -> "het getalpredicaat hoort het filter te worden:\n" + v);
     }
@@ -205,7 +205,7 @@ class NonTemporalFoldTest {
     @Test void the_characteristic_form_becomes_a_fold_over_a_characteristic_of_the_element() {
         RegelSpraakModel m = resolve(KENMERK.formatted("alle", "gediplomeerd zijn"));
         clean(m);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\"all\","
                         + "\"elementType\":\"Strandwacht\",\"test\":"),
                 () -> "de kenmerkvorm hoort een vouw over Strandwacht te worden:\n" + v);
@@ -229,7 +229,7 @@ class NonTemporalFoldTest {
     @Test void an_absorbed_not_lands_on_the_matrix() {
         RegelSpraakModel m = resolve(KENMERK.formatted("geen van de", "niet gediplomeerd is"));
         clean(m);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"quantifier\":\"none\""), () -> "de geschreven kwantor hoort none te zijn:\n" + v);
         assertTrue(v.contains("\"test\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\","
                         + "\"negated\":true,"),
@@ -239,7 +239,7 @@ class NonTemporalFoldTest {
     /** All five quantifiers over the membership matrix too — the counting ones carry their telwoord
      *  there for the same reason they do over a comparison. */
     @Test void all_five_quantifiers_over_the_characteristic_form() {
-        record Row(String written, String kwantor, String threshold) {}
+        record Row(String written, String quantifier, String threshold) {}
         for (Row r : new Row[]{new Row("alle", "all", ""),
                                new Row("geen van de", "none", ""),
                                new Row("ten minste 2 van de", "atLeast", "\"threshold\":2,"),
@@ -248,9 +248,9 @@ class NonTemporalFoldTest {
             RegelSpraakModel m = resolve(KENMERK.formatted(r.written(), "gediplomeerd zijn"));
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.written() + " — onverwachte diagnostiek: " + m.diagnostics);
-            String v = voorwaarde(m);
+            String v = condition(m);
             assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\""
-                            + r.kwantor() + "\"," + r.threshold() + "\"elementType\":\"Strandwacht\","),
+                            + r.quantifier() + "\"," + r.threshold() + "\"elementType\":\"Strandwacht\","),
                     () -> r.written() + " hoort de kwantor (en zijn telwoord) te dragen:\n" + v);
         }
     }
@@ -268,7 +268,7 @@ class NonTemporalFoldTest {
                     - het wachttal van de Schouwploeg is groter dan 0.
             """);
         clean(m);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"node\":\"QuantifierFold\",\"quantifier\":\"all\","
                         + "\"elementType\":\"Strandwacht\""),
                 () -> "de bullet hoort dezelfde vouw te worden:\n" + v);
@@ -280,7 +280,7 @@ class NonTemporalFoldTest {
         RegelSpraakModel m = resolve(
                 KENMERK.formatted("alle", "").replace("van de Schouwploeg .", "van de Schouwploeg die ervaren zijn gediplomeerd zijn."));
         clean(m);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ervaren\""),
                 () -> "de deelselectie hoort het filter te worden:\n" + v);
         assertTrue(v.contains("\"test\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\""),
@@ -294,7 +294,7 @@ class NonTemporalFoldTest {
      *  marker stays. */
     @Test void a_characteristic_of_the_subject_does_not_bind_on_the_element() {
         RegelSpraakModel m = resolve(KENMERK.formatted("alle", "gekeurd zijn"));
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"node\":\"Unresolved\""),
                 () -> "een kenmerk van het SUBJECT hoort op het element niets te binden:\n" + v);
     }
@@ -322,9 +322,9 @@ class NonTemporalFoldTest {
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == Severity.WARNING
                         && d.message().contains("bindt geen kenmerk of getalpredicaat van Strandwacht")),
                 () -> "de as van de weigering hoort erbij te staan: " + m.diagnostics);
-        assertTrue(voorwaarde(m).contains("\"node\":\"Unresolved\""),
+        assertTrue(condition(m).contains("\"node\":\"Unresolved\""),
                 () -> "een niet-bindende deelselectie mag nooit als vouw over het VOLLE bereik landen:\n"
-                        + voorwaarde(m));
+                        + condition(m));
     }
 
     /** A telwoord under 1 declines on the membership route for the reason it declines on the comparison
@@ -346,8 +346,8 @@ class NonTemporalFoldTest {
     @Test void the_qualified_characteristic_form_stays_a_marker() {
         RegelSpraakModel m = resolve(
                 KENMERK.formatted("alle", "gedurende het gehele jaar gediplomeerd zijn"));
-        assertTrue(voorwaarde(m).contains("\"node\":\"Unresolved\""),
-                () -> "de gekwalificeerde kenmerkvorm hoort haar marker te houden:\n" + voorwaarde(m));
+        assertTrue(condition(m).contains("\"node\":\"Unresolved\""),
+                () -> "de gekwalificeerde kenmerkvorm hoort haar marker te houden:\n" + condition(m));
     }
 
     /** A MULTI-STEP written range on the membership route declines, exactly as it does on the
@@ -378,7 +378,7 @@ class NonTemporalFoldTest {
                     Een Haven is veilig
                     indien alle wachten van alle ploegen van de Haven gediplomeerd zijn.
             """);
-        assertTrue(voorwaarde(m).contains("\"node\":\"Unresolved\""),
-                () -> "een meerstapsbereik hoort niet als eenstapsvouw te landen:\n" + voorwaarde(m));
+        assertTrue(condition(m).contains("\"node\":\"Unresolved\""),
+                () -> "een meerstapsbereik hoort niet als eenstapsvouw te landen:\n" + condition(m));
     }
 }

@@ -85,7 +85,7 @@ class MixedUnionEdgeWitnessTest {
         // sources that is a read of the field on both types, a count, because the sibling source spells the key as
         // declared and would keep a bare "contains" green on its own.
         String drl = drl(edited(NUMMERREGISTER, o -> {
-            IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer"));
+            IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer"));
             ((ArrayNode) o.get("rules").get("uniquenesses")).remove(1);
         }));
         assertEquals(2, count(drl, ".Strandvondst( $invoer : (ComputeHelpers.periods(vondstnummer)) )"),
@@ -106,8 +106,8 @@ class MixedUnionEdgeWitnessTest {
 
     /** A corpus {@code ir.json} with one authored edit, written to a temp file — the corpus file itself is
      *  never touched (the mutation lives in this test, not in the shared zone). */
-    private static Path edited(Path bron, Consumer<ObjectNode> edit) throws Exception {
-        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(bron));
+    private static Path edited(Path source, Consumer<ObjectNode> edit) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(source));
         edit.accept(ir);
         Path out = Files.createTempFile(tmp, "gemengde-unie", ".json");
         Files.writeString(out, ir.toString());
@@ -156,7 +156,7 @@ class MixedUnionEdgeWitnessTest {
             if (!"Inconsistentie".equals(f.getClass().getSimpleName())) continue;
             Object subject = f.getClass().getMethod("getSubject").invoke(f);
             String label = "?";
-            for (var e : after.invoer().entrySet()) if (e.getValue() == subject) label = e.getKey();
+            for (var e : after.input().entrySet()) if (e.getValue() == subject) label = e.getKey();
             out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ " + label);
         }
         return out;

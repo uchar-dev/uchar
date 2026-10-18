@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import java.math.BigDecimal;
@@ -47,13 +47,13 @@ public final class Allocation {
     public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Set<Object> depositors) {}
 
     /**
-     * The distribution by {@code methode} of {@code pot} over {@code ontvangers}, the recipients of one source:
+     * The distribution by {@code method} of {@code pot} over {@code ontvangers}, the recipients of one source:
      * {@code gewogen} where the allocation declares a ratio attribute, {@code capped} where it declares a cap,
      * {@code decimals} the floor's decimals (null for none), {@code descending} the ordered method's direction. The
      * order of {@code ontvangers} decides nothing: every share depends only on the values, and a tie group divides the
      * pot as it stands at the group's entry.
      */
-    public static Result bereken(ResolvedVerdeling.Methode methode, Object pot, List<Recipient> recipients, boolean gewogen,
+    public static Result bereken(ResolvedAllocation.Method method, Object pot, List<Recipient> recipients, boolean gewogen,
                            boolean capped, Integer decimals, boolean descending) {
         Map<Object, BigDecimal> shares = new IdentityHashMap<>();
         Set<Object> depositors = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -62,7 +62,7 @@ public final class Allocation {
         // ch. 4.4, decided for v1 and uniform across the methods: an empty pot is no distribution, so it writes no
         // share and no rest and deposits nothing, not even for an empty weight or cap, and it is no fault
         if (pot == null) return new Result(shares, null, depositors);
-        return switch (methode) {
+        return switch (method) {
             case GELIJKE_DELEN -> equalShares(pot, recipients, decimals, shares, depositors);
             case NAAR_RATO -> proportional(pot, recipients, capped, decimals, shares, depositors);
             case OP_VOLGORDE -> ordered(pot, recipients, gewogen, capped, decimals, descending, shares,
@@ -145,7 +145,7 @@ public final class Allocation {
         List<Object> gewichten = gewogen ? new ArrayList<>() : null, maxima = capped ? new ArrayList<>() : null;
         for (Recipient o : recipients) {
             facts.add(o.recipient());
-            orderKeys.add(o.sleutel() instanceof BigDecimal d ? d.stripTrailingZeros() : o.sleutel());
+            orderKeys.add(o.key() instanceof BigDecimal d ? d.stripTrailingZeros() : o.key());
             if (gewogen) {
                 if (o.weight() == null) depositors.add(o.recipient());
                 // a weighted tie group always splits by weight, so an empty weight is the real 0 it counts as

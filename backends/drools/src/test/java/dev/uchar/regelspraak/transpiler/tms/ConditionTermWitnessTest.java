@@ -189,7 +189,7 @@ class ConditionTermWitnessTest {
     /** The plans of the rules of the forms of {@code golden}, in the order of the model. */
     private static List<RulePlan> rulePlans(String golden) throws Exception {
         return DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL)
-                .execModelTranspiler().modelplan().rules().stream().filter(p -> p.vorm() != null).toList();
+                .execModelTranspiler().modelplan().rules().stream().filter(p -> p.form() != null).toList();
     }
 
     /** The tests of {@code p}, in the order of its left-hand side. */
@@ -205,7 +205,7 @@ class ConditionTermWitnessTest {
         List<String> out = new ArrayList<>();
         for (RulePlan p : plans) {
             List<TestItem> tests = tests(p);
-            if (tests.isEmpty()) out.add(p.vorm() + ": geen toets");
+            if (tests.isEmpty()) out.add(p.form() + ": geen toets");
             for (TestItem t : tests) out.add(naam(p, t) + ": " + TermTree.tree(t.test()));
         }
         return out;
@@ -221,16 +221,16 @@ class ConditionTermWitnessTest {
             for (TestItem t : tests(p)) {
                 List<String> rules = new ArrayList<>();
                 TermTree.fields("", t.test(), "0", rules);
-                if (p.vorm().equals(previousForm) && rules.equals(previous))
+                if (p.form().equals(previousForm) && rules.equals(previous))
                     out.add(naam(p, t) + ": zoals de vorige toets");
                 else for (String r : rules) out.add(naam(p, t) + r);
-                previousForm = p.vorm();
+                previousForm = p.form();
                 previous = rules;
             }
         return out;
     }
 
     private static String naam(RulePlan p, TestItem t) {
-        return p.vorm() + " " + t.rol() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
+        return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
     }
 }

@@ -1,0 +1,351 @@
+# zone: backends/drools frontends/regelspraak
+scope	old	new	kind	words	reason
+*	ATTRIBUUT_LEEG	ATTRIBUTE_EMPTY	translation	attribuut|leeg	
+*	ATTRIBUUT_TIJDLIJN	ATTRIBUTE_TIMELINE	translation	attribuut|tijdlijn	
+*	ATTRIBUUT_WAARDE	ATTRIBUTE_VALUE	translation	attribuut|waarde	
+*	AfgeleidKenmerk	DerivedCharacteristic	translation	afgeleid|kenmerk	
+*	AfgeleideWaarde	DerivedValue	translation	afgeleide|waarde	
+*	Afgerond	Rounding	translation	afgerond	
+*	AfrondModus	RoundingMode	translation	afrond|modus	
+*	AttribuutRef	AttributeReference	improved	attribuut|ref	ref is reference; the glossary has no row for it
+*	AttribuutWaarde	AttributeValue	translation	attribuut|waarde	
+*	BEZET_PER_PARTICIPANT	OCCUPIED_PER_PARTICIPANT	translation	bezet|per|participant	
+*	Begrensd	Clamp	translation	begrensd	
+*	Benoembaar	Designatable	translation	benoembaar	
+*	Binair	Binary	translation	binair	
+*	Booleaan	BooleanType	improved	booleaan	a record Boolean would shadow java.lang.Boolean in Datatype and in every file that imports Datatype.*
+*	Bron	Source	translation	bron	
+*	CASE_AANWEZIG	CASE_PRESENT	translation	case|aanwezig	
+*	CaseInvoer	CaseInput	translation	case|invoer	
+*	Conditie	Condition	translation	conditie	
+*	Constante	Constant	translation	constante	
+*	DatumTijd	DateTime	translation	datum|tijd	
+*	DefaultLezing	DefaultRead	translation	default|lezing	
+*	Dekking	Coverage	translation	dekking	
+*	DekkingRegel	CoverageRule	translation	dekking|regel	
+*	DekkingSoort	CoverageKind	translation	dekking|soort	
+*	Documentfout	DocumentError	translation	documentfout	
+*	ENGELS	ENGLISH	translation	engels	
+*	Eenheid	Unit	translation	eenheid	
+*	ElementSleutel	ElementKey	translation	element|sleutel	
+*	Evaluatiefouten	EvaluationFaults	translation	evaluatie|fouten	
+*	Feittype	FactType	translation	feittype	
+*	Fixpunt	Fixpoint	translation	fixpunt	
+*	Fout	Fault	translation	fout	
+*	GESANCTIONEERD	SANCTIONED	translation	gesanctioneerd	
+*	GegenereerdUit	GeneratedFrom	translation	gegenereerd|uit	
+*	Geldigheid	Validity	translation	geldigheid	
+*	GemaaktObject	MadeObject	translation	gemaakt|object	
+*	GemaakteKoppeling	MadeLink	translation	gemaakte|koppeling	
+*	Herkomstvorm	OriginForm	translation	herkomst|vorm	
+*	Instantie	Instance	translation	instantie	
+*	Invoer	Input	translation	invoer	
+*	Invoervormfout	InputFormFault	translation	invoer|vorm|fout	
+*	KENMERK_AANWEZIG	CHARACTERISTIC_PRESENT	translation	kenmerk|aanwezig	
+*	KENMERK_AFWEZIG	CHARACTERISTIC_ABSENT	translation	kenmerk|afwezig	
+*	Kenmerk	CharacteristicCheck	translation	kenmerk	
+*	KenmerkSoort	CharacteristicKind	translation	kenmerk|soort	
+*	KenmerkWaarde	CharacteristicValue	translation	kenmerk|waarde	
+*	Kwantor	Quantifier	translation	kwantor	
+*	Methode	Method	translation	methode	
+*	Navigatie	Navigation	translation	navigatie	
+*	ONVERGUND	UNPERMITTED	improved	on|vergund	onvergund is the domain characteristic of the test document ("onvergund indien niet vergund"), unpermitted; vergund is domain content
+*	OPGESLOKT	SWALLOWED	translation	opgeslokt	
+*	Onbekend	Unknown	translation	onbekend	
+*	PAKKET	PACKAGE	translation	pakket	
+*	ParameterWaarde	ParameterValue	translation	parameter|waarde	
+*	Periode	TimeWindow	translation	periode	
+*	PeriodeDekking	PeriodCoverage	translation	periode|dekking	
+*	Predicaat	Predicate	translation	predicaat	
+*	ProducentConsument	ProducerConsumer	translation	producent|consument	
+*	RecursieTest	RecursionTest	translation	recursie|test	
+*	RegelGraaf	RuleGraph	translation	regel|graaf	
+*	Rekenfout	ComputeFault	translation	reken|fout	
+*	ResolvedRegel	ResolvedRule	translation	resolved|regel	
+*	ResolvedRegelGroep	ResolvedRuleGroup	translation	resolved|regel|groep	
+*	ResolvedVerdeling	ResolvedAllocation	translation	resolved|verdeling	
+*	Rol	Role	translation	rol	
+*	RolWaarde	RoleValue	translation	rol|waarde	
+*	Rolbotsing	RoleCollision	translation	rol|botsing	
+*	Rolfout	RoleError	translation	rol|fout	
+*	Rollidmaatschap	RoleMembership	translation	rollidmaatschap	
+*	Rolweigering	RoleRefusal	translation	rol|weigering	
+*	Samengesteld	Compound	translation	samengesteld	
+*	ScenarioBundel	ScenarioBundle	translation	scenario|bundel	
+*	ScenarioMutatieTest	ScenarioMutationTest	translation	scenario|mutatie|test	
+*	ScenarioResultaat	ScenarioResult	translation	scenario|resultaat	
+*	Schrijversconflict	WritersConflict	translation	schrijvers|conflict	
+*	Situatie	Situation	translation	situatie	
+*	Soort	Kind	improved	soort	the kind of a rule version (ResolvedRegel.Soort: equation, calculation, initialisation, characteristic attribution), not a presentation
+*	VRIJGESTELD	EXEMPT	translation	vrijgesteld	
+*	Vergelijking	Comparison	translation	vergelijking	
+*	Verwachting	Expectation	translation	verwachting	
+*	VerwachtingResultaat	ExpectationResult	translation	verwachting|resultaat	
+*	Vocabulaire	Vocabulary	translation	vocabulaire	
+*	Vorm	Form	translation	vorm	
+*	Vormsoort	FormKind	translation	vorm|soort	
+*	Vuring	Firing	translation	vuring	
+*	Waarde	ScenarioValue	improved	waarde	Value is the record transpiler/tms/Value (once Waarde), and the comments of the backend still call it Waarde; this record is the value of a scenario
+*	WaardeInterval	ValueInterval	translation	waarde|interval	
+*	Waarnemer	Observer	translation	waarnemer	
+*	ZUIVER	PURE	translation	zuiver	
+*	aanduiding	designation	translation	aanduiding	
+*	aantal	count	translation	aantal	
+backends/drools/src/main/java/dev/uchar/regelspraak/loader/IrLoader.java	aantal	facetCount	improved	aantal	a name of this scope where the global new name count is declared (card rename-public-api)
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/ComputeHelpers.java	aantal	countOf	improved	aantal	a name of this scope where the global new name count is declared (card rename-public-api)
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java	aantal	itemCount	improved	aantal	a name of this scope where the global new name count is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/FoldFilterFarSideWitnessTest.java	aantal	itemCount	improved	aantal	a name of this scope where the global new name count is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/runtime/DateStepRangeWitnessTest.java	aantal	itemCount	improved	aantal	a name of this scope where the global new name count is declared (card rename-public-api)
+*	aanwezig	present	translation	aanwezig	
+*	aanwezigExpected	presentExpected	translation	aanwezig|expected	
+*	afgepeld	peeled	translation	afgepeld	
+*	afk	abbr	translation	afk	
+*	afkap	truncate	translation	afkap	
+*	afrDec	roundDec	translation	afr|dec	
+*	afwijkend	deviating	translation	afwijkend	
+*	aggregeert	aggregates	translation	aggregeert	
+*	ariteit	arity	translation	ariteit	
+*	attribuut	attribute	translation	attribuut	
+*	attribuutLeden	attributeMembers	translation	attribuut|leden	
+*	basis	base	translation	basis	
+*	basisNaam	baseName	translation	basis|naam	
+*	benoembaar	designatable	translation	benoembaar	
+*	benoemd	named	translation	benoemd	
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/RegelSpraakModel.java	benoemd	namedElement	improved	benoemd	the lookup of a designated element; named is a local list of the same file
+*	bestandsnaam	fileName	translation	bestand|s|naam	
+*	beste	best	translation	beste	
+*	besteDim	bestDim	translation	beste|dim	
+*	besteLabel	bestLabel	translation	beste|label	
+*	besteLen	bestLen	translation	beste|len	
+*	bezet	occupied	translation	bezet	
+*	bezit	owns	translation	bezit	
+*	bouw	build	translation	bouw	
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/CaseRunner.java	bouw	backendBuild	improved	bouw	a name of this scope where the global new name build is declared (card rename-public-api)
+*	bron	source	translation	bron	
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/Resolver.java	bron	sourceText	improved	bron	a name of this scope where the global new name source is declared (card rename-public-api)
+*	bronNavigatie	sourceNavigation	translation	bron|navigatie	
+*	consequentie	consequence	translation	consequentie	
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/PatternDslRendering.java	consequentie	consequenceItem	improved	consequentie	a name of this scope where the global new name consequence is declared (card rename-public-api)
+*	contexten	contexts	translation	contexten	
+*	controleer	check	translation	controleer	
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java	controleer	verifyDefault	improved	controleer	a name of this scope where the global new name check is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/ReaderUnderWriterWitnessTest.java	controleer	verifyOf	improved	controleer	a name of this scope where the global new name check is declared (card rename-public-api)
+*	creatie	creation	translation	creatie	
+*	dagsoortGlobalen	dayKindGlobals	translation	dagsoort|globalen	
+*	datum	date	translation	datum	
+*	datumTijd	dateTime	translation	datum|tijd	
+*	declaratie	declaration	translation	declaratie	
+*	dekking	coverage	translation	dekking	
+*	diagnose	diagnostic	translation	diagnose	
+*	digraf	digraph	translation	digraf	
+*	dimensiesVan	dimensionsOf	translation	dimensies|van	
+*	doel	target	translation	doel	
+backends/drools/src/main/java/dev/uchar/regelspraak/schema/FactModelGenerator.java	doel	targetName	improved	doel	a name of this scope where the global new name target is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/TmsDocuments.java	doel	targetName	improved	doel	a name of this scope where the global new name target is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/TmsSubtypeWitnessTest.java	doel	targetName	improved	doel	a name of this scope where the global new name target is declared (card rename-public-api)
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/RegelSpraakModel.java	doel	targetName	improved	doel	a name of this scope where the global new name target is declared (card rename-public-api)
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/RuleChecker.java	doel	targetName	improved	doel	a name of this scope where the global new name target is declared (card rename-public-api)
+*	doelLabels	targetLabels	translation	doel|labels	
+*	doeltype	targetType	translation	doel|type	
+*	domein	domain	translation	domein	
+*	eenheidOf	unitOf	translation	eenheid|of	
+*	eerste	first	translation	eerste	
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java	eerste	earliest	improved	eerste	a name of this scope where the global new name first is declared (card rename-public-api)
+*	eersteRol	firstRole	translation	eerste|rol	
+*	eigenaar	owner	translation	eigenaar	
+*	eindOutput	endOutput	translation	eind|output	
+*	elementVan	elementOf	translation	element|van	
+*	emmerscalair	bucketScalar	translation	emmerscalair	
+*	engels	english	translation	engels	
+*	enumWaarde	enumValue	translation	enum|waarde	
+*	enumeratiewaarde	enumerationValue	translation	enumeratie|waarde	
+*	expliciet	explicit	translation	expliciet	
+*	feitCreaties	factCreations	translation	feit|creaties	
+*	feittype	factType	translation	feittype	
+*	fixpunt	fixpoint	translation	fixpunt	
+*	fout	fault	improved	fout	the exception or fault the backend carries (Fout is Fault in the transpiler and the TMS plans)
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/CaseRunner.java	fout	failure	improved	fout	a name of this scope where the global new name fault is declared (card rename-public-api)
+frontends/regelspraak	fout	error	improved	fout	the refusal message of a resolver step (Typing.Result.fout, Designations.fout): an error text, not a fault of evaluation
+*	fouten	faults	translation	fouten	
+*	frase	phrase	translation	frase	
+*	geenFixpunt	noFixpoint	translation	geen|fixpunt	
+*	gegenereerd	generated	translation	gegenereerd	
+*	gegenereerdUit	generatedFrom	translation	gegenereerd|uit	
+*	geldigheid	validity	translation	geldigheid	
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/emit/IrEmitter.java	geldigheid	writeValidity	improved	geldigheid	a name of this scope where the global new name validity is declared (card rename-public-api)
+*	gelowerd	lowered	translation	gelowerd	
+*	genereer	generate	translation	genereer	
+*	gepromoveerd	promoted	translation	gepromoveerd	
+*	getal	number	translation	getal	
+*	getypt	typed	translation	getypt	
+*	gewType	weightType	translation	gew|type	
+*	geweigerd	refused	translation	geweigerd	
+*	ggd	gcd	translation	ggd	
+*	graaf	graph	translation	graaf	
+*	granulariteitVan	granularityOf	translation	granulariteit|van	
+*	heeftEigenInhoud	hasOwnContent	improved	heeft|eigen|inhoud	inhoud is content; the Haiku answer left it Dutch
+*	hooi	haystack	translation	hooi	
+*	inLijn	inLine	translation	in|lijn	
+*	inTonnen	inTonnes	translation	in|tonnen	
+*	inconsistenties	inconsistencies	translation	inconsistenties	
+*	ingelijnd	inlining	improved	ingelijnd	runs a builder in inlining mode; inlined is a local of another method of the same file
+*	instanties	instances	translation	instanties	
+*	invoer	input	translation	invoer	
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/CaseInvoer.java	invoer	inputData	improved	invoer	a name of this scope where the global new name input is declared (card rename-public-api)
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java	invoer	inputData	improved	invoer	a name of this scope where the global new name input is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/TmsEverUniquenessWitnessTest.java	invoer	inputData	improved	invoer	a name of this scope where the global new name input is declared (card rename-public-api)
+*	irModus	irMode	translation	ir|modus	
+*	isEen	isA	improved	is|een	is a: the type is, or inherits from, the other object type; is alone says nothing
+*	isGetalachtig	isNumberLike	translation	is|getal|achtig	
+*	isKenmerk	isCharacteristic	translation	is|kenmerk	
+*	isOrdenbaar	isOrderable	translation	is|ordenbaar	
+*	kenmerk	characteristic	translation	kenmerk	
+*	kenmerkGranulariteitVan	characteristicGranularityOf	translation	kenmerk|granulariteit|van	
+*	kenmerkNaam	characteristicName	translation	kenmerk|naam	
+*	kenmerkSoort	characteristicKind	translation	kenmerk|soort	
+*	kenmerkTijdlijnAantalVan	characteristicTimelineCountOf	translation	kenmerk|tijdlijn|aantal|van	
+*	keten	chain	translation	keten	
+*	keuze	choice	translation	keuze	
+*	klaar	done	translation	klaar	
+*	koppelingen	links	translation	koppelingen	
+*	kwantor	quantifier	translation	kwantor	
+*	leden	members	translation	leden	
+*	lees	read	translation	lees	
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/CaseRunner.java	lees	invokeGetter	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackend.java	lees	fixpointOf	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/ComputeHelpers.java	lees	readProperty	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java	lees	readOf	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/CaseInputWitnessTest.java	lees	readOf	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/CaseWireDateWitnessTest.java	lees	readOf	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/transpiler/tms/FormsPlan.java	lees	readOf	improved	lees	a name of this scope where the global new name read is declared (card rename-public-api)
+*	leest	reads	translation	leest	
+*	lez	reads	improved	lez	the Reads object of the rule that TmsTranspiler lowers
+*	lezingen	readings	improved	lezingen	the reads of a rule-graph form, apart from leest (reads)
+*	lijn	lineage	improved	lijn	the chain of rule versions of one lineage (RuleChecker); chain is keten in the same file and line is a line number
+*	lijst	list	translation	lijst	
+*	links	left	translation	links	
+*	meerVintage	multiVintage	improved	meer|vintage	the vintage kind of more than one: multi, not more
+*	meldAlle	reportAll	translation	meld|alle	
+*	melding	message	translation	melding	
+*	metScope	withScope	translation	met|scope	
+*	methode	method	translation	methode	
+*	modus	mode	translation	modus	
+*	nKenm	nCharacteristic	translation	n|kenm	
+*	naar	destination	improved	naar	the end of an edge (Edge.naar); to is the bound of a Periode and of a conversion in the same files
+*	naarVeelRol	toManyRole	translation	naar|veel|rol	
+*	navigatie	navigation	translation	navigatie	
+*	navigatieRol	navigationRole	translation	navigatie|rol	
+*	negatie	negation	improved	negatie	whether a clause is negated; negated is the component of WholePeriod and a local of RuleChecker, isNegated a method of the same file
+*	notVrijgesteld	notExempt	translation	not|vrijgesteld	
+*	numEenh	numUnit	translation	num|eenh	
+*	objectCreaties	objectCreations	translation	object|creaties	
+*	objecten	objects	translation	objecten	
+*	objecttype	objectType	translation	objecttype	
+*	objecttypeOpNaam	objectTypeByName	translation	objecttype|op|naam	
+*	ogenblik	moment	translation	ogenblik	
+*	onbeperkt	unbounded	translation	onbeperkt	
+*	onbewaakt	unguarded	translation	onbewaakt	
+*	ond	situationPart	improved	ond	the part of a situation block (SituatieOnderdeelContext); part is the loop variable of a text series in the same file
+*	onderdelen	components	improved	onderdelen	the parts of a compound condition (Conditie.Samengesteld); parts is a local map in the same file
+*	ong	unequal	translation	ong	
+*	ongeordend	unordered	translation	ongeordend	
+*	ongeschrevenVerdelingen	unwrittenAllocations	translation	ongeschreven|verdelingen	
+*	opgeslokt	swallowed	translation	opgeslokt	
+*	overlapFouten	overlapErrors	translation	overlap|fouten	
+*	ownBaseOnLijn	ownBaseOnLine	translation	own|base|on|lijn	
+*	pad	path	translation	pad	
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/RuleChecker.java	pad	bindingPath	improved	pad	a name of this scope where the global new name path is declared (card rename-public-api)
+*	peildatum	asOfDate	translation	peildatum	
+*	perioden	periods	translation	perioden	
+*	pijl	arrow	translation	pijl	
+*	positie	position	translation	positie	
+*	producentIndex	producerIndex	translation	producent|index	
+*	productie	production	translation	productie	
+*	productieDocument	productionDocument	translation	productie|document	
+*	rapport	report	translation	rapport	
+*	rationeel	rational	translation	rationeel	
+*	rechts	right	translation	rechts	
+*	rechtvaardiging	justification	translation	rechtvaardiging	
+*	reden	reason	translation	reden	
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/CaseRunner.java	reden	cause	improved	reden	a name of this scope where the global new name reason is declared (card rename-public-api)
+*	regelGroepen	ruleGroups	translation	regel|groepen	
+*	regelgroep	ruleGroup	translation	regelgroep	
+*	rekendatum	evaluationDate	translation	rekendatum	
+*	resultaat	result	translation	resultaat	
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/DecisionTableDesugar.java	resultaat	resultClause	improved	resultaat	a name of this scope where the global new name result is declared (card rename-public-api)
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/RuleChecker.java	resultaat	resultClause	improved	resultaat	a name of this scope where the global new name result is declared (card rename-public-api)
+*	rol	role	translation	rol	
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/RuleChecker.java	rol	roleName	improved	rol	a name of this scope where the global new name role is declared (card rename-public-api)
+*	rolDoeltypeNaarSubject	roleTargetTypeToSubject	translation	rol|doel|type|naar|subject	
+*	rolNaamMatcht	roleNameMatches	translation	rol|naam|matcht	
+*	sessie	session	translation	sessie	
+*	situatie	situation	translation	situatie	
+*	sleutel	key	translation	sleutel	
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/Stapels.java	sleutel	stackKey	improved	sleutel	a name of this scope where the global new name key is declared (card rename-public-api)
+*	soort	category	improved	soort	kind is a name that most files of the zone declare for another thing (the kind of a node, a function, a form), and a file row would rename the reads the classifier cannot type to the wrong name
+*	staffel	tier	translation	staffel	
+*	standaard	isDefault	improved	standaard	a boolean: whether the vocabulary is the default one; default is a Java keyword
+backends/drools	standaard	defaultEntry	improved	standaard	the test helper that builds a prioritized default; default is a Java keyword
+*	telpad	countPath	translation	telpad	
+*	tijdlijnAantalVan	timelineCountOf	translation	tijdlijn|aantal|van	
+*	toek	assignments	improved	toek	the list of MemberInit of an object creation (toekenningen): assignments
+*	toekenbaar	assignable	translation	toekenbaar	
+*	toon	show	translation	toon	
+*	tot	until	improved	tot	to is a parameter or a variable of most files that read a window; until is the end of it, beside from
+*	totaal	total	translation	totaal	
+*	transpileerbaar	transpilable	translation	transpileerbaar	
+*	tweede	second	translation	tweede	
+*	tweedeRol	secondRole	translation	tweede|rol	
+*	typen	types	translation	typen	
+*	uniciteitUnies	uniquenessUnions	translation	uniciteit|unies	
+*	uniciteiten	uniquenesses	translation	uniciteiten	
+*	valideer	validate	translation	valideer	
+*	vanaf	from	translation	vanaf	
+*	veld	field	translation	veld	
+backends/drools/src/main/java/dev/uchar/regelspraak/loader/IrLoader.java	veld	fieldName	improved	veld	a name of this scope where the global new name field is declared (card rename-public-api)
+*	verbruikt	consumed	translation	verbruikt	
+backends/drools/src/main/java/dev/uchar/regelspraak/graaf/RegelGraaf.java	verbruikt	consumedElements	improved	verbruikt	a name of this scope where the global new name consumed is declared (card rename-public-api)
+*	verdelingen	allocations	translation	verdelingen	
+*	verg	compare	translation	verg	
+*	vergelijk	compare	translation	vergelijk	
+*	verw	expectation	improved	verw	an abbreviation of verwachting: one expectation; verwacht is expected in the same file
+*	verwacht	expected	translation	verwacht	
+*	verwachteWaarde	expectedValue	translation	verwachte|waarde	
+*	verwachtingen	expectations	translation	verwachtingen	
+*	vgl	compare	translation	vgl	
+*	vocabulaire	vocabulary	translation	vocabulaire	
+*	vocabulaires	vocabularies	translation	vocabulaires	
+*	voegIn	insert	translation	voeg|in	
+*	voorwaarde	condition	improved	voorwaarde	the condition of a rule; only in a prioritized-defaults group does the wire also call a condition a justification, and that is rechtvaardiging
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java	voorwaarde	conditionTerm	improved	voorwaarde	a name of this scope where the global new name condition is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/CompanionPathWitnessTest.java	voorwaarde	conditionJson	improved	voorwaarde	a name of this scope where the global new name condition is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetCarrierWalkWitnessTest.java	voorwaarde	conditionJson	improved	voorwaarde	a name of this scope where the global new name condition is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetClusterWitnessTest.java	voorwaarde	conditionJson	improved	voorwaarde	a name of this scope where the global new name condition is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetResultArmWitnessTest.java	voorwaarde	conditionJson	improved	voorwaarde	a name of this scope where the global new name condition is declared (card rename-public-api)
+*	vorm	form	translation	vorm	
+backends/drools/src/main/java/dev/uchar/regelspraak/loader/IrLoader.java	vorm	formName	improved	vorm	a name of this scope where the global new name form is declared (card rename-public-api)
+*	vormen	forms	translation	vormen	
+backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/Cycles.java	vormen	graphForms	improved	vormen	a name of this scope where the global new name forms is declared (card rename-public-api)
+*	vormnaam	formName	translation	vormnaam	
+*	vrijgesteld	exempt	translation	vrijgesteld	
+*	vuringen	firings	translation	vuringen	
+*	vuur	fire	translation	vuur	
+*	vzs	prepositionSpec	translation	vzs	
+*	waarde	value	translation	waarde	
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/CompanionPathWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetCarrierWalkWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetClusterWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetNeedWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetReportSiteWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/LetResultArmWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/NestedLetPushWitnessTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+frontends/regelspraak/src/main/java/dev/uchar/regelspraak/ir/Expr.java	waarde	valueText	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+frontends/regelspraak/src/test/java/dev/uchar/regelspraak/CountOverPathTest.java	waarde	valueJson	improved	waarde	a name of this scope where the global new name value is declared (card rename-public-api)
+*	waardenOp	valuesOn	translation	waarden|op	
+*	wederkerig	reciprocal	translation	wederkerig	
+*	weergave	rendering	translation	weergave	
+*	werkelijk	actual	translation	werkelijk	
+*	wireNavigatie	wireNavigation	translation	wire|navigatie	
+*	wit	whitespace	translation	wit	
+*	zetAfgeleideWaarden	setDerivedValues	translation	zet|afgeleide|waarden	
+*	zus	sister	translation	zus	

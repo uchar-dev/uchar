@@ -120,7 +120,7 @@ class HostObjectWitnessTest {
     @Test void the_supertype_host_reads_the_target_in_both_branches() throws Exception {
         // IR-SPEC ch. 4.6 (q2) reads "an object of type T satisfies host O iff T ⊑ O", so a host naming an
         // ANCESTOR of the doel is legal and must be carried. Until 2026-09-19 both branches asked the question by
-        // NAME IDENTITY (`k.eigenaar() != subject`) and refused it, while the verifier, ref and the ASP backend all
+        // NAME IDENTITY (`k.owner() != subject`) and refused it, while the verifier, ref and the ASP backend all
         // carried the document — two executors answering and two refusing one verifier-clean form, which is the
         // split WF-109 exists to close. Measured RED FIRST on the pre-fix jar:
         //     verifier : PASS
@@ -166,11 +166,11 @@ class HostObjectWitnessTest {
 
     /** The golden's own case with ONE expected attribute value replaced — the population is untouched, so a
      *  divergence can only come from the reading. */
-    private JsonNode withExpectation(String naam, String attribuut, String waarde) throws Exception {
+    private JsonNode withExpectation(String naam, String attribute, String value) throws Exception {
         ObjectNode c = (ObjectNode) caseOf(naam);
         for (JsonNode e : c.get("expected"))
-            if ("attributeValue".equals(e.path("kind").asText()) && attribuut.equals(e.path("attribute").asText()))
-                ((ObjectNode) e.get("value")).put("number", waarde);
+            if ("attributeValue".equals(e.path("kind").asText()) && attribute.equals(e.path("attribute").asText()))
+                ((ObjectNode) e.get("value")).put("number", value);
         return c;
     }
 }

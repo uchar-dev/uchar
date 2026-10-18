@@ -77,8 +77,8 @@ class SourcePathChainWitnessTest {
     private static final String PATH_VAT = step("sluisbeheer", "beheerde sluis") + ", "
             + step("schutting", "geschutte praam") + ", " + step("lading", "geladen vat");
 
-    private static String step(String feittype, String rol) {
-        return "{ \"node\": \"RoleBinding\", \"factType\": \"" + feittype + "\", \"role\": \"" + rol + "\" }";
+    private static String step(String factType, String role) {
+        return "{ \"node\": \"RoleBinding\", \"factType\": \"" + factType + "\", \"role\": \"" + role + "\" }";
     }
 
     // ---------------- 1-5: the five readings, both branches ----------------
@@ -179,10 +179,10 @@ class SourcePathChainWitnessTest {
     private static final String NUM2 =
             "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"unspecified\" }";
 
-    /** One fold rule: {@code <attribuut>} of a Tolhuis is {@code <kind>} of {@code <arg>} of all
+    /** One fold rule: {@code <attribute>} of a Tolhuis is {@code <kind>} of {@code <arg>} of all
      *  {@code <element>} the path reaches. */
-    private static String regel(String naam, String attribuut, String kind, String element, String arg,
-            String emptyFallback, String pad) {
+    private static String regel(String naam, String attribute, String kind, String element, String arg,
+            String emptyFallback, String path) {
         return """
                 { "node": "Rule", "name": "%s", "versions": [ {
                   "validity": { "node": "Validity" },
@@ -194,11 +194,11 @@ class SourcePathChainWitnessTest {
                     "elementType": "%s",%s
                     "sourcePath": [ %s ], "type": %s, "source": { "snippet": "de vouw over het pad" } },
                   "initialisation": false, "presentation": "calculation" } ] }"""
-                .formatted(naam, attribuut, attribuut, kind, arg, element, arg, element, element,
-                        emptyFallback.equals("null") ? "" : " \"emptyFallback\": " + emptyFallback + ",", pad, NUM2);
+                .formatted(naam, attribute, attribute, kind, arg, element, arg, element, element,
+                        emptyFallback.equals("null") ? "" : " \"emptyFallback\": " + emptyFallback + ",", path, NUM2);
     }
 
-    private static String objecttype(String naam, String plural, String supertype, String attributes) {
+    private static String objectType(String naam, String plural, String supertype, String attributes) {
         return """
                 { "node": "ObjectType", "name": "%s", %s"animate": false, "plural": "%s",
                   "attributes": [ %s ],
@@ -208,16 +208,16 @@ class SourcePathChainWitnessTest {
     }
 
     /** One entry of an object type's attribute list. */
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{ \"node\": \"Attribute\", \"name\": \"" + naam + "\", \"datatype\": " + datatype + " }";
     }
 
-    private static String rol(String naam, String otn, String plural, boolean many) {
+    private static String role(String naam, String otn, String plural, boolean many) {
         return "{ \"node\": \"Role\", \"name\": \"" + naam + "\", \"objectType\": \"" + otn
                 + "\", \"plural\": \"" + plural + "\", \"many\": " + many + " }";
     }
 
-    private static String feittype(String naam, String a, String b) {
+    private static String factType(String naam, String a, String b) {
         return "{ \"node\": \"FactType\", \"name\": \"" + naam + "\", \"reciprocal\": false,"
                 + " \"roles\": [ " + a + ", " + b + " ] }";
     }
@@ -242,25 +242,25 @@ class SourcePathChainWitnessTest {
                 "ruleGroups": [] },
               "diagnostics": [] }"""
             .formatted(
-                    objecttype("Tolhuis", "Tolhuizen", null,
-                            String.join(", ", attribuut("laagste vracht", NUM2), attribuut("totale vracht", NUM2),
-                                    attribuut("steenlast", NUM2), attribuut("laagste zegelvracht", NUM2),
-                                    attribuut("laagste vatinhoud", NUM2))),
-                    objecttype("Sluis", "Sluizen", null, ""),
-                    objecttype("Praam", "Pramen", null, attribuut("vracht", NUM2)),
-                    objecttype("Zegelpraam", "Zegelpramen", "Praam", ""),
-                    objecttype("Ankersteen", "Ankerstenen", null, attribuut("steengewicht", NUM2)),
-                    objecttype("Vat", "Vaten", null, attribuut("inhoud", NUM2)),
-                    feittype("sluisbeheer", rol("tolhuis", "Tolhuis", "tolhuizen", false),
-                            rol("beheerde sluis", "Sluis", "beheerde sluizen", true)),
-                    feittype("schutting", rol("schuttende sluis", "Sluis", "schuttende sluizen", false),
-                            rol("geschutte praam", "Praam", "geschutte pramen", true)),
-                    feittype("verankering", rol("verankerde sluis", "Sluis", "verankerde sluizen", true),
-                            rol("gebruikte ankersteen", "Ankersteen", "gebruikte ankerstenen", false)),
-                    feittype("praamregister", rol("registerhouder", "Tolhuis", "registerhouders", false),
-                            rol("geregistreerde praam", "Praam", "geregistreerde pramen", true)),
-                    feittype("lading", rol("ladende praam", "Praam", "ladende pramen", false),
-                            rol("geladen vat", "Vat", "geladen vaten", true)),
+                    objectType("Tolhuis", "Tolhuizen", null,
+                            String.join(", ", attribute("laagste vracht", NUM2), attribute("totale vracht", NUM2),
+                                    attribute("steenlast", NUM2), attribute("laagste zegelvracht", NUM2),
+                                    attribute("laagste vatinhoud", NUM2))),
+                    objectType("Sluis", "Sluizen", null, ""),
+                    objectType("Praam", "Pramen", null, attribute("vracht", NUM2)),
+                    objectType("Zegelpraam", "Zegelpramen", "Praam", ""),
+                    objectType("Ankersteen", "Ankerstenen", null, attribute("steengewicht", NUM2)),
+                    objectType("Vat", "Vaten", null, attribute("inhoud", NUM2)),
+                    factType("sluisbeheer", role("tolhuis", "Tolhuis", "tolhuizen", false),
+                            role("beheerde sluis", "Sluis", "beheerde sluizen", true)),
+                    factType("schutting", role("schuttende sluis", "Sluis", "schuttende sluizen", false),
+                            role("geschutte praam", "Praam", "geschutte pramen", true)),
+                    factType("verankering", role("verankerde sluis", "Sluis", "verankerde sluizen", true),
+                            role("gebruikte ankersteen", "Ankersteen", "gebruikte ankerstenen", false)),
+                    factType("praamregister", role("registerhouder", "Tolhuis", "registerhouders", false),
+                            role("geregistreerde praam", "Praam", "geregistreerde pramen", true)),
+                    factType("lading", role("ladende praam", "Praam", "ladende pramen", false),
+                            role("geladen vat", "Vat", "geladen vaten", true)),
                     String.join(", ",
                             regel("laagste vracht", "laagste vracht", "minimum", "Praam", "vracht", "null", PATH_VRACHT),
                             regel("totale vracht", "totale vracht", "sum", "Praam", "vracht",

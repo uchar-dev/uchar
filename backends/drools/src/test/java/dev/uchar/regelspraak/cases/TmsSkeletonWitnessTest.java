@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.cases;
 
 import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.drools.core.RuleBaseConfiguration;
@@ -65,8 +65,8 @@ class TmsSkeletonWitnessTest {
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         assertEquals(DroolsBackend.Branch.EXEC_MODEL, b.branch());
         assertNull(b.drl());
-        assertEquals(List.of("regel: vergund indien erkend"), b.dekking().stream().map(Dekking::sleutel).toList());
-        assertTrue(b.dekking().stream().allMatch(Dekking::lowered), b.dekking()::toString);
+        assertEquals(List.of("regel: vergund indien erkend"), b.coverage().stream().map(Coverage::key).toList());
+        assertTrue(b.coverage().stream().allMatch(Coverage::lowered), b.coverage()::toString);
         assertEquals(RuleBaseConfiguration.AssertBehaviour.EQUALITY, equality(b.kieBase()));
         // the rule of a form carries the form's name; vergund is read by nothing, so it has no standing rules
         assertEquals(List.of(TmsTranspiler.PKG + ":vergund indien erkend"), rules(b.kieBase()));
@@ -169,11 +169,11 @@ class TmsSkeletonWitnessTest {
         for (int i = 2; i < goed.length; i++) {
             Object[] arguments = goed.clone();
             arguments[i] = null;
-            InvocationTargetException fout = assertThrows(InvocationTargetException.class, () -> build.invoke(null, arguments));
-            NullPointerException npe = assertInstanceOf(NullPointerException.class, fout.getCause());
-            String soort = build.getParameterTypes()[i] == List.class ? "empty list" : "empty map";
+            InvocationTargetException fault = assertThrows(InvocationTargetException.class, () -> build.invoke(null, arguments));
+            NullPointerException npe = assertInstanceOf(NullPointerException.class, fault.getCause());
+            String category = build.getParameterTypes()[i] == List.class ? "empty list" : "empty map";
             assertTrue(npe.getMessage().startsWith("side table '")
-                    && npe.getMessage().endsWith("' is null — pass an " + soort + " for a document without one"),
+                    && npe.getMessage().endsWith("' is null — pass an " + category + " for a document without one"),
                     "parameter " + i + ": " + npe.getMessage());
             tested++;
         }

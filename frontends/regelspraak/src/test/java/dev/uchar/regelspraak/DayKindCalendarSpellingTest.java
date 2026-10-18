@@ -46,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class DayKindCalendarSpellingTest {
 
-    private static RegelSpraakModel resolve(String bron) {
-        return Resolver.resolve(bron);
+    private static RegelSpraakModel resolve(String source) {
+        return Resolver.resolve(source);
     }
 
     private static List<Diagnostic> van(RegelSpraakModel m, Severity s) {

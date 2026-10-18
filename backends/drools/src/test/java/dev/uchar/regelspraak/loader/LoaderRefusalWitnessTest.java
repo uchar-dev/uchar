@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * OCaml loader refuses every one of them with a JSON pointer; this loader now does the same, and names an absent
  * field as the OCaml loader does, at the object that lacks it, with the field in the detail.
  *
- * <p>Each refusal is an {@link IrLoader.Documentfout}, a hard error, and never an {@link IrLoader.Refusal}: a
+ * <p>Each refusal is an {@link IrLoader.DocumentError}, a hard error, and never an {@link IrLoader.Refusal}: a
  * Refusal is the differential gate's auto-excluded channel ("form not carried"), and a malformed document filed
  * there leaves the gate green over a document nobody read. Corpus golden and red documents are verifier-clean,
  * so none of them reaches these arms; this suite is the only place they are pinned. Three tests pin the other side
@@ -68,7 +68,7 @@ class LoaderRefusalWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
         IrPath.objectType(ir, "Bakenmeester").put("node", "Objecttype");
-        IrLoader.Documentfout e = refuses(ir, ot + "/node");
+        IrLoader.DocumentError e = refuses(ir, ot + "/node");
         assertTrue(e.getMessage().contains("\"Objecttype\""), e.getMessage());
     }
 
@@ -85,7 +85,7 @@ class LoaderRefusalWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         String ot = objectTypePath(ir, "Bakenmeester");
         IrPath.objectType(ir, "Bakenmeester").putObject("attribuutGranulariteit").put("onderhoudstarief", "DAG");
-        IrLoader.Documentfout e = refuses(ir, ot + "/attribuutGranulariteit");
+        IrLoader.DocumentError e = refuses(ir, ot + "/attribuutGranulariteit");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
@@ -144,7 +144,7 @@ class LoaderRefusalWitnessTest {
         // named as the OCaml loader names it: at the object that lacks the field, the root being ""
         ObjectNode ir = golden(BAKENMEESTER);
         ir.remove("diagnostics");
-        IrLoader.Documentfout e = missing(ir, "", "diagnostics");
+        IrLoader.DocumentError e = missing(ir, "", "diagnostics");
         assertTrue(e.getMessage().contains(" at <root>: "), e.getMessage());
 
         ir = golden(BAKENMEESTER);
@@ -158,7 +158,7 @@ class LoaderRefusalWitnessTest {
     }
 
     @Test void a_document_that_is_no_object_is_refused_on_the_root() throws Exception {
-        IrLoader.Documentfout e = refuses(JSON.createArrayNode(), "");
+        IrLoader.DocumentError e = refuses(JSON.createArrayNode(), "");
         assertTrue(e.getMessage().contains(" at <root>: expected an object"), e.getMessage());
     }
 
@@ -186,7 +186,7 @@ class LoaderRefusalWitnessTest {
             String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
             ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                     .set("count", count);
-            IrLoader.Documentfout e = refuses(ir, attr + "/timeline/count");
+            IrLoader.DocumentError e = refuses(ir, attr + "/timeline/count");
             assertTrue(e.getMessage().contains("integer"), e.getMessage());
         }
     }
@@ -245,7 +245,7 @@ class LoaderRefusalWitnessTest {
         String characteristic = memberPath(ir, "Bakenmeester", "characteristics", "dienstdoend");
         ((ObjectNode) IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
                 .put("timelineName", "boekjaar");
-        IrLoader.Documentfout e = refuses(ir, characteristic + "/timeline/timelineName");
+        IrLoader.DocumentError e = refuses(ir, characteristic + "/timeline/timelineName");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
@@ -260,7 +260,7 @@ class LoaderRefusalWitnessTest {
         for (String kind : List.of("BIJVOEGLIJK", "bijvoeglijk", "Adjectival")) {
             ir = golden(BAKENMEESTER);
             IrPath.characteristic(IrPath.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", kind);
-            IrLoader.Documentfout e = refuses(ir, characteristic + "/kind");
+            IrLoader.DocumentError e = refuses(ir, characteristic + "/kind");
             assertTrue(e.getMessage().endsWith(": unknown kind value \"" + kind + "\""), e.getMessage());
         }
     }
@@ -307,7 +307,7 @@ class LoaderRefusalWitnessTest {
 
         ir = golden(BAKENMEESTER);
         ((ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value").get("type")).remove("node");
-        IrLoader.Documentfout e = refuses(ir, "/rules/rules/0/versions/0/value/type");
+        IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/value/type");
         assertTrue(e.getMessage().contains("missing field 'node'"), e.getMessage());
     }
 
@@ -345,7 +345,7 @@ class LoaderRefusalWitnessTest {
             refuses(twist, d + "/" + field);
         }
         diagnostic.set("source", IrPath.sourceReference("een melding"));
-        IrLoader.Documentfout e = refuses(ir, d + "/source");
+        IrLoader.DocumentError e = refuses(ir, d + "/source");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
@@ -354,7 +354,7 @@ class LoaderRefusalWitnessTest {
         // is gone with it. A name is a string and required, a plural written whole or not at all.
         ObjectNode ir = golden(BAKENMEESTER);
         IrPath.model(ir).putArray("dayKinds").add("springtijdag");
-        IrLoader.Documentfout e = refuses(ir, "/model/dayKinds/0");
+        IrLoader.DocumentError e = refuses(ir, "/model/dayKinds/0");
         assertTrue(e.getMessage().contains("(DayKind)"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
@@ -399,7 +399,7 @@ class LoaderRefusalWitnessTest {
 
         ir = golden(BAKENMEESTER);
         IrPath.model(ir).putObject("functionDefs");
-        IrLoader.Documentfout e = refuses(ir, "/model/functionDefs");
+        IrLoader.DocumentError e = refuses(ir, "/model/functionDefs");
         assertTrue(e.getMessage().contains("expected an array"), e.getMessage());
     }
 
@@ -411,7 +411,7 @@ class LoaderRefusalWitnessTest {
         ObjectNode ot = IrPath.objectType(ir, "Bakenmeester");
         ArrayNode characteristics = (ArrayNode) ot.get("characteristics");
         characteristics.addObject().put("node", "Characteristic").put("name", "dienstdoend").put("kind", "possessive");
-        IrLoader.Documentfout e = refuses(ir, objectTypePath(ir, "Bakenmeester") + "/characteristics/"
+        IrLoader.DocumentError e = refuses(ir, objectTypePath(ir, "Bakenmeester") + "/characteristics/"
                 + (characteristics.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'dienstdoend'"), e.getMessage());
     }
@@ -423,7 +423,7 @@ class LoaderRefusalWitnessTest {
         ArrayNode list = IrPath.modelList(ir, "objectTypes");
         ObjectNode copy = IrPath.objectType(ir, "Bakenmeester").deepCopy().put("name", "bakenmeester");
         list.add(copy);
-        IrLoader.Documentfout e = refuses(ir, "/model/objectTypes/" + (list.size() - 1) + "/name");
+        IrLoader.DocumentError e = refuses(ir, "/model/objectTypes/" + (list.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'Bakenmeester'"), "de melding noemt de eerste spelling: " + e.getMessage());
     }
 
@@ -432,8 +432,8 @@ class LoaderRefusalWitnessTest {
         // norm), and the exact-key table would have kept both
         ObjectNode ir = golden(PENNINGDREMPEL);
         ArrayNode parameters = IrPath.modelList(ir, "parameters");
-        parameters.add(IrPath.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
-        IrLoader.Documentfout e = refuses(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
+        parameters.add(IrPath.declaration(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
+        IrLoader.DocumentError e = refuses(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
         assertTrue(e.getMessage().endsWith(": the name 'Vondstdrempel' collides with the earlier 'vondstdrempel'"
                 + " (names are compared case-insensitively)"), e.getMessage());
 
@@ -475,7 +475,7 @@ class LoaderRefusalWitnessTest {
             String attr = memberPath(ir, "Bakenmeester", "attributes", "onderhoudstarief");
             ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
                     .put("granularity", value);
-            IrLoader.Documentfout e = refuses(ir, attr + "/timeline/granularity");
+            IrLoader.DocumentError e = refuses(ir, attr + "/timeline/granularity");
             assertTrue(e.getMessage().endsWith(": unknown granularity value \"" + value + "\""), e.getMessage());
             assertFalse(e.getMessage().contains("No enum constant"), e.getMessage());
             assertFalse(e.getMessage().contains("io.github"), e.getMessage());
@@ -492,15 +492,15 @@ class LoaderRefusalWitnessTest {
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         List<Path> cases = cases(BAKENMEESTER);
-        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.viaDrlText(tmp, cases));
-        assertThrows(IrLoader.Documentfout.class, () -> CaseRunner.runRed(tmp, cases.get(0)));
+        assertThrows(IrLoader.DocumentError.class, () -> CaseRunner.viaDrlText(tmp, cases));
+        assertThrows(IrLoader.DocumentError.class, () -> CaseRunner.runRed(tmp, cases.get(0)));
     }
 
     // ---------------- helpers ----------------
 
     /** Loads the twisted document and demands a document defect at exactly {@code site}. */
-    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+    private static IrLoader.DocumentError refuses(JsonNode ir, String site) {
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
         assertEquals(site, e.site(), e.getMessage());
         return e;
@@ -508,8 +508,8 @@ class LoaderRefusalWitnessTest {
 
     /** {@link #refuses} for an absent field: the defect sits at the object {@code parent}, and the detail names the
      *  field. */
-    private static IrLoader.Documentfout missing(JsonNode ir, String parent, String field) {
-        IrLoader.Documentfout e = refuses(ir, parent);
+    private static IrLoader.DocumentError missing(JsonNode ir, String parent, String field) {
+        IrLoader.DocumentError e = refuses(ir, parent);
         assertTrue(e.getMessage().contains("missing field '" + field + "'"), e.getMessage());
         return e;
     }

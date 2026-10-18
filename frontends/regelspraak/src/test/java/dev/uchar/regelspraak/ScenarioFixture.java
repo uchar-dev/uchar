@@ -2,7 +2,7 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 
 import java.util.List;
 
@@ -85,20 +85,20 @@ final class ScenarioFixture {
                 De vondstklasse van een Jutter moet ongelijk zijn aan 'wrakgoed'.
         """;
 
-    static ScenarioBundel resolve(String scenarioText) {
+    static ScenarioBundle resolve(String scenarioText) {
         return ScenarioResolver.resolve(MODEL + scenarioText);
     }
 
     /** The 1-based line of the first line of {@code bron} that contains {@code merker}. */
-    static int lineOf(String bron, String merker) {
-        String[] regels = bron.split("\n", -1);
+    static int lineOf(String source, String merker) {
+        String[] regels = source.split("\n", -1);
         for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) return i + 1;
         return fail("merker '" + merker + "' staat niet in de bron");
     }
 
     /** An ERROR whose message contains {@code fragment} stands on the line of {@code bron} that holds {@code merker}. */
-    static void errorOnLine(ScenarioBundel b, String bron, String merker, String fragment) {
-        int regel = lineOf(bron, merker);
+    static void errorOnLine(ScenarioBundle b, String source, String merker, String fragment) {
+        int regel = lineOf(source, merker);
         List<Diagnostic> matching = b.model().errors().stream()
                 .filter(d -> d.line() == regel && d.message().contains(fragment)).toList();
         assertFalse(matching.isEmpty(), () -> "verwacht een ERROR met '" + fragment + "' op regel " + regel

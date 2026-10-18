@@ -2,8 +2,8 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import dev.uchar.regelspraak.transpiler.tms.Fout;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,7 +47,7 @@ class SessionDumpWitnessTest {
     private static final String TEKST = "{\"node\":\"Text\"}";
 
     @Test void a_text_that_resembles_an_identity_stays_as_it_is() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST)),
                 List.of())), List.of());
         Path ir = TmsDocuments.document(model, List.of());
         CaseRunner runner = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL);
@@ -59,7 +59,7 @@ class SessionDumpWitnessTest {
 
     /** A case label is free text (the case schema), so it can look like an identity; the dump quotes it. */
     @Test void a_label_that_resembles_an_identity_stays_as_it_is() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST)),
                 List.of())), List.of());
         Path ir = TmsDocuments.document(model, List.of());
         CaseRunner runner = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL);
@@ -84,15 +84,15 @@ class SessionDumpWitnessTest {
     /** A sentence of the branch that names an object of the session by its type and identity, here a fault put in by
      *  hand, is refused by the dump, which neither writes nor replaces an identity. */
     @Test void a_sentence_with_an_identity_is_refused() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST)),
                 List.of())), List.of());
         Path ir = TmsDocuments.document(model, List.of());
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> CaseRunner.forMeasurement(ir,
-                DroolsBackend.Branch.EXEC_MODEL).withSession(vondst("V1", "x"), (bouw, sessie, labels) -> {
+                DroolsBackend.Branch.EXEC_MODEL).withSession(vondst("V1", "x"), (build, session, labels) -> {
             Object v1 = labels.get("V1");
             String identity = v1.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(v1));
-            sessie.insert(new Fout(v1, "proef", new IllegalStateException("een zin over " + identity)));
-            return SessionDump.op(sessie, labels);
+            session.insert(new Fault(v1, "proef", new IllegalStateException("een zin over " + identity)));
+            return SessionDump.op(session, labels);
         }));
         assertTrue(e.getMessage().startsWith("de dump schrijft geen identiteit: de zin \"een zin over Vondst@"),
                 e.getMessage());
@@ -112,9 +112,9 @@ class SessionDumpWitnessTest {
      *  and "a" with "b.c", and the attribute "b (kenmerk)" with the characteristic "b". Each pair gives two dumps that
      *  differ, with the type and the name of the key quoted. */
     @Test void two_keys_that_coincide_as_text_differ_in_the_dump() throws Exception {
-        assertKeys(ElementSleutel.van("A.B", "c", false), ElementSleutel.van("A", "B.c", false),
+        assertKeys(ElementKey.van("A.B", "c", false), ElementKey.van("A", "B.c", false),
                 "\"a.b\".\"c\"", "\"a\".\"b.c\"");
-        assertKeys(ElementSleutel.van("A", "b (kenmerk)", false), ElementSleutel.van("A", "b", true),
+        assertKeys(ElementKey.van("A", "b (kenmerk)", false), ElementKey.van("A", "b", true),
                 "\"a\".\"b (kenmerk)\"", "\"a\".\"b\" (kenmerk)");
     }
 
@@ -140,19 +140,19 @@ class SessionDumpWitnessTest {
      * vuringen"], [fixpunt gooit IllegalStateException: "de proef gooit"]]&gt; but was: &lt;[[], [], []]&gt;".
      */
     @Test void the_outcome_of_the_firing_stands_in_its_own_line() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST)),
                 List.of())), List.of());
         CaseRunner runner = CaseRunner.forMeasurement(TmsDocuments.document(model, List.of()),
                 DroolsBackend.Branch.EXEC_MODEL);
         String ja = dump(runner, vondst("V1", "x"));
-        String nee = runner.withSession(vondst("V1", "x"), (bouw, sessie, labels) -> {
-            SessionDump d = SessionDump.op(sessie, labels);
+        String nee = runner.withSession(vondst("V1", "x"), (build, session, labels) -> {
+            SessionDump d = SessionDump.op(session, labels);
             StringBuilder out = new StringBuilder();
-            d.write(out, bouw, new DroolsBackend.Vuring(7, 100, "geen fixpunt binnen \"100\" vuringen"), labels);
+            d.write(out, build, new DroolsBackend.Firing(7, 100, "geen fixpunt binnen \"100\" vuringen"), labels);
             return out.toString();
         });
-        String thrown = runner.withSession(vondst("V1", "x"), (bouw, sessie, labels) -> {
-            SessionDump d = SessionDump.op(sessie, labels);
+        String thrown = runner.withSession(vondst("V1", "x"), (build, session, labels) -> {
+            SessionDump d = SessionDump.op(session, labels);
             StringBuilder out = new StringBuilder();
             d.write(out, new IllegalStateException("de proef gooit"), labels);
             return out.toString();
@@ -197,9 +197,9 @@ class SessionDumpWitnessTest {
                 Path file = Path.of(doc.getKey(), "dump." + branch.name().toLowerCase(java.util.Locale.ROOT) + ".txt");
                 dumps.put(file, d);
                 if (renew != null) {
-                    Path pad = Path.of(renew).resolve(file);
-                    java.nio.file.Files.createDirectories(pad.getParent());
-                    java.nio.file.Files.writeString(pad, d);
+                    Path path = Path.of(renew).resolve(file);
+                    java.nio.file.Files.createDirectories(path.getParent());
+                    java.nio.file.Files.writeString(path, d);
                 }
             }
         for (Map.Entry<Path, String> d : dumps.entrySet())
@@ -228,14 +228,14 @@ class SessionDumpWitnessTest {
      * the diff and the output are kept with step 6b).
      */
     @Test void every_spelling_of_the_dump_is_fixed() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(attribuut("merk", TEKST),
-                attribuut("tarief", TmsDocuments.WHOLE)), List.of())), List.of(), List.of("drempel"));
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST),
+                attribute("tarief", TmsDocuments.WHOLE)), List.of())), List.of(), List.of("drempel"));
         Path ir = TmsDocuments.document(model, List.of(TmsDocuments.computingRule("tarief", "GELIJKSTELLING", "Vondst",
                 "tarief", TmsDocuments.parameterRead("drempel"), "null")));
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{\"merk\":"
                 + "{\"text\":\"x\"}},\"roles\":{},\"characteristics\":[]}"), Map.of("drempel", "3"),
                 List.of(TmsDocuments.consistent()));
-        String verwacht = String.join("\n",
+        String expected = String.join("\n",
                 "invoer bean \"V1\" Vondst(merk=String(\"x\"), tarief=leeg)",
                 "invoer global \"drempel\" = BigDecimal(3)",
                 "vuringen gooit IllegalStateException: \"de proef vuurt niet\"",
@@ -251,7 +251,7 @@ class SessionDumpWitnessTest {
                 "feit LocalDateTime(2026-10-14T09:15:30)",
                 "feit LocalTime(\"09:15\")",
                 "feit Long(8)",
-                "feit SampleRecord(naam=String(\"r\"), number=BigDecimal(1.50), lijst=[Boolean(false)])",
+                "feit SampleRecord(naam=String(\"r\"), number=BigDecimal(1.50), list=[Boolean(false)])",
                 "feit SampleType.FIRST_KIND",
                 "feit String(\"a\\\"b\\\\c\\rd\\ne\")",
                 "feit [BigDecimal(2), BigDecimal(2.0), BigDecimal(2.00), leeg, String(\"b\")]",
@@ -261,21 +261,21 @@ class SessionDumpWitnessTest {
                 "");
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             CaseRunner runner = CaseRunner.forMeasurement(ir, branch);
-            String d = runner.withSession(caseDocument, (bouw, sessie, labels) -> {
-                SessionDump dump = SessionDump.op(sessie, labels);
-                for (Object o : everyForm()) sessie.insert(o);
+            String d = runner.withSession(caseDocument, (build, session, labels) -> {
+                SessionDump dump = SessionDump.op(session, labels);
+                for (Object o : everyForm()) session.insert(o);
                 StringBuilder out = new StringBuilder();
                 dump.write(out, new IllegalStateException("de proef vuurt niet"), labels);
                 return out.toString();
             });
-            assertEquals(verwacht, d, () -> "de dump op " + branch);
+            assertEquals(expected, d, () -> "de dump op " + branch);
             IllegalStateException unnamed = assertThrows(IllegalStateException.class, () -> runner.withSession(caseDocument,
-                    (bouw, sessie, labels) -> refused(sessie, labels, unnamedVondst(bouw.beanLoader()))),
+                    (build, session, labels) -> refused(session, labels, unnamedVondst(build.beanLoader()))),
                     () -> "de bean zonder naam op " + branch);
             assertEquals("de dump heeft geen naam voor een bean van Vondst: geen caselabel en geen creatie die haar"
                     + " maakte", unnamed.getMessage(), () -> "de bean zonder naam op " + branch);
             IllegalStateException withoutText = assertThrows(IllegalStateException.class, () -> runner.withSession(caseDocument,
-                    (bouw, sessie, labels) -> refused(sessie, labels, new Textless())),
+                    (build, session, labels) -> refused(session, labels, new Textless())),
                     () -> "het object zonder tekst op " + branch);
             assertEquals("de dump schrijft geen identiteit: een " + Textless.class.getName() + " heeft geen tekst van"
                     + " zichzelf", withoutText.getMessage(), () -> "het object zonder tekst op " + branch);
@@ -286,7 +286,7 @@ class SessionDumpWitnessTest {
     private enum SampleType { FIRST_KIND }
 
     /** A record of the test, which the dump writes with its components. */
-    private record SampleRecord(String naam, BigDecimal number, List<Object> lijst) {}
+    private record SampleRecord(String naam, BigDecimal number, List<Object> list) {}
 
     /** A class of the test without a text of its own, which the dump refuses: its text would be its identity. */
     private static final class Textless {}
@@ -303,13 +303,13 @@ class SessionDumpWitnessTest {
                 map, set, SampleType.FIRST_KIND, new IllegalArgumentException("een \"fout\""),
                 new SampleRecord("r", new BigDecimal("1.50"), List.of(false)), Boolean.TRUE, 7, 8L,
                 java.time.LocalDate.of(2026, 10, 14), java.time.LocalDateTime.of(2026, 10, 14, 9, 15, 30),
-                java.time.LocalTime.of(9, 15), ElementSleutel.van("Vondst", "wrak", true));
+                java.time.LocalTime.of(9, 15), ElementKey.van("Vondst", "wrak", true));
     }
 
     /** The dump of a session into which {@code object} is put right before the dump, which must refuse it. */
-    private static String refused(org.kie.api.runtime.KieSession sessie, Map<String, Object> labels, Object object) {
-        SessionDump dump = SessionDump.op(sessie, labels);
-        sessie.insert(object);
+    private static String refused(org.kie.api.runtime.KieSession session, Map<String, Object> labels, Object object) {
+        SessionDump dump = SessionDump.op(session, labels);
+        session.insert(object);
         StringBuilder out = new StringBuilder();
         dump.write(out, new IllegalStateException("de proef vuurt niet"), labels);
         return out.toString();
@@ -345,21 +345,21 @@ class SessionDumpWitnessTest {
     /** Puts a {@link Value} under {@code a} and one under {@code b} on V1 in two sessions, and asserts that their
      *  dumps differ, each with its key rendered as {@code textA} and {@code textB}. The dumps are written without a
      *  fire, as for a fire that threw, so that only the rendering of the facts counts. */
-    private static void assertKeys(ElementSleutel a, ElementSleutel b, String textA, String textB)
+    private static void assertKeys(ElementKey a, ElementKey b, String textA, String textB)
             throws Exception {
         String dumpA = withoutFire(a), dumpB = withoutFire(b);
         assertNotEquals(dumpA, dumpB, () -> a + " en " + b + " kregen dezelfde dump:\n" + dumpA);
-        assertTrue(dumpA.contains("attribuut=" + textA + ","), () -> "de dump citeert " + a + " niet:\n" + dumpA);
-        assertTrue(dumpB.contains("attribuut=" + textB + ","), () -> "de dump citeert " + b + " niet:\n" + dumpB);
+        assertTrue(dumpA.contains("attribute=" + textA + ","), () -> "de dump citeert " + a + " niet:\n" + dumpA);
+        assertTrue(dumpB.contains("attribute=" + textB + ","), () -> "de dump citeert " + b + " niet:\n" + dumpB);
     }
 
-    private static String withoutFire(ElementSleutel sleutel) throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+    private static String withoutFire(ElementKey key) throws Exception {
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(attribute("merk", TEKST)),
                 List.of())), List.of());
         return CaseRunner.forMeasurement(TmsDocuments.document(model, List.of()), DroolsBackend.Branch.EXEC_MODEL)
-                .withSession(vondst("V1", "x"), (bouw, sessie, labels) -> {
-                    sessie.insert(new Value(labels.get("V1"), sleutel, BigDecimal.ONE, "proef"));
-                    SessionDump d = SessionDump.op(sessie, labels);
+                .withSession(vondst("V1", "x"), (build, session, labels) -> {
+                    session.insert(new Value(labels.get("V1"), key, BigDecimal.ONE, "proef"));
+                    SessionDump d = SessionDump.op(session, labels);
                     StringBuilder out = new StringBuilder();
                     d.write(out, new IllegalStateException("proef"), labels);
                     return out.toString();
@@ -367,9 +367,9 @@ class SessionDumpWitnessTest {
     }
 
     /** The line of {@code lees} for the link the creation "maak" lays between V1 and the Boei it makes for V1, in a
-     *  document whose fact type {@code feittype} relates a Vondst in the role {@code rol} to a Boei in the role "s". */
-    private static String linkLine(String feittype, String rol) throws Exception {
-        String d = dump(CaseRunner.forMeasurement(linkDocument(feittype, rol), DroolsBackend.Branch.EXEC_MODEL),
+     *  document whose fact type {@code factType} relates a Vondst in the role {@code role} to a Boei in the role "s". */
+    private static String linkLine(String factType, String role) throws Exception {
+        String d = dump(CaseRunner.forMeasurement(linkDocument(factType, role), DroolsBackend.Branch.EXEC_MODEL),
                 TmsDocuments.caseDocument(List.of(TmsDocuments.instance("V1", "Vondst", Map.of(), List.of(), Map.of())),
                         List.of(TmsDocuments.consistent())));
         List<String> rules = Stream.of(d.split("\n")).filter(r -> r.startsWith("lees koppeling ")).toList();
@@ -377,14 +377,14 @@ class SessionDumpWitnessTest {
         return rules.get(0);
     }
 
-    /** "Een Vondst heeft een Boei": the creation "maak", whose new Boei plays the role "s" of {@code feittype} beside the
-     *  Vondst in the role {@code rol}. */
-    static Path linkDocument(String feittype, String rol) throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(), List.of()),
-                TmsDocuments.objecttype("Boei", List.of(), List.of())),
-                List.of(TmsDocuments.feittype(feittype, rol, "Vondst", "s", "Boei")));
+    /** "Een Vondst heeft een Boei": the creation "maak", whose new Boei plays the role "s" of {@code factType} beside the
+     *  Vondst in the role {@code role}. */
+    static Path linkDocument(String factType, String role) throws Exception {
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(), List.of()),
+                TmsDocuments.objectType("Boei", List.of(), List.of())),
+                List.of(TmsDocuments.factType(factType, role, "Vondst", "s", "Boei")));
         return TmsCreationWitnessTest.document(model, List.of(), List.of(), List.of(TmsCreationWitnessTest.objectCreation(
-                "maak", "Vondst", "Boei", List.of(), "null", feittype, "s")), List.of(), List.of());
+                "maak", "Vondst", "Boei", List.of(), "null", factType, "s")), List.of(), List.of());
     }
 
     /** The case of one Vondst labelled {@code label} whose merk is {@code merk}. */
@@ -395,7 +395,7 @@ class SessionDumpWitnessTest {
 
     /** The document of a consistency named {@code naam} that every Vondst be verdacht. */
     private static Path inconsistency(String naam) throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(), List.of("verdacht"))),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(), List.of("verdacht"))),
                 List.of());
         return TmsDocuments.document(model, List.of(),
                 List.of(TmsDocuments.consistency(naam, "Vondst", TmsDocuments.check("verdacht", false))));
@@ -412,10 +412,10 @@ class SessionDumpWitnessTest {
 
     /** The dump of the session of {@code c}. */
     private static String dump(CaseRunner runner, JsonNode c) throws Exception {
-        return runner.withSession(c, (bouw, sessie, labels) -> {
-            SessionDump d = SessionDump.op(sessie, labels);
+        return runner.withSession(c, (build, session, labels) -> {
+            SessionDump d = SessionDump.op(session, labels);
             StringBuilder out = new StringBuilder();
-            d.write(out, bouw, DroolsBackend.vuur(bouw, sessie), labels);
+            d.write(out, build, DroolsBackend.fire(build, session), labels);
             return out.toString();
         });
     }

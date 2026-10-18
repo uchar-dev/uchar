@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.kern.Literals;
+import dev.uchar.regelspraak.core.Literals;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * exactly the values that drove them apart.
  *
  * <p>The model is the corpus golden {@code jutterswet-meldstip} read off the wire (its {@code
- * Aanmelding.meldstip} is a {@code DatumTijd} attribute); the cases are authored here, and no corpus
+ * Aanmelding.meldstip} is a {@code DateTime} attribute); the cases are authored here, and no corpus
  * expectation is read or touched. The reads go through {@link CaseRunner#inputBeans}, the input layer
  * before any rule fires, so what the reader made of a value is the assertion itself.
  *
@@ -192,12 +192,12 @@ class CaseWireDateTimeWitnessTest {
         try {
             read = meldstip(lexeme);
         } catch (IllegalArgumentException refusal) {
-            String melding = refusal.getMessage();
-            assertTrue(melding.contains("'" + lexeme + "'"),
-                    why + " — the refusal quotes the value it refused: " + melding);
-            assertTrue(melding.contains("'meldstip'"),
-                    why + " — and names the field it arrived on: " + melding);
-            return melding;
+            String message = refusal.getMessage();
+            assertTrue(message.contains("'" + lexeme + "'"),
+                    why + " — the refusal quotes the value it refused: " + message);
+            assertTrue(message.contains("'meldstip'"),
+                    why + " — and names the field it arrived on: " + message);
+            return message;
         } catch (CaseRunner.Excluded uitgesloten) {
             throw new AssertionError(why + " — but the reader EXCLUDED it (" + uitgesloten.getMessage()
                     + "), which files a malformed case under 'not carried' and leaves the gate green");
@@ -213,19 +213,19 @@ class CaseWireDateTimeWitnessTest {
      *  form branch that ALSO carries the calendar wording passes every case here (measured), and the two
      *  branches this reader deliberately splits become indistinguishable to a producer reading the message. */
     private static void refusesByForm(String lexeme, String why) throws Exception {
-        String melding = refusal(lexeme, why);
-        assertTrue(melding.contains(LEXEME_FORM),
-                why + " — a refusal a producer can act on states the form it expected: " + melding);
-        assertFalse(melding.contains(CALENDAR),
-                why + " — and does not also blame the calendar, which was never read here: " + melding);
+        String message = refusal(lexeme, why);
+        assertTrue(message.contains(LEXEME_FORM),
+                why + " — a refusal a producer can act on states the form it expected: " + message);
+        assertFalse(message.contains(CALENDAR),
+                why + " — and does not also blame the calendar, which was never read here: " + message);
     }
 
     /** Refused by the calendar, with the calendar in the message and the field widths left alone. */
     private static void refusesByCalendar(String lexeme, String why) throws Exception {
-        String melding = refusal(lexeme, why);
-        assertTrue(melding.contains(CALENDAR),
-                why + " — the refusal names the calendar: " + melding);
-        assertFalse(melding.contains(LEXEME_FORM),
-                why + " — and does not blame the field widths, which are right here: " + melding);
+        String message = refusal(lexeme, why);
+        assertTrue(message.contains(CALENDAR),
+                why + " — the refusal names the calendar: " + message);
+        assertFalse(message.contains(LEXEME_FORM),
+                why + " — and does not blame the field widths, which are right here: " + message);
     }
 }

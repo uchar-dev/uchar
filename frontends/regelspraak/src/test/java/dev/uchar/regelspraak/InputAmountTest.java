@@ -1,12 +1,12 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedConsistency;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -63,11 +63,11 @@ class InputAmountTest {
                 De verzekerde waarde van een Vondst moet berekend worden als zijn waarde plus 2,50 €.
         """;
 
-    private static ResolvedRegel regel(RegelSpraakModel m, String naam) {
+    private static ResolvedRule regel(RegelSpraakModel m, String naam) {
         return m.resolvedRegels.stream().filter(r -> r.naam().equals(naam)).findFirst().orElseThrow();
     }
 
-    private static String read(Expr e) { return assertInstanceOf(Expr.AttribuutRef.class, e).attribuut(); }
+    private static String read(Expr e) { return assertInstanceOf(Expr.AttributeReference.class, e).attribute(); }
 
     @Test void on_an_amount_with_unit_the_marking_builds_the_same_five_pieces() {
         // before: ERROR "attribuut 'waarde' van Vondst: '(mag opgegeven worden)' staat alleen op een Numeriek attribuut
@@ -80,36 +80,36 @@ class InputAmountTest {
         assertEquals(List.of("taxatie", "bergingskosten", "waarde", "opgegeven waarde", "berekende waarde",
                 "verzekerde waarde"), List.copyOf(v.attributen.keySet()));
         Datatype x = v.attributen.get("waarde");
-        assertEquals("EUR", x.eenheidOf().afkorting());
+        assertEquals("EUR", x.unitOf().afkorting());
         assertEquals(x, v.attributen.get("opgegeven waarde"));
         assertEquals(x, v.attributen.get("berekende waarde"));
 
         // 2: the computation, an addition in the same unit, keeps its name and targets berekende X
-        ResolvedRegel w = regel(m, "waarde");
-        assertEquals("berekende waarde", read(w.doel()));
-        assertEquals(Expr.BinOp.PLUS, assertInstanceOf(Expr.Binair.class, w.waarde()).op());
+        ResolvedRule w = regel(m, "waarde");
+        assertEquals("berekende waarde", read(w.target()));
+        assertEquals(Expr.BinOp.PLUS, assertInstanceOf(Expr.Binary.class, w.value()).op());
 
         // 3: the opgave, the computation, and the initialisation with its amount as the lowest default
         PrioritizedDefaults g = m.prioritizedDefaults.stream()
                 .filter(p -> p.naam().equals("opgave boven berekening waarde")).findFirst().orElseThrow();
         assertEquals(3, g.defaults().size());
         assertEquals(List.of("opgegeven waarde", "berekende waarde"),
-                g.defaults().subList(0, 2).stream().map(d -> read(d.consequentie())).toList(), "van hoog naar laag");
+                g.defaults().subList(0, 2).stream().map(d -> read(d.consequence())).toList(), "van hoog naar laag");
         Default init = g.defaults().get(2);
         assertTrue(init.initialisatie(), "de initialisatie is de laagste default");
-        Expr.Literal amount = assertInstanceOf(Expr.Literal.class, init.consequentie());
-        assertEquals("25,00", amount.waarde());
-        assertEquals("EUR", amount.type().eenheidOf().afkorting());
+        Expr.Literal amount = assertInstanceOf(Expr.Literal.class, init.consequence());
+        assertEquals("25,00", amount.valueText());
+        assertEquals("EUR", amount.type().unitOf().afkorting());
 
         // 4 and 5: the characteristic compares the two amounts, the consistency asserts it absent
-        Conditie.Samengesteld all = assertInstanceOf(Conditie.Samengesteld.class,
-                regel(m, "afwijking opgave waarde").voorwaarde());
-        Conditie.Vergelijking notEqual = assertInstanceOf(Conditie.Vergelijking.class, all.onderdelen().get(2));
-        assertEquals(Conditie.Operator.ONGELIJK, notEqual.op());
+        Condition.Compound all = assertInstanceOf(Condition.Compound.class,
+                regel(m, "afwijking opgave waarde").condition());
+        Condition.Comparison notEqual = assertInstanceOf(Condition.Comparison.class, all.components().get(2));
+        assertEquals(Condition.Operator.ONGELIJK, notEqual.op());
         assertEquals(List.of("controle opgave waarde"),
                 m.consistenties.stream().map(ResolvedConsistency::naam).toList());
         assertEquals(List.of("waarde", "controle bij afwijkende waarde", "verzekerde waarde", "afwijking opgave waarde"),
-                m.resolvedRegels.stream().map(ResolvedRegel::naam).toList(),
+                m.resolvedRegels.stream().map(ResolvedRule::naam).toList(),
                 "de initialisatieregel is opgenomen in de groep en staat niet meer als regel");
     }
 

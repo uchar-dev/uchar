@@ -16,25 +16,25 @@ import java.util.Objects;
  * fact type's name in its normalised form. Compared by that name and the two objects by identity, and not by
  * {@code phase}: one link is one fact, however it arose.
  */
-public record RelationLink(String relation, Object eerste, Object tweede, int phase) {
+public record RelationLink(String relation, Object first, Object second, int phase) {
 
     public RelationLink {
         Objects.requireNonNull(relation, "relatie");
-        Objects.requireNonNull(eerste, "eerste");
-        Objects.requireNonNull(tweede, "tweede");
+        Objects.requireNonNull(first, "eerste");
+        Objects.requireNonNull(second, "tweede");
         if (phase < 0) throw new IllegalArgumentException("fase " + phase + " < 0");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof RelationLink k && k.eerste == eerste && k.tweede == tweede && k.relation.equals(relation);
+        return o instanceof RelationLink k && k.first == first && k.second == second && k.relation.equals(relation);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(relation, System.identityHashCode(eerste), System.identityHashCode(tweede));
+        return Objects.hash(relation, System.identityHashCode(first), System.identityHashCode(second));
     }
 
     @Override public String toString() {
-        return "Koppeling(" + relation + ", " + FactNames.object(eerste) + ", " + FactNames.object(tweede) + ", fase "
+        return "Koppeling(" + relation + ", " + FactNames.object(first) + ", " + FactNames.object(second) + ", fase "
                 + phase + ")";
     }
 }

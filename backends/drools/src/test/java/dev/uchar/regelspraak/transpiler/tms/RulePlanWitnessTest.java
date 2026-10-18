@@ -82,21 +82,21 @@ class RulePlanWitnessTest {
         assertEquals(List.of(
                 "regel Kenmerktoekenning jutter penninggerechtigd | vorm Kenmerktoekenning jutter penninggerechtigd |"
                         + " groep null",
-                "  lezingen [0 INVOER $aantalAangemeldeVondsten (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=aantal aangemelde vondsten, kenmerk=false]), 1 PARAMETER $vondstdrempel (parameter"
+                "  lezingen [0 INVOER $aantalAangemeldeVondsten (eigen ElementKey[objectType=jutter,"
+                        + " naam=aantal aangemelde vondsten, characteristic=false]), 1 PARAMETER $vondstdrempel (parameter"
                         + " vondstdrempel)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$aantalAangemeldeVondsten = [].aantal aangemelde"
                         + " vondsten VALUE]",
                 "  patroon ParameterState $parameter_1 alfa [parameter_0: [parameter GELIJK vondstdrempel]] join []"
-                        + " bind [$vondstdrempel = [].waarde VALUE]",
+                        + " bind [$vondstdrempel = [].value VALUE]",
                 "  toets voorwaarde_1 CONDITION sonde -1 slots [0, 1] grootte 2: RS_AGG_COMPARE(Lees 0, Lees 1,"
                         + " Const >=)",
                 "    toets 0 Call bron 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
                 "    toets 0.0 SlotValue bron 'zijn aantal aangemelde vondsten'",
                 "    toets 0.1 SlotValue bron 'de vondstdrempel'",
                 "    toets 0.2 Const String",
-                "  gevolg Characteristic [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=penninggerechtigd, kenmerk=true], insertion=LOGICAL]",
+                "  gevolg Characteristic [onderwerp=$onderwerp, characteristic=ElementKey[objectType=jutter,"
+                        + " naam=penninggerechtigd, characteristic=true], insertion=LOGICAL]",
                 "regel parameterstand vondstdrempel | vorm null | groep null",
                 "  lezingen []",
                 "  gevolg InsertParameterState [parameter=vondstdrempel, global=vondstdrempel, insertion=LOGICAL]"),
@@ -106,9 +106,9 @@ class RulePlanWitnessTest {
     @Test void a_computing_rule_with_a_deposit_flag_and_the_rules_of_its_condition() throws Exception {
         assertEquals(List.of(
                 "regel bergingsaandeel van een jutter | vorm bergingsaandeel van een jutter | groep null",
-                "  lezingen [0 INVOER $ploegomvang (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
-                        + " kenmerk=false]), 1 INVOER $vangstwaarde (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=vangstwaarde, kenmerk=false]), 2 DEPOSIT_FLAG null (null)]",
+                "  lezingen [0 INVOER $ploegomvang (eigen ElementKey[objectType=jutter, naam=ploegomvang,"
+                        + " characteristic=false]), 1 INVOER $vangstwaarde (eigen ElementKey[objectType=jutter,"
+                        + " naam=vangstwaarde, characteristic=false]), 2 DEPOSIT_FLAG null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
                         + " [].vangstwaarde VALUE]",
                 "  toets voorwaarde_0 WITHOUT_FAULT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
@@ -133,18 +133,18 @@ class RulePlanWitnessTest {
                 "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=jutter, naam=bergingsaandeel,"
-                        + " kenmerk=false], writer=bergingsaandeel van een jutter, waarde=Const 1, slots=[],"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=jutter, naam=bergingsaandeel,"
+                        + " characteristic=false], writer=bergingsaandeel van een jutter, value=Const 1, slots=[],"
                         + " size=3, collapse=true, writesEmpty=false, deposit=Deposit[depositFlag=2,"
-                        + " vorm=bergingsaandeel van een jutter], fout=FaultName[vorm=bergingsaandeel van een jutter,"
+                        + " form=bergingsaandeel van een jutter], fault=FaultName[form=bergingsaandeel van een jutter,"
                         + " regel=bergingsaandeel van een jutter], insertion=LOGICAL]",
-                "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD, eenheid=null]"
+                "    value 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD, eenheid=null]"
                         + " bron '1'",
                 "regel bergingsaandeel van een jutter: fout in de voorwaarde | vorm bergingsaandeel van een jutter |"
                         + " groep null",
-                "  lezingen [0 INVOER $ploegomvang (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
-                        + " kenmerk=false]), 1 INVOER $vangstwaarde (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=vangstwaarde, kenmerk=false]), 2 DEPOSIT_FLAG null (null)]",
+                "  lezingen [0 INVOER $ploegomvang (eigen ElementKey[objectType=jutter, naam=ploegomvang,"
+                        + " characteristic=false]), 1 INVOER $vangstwaarde (eigen ElementKey[objectType=jutter,"
+                        + " naam=vangstwaarde, characteristic=false]), 2 DEPOSIT_FLAG null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
                         + " [].vangstwaarde VALUE]",
                 "  toets voorwaarde_1 FAULT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
@@ -171,8 +171,8 @@ class RulePlanWitnessTest {
                 "    toets 0.1.2 Const String",
                 "  gevolg TestFault [onderwerp=$onderwerp, test=Samengesteld ALLE 0(RS_AGG_COMPARE(Lees 0, Const"
                         + " 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Deel DIVIDED sonde -1 (Lees 1, Lees 0),"
-                        + " Const 0, Const FLOOR), Const 0, Const >)), rol=FAULT, slots=[0, 1], size=3,"
-                        + " fout=FaultName[vorm=bergingsaandeel van een jutter, regel=bergingsaandeel van een"
+                        + " Const 0, Const FLOOR), Const 0, Const >)), role=FAULT, slots=[0, 1], size=3,"
+                        + " fault=FaultName[form=bergingsaandeel van een jutter, regel=bergingsaandeel van een"
                         + " jutter], insertion=LOGICAL]",
                 "    test 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
@@ -195,9 +195,9 @@ class RulePlanWitnessTest {
                 "    test 0.1.2 Const String",
                 "regel bergingsaandeel van een jutter: deponering in de voorwaarde | vorm bergingsaandeel van een"
                         + " jutter | groep null",
-                "  lezingen [0 INVOER $ploegomvang (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
-                        + " kenmerk=false]), 1 INVOER $vangstwaarde (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=vangstwaarde, kenmerk=false]), 2 DEPOSIT_FLAG null (null)]",
+                "  lezingen [0 INVOER $ploegomvang (eigen ElementKey[objectType=jutter, naam=ploegomvang,"
+                        + " characteristic=false]), 1 INVOER $vangstwaarde (eigen ElementKey[objectType=jutter,"
+                        + " naam=vangstwaarde, characteristic=false]), 2 DEPOSIT_FLAG null (null)]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
                         + " [].vangstwaarde VALUE]",
                 "  toets voorwaarde_2 DEPOSIT sonde 2 slots [0, 1] grootte 3: Samengesteld ALLE"
@@ -222,7 +222,7 @@ class RulePlanWitnessTest {
                 "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
-                "  gevolg Inconsistency [onderwerp=$onderwerp, vorm=bergingsaandeel van een jutter,"
+                "  gevolg Inconsistency [onderwerp=$onderwerp, form=bergingsaandeel van een jutter,"
                         + " insertion=LOGICAL]"),
                 rules(golden("jutterswet-ploegaandeel")));
     }
@@ -230,47 +230,47 @@ class RulePlanWitnessTest {
     @Test void a_clamped_validity_and_the_evaluation_date_state() throws Exception {
         assertEquals(List.of(
                 "regel vensterheffing in 2026 | vorm vensterheffing in 2026 | groep null",
-                "  lezingen [0 INVOER $meldwaarde (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $meldwaarde (eigen ElementKey[objectType=vondstmelding, naam=meldwaarde,"
+                        + " characteristic=false])]",
                 "  onderwerp Vondstmelding $onderwerp alfa [] bind [$meldwaarde = [].meldwaarde VALUE]",
-                "  patroon EvaluationDate $geldigheid_0 alfa [geldig_0: [date WITHIN Geldigheid[vanaf=2026-01-01,"
-                        + " tot=2026-12-31]]] join [] bind []",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondstmelding,"
-                        + " naam=vensterheffing, kenmerk=false], writer=vensterheffing in 2026,"
-                        + " waarde=RS_PLUS(Lees 0, Const 25), slots=[0], size=1, collapse=true, writesEmpty=true,"
-                        + " deposit=null, fout=FaultName[vorm=vensterheffing in 2026, regel=vensterheffing in"
+                "  patroon EvaluationDate $geldigheid_0 alfa [geldig_0: [date WITHIN Validity[from=2026-01-01,"
+                        + " until=2026-12-31]]] join [] bind []",
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=vondstmelding,"
+                        + " naam=vensterheffing, characteristic=false], writer=vensterheffing in 2026,"
+                        + " value=RS_PLUS(Lees 0, Const 25), slots=[0], size=1, collapse=true, writesEmpty=true,"
+                        + " deposit=null, fault=FaultName[form=vensterheffing in 2026, regel=vensterheffing in"
                         + " 2026], insertion=LOGICAL]",
-                "    waarde 0 Call bron 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
-                "    waarde 0.0 SlotValue bron 'de meldwaarde van de Vondstmelding'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                "    value 0 Call bron 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
+                "    value 0.0 SlotValue bron 'de meldwaarde van de Vondstmelding'",
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '25'",
                 "regel vensterheffing in 2026: geen rekendatum | vorm vensterheffing in 2026 | groep null",
                 "  lezingen []",
                 "  patroon EvaluationDate $rekendatum alfa [geen-rekendatum_1: [date LEEG]] join [] bind []",
-                "  gevolg Fout [onderwerp=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
-                        + " session is time-free, fout=FaultName[vorm=vensterheffing in 2026, regel=vensterheffing in"
+                "  gevolg Fault [onderwerp=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
+                        + " session is time-free, fault=FaultName[form=vensterheffing in 2026, regel=vensterheffing in"
                         + " 2026], insertion=LOGICAL]",
                 "regel overgangsheffing tot en met 2025 | vorm overgangsheffing tot en met 2025 | groep null",
-                "  lezingen [0 INVOER $meldwaarde (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $meldwaarde (eigen ElementKey[objectType=vondstmelding, naam=meldwaarde,"
+                        + " characteristic=false])]",
                 "  onderwerp Vondstmelding $onderwerp alfa [] bind [$meldwaarde = [].meldwaarde VALUE]",
-                "  patroon EvaluationDate $geldigheid_0 alfa [geldig_2: [date WITHIN Geldigheid[vanaf=null,"
-                        + " tot=2025-12-31]]] join [] bind []",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondstmelding,"
-                        + " naam=overgangsheffing, kenmerk=false], writer=overgangsheffing tot en met 2025,"
-                        + " waarde=RS_PLUS(Lees 0, Const 40), slots=[0], size=1, collapse=true, writesEmpty=true,"
-                        + " deposit=null, fout=FaultName[vorm=overgangsheffing tot en met 2025,"
+                "  patroon EvaluationDate $geldigheid_0 alfa [geldig_2: [date WITHIN Validity[from=null,"
+                        + " until=2025-12-31]]] join [] bind []",
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=vondstmelding,"
+                        + " naam=overgangsheffing, characteristic=false], writer=overgangsheffing tot en met 2025,"
+                        + " value=RS_PLUS(Lees 0, Const 40), slots=[0], size=1, collapse=true, writesEmpty=true,"
+                        + " deposit=null, fault=FaultName[form=overgangsheffing tot en met 2025,"
                         + " regel=overgangsheffing tot en met 2025], insertion=LOGICAL]",
-                "    waarde 0 Call bron 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
-                "    waarde 0.0 SlotValue bron 'de meldwaarde van de Vondstmelding'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                "    value 0 Call bron 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
+                "    value 0.0 SlotValue bron 'de meldwaarde van de Vondstmelding'",
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '40'",
                 "regel overgangsheffing tot en met 2025: geen rekendatum | vorm overgangsheffing tot en met 2025 |"
                         + " groep null",
                 "  lezingen []",
                 "  patroon EvaluationDate $rekendatum alfa [geen-rekendatum_3: [date LEEG]] join [] bind []",
-                "  gevolg Fout [onderwerp=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
-                        + " session is time-free, fout=FaultName[vorm=overgangsheffing tot en met 2025,"
+                "  gevolg Fault [onderwerp=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
+                        + " session is time-free, fault=FaultName[form=overgangsheffing tot en met 2025,"
                         + " regel=overgangsheffing tot en met 2025], insertion=LOGICAL]",
                 "regel rekendatumstand | vorm null | groep null",
                 "  lezingen []",
@@ -281,9 +281,9 @@ class RulePlanWitnessTest {
     @Test void two_writers_of_a_target() throws Exception {
         assertEquals(List.of(
                 "regel vrijgave zonder beletsel | vorm vrijgave zonder beletsel | groep null",
-                "  lezingen [0 INVOER $geclaimd (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
-                        + " kenmerk=true]), 1 INVOER $bezwaren (eigen ElementSleutel[objecttype=bergingszaak,"
-                        + " naam=bezwaren, kenmerk=false])]",
+                "  lezingen [0 INVOER $geclaimd (eigen ElementKey[objectType=bergingszaak, naam=geclaimd,"
+                        + " characteristic=true]), 1 INVOER $bezwaren (eigen ElementKey[objectType=bergingszaak,"
+                        + " naam=bezwaren, characteristic=false])]",
                 "  onderwerp Bergingszaak $onderwerp alfa [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
                         + " [].bezwaren VALUE]",
                 "  toets voorwaarde_0 CONDITION sonde -1 slots [0, 1] grootte 2: Samengesteld GEEN 0(KENMERK(Lees 0,"
@@ -297,15 +297,15 @@ class RulePlanWitnessTest {
                 "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=bergingszaak, naam=status,"
-                        + " kenmerk=false], writer=vrijgave zonder beletsel, waarde=Const vrijgegeven, slots=[],"
-                        + " size=2, collapse=true, writesEmpty=true, deposit=null, fout=FaultName[vorm=vrijgave"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=bergingszaak, naam=status,"
+                        + " characteristic=false], writer=vrijgave zonder beletsel, value=Const vrijgegeven, slots=[],"
+                        + " size=2, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=vrijgave"
                         + " zonder beletsel, regel=vrijgave zonder beletsel], insertion=LOGICAL]",
-                "    waarde 0 Const String type Tekst[] bron ''vrijgegeven''",
+                "    value 0 Const String type Tekst[] bron ''vrijgegeven''",
                 "regel aanhouding bij beletsel | vorm aanhouding bij beletsel | groep null",
-                "  lezingen [0 INVOER $geclaimd (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
-                        + " kenmerk=true]), 1 INVOER $bezwaren (eigen ElementSleutel[objecttype=bergingszaak,"
-                        + " naam=bezwaren, kenmerk=false])]",
+                "  lezingen [0 INVOER $geclaimd (eigen ElementKey[objectType=bergingszaak, naam=geclaimd,"
+                        + " characteristic=true]), 1 INVOER $bezwaren (eigen ElementKey[objectType=bergingszaak,"
+                        + " naam=bezwaren, characteristic=false])]",
                 "  onderwerp Bergingszaak $onderwerp alfa [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
                         + " [].bezwaren VALUE]",
                 "  toets voorwaarde_1 CONDITION sonde -1 slots [0, 1] grootte 2: Samengesteld TEN_MINSTE"
@@ -319,43 +319,43 @@ class RulePlanWitnessTest {
                 "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=bergingszaak, naam=status,"
-                        + " kenmerk=false], writer=aanhouding bij beletsel, waarde=Const aangehouden, slots=[],"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=bergingszaak, naam=status,"
+                        + " characteristic=false], writer=aanhouding bij beletsel, value=Const aangehouden, slots=[],"
                         + " size=2, collapse=true, writesEmpty=true, deposit=null,"
-                        + " fout=FaultName[vorm=aanhouding bij beletsel, regel=aanhouding bij beletsel],"
+                        + " fault=FaultName[form=aanhouding bij beletsel, regel=aanhouding bij beletsel],"
                         + " insertion=LOGICAL]",
-                "    waarde 0 Const String type Tekst[] bron ''aangehouden''",
+                "    value 0 Const String type Tekst[] bron ''aangehouden''",
                 "regel schrijvers Bergingszaak.status: verschil | vorm null | groep null",
                 "  lezingen [0 VALUES $waarden (waarden)]",
                 "  onderwerp Bergingszaak $onderwerp alfa [] bind []",
-                "  accumulatie Value $waarde alfa [waarde_2: [attribuut GELIJK"
-                        + " ElementSleutel[objecttype=bergingszaak, naam=status, kenmerk=false]]] join"
+                "  accumulatie Value $waarde alfa [waarde_2: [attribute GELIJK"
+                        + " ElementKey[objectType=bergingszaak, naam=status, characteristic=false]]] join"
                         + " [waarde-onderwerp_3: onderwerp = $onderwerp] bind [] functies [LIST null -> $waarden]",
                 "  toets verschil_4 VORM sonde -1 slots [0] grootte 1: DIFFER(Lees 0)",
                 "    toets 0 Call",
                 "    toets 0.0 SlotValue",
-                "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0,"
-                        + " doel=ElementSleutel[objecttype=bergingszaak, naam=status, kenmerk=false],"
-                        + " attribuut=status, documentOrder=[vrijgave zonder beletsel, aanhouding bij beletsel],"
-                        + " typeClasses=[Bergingszaak], typen=[Bergingszaak], insertion=LOGICAL]"),
+                "  gevolg WritersConflict [onderwerp=$onderwerp, waarden=0,"
+                        + " target=ElementKey[objectType=bergingszaak, naam=status, characteristic=false],"
+                        + " attribute=status, documentOrder=[vrijgave zonder beletsel, aanhouding bij beletsel],"
+                        + " typeClasses=[Bergingszaak], types=[Bergingszaak], insertion=LOGICAL]"),
                 rules(golden("jutterswet-vrijgavetoets")));
     }
 
     @Test void a_subject_outside_a_stack() throws Exception {
         assertEquals(List.of(
                 "regel uitkering van een strandrecht | vorm uitkering van een strandrecht | groep null",
-                "  lezingen [0 INVOER $grondslag (eigen ElementSleutel[objecttype=strandrecht, naam=grondslag,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $grondslag (eigen ElementKey[objectType=strandrecht, naam=grondslag,"
+                        + " characteristic=false])]",
                 "  onderwerp Strandrecht $onderwerp alfa [niet-in-een-stapel_0: [null CLASS_NOT_IN [Wrakrecht]]]"
                         + " bind [$grondslag = [].grondslag VALUE]",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=strandrecht, naam=uitkering,"
-                        + " kenmerk=false], writer=uitkering van een strandrecht, waarde=RS_TIMES(Lees 0, Const 2),"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=strandrecht, naam=uitkering,"
+                        + " characteristic=false], writer=uitkering van een strandrecht, value=RS_TIMES(Lees 0, Const 2),"
                         + " slots=[0], size=1, collapse=true, writesEmpty=false, deposit=null,"
-                        + " fout=FaultName[vorm=uitkering van een strandrecht, regel=uitkering van een strandrecht],"
+                        + " fault=FaultName[form=uitkering van een strandrecht, regel=uitkering van een strandrecht],"
                         + " insertion=LOGICAL]",
-                "    waarde 0 Call bron 'zijn grondslag maal 2'",
-                "    waarde 0.0 SlotValue bron 'zijn grondslag'",
-                "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                "    value 0 Call bron 'zijn grondslag maal 2'",
+                "    value 0.0 SlotValue bron 'zijn grondslag'",
+                "    value 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '2'"),
                 rules(golden("jutterswet-wrakerfbasis"), p -> !RulePlanWitnessTest.ofStack(p)));
     }
@@ -363,8 +363,8 @@ class RulePlanWitnessTest {
     @Test void an_initialisation_without_other_writer() throws Exception {
         assertEquals(List.of(
                 "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false])]",
                 "  onderwerp Vondst $onderwerp alfa [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$gewicht ="
                         + " [].gewicht VALUE]",
                 "  toets voorwaarde_0 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
@@ -374,25 +374,25 @@ class RulePlanWitnessTest {
                 "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '10'",
                 "    toets 0.2 Const String",
-                "  niet Value $andere_schrijver alfa [andere-schrijver_2: [attribuut GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], writer NOT_EQUAL"
+                "  niet Value $andere_schrijver alfa [andere-schrijver_2: [attribute GELIJK"
+                        + " ElementKey[objectType=vondst, naam=bergloon, characteristic=false], writer NOT_EQUAL"
                         + " standaardbergloon]] join [andere-schrijver-onderwerp_3: onderwerp = $onderwerp] bind []",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
-                        + " kenmerk=false], writer=standaardbergloon, waarde=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=vondst, naam=bergloon,"
+                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
                         + " size=1, collapse=true, writesEmpty=false, deposit=null,"
-                        + " fout=FaultName[vorm=standaardbergloon, regel=standaardbergloon], insertion=LOGICAL]",
-                "    waarde 0 Call bron '2 maal zijn gewicht'",
-                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " fault=FaultName[form=standaardbergloon, regel=standaardbergloon], insertion=LOGICAL]",
+                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '2'",
-                "    waarde 0.1 SlotValue bron 'zijn gewicht'"),
+                "    value 0.1 SlotValue bron 'zijn gewicht'"),
                 rules(golden("jutterswet-voorwaardelijke-initialisatie")));
     }
 
     @Test void an_initialisation_beside_a_writer_that_writes_empty() throws Exception {
         assertEquals(List.of(
                 "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 EMPTY_WRITERS $lege_schrijvers (lege schrijvers), 2 SUBJECT"
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false]), 1 EMPTY_WRITERS $lege_schrijvers (lege schrijvers), 2 SUBJECT"
                         + " $onderwerp (onderwerp zelf)]",
                 "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht VALUE]",
                 "  toets voorwaarde_0 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
@@ -402,31 +402,31 @@ class RulePlanWitnessTest {
                 "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '10'",
                 "    toets 0.2 Const String",
-                "  niet Value $andere_schrijver alfa [andere-schrijver_1: [attribuut GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], writer NOT_EQUAL"
-                        + " standaardbergloon, waarde GEVULD]] join [andere-schrijver-onderwerp_2: onderwerp ="
+                "  niet Value $andere_schrijver alfa [andere-schrijver_1: [attribute GELIJK"
+                        + " ElementKey[objectType=vondst, naam=bergloon, characteristic=false], writer NOT_EQUAL"
+                        + " standaardbergloon, value GEVULD]] join [andere-schrijver-onderwerp_2: onderwerp ="
                         + " $onderwerp] bind []",
-                "  accumulatie Value $lege_schrijver alfa [lege-schrijver_3: [attribuut GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], writer NOT_EQUAL"
-                        + " standaardbergloon, waarde LEEG]] join [lege-schrijver-onderwerp_4: onderwerp ="
+                "  accumulatie Value $lege_schrijver alfa [lege-schrijver_3: [attribute GELIJK"
+                        + " ElementKey[objectType=vondst, naam=bergloon, characteristic=false], writer NOT_EQUAL"
+                        + " standaardbergloon, value LEEG]] join [lege-schrijver-onderwerp_4: onderwerp ="
                         + " $onderwerp] bind [] functies [COUNT null -> $lege_schrijvers]",
                 "  toets doel-leeg_5 VORM sonde -1 slots [1, 2] grootte 3: TARGET_EMPTY(Lees 1, Invoer Vondst.bergloon"
                         + " VALUE (Lees 2))",
                 "    toets 0 Call",
                 "    toets 0.0 SlotValue",
-                "    toets 0.1 Invoer",
+                "    toets 0.1 Input",
                 "    toets 0.1.0 SlotValue",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
-                        + " kenmerk=false], writer=standaardbergloon, waarde=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=vondst, naam=bergloon,"
+                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
                         + " size=3, collapse=true, writesEmpty=false, deposit=null,"
-                        + " fout=FaultName[vorm=standaardbergloon, regel=standaardbergloon], insertion=LOGICAL]",
-                "    waarde 0 Call bron '2 maal zijn gewicht'",
-                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " fault=FaultName[form=standaardbergloon, regel=standaardbergloon], insertion=LOGICAL]",
+                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '2'",
-                "    waarde 0.1 SlotValue bron 'zijn gewicht'",
+                "    value 0.1 SlotValue bron 'zijn gewicht'",
                 "regel zwaar bergloon | vorm zwaar bergloon | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false])]",
                 "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht VALUE]",
                 "  toets voorwaarde_6 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
                         + " Const >)",
@@ -435,17 +435,17 @@ class RulePlanWitnessTest {
                 "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '10'",
                 "    toets 0.2 Const String",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
-                        + " kenmerk=false], writer=zwaar bergloon, waarde=RS_TIMES(Const 2, Lees 0), slots=[0],"
-                        + " size=1, collapse=true, writesEmpty=true, deposit=null, fout=FaultName[vorm=zwaar"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=vondst, naam=bergloon,"
+                        + " characteristic=false], writer=zwaar bergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                        + " size=1, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=zwaar"
                         + " bergloon, regel=zwaar bergloon], insertion=LOGICAL]",
-                "    waarde 0 Call bron '2 maal zijn gewicht'",
-                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '2'",
-                "    waarde 0.1 SlotValue bron 'zijn gewicht'",
+                "    value 0.1 SlotValue bron 'zijn gewicht'",
                 "regel licht bergloon | vorm licht bergloon | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false])]",
                 "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht VALUE]",
                 "  toets voorwaarde_7 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
                         + " Const >)",
@@ -454,27 +454,27 @@ class RulePlanWitnessTest {
                 "    toets 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '10'",
                 "    toets 0.2 Const String",
-                "  gevolg Value [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
-                        + " kenmerk=false], writer=licht bergloon, waarde=RS_TIMES(Const 2, Lees 0), slots=[0],"
-                        + " size=1, collapse=true, writesEmpty=true, deposit=null, fout=FaultName[vorm=licht"
+                "  gevolg Value [onderwerp=$onderwerp, target=ElementKey[objectType=vondst, naam=bergloon,"
+                        + " characteristic=false], writer=licht bergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                        + " size=1, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=licht"
                         + " bergloon, regel=licht bergloon], insertion=LOGICAL]",
-                "    waarde 0 Call bron '2 maal zijn gewicht'",
-                "    waarde 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0.0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '2'",
-                "    waarde 0.1 SlotValue bron 'zijn gewicht'",
+                "    value 0.1 SlotValue bron 'zijn gewicht'",
                 "regel schrijvers Vondst.bergloon: verschil | vorm null | groep null",
                 "  lezingen [0 VALUES $waarden (waarden)]",
                 "  onderwerp Vondst $onderwerp alfa [] bind []",
-                "  accumulatie Value $waarde alfa [waarde_8: [attribuut GELIJK ElementSleutel[objecttype=vondst,"
-                        + " naam=bergloon, kenmerk=false]]] join [waarde-onderwerp_9: onderwerp = $onderwerp] bind []"
+                "  accumulatie Value $waarde alfa [waarde_8: [attribute GELIJK ElementKey[objectType=vondst,"
+                        + " naam=bergloon, characteristic=false]]] join [waarde-onderwerp_9: onderwerp = $onderwerp] bind []"
                         + " functies [LIST null -> $waarden]",
                 "  toets verschil_10 VORM sonde -1 slots [0] grootte 1: DIFFER(Lees 0)",
                 "    toets 0 Call",
                 "    toets 0.0 SlotValue",
-                "  gevolg Schrijversconflict [onderwerp=$onderwerp, waarden=0,"
-                        + " doel=ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false],"
-                        + " attribuut=bergloon, documentOrder=[standaardbergloon, zwaar bergloon, licht"
-                        + " bergloon], typeClasses=[Vondst], typen=[Vondst], insertion=LOGICAL]"),
+                "  gevolg WritersConflict [onderwerp=$onderwerp, waarden=0,"
+                        + " target=ElementKey[objectType=vondst, naam=bergloon, characteristic=false],"
+                        + " attribute=bergloon, documentOrder=[standaardbergloon, zwaar bergloon, licht"
+                        + " bergloon], typeClasses=[Vondst], types=[Vondst], insertion=LOGICAL]"),
                 rules(initialisationBesideEmptyWriter()));
     }
 
@@ -511,10 +511,10 @@ class RulePlanWitnessTest {
         for (RulePlan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .modelplan().rules()) {
             if (!which.test(p)) continue;
-            out.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendaGroup());
+            out.add("regel " + p.naam() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
-            for (Read l : p.lezingen().slots())
-                slots.add(l.slot() + " " + l.soort() + " " + l.naam() + " (" + l.sleutel() + ")");
+            for (Read l : p.readings().slots())
+                slots.add(l.slot() + " " + l.category() + " " + l.naam() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -530,7 +530,7 @@ class RulePlanWitnessTest {
 
     /** Whether {@code p} is a plan of a rule of a defaults stack, whose form the manifest names after the stack. */
     static boolean ofStack(RulePlan p) {
-        return p.vorm() != null && p.vorm().startsWith("defaults ");
+        return p.form() != null && p.form().startsWith("defaults ");
     }
 
     private static String item(LhsItem item) {
@@ -542,30 +542,30 @@ class RulePlanWitnessTest {
                     + n.inside() + " buiten " + n.outside() + " "
                     + n.patterns().stream().map(RulePlanWitnessTest::pattern).toList());
             case Exists b -> "bestaat " + b.patterns().stream().map(RulePlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
+            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+                    + a.aggregations().stream().map(f -> f.category() + " " + f.source() + " -> " + f.target()).toList();
+            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
 
     private static String pattern(FactPattern p) {
         return p.factClass().getSimpleName() + " " + p.naam() + " alfa " + alpha(p.alpha()) + " join "
-                + p.joins().stream().map((Join j) -> j.id() + ": " + j.veld() + " = " + j.doel()).toList() + " bind "
+                + p.joins().stream().map((Join j) -> j.id() + ": " + j.field() + " = " + j.target()).toList() + " bind "
                 + bindings(p.bindings());
     }
 
     private static List<String> alpha(List<Alpha> alpha) {
         List<String> out = new ArrayList<>();
         for (Alpha a : alpha)
-            out.add(a.id() + ": " + a.tests().stream().map(t -> t.veld() + " " + t.op()
-                    + (t.waarde() == null ? "" : " " + waarde(t.waarde()))).toList());
+            out.add(a.id() + ": " + a.tests().stream().map(t -> t.field() + " " + t.op()
+                    + (t.value() == null ? "" : " " + value(t.value()))).toList());
         return out;
     }
 
     private static List<String> bindings(List<Binding> bindings) {
-        return bindings.stream().map(b -> b.doel() + " = " + b.pad().stream().map(Binding.Field::naam).toList() + "."
-                + b.veld().naam() + " " + b.vorm()).toList();
+        return bindings.stream().map(b -> b.target() + " = " + b.path().stream().map(Binding.Field::naam).toList() + "."
+                + b.field().naam() + " " + b.form()).toList();
     }
 
     /** The kind of {@code g} and every field of it, a term as a tree and a table in key order. */
@@ -573,14 +573,14 @@ class RulePlanWitnessTest {
         List<String> fields = new ArrayList<>();
         try {
             for (RecordComponent c : g.getClass().getRecordComponents())
-                fields.add(c.getName() + "=" + waarde(c.getAccessor().invoke(g)));
+                fields.add(c.getName() + "=" + value(c.getAccessor().invoke(g)));
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
         return g.getClass().getSimpleName() + " " + fields;
     }
 
-    private static String waarde(Object w) {
+    private static String value(Object w) {
         if (w instanceof Term t) return TermTree.tree(t);
         if (w instanceof Class<?> k) return k.getSimpleName();
         if (w instanceof Map<?, ?> m) {

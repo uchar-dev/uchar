@@ -69,31 +69,31 @@ class DateStepRangeWitnessTest {
                 ZoneOffset.UTC);
     }
 
-    private static Temporal step(Temporal date, String aantal, String unit, boolean optellen) {
-        return RegelSpraakRuntime.rsDatumReken(date, new BigDecimal(aantal), unit, optellen);
+    private static Temporal step(Temporal date, String itemCount, String unit, boolean optellen) {
+        return RegelSpraakRuntime.rsDatumReken(date, new BigDecimal(itemCount), unit, optellen);
     }
 
-    /** One row: {@code verwacht} is ref's answer, a date or date-time, or null where ref faulted with {@code sentence}. */
-    private record Row(String description, Temporal start, String aantal, String unit, boolean optellen,
-                       Temporal verwacht, String sentence) {}
+    /** One row: {@code expected} is ref's answer, a date or date-time, or null where ref faulted with {@code sentence}. */
+    private record Row(String description, Temporal start, String itemCount, String unit, boolean optellen,
+                       Temporal expected, String sentence) {}
 
-    private static Row waarde(String description, Temporal start, String aantal, String unit, boolean optellen,
-                              Temporal verwacht) {
-        return new Row(description, start, aantal, unit, optellen, verwacht, null);
+    private static Row value(String description, Temporal start, String itemCount, String unit, boolean optellen,
+                              Temporal expected) {
+        return new Row(description, start, itemCount, unit, optellen, expected, null);
     }
 
-    private static Row fout(String description, Temporal start, String aantal, String unit, boolean optellen,
+    private static Row fault(String description, Temporal start, String itemCount, String unit, boolean optellen,
                             String sentence) {
-        return new Row(description, start, aantal, unit, optellen, null, sentence);
+        return new Row(description, start, itemCount, unit, optellen, null, sentence);
     }
 
     private static void play(List<Row> rows) {
         for (Row r : rows) {
             if (r.sentence() == null) {
-                assertEquals(r.verwacht(), step(r.start(), r.aantal(), r.unit(), r.optellen()), r.description());
+                assertEquals(r.expected(), step(r.start(), r.itemCount(), r.unit(), r.optellen()), r.description());
             } else {
                 IllegalStateException e = assertThrows(IllegalStateException.class,
-                        () -> step(r.start(), r.aantal(), r.unit(), r.optellen()), r.description());
+                        () -> step(r.start(), r.itemCount(), r.unit(), r.optellen()), r.description());
                 assertTrue(e.getMessage().contains(r.sentence()), r.description() + ": " + e.getMessage());
             }
         }
@@ -101,18 +101,18 @@ class DateStepRangeWitnessTest {
 
     @Test void the_examples_of_chapter_3_8_are_a_fault() {
         play(List.of(
-                fout("2024-01-01T00:00:00 plus 2 000 000 000 000 uur", T0, "2000000000000", "HOURS", true, RANGE),
-                fout("2024-01-01T00:00:00 min 2 000 000 000 000 uur", T0, "2000000000000", "HOURS", false, RANGE),
-                fout("2024-01-01T00:00:00 plus 60 000 000 000 dagen", T0, "60000000000", "DAYS", true, RANGE)));
+                fault("2024-01-01T00:00:00 plus 2 000 000 000 000 uur", T0, "2000000000000", "HOURS", true, RANGE),
+                fault("2024-01-01T00:00:00 min 2 000 000 000 000 uur", T0, "2000000000000", "HOURS", false, RANGE),
+                fault("2024-01-01T00:00:00 plus 60 000 000 000 dagen", T0, "60000000000", "DAYS", true, RANGE)));
     }
 
     @Test void a_count_outside_the_range_does_not_turn_over() {
         String count = "duration count 18446744073709551617 is out of range";
         play(List.of(
-                fout("2^64 + 1 dagen op een datum-tijd", T0, "18446744073709551617", "DAYS", true, count),
-                fout("2^64 + 1 dagen op een datum", D0, "18446744073709551617", "DAYS", true, count),
-                fout("2^64 + 1 dagen eraf", D0, "18446744073709551617", "DAYS", false, count),
-                fout("2^62 milliseconden eraf: ref's telling, niet het bereik", T0, "4611686018427387904", "MILLIS",
+                fault("2^64 + 1 dagen op een datum-tijd", T0, "18446744073709551617", "DAYS", true, count),
+                fault("2^64 + 1 dagen op een datum", D0, "18446744073709551617", "DAYS", true, count),
+                fault("2^64 + 1 dagen eraf", D0, "18446744073709551617", "DAYS", false, count),
+                fault("2^62 milliseconden eraf: ref's telling, niet het bereik", T0, "4611686018427387904", "MILLIS",
                         false, "duration count 4611686018427387904 is out of range")));
         // The day kind's walk read the count the same way: 2^64 + 1 as one step, and 2^63 as Long.MIN_VALUE, whose
         // negation is itself, so the walk did not start and returned the date unchanged.
@@ -127,79 +127,79 @@ class DateStepRangeWitnessTest {
 
     @Test void the_bound_in_clock_units_is_that_of_ref() {
         play(List.of(
-                waarde("uur plus, het laatste", T0, "1281023420655", "HOURS", true, ms(4611686018425200000L)),
-                fout("uur plus, een te ver", T0, "1281023420656", "HOURS", true, RANGE),
-                waarde("uur min, de stap op de grens", T0, "1281023894007", "HOURS", false, ms(-4611684314358000000L)),
-                fout("uur min, de stap buiten het bereik, het tijdstip erbinnen", T0, "1281023894008", "HOURS", false,
+                value("uur plus, het laatste", T0, "1281023420655", "HOURS", true, ms(4611686018425200000L)),
+                fault("uur plus, een te ver", T0, "1281023420656", "HOURS", true, RANGE),
+                value("uur min, de stap op de grens", T0, "1281023894007", "HOURS", false, ms(-4611684314358000000L)),
+                fault("uur min, de stap buiten het bereik, het tijdstip erbinnen", T0, "1281023894008", "HOURS", false,
                         RANGE),
-                waarde("minuut plus, het laatste", T0, "76861405239336", "MINUTES", true, ms(4611686018427360000L)),
-                fout("minuut plus, een te ver", T0, "76861405239337", "MINUTES", true, RANGE),
-                waarde("minuut min, de stap op de grens", T0, "76861433640456", "MINUTES", false,
+                value("minuut plus, het laatste", T0, "76861405239336", "MINUTES", true, ms(4611686018427360000L)),
+                fault("minuut plus, een te ver", T0, "76861405239337", "MINUTES", true, RANGE),
+                value("minuut min, de stap op de grens", T0, "76861433640456", "MINUTES", false,
                         ms(-4611684314360160000L)),
-                fout("minuut min, de stap buiten het bereik", T0, "76861433640457", "MINUTES", false, RANGE),
-                waarde("seconde plus, het laatste", T0, "4611684314360187", "SECONDS", true, ms(4611686018427387000L)),
-                fout("seconde plus, een te ver", T0, "4611684314360188", "SECONDS", true, RANGE),
-                waarde("seconde min, de stap op de grens", T0, "4611686018427387", "SECONDS", false,
+                fault("minuut min, de stap buiten het bereik", T0, "76861433640457", "MINUTES", false, RANGE),
+                value("seconde plus, het laatste", T0, "4611684314360187", "SECONDS", true, ms(4611686018427387000L)),
+                fault("seconde plus, een te ver", T0, "4611684314360188", "SECONDS", true, RANGE),
+                value("seconde min, de stap op de grens", T0, "4611686018427387", "SECONDS", false,
                         ms(-4611684314360187000L)),
-                fout("seconde min, de stap buiten het bereik", T0, "4611686018427388", "SECONDS", false, RANGE),
-                waarde("milliseconde plus, het laatste: 2^62 - 1", T0, "4611684314360187903", "MILLIS", true,
+                fault("seconde min, de stap buiten het bereik", T0, "4611686018427388", "SECONDS", false, RANGE),
+                value("milliseconde plus, het laatste: 2^62 - 1", T0, "4611684314360187903", "MILLIS", true,
                         ms(4611686018427387903L)),
-                fout("milliseconde plus, een te ver", T0, "4611684314360187904", "MILLIS", true, RANGE),
-                waarde("milliseconde min, het grootste aantal", T0, "4611686018427387903", "MILLIS", false,
+                fault("milliseconde plus, een te ver", T0, "4611684314360187904", "MILLIS", true, RANGE),
+                value("milliseconde min, het grootste aantal", T0, "4611686018427387903", "MILLIS", false,
                         ms(-4611684314360187903L)),
-                fout("milliseconde min -2^62: ref keert het teken niet om en geeft een tijdstip", T0,
+                fault("milliseconde min -2^62: ref keert het teken niet om en geeft een tijdstip", T0,
                         "-4611686018427387904", "MILLIS", false, RANGE)));
     }
 
     @Test void the_bound_in_calendar_units_is_that_of_ref() {
         play(List.of(
-                waarde("dag plus, het laatste", T0, "53375975860", "DAYS", true, ms(4611686018371200000L)),
-                fout("dag plus, een te ver", T0, "53375975861", "DAYS", true, RANGE),
-                fout("dag plus vanaf 23:59:59.999: het tijdstip valt buiten", LocalDateTime.of(2024, 1, 1, 23, 59, 59,
+                value("dag plus, het laatste", T0, "53375975860", "DAYS", true, ms(4611686018371200000L)),
+                fault("dag plus, een te ver", T0, "53375975861", "DAYS", true, RANGE),
+                fault("dag plus vanaf 23:59:59.999: het tijdstip valt buiten", LocalDateTime.of(2024, 1, 1, 23, 59, 59,
                         999_000_000), "53375975860", "DAYS", true, RANGE),
-                waarde("dag min, het laatste", T0, "53376015306", "DAYS", false, ms(-4611686018371200000L)),
-                fout("dag min, een te ver", T0, "53376015307", "DAYS", false, RANGE),
-                fout("dag min vanaf 09:00: het tijdstip valt erbinnen, de middernacht van zijn dag niet",
+                value("dag min, het laatste", T0, "53376015306", "DAYS", false, ms(-4611686018371200000L)),
+                fault("dag min, een te ver", T0, "53376015307", "DAYS", false, RANGE),
+                fault("dag min vanaf 09:00: het tijdstip valt erbinnen, de middernacht van zijn dag niet",
                         LocalDateTime.of(2024, 1, 1, 9, 0), "53376015307", "DAYS", false, RANGE),
-                waarde("week plus, het laatste", T0, "7625139408", "WEEKS", true, ms(4611686018025600000L)),
-                fout("week plus, een te ver", T0, "7625139409", "WEEKS", true, RANGE),
-                waarde("week min, het laatste", T0, "7625145043", "WEEKS", false, ms(-4611686017939200000L)),
-                fout("week min, een te ver", T0, "7625145044", "WEEKS", false, RANGE),
-                fout("week plus 7 * 10^17", T0, "700000000000000000", "WEEKS", true, RANGE),
-                waarde("maand plus, het laatste", T0, "1753661499", "MONTHS", true, ms(4611686016384000000L)),
-                fout("maand plus, een te ver", T0, "1753661500", "MONTHS", true, RANGE),
-                waarde("maand min, het laatste", T0, "1753662795", "MONTHS", false, ms(-4611686016470400000L)),
-                fout("maand min, een te ver", T0, "1753662796", "MONTHS", false, RANGE),
-                waarde("kwartaal plus, het laatste", T0, "584553833", "KWARTAAL", true, ms(4611686016384000000L)),
-                fout("kwartaal plus, een te ver", T0, "584553834", "KWARTAAL", true, RANGE),
-                waarde("kwartaal min, het laatste", T0, "584554265", "KWARTAAL", false, ms(-4611686016470400000L)),
-                fout("kwartaal min, een te ver", T0, "584554266", "KWARTAAL", false, RANGE),
-                fout("kwartaal plus 3 074 457 345 618 258 603: ref houdt van drie keer dat aantal 1 maand over", T0,
+                value("week plus, het laatste", T0, "7625139408", "WEEKS", true, ms(4611686018025600000L)),
+                fault("week plus, een te ver", T0, "7625139409", "WEEKS", true, RANGE),
+                value("week min, het laatste", T0, "7625145043", "WEEKS", false, ms(-4611686017939200000L)),
+                fault("week min, een te ver", T0, "7625145044", "WEEKS", false, RANGE),
+                fault("week plus 7 * 10^17", T0, "700000000000000000", "WEEKS", true, RANGE),
+                value("maand plus, het laatste", T0, "1753661499", "MONTHS", true, ms(4611686016384000000L)),
+                fault("maand plus, een te ver", T0, "1753661500", "MONTHS", true, RANGE),
+                value("maand min, het laatste", T0, "1753662795", "MONTHS", false, ms(-4611686016470400000L)),
+                fault("maand min, een te ver", T0, "1753662796", "MONTHS", false, RANGE),
+                value("kwartaal plus, het laatste", T0, "584553833", "KWARTAAL", true, ms(4611686016384000000L)),
+                fault("kwartaal plus, een te ver", T0, "584553834", "KWARTAAL", true, RANGE),
+                value("kwartaal min, het laatste", T0, "584554265", "KWARTAAL", false, ms(-4611686016470400000L)),
+                fault("kwartaal min, een te ver", T0, "584554266", "KWARTAAL", false, RANGE),
+                fault("kwartaal plus 3 074 457 345 618 258 603: ref houdt van drie keer dat aantal 1 maand over", T0,
                         "3074457345618258603", "KWARTAAL", true, RANGE),
-                waarde("jaar plus, het laatste", T0, "146138458", "YEARS", true, ms(4611686008608000000L)),
-                fout("jaar plus, een te ver", T0, "146138459", "YEARS", true, RANGE),
-                waarde("jaar min, het laatste", T0, "146138566", "YEARS", false, ms(-4611686008521600000L)),
-                fout("jaar min, een te ver", T0, "146138567", "YEARS", false, RANGE),
-                fout("jaar plus 5 * 10^17", T0, "500000000000000000", "YEARS", true, RANGE)));
+                value("jaar plus, het laatste", T0, "146138458", "YEARS", true, ms(4611686008608000000L)),
+                fault("jaar plus, een te ver", T0, "146138459", "YEARS", true, RANGE),
+                value("jaar min, het laatste", T0, "146138566", "YEARS", false, ms(-4611686008521600000L)),
+                fault("jaar min, een te ver", T0, "146138567", "YEARS", false, RANGE),
+                fault("jaar plus 5 * 10^17", T0, "500000000000000000", "YEARS", true, RANGE)));
     }
 
     @Test void a_date_without_time_follows_ref_to_the_years_of_java_time() {
         play(List.of(
-                waarde("dag plus 60 000 000 000: ref geeft deze datum, geen fout", D0, "60000000000", "DAYS", true,
+                value("dag plus 60 000 000 000: ref geeft deze datum, geen fout", D0, "60000000000", "DAYS", true,
                         LocalDate.of(164276444, 6, 2)),
-                waarde("dag min 60 000 000 000", D0, "60000000000", "DAYS", false, LocalDate.of(-164272397, 8, 1)),
-                waarde("dag plus tot de laatste dag van java.time", D0, "365241760748", "DAYS", true,
+                value("dag min 60 000 000 000", D0, "60000000000", "DAYS", false, LocalDate.of(-164272397, 8, 1)),
+                value("dag plus tot de laatste dag van java.time", D0, "365241760748", "DAYS", true,
                         LocalDate.of(999999999, 12, 31)),
-                fout("dag plus een verder: ref geeft 1000000000-01-01", D0, "365241760749", "DAYS", true, JAREN),
-                waarde("dag min tot de eerste dag van java.time", D0, "365243238885", "DAYS", false,
+                fault("dag plus een verder: ref geeft 1000000000-01-01", D0, "365241760749", "DAYS", true, JAREN),
+                value("dag min tot de eerste dag van java.time", D0, "365243238885", "DAYS", false,
                         LocalDate.of(-999999999, 1, 1)),
-                fout("dag min een verder: ref geeft -1000000000-12-31", D0, "365243238886", "DAYS", false, JAREN),
-                waarde("jaar plus tot het laatste jaar", D0, "999997975", "YEARS", true, LocalDate.of(999999999, 1, 1)),
-                fout("jaar plus een verder: ref geeft 1000000000-01-01", D0, "999997976", "YEARS", true, JAREN),
-                waarde("maand plus 2 000 000 000", D0, "2000000000", "MONTHS", true, LocalDate.of(166668690, 9, 1)),
-                fout("week plus 7 * 10^17: ref slaat om naar -11836990593520844-11-04", D0, "700000000000000000",
+                fault("dag min een verder: ref geeft -1000000000-12-31", D0, "365243238886", "DAYS", false, JAREN),
+                value("jaar plus tot het laatste jaar", D0, "999997975", "YEARS", true, LocalDate.of(999999999, 1, 1)),
+                fault("jaar plus een verder: ref geeft 1000000000-01-01", D0, "999997976", "YEARS", true, JAREN),
+                value("maand plus 2 000 000 000", D0, "2000000000", "MONTHS", true, LocalDate.of(166668690, 9, 1)),
+                fault("week plus 7 * 10^17: ref slaat om naar -11836990593520844-11-04", D0, "700000000000000000",
                         "WEEKS", true, JAREN),
-                fout("kwartaal plus 3 074 457 345 618 258 603: ref geeft 2024-02-01", D0, "3074457345618258603",
+                fault("kwartaal plus 3 074 457 345 618 258 603: ref geeft 2024-02-01", D0, "3074457345618258603",
                         "KWARTAAL", true, JAREN)));
     }
 

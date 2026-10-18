@@ -218,9 +218,9 @@ class DrlCreationBranchWitnessTest {
         return write(ir, "penning-vorm");
     }
 
-    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode lijst, String naam) {
+    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode list, String naam) {
         var kept = JSON.createArrayNode();
-        for (JsonNode n : lijst) if (!naam.equals(n.path("name").asText())) kept.add(n);
+        for (JsonNode n : list) if (!naam.equals(n.path("name").asText())) kept.add(n);
         return kept;
     }
 

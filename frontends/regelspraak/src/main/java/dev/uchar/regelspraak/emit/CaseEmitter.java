@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.emit;
 
-import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
+import dev.uchar.regelspraak.ir.ResolvedRuleGroup;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.ir.ResolvedScenario.*;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -28,7 +28,7 @@ public final class CaseEmitter {
     private CaseEmitter() {}
 
     /** The file name of the {@code n}-th scenario (1-based, in document order): {@code case<n>-<slug>.json}. */
-    public static String bestandsnaam(int n, ResolvedScenario s) {
+    public static String fileName(int n, ResolvedScenario s) {
         return "case" + n + "-" + slug(s.naam()) + ".json";
     }
 
@@ -45,25 +45,25 @@ public final class CaseEmitter {
      *  every diagnostic raised on a line of a source block whose forms it leaves out entirely
      *  ({@link Scope#omitted}): the document carries what its forms and its declarations raise. A rule group keeps
      *  its carried members and is dropped when none is left. */
-    public static RegelSpraakModel metScope(RegelSpraakModel m, Scope scope) {
+    public static RegelSpraakModel withScope(RegelSpraakModel m, Scope scope) {
         if (scope == null) return m;
         Set<String> names = new HashSet<>();
-        for (String v : scope.vormen()) names.add(norm(v));
-        Predicate<String> carries = naam -> names.contains(norm(basisNaam(naam)));
+        for (String v : scope.forms()) names.add(norm(v));
+        Predicate<String> carries = naam -> names.contains(norm(baseName(naam)));
         RegelSpraakModel k = m.copy();
         k.resolvedRegels.removeIf(r -> !carries.test(r.naam()));
-        k.objectCreaties.removeIf(x -> !carries.test(x.naam()));
-        k.verdelingen.removeIf(x -> !carries.test(x.naam()));
+        k.objectCreations.removeIf(x -> !carries.test(x.naam()));
+        k.allocations.removeIf(x -> !carries.test(x.naam()));
         k.consistenties.removeIf(x -> !carries.test(x.naam()));
-        k.uniciteiten.removeIf(x -> !carries.test(x.naam()));
-        k.uniciteitUnies.removeIf(x -> !carries.test(x.naam()));
-        k.feitCreaties.removeIf(x -> !carries.test(x.naam()));
+        k.uniquenesses.removeIf(x -> !carries.test(x.naam()));
+        k.uniquenessUnions.removeIf(x -> !carries.test(x.naam()));
+        k.factCreations.removeIf(x -> !carries.test(x.naam()));
         k.prioritizedDefaults.removeIf(x -> !carries.test(x.naam()));
         k.diagnostics.removeIf(d -> scope.omitted().stream().anyMatch(b -> b.contains(d.line())));
-        k.regelGroepen.clear();
-        for (ResolvedRegelGroep g : m.regelGroepen) {
-            List<String> leden = g.leden().stream().filter(carries).toList();
-            if (!leden.isEmpty()) k.regelGroepen.add(new ResolvedRegelGroep(g.naam(), g.recursive(), leden, g.bron(), g.line()));
+        k.ruleGroups.clear();
+        for (ResolvedRuleGroup g : m.ruleGroups) {
+            List<String> members = g.members().stream().filter(carries).toList();
+            if (!members.isEmpty()) k.ruleGroups.add(new ResolvedRuleGroup(g.naam(), g.recursive(), members, g.source(), g.line()));
         }
         return k;
     }
@@ -74,56 +74,56 @@ public final class CaseEmitter {
         w.beginObject();
         w.key("format").value("uchar-case-v0");
         w.key("asOfDate");
-        if (s.peildatum() == null) w.valueNull(); else w.value(s.peildatum().toString());
+        if (s.asOfDate() == null) w.valueNull(); else w.value(s.asOfDate().toString());
         w.key("input").beginObject();
         w.key("instances").beginArray();
-        for (Instantie i : s.situatie().instanties()) instantie(w, i);
+        for (Instance i : s.situation().instances()) instantie(w, i);
         w.endArray();
         w.key("parameters").beginObject();
-        for (ParameterWaarde p : s.situatie().parameters()) {
+        for (ParameterValue p : s.situation().parameters()) {
             w.key(p.parameter());
-            if (p.tijdlijn() != null) timelineValue(w, p.tijdlijn()); else waarde(w, p.waarde());
+            if (p.tijdlijn() != null) timelineValue(w, p.tijdlijn()); else value(w, p.value());
         }
         w.endObject();
         w.endObject();
         w.key("expected").beginArray();
-        for (Verwachting v : s.verwachtingen()) verwachting(w, v);
+        for (Expectation v : s.expectations()) verwachting(w, v);
         w.endArray();
         w.endObject();
         w.sb.append('\n');
         return w.sb.toString();
     }
 
-    private static void instantie(IrEmitter.Json w, Instantie i) {
+    private static void instantie(IrEmitter.Json w, Instance i) {
         w.beginObject();
         w.key("label").value(i.label());
-        w.key("objectType").value(i.objecttype().naam);
+        w.key("objectType").value(i.objectType().naam);
         w.key("attributes").beginObject();
-        for (AttribuutWaarde a : i.attributen()) {
-            w.key(a.attribuut());
-            if (a.tijdlijn() != null) timelineValue(w, a.tijdlijn()); else waarde(w, a.waarde());
+        for (AttributeValue a : i.attributen()) {
+            w.key(a.attribute());
+            if (a.tijdlijn() != null) timelineValue(w, a.tijdlijn()); else value(w, a.value());
         }
         w.endObject();
         w.key("roles").beginObject();
-        for (RolWaarde r : i.rollen()) {
-            w.key(r.sleutel()).beginArray();
-            for (String l : r.doelLabels()) w.value(l);
+        for (RoleValue r : i.rollen()) {
+            w.key(r.key()).beginArray();
+            for (String l : r.targetLabels()) w.value(l);
             w.endArray();
         }
         w.endObject();
         w.key("characteristics").beginArray();
-        for (KenmerkWaarde k : i.kenmerken()) if (k.perioden() == null) w.value(k.kenmerk());
+        for (CharacteristicValue k : i.kenmerken()) if (k.periods() == null) w.value(k.characteristic());
         w.endArray();
-        List<KenmerkWaarde> temporal = new ArrayList<>();
-        for (KenmerkWaarde k : i.kenmerken()) if (k.perioden() != null) temporal.add(k);
+        List<CharacteristicValue> temporal = new ArrayList<>();
+        for (CharacteristicValue k : i.kenmerken()) if (k.periods() != null) temporal.add(k);
         if (!temporal.isEmpty()) {
             w.key("characteristicTimelines").beginObject();
-            for (KenmerkWaarde k : temporal) {
-                w.key(k.kenmerk()).beginArray();
-                for (Periode p : k.perioden()) {
+            for (CharacteristicValue k : temporal) {
+                w.key(k.characteristic()).beginArray();
+                for (TimeWindow p : k.periods()) {
                     w.beginObject();
                     w.key("from").value(p.van().toString());
-                    w.key("to").value(p.tot().toString());
+                    w.key("to").value(p.until().toString());
                     w.endObject();
                 }
                 w.endArray();
@@ -133,37 +133,37 @@ public final class CaseEmitter {
         w.endObject();
     }
 
-    private static void verwachting(IrEmitter.Json w, Verwachting v) {
+    private static void verwachting(IrEmitter.Json w, Expectation v) {
         w.beginObject();
-        switch (v.soort()) {
-            case ATTRIBUUT_WAARDE -> {
+        switch (v.category()) {
+            case ATTRIBUTE_VALUE -> {
                 w.key("kind").value("attributeValue");
                 w.key("label").value(v.label());
-                w.key("attribute").value(v.attribuut());
+                w.key("attribute").value(v.attribute());
                 w.key("value");
-                waarde(w, v.verwachteWaarde());
+                value(w, v.expectedValue());
             }
-            case ATTRIBUUT_LEEG -> {
+            case ATTRIBUTE_EMPTY -> {
                 w.key("kind").value("attributeEmpty");
                 w.key("label").value(v.label());
-                w.key("attribute").value(v.attribuut());
+                w.key("attribute").value(v.attribute());
             }
-            case ATTRIBUUT_TIJDLIJN -> {
+            case ATTRIBUTE_TIMELINE -> {
                 w.key("kind").value("attributeTimeline");
                 w.key("label").value(v.label());
-                w.key("attribute").value(v.attribuut());
+                w.key("attribute").value(v.attribute());
                 w.key("timeline");
                 segments(w, v.tijdlijn());
             }
-            case KENMERK_AANWEZIG -> {
+            case CHARACTERISTIC_PRESENT -> {
                 w.key("kind").value("characteristicPresent");
                 w.key("label").value(v.label());
-                w.key("characteristic").value(v.kenmerk());
+                w.key("characteristic").value(v.characteristic());
             }
-            case KENMERK_AFWEZIG -> {
+            case CHARACTERISTIC_ABSENT -> {
                 w.key("kind").value("characteristicAbsent");
                 w.key("label").value(v.label());
-                w.key("characteristic").value(v.kenmerk());
+                w.key("characteristic").value(v.characteristic());
             }
             case CONSISTENT -> w.key("kind").value("consistent");
             case INCONSISTENT -> {
@@ -187,9 +187,9 @@ public final class CaseEmitter {
         for (Segment s : tijdlijn) {
             w.beginObject();
             w.key("from").value(s.van().toString());
-            w.key("to").value(s.tot().toString());
+            w.key("to").value(s.until().toString());
             w.key("value");
-            waarde(w, s.waarde());
+            value(w, s.value());
             w.endObject();
         }
         w.endArray();
@@ -197,22 +197,22 @@ public final class CaseEmitter {
 
     /** A value in its one case variant; a date-time in the frontend's lexeme with its three millisecond digits,
      *  which is how the IR writes a date-time literal too. */
-    private static void waarde(IrEmitter.Json w, Waarde v) {
+    private static void value(IrEmitter.Json w, ScenarioValue v) {
         w.beginObject();
-        if (v.getal() != null) w.key("number").value(v.getal());
-        else if (v.datum() != null) w.key("date").value(v.datum().toString());
-        else if (v.datumTijd() != null)
-            w.key("dateTime").value(v.datumTijd().format(java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")));
+        if (v.number() != null) w.key("number").value(v.number());
+        else if (v.date() != null) w.key("date").value(v.date().toString());
+        else if (v.dateTime() != null)
+            w.key("dateTime").value(v.dateTime().format(java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")));
         else if (v.bool() != null) w.key("boolean").value(v.bool().booleanValue());
         else if (v.tekst() != null) w.key("text").value(v.tekst());
-        else if (v.enumWaarde() != null) w.key("enumeration").value(v.enumWaarde());
+        else if (v.enumValue() != null) w.key("enumeration").value(v.enumValue());
         else throw new IllegalStateException("CaseEmitter: een waarde zonder variant");
         w.endObject();
     }
 
     /** A resolved form name without its §13.4.2.3 version suffix ({@code "<naam> #k"}): the name a scope names a
      *  form by. The scenario resolver reads it here too. */
-    public static String basisNaam(String naam) {
+    public static String baseName(String naam) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*\\S) #[0-9]+").matcher(naam);
         return m.matches() ? m.group(1) : naam;
     }

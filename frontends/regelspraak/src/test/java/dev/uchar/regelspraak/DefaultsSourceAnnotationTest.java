@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * its annotated {@code Uitzondering op} — emitted an IR in which neither annotation text occurred anywhere, with
  * {@code diagnostics: []} and a verifier PASS.
  *
- * <p>The placement, with no new wire field: a lifted rule's annotation lands in the {@code Default.bron} of the
- * default it becomes; the base rule's lands in {@code PrioritizedDefaults.bron} as well — the group is named after
+ * <p>The placement, with no new wire field: a lifted rule's annotation lands in the {@code Default.source} of the
+ * default it becomes; the base rule's lands in {@code PrioritizedDefaults.source} as well — the group is named after
  * the base, and in every hand-written defaults anchor each default, the lowest included, carries its own
  * provenance beside the group's. Several annotations on one block are joined with {@code "; "}.
  */
@@ -83,9 +83,9 @@ class DefaultsSourceAnnotationTest {
     @Test void m6_base_and_exception_carry_their_annotation_on_wire() {
         RegelSpraakModel m = Resolver.resolve(M6);
         PrioritizedDefaults g = onlyGroup(m);
-        assertEquals("art. 4 lid 2 Jutterswet", g.defaults().get(0).bron(), "de uitzonderingsdefault (hoogste) draagt haar eigen annotatie");
-        assertEquals("art. 4 lid 1 Jutterswet", g.defaults().get(1).bron(), "de basisdefault (laagste) draagt de annotatie van de basisregel");
-        assertEquals("art. 4 lid 1 Jutterswet", g.bron(), "de groep, genoemd naar de basis, draagt de annotatie van de basisregel");
+        assertEquals("art. 4 lid 2 Jutterswet", g.defaults().get(0).source(), "de uitzonderingsdefault (hoogste) draagt haar eigen annotatie");
+        assertEquals("art. 4 lid 1 Jutterswet", g.defaults().get(1).source(), "de basisdefault (laagste) draagt de annotatie van de basisregel");
+        assertEquals("art. 4 lid 1 Jutterswet", g.source(), "de groep, genoemd naar de basis, draagt de annotatie van de basisregel");
         // On the wire, in emission order: the defaults (highest first), then the group's own source after the array.
         assertEquals(List.of("art. 4 lid 2 Jutterswet", "art. 4 lid 1 Jutterswet", "art. 4 lid 1 Jutterswet"),
                 articleSources(IrEmitter.emit(m)));
@@ -94,9 +94,9 @@ class DefaultsSourceAnnotationTest {
     @Test void multiple_annotations_on_a_block_are_merged() {
         String src = MODEL + "// Bron: art. 3 Jutterswet\n// Bron: art. 5 Jutterswet\n" + BASE + EXCEPTION;
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(src));
-        assertEquals("art. 3 Jutterswet; art. 5 Jutterswet", g.defaults().get(1).bron());
-        assertEquals("art. 3 Jutterswet; art. 5 Jutterswet", g.bron());
-        assertNull(g.defaults().get(0).bron(), "een uitzondering zonder annotatie erft die van de basis niet");
+        assertEquals("art. 3 Jutterswet; art. 5 Jutterswet", g.defaults().get(1).source());
+        assertEquals("art. 3 Jutterswet; art. 5 Jutterswet", g.source());
+        assertNull(g.defaults().get(0).source(), "een uitzondering zonder annotatie erft die van de basis niet");
     }
 
     @Test void unordered_member_carries_its_annotation_on_group_and_default() {
@@ -117,10 +117,10 @@ class DefaultsSourceAnnotationTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(2, m.prioritizedDefaults.size());
-        assertEquals("art. 9 lid 1 Jutterswet", m.prioritizedDefaults.get(0).bron());
-        assertEquals("art. 9 lid 1 Jutterswet", m.prioritizedDefaults.get(0).defaults().get(0).bron());
-        assertEquals("art. 9 lid 2 Jutterswet", m.prioritizedDefaults.get(1).bron());
-        assertEquals("art. 9 lid 2 Jutterswet", m.prioritizedDefaults.get(1).defaults().get(0).bron());
+        assertEquals("art. 9 lid 1 Jutterswet", m.prioritizedDefaults.get(0).source());
+        assertEquals("art. 9 lid 1 Jutterswet", m.prioritizedDefaults.get(0).defaults().get(0).source());
+        assertEquals("art. 9 lid 2 Jutterswet", m.prioritizedDefaults.get(1).source());
+        assertEquals("art. 9 lid 2 Jutterswet", m.prioritizedDefaults.get(1).defaults().get(0).source());
     }
 
     @Test void an_annotation_above_the_unordered_head_belongs_to_no_rule_and_is_reported() {
@@ -141,7 +141,7 @@ class DefaultsSourceAnnotationTest {
         assertEquals(Severity.WARNING, d.severity());
         assertTrue(d.message().contains("art. 9 Jutterswet") && d.message().contains("Uitzonderingen ongeordend"),
                 () -> "de melding noemt de annotatie of de kop niet: " + d);
-        assertNull(m.prioritizedDefaults.get(0).bron(), "de kopannotatie wordt niet stil aan een lid gehangen");
+        assertNull(m.prioritizedDefaults.get(0).source(), "de kopannotatie wordt niet stil aan een lid gehangen");
     }
 
     // -------------------------------------------------------------------- what stays as it was
@@ -149,8 +149,8 @@ class DefaultsSourceAnnotationTest {
     @Test void without_annotation_every_source_stays_null() {
         // The three extension goldens carry no annotation; this is their shape, and it must not move.
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE + EXCEPTION));
-        assertNull(g.bron());
-        g.defaults().forEach(d -> assertNull(d.bron()));
+        assertNull(g.source());
+        g.defaults().forEach(d -> assertNull(d.source()));
     }
 
     @Test void the_rule_stub_is_not_on_the_wire() {

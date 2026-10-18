@@ -1,9 +1,9 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import dev.uchar.regelspraak.ir.Conditie;
-import dev.uchar.regelspraak.ir.Geldigheid;
-import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.ir.Condition;
+import dev.uchar.regelspraak.ir.Validity;
+import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
@@ -29,8 +29,8 @@ import java.util.function.Predicate;
  * calls class-qualified, never through an {@code import function}, which a field of a fact with the same name as a
  * helper shadows without a complaint. A function takes its arguments evaluated; the probe of a deposit is the
  * object its slot of the value array holds, a {@link DepositFlag} or nothing. A fault is an evaluation fault of the branch in
- * the reference interpreter's sentence ({@link Rekenfout}, {@link Invoervormfout}, a division by a numeric zero), which
- * the consequence or the fault rule of the form inserts as a {@link Fout}.
+ * the reference interpreter's sentence ({@link ComputeFault}, {@link InputFormFault}, a division by a numeric zero), which
+ * the consequence or the fault rule of the form inserts as a {@link Fault}.
  *
  * <p>Beside them the routes of a test and a consequence ({@code plan.Route}): a fresh probe, a report to it and its
  * verdict, and the facts a consequence makes whose class or constructor a DRL text cannot reach, the fault of a fixed
@@ -83,7 +83,7 @@ public final class ComputeHelpers {
         BigInteger counter = q.teller().sqrt(), denominator = q.noemer().sqrt();
         if (!counter.multiply(counter).equals(q.teller()) || !denominator.multiply(denominator).equals(q.noemer()))
             // the reference interpreter writes the radicand as a rational here (Q.to_string), not as a decimal
-            throw new Rekenfout("irrational square root of " + (q.noemer().equals(BigInteger.ONE) ? q.teller()
+            throw new ComputeFault("irrational square root of " + (q.noemer().equals(BigInteger.ONE) ? q.teller()
                     : q.teller() + "/" + q.noemer()) + " reached without an explicit rounding (§13.4.17.13 mandates"
                     + " one)");
         Breuk r = Breuk.van(counter, denominator);
@@ -111,10 +111,10 @@ public final class ComputeHelpers {
     /** A date or a date-time plus or minus {@code aantal} in the calendar or clock unit {@code unit}
      *  ({@code rsDatumReken}); a step or a count outside the range of RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault
      *  ({@link #dateFault}). */
-    public static Object dateStep(Object date, Object aantal, String unit, boolean optellen) {
+    public static Object dateStep(Object date, Object countOf, String unit, boolean optellen) {
         java.time.temporal.Temporal d = (java.time.temporal.Temporal) date;
         try {
-            return RegelSpraakRuntime.rsDatumReken(d, aantal, unit, optellen);
+            return RegelSpraakRuntime.rsDatumReken(d, countOf, unit, optellen);
         } catch (IllegalStateException e) {
             throw dateFault(e);
         }
@@ -122,9 +122,9 @@ public final class ComputeHelpers {
 
     /** A date plus or minus a count of days of the day kind {@code datePredicate} (RUNTIME-SEMANTICS ch. 3.8,
      *  {@code rsDatumPlusDagsoort}); a walk past the reach of ch. 3.8 is an evaluation fault ({@link #dateFault}). */
-    public static Object dayKindStep(Object date, Object aantal, Predicate<LocalDate> datePredicate, boolean optellen) {
+    public static Object dayKindStep(Object date, Object countOf, Predicate<LocalDate> datePredicate, boolean optellen) {
         try {
-            return RegelSpraakRuntime.rsDatumPlusDagsoort((LocalDate) date, aantal, datePredicate, optellen);
+            return RegelSpraakRuntime.rsDatumPlusDagsoort((LocalDate) date, countOf, datePredicate, optellen);
         } catch (IllegalStateException e) {
             throw dateFault(e);
         }
@@ -132,10 +132,10 @@ public final class ComputeHelpers {
 
     /** As {@link #dayKindStep}, on a date-time over its date part, the clock time riding through
      *  ({@code rsDatumTijdPlusDagsoort}). */
-    public static Object dateTimeDayKindStep(Object date, Object aantal, Predicate<LocalDate> datePredicate,
+    public static Object dateTimeDayKindStep(Object date, Object countOf, Predicate<LocalDate> datePredicate,
                                                boolean optellen) {
         try {
-            return RegelSpraakRuntime.rsDatumTijdPlusDagsoort((LocalDateTime) date, aantal, datePredicate, optellen);
+            return RegelSpraakRuntime.rsDatumTijdPlusDagsoort((LocalDateTime) date, countOf, datePredicate, optellen);
         } catch (IllegalStateException e) {
             throw dateFault(e);
         }
@@ -152,7 +152,7 @@ public final class ComputeHelpers {
                 || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_JAREN)
                 || (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range"))
                 || sentence.startsWith(DAY_KIND_WALK);
-        return range ? new Rekenfout(sentence, e) : e;
+        return range ? new ComputeFault(sentence, e) : e;
     }
 
     /** The opening of the runtime's fault of a day-kind walk past its reach ({@code rsDatumPlusDagsoort}), which is the
@@ -167,9 +167,9 @@ public final class ComputeHelpers {
         if (year == null) return null;
         Breuk q = Breuk.van(year);
         if (!q.noemer().equals(BigInteger.ONE))
-            throw new Rekenfout("easterSunday: expected a whole unitless year, got " + numberText(q));
+            throw new ComputeFault("easterSunday: expected a whole unitless year, got " + numberText(q));
         if (q.teller().abs().compareTo(BigInteger.valueOf(999_999_999)) > 0)
-            throw new Rekenfout("easterSunday: the year " + q.teller() + " lies outside the years -999999999 to"
+            throw new ComputeFault("easterSunday: the year " + q.teller() + " lies outside the years -999999999 to"
                     + " 999999999 that this backend's dates hold");
         return RegelSpraakRuntime.rsEerstePaasdag(new BigDecimal(q.teller()));
     }
@@ -193,14 +193,14 @@ public final class ComputeHelpers {
         for (Object part : v) {
             Breuk q = Breuk.van(part);
             if (!q.noemer().equals(BigInteger.ONE) || q.teller().bitLength() > 31)
-                throw new Rekenfout(spelling + ": the part " + numberText(q) + " is no whole number within the range"
+                throw new ComputeFault(spelling + ": the part " + numberText(q) + " is no whole number within the range"
                         + " of a date part");
         }
         try {
             return time ? RegelSpraakRuntime.rsDatumtijdMet(v[0], v[1], v[2], v[3], v[4], v[5], v[6])
                     : RegelSpraakRuntime.rsDatumMet(v[0], v[1], v[2]);
         } catch (java.time.DateTimeException e) {
-            throw new Rekenfout(spelling + ": " + e.getMessage(), e);
+            throw new ComputeFault(spelling + ": " + e.getMessage(), e);
         }
     }
 
@@ -219,27 +219,27 @@ public final class ComputeHelpers {
     }
 
     /** The map of a dimensioned attribute as it is, leeg where the value is no map. */
-    public static Map<?, ?> map(Object waarde) {
-        return waarde instanceof Map<?, ?> m ? m : null;
+    public static Map<?, ?> map(Object value) {
+        return value instanceof Map<?, ?> m ? m : null;
     }
 
     /** {@code waarde}, or {@code fallback} where it is leeg: a sum's {@code emptyFallback} (§5.8.2), which is evaluated
      *  whether it is used or not (RUNTIME-SEMANTICS ch. 5.11). */
-    public static Object fallback(Object waarde, Object fallback) {
-        return waarde == null ? fallback : waarde;
+    public static Object fallback(Object value, Object fallback) {
+        return value == null ? fallback : value;
     }
 
     // ---------------- folds ----------------
 
     /** A count an accumulate bound, as a number. */
-    public static BigDecimal aantal(Object count) {
+    public static BigDecimal countOf(Object count) {
         return BigDecimal.valueOf(((Number) count).longValue());
     }
 
     /** The value of a fold from what the accumulate bound (RUNTIME-SEMANTICS ch. 1.2 "Aggregations"): the folded
      *  {@code waarde}, or {@code fallback} where the count {@code aantal} of the contributions is 0. */
-    public static Object foldValue(Object aantal, Object waarde, Object fallback) {
-        return ((Number) aantal).longValue() == 0 ? fallback : waarde;
+    public static Object foldValue(Object countOf, Object value, Object fallback) {
+        return ((Number) countOf).longValue() == 0 ? fallback : value;
     }
 
     /** One step of a listed fold that keeps the least operand (RUNTIME-SEMANTICS ch. 1.2e): {@code tot} the value so
@@ -248,19 +248,19 @@ public final class ComputeHelpers {
     public static Object smallest(Object to, Object operand) {
         if (operand == null) return to;
         if (to == null) return operand;
-        return vergelijk(to, operand) < 0 ? to : operand;
+        return compare(to, operand) < 0 ? to : operand;
     }
 
     /** As {@link #smallest}, keeping the greatest operand. */
     public static Object largest(Object to, Object operand) {
         if (operand == null) return to;
         if (to == null) return operand;
-        return vergelijk(to, operand) > 0 ? to : operand;
+        return compare(to, operand) > 0 ? to : operand;
     }
 
     /** The order of two values a fold compares: numbers exactly, a rational among them included; dates as they order. */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static int vergelijk(Object a, Object b) {
+    public static int compare(Object a, Object b) {
         if (a instanceof Number x && b instanceof Number y) return Breuk.van(x).compareTo(Breuk.van(y));
         return ((Comparable) a).compareTo(b);
     }
@@ -271,7 +271,7 @@ public final class ComputeHelpers {
      *  is no date reading as leeg, with its leeg tables: an ordering with a leeg operand is onwaar, equality of two leeg
      *  dates is onwaar (§5.3 Tabel 38), inequality holds where exactly one is leeg (§5.6 Tabel 44). */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static boolean dateCompare(Object left, Object right, Conditie.Operator op) {
+    public static boolean dateCompare(Object left, Object right, Condition.Operator op) {
         Object a = dateValue(left), b = dateValue(right);
         switch (op) {
             case GELIJK: return Objects.equals(a, b) && !(a == null && b == null);
@@ -303,38 +303,38 @@ public final class ComputeHelpers {
 
     /** The leeg test of {@code waarde}, where {@code leeg}, or else the gevuld test; a read over an absent link is leeg
      *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). */
-    public static boolean emptyTest(Object waarde, boolean empty) {
-        return (waarde == null) == empty;
+    public static boolean emptyTest(Object value, boolean empty) {
+        return (value == null) == empty;
     }
 
     /** The eleven test (§8.1.3, {@code rsElfproef}) of {@code waarde}, a leeg value failing it, whose verdict must equal
      *  {@code desired}: false for the written negation, which complements it. */
-    public static boolean elevenTest(Object waarde, boolean desired) {
-        return RegelSpraakRuntime.rsElfproef(waarde) == desired;
+    public static boolean elevenTest(Object value, boolean desired) {
+        return RegelSpraakRuntime.rsElfproef(value) == desired;
     }
 
     /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code waarde} with {@code digits} digits, whose
      *  verdict must equal {@code desired}. */
-    public static boolean exactDigits(Object waarde, int digits, boolean desired) {
-        return RegelSpraakRuntime.rsNumeriekMetExact(waarde, digits) == desired;
+    public static boolean exactDigits(Object value, int digits, boolean desired) {
+        return RegelSpraakRuntime.rsNumeriekMetExact(value, digits) == desired;
     }
 
     /** A characteristic check of the subject (RUNTIME-SEMANTICS ch. 5.8): its truth value {@code waarde}, bound off a
      *  total standing, so never leeg, equal to {@code desired}, false for a negated check. */
-    public static boolean kenmerk(Object waarde, boolean desired) {
-        return (Boolean) waarde == desired;
+    public static boolean characteristic(Object value, boolean desired) {
+        return (Boolean) value == desired;
     }
 
-    /** A characteristic check of the object a path of roles reaches, as {@link #kenmerk}: a check over an absent link,
+    /** A characteristic check of the object a path of roles reaches, as {@link #characteristic}: a check over an absent link,
      *  whose read is leeg, holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8 rule 3). */
-    public static boolean characteristicCheckAlongPath(Object waarde, boolean desired) {
-        return waarde != null && (Boolean) waarde == desired;
+    public static boolean characteristicCheckAlongPath(Object value, boolean desired) {
+        return value != null && (Boolean) value == desired;
     }
 
     /** A role check over {@code aantal}, the number of links that hold the subject in the role (RUNTIME-SEMANTICS
      *  ch. 5.8a): whether there is one, complemented where the check is negated ({@code negated}). */
-    public static boolean roleCount(Object aantal, boolean negated) {
-        return (((Number) aantal).longValue() > 0) != negated;
+    public static boolean roleCount(Object countOf, boolean negated) {
+        return (((Number) countOf).longValue() > 0) != negated;
     }
 
     /** A role check over the subject's own reference field, bound as whether it is set ({@code isSet}), complemented
@@ -369,7 +369,7 @@ public final class ComputeHelpers {
     /** The stop triggers of a composite and of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once
      *  {@code read} members are read, of which {@code touch} hold and {@code rest} are unread, or null while the
      *  unread members can still change it. */
-    public static Boolean established(Conditie.Kwantor kw, int threshold, int touch, int read, int rest) {
+    public static Boolean established(Condition.Quantifier kw, int threshold, int touch, int read, int rest) {
         return switch (kw) {
             case ALLE, DE -> touch < read ? Boolean.FALSE : null;
             case GEEN -> touch > 0 ? Boolean.FALSE : null;
@@ -382,7 +382,7 @@ public final class ComputeHelpers {
     /** The verdict of a quantifier over {@code n} members of which {@code touch} hold, every member read
      *  (RUNTIME-SEMANTICS ch. 5.10): all where all hold, none where none does, the counting quantifiers on the
      *  threshold. */
-    public static boolean endVerdict(Conditie.Kwantor kw, int threshold, long touch, long n) {
+    public static boolean endVerdict(Condition.Quantifier kw, int threshold, long touch, long n) {
         return switch (kw) {
             case ALLE, DE -> touch == n;
             case GEEN -> touch == 0;
@@ -395,8 +395,8 @@ public final class ComputeHelpers {
     /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (RUNTIME-SEMANTICS ch. 3.9a): over
      *  {@code aantal} contributors, of which the sum {@code touch} of the verdicts, 1 or 0 each, hold, under {@code kw}
      *  with the threshold {@code drempel}. Over no contributor the accumulate's sum is not read. */
-    public static boolean quantifierVerdict(Object aantal, Object touch, Conditie.Kwantor kw, int threshold) {
-        long n = ((Number) aantal).longValue();
+    public static boolean quantifierVerdict(Object countOf, Object touch, Condition.Quantifier kw, int threshold) {
+        long n = ((Number) countOf).longValue();
         return endVerdict(kw, threshold, n == 0 ? 0 : ((BigDecimal) touch).longValueExact(), n);
     }
 
@@ -408,11 +408,11 @@ public final class ComputeHelpers {
      * the reading rule or nothing, and faults where its matrix faulted; one that is not reached does neither. Over no
      * contributor the accumulate's list is not read.
      */
-    public static boolean quantifierRead(Object aantal, Object contributions, Conditie.Kwantor kw, int threshold,
+    public static boolean quantifierRead(Object countOf, Object contributions, Condition.Quantifier kw, int threshold,
                                         Object depositFlag) {
-        List<?> lijst = ((Number) aantal).longValue() == 0 ? List.of() : (List<?>) contributions;
-        List<MemberTest> members = new ArrayList<>(lijst.size());
-        for (Object b : lijst) members.add((MemberTest) b);
+        List<?> list = ((Number) countOf).longValue() == 0 ? List.of() : (List<?>) contributions;
+        List<MemberTest> members = new ArrayList<>(list.size());
+        for (Object b : list) members.add((MemberTest) b);
         members.sort(null);
         int n = members.size(), touch = 0;
         for (int k = 0; k < n; k++) {
@@ -420,7 +420,7 @@ public final class ComputeHelpers {
             if (fixed != null) return fixed;
             MemberTest member = members.get(k);
             if (member.deposited()) DepositFlag.report(depositFlag);
-            if (member.fout() != null) throw member.fout();
+            if (member.fault() != null) throw member.fault();
             if (member.holds()) touch++;
         }
         return endVerdict(kw, threshold, touch, n);
@@ -434,22 +434,22 @@ public final class ComputeHelpers {
 
     /** The negation of {@code waarde}, a condition's truth value: the test of a consistency, which holds where its
      *  assertion does not (IR-SPEC ch. 3.5). */
-    public static boolean not(Object waarde) {
-        return !(Boolean) waarde;
+    public static boolean not(Object value) {
+        return !(Boolean) value;
     }
 
     /** Whether {@code waarde} is the asOfDate-bucket scalar a case gives for a timeline ({@link BucketScalar},
      *  RUNTIME-SEMANTICS ch. 8.4), equal to {@code desired}: a part of a test a form composes itself. */
-    public static boolean emmerscalair(Object waarde, boolean desired) {
-        return (waarde instanceof BucketScalar) == desired;
+    public static boolean bucketScalar(Object value, boolean desired) {
+        return (value instanceof BucketScalar) == desired;
     }
 
     /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): {@code emptyWriterCount}, the
-     *  number of other writers that wrote leeg on the subject, is not 0, or {@code invoer}, the subject's input on
-     *  the target, which the plan reads ({@code plan.Term.Invoer}), is leeg. The read has no effect, so that it is
+     *  number of other writers that wrote leeg on the subject, is not 0, or {@code input}, the subject's input on
+     *  the target, which the plan reads ({@code plan.Term.Input}), is leeg. The read has no effect, so that it is
      *  evaluated also where such a writer settles the guard changes nothing. */
-    public static boolean targetEmpty(Object emptyWriterCount, Object invoer) {
-        return ((Number) emptyWriterCount).longValue() != 0 || invoer == null;
+    public static boolean targetEmpty(Object emptyWriterCount, Object input) {
+        return ((Number) emptyWriterCount).longValue() != 0 || input == null;
     }
 
     /** Whether the value facts in {@code waarden}, a list, hold two different values, leeg among them
@@ -457,7 +457,7 @@ public final class ComputeHelpers {
     public static boolean differ(Object waarden) {
         List<?> l = (List<?>) waarden;
         for (Object x : l)
-            if (!equalValue(((Value) l.get(0)).waarde(), ((Value) x).waarde())) return true;
+            if (!equalValue(((Value) l.get(0)).value(), ((Value) x).value())) return true;
         return false;
     }
 
@@ -467,10 +467,10 @@ public final class ComputeHelpers {
         return ((Number) collisions).longValue() > 1;
     }
 
-    /** Whether the key {@code sleutel} is the same key of one form as the key {@code ander}
+    /** Whether the key {@code key} is the same key of one form as the key {@code ander}
      *  ({@link UniquenessKey#collidesWith}). */
-    public static boolean collidesWith(Object sleutel, Object other) {
-        return ((UniquenessKey) sleutel).collidesWith((UniquenessKey) other);
+    public static boolean collidesWith(Object key, Object other) {
+        return ((UniquenessKey) key).collidesWith((UniquenessKey) other);
     }
 
     /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
@@ -489,25 +489,25 @@ public final class ComputeHelpers {
 
     /**
      * The temporal total of the subject's own timeline without a clip (RUNTIME-SEMANTICS ch. 3.6): of the input
-     * {@code invoer} of the attribute {@code naam}, which takes the asOfDate-bucket scalar, the session's date being the
+     * {@code input} of the attribute {@code naam}, which takes the asOfDate-bucket scalar, the session's date being the
      * horizon: {@code rsTijdTotaal} of the one period of the grid {@code granularity} that holds the evaluation date
      * ({@link BucketScalar}), and leeg where the attribute has no input. A full timeline faults, in the reference
      * interpreter's words and naming {@code onderwerp}, and so does a session without an evaluation date, where the
      * total has no bucket to take: the reference interpreter tests the full timeline first, then the date
      * ({@code rekendatum}), then the value.
      */
-    public static Object ownTotal(Object invoer, Object onderwerp, Object rekendatum, String naam,
+    public static Object ownTotal(Object input, Object onderwerp, Object evaluationDate, String naam,
                                      String granularity) {
-        if (invoer instanceof BucketScalar e) return RegelSpraakRuntime.rsTijdTotaal(e.timeline(), granularity);
+        if (input instanceof BucketScalar e) return RegelSpraakRuntime.rsTijdTotaal(e.timeline(), granularity);
         // a timeline a form writes is refused while the model is built, so a full timeline here is the case's
-        if (invoer != null)
-            throw new Invoervormfout("the temporal total of \"" + naam + "\" over a case-supplied full timeline"
+        if (input != null)
+            throw new InputFormFault("the temporal total of \"" + naam + "\" over a case-supplied full timeline"
                     + " is not exercised by any corpus case; the asOfDate-bucket convention carries the total, and ",
                     onderwerp, " supplies a full timeline");
         // the case runner places a bucket scalar only where the case carries a date, so a session without one reaches
         // this with no input at all
-        if (rekendatum == null)
-            throw new Rekenfout("the temporal total of \"" + naam + "\" needs the evaluation date: the case"
+        if (evaluationDate == null)
+            throw new ComputeFault("the temporal total of \"" + naam + "\" needs the evaluation date: the case"
                     + " carries the asOfDate bucket's value");
         return RegelSpraakRuntime.rsTijdTotaal(null, granularity);
     }
@@ -516,7 +516,7 @@ public final class ComputeHelpers {
      *  as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), in the sentence {@code voor},
      *  the object {@code object}, {@code na}. */
     public static List<?> complete(Object timeline, String before, Object object, String after) {
-        if (timeline instanceof BucketScalar) throw new Invoervormfout(before, object, after);
+        if (timeline instanceof BucketScalar) throw new InputFormFault(before, object, after);
         return (List<?>) timeline;
     }
 
@@ -544,16 +544,16 @@ public final class ComputeHelpers {
         return depositFlag instanceof DepositFlag s && s.reported();
     }
 
-    /** The evaluation fault of the fixed sentence {@code sentence} ({@link Rekenfout}), named in the rule {@code regel}: the
-     *  fault that a consequence inserts where a form faults by a sentence of its own ({@code plan.Consequence.Fout}). */
-    public static Rekenfout computeFault(String sentence, String regel) {
-        return new Rekenfout(sentence).inRule(regel);
+    /** The evaluation fault of the fixed sentence {@code sentence} ({@link ComputeFault}), named in the rule {@code regel}: the
+     *  fault that a consequence inserts where a form faults by a sentence of its own ({@code plan.Consequence.Fault}). */
+    public static ComputeFault computeFault(String sentence, String regel) {
+        return new ComputeFault(sentence).inRule(regel);
     }
 
-    /** The §9.5 inconsistency of the form {@code vorm} on {@code onderwerp}: an instance of the class the fact model
+    /** The §9.5 inconsistency of the form {@code form} on {@code onderwerp}: an instance of the class the fact model
      *  generates for it ({@link TmsTranspiler#INCONSISTENCY}). */
-    public static Object inconsistency(String vorm, Object onderwerp) {
-        return RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENCY, vorm, onderwerp);
+    public static Object inconsistency(String form, Object onderwerp) {
+        return RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENCY, form, onderwerp);
     }
 
     /** The input timeline {@code timeline}, a list of segments, as the asOfDate-bucket scalar the case gave
@@ -562,13 +562,13 @@ public final class ComputeHelpers {
         return BucketScalar.van((List<?>) timeline);
     }
 
-    /** The fault of the form of an input ({@link Invoervormfout}), the sentence {@code voor}, the object {@code object}
+    /** The fault of the form of an input ({@link InputFormFault}), the sentence {@code voor}, the object {@code object}
      *  and {@code na}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
-     *  in a form the rule cannot read ({@code plan.Consequence.Invoervormfout}). A null {@code regel} names no rule yet: the
+     *  in a form the rule cannot read ({@code plan.Consequence.InputFormFault}). A null {@code regel} names no rule yet: the
      *  fault of a member of a fold ({@code plan.Consequence.MemberFault}), which the form that reads the fold names where it
      *  meets it. */
-    public static Invoervormfout inputFormFault(String before, Object object, String after, String regel) {
-        return new Invoervormfout(before, object, after).inRule(regel);
+    public static InputFormFault inputFormFault(String before, Object object, String after, String regel) {
+        return new InputFormFault(before, object, after).inRule(regel);
     }
 
     /** The keys of {@code element} in source {@code bron} of the uniqueness {@code uniciteit}, linked to the parent
@@ -576,14 +576,14 @@ public final class ComputeHelpers {
      *  ({@link UniquenessKey}): one key; or, where the component at {@code timeline} is a timeline, one key per value
      *  it ever carries, in ascending order and none where it carries none (ever-uniqueness, RUNTIME-SEMANTICS ch. 5.9,
      *  {@code rsOoitWaarden}). {@code timeline} is -1 where no component is on a timeline. */
-    public static List<UniquenessKey> uniquenessKeys(String uniqueness, int bron, Object element, Object scope,
+    public static List<UniquenessKey> uniquenessKeys(String uniqueness, int source, Object element, Object scope,
                                                              List<?> waarden, int timeline) {
-        if (timeline < 0) return List.of(new UniquenessKey(uniqueness, bron, element, scope, new ArrayList<>(waarden)));
+        if (timeline < 0) return List.of(new UniquenessKey(uniqueness, source, element, scope, new ArrayList<>(waarden)));
         List<UniquenessKey> out = new ArrayList<>();
-        for (BigDecimal waarde : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(waarden.get(timeline)))) {
-            List<Object> sleutel = new ArrayList<>(waarden);
-            sleutel.set(timeline, waarde);
-            out.add(new UniquenessKey(uniqueness, bron, element, scope, sleutel));
+        for (BigDecimal value : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(waarden.get(timeline)))) {
+            List<Object> key = new ArrayList<>(waarden);
+            key.set(timeline, value);
+            out.add(new UniquenessKey(uniqueness, source, element, scope, key));
         }
         return out;
     }
@@ -591,21 +591,21 @@ public final class ComputeHelpers {
     /** The facts the distribution of one allocation inserts for one source {@code bron} (RUNTIME-SEMANTICS ch. 4.2 to
      *  4.4), computed by {@link Allocation#bereken} from the {@code pot} and {@code ontvangers}, the list of the source's
      *  {@link Recipient} facts, in the order its consequence inserts them: the §9.5 inconsistency of the form
-     *  {@code vorm} on each recipient a degradation surfaces on; the share of every recipient that receives one, a
+     *  {@code form} on each recipient a degradation surfaces on; the share of every recipient that receives one, a
      *  {@link Value} of {@code aandeel} written by {@code writer}; and where the allocation writes a rest
      *  ({@code rest} not null) and something is distributed, that rest, a {@link Value} of {@code rest} on the
      *  source. */
-    public static List<Object> payout(String vorm, Object bron, ResolvedVerdeling.Methode methode, Object pot,
+    public static List<Object> payout(String form, Object source, ResolvedAllocation.Method method, Object pot,
                                          Object recipients, boolean gewogen, boolean capped, boolean descending,
-                                         Integer decimals, ElementSleutel aandeel, ElementSleutel rest, String writer) {
-        List<Recipient> lijst = new ArrayList<>();
-        for (Object o : (List<?>) recipients) lijst.add((Recipient) o);
-        Allocation.Result u = Allocation.bereken(methode, pot, lijst, gewogen, capped, decimals, descending);
+                                         Integer decimals, ElementKey aandeel, ElementKey rest, String writer) {
+        List<Recipient> list = new ArrayList<>();
+        for (Object o : (List<?>) recipients) list.add((Recipient) o);
+        Allocation.Result u = Allocation.bereken(method, pot, list, gewogen, capped, decimals, descending);
         List<Object> out = new ArrayList<>();
-        for (Object r : u.depositors()) out.add(inconsistency(vorm, r));
+        for (Object r : u.depositors()) out.add(inconsistency(form, r));
         for (Map.Entry<Object, BigDecimal> e : u.shares().entrySet())
             out.add(new Value(e.getKey(), aandeel, e.getValue(), writer));
-        if (rest != null && u.rest() != null) out.add(new Value(bron, rest, u.rest(), writer));
+        if (rest != null && u.rest() != null) out.add(new Value(source, rest, u.rest(), writer));
         return out;
     }
 
@@ -616,10 +616,10 @@ public final class ComputeHelpers {
      *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberFault} stands instead. Where
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the value, an exact
      *  rational collapsed to a decimal. */
-    public static Contribution contribution(String fold, Object onderwerp, Object member, Object waarde, String totaal,
+    public static Contribution contribution(String fold, Object onderwerp, Object member, Object value, String total,
                                     boolean filled) {
-        if (totaal != null && waarde instanceof BucketScalar) return null;
-        Object v = totaal == null ? waarde : RegelSpraakRuntime.rsTijdTotaal((List<?>) waarde, totaal);
+        if (total != null && value instanceof BucketScalar) return null;
+        Object v = total == null ? value : RegelSpraakRuntime.rsTijdTotaal((List<?>) value, total);
         return v == null ? null : new Contribution(fold, onderwerp, member, filled ? null : collapse(v));
     }
 
@@ -628,27 +628,27 @@ public final class ComputeHelpers {
      * to-many step of its route, in order, the least place of the step's member in its list, {@code places}, over
      * {@code counts} {@link ListPlace} facts under the reference field {@code fields}. A step whose member has no
      * place, since the input did not state the order of that list, breaks the contract of the rule that needs the
-     * place, for {@code reden}: the exception names the field, as no fault of the fold can be told without it
+     * place, for {@code reason}: the exception names the field, as no fault of the fold can be told without it
      * (RUNTIME-SEMANTICS ch. 5.10, 5.11).
      */
-    public static List<Integer> foldPlace(Consequence.PlaceReason reden, String fold, Object member, int selection,
+    public static List<Integer> foldPlace(Consequence.PlaceReason reason, String fold, Object member, int selection,
                                            List<String> fields, List<?> counts, List<?> places) {
         List<Integer> place = new ArrayList<>(fields.size() + 1);
         place.add(selection);
         for (int i = 0; i < fields.size(); i++) {
             if (((Number) counts.get(i)).longValue() == 0) {
-                String veld = fields.get(i);
-                throw new IllegalStateException(switch (reden) {
+                String field = fields.get(i);
+                throw new IllegalStateException(switch (reason) {
                     case FILTER_FAULT -> "het filter van " + fold + " faalt voor " + FactNames.object(member) + ", maar een"
-                            + " lid van zijn route heeft geen Lijstplaats onder het veld '" + veld + "': de invoer stelt de"
+                            + " lid van zijn route heeft geen Lijstplaats onder het veld '" + field + "': de invoer stelt de"
                             + " volgorde van die lijst niet, en zonder haar is de eerste fout van de vouw niet te bepalen"
                             + " (RUNTIME-SEMANTICS ch. 5.11)";
                     case MEMBER_FAULT -> "de vouw " + fold + " leest de tijdlijn van " + FactNames.object(member) + ", die de case"
                             + " als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats onder het veld '"
-                            + veld + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen"
+                            + field + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen"
                             + " welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)";
                     case QUANTIFIER -> "de kwantorvouw " + fold + " leest de matrix van " + FactNames.object(member) + ", maar"
-                            + " dat lid heeft geen Lijstplaats onder het veld '" + veld + "': de invoer stelt de volgorde van"
+                            + " dat lid heeft geen Lijstplaats onder het veld '" + field + "': de invoer stelt de volgorde van"
                             + " die lijst niet, en zonder haar is niet te bepalen welk lid de kortsluiting bereikt"
                             + " (RUNTIME-SEMANTICS ch. 5.10, 5.11)";
                 });
@@ -662,37 +662,37 @@ public final class ComputeHelpers {
     // A DRL text calls them class-qualified: MVEL has no try and no throw, and a function of the text returns a fault as
     // its outcome. The rendering into closures calls those it has a use for, so that both run one implementation.
 
-    /** Whether {@code v}, the outcome of an evaluation, is an evaluation fault this branch turns into a {@link Fout}: a
-     *  division by a numeric zero, a {@link Rekenfout} or an {@link Invoervormfout}. Every other exception is a broken
+    /** Whether {@code v}, the outcome of an evaluation, is an evaluation fault this branch turns into a {@link Fault}: a
+     *  division by a numeric zero, a {@link ComputeFault} or an {@link InputFormFault}. Every other exception is a broken
      *  contract and leaves the fire. */
     public static boolean isEvaluationFault(Object v) {
-        return v instanceof Throwable t && Rekenfout.isEvaluationFault(t);
+        return v instanceof Throwable t && ComputeFault.isEvaluationFault(t);
     }
 
     /** {@code e}, caught in an evaluation, where it is an evaluation fault ({@link #isEvaluationFault}); any other
      *  exception passes on as it is. */
     public static RuntimeException caught(RuntimeException e) {
-        if (!Rekenfout.isEvaluationFault(e)) throw e;
+        if (!ComputeFault.isEvaluationFault(e)) throw e;
         return e;
     }
 
-    /** The evaluation fault {@code fout} named after the rule {@code regel} it ran in, as the {@link Fout} of a form
+    /** The evaluation fault {@code fault} named after the rule {@code regel} it ran in, as the {@link Fault} of a form
      *  carries it. */
-    public static RuntimeException designate(Object fout, String regel) {
-        return Rekenfout.designate((RuntimeException) fout, regel);
+    public static RuntimeException designate(Object fault, String regel) {
+        return ComputeFault.designate((RuntimeException) fault, regel);
     }
 
-    /** The evaluation fault of the sentence {@code sentence} ({@link Rekenfout}), thrown wherever the evaluation reaches it:
+    /** The evaluation fault of the sentence {@code sentence} ({@link ComputeFault}), thrown wherever the evaluation reaches it:
      *  an {@code Unresolved} node, or the bound day outside a day kind ({@code plan.Term.Fail}). */
     public static Object fail(String sentence) {
-        throw new Rekenfout(sentence);
+        throw new ComputeFault(sentence);
     }
 
     /** {@code waarde}, and the evaluation fault of the sentence {@code sentence} where it is leeg: the evaluation date in a
      *  session without one ({@code plan.Term.Required}). */
-    public static Object required(Object waarde, String sentence) {
-        if (waarde == null) throw new Rekenfout(sentence);
-        return waarde;
+    public static Object required(Object value, String sentence) {
+        if (value == null) throw new ComputeFault(sentence);
+        return value;
     }
 
     /** The texts {@code parts}, in order, joined: a text composition or a concatenation ({@code plan.Term.TextComposition}). */
@@ -705,7 +705,7 @@ public final class ComputeHelpers {
     /** The member {@code property}, a bean property ({@code plan.Binding.Field#property}), of the bean
      *  {@code object}, through the getter the bean generator wrote for it on the object's own class
      *  ({@code Accessors.leesEigenschap}); null where {@code object} is null, a link that is absent. */
-    public static Object lees(Object object, String property) {
+    public static Object readProperty(Object object, String property) {
         return Accessors.leesEigenschap(object, property);
     }
 
@@ -717,37 +717,37 @@ public final class ComputeHelpers {
     }
 
     /** Whether {@code waarde} holds {@code true}: a characteristic read off a bean ({@code Binding.ReadForm.WAAR}). */
-    public static boolean holds(Object waarde) {
-        return Boolean.TRUE.equals(waarde);
+    public static boolean holds(Object value) {
+        return Boolean.TRUE.equals(value);
     }
 
     /** The true periods of a characteristic on a timeline as a bean holds them, a list of {@link Period}; null where it
      *  holds none ({@code Binding.ReadForm.PERIODS}). */
-    public static List<Period> periods(Object waarde) {
-        return Period.lijst((List<?>) waarde);
+    public static List<Period> periods(Object value) {
+        return Period.list((List<?>) value);
     }
 
     /** Whether a reference field holds {@code ander}, an instance of the class named {@code soort} where that is not
      *  null ({@code Binding.ReadForm.IS_SET}, {@link #isA}). A name stands for one class here: the replay admits only
-     *  a bean whose class {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference
+     *  a bean whose class {@code Build.beanLoader()} loaded ({@code DroolsBackend.insert}) and refuses a reference
      *  field that points outside the input ({@code targetOutsideInput}), so within a session two classes of one name do
      *  not meet. */
-    public static boolean isSet(Object other, String soort) {
-        return other != null && (soort == null || isA(other, soort));
+    public static boolean isSet(Object other, String category) {
+        return other != null && (category == null || isA(other, category));
     }
 
     /** Whether the evaluation date {@code datum} lies in the validity window from {@code vanaf} to {@code tot}, dates in
      *  ISO form, both inclusive and a null bound open; never where the session has no date
-     *  ({@code Alpha.Comparator.WITHIN}, {@link Geldigheid#contains}). */
+     *  ({@code Alpha.Comparator.WITHIN}, {@link Validity#contains}). */
     public static boolean inside(Object date, String from, String to) {
-        return new Geldigheid(from == null ? null : LocalDate.parse(from), to == null ? null : LocalDate.parse(to))
+        return new Validity(from == null ? null : LocalDate.parse(from), to == null ? null : LocalDate.parse(to))
                 .contains((LocalDate) date);
     }
 
     /** Whether {@code object} is an instance of the class named {@code klasse}: its own class or a class or interface
      *  it extends has that name ({@code Alpha.Comparator.IS_A}). A bean class is named, not loaded: a DRL text cannot
      *  reach the classes of the beans. A name stands for one class here: the replay admits only a bean whose class
-     *  {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference field that points
+     *  {@code Build.beanLoader()} loaded ({@code DroolsBackend.insert}) and refuses a reference field that points
      *  outside the input ({@code targetOutsideInput}), so within a session two classes of one name do not meet. */
     public static boolean isA(Object object, String javaClass) {
         return object != null && namedOrInherits(object.getClass(), javaClass);
@@ -755,7 +755,7 @@ public final class ComputeHelpers {
 
     /** Whether the own class of {@code object}, exactly, has none of the names {@code classes}
      *  ({@code Alpha.Comparator.CLASS_NOT_IN}). A name stands for one class here: the replay admits only a bean whose
-     *  class {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference field that points
+     *  class {@code Build.beanLoader()} loaded ({@code DroolsBackend.insert}) and refuses a reference field that points
      *  outside the input ({@code targetOutsideInput}), so within a session two classes of one name do not meet. */
     public static boolean classNotIn(Object object, List<?> classes) {
         return !classes.contains(object.getClass().getName());
@@ -787,19 +787,19 @@ public final class ComputeHelpers {
     }
 
     /** Fills the cell {@code cell} with {@code waarde}, the value of its binder, and returns it. */
-    public static Object fillBinderCell(Object cell, Object waarde) {
+    public static Object fillBinderCell(Object cell, Object value) {
         BinderCell c = (BinderCell) cell;
-        c.waarde = waarde;
+        c.value = value;
         c.filled = true;
-        return waarde;
+        return value;
     }
 
     /** The value of the binder in the cell {@code cell}; where it is leeg, the barrier of that cell's {@code Let}, which
      *  ends that {@code Let} with leeg (clause 2). */
     public static Object binderValue(Object cell) {
-        Object waarde = ((BinderCell) cell).waarde;
-        if (waarde == null) throw new EmptyBarrier(cell);
-        return waarde;
+        Object value = ((BinderCell) cell).value;
+        if (value == null) throw new EmptyBarrier(cell);
+        return value;
     }
 
     /** The outcome of the evaluation of a {@code Let} with the cell {@code cell} that the barrier {@code b} ended: leeg
@@ -813,7 +813,7 @@ public final class ComputeHelpers {
      *  never shared between sessions or threads. */
     private static final class BinderCell {
         private boolean filled;
-        private Object waarde;
+        private Object value;
     }
 
     /** The verdict of the matrix of a quantifier fold as a member's contribution: 1 where it holds, 0 where it does not
@@ -829,18 +829,18 @@ public final class ComputeHelpers {
         throw new IllegalStateException(sentence);
     }
 
-    /** The fault of two or more writers of the attribute {@code attribuut} of {@code onderwerp} that stand with
-     *  different values, over the value facts {@code waarden} ({@code Consequence.Schrijversconflict}, RUNTIME-SEMANTICS
+    /** The fault of two or more writers of the attribute {@code attribute} of {@code onderwerp} that stand with
+     *  different values, over the value facts {@code waarden} ({@code Consequence.WritersConflict}, RUNTIME-SEMANTICS
      *  ch. 5.7): the writers in the order of the document's rules {@code documentOrder}, a writer the document has
      *  no rule of after them by name, and the object's own type named through the pairs of {@code typeClasses}, the
-     *  simple names of the bean classes, and {@code typen}, the types as declared; a {@link Fout} under the first
+     *  simple names of the bean classes, and {@code types}, the types as declared; a {@link Fault} under the first
      *  writer. */
-    public static Fout writersConflict(Object onderwerp, Object waarden, String attribuut, List<?> documentOrder,
-                                          List<?> typeClasses, List<?> typen) {
-        List<Value> lijst = new ArrayList<>();
-        for (Object w : (List<?>) waarden) lijst.add((Value) w);
-        Schrijversconflict c = Schrijversconflict.van(onderwerp, attribuut, lijst, documentOrder, typeClasses, typen);
-        return new Fout(onderwerp, c.writers().get(0).writer(), c);
+    public static Fault writersConflict(Object onderwerp, Object waarden, String attribute, List<?> documentOrder,
+                                          List<?> typeClasses, List<?> types) {
+        List<Value> list = new ArrayList<>();
+        for (Object w : (List<?>) waarden) list.add((Value) w);
+        WritersConflict c = WritersConflict.van(onderwerp, attribute, list, documentOrder, typeClasses, types);
+        return new Fault(onderwerp, c.writers().get(0).writer(), c);
     }
 
     // A list of values in order, as a DRL text builds the list argument of a route: MVEL builds no array, and a route is
@@ -920,8 +920,8 @@ public final class ComputeHelpers {
     public static boolean otherFilling(Object two, Object one, String endName) {
         RelationLink x = (RelationLink) two, y = (RelationLink) one;
         return switch (endName) {
-            case "eerste" -> x.eerste() != y.eerste();
-            case "tweede" -> x.tweede() != y.tweede();
+            case "first" -> x.first() != y.first();
+            case "second" -> x.second() != y.second();
             default -> throw new IllegalArgumentException("een koppeling heeft geen einde '" + endName + "'");
         };
     }
@@ -936,7 +936,7 @@ public final class ComputeHelpers {
     /** Whether the outcome {@code x}, an {@link Outcome}, decides otherwise than the outcome {@code y}, as the
      *  reconciliation compares two decisions ({@link Outcome#equal}). */
     public static boolean anotherDecision(Object x, Object y) {
-        return !Outcome.equal(((Outcome) x).waarde(), ((Outcome) y).waarde());
+        return !Outcome.equal(((Outcome) x).value(), ((Outcome) y).value());
     }
 
     /** The creation depth of the object that the object creation {@code naam} of stratum {@code stratum} makes for a
@@ -973,7 +973,7 @@ public final class ComputeHelpers {
      *  the construction of an object creation ({@code plan.Consequence.Construction}) in a DRL text, which names a bean class
      *  and cannot load one, since the text does not see the beans. The class is loaded by the class loader of
      *  {@code onderwerp}, the bean of the creation's subject: within a session every bean is of the build's bean loader
-     *  ({@code DroolsBackend.voegIn}). A class that does not load, or that has no public constructor without arguments,
+     *  ({@code DroolsBackend.insert}). A class that does not load, or that has no public constructor without arguments,
      *  fails loudly with its name. */
     public static Object newObject(Object onderwerp, String javaClass) {
         Class<?> k;
@@ -997,12 +997,12 @@ public final class ComputeHelpers {
      *  that is not null, through the setter that {@code Namen.lidnamen} names ({@link Accessors#eigenschapSetter}): an
      *  attribute initialisation of an object creation ({@code plan.Consequence.Construction.Setting}), set before the bean is
      *  inserted, so no rule ever sees the bean without it; a leeg value leaves the member unset. */
-    public static void set(Object object, String property, Object waarde) {
-        if (waarde != null) Accessors.eigenschapSetter(object.getClass(), property).accept(object, waarde);
+    public static void set(Object object, String property, Object value) {
+        if (value != null) Accessors.eigenschapSetter(object.getClass(), property).accept(object, value);
     }
 
     /** The object a chain of to-one reference fields {@code fields}, bean properties, reaches from {@code start}, each
-     *  read as {@link #lees} reads it; a broken link reads as null. */
+     *  read as {@link #readProperty} reads it; a broken link reads as null. */
     private static Object walk(Object start, List<?> fields) {
         Object cur = start;
         for (Object v : fields) {

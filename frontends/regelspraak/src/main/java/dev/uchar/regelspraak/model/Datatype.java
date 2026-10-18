@@ -12,34 +12,34 @@ import java.util.List;
  * arithmetic pattern carries a unit the others must too (typeringen §4).
  */
 public sealed interface Datatype
-        permits Datatype.Numeriek, Datatype.Percentage, Datatype.Tekst, Datatype.Booleaan,
-                Datatype.DatumInDagen, Datatype.DatumTijd, Datatype.Enumeratie, Datatype.Onbekend {
+        permits Datatype.Numeriek, Datatype.Percentage, Datatype.Tekst, Datatype.BooleanType,
+                Datatype.DatumInDagen, Datatype.DateTime, Datatype.Enumeratie, Datatype.Unknown {
 
     /** §13.3.3.2 Numeriek (geheel/decimaal) with an optional unit. */
-    record Numeriek(boolean geheel, int decimalen, Teken teken, Eenheid eenheid) implements Datatype {
+    record Numeriek(boolean geheel, int decimalen, Teken teken, Unit eenheid) implements Datatype {
         public boolean hasUnit() { return eenheid != null; }
     }
     /** §13.3.3.3 Percentage. A Percentage attribuut "heeft verder altijd als eenheid %" (§3.3.5),
      *  optionally specialized as a rate ("%/jaar"); so its {@code eenheid} is never null. */
-    record Percentage(boolean geheel, int decimalen, Eenheid eenheid) implements Datatype {
+    record Percentage(boolean geheel, int decimalen, Unit eenheid) implements Datatype {
         /** The implicit "%" unit every Percentage carries (§3.3.5). */
-        public static final Eenheid PERCENT = new Eenheid("%", null);
+        public static final Unit PERCENT = new Unit("%", null);
         /** A bare percentage, carrying the implicit "%" unit. */
         public Percentage(boolean geheel, int decimalen) { this(geheel, decimalen, PERCENT); }
     }
     /** §13.3.3.4 Tekst. */
     record Tekst() implements Datatype {}
     /** §13.3.3.5 Boolean. */
-    record Booleaan() implements Datatype {}
+    record BooleanType() implements Datatype {}
     /** §13.3.3.6 Datum in dagen. */
     record DatumInDagen() implements Datatype {}
     /** §13.3.3.6 Datum en tijd in millisecondes. */
-    record DatumTijd() implements Datatype {}
+    record DateTime() implements Datatype {}
     /** §13.3.4.2 Enumeratie domain: the declaring domain's NAME (its identity — Tabel 36/43/61 rij 7
      *  require the SAME enumeration on both sides, not merely any enumeration) plus the declared value set. */
-    record Enumeratie(String domein, List<String> waarden) implements Datatype {}
+    record Enumeratie(String domain, List<String> waarden) implements Datatype {}
     /** A reference that could not be resolved to a concrete datatype. */
-    record Onbekend(String reason) implements Datatype {}
+    record Unknown(String reason) implements Datatype {}
 
     enum Teken { ONBEPAALD, NEGATIEF, NIET_NEGATIEF, POSITIEF }
 
@@ -47,30 +47,30 @@ public sealed interface Datatype
     default boolean isNumber()   { return this instanceof Numeriek; }
     default boolean isPercentage() { return this instanceof Percentage; }
     /** numeric in the typeringen sense: a number or a percentage. */
-    default boolean isGetalachtig() { return isNumber() || isPercentage(); }
+    default boolean isNumberLike() { return isNumber() || isPercentage(); }
     default boolean isText()      { return this instanceof Tekst; }
-    default boolean isBoolean()    { return this instanceof Booleaan; }
-    default boolean isDate()      { return this instanceof DatumInDagen || this instanceof DatumTijd; }
-    default boolean isUnknown()   { return this instanceof Onbekend; }
+    default boolean isBoolean()    { return this instanceof BooleanType; }
+    default boolean isDate()      { return this instanceof DatumInDagen || this instanceof DateTime; }
+    default boolean isUnknown()   { return this instanceof Unknown; }
     /** Orderable by a scalar &lt;/&gt; (so it can drive a §9.7.2 "op volgorde van toenemende/afnemende"
      *  ordering): a number/percentage or a date. Tekst, Booleaan and Enumeratie carry only gelijk/ongelijk
      *  in the typeringen matrix (§5.x), no ordinal {@code <}, so they are NOT orderable — a non-orderable
      *  ordering key keeps the verdeling a COMPLEX marker rather than guessing a lexicographic order. */
-    default boolean isOrdenbaar()  { return isGetalachtig() || isDate(); }
+    default boolean isOrderable()  { return isNumberLike() || isDate(); }
 
     /** §13.3.3 form (c) "getal": an unbounded numeriek/percentage — any number of decimals, no
      *  precision ceiling. The three getalspecificatie forms are encoded as: (a) "geheel getal"
      *  = geheel∧0; (b) "getal met x decimalen" = ¬geheel∧x≥1; (c) "getal" = ¬geheel∧0. So a
      *  decimalen of 0 is unbounded precisely when the type is NOT a whole number — the geheel
      *  flag is what tells form (c) apart from form (a), both of which carry decimalen 0. */
-    default boolean onbeperkt() {
+    default boolean unbounded() {
         if (this instanceof Numeriek n)   return !n.geheel() && n.decimalen() == 0;
         if (this instanceof Percentage p) return !p.geheel() && p.decimalen() == 0;
         return false;
     }
 
     /** The unit of a Numeriek or a Percentage (always "%", §3.3.5), or null. */
-    default Eenheid eenheidOf() {
+    default Unit unitOf() {
         if (this instanceof Numeriek n) return n.eenheid();
         if (this instanceof Percentage p) return p.eenheid();
         return null;
@@ -81,13 +81,13 @@ public sealed interface Datatype
         return switch (this) {
             case Numeriek n   -> "Numeriek" + (n.hasUnit() ? " (" + n.eenheid().afkorting() + ")" : "");
             case Percentage p -> "Percentage" + (p.eenheid() != null && p.eenheid().denominator() != null
-                                                  ? " (" + p.eenheid().weergave() + ")" : "");
+                                                  ? " (" + p.eenheid().rendering() + ")" : "");
             case Tekst t      -> "Tekst";
-            case Booleaan b   -> "Boolean";
+            case BooleanType b   -> "Boolean";
             case DatumInDagen d -> "Datum in dagen";
-            case DatumTijd d  -> "Datum-tijd";
-            case Enumeratie e -> "Enumeratie " + e.domein();
-            case Onbekend o   -> "onbekend(" + o.reason() + ")";
+            case DateTime d  -> "Datum-tijd";
+            case Enumeratie e -> "Enumeratie " + e.domain();
+            case Unknown o   -> "onbekend(" + o.reason() + ")";
         };
     }
 }

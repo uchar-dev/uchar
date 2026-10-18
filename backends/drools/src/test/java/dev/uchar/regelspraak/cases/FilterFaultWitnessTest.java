@@ -14,12 +14,12 @@ import java.util.Map;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
-import static dev.uchar.regelspraak.cases.TmsDocuments.feittype;
+import static dev.uchar.regelspraak.cases.TmsDocuments.factType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
@@ -30,8 +30,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -204,24 +204,24 @@ class FilterFaultWitnessTest {
     /** The golden's first case: J1 is not actief, so neither rule reaches its fold, and the composite of "drukte"
      *  stops after its first member. "vondstental" counts the same range without a filter. */
     @Test void a_fold_under_a_condition_that_does_not_apply_does_not_fail() throws Exception {
-        played(FILTERWACHT, TmsDocuments.caseDocument(j1(false), List.of(waarde("J1", "vondstental", "2"),
-                waarde("J1", "zware vondsten", null), verwacht("J1", "druk", false), consistent())));
+        played(FILTERWACHT, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "vondstental", "2"),
+                value("J1", "zware vondsten", null), expected("J1", "druk", false), consistent())));
     }
 
     /** J1 as above beside J2, actief, in one session: the folds of J2 read V3 and V4, never J1's V2. The reference
      *  interpreter answers this; the ASP runner reports viol("division by numeric zero","V2"). */
     @Test void beside_an_active_jutter_computes_only_its_fold() throws Exception {
         played(FILTERWACHT, TmsDocuments.caseDocument(combined(j1(false), j2j3()), List.of(
-                waarde("J1", "zware vondsten", null), verwacht("J1", "druk", false),
-                waarde("J2", "zware vondsten", "1"), verwacht("J2", "druk", true),
-                waarde("J3", "zware vondsten", "0"), verwacht("J3", "druk", false), consistent())));
+                value("J1", "zware vondsten", null), expected("J1", "druk", false),
+                value("J2", "zware vondsten", "1"), expected("J2", "druk", true),
+                value("J3", "zware vondsten", "0"), expected("J3", "druk", false), consistent())));
     }
 
     /** V9 (9 by 0) is linked to no Jutter, so no fold has it in its range. The ASP runner reports
      *  viol("division by numeric zero","V9") here too. */
     @Test void a_member_outside_each_range_is_not_filtered() throws Exception {
         played(FILTERWACHT, TmsDocuments.caseDocument(combined(j2j3(), List.of(vondst("V9", "9", "0"))), List.of(
-                waarde("J2", "zware vondsten", "1"), verwacht("J2", "druk", true), consistent())));
+                value("J2", "zware vondsten", "1"), expected("J2", "druk", true), consistent())));
     }
 
     /** The red case {@code vouwfilter-deelt-door-nul}: J1 actief, both rules reach the fold and divide 9 by 0. The
@@ -231,7 +231,7 @@ class FilterFaultWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(j1(true), List.of(consistent()));
         String division = "9 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
                 + " punt 4)";
-        assertEquals("Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels \"drukte\", \"zware"
+        assertEquals("EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regels \"drukte\", \"zware"
                 + " vondsten\": deling door nul in de regel \"drukte\": " + division + "; deling door nul in de regel \"zware"
                 + " vondsten\": " + division, TmsFaultWitnessTest.play(FILTERWACHT, caseDocument, EXEC), "exec-model");
         assertEquals(TmsFaultWitnessTest.play(FILTERWACHT, caseDocument, EXEC), TmsFaultWitnessTest.play(FILTERWACHT, caseDocument, DRL),
@@ -244,14 +244,14 @@ class FilterFaultWitnessTest {
     static final String DATE = "{\"node\":\"Date\",\"precision\":\"day\"}";
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("zwaarte", WHOLE), attribuut("meldtelling", WHOLE),
-                    attribuut("saldo", WHOLE), attribuut("noemer", WHOLE), attribuut("peildatum", DATE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("zwaarte", WHOLE), attribute("meldtelling", WHOLE),
+                    attribute("saldo", WHOLE), attribute("noemer", WHOLE), attribute("peildatum", DATE)),
                     List.of("actief", "druk", "beladen", "ontlast")),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("gewicht", WHOLE), attribuut("deelnemers", WHOLE),
-                    attribuut("vinddatum", DATE), attribuut("ploeg", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Melding", List.of(attribuut("telling", WHOLE)), List.of())),
+            TmsDocuments.objectType("Vondst", List.of(attribute("gewicht", WHOLE), attribute("deelnemers", WHOLE),
+                    attribute("vinddatum", DATE), attribute("ploeg", WHOLE)), List.of()),
+            TmsDocuments.objectType("Melding", List.of(attribute("telling", WHOLE)), List.of())),
             List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten"),
-                    feittype("JutterHeeftMelding", "melder", "Jutter", "melding", "Melding")));
+                    factType("JutterHeeftMelding", "melder", "Jutter", "melding", "Melding")));
 
     /** "zijn gewicht gedeeld door zijn deelnemers is groter dan 2", the quotient typed as a quotient derives its type
      *  (WF-091). */
@@ -272,11 +272,11 @@ class FilterFaultWitnessTest {
                 filter, "null", COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
     }
 
-    /** "Een Jutter heeft een melding met telling gelijk aan {@code telling}, indien {@code voorwaarde}". */
-    static String creatie(String count, String voorwaarde) {
+    /** "Een Jutter heeft een melding met telling gelijk aan {@code telling}, indien {@code condition}". */
+    static String creation(String count, String condition) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"meld\",\"versions\":[{\"createdType\":\"Melding\",\"subject\":"
                 + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"telling\",\"value\":" + count
-                + ",\"characteristic\":false}],\"condition\":" + voorwaarde + ",\"validity\":{\"node\":\"Validity\"},"
+                + ",\"characteristic\":false}],\"condition\":" + condition + ",\"validity\":{\"node\":\"Validity\"},"
                 + "\"connectingRole\":" + roleBinding("JutterHeeftMelding", "melding") + "}]}";
     }
 
@@ -294,8 +294,8 @@ class FilterFaultWitnessTest {
     }
 
     /** "{@code kenmerk} indien hij aan alle volgende voorwaarden voldoet: hij is actief; {@code quantifierFold}". */
-    static String quantifierRule(String naam, String kenmerk, String quantifierFold) {
-        return characteristicRule(naam, "Jutter", kenmerk, compound("all", 0, List.of(check("actief", false),
+    static String quantifierRule(String naam, String characteristic, String quantifierFold) {
+        return characteristicRule(naam, "Jutter", characteristic, compound("all", 0, List.of(check("actief", false),
                 quantifierFold)));
     }
 
@@ -315,8 +315,8 @@ class FilterFaultWitnessTest {
     @Test void a_fold_in_the_value_of_a_rule_with_condition() throws Exception {
         Path ir = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte",
                 binary("plus", fold(), number("1")), check("actief", false))), List.of());
-        played(ir, TmsDocuments.caseDocument(j1(false), List.of(waarde("J1", "zwaarte", null), consistent())));
-        played(ir, TmsDocuments.caseDocument(j2j3(), List.of(waarde("J2", "zwaarte", "2"), waarde("J3", "zwaarte", "1"),
+        played(ir, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "zwaarte", null), consistent())));
+        played(ir, TmsDocuments.caseDocument(j2j3(), List.of(value("J2", "zwaarte", "2"), value("J3", "zwaarte", "1"),
                 consistent())));
         fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "zwaarte", "9");
     }
@@ -325,11 +325,11 @@ class FilterFaultWitnessTest {
      *  actief; het aantal vondsten … is groter dan 0", read back through "de telling van de melding van de Jutter". J2
      *  has one heavy vondst and gets the melding; J3 has none. */
     @Test void a_fold_in_the_condition_of_a_creation() throws Exception {
-        Path ir = document(List.of(MELDTELLING), List.of(creatie(number("1"), compound("all", 0, List.of(
+        Path ir = document(List.of(MELDTELLING), List.of(creation(number("1"), compound("all", 0, List.of(
                 check("actief", false), comparison("greater", fold(), number("0")))))));
-        played(ir, TmsDocuments.caseDocument(j1(false), List.of(waarde("J1", "meldtelling", null), consistent())));
-        played(ir, TmsDocuments.caseDocument(j2j3(), List.of(waarde("J2", "meldtelling", "1"),
-                waarde("J3", "meldtelling", null), consistent())));
+        played(ir, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "meldtelling", null), consistent())));
+        played(ir, TmsDocuments.caseDocument(j2j3(), List.of(value("J2", "meldtelling", "1"),
+                value("J3", "meldtelling", null), consistent())));
         fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "meld", "9");
     }
 
@@ -338,7 +338,7 @@ class FilterFaultWitnessTest {
      *  both branches; until card drl-teksttak-op-truth-maintenance the DRL-text branch played it, J2 counting 1 and J3
      *  0, and faulted on J1 at the constraint that held the filter. */
     @Test void a_fold_in_the_initialisation_of_a_creation() throws Exception {
-        Path ir = document(List.of(MELDTELLING), List.of(creatie(fold(), check("actief", false))));
+        Path ir = document(List.of(MELDTELLING), List.of(creation(fold(), check("actief", false))));
         initialisationRefused(ir);
     }
 
@@ -362,9 +362,9 @@ class FilterFaultWitnessTest {
                 {"belading", "beladen", "all", "true", "true"}, {"ontlasting", "ontlast", "none", "false", "true"}}) {
             Path ir = document(List.of(quantifierRule(r[0], r[1], quantifierFold(r[2], FILTER,
                     comparison("greater", ownRead("gewicht", "Vondst"), number("5"))))), List.of());
-            played(ir, TmsDocuments.caseDocument(j1(false), List.of(verwacht("J1", r[1], false), consistent())));
-            played(ir, TmsDocuments.caseDocument(j2j3(), List.of(verwacht("J2", r[1], Boolean.parseBoolean(r[3])),
-                    verwacht("J3", r[1], Boolean.parseBoolean(r[4])), consistent())));
+            played(ir, TmsDocuments.caseDocument(j1(false), List.of(expected("J1", r[1], false), consistent())));
+            played(ir, TmsDocuments.caseDocument(j2j3(), List.of(expected("J2", r[1], Boolean.parseBoolean(r[3])),
+                    expected("J3", r[1], Boolean.parseBoolean(r[4])), consistent())));
             fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), r[0], "9");
         }
     }
@@ -381,10 +381,10 @@ class FilterFaultWitnessTest {
                 + "\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"100"
                 + " gedeeld door zijn deelnemers\"}}");
         Path ir = document(List.of(quantifierRule("drukte", "druk", quantifierFold("atLeast", "null", test))), List.of());
-        played(ir, TmsDocuments.caseDocument(j1(false), List.of(verwacht("J1", "druk", false), consistent())));
+        played(ir, TmsDocuments.caseDocument(j1(false), List.of(expected("J1", "druk", false), consistent())));
         played(ir, TmsDocuments.caseDocument(combined(j2j3(), List.of(jutter("J4", true, List.of("V6")),
-                vondst("V6", "60", "2"))), List.of(verwacht("J2", "druk", false), verwacht("J3", "druk", false),
-                verwacht("J4", "druk", true), consistent())));
+                vondst("V6", "60", "2"))), List.of(expected("J2", "druk", false), expected("J3", "druk", false),
+                expected("J4", "druk", true), consistent())));
         fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "drukte", "100");
     }
 
@@ -399,7 +399,7 @@ class FilterFaultWitnessTest {
         String j1 = instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1")));
         String j2 = instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1")));
         played(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("H1", "Haven", Map.of(), List.of(),
-                Map.of("jutters", List.of("J1", "J2"))), j1, j2, b1, b9), List.of(waarde("H1", "bootlengte", "9"),
+                Map.of("jutters", List.of("J1", "J2"))), j1, j2, b1, b9), List.of(value("H1", "bootlengte", "9"),
                 consistent())));
         String j3 = instanceWithRoles("J3", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B9")));
         fails(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("H1", "Haven", Map.of(), List.of(),
@@ -435,7 +435,7 @@ class FilterFaultWitnessTest {
 
     /** One case of the composite: the Jutter it is about, its instances, and per member its verdict there: "W" it
      *  holds, "O" it does not, or the dividend of the division by 0 it reaches. */
-    private record Case(String label, List<String> instanties, Map<Character, String> verdicts) {}
+    private record Case(String label, List<String> instances, Map<Character, String> verdicts) {}
 
     private static String jutter(String label, boolean actief, String balance, String denominator, List<String> vondsten) {
         return instanceWithRoles(label, "Jutter", Map.of("saldo", balance, "noemer", denominator),
@@ -506,23 +506,23 @@ class FilterFaultWitnessTest {
      *  answers in each of the other twelve, and agrees with every other cell (measured 2026-10-09 on the RegelSpraak
      *  frontend's documents of all 24 orders; the ASP runner agrees cell for cell). */
     @Test void the_members_of_an_all_compound_in_every_order() throws Exception {
-        List<String> afwijkend = new ArrayList<>();
+        List<String> deviating = new ArrayList<>();
         for (List<Character> order : TmsDocuments.permutations(List.of('A', 'F', 'D', 'K'))) {
             List<String> members = new ArrayList<>();
             for (char c : order) members.add(member(c));
             Path ir = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0, members))), List.of());
             for (Case g : CASES) {
                 String verdict = verdict(order, g);
-                JsonNode caseDocument = TmsDocuments.caseDocument(g.instanties(), verdict.equals("W") || verdict.equals("O")
-                        ? List.of(verwacht(g.label(), "druk", verdict.equals("W")), consistent()) : List.of(consistent()));
+                JsonNode caseDocument = TmsDocuments.caseDocument(g.instances(), verdict.equals("W") || verdict.equals("O")
+                        ? List.of(expected(g.label(), "druk", verdict.equals("W")), consistent()) : List.of(consistent()));
                 for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
-                    String received = observation(ir, caseDocument, branch), verwacht = expectation(verdict, "drukte");
-                    if (!received.equals(verwacht))
-                        afwijkend.add(order + " " + g.label() + " " + branch + ": verwacht " + verwacht + ", kreeg " + received);
+                    String received = observation(ir, caseDocument, branch), expected = expectation(verdict, "drukte");
+                    if (!received.equals(expected))
+                        deviating.add(order + " " + g.label() + " " + branch + ": verwacht " + expected + ", kreeg " + received);
                 }
             }
         }
-        assertEquals(List.of(), afwijkend);
+        assertEquals(List.of(), deviating);
     }
 
     /** "de telling van de melding van de Jutter is groter dan 0", a member that reads through a role, beside
@@ -548,10 +548,10 @@ class FilterFaultWitnessTest {
         Path memberFirst = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0,
                 List.of(navigated, foldMember)))), List.of());
         fails(foldFirst, TmsDocuments.caseDocument(j1, List.of(consistent())), "drukte", "9");
-        played(memberFirst, TmsDocuments.caseDocument(j1, List.of(verwacht("J1", "druk", false), consistent())));
+        played(memberFirst, TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk", false), consistent())));
         for (Path ir : List.of(foldFirst, memberFirst)) {
-            played(ir, TmsDocuments.caseDocument(j2, List.of(verwacht("J2", "druk", true), consistent())));
-            played(ir, TmsDocuments.caseDocument(j3, List.of(verwacht("J3", "druk", false), consistent())));
+            played(ir, TmsDocuments.caseDocument(j2, List.of(expected("J2", "druk", true), consistent())));
+            played(ir, TmsDocuments.caseDocument(j3, List.of(expected("J3", "druk", false), consistent())));
         }
     }
 
@@ -584,9 +584,9 @@ class FilterFaultWitnessTest {
         Path actiefFirst = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0,
                 List.of(check("actief", false), dateFold)))), List.of());
         fails(foldFirst, TmsDocuments.caseDocument(j1, List.of(consistent())), "drukte", "9");
-        played(actiefFirst, TmsDocuments.caseDocument(j1, List.of(verwacht("J1", "druk", false), consistent())));
+        played(actiefFirst, TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk", false), consistent())));
         for (Path ir : List.of(foldFirst, actiefFirst))
-            played(ir, TmsDocuments.caseDocument(j2, List.of(verwacht("J2", "druk", true), consistent())));
+            played(ir, TmsDocuments.caseDocument(j2, List.of(expected("J2", "druk", true), consistent())));
     }
 
     /** "de eerste van de vinddatum van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen:
@@ -624,39 +624,39 @@ class FilterFaultWitnessTest {
         // per quantifier: its wire spelling and threshold, its name, druk on J1, druk on J2 (control)
         String[][] quantifiers = {{"none", "0", "GEEN", "false", "false"}, {"atLeast", "1", "TEN_MINSTE", "true", "true"},
                 {"atMost", "1", "TEN_HOOGSTE", "false", "true"}, {"exactly", "1", "PRECIES", "false", "true"}};
-        List<String> afwijkend = new ArrayList<>();
+        List<String> deviating = new ArrayList<>();
         for (String[] k : quantifiers) {
             int threshold = Integer.parseInt(k[1]);
             Path ir = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound(k[0], threshold,
                     List.of(check("actief", false), check("beladen", false), dateFold(FILTER))))), List.of());
-            likeRef(ir, TmsDocuments.caseDocument(j1, List.of(verwacht("J1", "druk", Boolean.parseBoolean(k[3])),
-                    consistent())), k[0] + " " + threshold, afwijkend);
+            likeRef(ir, TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk", Boolean.parseBoolean(k[3])),
+                    consistent())), k[0] + " " + threshold, deviating);
             Path check = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound(k[0], threshold,
                     List.of(check("actief", false), check("beladen", false), dateFold(zwaar))))), List.of());
-            for (JsonNode caseDocument : List.of(TmsDocuments.caseDocument(j1, List.of(verwacht("J1", "druk",
-                    Boolean.parseBoolean(k[3])), consistent())), TmsDocuments.caseDocument(j2, List.of(verwacht("J2", "druk",
+            for (JsonNode caseDocument : List.of(TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk",
+                    Boolean.parseBoolean(k[3])), consistent())), TmsDocuments.caseDocument(j2, List.of(expected("J2", "druk",
                     Boolean.parseBoolean(k[4])), consistent())))) {
                 for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
                     String v = TmsFaultWitnessTest.play(check, caseDocument, branch);
-                    if (!v.equals("gespeeld")) afwijkend.add(k[0] + " controle " + branch + ": " + v);
+                    if (!v.equals("gespeeld")) deviating.add(k[0] + " controle " + branch + ": " + v);
                 }
             }
         }
         Path nested = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0, List.of(
                 check("actief", false), compound("atLeast", 1, List.of(check("beladen", false),
                         dateFold(FILTER))))))), List.of());
-        likeRef(nested, TmsDocuments.caseDocument(j1, List.of(verwacht("J1", "druk", true), consistent())), "atLeast 1",
-                afwijkend);
-        assertEquals(List.of(), afwijkend);
+        likeRef(nested, TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk", true), consistent())), "atLeast 1",
+                deviating);
+        assertEquals(List.of(), deviating);
     }
 
     /** Adds to {@code afwijkend} where a branch does not play {@code caseDocument} on {@code ir}, a composite ({@code bron})
      *  whose fold divides, with the reference interpreter's answer. Until card drl-teksttak-op-truth-maintenance the
      *  DRL-text branch refused the rule "drukte" here ("drl-transpiler MARKER: regel: drukte — …"). */
-    private static void likeRef(Path ir, JsonNode caseDocument, String bron, List<String> afwijkend) throws Exception {
+    private static void likeRef(Path ir, JsonNode caseDocument, String source, List<String> deviating) throws Exception {
         for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
             String v = TmsFaultWitnessTest.play(ir, caseDocument, branch);
-            if (!v.equals("gespeeld")) afwijkend.add(bron + " " + branch + ": " + v);
+            if (!v.equals("gespeeld")) deviating.add(source + " " + branch + ": " + v);
         }
     }
 
@@ -690,7 +690,7 @@ class FilterFaultWitnessTest {
         String division = "DelingDoorNul: deling door nul in de regel \"drukte\": 9 gedeeld door 0 — een numerieke nul"
                 + " als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
         String actief = check("actief", false), beladen = check("beladen", false), fold = dateFold(FILTER);
-        List<String> afwijkend = new ArrayList<>();
+        List<String> deviating = new ArrayList<>();
         // per form: its composite, J1's characteristics with V1 alone and its druk there, and with V2 beside V1
         Map<String, Object[]> playing = new java.util.LinkedHashMap<>();
         playing.put("geen, enig lid", new Object[] {compound("none", 0, List.of(fold)), List.of(), false,
@@ -709,27 +709,27 @@ class FilterFaultWitnessTest {
             Object[] w = v.getValue();
             Path ir = document(List.of(characteristicRule("drukte", "Jutter", "druk", (String) w[0])), List.of());
             @SuppressWarnings("unchecked") List<String> kenmerken = (List<String>) w[1], withV2 = (List<String>) w[3];
-            JsonNode answer = TmsDocuments.caseDocument(asOfJutter(kenmerken, false), List.of(verwacht("J1", "druk",
+            JsonNode answer = TmsDocuments.caseDocument(asOfJutter(kenmerken, false), List.of(expected("J1", "druk",
                     (Boolean) w[2]), consistent()));
-            JsonNode fout = TmsDocuments.caseDocument(asOfJutter(withV2, true), List.of(consistent()));
+            JsonNode fault = TmsDocuments.caseDocument(asOfJutter(withV2, true), List.of(consistent()));
             for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
                 String given = TmsFaultWitnessTest.play(ir, answer, branch);
-                if (!given.equals("gespeeld")) afwijkend.add(v.getKey() + " " + branch + ": " + given);
-                given = TmsFaultWitnessTest.play(ir, fout, branch);
-                if (!given.equals(division)) afwijkend.add(v.getKey() + " met V2 " + branch + ": " + given);
+                if (!given.equals("gespeeld")) deviating.add(v.getKey() + " " + branch + ": " + given);
+                given = TmsFaultWitnessTest.play(ir, fault, branch);
+                if (!given.equals(division)) deviating.add(v.getKey() + " met V2 " + branch + ": " + given);
             }
         }
         likeRef(document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("atMost", 1,
                 List.of(fold)))), List.of()), TmsDocuments.caseDocument(asOfJutter(List.of(), true),
-                List.of(verwacht("J1", "druk", true), consistent())), "atMost 1", afwijkend);
+                List.of(expected("J1", "druk", true), consistent())), "atMost 1", deviating);
         likeRef(document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("atLeast", 2,
                 List.of(fold)))), List.of()), TmsDocuments.caseDocument(asOfJutter(List.of(), true),
-                List.of(verwacht("J1", "druk", false), consistent())), "atLeast 2", afwijkend);
+                List.of(expected("J1", "druk", false), consistent())), "atLeast 2", deviating);
         likeRef(document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("none", 0, List.of(
                 compound("all", 0, List.of(actief, fold)))))), List.of()), TmsDocuments.caseDocument(
-                asOfJutter(List.of(), true), List.of(verwacht("J1", "druk", true), consistent())), "none 0",
-                afwijkend);
-        assertEquals(List.of(), afwijkend);
+                asOfJutter(List.of(), true), List.of(expected("J1", "druk", true), consistent())), "none 0",
+                deviating);
+        assertEquals(List.of(), deviating);
     }
 
     /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is groter dan 50", a fold
@@ -747,19 +747,19 @@ class FilterFaultWitnessTest {
      *  vondst above 50. J2's V6 (60 by 2) is above 50 and counts, its V4 (3 by 3) does not: 1. J4 has V6 and V2, so the
      *  condition holds and the value divides 9 by 0. */
     @Test void a_fold_in_the_value_under_a_fold_in_the_condition() throws Exception {
-        String voorwaarde = compound("all", 0, List.of(comparison("greater", zwaarFold(), number("0"))));
-        Path regel = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", fold(), voorwaarde)),
+        String condition = compound("all", 0, List.of(comparison("greater", zwaarFold(), number("0"))));
+        Path regel = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", fold(), condition)),
                 List.of());
-        Path creatie = document(List.of(MELDTELLING), List.of(creatie(fold(), voorwaarde)));
+        Path creation = document(List.of(MELDTELLING), List.of(creation(fold(), condition)));
         String v6 = vondst("V6", "60", "2");
-        played(regel, TmsDocuments.caseDocument(j1(false), List.of(waarde("J1", "zwaarte", null), consistent())));
+        played(regel, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "zwaarte", null), consistent())));
         List<String> j2 = List.of(jutter("J2", false, List.of("V6", "V4")), v6, vondst("V4", "3", "3"));
-        played(regel, TmsDocuments.caseDocument(j2, List.of(waarde("J2", "zwaarte", "1"), consistent())));
+        played(regel, TmsDocuments.caseDocument(j2, List.of(value("J2", "zwaarte", "1"), consistent())));
         List<String> j4 = List.of(jutter("J4", false, List.of("V6", "V2")), v6, vondst("V2", "9", "0"));
         fails(regel, TmsDocuments.caseDocument(j4, List.of(consistent())), "zwaarte", "9");
         // the creation, whose initialisation divides, the analysis refuses by name on both branches; until card
         // drl-teksttak-op-truth-maintenance the DRL-text branch played it on J1 and J2 and faulted on J4
-        initialisationRefused(creatie);
+        initialisationRefused(creation);
     }
 
     /** A subselection that divides by an attribute another rule writes on the element: "De deelnemers van een Vondst
@@ -771,19 +771,19 @@ class FilterFaultWitnessTest {
     @Test void a_dividing_filter_over_an_overwritten_divisor_in_every_rule_order() throws Exception {
         String deelnemers = computingRule("deelnemers", "BEREKENING", "Vondst", "deelnemers",
                 binary("plus", ownRead("ploeg", "Vondst"), number("1")), "null");
-        List<String> instanties = List.of(jutter("J1", false, List.of("V1", "V2")),
+        List<String> instances = List.of(jutter("J1", false, List.of("V1", "V2")),
                 instanceWithRoles("V1", "Vondst", Map.of("gewicht", "10", "ploeg", "1", "deelnemers", "10"), List.of(),
                         Map.of()),
                 instanceWithRoles("V2", "Vondst", Map.of("gewicht", "3", "ploeg", "0", "deelnemers", "3"), List.of(),
                         Map.of()));
         String zwaarte = computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", fold(), "null");
         for (List<String> rules : TmsDocuments.permutations(List.of(deelnemers, zwaarte)))
-            played(document(rules, List.of()), TmsDocuments.caseDocument(instanties,
-                    List.of(waarde("J1", "zwaarte", "2"), consistent())));
+            played(document(rules, List.of()), TmsDocuments.caseDocument(instances,
+                    List.of(value("J1", "zwaarte", "2"), consistent())));
         String drukte = characteristicRule("drukte", "Jutter", "druk", compound("all", 0, List.of(member('K'))));
         for (List<String> rules : TmsDocuments.permutations(List.of(deelnemers, drukte)))
-            played(document(rules, List.of()), TmsDocuments.caseDocument(instanties,
-                    List.of(verwacht("J1", "druk", true), consistent())));
+            played(document(rules, List.of()), TmsDocuments.caseDocument(instances,
+                    List.of(expected("J1", "druk", true), consistent())));
     }
 
     /** "De zwaarte van een Jutter moet berekend worden als zijn saldo gedeeld door zijn noemer indien hij aan alle
@@ -802,11 +802,11 @@ class FilterFaultWitnessTest {
                 List.of(comparison("greater", zwaarFold(), number("0")), check("actief", false))))), List.of());
         String v6 = vondst("V6", "60", "2");
         played(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("J5", "Jutter", Map.of("saldo", "6"), List.of(),
-                Map.of("vondsten", List.of("V6"))), v6), List.of(waarde("J5", "zwaarte", null), consistent())));
+                Map.of("vondsten", List.of("V6"))), v6), List.of(value("J5", "zwaarte", null), consistent())));
         played(ir, TmsDocuments.caseDocument(List.of(jutter("J6", true, "6", "2", List.of("V6")), v6),
-                List.of(waarde("J6", "zwaarte", "3"), consistent())));
+                List.of(value("J6", "zwaarte", "3"), consistent())));
         played(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("J7", "Jutter", Map.of("saldo", "6"), List.of("actief"),
-                Map.of("vondsten", List.of("V6"))), v6), List.of(waarde("J7", "zwaarte", null),
+                Map.of("vondsten", List.of("V6"))), v6), List.of(value("J7", "zwaarte", null),
                 TmsDocuments.inconsistent("zwaarte", "J7"))));
     }
 
@@ -818,8 +818,8 @@ class FilterFaultWitnessTest {
      *  the fold is not read and H1 gets no winterschuit. H2 is veilig and its S3 (10 by 2) is its winterschuit. */
     @Test void a_fact_creation_reads_the_members_of_its_condition_in_order() throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objecttype("Haven", List.of(attribuut("wintertal", COUNTING)), List.of("veilig")),
-                TmsDocuments.objecttype("Schuit", List.of(attribuut("lengte", WHOLE), attribuut("breedte", WHOLE)),
+                TmsDocuments.objectType("Haven", List.of(attribute("wintertal", COUNTING)), List.of("veilig")),
+                TmsDocuments.objectType("Schuit", List.of(attribute("lengte", WHOLE), attribute("breedte", WHOLE)),
                         List.of())),
                 List.of(factTypeOneToMany("thuisligging", "thuishaven", "Haven", "ligger", "Schuit", "liggers"),
                         factTypeOneToMany("winterberging", "winterhaven", "Haven", "winterschuit", "Schuit",
@@ -855,8 +855,8 @@ class FilterFaultWitnessTest {
             h1Case.addAll(schuiten1);
             if (members.get(0).equals(fold)) fails(ir, TmsDocuments.caseDocument(h1Case, List.of(consistent())),
                     "winterberging door de haven", "9");
-            else played(ir, TmsDocuments.caseDocument(h1Case, List.of(waarde("H1", "wintertal", "0"), consistent())));
-            played(ir, TmsDocuments.caseDocument(List.of(h2, s3), List.of(waarde("H2", "wintertal", "1"), consistent())));
+            else played(ir, TmsDocuments.caseDocument(h1Case, List.of(value("H1", "wintertal", "0"), consistent())));
+            played(ir, TmsDocuments.caseDocument(List.of(h2, s3), List.of(value("H2", "wintertal", "1"), consistent())));
         }
     }
 
@@ -865,7 +865,7 @@ class FilterFaultWitnessTest {
     /** A defaults group on the zwaarte, the higher default "1 indien hij actief is" and below it {@code lower}. */
     static Path defaultsGroup(String lower) throws Exception {
         return TmsDocuments.document(MODEL, List.of(), List.of(), List.of(TmsDocuments.attributeGroup("zwaarte basis",
-                "Jutter", "zwaarte", List.of(TmsDocuments.standaard(check("actief", false), number("1")), lower))));
+                "Jutter", "zwaarte", List.of(TmsDocuments.defaultEntry(check("actief", false), number("1")), lower))));
     }
 
     /** The lower default "2 indien hij aan alle volgende voorwaarden voldoet: - {@link #fold()} is groter dan 0", and
@@ -876,11 +876,11 @@ class FilterFaultWitnessTest {
      *  waits on the norm decision of card {@code 20261008-fout-op-tussenstand} (until card
      *  drl-teksttak-op-truth-maintenance the DRL-text branch refused every defaults group). */
     @Test void a_defaults_group_with_a_fold_that_can_fail_is_refused() throws Exception {
-        JsonNode caseDocument = TmsDocuments.caseDocument(j1(true), List.of(waarde("J1", "zwaarte", "1"), consistent()));
+        JsonNode caseDocument = TmsDocuments.caseDocument(j1(true), List.of(value("J1", "zwaarte", "1"), consistent()));
         for (String lower : List.of(
-                TmsDocuments.standaard(compound("all", 0, List.of(comparison("greater", fold(), number("0")))),
+                TmsDocuments.defaultEntry(compound("all", 0, List.of(comparison("greater", fold(), number("0")))),
                         number("2")),
-                TmsDocuments.standaard(check("druk", false), fold()))) {
+                TmsDocuments.defaultEntry(check("druk", false), fold()))) {
             String tms = TmsFaultWitnessTest.play(defaultsGroup(lower), caseDocument, EXEC);
             assertTrue(tms.startsWith("Excluded: ") && tms.contains("defaults: defaults A:Jutter.zwaarte — een deling in"
                     + " een default ('zijn gewicht gedeeld door zijn deelnemers'): "), tms);
@@ -895,14 +895,14 @@ class FilterFaultWitnessTest {
                 + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", sourceRole("aanmelding", "vondst"),
                 comparison("greater", ownRead("gewicht", "Vondst"), number("5")), "null", COUNTING,
                 "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
-        Path ir = defaultsGroup(TmsDocuments.standaard(compound("all", 0, List.of(comparison("greater", five,
+        Path ir = defaultsGroup(TmsDocuments.defaultEntry(compound("all", 0, List.of(comparison("greater", five,
                 number("0")))), number("2")));
         assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(j1(true),
-                List.of(waarde("J1", "zwaarte", "1"), consistent())), EXEC));
+                List.of(value("J1", "zwaarte", "1"), consistent())), EXEC));
         assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(List.of(jutter("J2", false,
-                List.of("V3")), vondst("V3", "10", "2")), List.of(waarde("J2", "zwaarte", "2"), consistent())), EXEC));
+                List.of("V3")), vondst("V3", "10", "2")), List.of(value("J2", "zwaarte", "2"), consistent())), EXEC));
         assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(List.of(jutter("J3", false,
-                List.of("V5")), vondst("V5", "4", "4")), List.of(waarde("J3", "zwaarte", null), consistent())), EXEC));
+                List.of("V5")), vondst("V5", "4", "4")), List.of(value("J3", "zwaarte", null), consistent())), EXEC));
     }
 
     // ---------------- a subselection that faults otherwise than by a division ----------------
@@ -917,10 +917,10 @@ class FilterFaultWitnessTest {
     /** A Jutter with a vondsttal; a Vondst with a gewicht, deelnemers, a vinddatum, a wachttijd in nooitdagen, a termijn
      *  in jaren, a jaar and a maand; and the day kind nooitdag, which no day is of. */
     static final String MODEL_FALLIBLE = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("vondsttal", WHOLE)), List.of("actief")),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("gewicht", WHOLE), attribuut("deelnemers", WHOLE),
-                    attribuut("vinddatum", DATE), attribuut("wachttijd", inUnit("nooitdagen")),
-                    attribuut("termijn", inUnit("jr")), attribuut("jaar", WHOLE), attribuut("maand", WHOLE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("vondsttal", WHOLE)), List.of("actief")),
+            TmsDocuments.objectType("Vondst", List.of(attribute("gewicht", WHOLE), attribute("deelnemers", WHOLE),
+                    attribute("vinddatum", DATE), attribute("wachttijd", inUnit("nooitdagen")),
+                    attribute("termijn", inUnit("jr")), attribute("jaar", WHOLE), attribute("maand", WHOLE)),
                     List.of())),
             List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")))
             .replace("\"dayKinds\":[]", "\"dayKinds\":[{\"node\":\"DayKind\",\"name\":\"nooitdag\",\"plural\":"
@@ -951,8 +951,8 @@ class FilterFaultWitnessTest {
     }
 
     /** A node of the wire with its source text. */
-    private static String node(String fields, String bron) {
-        return "{" + fields + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+    private static String node(String fields, String source) {
+        return "{" + fields + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** The messages of {@code t} and its causes, joined. */
@@ -1002,9 +1002,9 @@ class FilterFaultWitnessTest {
                 "macht", Map.of("gewicht", "0", "deelnemers", "-1"), "datum met", Map.of("jaar", "2026", "maand", "13"),
                 "rekenjaar", Map.of("gewicht", "10"), "paasdag", Map.of("jaar", "2000000000"));
         java.util.Set<String> refused = java.util.Set.of("macht");
-        Map<String, String> fout = Map.of("dagsoortstap", "day-kind walk: no day of the kind within 40000 calendar days",
+        Map<String, String> fault = Map.of("dagsoortstap", "day-kind walk: no day of the kind within 40000 calendar days",
                 "rekenjaar", "the evaluationYear context value needs an evaluation date");
-        List<String> afwijkend = new ArrayList<>();
+        List<String> deviating = new ArrayList<>();
         for (Map.Entry<String, String> f : filters.entrySet()) {
             Path ir = vondsttal(f.getValue());
             String v1 = withDates(instanceWithRoles("V1", "Vondst", numbers.get(f.getKey()), List.of(), Map.of()),
@@ -1012,26 +1012,26 @@ class FilterFaultWitnessTest {
             if (refused.contains(f.getKey())) {
                 // the analysis refuses the form by name, on both branches in one sentence
                 JsonNode caseDocument = TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(), List.of(),
-                        Map.of("vondsten", List.of("V1"))), v1), List.of(waarde("J1", "vondsttal", null), consistent()));
+                        Map.of("vondsten", List.of("V1"))), v1), List.of(value("J1", "vondsttal", null), consistent()));
                 String exec = TmsFaultWitnessTest.play(ir, caseDocument, EXEC), drl = TmsFaultWitnessTest.play(ir, caseDocument, DRL);
                 if (!exec.startsWith("Excluded: ") || !exec.equals(drl))
-                    afwijkend.add(f.getKey() + ": " + EXEC + " " + exec + ", " + DRL + " " + drl);
+                    deviating.add(f.getKey() + ": " + EXEC + " " + exec + ", " + DRL + " " + drl);
                 continue;
             }
             for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
                 String notActive = TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter",
                         Map.of(), List.of(), Map.of("vondsten", List.of("V1"))), v1),
-                        List.of(waarde("J1", "vondsttal", null), consistent())), branch);
-                if (!notActive.equals("gespeeld")) afwijkend.add(f.getKey() + " " + branch + " niet actief: " + notActive);
-                if (!fout.containsKey(f.getKey())) continue;
+                        List.of(value("J1", "vondsttal", null), consistent())), branch);
+                if (!notActive.equals("gespeeld")) deviating.add(f.getKey() + " " + branch + " niet actief: " + notActive);
+                if (!fault.containsKey(f.getKey())) continue;
                 JsonNode actief = TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(),
                         List.of("actief"), Map.of("vondsten", List.of("V1"))), v1), List.of(consistent()));
                 try {
                     String v = CaseRunner.playCase(ir, actief, branch);
-                    afwijkend.add(f.getKey() + " " + branch + " actief: geen fout maar " + (v == null ? "gespeeld" : v));
+                    deviating.add(f.getKey() + " " + branch + " actief: geen fout maar " + (v == null ? "gespeeld" : v));
                 } catch (RuntimeException e) {
-                    if (!causes(e).contains(fout.get(f.getKey())))
-                        afwijkend.add(f.getKey() + " " + branch + " actief: " + causes(e));
+                    if (!causes(e).contains(fault.get(f.getKey())))
+                        deviating.add(f.getKey() + " " + branch + " actief: " + causes(e));
                 }
             }
         }
@@ -1041,7 +1041,7 @@ class FilterFaultWitnessTest {
                 + " geheel getal van ten minste 0 als literal is ('zijn gewicht tot de macht zijn deelnemers'): de reële"
                 + " macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de referentie-interpreter een exacte wortel geeft of"
                 + " faalt")))
-            afwijkend.add("macht " + EXEC + ": " + power);
-        assertEquals(List.of(), afwijkend);
+            deviating.add("macht " + EXEC + ": " + power);
+        assertEquals(List.of(), deviating);
     }
 }

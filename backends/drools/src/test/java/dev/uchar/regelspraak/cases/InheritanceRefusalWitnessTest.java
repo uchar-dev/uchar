@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * dimensions) were read directly, per DECLARED type, at 122 reads (121 lines) in both transpiler branches. Those
  * reads walk the chain now, so that refusal is WITHDRAWN and its two tests are turned around into
  * witnesses of what the same mutations do today; the dimensioned half was over-broad even then, since
- * every dimension read already went through the chain-aware {@code dimensiesVan}.
+ * every dimension read already went through the chain-aware {@code dimensionsOf}.
  *
  * <p>What is LEFT is narrower and named for what it is: the §9.9 startpunt-ANCHOR family, a PROTOCOL
  * keyed on the DECLARED SUBJECT NAME rather than a member lookup. Two sites that fall independently —
@@ -147,9 +147,9 @@ class InheritanceRefusalWitnessTest {
         ArrayNode pds = IrPath.rulesList(ir, "prioritizedDefaults");
         ObjectNode firstGroup = (ObjectNode) pds.get(0);              // Strandrecht.uitkering
         firstGroup.put("unordered", true);
-        ObjectNode tweede = firstGroup.deepCopy();
-        tweede.put("name", "uitkering van een strandrecht #2");
-        pds.insert(1, tweede);
+        ObjectNode second = firstGroup.deepCopy();
+        second.put("name", "uitkering van een strandrecht #2");
+        pds.insert(1, second);
 
         Path irPath = model("overerving-geerfde-set", ir);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
@@ -171,9 +171,9 @@ class InheritanceRefusalWitnessTest {
         ArrayNode pds = IrPath.rulesList(ir, "prioritizedDefaults");
         ObjectNode wrak = (ObjectNode) pds.get(1);                     // Wrakrecht.uitkering
         wrak.put("unordered", true);
-        ObjectNode tweede = wrak.deepCopy();
-        tweede.put("name", "uitkering van een wrakrecht #2");
-        pds.add(tweede);
+        ObjectNode second = wrak.deepCopy();
+        second.put("name", "uitkering van een wrakrecht #2");
+        pds.add(second);
 
         Path irPath = model("overerving-eigen-set", ir);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
@@ -224,8 +224,8 @@ class InheritanceRefusalWitnessTest {
         ObjectNode ir = goldenIr(CHAIN);
         IrPath.timeline(IrPath.attribute(IrPath.objectType(ir, "Strandrecht"), "grondslag"), "year");
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))).model();
-        Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
-        assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granulariteitVan("grondslag"));
+        Objecttype wrak = m.objectTypeByName("Wrakrecht");
+        assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granularityOf("grondslag"));
         assertTrue(wrak.granularityMembers().containsKey("grondslag"),
                 "the chain-closed facet map is what the routed read sites ask");
         assertTrue(wrak.attribuutGranulariteit.isEmpty(),
@@ -234,7 +234,7 @@ class InheritanceRefusalWitnessTest {
 
     @Test void an_inherited_dimensioned_member_loads_and_reads_its_dimensions_on_the_chain() throws Exception {
         // The other half of the withdrawn refusal, and it was OVER-BROAD even when it was written:
-        // every dimension read in this backend already went through `dimensiesVan`, which has walked the
+        // every dimension read in this backend already went through `dimensionsOf`, which has walked the
         // chain since the kernel — measured at the same card. So this test is red on the base for ONE
         // reason only, the loader, and the accessor half passed all along. Recorded that way rather than
         // as a repair, because a refusal that was never load-bearing is worth knowing about.
@@ -242,8 +242,8 @@ class InheritanceRefusalWitnessTest {
         IrPath.attribute(IrPath.objectType(ir, "Strandrecht"), "grondslag")
                 .set("dimensions", JSON.createArrayNode().add("seizoen"));
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-dimensie", ir)))).model();
-        Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
-        assertEquals(List.of("seizoen"), wrak.dimensiesVan("grondslag"));
+        Objecttype wrak = m.objectTypeByName("Wrakrecht");
+        assertEquals(List.of("seizoen"), wrak.dimensionsOf("grondslag"));
         assertTrue(wrak.dimensionedMembers().containsKey("grondslag"));
     }
 
@@ -328,7 +328,7 @@ class InheritanceRefusalWitnessTest {
         // position of the reference, never the gate's auto-excluded channel (2026-09-23).
         ObjectNode ir = goldenIr(CHAIN);
         IrPath.objectType(ir, "Wrakrecht").put("supertype", "Bestaatniet");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-onbekend", ir)))));
         assertTrue(e.getMessage().contains("supertype 'Bestaatniet' is not declared"), e.getMessage());
         assertTrue(e.site().endsWith("/supertype"), e.getMessage());
@@ -356,7 +356,7 @@ class InheritanceRefusalWitnessTest {
         // comment saying the verifier has it covered.
         ObjectNode ir = goldenIr(CHAIN);
         IrPath.objectType(ir, "Strandrecht").put("supertype", "Wrakrecht");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-cyclus", ir)))));
         assertTrue(e.getMessage().contains("supertype cycle at"), e.getMessage());
     }
@@ -385,15 +385,15 @@ class InheritanceRefusalWitnessTest {
     }
 
     /** The synthetic anchor member a startpuntbepaling names — WF-032 requires it to be declared. */
-    private static void anchorAttribute(ObjectNode ir, String objecttype) {
-        IrPath.addAttribute(IrPath.objectType(ir, objecttype), "meetdatum",
+    private static void anchorAttribute(ObjectNode ir, String objectType) {
+        IrPath.addAttribute(IrPath.objectType(ir, objectType), "meetdatum",
                 JSON.createObjectNode().put("node", "Date").put("precision", "day"));
     }
 
-    private static void startPointOn(ObjectNode ir, String objecttype) {
+    private static void startPointOn(ObjectNode ir, String objectType) {
         IrPath.rulesList(ir, "startPointDeterminations").add(JSON.createObjectNode()
                 .put("node", "StartPointDetermination").put("timeline", "boekjaar")
-                .put("objectType", objecttype).put("member", "meetdatum"));
+                .put("objectType", objectType).put("member", "meetdatum"));
     }
 
     private static ObjectNode number() {

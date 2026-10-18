@@ -20,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BrokenDurationTest {
 
-    private static List<String> fouten(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static List<String> faults(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         return m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();
     }
 
@@ -64,22 +64,22 @@ class BrokenDurationTest {
 
         """;
 
-    private static String einddag(String waarde) {
+    private static String einddag(String value) {
         return VERGUNNINGEN + "Regel einddag\n    geldig altijd\n        De einddag van een Vergunning moet berekend "
-                + "worden als " + waarde + ".\n";
+                + "worden als " + value + ".\n";
     }
 
-    private static String eindtijd(String waarde) {
+    private static String eindtijd(String value) {
         return VERGUNNINGEN + "Regel eindtijd\n    geldig altijd\n        De eindtijd van een Vergunning moet berekend "
-                + "worden als " + waarde + ".\n";
+                + "worden als " + value + ".\n";
     }
 
-    private static String voorwaarde(String waarde) {
+    private static String condition(String value) {
         return VERGUNNINGEN + "Regel status\n    geldig altijd\n        De status van een Vergunning moet gesteld "
-                + "worden op 1\n        indien zijn peildag later is dan " + waarde + ".\n";
+                + "worden op 1\n        indien zijn peildag later is dan " + value + ".\n";
     }
 
-    private static String justification(String waarde) {
+    private static String justification(String value) {
         return VERGUNNINGEN + """
             Regel status
                 geldig altijd
@@ -88,10 +88,10 @@ class BrokenDurationTest {
             Uitzondering op status: verlopen
                 geldig altijd
                     De status van een Vergunning moet gesteld worden op 1
-            """ + "        indien zijn peildag later is dan " + waarde + ".\n";
+            """ + "        indien zijn peildag later is dan " + value + ".\n";
     }
 
-    private static String consequentie(String waarde) {
+    private static String consequence(String value) {
         return VERGUNNINGEN + """
             Regel einddag
                 geldig altijd
@@ -99,32 +99,32 @@ class BrokenDurationTest {
 
             Uitzondering op einddag: verlengd
                 geldig altijd
-            """ + "        De einddag van een Vergunning moet berekend worden als " + waarde + "\n"
+            """ + "        De einddag van een Vergunning moet berekend worden als " + value + "\n"
                 + "        indien zijn ronde duur groter is dan 0 mnd.\n";
     }
 
     /** The refusal: {@code example} is ch. 3.8's example in the duration's unit, or the literal truncated;
      *  {@code suffix} the smaller unit to step the rest in, or why the date has none. */
     private static String sentence(String op, String written, String duration, String cause, String eenheid,
-                              String example, String afkap, String suffix) {
+                              String example, String truncate, String suffix) {
         return "datum " + op + " duur '" + written + "': de duur '" + duration + "' " + cause
                 + ", en de uitvoerders kappen een gebroken telling in " + eenheid + " naar nul af vóór de kalenderstap "
-                + "(RUNTIME-SEMANTICS ch. 3.8: " + example + "); schrijf de afkapping uit als '" + afkap + "'" + suffix;
+                + "(RUNTIME-SEMANTICS ch. 3.8: " + example + "); schrijf de afkapping uit als '" + truncate + "'" + suffix;
     }
 
     private static String nineteenth(String eenheid) {
         return "1,9 " + eenheid + " telt als 1 " + eenheid + " en -1,9 " + eenheid + " als -1 " + eenheid;
     }
 
-    private static String takeAlong(String afkap, String op, String smaller) {
-        return ", of neem het deel in een kleinere eenheid mee ('" + afkap + " " + op + " … " + smaller + "')";
+    private static String takeAlong(String truncate, String op, String smaller) {
+        return ", of neem het deel in een kleinere eenheid mee ('" + truncate + " " + op + " … " + smaller + "')";
     }
 
     /** The refusal of a duration that is no literal, with the next smaller unit or the closing sentence. */
-    private static String read(String op, String links, String duration, String cause, String eenheid, String smaller) {
-        String afkap = links + " " + op + " (" + duration + " richting nul afgerond op 0 decimalen)";
-        String suffix = smaller.startsWith("; ") ? smaller : takeAlong(afkap, op, smaller);
-        return sentence(op, links + " " + op + " " + duration, duration, cause, eenheid, nineteenth(eenheid), afkap, suffix);
+    private static String read(String op, String left, String duration, String cause, String eenheid, String smaller) {
+        String truncate = left + " " + op + " (" + duration + " richting nul afgerond op 0 decimalen)";
+        String suffix = smaller.startsWith("; ") ? smaller : takeAlong(truncate, op, smaller);
+        return sentence(op, left + " " + op + " " + duration, duration, cause, eenheid, nineteenth(eenheid), truncate, suffix);
     }
 
     private static final String NO_DAGDEEL = "; een datum in dagen kent geen eenheid kleiner dan een dag";
@@ -139,7 +139,7 @@ class BrokenDurationTest {
                         + "schrijf de afkapping uit als 'zijn startdag plus (zijn duur richting nul afgerond op 0 "
                         + "decimalen)', of neem het deel in een kleinere eenheid mee ('zijn startdag plus (zijn duur "
                         + "richting nul afgerond op 0 decimalen) plus … dagen')"),
-                fouten(einddag("zijn startdag plus zijn duur")));
+                faults(einddag("zijn startdag plus zijn duur")));
     }
 
     @Test void r2_a_literal_with_a_rational_in_months() {
@@ -149,7 +149,7 @@ class BrokenDurationTest {
                         + "(RUNTIME-SEMANTICS ch. 3.8: 20,5 mnd telt als 20 mnd); schrijf de afkapping uit als 'zijn "
                         + "startdag plus 20 mnd', of neem het deel in een kleinere eenheid mee ('zijn startdag plus 20 "
                         + "mnd plus … dagen')"),
-                fouten(einddag("zijn startdag plus 20,5 mnd")));
+                faults(einddag("zijn startdag plus 20,5 mnd")));
     }
 
     @Test void r3_a_literal_with_a_rational_in_years_and_in_weeks() {
@@ -159,13 +159,13 @@ class BrokenDurationTest {
                         + "(RUNTIME-SEMANTICS ch. 3.8: 1,5 jr telt als 1 jr); schrijf de afkapping uit als 'zijn "
                         + "startdag plus 1 jr', of neem het deel in een kleinere eenheid mee ('zijn startdag plus 1 jr "
                         + "plus … maanden')"),
-                fouten(einddag("zijn startdag plus 1,5 jr")));
+                faults(einddag("zijn startdag plus 1,5 jr")));
         assertEquals(List.of("datum plus duur 'zijn startdag plus 2,5 wk': de duur '2,5 wk' heeft een breuk, en de "
                         + "uitvoerders kappen een gebroken telling in wk naar nul af vóór de kalenderstap "
                         + "(RUNTIME-SEMANTICS ch. 3.8: 2,5 wk telt als 2 wk); schrijf de afkapping uit als 'zijn "
                         + "startdag plus 2 wk', of neem het deel in een kleinere eenheid mee ('zijn startdag plus 2 wk "
                         + "plus … dagen')"),
-                fouten(einddag("zijn startdag plus 2,5 wk")));
+                faults(einddag("zijn startdag plus 2,5 wk")));
     }
 
     // ---- every unit on its date: dg, wk, mnd, kw, jr on a Datum in dagen; u, minuut, sec, ms on a datum-tijd
@@ -173,52 +173,52 @@ class BrokenDurationTest {
     @Test void every_unit_on_its_date() {
         String g = "is een getal met 1 decimalen";
         assertEquals(List.of(read("plus", "zijn startdag", "zijn dagduur", g, "dg", NO_DAGDEEL)),
-                fouten(einddag("zijn startdag plus zijn dagduur")));
+                faults(einddag("zijn startdag plus zijn dagduur")));
         assertEquals(List.of(read("plus", "zijn startdag", "zijn weekduur", g, "wk", "dagen")),
-                fouten(einddag("zijn startdag plus zijn weekduur")));
+                faults(einddag("zijn startdag plus zijn weekduur")));
         assertEquals(List.of(read("plus", "zijn startdag", "zijn kwartaalduur", g, "kw", "maanden")),
-                fouten(einddag("zijn startdag plus zijn kwartaalduur")));
+                faults(einddag("zijn startdag plus zijn kwartaalduur")));
         assertEquals(List.of(read("plus", "zijn startdag", "zijn jaarduur", g, "jr", "maanden")),
-                fouten(einddag("zijn startdag plus zijn jaarduur")));
+                faults(einddag("zijn startdag plus zijn jaarduur")));
         assertEquals(List.of(read("plus", "zijn begintijd", "zijn dagduur", g, "dg", "uur")),
-                fouten(eindtijd("zijn begintijd plus zijn dagduur")));
+                faults(eindtijd("zijn begintijd plus zijn dagduur")));
         assertEquals(List.of(read("plus", "zijn begintijd", "zijn uurduur", g, "u", "minuten")),
-                fouten(eindtijd("zijn begintijd plus zijn uurduur")));
+                faults(eindtijd("zijn begintijd plus zijn uurduur")));
         assertEquals(List.of(read("plus", "zijn begintijd", "zijn minuutduur", g, "minuut", "seconden")),
-                fouten(eindtijd("zijn begintijd plus zijn minuutduur")));
+                faults(eindtijd("zijn begintijd plus zijn minuutduur")));
         assertEquals(List.of(read("plus", "zijn begintijd", "zijn secondeduur", g, "sec", "milliseconden")),
-                fouten(eindtijd("zijn begintijd plus zijn secondeduur")));
+                faults(eindtijd("zijn begintijd plus zijn secondeduur")));
         assertEquals(List.of(read("plus", "zijn begintijd", "zijn msduur", g, "ms",
                         "; een milliseconde is de kleinste eenheid")),
-                fouten(eindtijd("zijn begintijd plus zijn msduur")));
+                faults(eindtijd("zijn begintijd plus zijn msduur")));
         assertEquals(List.of(sentence("plus", "zijn startdag plus 2,5 dg", "2,5 dg", "heeft een breuk", "dg",
                         "2,5 dg telt als 2 dg", "zijn startdag plus 2 dg", NO_DAGDEEL)),
-                fouten(einddag("zijn startdag plus 2,5 dg")));
+                faults(einddag("zijn startdag plus 2,5 dg")));
         assertEquals(List.of(sentence("plus", "zijn begintijd plus 1,5 u", "1,5 u", "heeft een breuk", "u",
                         "1,5 u telt als 1 u", "zijn begintijd plus 1 u",
                         takeAlong("zijn begintijd plus 1 u", "plus", "minuten"))),
-                fouten(eindtijd("zijn begintijd plus 1,5 u")));
+                faults(eindtijd("zijn begintijd plus 1,5 u")));
     }
 
     @Test void a_day_kind_as_unit() {
         // ch. 3.8: a fractional count truncates toward zero before the walk as well
         assertEquals(List.of(read("plus", "zijn startdag", "zijn getijbestek", "is een getal met 1 decimalen",
                         "springtijdagen", "; een dagsoort kent geen kleinere eenheid")),
-                fouten(einddag("zijn startdag plus zijn getijbestek")));
+                faults(einddag("zijn startdag plus zijn getijbestek")));
     }
 
     @Test void plus_and_minus() {
         assertEquals(List.of(read("min", "zijn startdag", "zijn duur", "is een getal met 1 decimalen", "mnd",
                         "dagen")),
-                fouten(einddag("zijn startdag min zijn duur")));
+                faults(einddag("zijn startdag min zijn duur")));
         assertEquals(List.of(sentence("min", "zijn startdag min 20,5 mnd", "20,5 mnd", "heeft een breuk", "mnd",
                         "20,5 mnd telt als 20 mnd", "zijn startdag min 20 mnd",
                         takeAlong("zijn startdag min 20 mnd", "min", "dagen"))),
-                fouten(einddag("zijn startdag min 20,5 mnd")));
+                faults(einddag("zijn startdag min 20,5 mnd")));
         assertEquals(List.of(sentence("plus", "zijn startdag plus -20,5 mnd", "-20,5 mnd", "heeft een breuk", "mnd",
                         "-20,5 mnd telt als -20 mnd", "zijn startdag plus -20 mnd",
                         takeAlong("zijn startdag plus -20 mnd", "plus", "dagen"))),
-                fouten(einddag("zijn startdag plus -20,5 mnd")));
+                faults(einddag("zijn startdag plus -20,5 mnd")));
     }
 
     // ---- every source of a fraction: a parameter, an unbounded number, a computation without a whole outcome
@@ -226,32 +226,32 @@ class BrokenDurationTest {
     @Test void every_source_of_a_rational() {
         assertEquals(List.of(read("plus", "zijn startdag", "de standaardduur", "is een getal met 1 decimalen",
                         "mnd", "dagen")),
-                fouten(einddag("zijn startdag plus de standaardduur")));
+                faults(einddag("zijn startdag plus de standaardduur")));
         assertEquals(List.of(read("plus", "zijn startdag", "zijn vrije duur",
                         "is een getal zonder vast aantal decimalen", "mnd", "dagen")),
-                fouten(einddag("zijn startdag plus zijn vrije duur")));
+                faults(einddag("zijn startdag plus zijn vrije duur")));
         String division = "zijn ronde duur gedeeld door 2";
         assertEquals(List.of(sentence("plus", "zijn startdag plus (" + division + ")", division, "is een deling", "mnd",
                         nineteenth("mnd"), "zijn startdag plus (" + division + " richting nul afgerond op 0 decimalen)",
                         takeAlong("zijn startdag plus (" + division + " richting nul afgerond op 0 decimalen)", "plus",
                                 "dagen"))),
-                fouten(einddag("zijn startdag plus (" + division + ")")));
+                faults(einddag("zijn startdag plus (" + division + ")")));
         String pct = "50% van zijn ronde duur";
         assertEquals(List.of(sentence("plus", "zijn startdag plus (" + pct + ")", pct, "is een percentage", "mnd",
                         nineteenth("mnd"), "zijn startdag plus (" + pct + " richting nul afgerond op 0 decimalen)",
                         takeAlong("zijn startdag plus (" + pct + " richting nul afgerond op 0 decimalen)", "plus",
                                 "dagen"))),
-                fouten(einddag("zijn startdag plus (" + pct + ")")));
+                faults(einddag("zijn startdag plus (" + pct + ")")));
         String rounded = "zijn vrije duur rekenkundig afgerond op 1 decimalen";
         assertEquals(List.of(sentence("plus", "zijn startdag plus (" + rounded + ")", rounded,
                         "is afgerond op 1 decimalen", "mnd", nineteenth("mnd"),
                         "zijn startdag plus (" + rounded + " richting nul afgerond op 0 decimalen)",
                         takeAlong("zijn startdag plus (" + rounded + " richting nul afgerond op 0 decimalen)", "plus",
                                 "dagen"))),
-                fouten(einddag("zijn startdag plus (" + rounded + ")")));
+                faults(einddag("zijn startdag plus (" + rounded + ")")));
         assertEquals(List.of(read("plus", "zijn startdag", "zijn ronde duur maal 1,5",
                         "kan een breuk dragen: '1,5' heeft een breuk", "mnd", "dagen")),
-                fouten(einddag("zijn startdag plus zijn ronde duur maal 1,5")));
+                faults(einddag("zijn startdag plus zijn ronde duur maal 1,5")));
     }
 
     @Test void a_conversion_to_a_greater_unit() {
@@ -262,18 +262,18 @@ class BrokenDurationTest {
                         "jr", nineteenth("jr"), "zijn startdag plus (" + sum + " richting nul afgerond op 0 decimalen)",
                         takeAlong("zijn startdag plus (" + sum + " richting nul afgerond op 0 decimalen)", "plus",
                                 "maanden"))),
-                fouten(einddag("zijn startdag plus (" + sum + ")")));
+                faults(einddag("zijn startdag plus (" + sum + ")")));
         String weeks = "zijn weekduur rekenkundig afgerond op 0 decimalen plus 3 dg";
         assertEquals(List.of(sentence("plus", "zijn startdag plus (" + weeks + ")", weeks,
                         "kan een breuk dragen: '3 dg' wordt naar wk omgerekend (een dg is een breuk van een wk)",
                         "wk", nineteenth("wk"), "zijn startdag plus (" + weeks + " richting nul afgerond op 0 decimalen)",
                         takeAlong("zijn startdag plus (" + weeks + " richting nul afgerond op 0 decimalen)", "plus",
                                 "dagen"))),
-                fouten(einddag("zijn startdag plus (" + weeks + ")")));
+                faults(einddag("zijn startdag plus (" + weeks + ")")));
     }
 
     @Test void a_variable_carries_the_rational_of_its_definition() {
-        String bron = VERGUNNINGEN + """
+        String source = VERGUNNINGEN + """
             Regel einddag
                 geldig altijd
                     De einddag van een Vergunning moet berekend worden als zijn startdag plus de halve duur.
@@ -282,12 +282,12 @@ class BrokenDurationTest {
             """;
         assertEquals(List.of(read("plus", "zijn startdag", "de halve duur",
                         "kan een breuk dragen: 'zijn ronde duur gedeeld door 2' is een deling", "mnd", "dagen")),
-                fouten(bron));
+                faults(source));
     }
 
     @Test void a_definition_in_two_steps_is_a_refusal() {
         // the variabelendeel is resolved twice (inlined, then as binders): one defect, one refusal
-        String bron = VERGUNNINGEN + """
+        String source = VERGUNNINGEN + """
             Regel einddag
                 geldig altijd
                     De einddag van een Vergunning moet berekend worden als de verlengde dag.
@@ -295,7 +295,7 @@ class BrokenDurationTest {
                         de verlengde dag is zijn startdag plus zijn duur.
             """;
         assertEquals(List.of(read("plus", "zijn startdag", "zijn duur", "is een getal met 1 decimalen", "mnd",
-                "dagen")), fouten(bron));
+                "dagen")), faults(source));
     }
 
     // ---- every position: a value, a condition, the justification and the consequence of a default
@@ -303,9 +303,9 @@ class BrokenDurationTest {
     @Test void every_position() {
         List<String> sentence = List.of(read("plus", "zijn startdag", "zijn duur", "is een getal met 1 decimalen",
                 "mnd", "dagen"));
-        assertEquals(sentence, fouten(voorwaarde("zijn startdag plus zijn duur")));
-        assertEquals(sentence, fouten(justification("zijn startdag plus zijn duur")));
-        assertEquals(sentence, fouten(consequentie("zijn startdag plus zijn duur")));
+        assertEquals(sentence, faults(condition("zijn startdag plus zijn duur")));
+        assertEquals(sentence, faults(justification("zijn startdag plus zijn duur")));
+        assertEquals(sentence, faults(consequence("zijn startdag plus zijn duur")));
     }
 
     // ---- found in the form space: the rounding written behind the date sum, the parentheses left out
@@ -317,7 +317,7 @@ class BrokenDurationTest {
         assertEquals(List.of("afronding '" + withoutParentheses + "': 'zijn startdag plus zijn ronde duur' is een datum, en "
                         + "een afronding rondt een getal af; rond de duur af: 'zijn startdag plus (zijn ronde duur "
                         + "richting nul afgerond op 0 decimalen)'"),
-                fouten(einddag(withoutParentheses)));
+                faults(einddag(withoutParentheses)));
         // with a fraction in the duration, the sum inside is refused first, in its own words
         String broken = "zijn startdag plus zijn duur richting nul afgerond op 0 decimalen";
         assertEquals(List.of(read("plus", "zijn startdag", "zijn duur", "is een getal met 1 decimalen", "mnd",
@@ -325,42 +325,42 @@ class BrokenDurationTest {
                         "afronding '" + broken + "': 'zijn startdag plus zijn duur' is een datum, en een afronding "
                         + "rondt een getal af; rond de duur af: 'zijn startdag plus (zijn duur richting nul afgerond "
                         + "op 0 decimalen)'"),
-                fouten(einddag(broken)));
+                faults(einddag(broken)));
         assertEquals(List.of("afronding 'zijn begintijd naar boven afgerond op 0 decimalen': 'zijn begintijd' is een "
                         + "datum-tijd, en een afronding rondt een getal af"),
-                fouten(eindtijd("zijn begintijd naar boven afgerond op 0 decimalen")));
+                faults(eindtijd("zijn begintijd naar boven afgerond op 0 decimalen")));
     }
 
     // ---- the forms that keep playing
 
     @Test void a_whole_duration_stays_playing() {
-        for (String waarde : List.of("zijn startdag plus zijn ronde duur", "zijn startdag plus 20 mnd",
+        for (String value : List.of("zijn startdag plus zijn ronde duur", "zijn startdag plus 20 mnd",
                 "zijn startdag plus 20,0 mnd", "zijn startdag min zijn ronde duur",
                 "zijn startdag plus zijn ronde duur maal 2", "zijn startdag plus (zijn ronde duur plus 1 jr)",
                 "zijn startdag plus (1 jr plus 12 mnd)", "zijn startdag plus (2 wk plus 7 dg)",
                 "zijn startdag plus 1 jr plus 6 mnd",
                 "zijn startdag plus de tijdsduur van zijn startdag tot zijn peildag in hele maanden"))
-            assertEquals(List.of(), fouten(einddag(waarde)), waarde);
-        assertEquals(List.of(), fouten(eindtijd("zijn begintijd plus 26 uur")));
+            assertEquals(List.of(), faults(einddag(value)), value);
+        assertEquals(List.of(), faults(eindtijd("zijn begintijd plus 26 uur")));
     }
 
     @Test void a_duration_rounded_to_zero_decimals_stays_playing() {
         // R6: the author's detour and the truncation written out
-        for (String waarde : List.of(
+        for (String value : List.of(
                 "zijn startdag plus (zijn duur naar beneden afgerond op 0 decimalen) plus 15 dg",
                 "zijn startdag plus (zijn duur richting nul afgerond op 0 decimalen)",
                 "zijn startdag plus (zijn vrije duur rekenkundig afgerond op 0 decimalen)"))
-            assertEquals(List.of(), fouten(einddag(waarde)), waarde);
+            assertEquals(List.of(), faults(einddag(value)), value);
     }
 
     @Test void the_proposed_forms_play() {
-        for (String waarde : List.of(
+        for (String value : List.of(
                 "zijn startdag plus (zijn duur richting nul afgerond op 0 decimalen) plus 15 dagen",
                 "zijn startdag plus 20 mnd plus 15 dagen", "zijn startdag plus 1 jr plus 6 maanden",
                 "zijn startdag plus (zijn ronde duur gedeeld door 2 richting nul afgerond op 0 decimalen)",
                 "zijn startdag min (zijn duur richting nul afgerond op 0 decimalen) min 15 dagen"))
-            assertEquals(List.of(), fouten(einddag(waarde)), waarde);
-        assertEquals(List.of(), fouten(eindtijd(
+            assertEquals(List.of(), faults(einddag(value)), value);
+        assertEquals(List.of(), faults(eindtijd(
                 "zijn begintijd plus (zijn uurduur richting nul afgerond op 0 decimalen) plus 30 minuten")));
     }
 }

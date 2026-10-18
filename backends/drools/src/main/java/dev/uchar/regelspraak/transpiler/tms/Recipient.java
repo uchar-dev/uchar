@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * One recipient of one allocation of the exec-model branch, for one source, inserted logically:
  * {@code ontvanger} is an instance of the allocation's {@code targetType} that its connecting relation links to the
- * source {@code bron} (RUNTIME-SEMANTICS ch. 4.1), and {@code gewicht}, {@code sleutel} and {@code maximum} are its
+ * source {@code bron} (RUNTIME-SEMANTICS ch. 4.1), and {@code gewicht}, {@code key} and {@code maximum} are its
  * weight, ordering key and cap as they stand, each null where it is leeg or where the allocation declares no such
  * attribute. A rule of the allocation inserts it per recipient, with every one of those reads bound in its left-hand
  * side, a derived one through its standing; the allocation's own rule collects these facts per source in an accumulate
@@ -17,23 +17,23 @@ import java.util.Objects;
  * <p>Compared by the allocation, the source and the recipient by identity, and the three values by value (a number by
  * {@code compareTo}), so that a recipient whose values are inserted again unchanged stays one fact.
  */
-public record Recipient(String allocation, Object bron, Object recipient, Object weight, Object sleutel,
+public record Recipient(String allocation, Object source, Object recipient, Object weight, Object key,
                         Object maximum) {
 
     public Recipient {
         Objects.requireNonNull(allocation, "verdeling");
-        Objects.requireNonNull(bron, "bron");
+        Objects.requireNonNull(source, "bron");
         Objects.requireNonNull(recipient, "ontvanger");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Recipient x && x.bron == bron && x.recipient == recipient && x.allocation.equals(allocation)
-                && equal(x.weight, weight) && equal(x.sleutel, sleutel) && equal(x.maximum, maximum);
+        return o instanceof Recipient x && x.source == source && x.recipient == recipient && x.allocation.equals(allocation)
+                && equal(x.weight, weight) && equal(x.key, key) && equal(x.maximum, maximum);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(allocation, System.identityHashCode(bron), System.identityHashCode(recipient), hash(weight),
-                hash(sleutel), hash(maximum));
+        return Objects.hash(allocation, System.identityHashCode(source), System.identityHashCode(recipient), hash(weight),
+                hash(key), hash(maximum));
     }
 
     private static boolean equal(Object a, Object b) {
@@ -46,8 +46,8 @@ public record Recipient(String allocation, Object bron, Object recipient, Object
     }
 
     @Override public String toString() {
-        return "Ontvanger(" + allocation + ", " + FactNames.object(bron) + ", " + FactNames.object(recipient)
-                + ", gewicht " + (weight == null ? "leeg" : weight) + ", sleutel " + (sleutel == null ? "leeg" : sleutel)
+        return "Ontvanger(" + allocation + ", " + FactNames.object(source) + ", " + FactNames.object(recipient)
+                + ", gewicht " + (weight == null ? "leeg" : weight) + ", sleutel " + (key == null ? "leeg" : key)
                 + ", maximum " + (maximum == null ? "leeg" : maximum) + ")";
     }
 }

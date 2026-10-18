@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code IllegalArgumentException}. Since L4 of the v1 wire migration the kind set is closed per node (IR-SPEC
  * ch. 4.3): an {@code Aggregation} carries one of the eight fold kinds and a {@code BuiltinCall} one of the
  * seventeen others, so a kind outside that set — a kind of the other node included — is a malformed document, a
- * {@link IrLoader.Documentfout} at the kind's pointer in the shared loader's sentence ({@code unknown kind value
+ * {@link IrLoader.DocumentError} at the kind's pointer in the shared loader's sentence ({@code unknown kind value
  * "<v>"}), where until L4 an open-ended kind was a per-form {@link IrLoader.Refusal} the gate filed as not carried.
  *
  * <p>The stand-in is {@code GEMIDDELDE}, which is not an arbitrary token: it is the average fold maintainer decision
@@ -38,7 +38,7 @@ class UnknownFunctionKindWitnessTest {
     @Test void an_unknown_fold_kind_is_a_named_document_error() throws Exception {
         ObjectNode root = (ObjectNode) golden();
         ((ObjectNode) fold(root)).put("kind", "GEMIDDELDE");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(root),
                 "een vouwsoort buiten de gesloten verzameling hoort een benoemde documentfout te zijn,"
                         + " geen onbeheerde IllegalArgumentException");
         assertEquals(KIND, e.site(), e.getMessage());
@@ -49,7 +49,7 @@ class UnknownFunctionKindWitnessTest {
     @Test void a_kind_of_the_other_node_is_unknown() throws Exception {
         ObjectNode root = (ObjectNode) golden();
         ((ObjectNode) fold(root)).put("kind", "squareRoot");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(root));
         assertEquals(KIND, e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown kind value \"squareRoot\""), e.getMessage());
     }

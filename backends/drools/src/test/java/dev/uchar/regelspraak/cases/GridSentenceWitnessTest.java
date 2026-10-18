@@ -72,14 +72,14 @@ class GridSentenceWitnessTest {
                 "{\"node\":\"Attribute\",\"name\":\"meetdatum\",\"datatype\":{\"node\":\"Date\",\"precision\":\"day\"}},");
     }
 
-    /** A case with {@code m} set to {@code waarde} (a timeline or a scalar) and, when {@code verwacht} is not null,
+    /** A case with {@code m} set to {@code waarde} (a timeline or a scalar) and, when {@code expected} is not null,
      *  an expected timeline on {@code m}. */
-    private static JsonNode caseDocument(String waarde, String verwacht) throws Exception {
+    private static JsonNode caseDocument(String value, String expected) throws Exception {
         return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":\"2024-06-01\",\"input\":{\"instances\":"
-                + "[{\"label\":\"J1\",\"objectType\":\"Jutter\",\"attributes\":{" + (waarde == null ? "" : "\"m\":" + waarde)
+                + "[{\"label\":\"J1\",\"objectType\":\"Jutter\",\"attributes\":{" + (value == null ? "" : "\"m\":" + value)
                 + "},\"roles\":{},\"characteristics\":[]}],\"parameters\":{}},\"expected\":["
-                + (verwacht == null ? "" : "{\"kind\":\"attributeTimeline\",\"label\":\"J1\",\"attribute\":\"m\","
-                        + "\"timeline\":" + verwacht + "},")
+                + (expected == null ? "" : "{\"kind\":\"attributeTimeline\",\"label\":\"J1\",\"attribute\":\"m\","
+                        + "\"timeline\":" + expected + "},")
                 + "{\"kind\":\"consistent\"}]}");
     }
 

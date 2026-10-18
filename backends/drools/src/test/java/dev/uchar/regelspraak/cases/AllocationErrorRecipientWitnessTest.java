@@ -41,7 +41,7 @@ class AllocationErrorRecipientWitnessTest {
     @Test void the_empty_weight_lands_on_the_recipient() throws Exception {
         BothBranches.green(RANK.resolve("ir.json"), rank(), "the empty-weight error on recipient W5");
         ObjectNode c = rank();
-        verwacht(c, inconsistent(RANK_RULE, "K1"));
+        expected(c, inconsistent(RANK_RULE, "K1"));
         BothBranches.red(RANK.resolve("ir.json"), c,
                 "verwacht inconsistent (" + RANK_RULE + " @ K1), niet gevonden onder " + RANK_RULE + " @ W5",
                 "no error on the source kas");
@@ -50,11 +50,11 @@ class AllocationErrorRecipientWitnessTest {
     /** Naar rato with a cap: H has no weight and D a negative maximum — one fact on each, none on W or the berging. */
     @Test void every_violating_recipient_gets_its_own_error() throws Exception {
         ObjectNode c = twoViolators();
-        verwacht(c, inconsistent(BERG_RULE, "H"), inconsistent(BERG_RULE, "D"));
+        expected(c, inconsistent(BERG_RULE, "H"), inconsistent(BERG_RULE, "D"));
         BothBranches.green(BERGING.resolve("ir.json"), c, "one error on H (weight), one on D (maximum)");
         for (String elsewhere : new String[] { "W", "B1" }) {
             ObjectNode d = twoViolators();
-            verwacht(d, inconsistent(BERG_RULE, elsewhere));
+            expected(d, inconsistent(BERG_RULE, elsewhere));
             String out = BothBranches.red(BERGING.resolve("ir.json"), d,
                     "verwacht inconsistent (" + BERG_RULE + " @ " + elsewhere + "), niet gevonden onder", "no error on " + elsewhere);
             assertTrue(out.contains(BERG_RULE + " @ H") && out.contains(BERG_RULE + " @ D"), out);
@@ -68,7 +68,7 @@ class AllocationErrorRecipientWitnessTest {
             if (i.get("objectType").asText().equals("Berger"))
                 ((ObjectNode) i.get("attributes")).set("geborgen gewicht", JSON.readTree("{\"number\": \"0\"}"));
         ((ObjectNode) instance(c, "W").get("attributes")).remove("bergingsmaximum");
-        verwacht(c, JSON.readTree("{\"kind\": \"consistent\"}"));
+        expected(c, JSON.readTree("{\"kind\": \"consistent\"}"));
         BothBranches.green(BERGING.resolve("ir.json"), c, "zero weight sum: no cap read, no error");
     }
 
@@ -76,7 +76,7 @@ class AllocationErrorRecipientWitnessTest {
     @Test void an_empty_pot_reports_nothing() throws Exception {
         ObjectNode c = rank();
         ((ObjectNode) instance(c, "K1").get("attributes")).remove("penningbudget");
-        verwacht(c, JSON.readTree("{\"kind\": \"consistent\"}"));
+        expected(c, JSON.readTree("{\"kind\": \"consistent\"}"));
         BothBranches.green(RANK.resolve("ir.json"), c, "empty pot: no distribution, no error");
     }
 
@@ -103,7 +103,7 @@ class AllocationErrorRecipientWitnessTest {
                 + " \"characteristics\": [], \"attributes\": {\"opbrengst\": {\"number\": \"100\"}}}"));
         inst.add(JSON.readTree("{\"label\": \"Y\", \"objectType\": \"Berger\", \"roles\": {}, \"characteristics\": [],"
                 + " \"attributes\": {\"bergingsmaximum\": {\"number\": \"300\"}}}"));
-        verwacht(c, expectation);
+        expected(c, expectation);
         return c;
     }
 
@@ -134,7 +134,7 @@ class AllocationErrorRecipientWitnessTest {
     }
 
     /** Replace the case's expectations: the rows here pin the channel, not the shares. */
-    private static void verwacht(ObjectNode c, JsonNode... e) {
+    private static void expected(ObjectNode c, JsonNode... e) {
         ArrayNode a = JSON.createArrayNode();
         for (JsonNode x : e) a.add(x);
         c.set("expected", a);

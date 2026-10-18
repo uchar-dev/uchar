@@ -3,7 +3,7 @@ package dev.uchar.regelspraak;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.ir.ResolvedScenario.*;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -34,135 +34,135 @@ class ScenarioTypeGateTest {
                 + "Met als verwacht resultaat:\n" + verwachting;
     }
 
-    private static void fout(String scenarioText, String merker, String fragment) {
-        ScenarioBundel b = resolve(scenarioText);
+    private static void error(String scenarioText, String merker, String fragment) {
+        ScenarioBundle b = resolve(scenarioText);
         errorOnLine(b, MODEL + scenarioText, merker, fragment);
         assertFalse(b.isOk());
     }
 
     @Test void the_model_resolves_cleanly() {
-        ScenarioBundel b = ScenarioResolver.resolve(MODEL);
+        ScenarioBundle b = ScenarioResolver.resolve(MODEL);
         assertTrue(b.isOk(), () -> "het testmodel hoort schoon te resolven: " + b.model().errors());
         assertTrue(b.scenarios().isEmpty());
     }
 
     @Test void the_base_scenario_resolves_cleanly() {
-        ScenarioBundel b = resolve(scenario("- J is bergingsbevoegd\n"));
+        ScenarioBundle b = resolve(scenario("- J is bergingsbevoegd\n"));
         assertTrue(b.isOk(), () -> "het basisscenario hoort schoon te resolven: " + b.model().errors());
     }
 
     // ---------------- the type gate: one defect, one ERROR on its line ----------------
 
     @Test void incompatible_unit() {
-        fout("Situatie s:\neen Jutter J\n- het vondstgewicht is 3 vadem\n", "3 vadem",
+        error("Situatie s:\neen Jutter J\n- het vondstgewicht is 3 vadem\n", "3 vadem",
                 "het attribuut 'vondstgewicht': toekenning: assignment across incompatible units");
     }
 
     @Test void text_on_a_number() {
-        fout("Situatie s:\neen Jutter J\n- het vondstgewicht is \"zwaar\"\n", "zwaar",
+        error("Situatie s:\neen Jutter J\n- het vondstgewicht is \"zwaar\"\n", "zwaar",
                 "het attribuut 'vondstgewicht': toekenning: a text value is assigned to a number target");
     }
 
     @Test void more_decimals_than_the_declaration() {
-        fout("Situatie s:\neen Jutter J\n- het vondstgewicht is 1,125 kg\n", "1,125",
+        error("Situatie s:\neen Jutter J\n- het vondstgewicht is 1,125 kg\n", "1,125",
                 "meer decimalen (3) dan het attribuut toelaat (2)");
     }
 
     @Test void unknown_attribute() {
-        fout("Situatie s:\neen Jutter J\n- de spanwijdte is 4\n", "spanwijdte",
+        error("Situatie s:\neen Jutter J\n- de spanwijdte is 4\n", "spanwijdte",
                 "het objecttype 'Jutter' kent geen attribuut 'spanwijdte'");
     }
 
     @Test void unknown_object_type() {
-        fout("Situatie s:\neen Zeemeermin Z\n", "Zeemeermin", "het objecttype 'Zeemeermin' is niet gedeclareerd");
+        error("Situatie s:\neen Zeemeermin Z\n", "Zeemeermin", "het objecttype 'Zeemeermin' is niet gedeclareerd");
     }
 
     @Test void label_collides_with_object_type() {
-        fout("Situatie s:\neen Jutter Jutter\n", "een Jutter Jutter",
+        error("Situatie s:\neen Jutter Jutter\n", "een Jutter Jutter",
                 "het label 'Jutter' botst met (het eerste woord van) de objecttypenaam 'Jutter'");
     }
 
     @Test void unknown_characteristic() {
-        fout("Situatie s:\neen Jutter J\n- is zeeziek\n", "zeeziek", "het objecttype 'Jutter' kent geen kenmerk 'zeeziek'");
+        error("Situatie s:\neen Jutter J\n- is zeeziek\n", "zeeziek", "het objecttype 'Jutter' kent geen kenmerk 'zeeziek'");
     }
 
     @Test void the_verb_follows_the_characteristic_kind() {
-        fout("Situatie s:\neen Jutter J\n- is strandrecht\n", "is strandrecht",
+        error("Situatie s:\neen Jutter J\n- is strandrecht\n", "is strandrecht",
                 "het kenmerk 'strandrecht' is bezittelijk; schrijf 'heeft strandrecht'");
-        fout("Situatie s:\neen Jutter J\n- heeft bergingsbevoegd\n", "heeft bergingsbevoegd",
+        error("Situatie s:\neen Jutter J\n- heeft bergingsbevoegd\n", "heeft bergingsbevoegd",
                 "het kenmerk 'bergingsbevoegd' is niet bezittelijk; schrijf 'is bergingsbevoegd'");
     }
 
     @Test void unknown_role() {
-        fout("Situatie s:\neen Vondst V\n- de schipper is J\n", "schipper", "het objecttype 'Vondst' kent geen rol 'schipper'");
+        error("Situatie s:\neen Vondst V\n- de schipper is J\n", "schipper", "het objecttype 'Vondst' kent geen rol 'schipper'");
     }
 
     @Test void the_role_form_follows_the_cardinality() {
-        fout("Situatie s:\neen Vondst V\n- de aanmelder zijn J en K\n", "aanmelder zijn",
+        error("Situatie s:\neen Vondst V\n- de aanmelder zijn J en K\n", "aanmelder zijn",
                 "de rol 'aanmelder' is een naar-één-rol; schrijf de 'is'-vorm");
-        fout("Situatie s:\neen Jutter J\n- de vondsten is V\n", "vondsten is",
+        error("Situatie s:\neen Jutter J\n- de vondsten is V\n", "vondsten is",
                 "de rol 'vondsten' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm");
     }
 
     @Test void role_to_a_label_that_stands_nowhere() {
         String s = "Situatie s:\neen Vondst V\n- de aanmelder is J9\n"
                 + "Scenario x\ngebaseerd op de situatie s\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
-        fout(s, "aanmelder is J9", "de rol 'aanmelder' verwijst naar het label 'J9', dat nergens in de samengestelde "
+        error(s, "aanmelder is J9", "de rol 'aanmelder' verwijst naar het label 'J9', dat nergens in de samengestelde "
                 + "situatie gedeclareerd is");
     }
 
     @Test void role_to_a_label_of_another_type() {
         String s = "Situatie s:\neen Vondst V\n- de aanmelder is W\neen Vondst W\n"
                 + "Scenario x\ngebaseerd op de situatie s\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
-        fout(s, "aanmelder is W", "de rol 'aanmelder' verwacht een Jutter, maar het label 'W' is een Vondst");
+        error(s, "aanmelder is W", "de rol 'aanmelder' verwacht een Jutter, maar het label 'W' is een Vondst");
     }
 
     @Test void unknown_parameter() {
-        fout("Situatie s:\nde parameter de getijdendrempel is 4\n", "getijdendrempel",
+        error("Situatie s:\nde parameter de getijdendrempel is 4\n", "getijdendrempel",
                 "de parameter 'de getijdendrempel' is niet gedeclareerd");
     }
 
     @Test void enumeration_value_outside_the_domain() {
-        fout("Situatie s:\neen Jutter J\n- de vondstklasse is 'goud'\n", "'goud'",
+        error("Situatie s:\neen Jutter J\n- de vondstklasse is 'goud'\n", "'goud'",
                 "'goud' is geen waarde van de enumeratie Vondstklasse (drijfgoed, strandgoed, wrakgoed)");
     }
 
     @Test void a_text_value_is_literal() {
-        fout("Situatie s:\neen Jutter J\n- de naam is \"nummer «1»\"\n", "nummer",
+        error("Situatie s:\neen Jutter J\n- de naam is \"nummer «1»\"\n", "nummer",
                 "de tekstwaarde draagt een «expressie», en een waarde in een scenario is letterlijk");
     }
 
     @Test void a_dimensioned_attribute_has_no_case_form() {
-        fout("Situatie s:\neen Jutter J\n- het seizoensgewicht is 3,00 kg\n", "seizoensgewicht is",
+        error("Situatie s:\neen Jutter J\n- het seizoensgewicht is 3,00 kg\n", "seizoensgewicht is",
                 "het attribuut 'seizoensgewicht' is gedimensioneerd, en een casebestand draagt geen dimensiecoördinaten");
     }
 
     // ---------------- timelines ----------------
 
     @Test void a_period_belongs_to_a_timeline() {
-        fout("Situatie s:\neen Jutter J\n- het vondstgewicht is 3,00 kg van 01-01-2024 tot 01-02-2024\n", "3,00 kg van",
+        error("Situatie s:\neen Jutter J\n- het vondstgewicht is 3,00 kg van 01-01-2024 tot 01-02-2024\n", "3,00 kg van",
                 "het attribuut 'vondstgewicht' is niet tijdsafhankelijk");
-        fout("Situatie s:\neen Jutter J\n- is bergingsbevoegd van 01-01-2024 tot 01-02-2024\n", "bergingsbevoegd van",
+        error("Situatie s:\neen Jutter J\n- is bergingsbevoegd van 01-01-2024 tot 01-02-2024\n", "bergingsbevoegd van",
                 "het kenmerk 'bergingsbevoegd' is niet tijdsafhankelijk");
-        fout("Situatie s:\nde parameter de vondstdrempel is 3 van 01-01-2024 tot 01-02-2024\n", "vondstdrempel is 3 van",
+        error("Situatie s:\nde parameter de vondstdrempel is 3 van 01-01-2024 tot 01-02-2024\n", "vondstdrempel is 3 van",
                 "de parameter 'vondstdrempel' is niet tijdsafhankelijk");
     }
 
     @Test void a_time_dependent_characteristic_gets_periods() {
-        fout("Situatie s:\neen Jutter J\n- is borgplichtig\n", "- is borgplichtig",
+        error("Situatie s:\neen Jutter J\n- is borgplichtig\n", "- is borgplichtig",
                 "het kenmerk 'borgplichtig' is tijdsafhankelijk; een casebestand levert het als perioden");
     }
 
     @Test void periods_are_in_order_and_do_not_overlap() {
-        fout("Situatie s:\neen Jutter J\n- is borgplichtig van 01-02-2024 tot 01-01-2024\n", "borgplichtig van",
+        error("Situatie s:\neen Jutter J\n- is borgplichtig van 01-02-2024 tot 01-01-2024\n", "borgplichtig van",
                 "de periode van 2024-02-01 tot 2024-01-01 is leeg of loopt terug");
-        fout("Situatie s:\neen Jutter J\n- is borgplichtig van 01-01-2024 tot 20-01-2024\n"
+        error("Situatie s:\neen Jutter J\n- is borgplichtig van 01-01-2024 tot 20-01-2024\n"
                         + "- is borgplichtig van 10-01-2024 tot 01-02-2024\n", "van 10-01-2024",
                 "de periode van 2024-01-10 tot 2024-02-01 begint vóór het einde van de vorige (2024-01-20)");
     }
 
     @Test void a_period_boundary_is_a_day() {
-        fout("Situatie s:\neen Jutter J\n- is borgplichtig van 01-01-2024 10:00:00.000 tot 01-02-2024\n", "10:00",
+        error("Situatie s:\neen Jutter J\n- is borgplichtig van 01-01-2024 10:00:00.000 tot 01-02-2024\n", "10:00",
                 "de periodegrens '01-01-2024 10:00:00.000' draagt een tijd, maar een periode telt in hele dagen");
     }
 
@@ -172,19 +172,19 @@ class ScenarioTypeGateTest {
     private static final String GRID = "; een casebestand levert een tijdlijn in de perioden van dat raster";
 
     @Test void an_attribute_period_lies_on_the_grid_of_the_declaration() {
-        fout("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 05-01-2024 tot 01-02-2024\n", "05-01-2024",
+        error("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 05-01-2024 tot 01-02-2024\n", "05-01-2024",
                 "de periodegrens 2024-01-05 van het attribuut 'borgdagen' ligt niet op het maandraster van de "
                         + "declaratie" + GRID);
     }
 
     @Test void a_parameter_period_lies_on_the_grid_of_the_declaration() {
-        fout("Situatie s:\nde parameter het penningbedrag is 7 van 01-03-2024 tot 01-01-2025\n", "01-03-2024",
+        error("Situatie s:\nde parameter het penningbedrag is 7 van 01-03-2024 tot 01-01-2025\n", "01-03-2024",
                 "de periodegrens 2024-03-01 van de parameter 'penningbedrag' ligt niet op het jaarraster van de "
                         + "declaratie" + GRID);
     }
 
     @Test void an_expected_period_lies_on_the_grid_of_the_declaration() {
-        fout(scenario("- de borgdagen van J is 4 van 01-01-2024 tot 15-02-2024\n"), "15-02-2024",
+        error(scenario("- de borgdagen van J is 4 van 01-01-2024 tot 15-02-2024\n"), "15-02-2024",
                 "de periodegrens 2024-02-15 van de verwachting voor 'borgdagen' ligt niet op het maandraster van de "
                         + "declaratie" + GRID);
     }
@@ -200,7 +200,7 @@ class ScenarioTypeGateTest {
 
         """;
 
-    private static ScenarioBundel fixedScenario(String assignment) {
+    private static ScenarioBundle fixedScenario(String assignment) {
         return ScenarioResolver.resolve(FIXED_GRIDS + "Scenario s\nmet peildatum 15-03-2025\n"
                 + "Gegeven is de volgende situatie:\neen Jutter J\n" + assignment
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
@@ -213,22 +213,22 @@ class ScenarioTypeGateTest {
                 + "- de maandwachtdagen is 5 van 29-02-2024 tot 31-03-2024\n"
                 + "- de kwartaalteller is 4 van 01-04-2024 tot 01-07-2024\n"
                 + "- de weekteller is 4 van 07-10-2024 tot 14-10-2024\n";
-        ScenarioBundel goed = fixedScenario(onGrid);
+        ScenarioBundle goed = fixedScenario(onGrid);
         assertTrue(goed.isOk(), () -> goed.model().errors().toString());
         String scheef = "- de stormwachtdagen is 4 van 01-01-2025 tot 01-10-2025\n"
                 + "- de maandwachtdagen is 4 van 01-02-2024 tot 29-02-2024\n"
                 + "- de kwartaalteller is 4 van 01-04-2024 tot 01-06-2024\n"
                 + "- de weekteller is 4 van 07-10-2024 tot 15-10-2024\n";
-        ScenarioBundel b = fixedScenario(scheef);
-        String bron = FIXED_GRIDS + "Scenario s\nmet peildatum 15-03-2025\nGegeven is de volgende situatie:\n"
+        ScenarioBundle b = fixedScenario(scheef);
+        String source = FIXED_GRIDS + "Scenario s\nmet peildatum 15-03-2025\nGegeven is de volgende situatie:\n"
                 + "een Jutter J\n" + scheef;
-        errorOnLine(b, bron, "stormwachtdagen is 4", "de periodegrens 2025-01-01 van het attribuut 'stormwachtdagen' "
+        errorOnLine(b, source, "stormwachtdagen is 4", "de periodegrens 2025-01-01 van het attribuut 'stormwachtdagen' "
                 + "ligt niet op het jaarraster van de declaratie (vast startpunt --10-01)" + GRID);
-        errorOnLine(b, bron, "maandwachtdagen is 4", "de periodegrens 2024-02-01 van het attribuut 'maandwachtdagen' "
+        errorOnLine(b, source, "maandwachtdagen is 4", "de periodegrens 2024-02-01 van het attribuut 'maandwachtdagen' "
                 + "ligt niet op het maandraster van de declaratie (vast startpunt --01-31)" + GRID);
-        errorOnLine(b, bron, "kwartaalteller is 4", "de periodegrens 2024-06-01 van het attribuut 'kwartaalteller' "
+        errorOnLine(b, source, "kwartaalteller is 4", "de periodegrens 2024-06-01 van het attribuut 'kwartaalteller' "
                 + "ligt niet op het raster van 3 maanden van de declaratie (vast startpunt 2024-01-01)" + GRID);
-        errorOnLine(b, bron, "weekteller is 4", "de periodegrens 2024-10-15 van het attribuut 'weekteller' ligt niet "
+        errorOnLine(b, source, "weekteller is 4", "de periodegrens 2024-10-15 van het attribuut 'weekteller' ligt niet "
                 + "op het weekraster van de declaratie (vast startpunt 2024-09-30)" + GRID);
         assertEquals(4, b.model().errors().size(), () -> b.model().errors().toString());
     }
@@ -236,25 +236,25 @@ class ScenarioTypeGateTest {
     @Test void a_characteristic_period_counts_in_days() {
         // the readers take a characteristic's periods day-precise, whatever its grid (the grid buckets its day counts),
         // and the pinned anchor cases carry such periods: no grid check here
-        ScenarioBundel b = resolve("Situatie s:\neen Jutter J\n- is borgplichtig van 03-01-2024 tot 20-02-2024\n"
+        ScenarioBundle b = resolve("Situatie s:\neen Jutter J\n- is borgplichtig van 03-01-2024 tot 20-02-2024\n"
                 + "de parameter de vondstdrempel is 3\n"
                 + "Scenario k\nmet peildatum 15-03-2024\ngebaseerd op de situatie s\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        assertEquals(List.of(new Periode(LocalDate.of(2024, 1, 3), LocalDate.of(2024, 2, 20))),
-                b.scenarios().get(0).situatie().instantie("J").kenmerken().get(0).perioden());
+        assertEquals(List.of(new TimeWindow(LocalDate.of(2024, 1, 3), LocalDate.of(2024, 2, 20))),
+                b.scenarios().get(0).situation().instantie("J").kenmerken().get(0).periods());
     }
 
     @Test void fixed_value_and_periods_in_a_block() {
-        fout("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen is 5\n",
+        error("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen is 5\n",
                 "de borgdagen is 5", "het attribuut 'borgdagen' krijgt in dit blok zowel perioden als een vaste waarde");
     }
 
     @Test void timelineExpectations() {
-        fout(scenario("- de vondstgewicht van J is altijd leeg\n"), "altijd leeg",
+        error(scenario("- de vondstgewicht van J is altijd leeg\n"), "altijd leeg",
                 "het attribuut 'vondstgewicht' is niet tijdsafhankelijk; een tijdlijnverwachting hoort bij een "
                         + "attribuut met een tijdlijn");
-        fout(scenario("- de borgdagen van J is altijd leeg\n- de borgdagen van J is 4 van 01-01-2024 tot 01-02-2024\n"),
+        error(scenario("- de borgdagen van J is altijd leeg\n- de borgdagen van J is 4 van 01-01-2024 tot 01-02-2024\n"),
                 "is 4 van", "de periode voor 'borgdagen' van J spreekt de verwachting tegen dat het attribuut altijd leeg is");
     }
 
@@ -263,7 +263,7 @@ class ScenarioTypeGateTest {
     @Test void an_as_of_date_is_a_day() {
         String s = BARE + "Scenario s\nmet peildatum 01-06-2025 10:00:00.000\ngebaseerd op de situatie kaal\n"
                 + "Met als verwacht resultaat:\n- J is bergingsbevoegd\n";
-        fout(s, "met peildatum", "de peildatum '01-06-2025 10:00:00.000' draagt een tijd, maar een casebestand draagt "
+        error(s, "met peildatum", "de peildatum '01-06-2025 10:00:00.000' draagt een tijd, maar een casebestand draagt "
                 + "als peildatum alleen een dag (asOfDate)");
         // the one refusal: before, the gate that asks a window's rule for a peildatum added "heeft geen peildatum"
         // beside it, where the scenario writes one
@@ -271,24 +271,24 @@ class ScenarioTypeGateTest {
     }
 
     @Test void a_scenario_without_a_situation() {
-        fout("Scenario leeg\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n", "Scenario leeg",
+        error("Scenario leeg\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n", "Scenario leeg",
                 "het scenario 'leeg' heeft geen situatie");
     }
 
     @Test void an_unknown_situation() {
-        fout("Scenario x\ngebaseerd op de situatie nergens\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n",
+        error("Scenario x\ngebaseerd op de situatie nergens\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n",
                 "situatie nergens", "de situatie 'nergens' is nergens in het document gedeclareerd");
     }
 
     @Test void a_name_without_letter_or_digit() {
-        fout(BARE + "Scenario -\ngebaseerd op de situatie kaal\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n",
+        error(BARE + "Scenario -\ngebaseerd op de situatie kaal\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n",
                 "Scenario -", "de naam van het scenario '-' geeft geen bestandsnaam");
     }
 
     @Test void the_as_of_date_gate() {
         String s = BARE + "Scenario zonder dag\ngebaseerd op de situatie kaal\nMet als verwacht resultaat:\n"
                 + "- J is bergingsbevoegd\n";
-        fout(s, "Scenario zonder dag", "de regel 'wachtbonus vanaf 2025' heeft een geldigheidsvenster, maar het "
+        error(s, "Scenario zonder dag", "de regel 'wachtbonus vanaf 2025' heeft een geldigheidsvenster, maar het "
                 + "scenario 'zonder dag' heeft geen peildatum");
         // with a scope that leaves the windowed rule out, no peildatum is needed
         String gescoped = BARE + "Scenario zonder dag\ntoetst de regel bevoegdheid bij gewicht\n"
@@ -299,16 +299,16 @@ class ScenarioTypeGateTest {
     @Test void the_parameter_gate() {
         String s = "Situatie zonder drempel:\neen Jutter J\nScenario x\nmet peildatum 01-06-2025\n"
                 + "gebaseerd op de situatie zonder drempel\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
-        fout(s, "Scenario x", "de regel 'bonus bij drempel' leest de parameter 'vondstdrempel', die in de situatie van "
+        error(s, "Scenario x", "de regel 'bonus bij drempel' leest de parameter 'vondstdrempel', die in de situatie van "
                 + "het scenario 'x' geen waarde heeft");
     }
 
     @Test void an_unknown_rule_in_the_key_of_an_inconsistency() {
-        fout(scenario("- de gegevens zijn inconsistent volgens \"nergens\"\n"), "volgens",
+        error(scenario("- de gegevens zijn inconsistent volgens \"nergens\"\n"), "volgens",
                 "de regel 'nergens' van de inconsistentie bestaat niet in het document en is geen conflictkanaal");
-        fout(scenario("- de gegevens zijn inconsistent volgens \"Jutter.zeeziek\"\n"), "volgens",
+        error(scenario("- de gegevens zijn inconsistent volgens \"Jutter.zeeziek\"\n"), "volgens",
                 "de regel 'Jutter.zeeziek' van de inconsistentie bestaat niet in het document");
-        fout(scenario("- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor K\n"), "volgens",
+        error(scenario("- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor K\n"), "volgens",
                 "het label 'K' in de verwachting is nergens in de situatie gedeclareerd");
         assertTrue(resolve(scenario("- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor J\n"
                 + "- de gegevens zijn inconsistent volgens \"Jutter.vondstklasse/0\"\n")).isOk());
@@ -321,12 +321,12 @@ class ScenarioTypeGateTest {
     @Test void an_as_of_date_that_is_no_date() {
         String s = BARE + "Scenario s\nmet peildatum 31-02-2025\ngebaseerd op de situatie kaal\n"
                 + "Met als verwacht resultaat:\n- J is bergingsbevoegd\n";
-        fout(s, "met peildatum", "de peildatum '31-02-2025' is geen geldige datum");
+        error(s, "met peildatum", "de peildatum '31-02-2025' is geen geldige datum");
         assertEquals(1, resolve(s).model().errors().size(), () -> resolve(s).model().errors().toString());
     }
 
     @Test void a_scope_beside_a_start_point_determination() {
-        String bron = """
+        String source = """
                 Tijdlijn het wachtjaar heeft tijdvakken van een jaar met variabel startpunt;
 
                 Objecttype de Jutter (mv: Jutters) (bezield)
@@ -349,8 +349,8 @@ class ScenarioTypeGateTest {
                 Met als verwacht resultaat:
                 - de bonus van J is 3
                 """;
-        ScenarioBundel b = ScenarioResolver.resolve(bron);
-        errorOnLine(b, bron, "toetst de regel bonus", "een scope in een document met een startpuntbepaling wordt "
+        ScenarioBundle b = ScenarioResolver.resolve(source);
+        errorOnLine(b, source, "toetst de regel bonus", "een scope in een document met een startpuntbepaling wordt "
                 + "geweigerd: de bepaling en de regel die haar anker schrijft horen bij elkaar");
     }
 
@@ -358,14 +358,14 @@ class ScenarioTypeGateTest {
         String head = BARE + "Scenario s\n";
         String suffix = "met peildatum 01-06-2025\ngebaseerd op de situatie kaal\nMet als verwacht resultaat:\n"
                 + "- J is bergingsbevoegd\n";
-        fout(head + "toetst de regelgroep nergens\n" + suffix, "toetst de regelgroep",
+        error(head + "toetst de regelgroep nergens\n" + suffix, "toetst de regelgroep",
                 "de regelgroep 'nergens' uit de scope bestaat niet in het document");
-        fout(head + "toetst de regel nergens\n" + suffix, "toetst de regel",
+        error(head + "toetst de regel nergens\n" + suffix, "toetst de regel",
                 "de regel 'nergens' uit de scope bestaat niet in het document");
     }
 
     @Test void the_as_of_date_gate_for_a_rule_that_reads_the_evaluation_date() {
-        String bron = MODEL + """
+        String source = MODEL + """
 
                 Regel bergingsdatum
                     geldig altijd
@@ -378,21 +378,21 @@ class ScenarioTypeGateTest {
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
                 """;
-        ScenarioBundel b = ScenarioResolver.resolve(bron);
-        errorOnLine(b, bron, "Scenario s", "de regel 'bergingsdatum' leest de rekendatum, maar het scenario 's' heeft "
+        ScenarioBundle b = ScenarioResolver.resolve(source);
+        errorOnLine(b, source, "Scenario s", "de regel 'bergingsdatum' leest de rekendatum, maar het scenario 's' heeft "
                 + "geen peildatum (voeg 'met peildatum <datum>' toe)");
     }
 
     @Test void a_fixed_value_for_periods_in_a_block() {
-        fout("Situatie s:\neen Jutter J\n- de borgdagen is 5\n- de borgdagen is 4 van 01-01-2024 tot 01-02-2024\n",
+        error("Situatie s:\neen Jutter J\n- de borgdagen is 5\n- de borgdagen is 4 van 01-01-2024 tot 01-02-2024\n",
                 "de borgdagen is 4", "het attribuut 'borgdagen' krijgt in dit blok zowel een vaste waarde als perioden");
-        fout("Situatie s:\nde parameter het penningbedrag is 7\n"
+        error("Situatie s:\nde parameter het penningbedrag is 7\n"
                         + "de parameter het penningbedrag is 8 van 01-01-2024 tot 01-01-2025\n", "is 8 van",
                 "de parameter 'penningbedrag' krijgt in dit blok zowel een vaste waarde als perioden");
     }
 
     @Test void a_role_that_two_fact_types_know() {
-        String bron = """
+        String source = """
                 Objecttype de Jutter (mv: Jutters) (bezield)
                     de naam Tekst;
 
@@ -418,13 +418,13 @@ class ScenarioTypeGateTest {
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
                 """;
-        ScenarioBundel b = ScenarioResolver.resolve(bron);
-        errorOnLine(b, bron, "de vondsten zijn V", "de rol 'vondsten' vanaf het objecttype 'Jutter' is niet eenduidig: "
+        ScenarioBundle b = ScenarioResolver.resolve(source);
+        errorOnLine(b, source, "de vondsten zijn V", "de rol 'vondsten' vanaf het objecttype 'Jutter' is niet eenduidig: "
                 + "meer dan één feittype kent haar");
     }
 
     @Test void a_period_boundary_that_is_no_date() {
-        fout("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 31-02-2024 tot 01-04-2024\n", "31-02-2024",
+        error("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 31-02-2024 tot 01-04-2024\n", "31-02-2024",
                 "de periodegrens '31-02-2024' is geen geldige datum");
     }
 
@@ -432,32 +432,32 @@ class ScenarioTypeGateTest {
         String s = "Situatie a:\neen Jutter X\nSituatie b gebaseerd op de situatie a:\neen Vondst X\n"
                 + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie b\nGegeven is de volgende situatie:\n"
                 + "de parameter de vondstdrempel is 3\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
-        fout(s, "een Vondst X", "het label 'X' is eerder gedeclareerd als 'Jutter', hier als 'Vondst'");
+        error(s, "een Vondst X", "het label 'X' is eerder gedeclareerd als 'Jutter', hier als 'Vondst'");
     }
 
     @Test void always_empty_after_periods() {
-        fout(scenario("- de borgdagen van J is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen van J is altijd leeg\n"),
+        error(scenario("- de borgdagen van J is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen van J is altijd leeg\n"),
                 "altijd leeg", "de verwachting dat 'borgdagen' van J altijd leeg is, spreekt de perioden ervoor tegen");
     }
 
     @Test void an_expectation_that_does_not_parse() {
         String s = scenario("- de gegevens zijn\n- J is bergingsbevoegd\n");
-        fout(s, "- de gegevens zijn", "de verwachting '- de gegevens zijn' is syntactisch niet herkend");
+        error(s, "- de gegevens zijn", "de verwachting '- de gegevens zijn' is syntactisch niet herkend");
         // error recovery leaves a second bare expectation without text; it names nothing and draws no sentence
         assertTrue(resolve(s).model().errors().stream().noneMatch(d -> d.message().contains("de verwachting ''")),
                 () -> resolve(s).model().errors().toString());
     }
 
     @Test void a_value_that_is_no_date_or_belongs_to_no_enumeration() {
-        fout("Situatie s:\neen Jutter J\n- de bergingsdatum is 31-02-2024\n", "31-02-2024",
+        error("Situatie s:\neen Jutter J\n- de bergingsdatum is 31-02-2024\n", "31-02-2024",
                 "het attribuut 'bergingsdatum': de datum '31-02-2024' is geen geldige datum");
-        fout("Situatie s:\neen Jutter J\n- de naam is 'drijfgoed'\n", "de naam is 'drijfgoed'",
+        error("Situatie s:\neen Jutter J\n- de naam is 'drijfgoed'\n", "de naam is 'drijfgoed'",
                 "het attribuut 'naam': een enumeratiewaarde ('drijfgoed') past niet op een Tekst");
     }
 
     @Test void a_parameter_without_a_value() {
         String s = "Situatie s:\nde parameter de vondstdrempel is\n";
-        fout(s + "een Jutter J\n", "de vondstdrempel is", "de parameter 'vondstdrempel': er staat geen waarde");
+        error(s + "een Jutter J\n", "de vondstdrempel is", "de parameter 'vondstdrempel': er staat geen waarde");
     }
 
     // ---------------- semantics the lowering reads ----------------
@@ -481,16 +481,16 @@ class ScenarioTypeGateTest {
             Met als verwacht resultaat:
             - de gegevens zijn consistent
             """;
-        ScenarioBundel b = resolve(s);
+        ScenarioBundle b = resolve(s);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Situatie sit = b.scenarios().get(0).situatie();
-        assertEquals(List.of("J", "K"), sit.instanties().stream().map(Instantie::label).toList());
-        Instantie j = sit.instantie("J");
-        assertEquals(List.of("vondstgewicht", "naam"), j.attributen().stream().map(AttribuutWaarde::attribuut).toList(),
+        Situation sit = b.scenarios().get(0).situation();
+        assertEquals(List.of("J", "K"), sit.instances().stream().map(Instance::label).toList());
+        Instance j = sit.instantie("J");
+        assertEquals(List.of("vondstgewicht", "naam"), j.attributen().stream().map(AttributeValue::attribute).toList(),
                 "een latere toewijzing vervangt de eerdere op haar plaats");
-        assertEquals("20.00", j.attributen().get(0).waarde().getal());
+        assertEquals("20.00", j.attributen().get(0).value().number());
         assertEquals(1, sit.parameters().size());
-        assertEquals("4", sit.parameters().get(0).waarde().getal(), "de latere parameterwaarde wint");
+        assertEquals("4", sit.parameters().get(0).value().number(), "de latere parameterwaarde wint");
     }
 
     @Test void the_conversion_is_exact_and_the_lexeme_follows_the_source() {
@@ -505,23 +505,23 @@ class ScenarioTypeGateTest {
             - de sleepafstand is 3/4 vadem
             - het gewicht is 250 kg
             """;
-        ScenarioBundel b = resolve(s + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie eenheden\n"
+        ScenarioBundle b = resolve(s + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie eenheden\n"
                 + "Gegeven is de volgende situatie:\nde parameter de vondstdrempel is 3\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Situatie sit = b.scenarios().get(0).situatie();
-        assertEquals("1500", sit.instantie("J").attributen().get(0).waarde().getal(), "1,5 t is exact 1500 kg");
-        assertEquals("1/6", sit.instantie("V").attributen().get(0).waarde().getal(),
+        Situation sit = b.scenarios().get(0).situation();
+        assertEquals("1500", sit.instantie("J").attributen().get(0).value().number(), "1,5 t is exact 1500 kg");
+        assertEquals("1/6", sit.instantie("V").attributen().get(0).value().number(),
                 "1 voet is 1/6 vadem: een niet-eindigende omrekening blijft een breuk");
-        assertEquals("2.50", sit.instantie("V").attributen().get(1).waarde().getal(), "zonder omrekening blijft de schaal");
-        assertEquals("3/4", sit.instantie("W").attributen().get(0).waarde().getal());
-        assertEquals("250", sit.instantie("W").attributen().get(1).waarde().getal());
+        assertEquals("2.50", sit.instantie("V").attributen().get(1).value().number(), "zonder omrekening blijft de schaal");
+        assertEquals("3/4", sit.instantie("W").attributen().get(0).value().number());
+        assertEquals("250", sit.instantie("W").attributen().get(1).value().number());
     }
 
     @Test void the_conversion_computes_with_the_declared_rational() {
         // before: through the unit records' 16-digit factors, "2 gtd" became 0.6666666666666666 etm, where the wire
         // writes the factor 1/3 and every executor reads 2/3
-        ScenarioBundel b = ScenarioResolver.resolve("""
+        ScenarioBundle b = ScenarioResolver.resolve("""
                 Eenheidsysteem Getijden
                     het etmaal (mv: etmalen) etm
                     het getij (mv: getijden) gtd = 1/3 etm
@@ -539,23 +539,23 @@ class ScenarioTypeGateTest {
                 - de gegevens zijn consistent
                 """);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Instantie v = b.scenarios().get(0).situatie().instantie("V");
-        assertEquals("2/3", v.attributen().get(0).waarde().getal());
-        assertEquals("3", v.attributen().get(1).waarde().getal());
+        Instance v = b.scenarios().get(0).situation().instantie("V");
+        assertEquals("2/3", v.attributen().get(0).value().number());
+        assertEquals("3", v.attributen().get(1).value().number());
     }
 
     @Test void a_written_number_is_the_lexeme_of_the_emitter() {
         // one normalisation for a case file and an IR document: before, "2400,00" was read through a decimal of its own
-        ScenarioBundel b = resolve("Situatie getallen:\neen Vondst V\n- de sleepafstand is 6/8 vadem\n"
+        ScenarioBundle b = resolve("Situatie getallen:\neen Vondst V\n- de sleepafstand is 6/8 vadem\n"
                 + "- het gewicht is 2400,00 kg\neen Vondst W\n- de sleepafstand is 2_0/5 vadem\n"
                 + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie getallen\n"
                 + "Gegeven is de volgende situatie:\nde parameter de vondstdrempel is 3\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Situatie sit = b.scenarios().get(0).situatie();
+        Situation sit = b.scenarios().get(0).situation();
         for (String[] pair : new String[][]{{"V", "0", "6/8"}, {"V", "1", "2400,00"}, {"W", "0", "2_0/5"}})
             assertEquals(dev.uchar.regelspraak.emit.IrEmitter.numberLexeme(pair[2]),
-                    sit.instantie(pair[0]).attributen().get(Integer.parseInt(pair[1])).waarde().getal(), pair[2]);
+                    sit.instantie(pair[0]).attributen().get(Integer.parseInt(pair[1])).value().number(), pair[2]);
     }
 
     @Test void the_role_key_follows_the_written_form() {
@@ -567,22 +567,22 @@ class ScenarioTypeGateTest {
             een Vondst W
             - de aanmelder is J
             """;
-        ScenarioBundel b = resolve(s + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie rollen\n"
+        ScenarioBundle b = resolve(s + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie rollen\n"
                 + "Gegeven is de volgende situatie:\nde parameter de vondstdrempel is 3\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Situatie sit = b.scenarios().get(0).situatie();
-        RolWaarde many = sit.instantie("J").rollen().get(0);
-        assertEquals("vondsten", many.sleutel(), "het meervoud blijft de sleutel");
+        Situation sit = b.scenarios().get(0).situation();
+        RoleValue many = sit.instantie("J").rollen().get(0);
+        assertEquals("vondsten", many.key(), "het meervoud blijft de sleutel");
         assertTrue(many.meervoudig());
-        assertEquals(List.of("V", "W"), many.doelLabels());
-        RolWaarde one = sit.instantie("W").rollen().get(0);
-        assertEquals("aanmelder", one.sleutel());
+        assertEquals(List.of("V", "W"), many.targetLabels());
+        RoleValue one = sit.instantie("W").rollen().get(0);
+        assertEquals("aanmelder", one.key());
         assertFalse(one.meervoudig());
     }
 
     @Test void timelines_and_the_empty_timeline() {
-        ScenarioBundel b = resolve("""
+        ScenarioBundle b = resolve("""
             Situatie tijd:
             een Jutter J
             - de borgdagen is 4 van 01-01-2024 tot 01-02-2024
@@ -601,17 +601,17 @@ class ScenarioTypeGateTest {
             """);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         ResolvedScenario s = b.scenarios().get(0);
-        AttribuutWaarde borg = s.situatie().instantie("J").attributen().get(0);
-        assertNull(borg.waarde());
+        AttributeValue borg = s.situation().instantie("J").attributen().get(0);
+        assertNull(borg.value());
         assertEquals(List.of(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 3, 1)),
                 borg.tijdlijn().stream().map(Segment::van).toList());
-        KenmerkWaarde plicht = s.situatie().instantie("J").kenmerken().get(0);
-        assertEquals("borgplichtig", plicht.kenmerk());
-        assertEquals(1, plicht.perioden().size());
-        assertNull(s.situatie().instantie("J").kenmerken().get(1).perioden(), "een vast kenmerk draagt geen perioden");
+        CharacteristicValue plicht = s.situation().instantie("J").kenmerken().get(0);
+        assertEquals("borgplichtig", plicht.characteristic());
+        assertEquals(1, plicht.periods().size());
+        assertNull(s.situation().instantie("J").kenmerken().get(1).periods(), "een vast kenmerk draagt geen perioden");
         // the two segment bullets of one timeline are one expectation, at the place of the first
-        assertEquals(List.of(ExpectationKind.ATTRIBUUT_TIJDLIJN, ExpectationKind.KENMERK_AANWEZIG,
-                ExpectationKind.CONSISTENT), s.verwachtingen().stream().map(Verwachting::soort).toList());
-        assertEquals(2, s.verwachtingen().get(0).tijdlijn().size());
+        assertEquals(List.of(ExpectationKind.ATTRIBUTE_TIMELINE, ExpectationKind.CHARACTERISTIC_PRESENT,
+                ExpectationKind.CONSISTENT), s.expectations().stream().map(Expectation::category).toList());
+        assertEquals(2, s.expectations().get(0).tijdlijn().size());
     }
 }

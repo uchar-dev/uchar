@@ -2,7 +2,7 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GeneratedNamesPerPartTest {
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.errors().stream().map(Diagnostic::toString).toList());
         return m;
     }
@@ -37,14 +37,14 @@ class GeneratedNamesPerPartTest {
             String indent = r[i].substring(0, r[i].indexOf('"'));
             String closingLine = indent.substring(2) + "}";
             List<String> result = new ArrayList<>();
-            String vocabulaire = null;
+            String vocabulary = null;
             boolean within = false;
             for (int j = i; j < r.length && !r[j].equals(closingLine) && !r[j].equals(closingLine + ","); j++) {
                 String t = r[j].trim();
                 if (r[j].equals(indent + "\"designations\": [")) within = true;
                 else if (!within) continue;
-                else if (t.startsWith("\"vocabulary\": ")) vocabulaire = t.substring(15, t.length() - 2);
-                else if (t.startsWith("\"designation\": ")) result.add(vocabulaire + ": " + t.substring(16, t.length() - 1));
+                else if (t.startsWith("\"vocabulary\": ")) vocabulary = t.substring(15, t.length() - 2);
+                else if (t.startsWith("\"designation\": ")) result.add(vocabulary + ": " + t.substring(16, t.length() - 1));
             }
             return result;
         }
@@ -52,20 +52,20 @@ class GeneratedNamesPerPartTest {
     }
 
     /** The ERROR {@code fragment} stands on the first line of {@code bron} that carries {@code merker}. */
-    private static void fout(String bron, String merker, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(bron);
-        String[] regels = bron.split("\n", -1);
+    private static void error(String source, String merker, String fragment) {
+        RegelSpraakModel m = Resolver.resolve(source);
+        String[] regels = source.split("\n", -1);
         int regel = 0;
         for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) { regel = i + 1; break; }
         assertTrue(regel > 0, "merker '" + merker + "' niet in de bron");
         final int r = regel;
-        List<Diagnostic> fouten = m.errors();
-        assertTrue(fouten.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
-                () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + fouten);
+        List<Diagnostic> faults = m.errors();
+        assertTrue(faults.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
+                () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + faults);
     }
 
-    private static String benaming(RegelSpraakModel m, String vocabulaire, Benoembaar element) {
-        return m.benaming(vocabulaire, element).orElse("-");
+    private static String benaming(RegelSpraakModel m, String vocabulary, Designatable element) {
+        return m.benaming(vocabulary, element).orElse("-");
     }
 
     // --- the group 'B voor S' ------------------------------------------------------------------------
@@ -98,7 +98,7 @@ class GeneratedNamesPerPartTest {
                 indien zijn vergunningseinde gevuld is.
         """;
 
-    private static final Benoembaar THE_GROUP = Benoembaar.vorm("meldtermijn voor Strandjutter");
+    private static final Designatable THE_GROUP = Designatable.form("meldtermijn voor Strandjutter");
 
     // --- the member and rule '<lid> via <rol 1> en <rol 2>' -----------------------------------------------
 
@@ -142,31 +142,31 @@ class GeneratedNamesPerPartTest {
                 Het zwaarste gewicht van een Ploeg moet berekend worden als de maximale waarde van het gewicht van de weging van de vondst van alle jutters van de Ploeg.
         """;
 
-    private static final Benoembaar THE_MEMBER = Benoembaar.attribuut("Jutter", "gewicht via vondst en weging");
-    private static final Benoembaar THE_RULE = Benoembaar.vorm("gewicht via vondst en weging");
+    private static final Designatable THE_MEMBER = Designatable.attribute("Jutter", "gewicht via vondst en weging");
+    private static final Designatable THE_RULE = Designatable.form("gewicht via vondst en weging");
 
     // --- the four cases ---------------------------------------------------------------------------------------
 
     @Test void all_parts_with_a_designation() {
         RegelSpraakModel g = clean(GROUP.formatted("(handboek: strandloper) (cgm: STRANDJUTTER)",
                 "(handboek: termijn van melding) (cgm: MELDTERMIJN)"));
-        assertTrue(g.gegenereerdUit(THE_GROUP).isPresent(), () -> g.gegenereerd.toString());
+        assertTrue(g.generatedFrom(THE_GROUP).isPresent(), () -> g.generated.toString());
         assertEquals("termijn van melding voor strandloper", benaming(g, "handboek", THE_GROUP));
         assertEquals("MELDTERMIJN voor STRANDJUTTER", benaming(g, "cgm", THE_GROUP));
         // the way back from the composed designation finds the group
-        assertEquals(THE_GROUP, g.benoemd("handboek", Benoembaar.Soort.VORM, null,
+        assertEquals(THE_GROUP, g.namedElement("handboek", Designatable.Kind.VORM, null,
                 "Termijn van melding voor strandloper").orElseThrow());
         assertEquals(List.of("handboek: termijn van melding voor strandloper", "cgm: MELDTERMIJN voor STRANDJUTTER"),
                 onTheWire(IrEmitter.emit(g), "PrioritizedDefaults", "meldtermijn voor Strandjutter"));
 
         RegelSpraakModel v = clean(FOLD.formatted("", "(handboek: massa) (cgm: GEWICHT)",
                 "(handboek: vangst) (cgm: VONDST)", "(handboek: meting) (cgm: WEGING)"));
-        assertTrue(v.gegenereerdUit(THE_MEMBER).isPresent(), () -> v.gegenereerd.toString());
-        for (Benoembaar e : List.of(THE_MEMBER, THE_RULE)) {
+        assertTrue(v.generatedFrom(THE_MEMBER).isPresent(), () -> v.generated.toString());
+        for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
             assertEquals("massa via vangst en meting", benaming(v, "handboek", e), e::toString);
             assertEquals("GEWICHT via VONDST en WEGING", benaming(v, "cgm", e), e::toString);
         }
-        assertEquals(THE_MEMBER, v.benoemd("handboek", Benoembaar.Soort.ATTRIBUUT, "Jutter", "Massa via vangst en meting")
+        assertEquals(THE_MEMBER, v.namedElement("handboek", Designatable.Kind.ATTRIBUUT, "Jutter", "Massa via vangst en meting")
                 .orElseThrow());
         String ir = IrEmitter.emit(v);
         for (String node : List.of("Attribute", "Rule"))
@@ -184,13 +184,13 @@ class GeneratedNamesPerPartTest {
 
         // the second role carries none; the member none in cgm
         RegelSpraakModel v = clean(FOLD.formatted("", "(handboek: massa)", "(handboek: vangst) (cgm: VONDST)", ""));
-        for (Benoembaar e : List.of(THE_MEMBER, THE_RULE)) {
+        for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
             assertEquals("massa via vangst en weging", benaming(v, "handboek", e), e::toString);
             assertEquals("gewicht via VONDST en weging", benaming(v, "cgm", e), e::toString);
         }
         // only the member carries one, as in the maintainer's example
         RegelSpraakModel member = clean(FOLD.formatted("", "(handboek: Bedrag gewicht)", "", ""));
-        for (Benoembaar e : List.of(THE_MEMBER, THE_RULE)) {
+        for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
             assertEquals("Bedrag gewicht via vondst en weging", benaming(member, "handboek", e), e::toString);
             assertEquals("-", benaming(member, "cgm", e), e::toString);
         }
@@ -207,7 +207,7 @@ class GeneratedNamesPerPartTest {
         assertEquals(List.of(), onTheWire(IrEmitter.emit(g), "PrioritizedDefaults", "meldtermijn voor Strandjutter"));
 
         RegelSpraakModel v = clean(FOLD.formatted("", "", "", ""));
-        for (Benoembaar e : List.of(THE_MEMBER, THE_RULE)) {
+        for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
             assertEquals("-", benaming(v, "handboek", e), e::toString);
             assertEquals("-", benaming(v, "cgm", e), e::toString);
             assertEquals("gewicht via vondst en weging", v.effectiveName("cgm", e));
@@ -234,7 +234,7 @@ class GeneratedNamesPerPartTest {
                 geldig altijd
                     De controledag van een Jutter moet gesteld worden op zijn vinddag.
             """;
-        fout(group, "Regel meldtermijn ", "De regel 'meldtermijn voor strandloper' en de regel 'meldtermijn voor "
+        error(group, "Regel meldtermijn ", "De regel 'meldtermijn voor strandloper' en de regel 'meldtermijn voor "
                 + "Strandjutter' hebben in het vocabulaire 'handboek' dezelfde effectieve naam 'meldtermijn voor "
                 + "strandloper'; binnen hun reikwijdte is die uniek, hoofdletterongevoelig, zodat de weg terug naar de "
                 + "declaratie één antwoord heeft (WF-118); de frontend stelde de benaming van de regel 'meldtermijn voor "
@@ -244,7 +244,7 @@ class GeneratedNamesPerPartTest {
         // the member composes the designation a written attribute of Jutter carries
         String fold = FOLD.formatted("de vangstmassa (handboek: massa via vangst en meting) Numeriek (geheel getal);",
                 "(handboek: massa)", "(handboek: vangst)", "(handboek: meting)");
-        fout(fold, "het gewicht (handboek: massa)", "Het attribuut 'vangstmassa' van 'Jutter' en het attribuut "
+        error(fold, "het gewicht (handboek: massa)", "Het attribuut 'vangstmassa' van 'Jutter' en het attribuut "
                 + "'gewicht via vondst en weging' van 'Jutter' hebben in het vocabulaire 'handboek' dezelfde effectieve "
                 + "naam 'massa via vangst en meting'; binnen hun reikwijdte is die uniek, hoofdletterongevoelig, zodat de "
                 + "weg terug naar de declaratie één antwoord heeft (WF-118); de frontend stelde de benaming van het "
@@ -288,7 +288,7 @@ class GeneratedNamesPerPartTest {
 
         // a part without a designation is refused itself; the group carries the mixed name, and no refusal of its own
         String mixed = STANDAARD.formatted("(cgm: STRANDJUTTER)", "");
-        fout(mixed, "Regel meldtermijn", "De regel 'meldtermijn' draagt geen benaming in het standaardvocabulaire "
+        error(mixed, "Regel meldtermijn", "De regel 'meldtermijn' draagt geen benaming in het standaardvocabulaire "
                 + "'cgm', dat elke declaratie noemt (WF-119)");
         RegelSpraakModel g = Resolver.resolve(mixed);
         assertEquals(1, g.errors().size(), g.errors()::toString);
@@ -296,9 +296,9 @@ class GeneratedNamesPerPartTest {
 
         // no part carries one: the group is refused as well, with its parts named, on the line of B
         String plain = STANDAARD.formatted("", "");
-        fout(plain, "Objecttype de Strandjutter", "Het objecttype 'Strandjutter' draagt geen benaming in het "
+        error(plain, "Objecttype de Strandjutter", "Het objecttype 'Strandjutter' draagt geen benaming in het "
                 + "standaardvocabulaire 'cgm', dat elke declaratie noemt (WF-119)");
-        fout(plain, "Regel meldtermijn", "De regel 'meldtermijn voor Strandjutter' draagt geen benaming in het "
+        error(plain, "Regel meldtermijn", "De regel 'meldtermijn voor Strandjutter' draagt geen benaming in het "
                 + "standaardvocabulaire 'cgm', dat elke declaratie noemt (WF-119); de frontend stelt de benaming van "
                 + "deze declaratie samen uit die van de regel 'meldtermijn' en het objecttype 'Strandjutter', en geen "
                 + "daarvan draagt er een");

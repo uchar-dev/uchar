@@ -41,13 +41,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  *
  * <p><b>Red</b> before the step, on {@code 36a3b0a9}, with the routes that a DRL text needed and that were not public:
- * routes naming {@code Rekenfout.isEvaluationFault}, {@code Rekenfout.designate} and {@code Schrijversconflict.van}, which
+ * routes naming {@code ComputeFault.isEvaluationFault}, {@code ComputeFault.designate} and {@code WritersConflict.van}, which
  * are package-private, fail both checks; and the overloaded {@code lijst} of the spike of FABLE-2 fails the first.
  */
 class ReachabilityWitnessTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
-    private static final String PAKKET = "dev.uchar.regelspraak.tms.bereikbaarheid";
+    private static final String PACKAGE = "dev.uchar.regelspraak.tms.bereikbaarheid";
 
     /** Floors, measured 2026-10-13 at step 1e: the functions of a term and the routes. A deliberate removal lowers a
      *  floor in the same commit. */
@@ -55,29 +55,29 @@ class ReachabilityWitnessTest {
     private static final int EXPECTED_MIN_ROUTES = 41;
 
     @Test void every_helper_name_is_unique_in_its_class() {
-        List<String> fout = new ArrayList<>();
+        List<String> fault = new ArrayList<>();
         for (Map.Entry<String, Object[]> h : helpers().entrySet()) {
             Class<?> javaClass = (Class<?>) h.getValue()[0];
-            String methode = (String) h.getValue()[1];
-            List<Method> methods = Arrays.stream(javaClass.getMethods()).filter(m -> m.getName().equals(methode)).toList();
+            String method = (String) h.getValue()[1];
+            List<Method> methods = Arrays.stream(javaClass.getMethods()).filter(m -> m.getName().equals(method)).toList();
             if (methods.size() != 1 || !Modifier.isStatic(methods.get(0).getModifiers())
                     || !Modifier.isPublic(javaClass.getModifiers()))
-                fout.add(h.getKey() + " " + javaClass.getName() + "." + methode + ": " + methods);
+                fault.add(h.getKey() + " " + javaClass.getName() + "." + method + ": " + methods);
         }
-        assertEquals(List.of(), fout, "hulpen die niet de enige publieke statische methode van hun naam zijn");
+        assertEquals(List.of(), fault, "hulpen die niet de enige publieke statische methode van hun naam zijn");
     }
 
     @Test void a_drl_text_calls_every_class_qualified_helper() throws Exception {
-        StringBuilder drl = new StringBuilder("package " + PAKKET + ";\n\n");
+        StringBuilder drl = new StringBuilder("package " + PACKAGE + ";\n\n");
         StringBuilder mvel = new StringBuilder();
         int functions = 0, routes = 0;
         for (Map.Entry<String, Object[]> h : helpers().entrySet()) {
             Class<?> javaClass = (Class<?>) h.getValue()[0];
-            String methode = (String) h.getValue()[1];
+            String method = (String) h.getValue()[1];
             // the arguments follow the method of that name, public or not, so that a helper the text cannot reach
             // fails on its visibility and not on its arguments
-            Method m = Arrays.stream(javaClass.getMethods()).filter(x -> x.getName().equals(methode)).findFirst()
-                    .orElseGet(() -> Arrays.stream(javaClass.getDeclaredMethods()).filter(x -> x.getName().equals(methode))
+            Method m = Arrays.stream(javaClass.getMethods()).filter(x -> x.getName().equals(method)).findFirst()
+                    .orElseGet(() -> Arrays.stream(javaClass.getDeclaredMethods()).filter(x -> x.getName().equals(method))
                             .findFirst().orElse(null));
             List<String> java = new ArrayList<>(), empty = new ArrayList<>();
             if (m != null) {
@@ -87,7 +87,7 @@ class ReachabilityWitnessTest {
                 }
             }
             String naam = h.getKey().replace(' ', '_').replace('.', '_');
-            String call = javaClass.getCanonicalName() + "." + methode;
+            String call = javaClass.getCanonicalName() + "." + method;
             boolean emptiness = m != null && m.getReturnType() == void.class;
             drl.append("function ").append(emptiness ? "void " : "java.lang.Object ").append(naam).append("() { ")
                     .append(emptiness ? "" : "return ").append(call).append("(").append(String.join(", ", java))
@@ -105,12 +105,12 @@ class ReachabilityWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL).beanLoader();
         KieHelper helper = new KieHelper();
         helper.setClassLoader(beans);
-        helper.addContent(drl.toString(), PAKKET.replace('.', '/') + "/bereikbaarheid.drl");
+        helper.addContent(drl.toString(), PACKAGE.replace('.', '/') + "/bereikbaarheid.drl");
         Results result = helper.verify();
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         for (Message message : result.getMessages(Message.Level.ERROR))
-            fouten.add("r. " + message.getLine() + ": " + message.getText().replace('\n', ' '));
-        assertEquals(List.of(), fouten, () -> "de DRL-tekst compileert niet:\n" + drl);
+            faults.add("r. " + message.getLine() + ": " + message.getText().replace('\n', ' '));
+        assertEquals(List.of(), faults, () -> "de DRL-tekst compileert niet:\n" + drl);
         KieBase kieBase = helper.build(EqualityBehaviorOption.EQUALITY);
         assertNotNull(kieBase);
         int f = functions, r = routes;
@@ -121,8 +121,8 @@ class ReachabilityWitnessTest {
     /** Every helper the plan names, by "functie NAAM" or "route NAAM", with its class and its method name. */
     private static Map<String, Object[]> helpers() {
         Map<String, Object[]> out = new LinkedHashMap<>();
-        for (StaticFunction f : StaticFunction.values()) out.put("functie " + f.name(), new Object[]{f.javaClass(), f.methode()});
-        for (Route r : Route.values()) out.put("route " + r.name(), new Object[]{r.javaClass(), r.methode()});
+        for (StaticFunction f : StaticFunction.values()) out.put("functie " + f.name(), new Object[]{f.javaClass(), f.method()});
+        for (Route r : Route.values()) out.put("route " + r.name(), new Object[]{r.javaClass(), r.method()});
         return out;
     }
 }

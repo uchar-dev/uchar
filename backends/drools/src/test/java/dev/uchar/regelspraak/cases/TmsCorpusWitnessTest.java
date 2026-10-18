@@ -89,7 +89,7 @@ class TmsCorpusWitnessTest {
             goldens = s.filter(p -> p.getFileName().toString().equals("ir.json")).map(Path::getParent).sorted().toList();
         }
         Map<String, Integer> count = new TreeMap<>();
-        List<String> fout = new ArrayList<>();
+        List<String> fault = new ArrayList<>();
         int withoutCases = 0;
         for (Path g : goldens) {
             List<Path> cases;
@@ -102,10 +102,10 @@ class TmsCorpusWitnessTest {
             switch (r.status()) {
                 case "PLAYED" -> count.merge("PLAYED", 1, Integer::sum);
                 case "EXCLUDE" -> count.merge(family(r.reason()), 1, Integer::sum);
-                default -> fout.add(naam + ": " + r);
+                default -> fault.add(naam + ": " + r);
             }
         }
-        assertEquals(List.of(), fout, "goldens die de tak draagt maar verkeerd uitrekent");
+        assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent");
         int played = count.getOrDefault("PLAYED", 0), without = withoutCases;
         assertTrue(played >= EXPECTED_MIN_PLAYED, () -> "gespeelde goldens " + played + " onder de vloer "
                 + EXPECTED_MIN_PLAYED + "; per familie " + count + ", zonder cases " + without);
@@ -113,15 +113,15 @@ class TmsCorpusWitnessTest {
 
     /** The family of a refusal: the kind of form the manifest refuses first, the label of the branch (a cycle, two
      *  rules of one name), or the loader. */
-    private static String family(String reden) {
-        if (reden.startsWith("transpiler SKIP: ")) {
-            String rest = reden.substring("transpiler SKIP: ".length());
+    private static String family(String reason) {
+        if (reason.startsWith("transpiler SKIP: ")) {
+            String rest = reason.substring("transpiler SKIP: ".length());
             int colon = rest.indexOf(':');
             return colon < 0 ? "transpiler" : rest.substring(0, colon);
         }
-        if (reden.startsWith("exec-model: ")) return "exec-model";
-        if (reden.startsWith("loader: ")) return "loader";
-        if (reden.startsWith("beannaambotsing: ")) return "beannaambotsing";
-        return "anders: " + reden;
+        if (reason.startsWith("exec-model: ")) return "exec-model";
+        if (reason.startsWith("loader: ")) return "loader";
+        if (reason.startsWith("beannaambotsing: ")) return "beannaambotsing";
+        return "anders: " + reason;
     }
 }

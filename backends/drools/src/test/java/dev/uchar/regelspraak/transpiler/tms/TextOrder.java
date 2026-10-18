@@ -55,10 +55,10 @@ public final class TextOrder {
             helper.setClassLoader(b.beanLoader());
             helper.addContent(text, DrlRendering.PATH);
             Results result = helper.verify();
-            List<String> fouten = new ArrayList<>();
-            for (Message m : result.getMessages(Message.Level.ERROR)) fouten.add(m.getText());
-            if (!fouten.isEmpty()) throw new IllegalStateException("de tekst in volgorde " + order
-                    + " compileert niet: " + fouten);
+            List<String> faults = new ArrayList<>();
+            for (Message m : result.getMessages(Message.Level.ERROR)) faults.add(m.getText());
+            if (!faults.isEmpty()) throw new IllegalStateException("de tekst in volgorde " + order
+                    + " compileert niet: " + faults);
             return helper.build(EqualityBehaviorOption.EQUALITY);
         } finally {
             Thread.currentThread().setContextClassLoader(previous);

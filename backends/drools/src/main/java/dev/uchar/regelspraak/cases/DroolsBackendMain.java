@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
-import dev.uchar.regelspraak.transpiler.tms.Evaluatiefouten;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -51,7 +51,7 @@ public final class DroolsBackendMain {
                 default -> { out.println("FAIL " + String.join(" | ", r.caseFailures())); return 1; }
             }
         } catch (RuntimeException e) {
-            out.println("ERROR " + e.getClass().getSimpleName() + ": " + melding(e));
+            out.println("ERROR " + e.getClass().getSimpleName() + ": " + message(e));
             return 3;
         }
     }
@@ -61,8 +61,8 @@ public final class DroolsBackendMain {
      *  with. The faults that stand at the fixpoint keep the head that names the rule of
      *  each whole, and the bound applies to their sentences only: a bound across the whole message would drop from the
      *  line every rule whose fault comes past it. */
-    private static String melding(RuntimeException e) {
-        if (e instanceof Evaluatiefouten f) return flatten(f.head()) + ": " + clamped(flatten(f.sentences()));
+    private static String message(RuntimeException e) {
+        if (e instanceof EvaluationFaults f) return flatten(f.head()) + ": " + clamped(flatten(f.sentences()));
         return clamped(flatten(String.valueOf(e.getMessage())));
     }
 

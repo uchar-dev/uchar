@@ -28,7 +28,7 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
         List<String> out = new ArrayList<>();
         for (FactPattern p : patterns) {
             out.add(p.naam());
-            for (Binding b : p.bindings()) out.add(b.doel());
+            for (Binding b : p.bindings()) out.add(b.target());
         }
         return out;
     }
@@ -39,11 +39,11 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
         Set<String> seen = new LinkedHashSet<>(), read = new LinkedHashSet<>();
         for (FactPattern p : patterns) {
             List<String> targets = new ArrayList<>();
-            for (Join j : p.joins()) targets.add(j.doel());
-            for (BetaTest t : p.betaTests()) targets.add(t.doel());
+            for (Join j : p.joins()) targets.add(j.target());
+            for (BetaTest t : p.betaTests()) targets.add(t.target());
             for (String d : targets) if (!seen.contains(d)) read.add(d);
             seen.add(p.naam());
-            for (Binding b : p.bindings()) seen.add(b.doel());
+            for (Binding b : p.bindings()) seen.add(b.target());
         }
         return List.copyOf(read);
     }

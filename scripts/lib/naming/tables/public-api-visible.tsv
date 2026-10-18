@@ -1,0 +1,18 @@
+# zone: backends/drools
+scope	old	new	kind	words	reason
+RuleGraph.NodeKind	ATTRIBUUT	ATTRIBUTE	improved	attribuut	an attribute node of the rule graph; Benoembaar.Soort.ATTRIBUUT keeps the Dutch spelling (a declaration of RegelSpraak)
+backends/drools/src/main/java/dev/uchar/regelspraak/graph/RuleGraph.java	ATTRIBUUT	ATTRIBUTE	improved	attribuut	the case labels of the switch over NodeKind in this file, which the classifier does not tie to the enum
+ScenarioResult.CoverageKind	GEVUURD	FIRED	improved	gevuurd	the construct fired (CoverageKind: whether a lowered construct fired); the owner made the JSON spelling English, the name has no origin in RegelSpraak
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackend.java	GEVUURD	FIRED	improved	gevuurd	the spelling of CoverageKind that this file pins in a string or a comment
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/ObserverWitnessTest.java	GEVUURD	FIRED	improved	gevuurd	the spelling of CoverageKind that this file pins in a string or a comment
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/ScenarioReportWitnessTest.java	GEVUURD	FIRED	improved	gevuurd	the spelling of CoverageKind that this file pins in a string or a comment
+RuleGraph.NodeKind	INVOER	INPUT	improved	invoer	an input node of the rule graph: a datum no rule produces
+backends/drools/src/main/java/dev/uchar/regelspraak/graph/RuleGraph.java	INVOER	INPUT	improved	invoer	the case labels of the switch over NodeKind in this file, which the classifier does not tie to the enum
+RuleGraph.NodeKind	KENMERK	CHARACTERISTIC	improved	kenmerk	a characteristic node of the rule graph
+backends/drools/src/main/java/dev/uchar/regelspraak/graph/RuleGraph.java	KENMERK	CHARACTERISTIC	improved	kenmerk	the case labels of the switch over NodeKind in this file, which the classifier does not tie to the enum
+ScenarioResult.CoverageKind	NIET_GERAAKT	NOT_FIRED	improved	niet|geraakt	the complement of FIRED: the construct was lowered and did not fire; the owner made the JSON spelling English
+backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackend.java	NIET_GERAAKT	NOT_FIRED	improved	niet|geraakt	the spelling of CoverageKind that this file pins in a string or a comment
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/ObserverWitnessTest.java	NIET_GERAAKT	NOT_FIRED	improved	niet|geraakt	the spelling of CoverageKind that this file pins in a string or a comment
+backends/drools/src/test/java/dev/uchar/regelspraak/cases/ScenarioReportWitnessTest.java	NIET_GERAAKT	NOT_FIRED	improved	niet|geraakt	the spelling of CoverageKind that this file pins in a string or a comment
+RuleGraph.NodeKind	REGEL	RULE	improved	regel	a rule node of the rule graph; the playground writes the constant as the kind of a node
+backends/drools/src/main/java/dev/uchar/regelspraak/graph/RuleGraph.java	REGEL	RULE	improved	regel	the case labels of the switch over NodeKind in this file, which the classifier does not tie to the enum

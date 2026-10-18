@@ -9,7 +9,7 @@ import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binderRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
@@ -19,7 +19,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.let;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -53,10 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class TmsFoldBinderWitnessTest {
 
     private static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("drempel", WHOLE), attribuut("zwaar", WHOLE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("drempel", WHOLE), attribute("zwaar", WHOLE)),
                     List.of()),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("gewicht", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Brokstuk", List.of(attribuut("gewicht", WHOLE)), List.of())),
+            TmsDocuments.objectType("Vondst", List.of(attribute("gewicht", WHOLE)), List.of()),
+            TmsDocuments.objectType("Brokstuk", List.of(attribute("gewicht", WHOLE)), List.of())),
             List.of(factTypeOneToMany("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten"),
                     factTypeOneToMany("samenstelling", "geheel", "Vondst", "brokstuk", "Brokstuk", "brokstukken")));
 
@@ -85,9 +85,9 @@ class TmsFoldBinderWitnessTest {
     private static final String VONDSTGEWICHT = ownRead("gewicht", "Vondst");
     private static final String BROK_WEIGHT = ownRead("gewicht", "Brokstuk");
 
-    private static Path document(String waarde) throws Exception {
+    private static Path document(String value) throws Exception {
         return TmsDocuments.document(MODEL, List.of(computingRule("zware vondsten van een jutter", "BEREKENING", "Jutter",
-                "zwaar", waarde, "null")));
+                "zwaar", value, "null")));
     }
 
     private static String refusal(Path ir) throws Exception {
@@ -105,14 +105,14 @@ class TmsFoldBinderWitnessTest {
             + " niet: deze tak draagt deze vorm nog niet";
 
     @Test void a_binder_in_the_filter_or_the_matrix_of_a_fold_waits_for_a_later_card() throws Exception {
-        List<String> werkelijk = new ArrayList<>();
-        for (String waarde : List.of(
+        List<String> actual = new ArrayList<>();
+        for (String value : List.of(
                 let("grens", THRESHOLD, count(greater(VONDSTGEWICHT, BOUND)), WHOLE),
                 let("grens", THRESHOLD, count(quantifierFold(null, greater(BROK_WEIGHT, BOUND))), WHOLE),
                 let("grens", THRESHOLD, count(quantifierFold(greater(BROK_WEIGHT, BOUND), greater(BROK_WEIGHT, number("6")))),
                         WHOLE)))
-            werkelijk.add(refusal(document(waarde)));
-        assertEquals(List.of(STILL_NOT, STILL_NOT, STILL_NOT), werkelijk);
+            actual.add(refusal(document(value)));
+        assertEquals(List.of(STILL_NOT, STILL_NOT, STILL_NOT), actual);
     }
 
     @Test void a_binder_without_enclosing_let_keeps_the_reason_of_wf064() throws Exception {
@@ -124,15 +124,15 @@ class TmsFoldBinderWitnessTest {
     @Test void a_let_in_the_filter_plays() throws Exception {
         String six = let("grens", number("6"), BOUND, WHOLE);
         Path ir = document(let("grens", THRESHOLD, count(greater(VONDSTGEWICHT, six)), WHOLE));
-        List<String> instanties = new ArrayList<>(List.of(
+        List<String> instances = new ArrayList<>(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of("drempel", "5"), List.of(), Map.of("vondsten",
                         List.of("V1", "V2", "V3"))),
                 instanceWithRoles("J2", "Jutter", Map.of("drempel", "2"), List.of(), Map.of("vondsten",
                         List.of("V4")))));
         Map<String, String> gewichten = Map.of("V1", "3", "V2", "7", "V3", "9", "V4", "3");
-        gewichten.forEach((label, weight) -> instanties.add(instanceWithRoles(label, "Vondst",
+        gewichten.forEach((label, weight) -> instances.add(instanceWithRoles(label, "Vondst",
                 Map.of("gewicht", weight), List.of(), Map.of())));
-        assertNull(CaseRunner.playCase(ir, TmsDocuments.caseDocument(instanties, List.of(waarde("J1", "zwaar", "2"),
-                waarde("J2", "zwaar", "0"))), DroolsBackend.Branch.EXEC_MODEL));
+        assertNull(CaseRunner.playCase(ir, TmsDocuments.caseDocument(instances, List.of(value("J1", "zwaar", "2"),
+                value("J2", "zwaar", "0"))), DroolsBackend.Branch.EXEC_MODEL));
     }
 }

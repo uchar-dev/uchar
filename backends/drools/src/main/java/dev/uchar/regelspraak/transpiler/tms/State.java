@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 
 import java.util.Objects;
 
@@ -18,24 +18,24 @@ import java.util.Objects;
  *
  * <p>Keyed and compared as {@link HasCharacteristic} is; the value may be null, and then it is leeg.
  */
-public record State(Object onderwerp, ElementSleutel attribuut, Object waarde) {
+public record State(Object onderwerp, ElementKey attribute, Object value) {
 
     public State {
         Objects.requireNonNull(onderwerp, "onderwerp");
-        Objects.requireNonNull(attribuut, "attribuut");
+        Objects.requireNonNull(attribute, "attribuut");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof State s && s.onderwerp == onderwerp && s.attribuut.equals(attribuut)
-                && Objects.equals(s.waarde, waarde);
+        return o instanceof State s && s.onderwerp == onderwerp && s.attribute.equals(attribute)
+                && Objects.equals(s.value, value);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(onderwerp), attribuut, waarde);
+        return Objects.hash(System.identityHashCode(onderwerp), attribute, value);
     }
 
     @Override public String toString() {
-        return "Stand(" + FactNames.object(onderwerp) + ", " + FactNames.member(attribuut) + ", "
-                + (waarde == null ? "leeg" : waarde) + ")";
+        return "Stand(" + FactNames.object(onderwerp) + ", " + FactNames.member(attribute) + ", "
+                + (value == null ? "leeg" : value) + ")";
     }
 }

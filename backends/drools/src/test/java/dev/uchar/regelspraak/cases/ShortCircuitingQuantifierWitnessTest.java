@@ -76,7 +76,7 @@ class ShortCircuitingQuantifierWitnessTest {
 
     /** Fire the golden on ONE Wacht and hand back its bean. */
     private static Object guard(String ploegomvang, String vangstwaarde) throws Exception {
-        return CaseRunner.afterFire(WACHTDELING, caseOf(ploegomvang, vangstwaarde)).invoer().get("W1");
+        return CaseRunner.afterFire(WACHTDELING, caseOf(ploegomvang, vangstwaarde)).input().get("W1");
     }
 
     private static JsonNode caseOf(String ploegomvang, String vangstwaarde) throws Exception {

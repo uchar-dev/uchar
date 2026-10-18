@@ -52,19 +52,19 @@ class RuleTargetTest {
         Eén aanmelder heeft meerdere vondsten
         """;
 
-    private static String regel(String resultaat) {
+    private static String regel(String result) {
         return MODEL + """
 
             Regel doel
                 geldig altijd
                     %s
-            """.formatted(resultaat);
+            """.formatted(result);
     }
 
     private static Diagnostic onlyError(RegelSpraakModel m) {
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
-        return fouten.get(0);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        return faults.get(0);
     }
 
     @ParameterizedTest
@@ -76,8 +76,8 @@ class RuleTargetTest {
             // before: IrEmitter's exception ("het doel van regel 'doel' … navigeert; het doel legt het onderwerp vast")
             "De premie van zijn vakhouder moet gesteld worden op 10.                   | het doel navigeert via 'zijn vakhouder'"
     })
-    void a_target_outside_the_subject_is_refused(String resultaat, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(regel(resultaat));
+    void a_target_outside_the_subject_is_refused(String result, String fragment) {
+        RegelSpraakModel m = Resolver.resolve(regel(result));
         Diagnostic d = onlyError(m);
         assertTrue(d.message().contains(fragment) && d.message().contains("WF-022"), d.message());
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
@@ -89,8 +89,8 @@ class RuleTargetTest {
             "De premie van een Jutter moet berekend worden als 10.",
             "Een Strandvak is gemarkeerd."
     })
-    void a_own_target_stays_clean(String resultaat) {
-        RegelSpraakModel m = Resolver.resolve(regel(resultaat));
+    void a_own_target_stays_clean(String result) {
+        RegelSpraakModel m = Resolver.resolve(regel(result));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
@@ -100,12 +100,12 @@ class RuleTargetTest {
      *  already refused, and before this fix added "is geen kenmerktoekenning of gelijkstelling (bv. een
      *  initialisatie)" (a characteristic on a navigated subject) or "schrijft een ander doel" (an attribute
      *  target, an unordered member) — messages about a form the author did not write. */
-    private static void onlyRuleTargetErrors(String src, int verwacht) {
+    private static void onlyRuleTargetErrors(String src, int expected) {
         RegelSpraakModel m = Resolver.resolve(src);
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(verwacht, fouten.size(), () -> "verwachtte " + verwacht + " fout(en), kreeg: " + fouten);
-        assertTrue(fouten.stream().allMatch(d -> d.message().startsWith("regeldoel ")),
-                () -> "alleen de regeldoelweigering hoort te spreken: " + fouten);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(expected, faults.size(), () -> "verwachtte " + expected + " fout(en), kreeg: " + faults);
+        assertTrue(faults.stream().allMatch(d -> d.message().startsWith("regeldoel ")),
+                () -> "alleen de regeldoelweigering hoort te spreken: " + faults);
     }
 
     @Test void a_refused_characteristic_target_in_an_exception_family_speaks_only() {
@@ -173,7 +173,7 @@ class RuleTargetTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertNull(m.resolvedRegels.get(0).voorwaarde(), "het venster hoort in het filter, niet op de regel");
+        assertNull(m.resolvedRegels.get(0).condition(), "het venster hoort in het filter, niet op de regel");
     }
 
     @Test void a_window_behind_a_single_subselection_stays_a_rule_window() {

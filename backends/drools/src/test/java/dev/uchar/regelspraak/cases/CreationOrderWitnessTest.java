@@ -39,7 +39,7 @@ class CreationOrderWitnessTest {
         // "… met telling gelijk aan zijn basis", with "De basis van een Jutter moet berekend worden als 2" and "Afwijking
         // van basis: opgegeven basis gaat voor …"; J1's opgegeven basis is 7. ref and clingo: 7, 2, 2 and 2.
         String group = group("basis", "Jutter", own("opgegeven basis", "Jutter"), number(2));
-        String ir = document(List.of(creatie(own("basis", "Jutter"))), List.of(READ_BACK), List.of(group), List.of());
+        String ir = document(List.of(creation(own("basis", "Jutter"))), List.of(READ_BACK), List.of(group), List.of());
         List<String> situation = new ArrayList<>(situation());
         situation.set(0, instance("J1", "Jutter", "\"opgegeven basis\":{\"number\":\"7\"}", ""));
         assertNull(play(ir, caseDocument(situation, count("7", "2", "2", "2"))), "de basis uit een defaultsgroep");
@@ -51,7 +51,7 @@ class CreationOrderWitnessTest {
         // + (leeg min 1 = -1) = 15, J2 leeg, J3 -1 and J4 8.
         String group = group("nettogewicht", "Vondst", own("opgegeven nettogewicht", "Vondst"),
                 binary("minus", own("gewicht", "Vondst"), number(1)));
-        String ir = document(List.of(creatie(fold("sum", "nettogewicht", null))), List.of(READ_BACK), List.of(group), List.of());
+        String ir = document(List.of(creation(fold("sum", "nettogewicht", null))), List.of(READ_BACK), List.of(group), List.of());
         List<String> situation = new ArrayList<>(situation());
         situation.set(4, situation.get(4).replace("\"attributes\":{", "\"attributes\":{\"opgegeven nettogewicht\":{\"number\":\"10\"},"));
         assertNull(play(ir, caseDocument(situation, count("15", null, "-1", "8"))), "een som over een lid uit een defaultsgroep");
@@ -70,7 +70,7 @@ class CreationOrderWitnessTest {
                 + "\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"licht\",\"negated\":false,\"source\":{\"snippet\":"
                 + "\"licht zijn\"}},\"sourceRole\":" + roleBinding("JutterHeeftVondst", "vondst") + ",\"type\":" + COUNT_NUMBER
                 + ",\"source\":{\"snippet\":\"het aantal vondsten van de Jutter die licht zijn\"}}";
-        String ir = document(List.of(creatie(count)), List.of(READ_BACK, licht, zwaar), List.of(), List.of());
+        String ir = document(List.of(creation(count)), List.of(READ_BACK, licht, zwaar), List.of(), List.of());
         assertNull(play(ir, caseDocument(situation(), count("2", "0", "1", "0"))), "een telling over een ontkend kenmerk");
     }
 
@@ -85,7 +85,7 @@ class CreationOrderWitnessTest {
                 + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"maas\",\"value\":" + number(5)
                 + ",\"characteristic\":false}],\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("JutterHeeftNet", "net")
                 + "}]}";
-        String ir = document(List.of(creatie(nets), objectCreationJson), List.of(READ_BACK), List.of(), List.of());
+        String ir = document(List.of(creation(nets), objectCreationJson), List.of(READ_BACK), List.of(), List.of());
         assertNull(play(ir, caseDocument(situation(), count("1", "1", "1", "1"))), "een telling over de netten van een latere creatie");
     }
 
@@ -96,10 +96,10 @@ class CreationOrderWitnessTest {
                 + "\"gecontroleerde netten\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"gecontroleerde netten van de Jutter\"}}],"
                 + "\"elementType\":\"Net\",\"sourceRole\":" + roleBinding("JutterControleertNet", "gecontroleerd net") + ",\"type\":"
                 + COUNT_NUMBER + ",\"source\":{\"snippet\":\"het aantal gecontroleerde netten van de Jutter\"}}";
-        String controleer = "{\"node\":\"FactCreation\",\"name\":\"controleer\",\"versions\":[{\"factType\":\"JutterControleertNet\","
+        String check = "{\"node\":\"FactCreation\",\"name\":\"controleer\",\"versions\":[{\"factType\":\"JutterControleertNet\","
                 + "\"anchorRole\":\"controleur\",\"targetRole\":\"gecontroleerd net\",\"anchor\":\"Jutter\",\"path\":["
                 + roleBinding("JutterHeeftNet", "net") + "],\"validity\":{\"node\":\"Validity\"}}]}";
-        String ir = document(List.of(creatie(gecontroleerd)), List.of(READ_BACK), List.of(), List.of(controleer));
+        String ir = document(List.of(creation(gecontroleerd)), List.of(READ_BACK), List.of(), List.of(check));
         List<String> situation = new ArrayList<>(situation());
         for (int i = 1; i <= 4; i++) situation.add(instance("N" + i, "Net", "", "\"eigenaar\":[\"J" + i + "\"]"));
         assertNull(play(ir, caseDocument(situation, count("1", "1", "1", "1"))), "een telling over een relatie uit een feitcreatie");
@@ -115,7 +115,7 @@ class CreationOrderWitnessTest {
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"nettogewicht\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":"
                 + "\"Het nettogewicht van een Vondst\"}},\"value\":" + binary("minus", own("gewicht", "Vondst"), number(1))
                 + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
-        String ir = document(List.of(creatie(fold("sum", "nettogewicht", null))), List.of(READ_BACK, netto), List.of(), List.of());
+        String ir = document(List.of(creation(fold("sum", "nettogewicht", null))), List.of(READ_BACK, netto), List.of(), List.of());
         assertNull(play(ir, caseDocument(situation(), count("8", null, "-1", "8"))), "een som over een lid uit een latere regel");
     }
 
@@ -124,22 +124,22 @@ class CreationOrderWitnessTest {
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String COUNT_NUMBER = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
 
-    private static String attribuut(String naam) {
+    private static String attribute(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String kenmerk(String naam) {
+    private static String characteristic(String naam) {
         return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"nominal\"}";
     }
 
-    private static String objecttype(String naam, String plural, boolean animate, List<String> kenmerken, String... members) {
+    private static String objectType(String naam, String plural, boolean animate, List<String> kenmerken, String... members) {
         List<String> a = new ArrayList<>();
-        for (String l : members) a.add(attribuut(l));
+        for (String l : members) a.add(attribute(l));
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", a) + "],\"characteristics\":[" + String.join(",", kenmerken) + "]}";
     }
 
-    private static String feittype(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\""
@@ -149,25 +149,25 @@ class CreationOrderWitnessTest {
     /** Jutter, Afrekening, Vondst and Net; one jutter has many vondsten, one afrekening, many netten and many
      *  gecontroleerde netten. */
     private static final String MODEL = "{\"objectTypes\":["
-            + objecttype("Jutter", "Jutters", true, List.of(), "telling", "basis", "opgegeven basis") + ","
-            + objecttype("Afrekening", "Afrekeningen", false, List.of(), "telling") + ","
-            + objecttype("Vondst", "Vondsten", false, List.of(kenmerk("zwaar"), kenmerk("licht")), "gewicht", "nettogewicht",
+            + objectType("Jutter", "Jutters", true, List.of(), "telling", "basis", "opgegeven basis") + ","
+            + objectType("Afrekening", "Afrekeningen", false, List.of(), "telling") + ","
+            + objectType("Vondst", "Vondsten", false, List.of(characteristic("zwaar"), characteristic("licht")), "gewicht", "nettogewicht",
                     "opgegeven nettogewicht") + ","
-            + objecttype("Net", "Netten", false, List.of(), "maas")
+            + objectType("Net", "Netten", false, List.of(), "maas")
             + "],\"factTypes\":["
-            + feittype("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
-            + feittype("JutterHeeftAfrekening", "afrekenaar", "Jutter", "afrekening", null, "Afrekening") + ","
-            + feittype("JutterHeeftNet", "eigenaar", "Jutter", "net", "netten", "Net") + ","
-            + feittype("JutterControleertNet", "controleur", "Jutter", "gecontroleerd net", "gecontroleerde netten", "Net")
+            + factType("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
+            + factType("JutterHeeftAfrekening", "afrekenaar", "Jutter", "afrekening", null, "Afrekening") + ","
+            + factType("JutterHeeftNet", "eigenaar", "Jutter", "net", "netten", "Net") + ","
+            + factType("JutterControleertNet", "controleur", "Jutter", "gecontroleerd net", "gecontroleerde netten", "Net")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String roleBinding(String feittype, String rol) {
-        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    private static String roleBinding(String factType, String role) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
     }
 
-    private static String own(String attribuut, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type + "\",\"source\":"
-                + "{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type + "\",\"source\":"
+                + "{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     private static String number(int n) {
@@ -180,8 +180,8 @@ class CreationOrderWitnessTest {
     }
 
     /** A fold of kind {@code soort} over the {@code lid} of the vondsten of the Jutter; {@code filter} null for none. */
-    private static String fold(String soort, String member, String filter) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"" + soort + "\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\""
+    private static String fold(String category, String member, String filter) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + category + "\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\""
                 + member + "\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":\"het " + member + " van alle vondsten van de Jutter\"}}],"
                 + "\"elementType\":\"Vondst\"" + (filter == null ? "" : ",\"filter\":" + filter) + ",\"sourceRole\":"
                 + roleBinding("JutterHeeftVondst", "vondst") + ",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"de som van het " + member
@@ -189,9 +189,9 @@ class CreationOrderWitnessTest {
     }
 
     /** "Regel maak een afrekening: Een Jutter heeft een afrekening met telling gelijk aan &lt;waarde&gt;." */
-    private static String creatie(String waarde) {
+    private static String creation(String value) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"maak een afrekening\",\"versions\":[{\"createdType\":\"Afrekening\","
-                + "\"subject\":\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"telling\",\"value\":" + waarde
+                + "\"subject\":\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"telling\",\"value\":" + value
                 + ",\"characteristic\":false}],\"validity\":{\"node\":\"Validity\"},\"connectingRole\":"
                 + roleBinding("JutterHeeftAfrekening", "afrekening") + "}]}";
     }
@@ -205,11 +205,11 @@ class CreationOrderWitnessTest {
             + "\"calculation\"}]}";
 
     /** "Een Vondst is &lt;kenmerk&gt; indien &lt;voorwaarde&gt;." */
-    private static String characteristicRule(String kenmerk, String voorwaarde) {
-        return "{\"node\":\"Rule\",\"name\":\"" + kenmerk + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
-                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + kenmerk + "\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":"
-                + "\"Een Vondst is " + kenmerk + "\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":"
-                + "\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + voorwaarde + ",\"initialisation\":false}]}";
+    private static String characteristicRule(String characteristic, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + characteristic + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + characteristic + "\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":"
+                + "\"Een Vondst is " + characteristic + "\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":"
+                + "\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + condition + ",\"initialisation\":false}]}";
     }
 
     /** A defaults group on {@code lid} of {@code type}: the opgave where it is filled, else {@code basis}. */
@@ -261,9 +261,9 @@ class CreationOrderWitnessTest {
         return String.join(",", out);
     }
 
-    private static String caseDocument(List<String> instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(List<String> instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

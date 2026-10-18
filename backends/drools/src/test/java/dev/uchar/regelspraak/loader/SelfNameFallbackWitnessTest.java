@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * existed, a null name reached the identifier contract and the load died in a NullPointerException. M1 turned the
  * five tables into lists (delta B2): the name is written once, on the node, so there is no key left to stand in for
  * it and a nameless declaration has no name at all. The loader refuses it by the node's own name field instead of
- * keying the model on null — since 2026-09-23 as a document defect ({@link IrLoader.Documentfout}, a hard error at
+ * keying the model on null — since 2026-09-23 as a document defect ({@link IrLoader.DocumentError}, a hard error at
  * the JSON position of that field), no longer as a "form not carried" {@link IrLoader.Refusal}, which the
  * differential gate would have filed under its auto-excluded channel.
  *
@@ -67,7 +67,7 @@ class SelfNameFallbackWitnessTest {
         while (declarations.get(index) != declaration) index++;
         declaration.putNull(nameField);
 
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(root),
                 golden + ": a nameless declaration must be refused, not keyed on null");
         assertEquals("/model/" + list + "/" + index + "/" + nameField, e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("a declaration without a name"), e.getMessage());

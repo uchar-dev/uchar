@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.resolver;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
@@ -25,10 +25,10 @@ public final class Resolver {
     }
 
     /** As {@link #resolve(String)}, but with the source file name threaded onto the char stream so every
-     *  {@link dev.uchar.regelspraak.ir.Bron} anchors back to {@code bestandsnaam} (uitleg can then
+     *  {@link dev.uchar.regelspraak.ir.Source} anchors back to {@code fileName} (uitleg can then
      *  cite the file/regel); otherwise identical. */
-    public static RegelSpraakModel resolve(String source, String bestandsnaam) {
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source, bestandsnaam));
+    public static RegelSpraakModel resolve(String source, String fileName) {
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         RegelSpraak parser = new RegelSpraak(tokens);
 
@@ -71,7 +71,7 @@ public final class Resolver {
     }
 
     /**
-     * The marker discipline (maintainer decision 2026-09-19): every {@link Conditie.Unresolved} /
+     * The marker discipline (maintainer decision 2026-09-19): every {@link Condition.Unresolved} /
      * {@link Expr.Unresolved} that SURVIVES into the finished model gets a WARNING beside it. A marker is
      * the honest wire form and stays one — a WARNING leaves the document on disk — but the author is told
      * what stayed unresolved and why, instead of finding a marker in the IR with nothing said about it.
@@ -90,43 +90,43 @@ public final class Resolver {
      * {@code IrEmitter} serialises: a marker unreachable from those never reaches a consumer either.
      */
     private static void reportUnresolved(RegelSpraakModel m) {
-        java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Bron, String> report = (bron, reason) -> {
+        java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, String> report = (sourceText, reason) -> {
             if (reason == null) return;
             m.diagnostics.add(new Diagnostic(Severity.WARNING,
-                    "onopgelost: " + reason + " — '" + bron + "' blijft als marker op de wire staan",
-                    bron == null ? 0 : bron.line()));
+                    "onopgelost: " + reason + " — '" + sourceText + "' blijft als marker op de wire staan",
+                    sourceText == null ? 0 : sourceText.line()));
         };
         for (var r : m.resolvedRegels) {
-            Expr.collectUnresolved(r.doel(), report);
-            Expr.collectUnresolved(r.waarde(), report);
-            Conditie.collectUnresolved(r.voorwaarde(), report);
+            Expr.collectUnresolved(r.target(), report);
+            Expr.collectUnresolved(r.value(), report);
+            Condition.collectUnresolved(r.condition(), report);
         }
-        for (var d : m.resolvedDayKindDefinitions) Conditie.collectUnresolved(d.voorwaarde(), report);
-        for (var oc : m.objectCreaties) {
-            for (var t : oc.initialisations()) Expr.collectUnresolved(t.waarde(), report);
-            Conditie.collectUnresolved(oc.voorwaarde(), report);
+        for (var d : m.resolvedDayKindDefinitions) Condition.collectUnresolved(d.condition(), report);
+        for (var oc : m.objectCreations) {
+            for (var t : oc.initialisations()) Expr.collectUnresolved(t.value(), report);
+            Condition.collectUnresolved(oc.condition(), report);
         }
-        for (var v : m.verdelingen)  Conditie.collectUnresolved(v.voorwaarde(), report);
-        for (var c : m.consistenties) Conditie.collectUnresolved(c.assertie(), report);
-        for (var fc : m.feitCreaties) Conditie.collectUnresolved(fc.voorwaarde(), report);
-        java.util.Set<Conditie> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (var v : m.allocations)  Condition.collectUnresolved(v.condition(), report);
+        for (var c : m.consistenties) Condition.collectUnresolved(c.assertie(), report);
+        for (var fc : m.factCreations) Condition.collectUnresolved(fc.condition(), report);
+        java.util.Set<Condition> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (var pd : m.prioritizedDefaults) reportDefaults(pd.defaults(), report, seen);
     }
 
     /** The §7 defaults tree: each default's guard and consequence, and recursively the defaults of its
      *  exception groups — a marker nested in an exception is as much on the wire as a top-level one. A
      *  restrictive exception repeats its carrier's conjuncts, the very same nodes (grammar/DIVERGENCES.md §4,
-     *  form 2), so a guard is walked with {@link Conditie#eachConjunctOnce} and each node reported once: one
+     *  form 2), so a guard is walked with {@link Condition#eachConjunctOnce} and each node reported once: one
      *  marker in a base's condition is one WARNING, not one per exception above it. */
     private static void reportDefaults(java.util.List<dev.uchar.regelspraak.ir.Default> defaults,
-                                     java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Bron, String> report,
-                                     java.util.Set<Conditie> seen) {
+                                     java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, String> report,
+                                     java.util.Set<Condition> seen) {
         if (defaults == null) return;
         for (var d : defaults) {
-            Conditie.eachConjunctOnce(d.voorwaarde(), seen, c -> Conditie.collectUnresolved(c, report));
-            Expr.collectUnresolved(d.consequentie(), report);
+            Condition.eachConjunctOnce(d.condition(), seen, c -> Condition.collectUnresolved(c, report));
+            Expr.collectUnresolved(d.consequence(), report);
             if (d.exceptions() != null)
-                for (var group : d.exceptions().leden()) reportDefaults(group.defaults(), report, seen);
+                for (var group : d.exceptions().members()) reportDefaults(group.defaults(), report, seen);
         }
     }
 
@@ -144,17 +144,17 @@ public final class Resolver {
      *  The mutual order of the head annotations is fixed by the grammar and always has been; the extension
      *  inserts one more element and the author has to know where. */
     private static void headFormHints(CommonTokenStream tokens, RegelSpraakModel model) {
-        var lijst = tokens.getTokens().stream().filter(t -> t.getChannel() == Token.DEFAULT_CHANNEL).toList();
-        for (int i = 0; i < lijst.size(); i++) {
-            if (lijst.get(i).getType() != RegelSpraakLexer.OBJECTTYPE) continue;
+        var list = tokens.getTokens().stream().filter(t -> t.getChannel() == Token.DEFAULT_CHANNEL).toList();
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getType() != RegelSpraakLexer.OBJECTTYPE) continue;
             boolean afterPlural = false;
             // Walk the HEAD only: the first token no head can contain ends it. Without that bound the
             // scan would run on into rule text, where "is een" is ordinary Dutch and no mistake at all.
-            for (int j = i + 1; j < lijst.size() && headToken(lijst.get(j).getType()); j++) {
-                Token t = lijst.get(j);
+            for (int j = i + 1; j < list.size() && headToken(list.get(j).getType()); j++) {
+                Token t = list.get(j);
                 if (t.getType() == RegelSpraakLexer.MV_START) { afterPlural = true; continue; }
                 if (t.getType() != RegelSpraakLexer.IS) continue;
-                Token after = j + 1 < lijst.size() ? lijst.get(j + 1) : null;
+                Token after = j + 1 < list.size() ? list.get(j + 1) : null;
                 if (after == null) break;
                 if (after.getType() == RegelSpraakLexer.UPPER_ID)
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
@@ -188,18 +188,18 @@ public final class Resolver {
      *  {@link dev.uchar.regelspraak.emit.IrEmitter}.
      *  Returns the process exit code (0 = ir geschreven, 1 = resolver-fouten, 2 = usage) instead of exiting, so the
      *  disk discipline is testable as the REAL CLI path: an unresolvable model writes NOTHING and exits non-zero. */
-    public static int irModus(java.util.List<String> rest) throws java.io.IOException {
+    public static int irMode(java.util.List<String> rest) throws java.io.IOException {
         if (rest.size() < 2) { System.err.println("usage: Resolver --ir <out.json> <file.rgs...>"); return 2; }
         java.nio.file.Path out = java.nio.file.Path.of(rest.get(0));
-        StringBuilder bron = new StringBuilder();
+        StringBuilder sourceText = new StringBuilder();
         for (String f : rest.subList(1, rest.size()))
-            bron.append(java.nio.file.Files.readString(java.nio.file.Path.of(f))).append('\n');
+            sourceText.append(java.nio.file.Files.readString(java.nio.file.Path.of(f))).append('\n');
         // a single source file threads its name into the Bron coordinates; a
         // concatenated chain deliberately does not (per-file line offsets
         // would lie about every file after the first)
         RegelSpraakModel m = rest.size() == 2
-                ? resolve(bron.toString(), rest.get(1))
-                : resolve(bron.toString());
+                ? resolve(sourceText.toString(), rest.get(1))
+                : resolve(sourceText.toString());
         // Check errors BEFORE touching disk: an unresolvable model writes NOTHING (a mirror of a broken model
         // would carry half-bound references and misleading diagnostics as if authoritative).
         if (!m.isOk()) {
@@ -211,7 +211,7 @@ public final class Resolver {
         // invisible on the one path an author actually uses. stderr, so the stdout summary stays parseable.
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d));
         // the WARNINGs the emitter itself appends, for what the wire cannot carry, are shown the same way
-        dev.uchar.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(m)
+        dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(m)
                 .forEach(d -> System.err.println("  " + d));
         java.nio.file.Files.writeString(out, dev.uchar.regelspraak.emit.IrEmitter.emit(m),
                 java.nio.charset.StandardCharsets.UTF_8);
@@ -220,32 +220,32 @@ public final class Resolver {
         return 0;
     }
 
-    /** The --cases mode body, beside --ir: {@code rest} = [out.json, file.rgs...] as for {@link #irModus}, the sources
+    /** The --cases mode body, beside --ir: {@code rest} = [out.json, file.rgs...] as for {@link #irMode}, the sources
      *  read as ONE test document (scenariotoetsen, grammar/DIVERGENCES.md). It writes the IR document the scenarios
      *  run against — the whole model, or with a scope the forms the scope carries — to {@code out.json}, and each
-     *  scenario as one case file {@code case<n>-<slug>.json} into {@code map}. Exit codes as {@link #irModus}: a model
+     *  scenario as one case file {@code case<n>-<slug>.json} into {@code map}. Exit codes as {@link #irMode}: a model
      *  that carries an ERROR, the scenarios' own included, writes NOTHING. */
     public static int casesMode(java.util.List<String> rest, java.nio.file.Path map) throws java.io.IOException {
         String use = "usage: Resolver --ir <out.json> --cases <map> <file.rgs...>";
         if (rest.size() < 2) { System.err.println(use); return 2; }
         java.nio.file.Path out = java.nio.file.Path.of(rest.get(0));
-        StringBuilder bron = new StringBuilder();
+        StringBuilder sourceText = new StringBuilder();
         java.util.List<String> files = rest.subList(1, rest.size());
         java.util.List<Integer> firstLines = new java.util.ArrayList<>();
         int regel = 1;
         for (String f : files) {
             String tekst = java.nio.file.Files.readString(java.nio.file.Path.of(f));
             firstLines.add(regel);
-            bron.append(tekst).append('\n');
+            sourceText.append(tekst).append('\n');
             regel += (int) (tekst + '\n').chars().filter(c -> c == '\n').count();
         }
-        ScenarioResolver.ScenarioBundel b = ScenarioResolver.resolve(bron.toString());
+        ScenarioResolver.ScenarioBundle b = ScenarioResolver.resolve(sourceText.toString());
         RegelSpraakModel m = b.model();
         if (b.scenarios().isEmpty())
             m.diagnostics.add(new Diagnostic(Severity.ERROR, "scenario: het document draagt geen scenario, dus er valt "
                     + "geen casebestand te schrijven", 0));
         RegelSpraakModel irModel = b.scenarios().isEmpty() ? m
-                : dev.uchar.regelspraak.emit.CaseEmitter.metScope(m, b.scenarios().get(0).scope());
+                : dev.uchar.regelspraak.emit.CaseEmitter.withScope(m, b.scenarios().get(0).scope());
         // one chain of files, one line count: each diagnostic names the file and the line in that file, and only
         // those — the line in the chain means nothing to the author
         java.util.function.Function<Diagnostic, String> message = d -> {
@@ -260,7 +260,7 @@ public final class Resolver {
             return 1;
         }
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println(message.apply(d)));
-        dev.uchar.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(irModel)
+        dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(irModel)
                 .forEach(d -> System.err.println("  " + d));
         // Everything is decided before anything is written: the IR document and every case file as text, and the
         // case files the map already holds that this run would not write — a case left there beside the new ones
@@ -270,7 +270,7 @@ public final class Resolver {
         java.util.Map<String, String> cases = new java.util.LinkedHashMap<>();
         for (int i = 0; i < b.scenarios().size(); i++) {
             var s = b.scenarios().get(i);
-            cases.put(dev.uchar.regelspraak.emit.CaseEmitter.bestandsnaam(i + 1, s),
+            cases.put(dev.uchar.regelspraak.emit.CaseEmitter.fileName(i + 1, s),
                     dev.uchar.regelspraak.emit.CaseEmitter.emit(s));
         }
         java.util.List<String> foreign = new java.util.ArrayList<>();
@@ -310,7 +310,7 @@ public final class Resolver {
             rest.remove(c);
         }
         if (!ir) { System.err.println("usage: Resolver --ir <out.json> [--cases <map>] <file.rgs...>"); System.exit(2); }
-        System.exit(map == null ? irModus(rest) : casesMode(rest, map));
+        System.exit(map == null ? irMode(rest) : casesMode(rest, map));
     }
 
     private Resolver() {}

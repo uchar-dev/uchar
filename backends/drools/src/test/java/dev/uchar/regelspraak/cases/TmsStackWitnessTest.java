@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -26,9 +26,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsStackWitnessTest {
 
     private static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("gewicht", WHOLE), attribuut("bergloon", WHOLE)),
+            TmsDocuments.objectType("Vondst", List.of(attribute("gewicht", WHOLE), attribute("bergloon", WHOLE)),
                     List.of()),
             TmsDocuments.subtype("Wrakvondst", "Vondst", List.of(), List.of())), List.of());
 
@@ -74,14 +74,14 @@ class TmsStackWitnessTest {
             comparison("greater", ownRead("gewicht", "Vondst"), number("10")));
 
     private static final String GROUP = attributeGroup("wrakbergloon", "Wrakvondst", "bergloon", List.of(
-            standaard(compound("all", 0, List.of(
+            defaultEntry(compound("all", 0, List.of(
                             comparison("greater", ownRead("gewicht", "Wrakvondst"), number("50")),
                             comparison("greater", ownRead("gewicht", "Wrakvondst"), number("100")))),
                     number("9")),
-            standaard(comparison("greater", ownRead("gewicht", "Wrakvondst"), number("50")), number("5"))));
+            defaultEntry(comparison("greater", ownRead("gewicht", "Wrakvondst"), number("50")), number("5"))));
 
     /** Per object its type, gewicht, bergloon in the input (null for none), and bergloon at the end (null for leeg). */
-    private record Case(String type, String weight, String invoer, String bergloon) {}
+    private record Case(String type, String weight, String input, String bergloon) {}
 
     private static final Map<String, Case> CASES = new LinkedHashMap<>();
     static {
@@ -99,18 +99,18 @@ class TmsStackWitnessTest {
     private static Map<String, String> numbers(Case g) {
         Map<String, String> out = new LinkedHashMap<>();
         out.put("gewicht", g.weight());
-        if (g.invoer() != null) out.put("bergloon", g.invoer());
+        if (g.input() != null) out.put("bergloon", g.input());
         return out;
     }
 
     private static JsonNode caseDocument() throws Exception {
-        List<String> instanties = new ArrayList<>(), verwachtingen = new ArrayList<>();
+        List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
         CASES.forEach((label, g) -> {
-            instanties.add(instance(label, g.type(), numbers(g), List.of(), Map.of()));
-            verwachtingen.add(waarde(label, "bergloon", g.bergloon()));
+            instances.add(instance(label, g.type(), numbers(g), List.of(), Map.of()));
+            expectations.add(value(label, "bergloon", g.bergloon()));
         });
-        verwachtingen.add(consistent());
-        return TmsDocuments.caseDocument(instanties, verwachtingen);
+        expectations.add(consistent());
+        return TmsDocuments.caseDocument(instances, expectations);
     }
 
     private static Path document() throws Exception {
@@ -124,14 +124,14 @@ class TmsStackWitnessTest {
 
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int[] folded = {0};
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
             fireSample(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList(), folded);
         assertTrue(folded[0] > 0, "de initialisatiedefault van de stapel vuurde nooit op W2");
         DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         int[] inTheText = {0};
         for (List<String> order : TmsDocuments.sample(rules, 20261008L, 100))
             fireSample(t, TextOrder.kieBase(t, order), order, inTheText);
@@ -153,7 +153,7 @@ class TmsStackWitnessTest {
                 beans.add(beanObject);
             }
             List<String> onTheSubtype = new ArrayList<>();
-            TmsDocuments.vuur(b, kieBase, names, beans, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocuments.fire(b, kieBase, names, beans, session -> session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     String regel = e.getMatch().getRule().getName();
                     for (Object o : e.getMatch().getObjects()) {
@@ -162,13 +162,13 @@ class TmsStackWitnessTest {
                         if (regel.endsWith("default 2") && "W2".equals(labels.get(o))) folded[0]++;
                     }
                 }
-            }), sessie -> { });
+            }), session -> { });
             assertTrue(onTheSubtype.isEmpty(), () -> "de initialisatie vuurde als regel op " + onTheSubtype + " op "
                     + b.branch() + " in volgorde " + names);
             for (Object beanObject : beans) {
                 Case g = CASES.get(labels.get(beanObject));
                 assertEquals(g.bergloon() == null ? null : new BigDecimal(g.bergloon()),
-                        TmsDocuments.lees(beanObject, "bergloon"), () -> labels.get(beanObject) + " bergloon op " + b.branch()
+                        TmsDocuments.read(beanObject, "bergloon"), () -> labels.get(beanObject) + " bergloon op " + b.branch()
                                 + " in volgorde " + names);
             }
         }

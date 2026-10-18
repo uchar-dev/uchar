@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p><b>One of those five left the fence on 2026-09-19</b>: the VOORWAARDE. A condition has a
  * quantifier to give the collection a home — the written "alle" lowers to a
- * {@link dev.uchar.regelspraak.ir.Conditie.QuantifierFold} — so the set reading is not excused
+ * {@link dev.uchar.regelspraak.ir.Condition.QuantifierFold} — so the set reading is not excused
  * there but removed, and there is nothing left for the fence to name. The two condition rows below
  * therefore measure the lowering; the counter-proofs that the fence still stands wherever the fold
  * DECLINES (an unbindable range, a multi-step range, an unbound die/dat, a telwoord under 1) live with
@@ -150,8 +150,8 @@ class SetReadWithoutFoldTest {
     @Test void set_read_as_object_creation_member_init_is_named() {
         // The §13.4.6.3 waardetoekenning is a generic expressie RHS and the third (and last) VALUE slot
         // this IR has — a live producer route of its own: before the check the verifier reported
-        // WF-096 FAIL /objectCreaties/0/toekenningen/0/waarde as the document's ONLY defect (measured
-        // 2026-09-11, before M1; the verifier names that position /rules/objectCreaties/0/toekenningen/0/waarde
+        // WF-096 FAIL /objectCreations/0/toekenningen/0/waarde as the document's ONLY defect (measured
+        // 2026-09-11, before M1; the verifier names that position /rules/objectCreations/0/toekenningen/0/waarde
         // since).
         assertEquals(List.of(MESSAGE), meldingen("""
                 Regel nieuw rapport
@@ -170,7 +170,7 @@ class SetReadWithoutFoldTest {
     }
 
     @Test void the_condition_of_an_object_creation_folds_along() {
-        // An objectcreatie never becomes a ResolvedRegel (measured: resolvedRegels 0, objectCreaties 1),
+        // An objectcreatie never becomes a ResolvedRule (measured: resolvedRegels 0, objectCreations 1),
         // so its voorwaarde is the witness that the condition treatment sits where EVERY resultaatdeel
         // kind's voorwaarde passes through — not on the rule carrier alone. The same holds for a
         // verdeling, a feitcreatie, a dagsoortdefinitie and a startpuntbepaling. Until 2026-09-19 it
@@ -225,7 +225,7 @@ class SetReadWithoutFoldTest {
     @Test void the_diagnostic_is_an_error() {
         // The one knob, pinned so that moving it is a deliberate, visible act. ERROR is the
         // fail-fast level (maintainer decision 2026-09-11, promoting the initial WARNING):
-        // irModus writes nothing when the model carries an error, so the ill-formed document is
+        // irMode writes nothing when the model carries an error, so the ill-formed document is
         // not produced at all — that wire is never written by this frontend. The emitter,
         // called directly, refuses the model as well (WF-113 (a), the test below).
         List<Diagnostic> ds = setReadDiagnostics(RULE_VALUE);

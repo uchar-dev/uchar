@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.resolver.Resolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -95,10 +95,10 @@ class ScenarioInheritanceLineScopeTest {
     /** The names of the defaults groups the IR document of a one-scenario document with header {@code scope} carries,
      *  in the order of the document. */
     private static List<String> groups(String scope) {
-        ScenarioBundel b = ScenarioResolver.resolve(SOURCE + "Scenario s\n" + scope + SCENARIO);
+        ScenarioBundle b = ScenarioResolver.resolve(SOURCE + "Scenario s\n" + scope + SCENARIO);
         assertTrue(b.model().errors().isEmpty(), () -> b.model().errors().toString());
         ResolvedScenario s = b.scenarios().get(0);
-        return CaseEmitter.metScope(b.model(), s.scope()).prioritizedDefaults.stream().map(PrioritizedDefaults::naam)
+        return CaseEmitter.withScope(b.model(), s.scope()).prioritizedDefaults.stream().map(PrioritizedDefaults::naam)
                 .toList();
     }
 
@@ -133,9 +133,9 @@ class ScenarioInheritanceLineScopeTest {
     @Test void the_base_with_its_subtype_groups_is_the_document_without_the_other_rules() {
         // A document of the base and its deviations alone: a scope that names the base is the production document.
         String baseDocument = SOURCE.substring(0, SOURCE.indexOf("Regel meldtermijn van een kustjutter"));
-        ScenarioBundel b = ScenarioResolver.resolve(baseDocument + "Scenario s\ntoetst de regel meldtermijn\n" + SCENARIO);
+        ScenarioBundle b = ScenarioResolver.resolve(baseDocument + "Scenario s\ntoetst de regel meldtermijn\n" + SCENARIO);
         assertTrue(b.model().errors().isEmpty(), () -> b.model().errors().toString());
         assertEquals(IrEmitter.emit(Resolver.resolve(baseDocument)),
-                IrEmitter.emit(CaseEmitter.metScope(b.model(), b.scenarios().get(0).scope())));
+                IrEmitter.emit(CaseEmitter.withScope(b.model(), b.scenarios().get(0).scope())));
     }
 }

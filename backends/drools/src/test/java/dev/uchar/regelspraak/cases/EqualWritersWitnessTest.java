@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
-import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
+import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.Outcome;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * both orders of the two rules, each on both branches, with the rules of the branch in the KieBase in the order the
  * branch generates them and in the reverse order, so that the agenda fires the two writers both ways round, with eight
  * jutters. Each jutter must get the value of the writer that comes first in the document, with its scale, 5.00 or 5,
- * on its bean and in what {@code DroolsBackend.lees} gives; and both writers must stand on each, with their scales,
+ * on its bean and in what {@code DroolsBackend.read} gives; and both writers must stand on each, with their scales,
  * which is the premise of the witness.
  *
  * <p><b>Red</b> before the repair (measured 2026-10-14 on {@code 10492758}): the reader of the fixpoint took the first
@@ -47,23 +47,23 @@ class EqualWritersWitnessTest {
     private static final int JUTTERS = 8;
 
     @Test void the_first_writer_of_the_document_sets_its_scale() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
-                TmsDocuments.attribuut("basis", TWO_DECIMALS),
-                TmsDocuments.attribuut("premie", TWO_DECIMALS)), List.of())), List.of());
-        String voorwaarde = TmsDocuments.comparison("greater", TmsDocuments.ownRead("basis", "Jutter"),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+                TmsDocuments.attribute("basis", TWO_DECIMALS),
+                TmsDocuments.attribute("premie", TWO_DECIMALS)), List.of())), List.of());
+        String condition = TmsDocuments.comparison("greater", TmsDocuments.ownRead("basis", "Jutter"),
                 TmsDocuments.number("0"));
         String base = TmsDocuments.computingRule("premie uit de basis", "GELIJKSTELLING", "Jutter", "premie",
-                TmsDocuments.ownRead("basis", "Jutter"), voorwaarde);
+                TmsDocuments.ownRead("basis", "Jutter"), condition);
         String whole = TmsDocuments.computingRule("premie als geheel getal", "GELIJKSTELLING", "Jutter", "premie",
-                TmsDocuments.number("5"), voorwaarde);
+                TmsDocuments.number("5"), condition);
         TreeSet<String> both = new TreeSet<>(List.of("premie als geheel getal=5", "premie uit de basis=5.00"));
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         for (List<String> rules : List.of(List.of(base, whole), List.of(whole, base))) {
             List<String> everywhere = Collections.nCopies(JUTTERS, rules.get(0) == base ? "5.00" : "5");
             Path ir = TmsDocuments.document(model, rules);
             for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
                 DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-                for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261014L, 0)) {
+                for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261014L, 0)) {
                     String where = TmsDocuments.ruleNames(rules) + " op " + branch + " in de volgorde " + names;
                     List<Object> jutters = new ArrayList<>();
                     for (int i = 0; i < JUTTERS; i++)
@@ -71,32 +71,32 @@ class EqualWritersWitnessTest {
                     List<String> read = new ArrayList<>();
                     ClassLoader previous = Thread.currentThread().getContextClassLoader();
                     Thread.currentThread().setContextClassLoader(b.beanLoader());
-                    KieSession sessie = TmsDocuments.kieBaseOf(b, names).newKieSession();
+                    KieSession session = TmsDocuments.kieBaseOf(b, names).newKieSession();
                     try {
-                        for (Object j : jutters) sessie.insert(j);
-                        assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), where);
+                        for (Object j : jutters) session.insert(j);
+                        assertNull(DroolsBackend.fire(b, session).noFixpoint(), where);
                         for (Object j : jutters) {
                             TreeSet<String> written = new TreeSet<>();
-                            for (Object f : sessie.getObjects(o -> o instanceof Value w && w.onderwerp() == j))
+                            for (Object f : session.getObjects(o -> o instanceof Value w && w.onderwerp() == j))
                                 written.add(((Value) f).writer() + "="
-                                        + ((BigDecimal) ((Value) f).waarde()).toPlainString());
-                            if (!written.equals(both)) fouten.add(where + ": de schrijvers " + written);
+                                        + ((BigDecimal) ((Value) f).value()).toPlainString());
+                            if (!written.equals(both)) faults.add(where + ": de schrijvers " + written);
                         }
-                        for (Fixpunt.AfgeleideWaarde w : DroolsBackend.lees(b, sessie).waarden())
-                            read.add(((BigDecimal) w.waarde()).toPlainString());
-                        DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                        for (Fixpoint.DerivedValue w : DroolsBackend.fixpointOf(b, session).waarden())
+                            read.add(((BigDecimal) w.value()).toPlainString());
+                        DroolsBackend.setDerivedValues(b, session);
                     } finally {
-                        sessie.dispose();
+                        session.dispose();
                         Thread.currentThread().setContextClassLoader(previous);
                     }
                     List<String> onBeans = new ArrayList<>();
-                    for (Object j : jutters) onBeans.add(((BigDecimal) TmsDocuments.lees(j, "premie")).toPlainString());
-                    if (!onBeans.equals(everywhere)) fouten.add(where + ": op de beans " + onBeans);
-                    if (!read.equals(everywhere)) fouten.add(where + ": in lees " + read);
+                    for (Object j : jutters) onBeans.add(((BigDecimal) TmsDocuments.read(j, "premie")).toPlainString());
+                    if (!onBeans.equals(everywhere)) faults.add(where + ": op de beans " + onBeans);
+                    if (!read.equals(everywhere)) faults.add(where + ": in lees " + read);
                 }
             }
         }
-        assertEquals(List.of(), fouten, "de waarde van de eerste schrijver van het document, met haar schaal");
+        assertEquals(List.of(), faults, "de waarde van de eerste schrijver van het document, met haar schaal");
     }
 
     /**
@@ -113,7 +113,7 @@ class EqualWritersWitnessTest {
      * refuses a default whose value has another scale than its target, so the document could not be confirmed there.
      * The document is played in both orders of the two groups, each on both branches, with the rules in the KieBase in
      * the order the branch generates them and in the reverse order, with eight jutters. Each jutter must get the value
-     * of the group that comes first in the document, with its scale, on its bean and in {@code DroolsBackend.lees};
+     * of the group that comes first in the document, with its scale, on its bean and in {@code DroolsBackend.read};
      * the premises are that both groups decide on each jutter, the first in the document as chain 0, and that the
      * stack writes one value fact there. The reference interpreter and the ASP backend give 5 for either order.
      *
@@ -124,26 +124,26 @@ class EqualWritersWitnessTest {
      * rules unsorted, leaves this witness green, since it has no second writer to sort.
      */
     @Test void two_unordered_groups_that_agree_give_the_scale_of_the_first_group() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
-                TmsDocuments.attribuut("basis", TWO_DECIMALS),
-                TmsDocuments.attribuut("bedrag", TWO_DECIMALS),
-                TmsDocuments.attribuut("premie", TWO_DECIMALS)), List.of())), List.of());
-        String rechtvaardiging = TmsDocuments.comparison("greater", TmsDocuments.ownRead("basis", "Jutter"),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+                TmsDocuments.attribute("basis", TWO_DECIMALS),
+                TmsDocuments.attribute("bedrag", TWO_DECIMALS),
+                TmsDocuments.attribute("premie", TWO_DECIMALS)), List.of())), List.of());
+        String justification = TmsDocuments.comparison("greater", TmsDocuments.ownRead("basis", "Jutter"),
                 TmsDocuments.number("0"));
         String base = unordered(TmsDocuments.attributeGroup("premie uit de basis", "Jutter", "premie",
-                List.of(TmsDocuments.standaard(rechtvaardiging, TmsDocuments.ownRead("basis", "Jutter")))));
+                List.of(TmsDocuments.defaultEntry(justification, TmsDocuments.ownRead("basis", "Jutter")))));
         String amount = unordered(TmsDocuments.attributeGroup("premie uit het bedrag", "Jutter", "premie",
-                List.of(TmsDocuments.standaard(rechtvaardiging, TmsDocuments.ownRead("bedrag", "Jutter")))));
-        List<String> fouten = new ArrayList<>();
+                List.of(TmsDocuments.defaultEntry(justification, TmsDocuments.ownRead("bedrag", "Jutter")))));
+        List<String> faults = new ArrayList<>();
         for (List<String> groups : List.of(List.of(base, amount), List.of(amount, base))) {
-            String eerste = groups.get(0) == base ? "5.00" : "5", tweede = groups.get(0) == base ? "5" : "5.00";
-            List<String> everywhere = Collections.nCopies(JUTTERS, eerste);
-            TreeSet<String> besluiten = new TreeSet<>(List.of("0=" + eerste, "1=" + tweede));
-            TreeSet<String> stack = new TreeSet<>(List.of("defaults A:Jutter.premie=" + eerste));
+            String first = groups.get(0) == base ? "5.00" : "5", second = groups.get(0) == base ? "5" : "5.00";
+            List<String> everywhere = Collections.nCopies(JUTTERS, first);
+            TreeSet<String> besluiten = new TreeSet<>(List.of("0=" + first, "1=" + second));
+            TreeSet<String> stack = new TreeSet<>(List.of("defaults A:Jutter.premie=" + first));
             Path ir = TmsDocuments.document(model, List.of(), List.of(), groups);
             for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
                 DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-                for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261014L, 0)) {
+                for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261014L, 0)) {
                     String where = TmsDocuments.ruleNames(groups) + " op " + branch + " in de volgorde " + names;
                     List<Object> jutters = new ArrayList<>();
                     for (int i = 0; i < JUTTERS; i++)
@@ -152,38 +152,38 @@ class EqualWritersWitnessTest {
                     List<String> read = new ArrayList<>();
                     ClassLoader previous = Thread.currentThread().getContextClassLoader();
                     Thread.currentThread().setContextClassLoader(b.beanLoader());
-                    KieSession sessie = TmsDocuments.kieBaseOf(b, names).newKieSession();
+                    KieSession session = TmsDocuments.kieBaseOf(b, names).newKieSession();
                     try {
-                        for (Object j : jutters) sessie.insert(j);
-                        assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), where);
+                        for (Object j : jutters) session.insert(j);
+                        assertNull(DroolsBackend.fire(b, session).noFixpoint(), where);
                         for (Object j : jutters) {
                             TreeSet<String> decides = new TreeSet<>();
-                            for (Object f : sessie.getObjects(o -> o instanceof Outcome u && u.onderwerp() == j
-                                    && u.soort() == Outcome.Kind.DECIDED))
+                            for (Object f : session.getObjects(o -> o instanceof Outcome u && u.onderwerp() == j
+                                    && u.category() == Outcome.Kind.DECIDED))
                                 decides.add(((Outcome) f).chain() + "="
-                                        + ((BigDecimal) ((Outcome) f).waarde()).toPlainString());
-                            if (!decides.equals(besluiten)) fouten.add(where + ": de besluiten " + decides);
+                                        + ((BigDecimal) ((Outcome) f).value()).toPlainString());
+                            if (!decides.equals(besluiten)) faults.add(where + ": de besluiten " + decides);
                             TreeSet<String> written = new TreeSet<>();
-                            for (Object f : sessie.getObjects(o -> o instanceof Value w && w.onderwerp() == j))
+                            for (Object f : session.getObjects(o -> o instanceof Value w && w.onderwerp() == j))
                                 written.add(((Value) f).writer() + "="
-                                        + ((BigDecimal) ((Value) f).waarde()).toPlainString());
-                            if (!written.equals(stack)) fouten.add(where + ": de schrijvers " + written);
+                                        + ((BigDecimal) ((Value) f).value()).toPlainString());
+                            if (!written.equals(stack)) faults.add(where + ": de schrijvers " + written);
                         }
-                        for (Fixpunt.AfgeleideWaarde w : DroolsBackend.lees(b, sessie).waarden())
-                            read.add(((BigDecimal) w.waarde()).toPlainString());
-                        DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                        for (Fixpoint.DerivedValue w : DroolsBackend.fixpointOf(b, session).waarden())
+                            read.add(((BigDecimal) w.value()).toPlainString());
+                        DroolsBackend.setDerivedValues(b, session);
                     } finally {
-                        sessie.dispose();
+                        session.dispose();
                         Thread.currentThread().setContextClassLoader(previous);
                     }
                     List<String> onBeans = new ArrayList<>();
-                    for (Object j : jutters) onBeans.add(((BigDecimal) TmsDocuments.lees(j, "premie")).toPlainString());
-                    if (!onBeans.equals(everywhere)) fouten.add(where + ": op de beans " + onBeans);
-                    if (!read.equals(everywhere)) fouten.add(where + ": in lees " + read);
+                    for (Object j : jutters) onBeans.add(((BigDecimal) TmsDocuments.read(j, "premie")).toPlainString());
+                    if (!onBeans.equals(everywhere)) faults.add(where + ": op de beans " + onBeans);
+                    if (!read.equals(everywhere)) faults.add(where + ": in lees " + read);
                 }
             }
         }
-        assertEquals(List.of(), fouten, "de waarde van de eerste groep van het document, met haar schaal");
+        assertEquals(List.of(), faults, "de waarde van de eerste groep van het document, met haar schaal");
     }
 
     /** {@code groep} with the declared-unordered marking, where the schema places it: before the validity. */

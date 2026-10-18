@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
@@ -115,7 +115,7 @@ class EvaluationYearWitnessTest {
 
     @Test void the_evaluation_date_plays_beside_it_in_both_branches() throws Exception {
         // The sibling context value in the same position, read as the evaluation date.
-        BothBranches.green(document(IrPath.regel("peildatum", "GELIJKSTELLING", doel("peildatum"), REKENDATUM, "null")),
+        BothBranches.green(document(IrPath.regel("peildatum", "GELIJKSTELLING", target("peildatum"), REKENDATUM, "null")),
                 caseDocument("\"2026-03-15\"", "peildatum", "{\"date\":\"2026-03-15\"}"), "Rekendatum as a rule value still plays");
     }
 
@@ -126,9 +126,9 @@ class EvaluationYearWitnessTest {
     @Test void the_analysis_lowers_the_node() throws Exception {
         for (String regel : List.of(valueRule(), computeRule(), compareRule())) {
             IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(document(regel))));
-            String sleutel = "regel: " + l.model().resolvedRegels.get(0).naam();
-            Dekking tms = coverageOf(tmsCoverage(l), sleutel);
-            assertEquals(Dekking.Verdict.LOWERED, tms.verdict(), "tms — " + sleutel + ": " + tms.reden());
+            String key = "regel: " + l.model().resolvedRegels.get(0).naam();
+            Coverage tms = coverageOf(tmsCoverage(l), key);
+            assertEquals(Coverage.Verdict.LOWERED, tms.verdict(), "tms — " + key + ": " + tms.reason());
         }
     }
 
@@ -205,54 +205,54 @@ class EvaluationYearWitnessTest {
         ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(p.golden()).resolve(p.caseFileName())));
         if (p.date() != null) c.put("asOfDate", p.date());
         java.util.Set<String> touched = new java.util.HashSet<>();
-        ArrayNode verwacht = JSON.createArrayNode();
+        ArrayNode expected = JSON.createArrayNode();
         for (JsonNode e : c.get("expected")) {
-            String soort = e.path("kind").asText();
-            String sleutel = e.path("label").asText() + "." + e.path("attribute").asText();
-            if ((soort.equals("attributeValue") || soort.equals("attributeEmpty")) && p.waarden().containsKey(sleutel)) {
-                touched.add(sleutel);
+            String category = e.path("kind").asText();
+            String key = e.path("label").asText() + "." + e.path("attribute").asText();
+            if ((category.equals("attributeValue") || category.equals("attributeEmpty")) && p.waarden().containsKey(key)) {
+                touched.add(key);
                 ObjectNode n = JSON.createObjectNode();
-                String w = p.waarden().get(sleutel);
+                String w = p.waarden().get(key);
                 n.put("kind", w == null ? "attributeEmpty" : "attributeValue");
                 n.put("label", e.path("label").asText());
                 n.put("attribute", e.path("attribute").asText());
                 if (w != null) n.set("value", JSON.readTree(w));
-                verwacht.add(n);
-            } else if (soort.equals("consistent") && p.inconsistent()) {
-                verwacht.add(JSON.createObjectNode().put("kind", "inconsistent"));
+                expected.add(n);
+            } else if (category.equals("consistent") && p.inconsistent()) {
+                expected.add(JSON.createObjectNode().put("kind", "inconsistent"));
             } else {
-                verwacht.add(e);
+                expected.add(e);
             }
         }
         assertEquals(p.waarden().keySet(), touched, "every patched expectation exists in " + p.golden() + "/" + p.caseFileName());
-        c.set("expected", verwacht);
+        c.set("expected", expected);
         return c;
     }
 
     private static String valueRule() {
-        return IrPath.regel("meldjaar", "GELIJKSTELLING", doel("meldjaar"), REKENJAAR, "null");
+        return IrPath.regel("meldjaar", "GELIJKSTELLING", target("meldjaar"), REKENJAAR, "null");
     }
 
     private static String computeRule() {
-        return IrPath.regel("ouderdom", "BEREKENING", doel("ouderdom"),
-                "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":" + REKENJAAR + ",\"right\":" + lees("vondstjaar")
+        return IrPath.regel("ouderdom", "BEREKENING", target("ouderdom"),
+                "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":" + REKENJAAR + ",\"right\":" + read("vondstjaar")
                         + ",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar min zijn vondstjaar\"}}", "null");
     }
 
     private static String compareRule() {
-        return IrPath.regel("meldcode", "GELIJKSTELLING", doel("meldcode"), IrPath.literal("1", GETAL, "1"),
-                "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + REKENJAAR + ",\"right\":" + lees("vondstjaar")
+        return IrPath.regel("meldcode", "GELIJKSTELLING", target("meldcode"), IrPath.literal("1", GETAL, "1"),
+                "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + REKENJAAR + ",\"right\":" + read("vondstjaar")
                         + ",\"source\":{\"snippet\":\"het Rekenjaar groter is dan zijn vondstjaar\"}}");
     }
 
-    private static String doel(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"de " + attribuut + " van een Vondst\"}}";
+    private static String target(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"de " + attribute + " van een Vondst\"}}";
     }
 
-    private static String lees(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String read(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     private static Path document(String regel) throws Exception {
@@ -260,14 +260,14 @@ class EvaluationYearWitnessTest {
     }
 
     /** One Vondst found in 2000, in a session on {@code asOf} (a JSON date string, or {@code null}). */
-    private static JsonNode caseDocument(String asOf, String attribuut, String waarde) throws Exception {
+    private static JsonNode caseDocument(String asOf, String attribute, String value) throws Exception {
         return JSON.readTree("""
             { "format": "uchar-case-v0", "asOfDate": %s,
               "input": { "instances": [ { "label": "V1", "objectType": "Vondst",
                   "attributes": { "vondstjaar": { "number": "2000" } }, "roles": {}, "characteristics": [] } ],
                 "parameters": {} },
               "expected": [ { "kind": "attributeValue", "label": "V1", "attribute": "%s", "value": %s } ] }
-            """.formatted(asOf, attribuut, waarde));
+            """.formatted(asOf, attribute, value));
     }
 
     /** The golden with the node at {@code pointer} replaced by evaluationYear under the replaced node's own type. The node
@@ -291,18 +291,18 @@ class EvaluationYearWitnessTest {
         return sb.toString();
     }
 
-    private static Dekking coverageOf(List<Dekking> dekking, String sleutel) {
-        for (Dekking d : dekking) if (sleutel.equals(d.sleutel())) return d;
-        throw new AssertionError("no manifest entry " + sleutel + " in " + dekking);
+    private static Coverage coverageOf(List<Coverage> coverage, String key) {
+        for (Coverage d : coverage) if (key.equals(d.key())) return d;
+        throw new AssertionError("no manifest entry " + key + " in " + coverage);
     }
 
-    private static List<Dekking> tmsCoverage(IrLoader.Loaded l) {
-        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.genereer(l.model()));
+    private static List<Coverage> tmsCoverage(IrLoader.Loaded l) {
+        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(l.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings()).dekking();
+                    l.sourcePaths(), l.navigationBindings()).coverage();
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

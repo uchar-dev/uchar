@@ -58,7 +58,7 @@ class CharacteristicValueWitnessTest {
 
     @Test void the_same_rule_with_true_plays_in_both_branches() throws Exception {
         Path ir = write("waar-ir.json", document("waar"));
-        Path casePath = write("casus-waar.json", CASE_AANWEZIG);
+        Path casePath = write("casus-waar.json", CASE_PRESENT);
         for (boolean viaDrl : new boolean[] { false, true }) {
             CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, List.of(casePath))
                                          : CaseRunner.viaExecModel(ir, List.of(casePath));
@@ -73,11 +73,11 @@ class CharacteristicValueWitnessTest {
     }
 
     /** The negatief's document with the attribution's value set to {@code waarde}. */
-    private static String document(String waarde) throws Exception {
+    private static String document(String value) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(NEGATIEF));
         ObjectNode literal = (ObjectNode) IrPath.version(doc, "rules", 0, 0).get("value");
-        literal.putObject("value").put("boolean", waarde.equals("waar"));
-        literal.set("source", IrPath.sourceReference(waarde));
+        literal.putObject("value").put("boolean", value.equals("waar"));
+        literal.set("source", IrPath.sourceReference(value));
         return doc.toPrettyString();
     }
 
@@ -94,7 +94,7 @@ class CharacteristicValueWitnessTest {
                             { "kind": "consistent" } ] }
             """;
 
-    private static final String CASE_AANWEZIG = """
+    private static final String CASE_PRESENT = """
             { "format": "uchar-case-v0", "asOfDate": null,
               "input": { "instances": [
                   { "label": "R1", "objectType": "Recht", "attributes": {}, "roles": {},

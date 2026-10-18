@@ -54,36 +54,36 @@ class LeftSidePlanWitnessTest {
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-premierecht", "ir.json");
 
     @Test void the_left_side_of_every_form_is_a_plan_out_of_the_closed_vocabulary() throws Exception {
-        DroolsBackend.Build bouw = DroolsBackend.build(GOLDEN, DroolsBackend.Branch.EXEC_MODEL);
-        Map<String, Map<String, Integer>> verwacht = new TreeMap<>();
-        verwacht.put("toekenning van een recht op premie", count(
+        DroolsBackend.Build build = DroolsBackend.build(GOLDEN, DroolsBackend.Branch.EXEC_MODEL);
+        Map<String, Map<String, Integer>> expected = new TreeMap<>();
+        expected.put("toekenning van een recht op premie", count(
                 "plan", 1, "lezing INVOER", 1, "onderwerp", 1, "binding op het onderwerp", 1, "toets", 1));
-        verwacht.put("premie van een recht op premie", count(
+        expected.put("premie van een recht op premie", count(
                 "plan", 1, "lezing CHARACTERISTIC_STATE", 1, "lezing INVOER", 1, "lezing PARAMETER", 1,
                 "onderwerp", 1, "binding op het onderwerp", 1, "patroon ParameterState", 1, "patroon CharacteristicState", 1,
                 "alfa", 2, "join", 1, "binding", 2, "toets", 1));
-        verwacht.put("premiebedrag van een jutter", count(
+        expected.put("premiebedrag van een jutter", count(
                 "plan", 2, "lezing SUBJECT", 1, "lezing STATE", 1, "lezing FOLD_COUNT", 1, "lezing FOLDED_VALUE", 1,
                 "onderwerp", 2, "patroon Jutter", 1, "patroon State", 1, "accumulatie Contribution", 1, "functie COUNT", 1,
                 "functie SUM", 1, "alfa", 2, "join", 2, "binding", 2));
-        verwacht.put("aantal toegekende rechten", count(
+        expected.put("aantal toegekende rechten", count(
                 "plan", 2, "lezing CHARACTERISTIC_STATE", 1, "lezing SUBJECT", 1, "lezing FOLD_COUNT", 1,
                 "onderwerp", 2, "patroon Jutter", 1, "patroon CharacteristicState", 1, "accumulatie Contribution", 1,
                 "functie COUNT", 1, "alfa", 2, "join", 2, "binding", 1, "toets", 1));
-        verwacht.put("premiegerechtigdheid", count(
+        expected.put("premiegerechtigdheid", count(
                 "plan", 1, "lezing STATE", 1, "onderwerp", 1, "patroon State", 1, "alfa", 1, "join", 1, "binding", 1,
                 "toets", 1));
-        assertEquals(verwacht, perForm(bouw.execModelTranspiler().modelplan().rules()));
+        assertEquals(expected, perForm(build.execModelTranspiler().modelplan().rules()));
     }
 
     /** Per form, the plans of its rules and the kinds of their slots and items. */
     private static Map<String, Map<String, Integer>> perForm(List<RulePlan> plans) {
         Map<String, Map<String, Integer>> out = new TreeMap<>();
         for (RulePlan r : plans) {
-            if (r.vorm() == null) continue;
-            Map<String, Integer> t = out.computeIfAbsent(r.vorm(), v -> new TreeMap<>());
+            if (r.form() == null) continue;
+            Map<String, Integer> t = out.computeIfAbsent(r.form(), v -> new TreeMap<>());
             tally(t, "plan");
-            for (Read l : r.lezingen().slots()) tally(t, "lezing " + l.soort());
+            for (Read l : r.readings().slots()) tally(t, "lezing " + l.category());
             for (LhsItem item : r.leftSide()) {
                 switch (item) {
                     case Subject o -> {
@@ -94,8 +94,8 @@ class LeftSidePlanWitnessTest {
                     case Not n -> n.patterns().forEach(p -> pattern(t, "niet", p));
                     case Exists b -> b.patterns().forEach(p -> pattern(t, "bestaat", p));
                     case Accumulation a -> {
-                        pattern(t, "accumulatie", a.bron());
-                        a.aggregations().forEach(f -> tally(t, "functie " + f.soort()));
+                        pattern(t, "accumulatie", a.source());
+                        a.aggregations().forEach(f -> tally(t, "functie " + f.category()));
                     }
                     case TestItem x -> tally(t, "toets");
                 }
@@ -104,15 +104,15 @@ class LeftSidePlanWitnessTest {
         return out;
     }
 
-    private static void pattern(Map<String, Integer> t, String soort, FactPattern p) {
-        tally(t, soort + " " + p.factClass().getSimpleName());
+    private static void pattern(Map<String, Integer> t, String category, FactPattern p) {
+        tally(t, category + " " + p.factClass().getSimpleName());
         p.alpha().forEach(a -> tally(t, "alfa"));
         p.joins().forEach(j -> tally(t, "join"));
         p.bindings().forEach(b -> tally(t, "binding"));
     }
 
-    private static void tally(Map<String, Integer> t, String soort) {
-        t.merge(soort, 1, Integer::sum);
+    private static void tally(Map<String, Integer> t, String category) {
+        t.merge(category, 1, Integer::sum);
     }
 
     private static Map<String, Integer> count(Object... paren) {

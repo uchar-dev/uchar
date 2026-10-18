@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
@@ -47,7 +47,7 @@ class JoinWithTwoNullsWitnessTest {
 
     private static final Path KUSTWACHT = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-kustwacht",
             "ir.json");
-    private static final ElementSleutel RUSTWACHT = ElementSleutel.van("wachter", "rustwacht", true);
+    private static final ElementKey RUSTWACHT = ElementKey.van("wachter", "rustwacht", true);
 
     @Test void a_join_whose_both_sides_read_null_meets_nothing_in_both_renderings() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(KUSTWACHT, DroolsBackend.Branch.EXEC_MODEL);
@@ -68,9 +68,9 @@ class JoinWithTwoNullsWitnessTest {
             Object p1 = post.getConstructor().newInstance();
             List<String> outcome = new ArrayList<>();
             for (Object[] posten : new Object[][] { { null, null }, { p1, p1 }, { p1, null } }) {
-                String invoer = (posten[0] == null ? "leeg" : "P1") + "/" + (posten[1] == null ? "leeg" : "P1");
-                outcome.add(invoer + " model " + kenmerken(model, wachter, posten));
-                outcome.add(invoer + " drl " + kenmerken(drl, wachter, posten));
+                String input = (posten[0] == null ? "leeg" : "P1") + "/" + (posten[1] == null ? "leeg" : "P1");
+                outcome.add(input + " model " + kenmerken(model, wachter, posten));
+                outcome.add(input + " drl " + kenmerken(drl, wachter, posten));
             }
             assertEquals(List.of("leeg/leeg model []", "leeg/leeg drl []", "P1/P1 model [W1, W2]", "P1/P1 drl [W1, W2]",
                     "P1/leeg model [W1]", "P1/leeg drl [W1]"), outcome);
@@ -94,24 +94,24 @@ class JoinWithTwoNullsWitnessTest {
     /** The labels of the Wachters W1 and W2, with the posts {@code posten}, that have the characteristic at the fixpoint
      *  of a session of {@code kb}. */
     private static List<String> kenmerken(KieBase kb, Class<?> wachter, Object[] posten) throws Exception {
-        KieSession sessie = kb.newKieSession();
+        KieSession session = kb.newKieSession();
         try {
             List<Object> wachters = new ArrayList<>();
             for (Object p : posten) {
                 Object w = wachter.getConstructor().newInstance();
                 if (p != null) wachter.getMethod("setPost", p.getClass()).invoke(w, p);
                 wachters.add(w);
-                sessie.insert(w);
+                session.insert(w);
             }
-            sessie.fireAllRules();
+            session.fireAllRules();
             List<String> out = new ArrayList<>();
             for (int i = 0; i < wachters.size(); i++)
-                for (Object f : sessie.getObjects(new ClassObjectFilter(HasCharacteristic.class)))
-                    if (((HasCharacteristic) f).onderwerp() == wachters.get(i) && ((HasCharacteristic) f).kenmerk().equals(RUSTWACHT))
+                for (Object f : session.getObjects(new ClassObjectFilter(HasCharacteristic.class)))
+                    if (((HasCharacteristic) f).onderwerp() == wachters.get(i) && ((HasCharacteristic) f).characteristic().equals(RUSTWACHT))
                         out.add("W" + (i + 1));
             return out;
         } finally {
-            sessie.dispose();
+            session.dispose();
         }
     }
 }

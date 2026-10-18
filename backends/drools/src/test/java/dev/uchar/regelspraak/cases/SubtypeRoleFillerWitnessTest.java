@@ -68,14 +68,14 @@ class SubtypeRoleFillerWitnessTest {
         Map<String, Object> one = CaseRunner.inputBeans(WRAKMELDING.resolve("ir.json"), caseOf(CASES.get(0)));
         assertEquals("Vondst", fieldClass(one.get("M1"), "getVondst"), "het veld heeft de klasse van de vuller");
         assertEquals("Wrakvondst", one.get("W").getClass().getSimpleName());
-        for (String m : List.of("M1", "M2", "M3")) assertSame(one.get("W"), lees(one.get(m), "getVondst"), m);
-        assertSame(one.get("V"), lees(one.get("M4"), "getVondst"), "M4");
+        for (String m : List.of("M1", "M2", "M3")) assertSame(one.get("W"), read(one.get(m), "getVondst"), m);
+        assertSame(one.get("V"), read(one.get("M4"), "getVondst"), "M4");
 
         Map<String, Object> three = CaseRunner.inputBeans(WRAKMELDING.resolve("ir.json"), caseOf(CASES.get(2)));
-        assertSame(three.get("W"), lees(three.get("R"), "getGerapporteerdeVondst"), "vanaf de rapportkant geschreven");
-        assertSame(three.get("R"), lees(three.get("W"), "getRapport"), "en ook aan de wrakkant gezet");
-        assertSame(three.get("P"), lees(three.get("S"), "getRapport"), "vanaf het scheepswrak geschreven");
-        assertSame(three.get("S"), lees(three.get("P"), "getGerapporteerdeVondst"), "en in het Vondst-veld van P gezet");
+        assertSame(three.get("W"), read(three.get("R"), "getGerapporteerdeVondst"), "vanaf de rapportkant geschreven");
+        assertSame(three.get("R"), read(three.get("W"), "getRapport"), "en ook aan de wrakkant gezet");
+        assertSame(three.get("P"), read(three.get("S"), "getRapport"), "vanaf het scheepswrak geschreven");
+        assertSame(three.get("S"), read(three.get("P"), "getGerapporteerdeVondst"), "en in het Vondst-veld van P gezet");
     }
 
     /** The golden's three cases through both branches: the to-one read on the storing side, a count, a sum, a
@@ -92,29 +92,29 @@ class SubtypeRoleFillerWitnessTest {
      *  was a {@code Scheepswrak} field and every rule over the link refused, a plain {@code Vondst} included. */
     @Test void the_reference_field_has_the_class_of_the_filler_in_every_order() throws Exception {
         ObjectNode ir = golden();
-        ArrayNode typen = IrPath.modelList(ir, "objectTypes");
-        assertEquals("[\"Vondst\",\"Wrakvondst\",\"Scheepswrak\",\"Melding\",\"Rapport\"]", names(typen));
-        JsonNode scheepswrak = typen.remove(2), wrakvondst = typen.remove(1);
-        typen.insert(0, wrakvondst);
-        typen.insert(0, scheepswrak);
-        assertEquals("[\"Scheepswrak\",\"Wrakvondst\",\"Vondst\",\"Melding\",\"Rapport\"]", names(typen));
+        ArrayNode types = IrPath.modelList(ir, "objectTypes");
+        assertEquals("[\"Vondst\",\"Wrakvondst\",\"Scheepswrak\",\"Melding\",\"Rapport\"]", names(types));
+        JsonNode scheepswrak = types.remove(2), wrakvondst = types.remove(1);
+        types.insert(0, wrakvondst);
+        types.insert(0, scheepswrak);
+        assertEquals("[\"Scheepswrak\",\"Wrakvondst\",\"Vondst\",\"Melding\",\"Rapport\"]", names(types));
         RegelSpraakModel model = IrLoader.load(ir);
-        assertTrue(FactModelGenerator.members(model, model.objecttypeOpNaam("Melding"))
+        assertTrue(FactModelGenerator.members(model, model.objectTypeByName("Melding"))
                 .contains(new FactModelGenerator.Member("vondst", "Vondst", false)), "Melding.vondst is een Vondst-veld");
-        assertTrue(FactModelGenerator.members(model, model.objecttypeOpNaam("Rapport"))
+        assertTrue(FactModelGenerator.members(model, model.objectTypeByName("Rapport"))
                 .contains(new FactModelGenerator.Member("gerapporteerdeVondst", "Vondst", false)));
-        Path pad = write(ir);
-        for (String c : CASES) BothBranches.green(pad, caseOf(c), c);
+        Path path = write(ir);
+        for (String c : CASES) BothBranches.green(path, caseOf(c), c);
     }
 
     /** The type gate is assignability: the field of the role filled by {@code Vondst} takes a {@code Vondst}, a
      *  {@code Wrakvondst} and a {@code Scheepswrak}, and nothing that is no {@code Vondst}. */
     @Test void the_field_takes_each_subtype_of_the_filler_for_the_same_role() throws Exception {
         RegelSpraakModel model = IrLoader.load(golden());
-        Objecttype melding = model.objecttypeOpNaam("Melding");
+        Objecttype message = model.objectTypeByName("Melding");
         for (String t : List.of("Vondst", "Wrakvondst", "Scheepswrak"))
-            assertTrue(FactModelGenerator.hasReferenceField(model, melding, "vondst", model.objecttypeOpNaam(t)), t);
-        assertFalse(FactModelGenerator.hasReferenceField(model, melding, "vondst", model.objecttypeOpNaam("Rapport")));
+            assertTrue(FactModelGenerator.hasReferenceField(model, message, "vondst", model.objectTypeByName(t)), t);
+        assertFalse(FactModelGenerator.hasReferenceField(model, message, "vondst", model.objectTypeByName("Rapport")));
     }
 
     /** The fence on that assignability. Twisted from the red case: {@code Vlot} is made a {@code Ponton}, so both
@@ -132,9 +132,9 @@ class SubtypeRoleFillerWitnessTest {
         attributeReference.put("attribute", "dekhoogte").put("subjectType", "Vlot");
         ((ObjectNode) attributeReference.get("path").get(0)).put("factType", "vlotligging");
         RegelSpraakModel model = IrLoader.load(ir);
-        Objecttype schuit = model.objecttypeOpNaam("Schuit");
-        assertTrue(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objecttypeOpNaam("Ponton")));
-        assertFalse(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objecttypeOpNaam("Vlot")));
+        Objecttype schuit = model.objectTypeByName("Schuit");
+        assertTrue(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objectTypeByName("Ponton")));
+        assertFalse(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objectTypeByName("Vlot")));
         // both branches name the missing field in the sentence of the analysis; until card
         // drl-teksttak-op-truth-maintenance the DRL-text branch named who holds the field
         BothBranches.refused(write(ir), JSON.readTree("""
@@ -178,11 +178,11 @@ class SubtypeRoleFillerWitnessTest {
                       { "kind": "attributeValue", "label": "V", "attribute": "maatwaarde", "value": { "number": "5" } },
                       { "kind": "attributeValue", "label": "W", "attribute": "maatwaarde", "value": { "number": "2" } } ] }
                 """);
-        Path pad = write(ir);
-        Map<String, Object> invoer = CaseRunner.inputBeans(pad, c);
-        assertSame(invoer.get("V"), lees(invoer.get("W"), "getMaat"));
-        assertSame(invoer.get("W"), lees(invoer.get("V"), "getMaat"), "de poot van het subtype gespiegeld");
-        BothBranches.green(pad, c, "wederkerig met een subtype");
+        Path path = write(ir);
+        Map<String, Object> input = CaseRunner.inputBeans(path, c);
+        assertSame(input.get("V"), read(input.get("W"), "getMaat"));
+        assertSame(input.get("W"), read(input.get("V"), "getMaat"), "de poot van het subtype gespiegeld");
+        BothBranches.green(path, c, "wederkerig met een subtype");
     }
 
     /** An object creation on the subtype links the minted {@code Melding} to the {@code Wrakvondst} that created it,
@@ -290,7 +290,7 @@ class SubtypeRoleFillerWitnessTest {
         ObjectNode ir = golden();
         IrPath.addAttribute(IrPath.objectType(ir, "Rapport"), "gerapporteerde-vondst", JSON.readTree(WHOLE));
         ArrayNode rules = IrPath.rulesList(ir, "rules");
-        rules.remove(indexOf(rules, IrPath.vorm(ir, "rules", "rapportwaarde van een rapport")));
+        rules.remove(indexOf(rules, IrPath.form(ir, "rules", "rapportwaarde van een rapport")));
         BothBranches.refused(write(ir), caseOf(CASES.get(2)), "whose bean property Rapport.gerapporteerdeVondst"
                 + " belongs to the attribute 'gerapporteerde-vondst' of Rapport", "een rol op de eigenschap van een lid");
     }
@@ -328,19 +328,19 @@ class SubtypeRoleFillerWitnessTest {
                           "type":%s,
                           "source":{"snippet":"de som van het gewicht van alle bijlagen van alle meldingen van de Vondst"}},
                  "initialisation":false,"presentation":"calculation"}]}""".formatted(WHOLE)));
-        Path pad = write(ir);
+        Path path = write(ir);
         JsonNode c = JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [ { "label": "V", "objectType": "Vondst", "attributes": {}, "roles": {},
                                               "characteristics": [] } ], "parameters": {} },
                   "expected": [ { "kind": "attributeEmpty", "label": "V", "attribute": "bijlagengewicht" } ] }
                 """);
-        BothBranches.refused(pad, c, "de rol 'melding' op Vondst is meervoudig, dus haar opslag is het veld aan de"
+        BothBranches.refused(path, c, "de rol 'melding' op Vondst is meervoudig, dus haar opslag is het veld aan de"
                 + " overzijde, en dat veld ontbreekt: de rol 'vondst' op Melding deelt haar naam met een gedeclareerd"
                 + " lid", "de zusterrol is enkelvoudig; haar veld is door een lid genomen");
         for (boolean viaDrl : new boolean[] { false, true }) {
             CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                    () -> CaseRunner.playCase(pad, c, viaDrl));
+                    () -> CaseRunner.playCase(path, c, viaDrl));
             assertFalse(e.getMessage().contains("beide zijden meervoudig"), e.getMessage());
         }
     }
@@ -356,12 +356,12 @@ class SubtypeRoleFillerWitnessTest {
     }
 
     private Path write(JsonNode ir) throws Exception {
-        Path pad = Files.createTempFile(tmp, "ir", ".json");
-        Files.writeString(pad, JSON.writeValueAsString(ir));
-        return pad;
+        Path path = Files.createTempFile(tmp, "ir", ".json");
+        Files.writeString(path, JSON.writeValueAsString(ir));
+        return path;
     }
 
-    private static Object lees(Object bean, String getter) throws Exception {
+    private static Object read(Object bean, String getter) throws Exception {
         return bean.getClass().getMethod(getter).invoke(bean);
     }
 
@@ -369,14 +369,14 @@ class SubtypeRoleFillerWitnessTest {
         return bean.getClass().getMethod(getter).getReturnType().getSimpleName();
     }
 
-    private static int indexOf(ArrayNode lijst, JsonNode member) {
-        for (int i = 0; i < lijst.size(); i++) if (lijst.get(i) == member) return i;
+    private static int indexOf(ArrayNode list, JsonNode member) {
+        for (int i = 0; i < list.size(); i++) if (list.get(i) == member) return i;
         throw new AssertionError("niet in de lijst: " + member.path("name").asText());
     }
 
-    private static String names(ArrayNode typen) {
+    private static String names(ArrayNode types) {
         ArrayNode out = JSON.createArrayNode();
-        for (JsonNode t : typen) out.add(t.path("name").asText());
+        for (JsonNode t : types) out.add(t.path("name").asText());
         return out.toString();
     }
 }

@@ -74,7 +74,7 @@ class DrlUnitSiteWitnessTest {
     @Test void the_drl_text_follows_the_declarations_not_the_wire_repetition() throws Exception {
         int twists = 0;
         Set<String> touched = new LinkedHashSet<>();
-        List<String> afwijkend = new ArrayList<>();
+        List<String> deviating = new ArrayList<>();
         for (Path ir : goldens()) {
             JsonNode honest = JSON.readTree(Files.readString(ir));
             JsonNode lying = honest.deepCopy();
@@ -92,17 +92,17 @@ class DrlUnitSiteWitnessTest {
                 continue;                            // the loader does not carry the lying form, as before the analysis
             } catch (dev.uchar.regelspraak.cases.CaseRunner.Excluded refusal) {
                 // a lie that makes the analysis refuse what it carried honestly is a place that reads the repetition
-                afwijkend.add(naam(ir) + " — the lying document is refused: " + refusal.getMessage());
+                deviating.add(naam(ir) + " — the lying document is refused: " + refusal.getMessage());
                 continue;
             }
             twists += n;
             touched.add(naam(ir));
-            if (!a.equals(b)) afwijkend.add(naam(ir) + " — " + firstDifference(a, b));
+            if (!a.equals(b)) deviating.add(naam(ir) + " — " + firstDifference(a, b));
         }
         // never silently green: a corpus without a single twistable unit annotation would make every
         // assertion below vacuous, so the empty probe is itself the failure.
         assertTrue(twists > 0, "no derived position was twisted — the witness probed nothing (" + touched + ")");
-        assertEquals(List.of(), afwijkend,
+        assertEquals(List.of(), deviating,
                 "the DRL text moved when a wire annotation lied: that place reads the repetition, not the declaration");
     }
 
@@ -125,10 +125,10 @@ class DrlUnitSiteWitnessTest {
             if (dateTyped(l, d, scope) && !dateTyped(r, d, scope)) duration = r;
             else if (dateTyped(r, d, scope) && !dateTyped(l, d, scope)) duration = l;
         }
-        boolean vrijgesteld = exemptByParent || "Literal".equals(node)
+        boolean exempt = exemptByParent || "Literal".equals(node)
                 || ("BuiltinCall".equals(node) && DURATION_CALL_KINDS.contains(o.path("kind").asText("")));
         int n = 0;
-        if (!vrijgesteld && derived(o) && o.get("type") instanceof ObjectNode t) {
+        if (!exempt && derived(o) && o.get("type") instanceof ObjectNode t) {
             ObjectNode sister = sister(t.get("unit"), CLASS.get(node));
             if (sister != null) { t.set("unit", sister); n++; }
         }
@@ -165,10 +165,10 @@ class DrlUnitSiteWitnessTest {
         if (a == null || c == null || f == null) return null;
         BigInteger num = f.get("num").bigIntegerValue().multiply(BigInteger.TEN.pow(exp));
         BigInteger den = f.get("den").bigIntegerValue();
-        BigInteger ggd = num.gcd(den);
+        BigInteger gcd = num.gcd(den);
         ObjectNode out = u.deepCopy();
         out.put("abbreviation", a.asText() + "-verdraaid" + exp);
-        out.putObject("factorToCanonical").put("num", num.divide(ggd)).put("den", den.divide(ggd));
+        out.putObject("factorToCanonical").put("num", num.divide(gcd)).put("den", den.divide(gcd));
         return out;
     }
 
@@ -183,7 +183,7 @@ class DrlUnitSiteWitnessTest {
     private static JsonNode declared(JsonNode e, Declarations d, Map<String, JsonNode> scope) {
         if (e == null || !e.isObject()) return null;
         return switch (e.path("node").asText("")) {
-            case "AttributeReference" -> d.attribuut(e.path("subjectType").asText(""), e.path("attribute").asText(""));
+            case "AttributeReference" -> d.attribute(e.path("subjectType").asText(""), e.path("attribute").asText(""));
             case "ParameterReference" -> d.parameters.get(e.path("parameter").asText("").toLowerCase(java.util.Locale.ROOT));
             case "DimensionCellRead" -> declared(e.get("attribute"), d, scope);
             case "BinderRef" -> scope.get(e.path("name").asText("").toLowerCase(java.util.Locale.ROOT));
@@ -209,7 +209,7 @@ class DrlUnitSiteWitnessTest {
                 parameters.put(p.path("name").asText("").toLowerCase(java.util.Locale.ROOT), p.get("datatype"));
         }
 
-        JsonNode attribuut(String type, String naam) {
+        JsonNode attribute(String type, String naam) {
             String a = naam.toLowerCase(java.util.Locale.ROOT);
             for (String t = type.toLowerCase(java.util.Locale.ROOT); t != null; t = supertype.get(t)) {
                 JsonNode dt = attributes.get(t + "|" + a);

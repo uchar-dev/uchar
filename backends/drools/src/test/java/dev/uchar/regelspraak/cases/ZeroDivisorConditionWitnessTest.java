@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.engine.ScenarioResultaat;
+import dev.uchar.regelspraak.engine.ScenarioResult;
 
 import org.junit.jupiter.api.Test;
 
@@ -124,9 +124,9 @@ class ZeroDivisorConditionWitnessTest {
     @Test void the_scenario_report_and_the_red_route_carry_the_sentence() throws Exception {
         Path ir = document(zwaar(DIVISION_GREATER_THAN_ONE));
         Path c = Files.writeString(Files.createTempDirectory("nuldeler-voorwaarde").resolve("case1-nul.json"), ZERO_AND_ORDINARY);
-        List<ScenarioResultaat> rapport = CaseRunner.rapport(ir, List.of(c));
-        assertEquals(ScenarioResultaat.Status.FAIL, rapport.get(0).status(), rapport::toString);
-        assertEquals("case1-nul.json: ERROR DelingDoorNul: " + sentence("zwaar", "60"), rapport.get(0).diagnose());
+        List<ScenarioResult> report = CaseRunner.report(ir, List.of(c));
+        assertEquals(ScenarioResult.Status.FAIL, report.get(0).status(), report::toString);
+        assertEquals("case1-nul.json: ERROR DelingDoorNul: " + sentence("zwaar", "60"), report.get(0).diagnostic());
         // gate 8 pins "Breuk deling door 0" on its red cases: the chain still carries it
         CaseRunner.RedResult r = CaseRunner.runRed(ir, c);
         assertEquals("FAULT", r.status(), r::detail);
@@ -136,21 +136,21 @@ class ZeroDivisorConditionWitnessTest {
 
     @Test void a_consumer_that_itself_fires_reads_the_rule_and_the_condition() throws Exception {
         // the distribution's service fires the KieBase itself, on the exec-model branch through the entry: the
-        // fire reaches its fixpoint with the fault of the condition standing as a fact, DroolsBackend.lees gives it as
-        // data, and DroolsBackend.zetAfgeleideWaarden throws it in the sentence of the replay, which names the rule.
+        // fire reaches its fixpoint with the fault of the condition standing as a fact, DroolsBackend.read gives it as
+        // data, and DroolsBackend.setDerivedValues throws it in the sentence of the replay, which names the rule.
         // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which
         // DroolsBackend.designate named, and so did the destructive DRL-text branch until card
         // drl-teksttak-op-truth-maintenance ("[Rule "zwaar" …"); since that card both branches render the analysis.
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             CaseRunner.forMeasurement(document(zwaar(DIVISION_GREATER_THAN_ONE)), branch)
-                    .withSession(JSON.readTree(ZERO_AND_ORDINARY), (bouw, sessie, labels) -> {
-                        assertEquals(null, DroolsBackend.vuur(bouw, sessie).geenFixpunt(),
+                    .withSession(JSON.readTree(ZERO_AND_ORDINARY), (build, session, labels) -> {
+                        assertEquals(null, DroolsBackend.fire(build, session).noFixpoint(),
                                 branch + ": the fire reaches its fixpoint");
-                        List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();
-                        assertEquals(1, fouten.size(), fouten::toString);
-                        assertEquals(sentence("zwaar", "60"), fouten.get(0).melding(), branch + ": the fault as data");
+                        List<dev.uchar.regelspraak.transpiler.tms.Fault> faults = DroolsBackend.fixpointOf(build, session).faults();
+                        assertEquals(1, faults.size(), faults::toString);
+                        assertEquals(sentence("zwaar", "60"), faults.get(0).message(), branch + ": the fault as data");
                         named(sentence("zwaar", "60"), assertThrows(RuntimeException.class,
-                                () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)));
+                                () -> DroolsBackend.setDerivedValues(build, session)));
                         return null;
                     });
     }
@@ -160,43 +160,43 @@ class ZeroDivisorConditionWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    private static String attribuut(String naam, String type) {
+    private static String attribute(String naam, String type) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + type + "}";
     }
 
-    private static String kenmerk(String naam) {
+    private static String characteristic(String naam) {
         return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
     }
 
     private static final String ROLE_VONDST = "{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"}";
 
     private static final String MODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
-            + "\"plural\":\"Jutters\",\"attributes\":[" + attribuut("verhouding", TWO_DECIMALS) + ","
-            + attribuut("aantal zware vondsten", WHOLE) + "],\"characteristics\":[" + kenmerk("ijverig") + "]},"
+            + "\"plural\":\"Jutters\",\"attributes\":[" + attribute("verhouding", TWO_DECIMALS) + ","
+            + attribute("aantal zware vondsten", WHOLE) + "],\"characteristics\":[" + characteristic("ijverig") + "]},"
             + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\",\"attributes\":["
-            + attribuut("geschatte gewicht", TWO_DECIMALS) + "," + attribuut("gewogen gewicht", TWO_DECIMALS) + ","
-            + attribuut("verhouding", TWO_DECIMALS) + "],\"characteristics\":[" + kenmerk("zwaar") + "]}],"
+            + attribute("geschatte gewicht", TWO_DECIMALS) + "," + attribute("gewogen gewicht", TWO_DECIMALS) + ","
+            + attribute("verhouding", TWO_DECIMALS) + "],\"characteristics\":[" + characteristic("zwaar") + "]}],"
             + "\"factTypes\":[{\"node\":\"FactType\",\"name\":\"JutterHeeftVondst\",\"reciprocal\":false,\"roles\":["
             + "{\"node\":\"Role\",\"name\":\"jutter\",\"objectType\":\"Jutter\",\"many\":false},{\"node\":\"Role\",\"name\":"
             + "\"vondst\",\"objectType\":\"Vondst\",\"plural\":\"vondsten\",\"many\":true}]}],\"parameters\":[{\"node\":"
             + "\"Parameter\",\"name\":\"drempel\",\"datatype\":" + TWO_DECIMALS + "}],\"domains\":[],\"unitSystems\":[],"
             + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     /** "de &lt;attribuut&gt; van de jutter van de Vondst", over the role jutter. */
-    private static String viaJutter(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Jutter\",\"source\":"
-                + "{\"snippet\":\"de " + attribuut + " van de jutter van de Vondst\"},\"path\":[{\"node\":\"RoleBinding\","
+    private static String viaJutter(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Jutter\",\"source\":"
+                + "{\"snippet\":\"de " + attribute + " van de jutter van de Vondst\"},\"path\":[{\"node\":\"RoleBinding\","
                 + "\"factType\":\"JutterHeeftVondst\",\"role\":\"jutter\"}]}";
     }
 
-    private static String number(String waarde) {
-        return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + waarde + "\"},\"type\":" + WHOLE + ",\"source\":"
-                + "{\"snippet\":\"" + waarde + "\"}}";
+    private static String number(String value) {
+        return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + value + "\"},\"type\":" + WHOLE + ",\"source\":"
+                + "{\"snippet\":\"" + value + "\"}}";
     }
 
     private static String division(String left, String right) {
@@ -204,25 +204,25 @@ class ZeroDivisorConditionWitnessTest {
                 + TWO_DECIMALS + ",\"source\":{\"snippet\":\"een deling\"}}";
     }
 
-    private static String greaterThan(String left, String right, String bron) {
+    private static String greaterThan(String left, String right, String source) {
         return "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + left + ",\"right\":" + right + ",\"source\":"
-                + "{\"snippet\":\"" + bron + "\"}}";
+                + "{\"snippet\":\"" + source + "\"}}";
     }
 
     private static final String WAAR = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},"
             + "\"source\":{\"snippet\":\"waar\"}}";
 
     /** "Een Vondst is zwaar indien &lt;voorwaarde&gt;". */
-    private static String zwaar(String voorwaarde) {
-        return regel("zwaar", "Vondst", "zwaar", "Een Vondst is zwaar", WAAR, voorwaarde, "");
+    private static String zwaar(String condition) {
+        return regel("zwaar", "Vondst", "zwaar", "Een Vondst is zwaar", WAAR, condition, "");
     }
 
-    private static String regel(String naam, String type, String doel, String targetSource, String waarde, String voorwaarde,
+    private static String regel(String naam, String type, String target, String targetSource, String value, String condition,
                                 String tail) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
-                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\",\"source\":"
-                + "{\"snippet\":\"" + targetSource + "\"}},\"value\":" + waarde
-                + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde) + ",\"initialisation\":false" + tail + "}]}";
+                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\",\"source\":"
+                + "{\"snippet\":\"" + targetSource + "\"}},\"value\":" + value
+                + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false" + tail + "}]}";
     }
 
     private static Path document(String rules) throws Exception {
@@ -248,8 +248,8 @@ class ZeroDivisorConditionWitnessTest {
                 + "[\"J1\"]" : "") + "},\"characteristics\":[]}";
     }
 
-    private static String caseDocument(String instanties) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instanties + "],\"parameters\":"
+    private static String caseDocument(String instances) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instances + "],\"parameters\":"
                 + "{\"drempel\":{\"number\":\"1.00\"}}},\"expected\":[]}";
     }
 

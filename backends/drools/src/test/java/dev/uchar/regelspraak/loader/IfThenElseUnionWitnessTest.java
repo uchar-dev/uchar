@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.loader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.cases.IrPath;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -39,17 +39,17 @@ class IfThenElseUnionWitnessTest {
 
         // the form sits INSIDE an ordinary node, so reaching it at all means the tree carries it — a side
         // table would have put an Onopgelost here and kept the shape elsewhere.
-        Expr.Binair top = assertInstanceOf(Expr.Binair.class, value, "de waarde is de omhullende Binair");
-        Expr.IfThenElse choice = assertInstanceOf(Expr.IfThenElse.class, top.links(),
+        Expr.Binary top = assertInstanceOf(Expr.Binary.class, value, "de waarde is de omhullende Binair");
+        Expr.IfThenElse choice = assertInstanceOf(Expr.IfThenElse.class, top.left(),
                 "de ch. 10.2-vorm is een unie-knoop in de boom, geen Onopgelost-drager");
 
         // every required field of the wire shape landed on the record (WF-069's node; the wire spells them
         // condition / then / else).
         assertNotNull(choice.type(), "type");
-        assertNotNull(choice.bron(), "bron");
-        assertInstanceOf(Conditie.Vergelijking.class, choice.condition(), "de guard is de gewone conditie-unie");
-        assertEquals("laag", ((Expr.AttribuutRef) choice.then()).attribuut(), "de dan-tak");
-        assertEquals("hoog", ((Expr.AttribuutRef) choice.otherwise()).attribuut(), "de anders-tak");
+        assertNotNull(choice.source(), "bron");
+        assertInstanceOf(Condition.Comparison.class, choice.condition(), "de guard is de gewone conditie-unie");
+        assertEquals("laag", ((Expr.AttributeReference) choice.then()).attribute(), "de dan-tak");
+        assertEquals("hoog", ((Expr.AttributeReference) choice.otherwise()).attribute(), "de anders-tak");
 
         // and nothing in this tree is unresolved any more: the last Onopgelost CARRIER is gone, so an
         // Onopgelost here would again mean a form parsed into a leaf.
@@ -89,13 +89,13 @@ class IfThenElseUnionWitnessTest {
 
     /** Whether the tree reads the named attribute — the generic scan, asked exactly as a consumer asks it. */
     private static boolean reads(Expr e, String attribute) {
-        return Expr.contains(e, x -> x instanceof Expr.AttribuutRef a && attribute.equals(a.attribuut()));
+        return Expr.contains(e, x -> x instanceof Expr.AttributeReference a && attribute.equals(a.attribute()));
     }
 
     private static Expr ruleValue(String ir) throws Exception {
         RegelSpraakModel model = IrLoader.loadAll(JSON.readTree(ir)).model();
         assertEquals(1, model.resolvedRegels.size(), "één regel in dit document");
-        return model.resolvedRegels.get(0).waarde();
+        return model.resolvedRegels.get(0).value();
     }
 
     // ---------------- the wire shapes ----------------
@@ -120,7 +120,7 @@ class IfThenElseUnionWitnessTest {
                 .formatted(op, left, right, type, op.toLowerCase(Locale.ROOT));
     }
 
-    private static String verg(String op, String left, String right) {
+    private static String compare(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, left, right, op.toLowerCase(Locale.ROOT));
     }
@@ -144,14 +144,14 @@ class IfThenElseUnionWitnessTest {
     /** The ch. 10.2 node as the LEFT operand of an ordinary Binair — so the walk must pass an ordinary node
      *  first and the form cannot be found by looking at the value root alone. */
     private static String nestedModel() {
-        String choice = ite(verg("greater", attr("grondslag", num(2)), lit("1.00", num(2))),
+        String choice = ite(compare("greater", attr("grondslag", num(2)), lit("1.00", num(2))),
                 attr("laag", num(2)), attr("hoog", num(2)), num(2));
         return doc(binary("plus", choice, lit("0.00", num(2)), num(2)));
     }
 
     /** The same form under a Let body, its guard reading the binder. */
     private static String underLetModel() {
-        String choice = ite(verg("greater", bref("g", num(2)), lit("1.00", num(2))),
+        String choice = ite(compare("greater", bref("g", num(2)), lit("1.00", num(2))),
                 attr("laag", num(2)), attr("hoog", num(2)), num(2));
         return doc(let("g", attr("grondslag", num(2)), choice, num(2)));
     }

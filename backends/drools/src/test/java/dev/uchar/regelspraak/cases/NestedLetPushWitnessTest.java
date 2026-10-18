@@ -49,12 +49,12 @@ class NestedLetPushWitnessTest {
         //   inkomen  5,00, restpost 2,00   -> anders-arm, and it simply computes: ref uit 2,50, CONSISTENT.
         // The first flank is the one that was red: `w`'s forcing gate carried `z != null`, which is false on
         // the dan-arm because `z` was never forced there, so `w` went unforced and its barrier emptied.
-        BothBranches.green(write(pushModel()), jutter(n("inkomen", "40.00"), waarde("1.00") + ", " + consistent()),
+        BothBranches.green(write(pushModel()), jutter(n("inkomen", "40.00"), valueJson("1.00") + ", " + consistent()),
                 "de dan-arm leest de geneste behoefte niet");
         BothBranches.green(write(pushModel()), jutter(n("inkomen", "5.00"), empty() + ", " + inconsistent()),
                 "de anders-arm leest haar en meldt");
         BothBranches.green(write(pushModel()), jutter(n("inkomen", "5.00") + ", " + n("restpost", "2.00"),
-                waarde("2.50") + ", " + consistent()), "de anders-arm rekent gewoon");
+                valueJson("2.50") + ", " + consistent()), "de anders-arm rekent gewoon");
     }
 
     // ---------------- the SCOPE pin of the barrier: the whole expression, never the arm ----------------
@@ -69,7 +69,7 @@ class NestedLetPushWitnessTest {
         //                                     empties its whole body, the `plus` included. NOT 5,00.
         // Both flanks are falsifiable in the same direction: a lowering that shrinks the barrier to the arm
         // answers 5,00 on each of them.
-        BothBranches.green(write(wrapperModel()), jutter(n("inkomen", "40.00"), waarde("6.00") + ", " + consistent()),
+        BothBranches.green(write(wrapperModel()), jutter(n("inkomen", "40.00"), valueJson("6.00") + ", " + consistent()),
                 "de niet-lezende arm telt gewoon op");
         BothBranches.green(write(wrapperModel()), jutter(n("inkomen", "5.00"), empty() + ", " + inconsistent()),
                 "de barriere leegt het geheel, niet de arm");
@@ -89,12 +89,12 @@ class NestedLetPushWitnessTest {
         //   inkomen  5,00, restpost 2,00   -> anders-arm: ref uit 2,50, CONSISTENT.
         // The middle flank also pins the COMPANION side of the exchange: after the swap `w`'s need IS a
         // binder, so the companion has to decompose a need through the environment it is itself building.
-        BothBranches.green(write(switchModel()), jutter(n("inkomen", "40.00"), waarde("0.00") + ", " + consistent()),
+        BothBranches.green(write(switchModel()), jutter(n("inkomen", "40.00"), valueJson("0.00") + ", " + consistent()),
                 "de dan-arm leest de geneste behoefte niet");
         BothBranches.green(write(switchModel()), jutter(n("inkomen", "5.00"), empty() + ", " + inconsistent()),
                 "de anders-arm leest haar en meldt");
         BothBranches.green(write(switchModel()), jutter(n("inkomen", "5.00") + ", " + n("restpost", "2.00"),
-                waarde("2.50") + ", " + consistent()), "de anders-arm rekent gewoon");
+                valueJson("2.50") + ", " + consistent()), "de anders-arm rekent gewoon");
     }
 
     // ---------------- the lens finding: a need that is ITSELF a binder ----------------
@@ -111,7 +111,7 @@ class NestedLetPushWitnessTest {
         BothBranches.green(write(chainModel()), jutter(n("inkomen", "10.00"), empty() + ", " + inconsistent()),
                 "de behoefte-als-binder meldt");
         BothBranches.green(write(chainModel()), jutter(n("inkomen", "10.00") + ", " + n("restpost", "2.00"),
-                waarde("5.00") + ", " + consistent()), "de behoefte-als-binder verzint niets");
+                valueJson("5.00") + ", " + consistent()), "de behoefte-als-binder verzint niets");
     }
 
     // ---------------- the SCOPE, first direction: a need both arms read stays eager ----------------
@@ -130,7 +130,7 @@ class NestedLetPushWitnessTest {
         BothBranches.green(write(bothArmsModel()), jutter(n("inkomen", "5.00"), empty() + ", " + inconsistent()),
                 "de anders-arm leest haar");
         BothBranches.green(write(bothArmsModel()), jutter(n("inkomen", "40.00") + ", " + n("restpost", "2.00"),
-                waarde("21.00") + ", " + consistent()), "beide lezingen rekenen");
+                valueJson("21.00") + ", " + consistent()), "beide lezingen rekenen");
     }
 
     // ---------------- the SCOPE, second direction: the shape no route reaches ----------------
@@ -143,7 +143,7 @@ class NestedLetPushWitnessTest {
         // drl-teksttak-op-truth-maintenance; until then the destructive DRL-text lowering refused it BY NAME ("takgarde
         // van een voorwaardelijk gelezen behoefte (ch. 10.2)"), and clingo raises its own loud TRANSLATION FAULT on the
         // same document.
-        BothBranches.green(write(wrapperBetweenModel()), jutter(n("inkomen", "40.00"), waarde("5.00") + ", "
+        BothBranches.green(write(wrapperBetweenModel()), jutter(n("inkomen", "40.00"), valueJson("5.00") + ", "
                 + consistent()), "de wikkel tussen de twee Lets speelt");
     }
 
@@ -168,9 +168,9 @@ class NestedLetPushWitnessTest {
         //   it is 9,00 if the two `w`s are confused (8,00/2,00 + 5,00), so the two bindings are told apart by
         //   a number here and not only by a report.
         for (JsonNode c : new JsonNode[] {
-                jutter(n("saldo", "5.00") + ", " + n("inkomen", "40.00"), waarde("5.00") + ", " + consistent()),
+                jutter(n("saldo", "5.00") + ", " + n("inkomen", "40.00"), valueJson("5.00") + ", " + consistent()),
                 jutter(n("saldo", "5.00") + ", " + n("inkomen", "8.00") + ", " + n("restpost", "2.00"),
-                        waarde("7.50") + ", " + consistent()) })
+                        valueJson("7.50") + ", " + consistent()) })
             BothBranches.green(ir, c, "de herbonden takgarde speelt");
     }
 
@@ -186,11 +186,11 @@ class NestedLetPushWitnessTest {
 
     // ---------------- helpers: the case shapes (uchar-case-v0) ----------------
 
-    private static String n(String attribuut, String number) {
-        return "\"%s\": { \"number\": \"%s\" }".formatted(attribuut, number);
+    private static String n(String attribute, String number) {
+        return "\"%s\": { \"number\": \"%s\" }".formatted(attribute, number);
     }
 
-    private static JsonNode jutter(String attributes, String verwacht) throws Exception {
+    private static JsonNode jutter(String attributes, String expected) throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -199,10 +199,10 @@ class NestedLetPushWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(attributes, verwacht));
+                """.formatted(attributes, expected));
     }
 
-    private static String waarde(String number) {
+    private static String valueJson(String number) {
         return "{ \"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"uit\", \"value\": { \"number\": \"%s\" } }"
                 .formatted(number);
     }
@@ -225,8 +225,8 @@ class NestedLetPushWitnessTest {
                 .formatted(naam, naam);
     }
 
-    private static String lit(String waarde) {
-        return IrPath.literal(waarde, num(), waarde);
+    private static String lit(String valueJson) {
+        return IrPath.literal(valueJson, num(), valueJson);
     }
 
     private static String binary(String op, String left, String right) {
@@ -258,7 +258,7 @@ class NestedLetPushWitnessTest {
     private static final String NAME = "uit van een jutter";
 
     /** A one-objecttype document over {@code Jutter} with "uit van een jutter" as its only rule. */
-    private static String model(String waarde) {
+    private static String model(String valueJson) {
         return ("{\"format\":\"uchar-ir-v1\","
                 + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
                 + "\"plural\":\"Jutters\",\"attributes\":["
@@ -275,10 +275,10 @@ class NestedLetPushWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
-                .formatted(pos(), pos(), pos(), num(), NAME, doel(), waarde);
+                .formatted(pos(), pos(), pos(), num(), NAME, target(), valueJson);
     }
 
-    private static String doel() {
+    private static String target() {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"uit\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"De uit van een Jutter\"}}");
     }

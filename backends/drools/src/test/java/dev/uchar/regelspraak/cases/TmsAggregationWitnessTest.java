@@ -19,7 +19,7 @@ import java.util.Map;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourcePath;
@@ -34,9 +34,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -83,11 +83,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsAggregationWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("bergsom", WHOLE), attribuut("erkendaantal", WHOLE),
-                    attribuut("vrijaantal", WHOLE), attribuut("gemiddeld bergloon", WHOLE), attribuut("premie", WHOLE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("bergsom", WHOLE), attribute("erkendaantal", WHOLE),
+                    attribute("vrijaantal", WHOLE), attribute("gemiddeld bergloon", WHOLE), attribute("premie", WHOLE)),
                     List.of()),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("taxatie", WHOLE), attribuut("bergloon", WHOLE),
-                    attribuut("ondergrens", WHOLE)), List.of("gemeld", "erkend", "vrij"))),
+            TmsDocuments.objectType("Vondst", List.of(attribute("taxatie", WHOLE), attribute("bergloon", WHOLE),
+                    attribute("ondergrens", WHOLE)), List.of("gemeld", "erkend", "vrij"))),
             List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")));
 
     private static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
@@ -95,8 +95,8 @@ class TmsAggregationWitnessTest {
     private static final String VRIJGAVE = characteristicRule("vrijgave", "Vondst", "vrij", check("erkend", true));
 
     private static final String BERGLOON = attributeGroup("bergloon van een vondst", "Vondst", "bergloon", List.of(
-            standaard(check("erkend", false), ownRead("taxatie", "Vondst")),
-            standaard(check("gemeld", false), number("5"))));
+            defaultEntry(check("erkend", false), ownRead("taxatie", "Vondst")),
+            defaultEntry(check("gemeld", false), number("5"))));
 
     private static final String VONDSTEN = "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
             + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}";
@@ -130,27 +130,27 @@ class TmsAggregationWitnessTest {
     }
 
     static JsonNode caseDocument() throws Exception {
-        List<String> instanties = new ArrayList<>(List.of(
+        List<String> instances = new ArrayList<>(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V1", "V2", "V3"))),
                 instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of())));
-        instanties.addAll(vondsten());
-        return TmsDocuments.caseDocument(instanties, List.of(waarde("J1", "bergsom", "50"), waarde("J1", "erkendaantal", "2"),
-                waarde("J1", "vrijaantal", "1"), waarde("J2", "bergsom", "0"), waarde("J2", "erkendaantal", "0"),
-                waarde("J2", "vrijaantal", "0"), waarde("V1", "bergloon", "30"), waarde("V2", "bergloon", "20"),
-                waarde("V3", "bergloon", null), consistent()));
+        instances.addAll(vondsten());
+        return TmsDocuments.caseDocument(instances, List.of(value("J1", "bergsom", "50"), value("J1", "erkendaantal", "2"),
+                value("J1", "vrijaantal", "1"), value("J2", "bergsom", "0"), value("J2", "erkendaantal", "0"),
+                value("J2", "vrijaantal", "0"), value("V1", "bergloon", "30"), value("V2", "bergloon", "20"),
+                value("V3", "bergloon", null), consistent()));
     }
 
     // ---------------- a fold over members whose values arrive later ----------------
 
     @Test void every_order_of_the_rules_in_the_document() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(document(order), caseDocument(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(120, outcomes.size());
     }
 
@@ -163,9 +163,9 @@ class TmsAggregationWitnessTest {
      */
     @Test void a_fold_firing_again_leaves_a_value_for_the_target() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(RULES), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int refires = 0, intermediate = 0, dropped = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100)) {
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
             Object j2 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
@@ -176,8 +176,8 @@ class TmsAggregationWitnessTest {
             Map<String, List<Object>> seen = new java.util.HashMap<>();
             List<Long> counts = new ArrayList<>(), exemptions = new ArrayList<>();
             int[] waarden = {0, 0};
-            TmsDocuments.vuur(b, order, List.of(j1, j2, v1, v2, v3), sessie ->
-                    sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocuments.fire(b, order, List.of(j1, j2, v1, v2, v3), session ->
+                    session.addEventListener(new DefaultAgendaEventListener() {
                         @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                             String regel = e.getMatch().getRule().getName();
                             if ((regel.equals("bergsom") || regel.equals("erkendaantal"))
@@ -188,19 +188,19 @@ class TmsAggregationWitnessTest {
                             if (regel.equals("vrijaantal") && e.getMatch().getObjects().contains(j1))
                                 exemptions.add(smallestNumber(e));
                         }
-                    }), sessie -> {
-                        waarden[0] = sessie.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
-                                && w.attribuut().naam().equals("bergsom")).size();
-                        waarden[1] = sessie.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
-                                && w.attribuut().naam().equals("erkendaantal")).size();
+                    }), session -> {
+                        waarden[0] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
+                                && w.attribute().naam().equals("bergsom")).size();
+                        waarden[1] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
+                                && w.attribute().naam().equals("erkendaantal")).size();
                     });
             assertEquals(List.of(1, 1), List.of(waarden[0], waarden[1]), () -> "Waarde-feiten van J1 in volgorde " + names);
-            assertNumber("50", TmsDocuments.lees(j1, "bergsom"), "bergsom van J1 in volgorde " + names);
-            assertNumber("2", TmsDocuments.lees(j1, "erkendaantal"), "erkendaantal van J1 in volgorde " + names);
-            assertNumber("1", TmsDocuments.lees(j1, "vrijaantal"), "vrijaantal van J1 in volgorde " + names);
-            assertNumber("0", TmsDocuments.lees(j2, "bergsom"), "bergsom van J2 in volgorde " + names);
-            assertNumber("0", TmsDocuments.lees(j2, "erkendaantal"), "erkendaantal van J2 in volgorde " + names);
-            assertNumber("0", TmsDocuments.lees(j2, "vrijaantal"), "vrijaantal van J2 in volgorde " + names);
+            assertNumber("50", TmsDocuments.read(j1, "bergsom"), "bergsom van J1 in volgorde " + names);
+            assertNumber("2", TmsDocuments.read(j1, "erkendaantal"), "erkendaantal van J1 in volgorde " + names);
+            assertNumber("1", TmsDocuments.read(j1, "vrijaantal"), "vrijaantal van J1 in volgorde " + names);
+            assertNumber("0", TmsDocuments.read(j2, "bergsom"), "bergsom van J2 in volgorde " + names);
+            assertNumber("0", TmsDocuments.read(j2, "erkendaantal"), "erkendaantal van J2 in volgorde " + names);
+            assertNumber("0", TmsDocuments.read(j2, "vrijaantal"), "vrijaantal van J2 in volgorde " + names);
             List<Object> sums = seen.getOrDefault("bergsom", List.of());
             if (sums.size() > 1 && sums.stream().distinct().count() > 1) refires++;
             if (counts.stream().anyMatch(x -> x != null && x < 2)) intermediate++;
@@ -215,10 +215,10 @@ class TmsAggregationWitnessTest {
     // ---------------- a fold in a default ----------------
 
     private static final String PREMIE = attributeGroup("premie van een jutter", "Jutter", "premie", List.of(
-            standaard(comparison("greater", ERKEND_COUNT, number("1")), aggregation("sum", ownRead("bergloon", "Vondst"),
+            defaultEntry(comparison("greater", ERKEND_COUNT, number("1")), aggregation("sum", ownRead("bergloon", "Vondst"),
                     "Vondst", sourceRole("aanmelding", "vondst"), "null", "null", WHOLE,
                     "de som van het bergloon van alle vondsten van de Jutter")),
-            standaard(comparison("greater", COUNT, number("0")), number("5"))));
+            defaultEntry(comparison("greater", COUNT, number("0")), number("5"))));
 
     static final List<String> DEFAULT_RULES = List.of(ERKENNING);
 
@@ -229,14 +229,14 @@ class TmsAggregationWitnessTest {
     /** J1 as above: two erkende vondsten, so the higher default decides the sum, 50. J3 reports V4 (gemeld, taxatie 7):
      *  one erkende vondst, so the lower default decides 5. J2 reports nothing: no default holds, premie leeg. */
     static JsonNode defaultCase() throws Exception {
-        List<String> instanties = new ArrayList<>(List.of(
+        List<String> instances = new ArrayList<>(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V1", "V2", "V3"))),
                 instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of()),
                 instanceWithRoles("J3", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V4")))));
-        instanties.addAll(vondsten());
-        instanties.add(instanceWithRoles("V4", "Vondst", Map.of("taxatie", "7"), List.of("gemeld"), Map.of()));
-        return TmsDocuments.caseDocument(instanties, List.of(waarde("J1", "premie", "50"), waarde("J2", "premie", null),
-                waarde("J3", "premie", "5"), consistent()));
+        instances.addAll(vondsten());
+        instances.add(instanceWithRoles("V4", "Vondst", Map.of("taxatie", "7"), List.of("gemeld"), Map.of()));
+        return TmsDocuments.caseDocument(instances, List.of(value("J1", "premie", "50"), value("J2", "premie", null),
+                value("J3", "premie", "5"), consistent()));
     }
 
     @Test void a_fold_in_justification_and_consequence_of_a_default() throws Exception {
@@ -261,15 +261,15 @@ class TmsAggregationWitnessTest {
             for (Object v : List.of(v1, v2, v3)) setRole(v, "aanmelder", j1);
             setRole(v4, "aanmelder", j3);
             List<String> fired = new ArrayList<>();
-            TmsDocuments.vuur(b, order, List.of(j1, j2, j3, v1, v2, v3, v4), sessie ->
-                    sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocuments.fire(b, order, List.of(j1, j2, j3, v1, v2, v3, v4), session ->
+                    session.addEventListener(new DefaultAgendaEventListener() {
                         @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                             if (e.getMatch().getObjects().contains(j1)) fired.add(e.getMatch().getRule().getName());
                         }
-                    }), sessie -> { });
-            assertNumber("50", TmsDocuments.lees(j1, "premie"), "premie van J1 in volgorde " + names);
-            assertNull(TmsDocuments.lees(j2, "premie"), () -> "premie van J2 in volgorde " + names);
-            assertNumber("5", TmsDocuments.lees(j3, "premie"), "premie van J3 in volgorde " + names);
+                    }), session -> { });
+            assertNumber("50", TmsDocuments.read(j1, "premie"), "premie van J1 in volgorde " + names);
+            assertNull(TmsDocuments.read(j2, "premie"), () -> "premie van J2 in volgorde " + names);
+            assertNumber("5", TmsDocuments.read(j3, "premie"), "premie van J3 in volgorde " + names);
             if (fired.contains("defaults A:Jutter.premie: default 1")) adopted++;
         }
         assertTrue(adopted > 0, "geen volgorde liet de lagere default voor J1 beslissen voordat de telling 2 werd");
@@ -288,10 +288,10 @@ class TmsAggregationWitnessTest {
 
     /** J1 as above: 50 divided by 2, where the count passes 0 on the way. */
     static JsonNode temporaryDivisionCase() throws Exception {
-        List<String> instanties = new ArrayList<>(List.of(
+        List<String> instances = new ArrayList<>(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V1", "V2", "V3")))));
-        instanties.addAll(vondsten());
-        return TmsDocuments.caseDocument(instanties, List.of(waarde("J1", "gemiddeld bergloon", "25"), consistent()));
+        instances.addAll(vondsten());
+        return TmsDocuments.caseDocument(instances, List.of(value("J1", "gemiddeld bergloon", "25"), consistent()));
     }
 
     /** J2 reports nothing: the sum is its fallback 0 and the count 0, at the fixpoint as well. */
@@ -301,18 +301,18 @@ class TmsAggregationWitnessTest {
     }
 
     @Test void a_division_by_a_count_that_is_intermediate_zero() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(DIVISION_RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(divisionDocument(order), temporaryDivisionCase(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
             outcomes.add(names + " " + TmsFaultWitnessTest.play(divisionDocument(order), persistentDivisionCase(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " DelingDoorNul: deling door nul in de regel \"gemiddeld bergloon\": 0 gedeeld door 0 —"
+            expected.add(names + " DelingDoorNul: deling door nul in de regel \"gemiddeld bergloon\": 0 gedeeld door 0 —"
                     + " een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(4, outcomes.size());
     }
 
@@ -329,10 +329,10 @@ class TmsAggregationWitnessTest {
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "10"), List.of());
             for (Object v : List.of(v1, v2, v3)) setRole(v, "aanmelder", j1);
             TmsFaultWitnessTest.FaultFacts facts = new TmsFaultWitnessTest.FaultFacts();
-            assertNull(TmsFaultWitnessTest.vuur(b, order, List.of(j1, v1, v2, v3), new DefaultAgendaEventListener() {},
+            assertNull(TmsFaultWitnessTest.fire(b, order, List.of(j1, v1, v2, v3), new DefaultAgendaEventListener() {},
                     facts), () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertNumber("25", TmsDocuments.lees(j1, "gemiddeld bergloon"), "gemiddeld bergloon in volgorde " + names);
+            assertNumber("25", TmsDocuments.read(j1, "gemiddeld bergloon"), "gemiddeld bergloon in volgorde " + names);
             if (facts.inserted > 0) intermediate++;
         }
         assertTrue(intermediate > 0, "geen volgorde deelde door de telling terwijl die nog 0 was");
@@ -341,8 +341,8 @@ class TmsAggregationWitnessTest {
     // ---------------- a fault in a fold's filter ----------------
 
     static final String FILTERMODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("zware vondsten", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("gewicht", WHOLE), attribuut("deelnemers", WHOLE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("zware vondsten", WHOLE)), List.of()),
+            TmsDocuments.objectType("Vondst", List.of(attribute("gewicht", WHOLE), attribute("deelnemers", WHOLE)),
                     List.of())),
             List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")));
 
@@ -386,8 +386,8 @@ class TmsAggregationWitnessTest {
             setRole(v1, "aanmelder", j1);
             setRole(v2, "aanmelder", j1);
             // the places of the list the case would write, which a fold whose filter can fault reads
-            List<Object> invoer = List.of(j1, v1, v2, new ListPlace(v1, "aanmelder", 0), new ListPlace(v2, "aanmelder", 1));
-            assertEquals(sentence, TmsFaultWitnessTest.vuur(b, order, invoer, new DefaultAgendaEventListener() {},
+            List<Object> input = List.of(j1, v1, v2, new ListPlace(v1, "aanmelder", 0), new ListPlace(v2, "aanmelder", 1));
+            assertEquals(sentence, TmsFaultWitnessTest.fire(b, order, input, new DefaultAgendaEventListener() {},
                     new TmsFaultWitnessTest.FaultFacts()), () -> "volgorde " + names);
             orders++;
         }
@@ -409,28 +409,28 @@ class TmsAggregationWitnessTest {
      *  skipped and the fold is its taxatie. The ASP runner translates no listed minimum ("expression kind not
      *  translated", measured 2026-10-08), so the witness takes the eerste, which both runners carry. */
     static JsonNode listedCase() throws Exception {
-        return TmsDocuments.caseDocument(vondsten(), List.of(waarde("V1", "ondergrens", "30"), waarde("V2", "ondergrens", "20"),
-                waarde("V3", "ondergrens", "10"), consistent()));
+        return TmsDocuments.caseDocument(vondsten(), List.of(value("V1", "ondergrens", "30"), value("V2", "ondergrens", "20"),
+                value("V3", "ondergrens", "10"), consistent()));
     }
 
     @Test void a_listed_fold_over_a_later_derived_operand() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(LISTED_RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(document(order), listedCase(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- a two-step range ----------------
 
     static final String PATH_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("vangstsom", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Boot", List.of(), List.of()),
-            TmsDocuments.objecttype("Bergplaats", List.of(attribuut("ruw gewicht", WHOLE),
-                    attribuut("vangstgewicht", WHOLE)), List.of())),
+            TmsDocuments.objectType("Jutter", List.of(attribute("vangstsom", WHOLE)), List.of()),
+            TmsDocuments.objectType("Boot", List.of(), List.of()),
+            TmsDocuments.objectType("Bergplaats", List.of(attribute("ruw gewicht", WHOLE),
+                    attribute("vangstgewicht", WHOLE)), List.of())),
             List.of(factTypeOneToMany("bemanning", "schipper", "Jutter", "gevoerde boot", "Boot", "gevoerde boten"),
                     factTypeOneToMany("lossing", "losplaats", "Bergplaats", "lossende boot", "Boot", "lossende boten")));
 
@@ -454,7 +454,7 @@ class TmsAggregationWitnessTest {
                 instanceWithRoles("B3", "Boot", Map.of(), List.of(), Map.of("losplaats", List.of("P2"))),
                 instanceWithRoles("P1", "Bergplaats", Map.of("ruw gewicht", "2"), List.of(), Map.of()),
                 instanceWithRoles("P2", "Bergplaats", Map.of("ruw gewicht", "4"), List.of(), Map.of())),
-                List.of(waarde("J1", "vangstsom", "8"), waarde("J2", "vangstsom", "0"), consistent()));
+                List.of(value("J1", "vangstsom", "8"), value("J2", "vangstsom", "0"), consistent()));
     }
 
     static Path pathDocument(List<String> rules) throws Exception {
@@ -462,14 +462,14 @@ class TmsAggregationWitnessTest {
     }
 
     @Test void a_member_reached_via_two_routes_contributes_once() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(PATH_RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(pathDocument(order), pathCase(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- helpers ----------------
@@ -491,19 +491,19 @@ class TmsAggregationWitnessTest {
         return out;
     }
 
-    /** Sets the to-one reference field {@code rol} of {@code beanObject} to {@code doel}, as the case reader does. */
-    private static void setRole(Object beanObject, String rol, Object doel) throws Exception {
+    /** Sets the to-one reference field {@code role} of {@code beanObject} to {@code doel}, as the case reader does. */
+    private static void setRole(Object beanObject, String role, Object target) throws Exception {
         for (java.lang.reflect.Method m : beanObject.getClass().getMethods())
-            if (m.getName().equals(dev.uchar.regelspraak.transpiler.kern.Namen.setter(rol)) && m.getParameterCount() == 1) {
-                m.invoke(beanObject, doel);
+            if (m.getName().equals(dev.uchar.regelspraak.transpiler.core.Namen.setter(role)) && m.getParameterCount() == 1) {
+                m.invoke(beanObject, target);
                 return;
             }
-        throw new AssertionError("geen setter voor " + rol + " op " + beanObject.getClass());
+        throw new AssertionError("geen setter voor " + role + " op " + beanObject.getClass());
     }
 
-    private static void assertNumber(String verwacht, Object werkelijk, String description) {
-        assertTrue(werkelijk instanceof BigDecimal w && new BigDecimal(verwacht).compareTo(w) == 0,
-                () -> description + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    private static void assertNumber(String expected, Object actual, String description) {
+        assertTrue(actual instanceof BigDecimal w && new BigDecimal(expected).compareTo(w) == 0,
+                () -> description + ": verwacht " + expected + ", werkelijk " + actual);
     }
 
 }

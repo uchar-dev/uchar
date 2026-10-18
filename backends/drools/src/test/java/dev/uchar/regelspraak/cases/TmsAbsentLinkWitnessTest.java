@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
@@ -20,9 +20,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.pathCheck;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -71,11 +71,11 @@ class TmsAbsentLinkWitnessTest {
                     "null"));
 
     private static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("basistarief", WHOLE), attribuut("tarief", WHOLE)),
+            TmsDocuments.objectType("Jutter", List.of(attribute("basistarief", WHOLE), attribute("tarief", WHOLE)),
                     List.of("aangemeld", "erkend")),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("beloning", WHOLE), attribuut("vergoeding", WHOLE)),
+            TmsDocuments.objectType("Vondst", List.of(attribute("beloning", WHOLE), attribute("vergoeding", WHOLE)),
                     List.of("toegewezen", "onbeheerd", "afwijkend", "begeleid", "verdacht", "geprijsd"))),
-            List.of(TmsDocuments.feittype("vinding", "vondst", "Vondst", "vinder", "Jutter")));
+            List.of(TmsDocuments.factType("vinding", "vondst", "Vondst", "vinder", "Jutter")));
 
     @Test void a_sample_of_orders_of_the_rules_in_the_document() throws Exception {
         int orders = 0;
@@ -95,20 +95,20 @@ class TmsAbsentLinkWitnessTest {
                         instance("V1", "Vondst", Map.of(), List.of(), Map.of("vinder", "J1")),
                         instance("V2", "Vondst", Map.of(), List.of(), Map.of("vinder", "J2")),
                         instance("V3", "Vondst", Map.of(), List.of(), Map.of())),
-                List.of(verwacht("J1", "erkend", true), waarde("J1", "tarief", "5"),
-                        verwacht("J2", "erkend", false), waarde("J2", "tarief", null),
-                        verwacht("V1", "toegewezen", true), verwacht("V1", "onbeheerd", false),
-                        verwacht("V1", "afwijkend", false), verwacht("V1", "begeleid", true),
-                        verwacht("V1", "verdacht", false), verwacht("V1", "geprijsd", true),
-                        waarde("V1", "beloning", "10"), waarde("V1", "vergoeding", "8"),
-                        verwacht("V2", "toegewezen", false), verwacht("V2", "onbeheerd", true),
-                        verwacht("V2", "afwijkend", true), verwacht("V2", "begeleid", false),
-                        verwacht("V2", "verdacht", true), verwacht("V2", "geprijsd", true),
-                        waarde("V2", "beloning", "0"), waarde("V2", "vergoeding", "8"),
-                        verwacht("V3", "toegewezen", false), verwacht("V3", "onbeheerd", true),
-                        verwacht("V3", "afwijkend", true), verwacht("V3", "begeleid", false),
-                        verwacht("V3", "verdacht", false), verwacht("V3", "geprijsd", false),
-                        waarde("V3", "beloning", "0"), waarde("V3", "vergoeding", "0")));
+                List.of(expected("J1", "erkend", true), value("J1", "tarief", "5"),
+                        expected("J2", "erkend", false), value("J2", "tarief", null),
+                        expected("V1", "toegewezen", true), expected("V1", "onbeheerd", false),
+                        expected("V1", "afwijkend", false), expected("V1", "begeleid", true),
+                        expected("V1", "verdacht", false), expected("V1", "geprijsd", true),
+                        value("V1", "beloning", "10"), value("V1", "vergoeding", "8"),
+                        expected("V2", "toegewezen", false), expected("V2", "onbeheerd", true),
+                        expected("V2", "afwijkend", true), expected("V2", "begeleid", false),
+                        expected("V2", "verdacht", true), expected("V2", "geprijsd", true),
+                        value("V2", "beloning", "0"), value("V2", "vergoeding", "8"),
+                        expected("V3", "toegewezen", false), expected("V3", "onbeheerd", true),
+                        expected("V3", "afwijkend", true), expected("V3", "begeleid", false),
+                        expected("V3", "verdacht", false), expected("V3", "geprijsd", false),
+                        value("V3", "beloning", "0"), value("V3", "vergoeding", "0")));
     }
 
     private static List<String> names(List<String> rules) throws Exception {

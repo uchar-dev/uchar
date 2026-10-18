@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The loader on the operand typing of WF-035 (date ± duration) and WF-038 (a square root, an absolute value and the
- * duration clause): each form the verifier refuses is refused here at load, as an {@link IrLoader.Documentfout} at the
+ * duration clause): each form the verifier refuses is refused here at load, as an {@link IrLoader.DocumentError} at the
  * verifier's pointer and in the sentence the verifier, {@code ref} and the ASP backend share, written out literally
  * below so that a sentence which drifts from theirs fails here. Before the loader asked, a duration plus a date PLAYED
  * in both branches with the addition silently commuted (measured on the twist of
@@ -208,8 +208,8 @@ class TypingRefusalWitnessTest {
         o.set(path.substring(slash + 1), JSON.readTree(json));
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+    private static IrLoader.DocumentError refuses(JsonNode ir, String site) {
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
         assertEquals(site, e.site(), e.getMessage());
         return e;

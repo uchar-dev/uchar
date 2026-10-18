@@ -29,13 +29,13 @@ import java.util.List;
  * and the (declared) scope-parent role — the reference field's relation, made explicit on the wire.
  */
 public record ResolvedUniqueness(String naam, Objecttype subject, List<String> keys, String scopeField,
-                                Bron bron, Geldigheid geldigheid,
+                                Source source, Validity validity,
                                 RegelSpraakModel.RoleBindingRef scopeBinding) {
 
     /** The v0 form without the symbolic scope binding (a global uniqueness, or a scope whose
      *  relation is not uniquely derivable — the extension field then stays absent). */
     public ResolvedUniqueness(String naam, Objecttype subject, List<String> keys, String scopeField,
-                             Bron bron, Geldigheid geldigheid) {
-        this(naam, subject, keys, scopeField, bron, geldigheid, null);
+                             Source source, Validity validity) {
+        this(naam, subject, keys, scopeField, source, validity, null);
     }
 }

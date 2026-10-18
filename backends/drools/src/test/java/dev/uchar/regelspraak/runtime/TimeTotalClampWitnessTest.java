@@ -27,25 +27,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TimeTotalClampWitnessTest {
 
     @Test void a_month_between_clamped_walls_weighs_a_month() {
-        assertEquals(new BigDecimal("10"), totaal("MAAND", "2024-01-31", "2024-02-29", "10"),
+        assertEquals(new BigDecimal("10"), total("MAAND", "2024-01-31", "2024-02-29", "10"),
                 "the --01-31 month grid's February 2024 period");
-        assertEquals(new BigDecimal("10"), totaal("MAAND", "2025-01-31", "2025-02-28", "10"),
+        assertEquals(new BigDecimal("10"), total("MAAND", "2025-01-31", "2025-02-28", "10"),
                 "the same period in a year without 29 February");
-        assertEquals(new BigDecimal("10"), totaal("MAAND", "2024-04-30", "2024-05-31", "10"),
+        assertEquals(new BigDecimal("10"), total("MAAND", "2024-04-30", "2024-05-31", "10"),
                 "a period starting on a clamped wall and ending on the 31st");
     }
 
     @Test void a_quarter_and_a_year_between_clamped_walls_weigh_a_unit() {
-        assertEquals(new BigDecimal("30"), totaal("KWARTAAL", "2024-11-30", "2025-02-28", "30"),
+        assertEquals(new BigDecimal("30"), total("KWARTAAL", "2024-11-30", "2025-02-28", "30"),
                 "the --05-31 quarter grid's period around the turn of the year");
-        assertEquals(new BigDecimal("100"), totaal("JAAR", "2024-02-29", "2025-02-28", "100"),
+        assertEquals(new BigDecimal("100"), total("JAAR", "2024-02-29", "2025-02-28", "100"),
                 "the --02-29 year grid's period from the leap day");
     }
 
     @Test void a_day_too_short_is_no_whole_unit() {
-        assertEquals(BigDecimal.ZERO, totaal("MAAND", "2024-01-31", "2024-02-28", "10"));
-        assertEquals(BigDecimal.ZERO, totaal("JAAR", "2024-02-29", "2025-02-27", "100"));
-        assertEquals(new BigDecimal("20"), totaal("MAAND", "2024-01-31", "2024-03-31", "10"),
+        assertEquals(BigDecimal.ZERO, total("MAAND", "2024-01-31", "2024-02-28", "10"));
+        assertEquals(BigDecimal.ZERO, total("JAAR", "2024-02-29", "2025-02-27", "100"));
+        assertEquals(new BigDecimal("20"), total("MAAND", "2024-01-31", "2024-03-31", "10"),
                 "two periods of the --01-31 grid");
     }
 
@@ -53,23 +53,23 @@ class TimeTotalClampWitnessTest {
         assertEquals(BigDecimal.ZERO, RegelSpraakRuntime.rsTijdsduur(LocalDate.parse("2024-01-31"),
                 LocalDate.parse("2024-02-29"), "MONTHS", false), "ch. 3.8: whole-unit counting is not the inverse"
                 + " of date-plus-unit arithmetic");
-        assertEquals(new BigDecimal("10"), totaal("MAAND", "2024-01-31", "2024-02-29", "10"),
+        assertEquals(new BigDecimal("10"), total("MAAND", "2024-01-31", "2024-02-29", "10"),
                 "the temporal total over the same two dates");
     }
 
-    private static BigDecimal totaal(String granularity, String van, String to, String waarde) {
-        return RegelSpraakRuntime.rsTijdTotaal(List.of(new Seg(van, to, waarde)), granularity);
+    private static BigDecimal total(String granularity, String van, String to, String value) {
+        return RegelSpraakRuntime.rsTijdTotaal(List.of(new Seg(van, to, value)), granularity);
     }
 
     /** Shape-faithful segment stand-in for the runtime fold: the {@code van}/{@code tot}/{@code waarde} properties
      *  it reads reflectively. */
     public static final class Seg {
-        private final LocalDate van, to; private final BigDecimal waarde;
-        Seg(String van, String to, String waarde) {
-            this.van = LocalDate.parse(van); this.to = LocalDate.parse(to); this.waarde = new BigDecimal(waarde);
+        private final LocalDate van, to; private final BigDecimal value;
+        Seg(String van, String to, String value) {
+            this.van = LocalDate.parse(van); this.to = LocalDate.parse(to); this.value = new BigDecimal(value);
         }
         public LocalDate getVan() { return van; }
         public LocalDate getTot() { return to; }
-        public BigDecimal getWaarde() { return waarde; }
+        public BigDecimal getWaarde() { return value; }
     }
 }

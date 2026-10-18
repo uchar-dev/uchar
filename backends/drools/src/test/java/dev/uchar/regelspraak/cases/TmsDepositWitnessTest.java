@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
@@ -22,9 +22,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -59,9 +59,9 @@ class TmsDepositWitnessTest {
 
     private static final String TWO = numberType(false, 2, null), WHOLE = numberType(true, 0, null);
 
-    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
-            attribuut("a", TWO), attribuut("grond b", TWO), attribuut("b", TWO), attribuut("heffing", TWO),
-            attribuut("toeslag", TWO)), List.of("zwaar", "zeer zwaar"))), List.of());
+    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+            attribute("a", TWO), attribute("grond b", TWO), attribute("b", TWO), attribute("heffing", TWO),
+            attribute("toeslag", TWO)), List.of("zwaar", "zeer zwaar"))), List.of());
 
     private static final String A = ownRead("a", "Jutter"), B = ownRead("b", "Jutter");
 
@@ -87,8 +87,8 @@ class TmsDepositWitnessTest {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J1", "Jutter", Map.of("a", numberValue("5.00")), List.of()),
                 instanceWith("J3", "Jutter", Map.of("a", numberValue("50.00")), List.of())),
-                List.of(verwacht("J1", "zwaar", false), verwacht("J1", "zeer zwaar", false), waarde("J1", "heffing", null),
-                        waarde("J1", "toeslag", null), verwacht("J3", "zwaar", false), verwacht("J3", "zeer zwaar", false),
+                List.of(expected("J1", "zwaar", false), expected("J1", "zeer zwaar", false), value("J1", "heffing", null),
+                        value("J1", "toeslag", null), expected("J3", "zwaar", false), expected("J3", "zeer zwaar", false),
                         inconsistent("zwaar bij verhouding", "J1"), inconsistent("heffing van een jutter", "J1"),
                         inconsistent("toeslag van een jutter", "J1"), inconsistent("verhoudingscontrole", "J1"),
                         inconsistent("zwaar bij verhouding", "J3"), inconsistent("zeer zwaar bij verhouding", "J3"),
@@ -99,20 +99,20 @@ class TmsDepositWitnessTest {
     static JsonNode case2() throws Exception {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J2", "Jutter", Map.of("a", numberValue("5.00"), "grond b", numberValue("10.00")), List.of())),
-                List.of(verwacht("J2", "zwaar", false), waarde("J2", "heffing", "0.50"), waarde("J2", "toeslag", "0.50"),
+                List.of(expected("J2", "zwaar", false), value("J2", "heffing", "0.50"), value("J2", "toeslag", "0.50"),
                         consistent()));
     }
 
     @Test void every_reached_division_by_empty_also_deposits_in_a_condition() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order, List.of(CHECK));
             for (JsonNode caseDocument : List.of(case1(), case2())) {
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " gespeeld");
+                expected.add(names + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 }

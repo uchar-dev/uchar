@@ -1147,10 +1147,10 @@ the destructive lowering (`transpiler/model/ExecModelTranspiler`, 9 950 lines),
 golden with cases the branch plays the 242 the destructive lowering played,
 with the same pinned outcomes, and six it refused, 248 of 294, without a FAIL;
 gate 12 pins 248 (from 242) and the DRL-text branch's 196 unchanged. A consumer
-fires a session through four public calls of `DroolsBackend`: `voegIn` states
+fires a session through four public calls of `DroolsBackend`: `insert` states
 the beans and what the branch reads beside them, `vuur` fires to the fixpoint
 under a cap of max(10 000, 4 × R × N0) recomputed at every creation phase,
-`lees` reads the fixpoint, and `zetAfgeleideWaarden` writes it on the beans
+`lees` reads the fixpoint, and `setDerivedValues` writes it on the beans
 once and closes the session. Until then the beans hold the input alone, and an
 evaluation fault stands as a fact of the fixpoint that `lees` gives as data and
 the write-back throws. Between two fires only an update of an attribute or a
@@ -1233,7 +1233,7 @@ CLI and the playground read `build.drl()` and catch the
 `IllegalStateException` of a DRL text that does not compile, and
 `Namen.getter`/`setter` follow the bean generator. The branch guard in
 `CaseSessie` stays, as `build.branch() != Branch.EXEC_MODEL`: the scenario
-explanation compares its firings with the trace of `CaseRunner.rapport`, which
+explanation compares its firings with the trace of `CaseRunner.report`, which
 plays the exec-model branch, and the DRL-text branch reaches the same fixpoint
 with the 47 known differences in that trace. Cards in `backlog/new/`:
 `beanlidnamen-zonder-java-identifier`, `caselezer-zoals-ref` (an expectation

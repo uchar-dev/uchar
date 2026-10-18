@@ -11,7 +11,7 @@ import java.time.LocalDate;
  * does not change while the session fires, so the fact is never withdrawn.
  *
  * <p>A fault that needs the date and belongs to no object, a version with a bounded validity in a time-free session,
- * is a {@link Fout} on this fact. Compared by value.
+ * is a {@link Fault} on this fact. Compared by value.
  */
 public record EvaluationDate(LocalDate date) {
 

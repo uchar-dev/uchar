@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedFactCreation;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.ir.ResolvedUniqueness;
 import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
 import dev.uchar.regelspraak.ir.Spelling;
@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * literal's variant as the lexeme the record holds; the bound day and a session value as the one constant record.
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
- * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
+ * refusal is an {@link IrLoader.DocumentError} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
  * document here is ill-formed.
  */
 class RuleAndExpressionLayerRefusalWitnessTest {
@@ -214,7 +214,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         for (String form : forms) {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VALUE + "/value", form);
-            IrLoader.Documentfout e = refuses(ir, VALUE + "/value");
+            IrLoader.DocumentError e = refuses(ir, VALUE + "/value");
             assertTrue(e.getMessage().endsWith(": " + IrLoader.LITERAL_VALUE), form + ": " + e.getMessage());
         }
     }
@@ -256,7 +256,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
                     loaded++;
                     continue;
                 }
-                IrLoader.Documentfout e = refuses(ir, w + "/value");
+                IrLoader.DocumentError e = refuses(ir, w + "/value");
                 String sentence = "literal value is " + (v.getKey().equals("enumeration") ? "an" : "a") + " " + v.getKey()
                         + " value but its type is " + t[1] + ": the variant is the one the type names";
                 assertTrue(e.getMessage().endsWith(": " + sentence), sentence + " / " + e.getMessage());
@@ -285,7 +285,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         for (String lexeme : List.of("12.50", "-3", "0", "1/3", "-2/7", "007")) {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VALUE + "/value", "{\"number\":\"" + lexeme + "\"}");
-            assertEquals(lexeme, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+            assertEquals(lexeme, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value()).valueText());
         }
     }
 
@@ -305,7 +305,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VALUE + "/type", DAG);
             set(ir, VALUE + "/value", "{\"date\":\"" + lexeme + "\"}");
-            assertEquals(lexeme, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+            assertEquals(lexeme, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value()).valueText());
         }
     }
 
@@ -328,7 +328,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VALUE + "/type", "{\"node\":\"Date\",\"precision\":\"millisecond\"}");
             set(ir, VALUE + "/value", "{\"dateTime\":\"" + lexeme + "\"}");
-            assertEquals(lexeme, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+            assertEquals(lexeme, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value()).valueText());
         }
     }
 
@@ -376,7 +376,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         for (String[] name : names) {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VALUE, contextValue(name[0]).toString());
-            Expr.Constante c = assertInstanceOf(Expr.Constante.class, IrLoader.load(ir).resolvedRegels.get(0).waarde());
+            Expr.Constant c = assertInstanceOf(Expr.Constant.class, IrLoader.load(ir).resolvedRegels.get(0).value());
             assertEquals(name[1], c.naam());
             assertInstanceOf(Datatype.DatumInDagen.class, c.type());
         }
@@ -555,14 +555,14 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         ObjectNode ir = golden(JUTHEFFING);
         RegelSpraakModel m = IrLoader.load(ir);
         List<String> names = new ArrayList<>();
-        for (ResolvedRegel r : m.resolvedRegels) names.add(r.naam());
+        for (ResolvedRule r : m.resolvedRegels) names.add(r.naam());
         assertEquals(List.of("jutheffing naar jaartarief #1", "jutheffing naar jaartarief #2",
                 "registratiegetal bij aangifte"), names, "two versions carry the suffix, a form of one its bare name");
-        assertEquals(LocalDate.of(2025, 1, 1), m.resolvedRegels.get(0).geldigheid().vanaf());
+        assertEquals(LocalDate.of(2025, 1, 1), m.resolvedRegels.get(0).validity().from());
         assertEquals(ir.at("/rules/rules/0/versions/1/validity/from").asText(),
-                String.valueOf(m.resolvedRegels.get(1).geldigheid().vanaf()), "each version its own validity");
-        assertNull(m.resolvedRegels.get(2).geldigheid().vanaf());
-        assertNull(m.resolvedRegels.get(2).geldigheid().tot());
+                String.valueOf(m.resolvedRegels.get(1).validity().from()), "each version its own validity");
+        assertNull(m.resolvedRegels.get(2).validity().from());
+        assertNull(m.resolvedRegels.get(2).validity().until());
 
         // a nameless form stays nameless on every version, and the form's annotations stand on each
         ((ObjectNode) ir.at("/rules/rules/0")).putNull("name");
@@ -582,23 +582,23 @@ class RuleAndExpressionLayerRefusalWitnessTest {
     }
 
     @Test void the_kind_of_a_version_is_its_structure() throws Exception {
-        assertEquals(ResolvedRegel.Soort.BEREKENING, IrLoader.load(golden(PREMIEVENSTER)).resolvedRegels.get(0).soort());
-        assertEquals(ResolvedRegel.Soort.GELIJKSTELLING, IrLoader.load(golden(KEURSTAAT)).resolvedRegels.get(3).soort());
-        assertEquals(ResolvedRegel.Soort.KENMERKTOEKENNING,
-                IrLoader.load(golden(PENNINGDREMPEL)).resolvedRegels.get(0).soort());
-        assertEquals(ResolvedRegel.Soort.INITIALISATIE, IrLoader.load(golden(WAARDERING)).resolvedRegels.get(1).soort());
+        assertEquals(ResolvedRule.Kind.BEREKENING, IrLoader.load(golden(PREMIEVENSTER)).resolvedRegels.get(0).category());
+        assertEquals(ResolvedRule.Kind.GELIJKSTELLING, IrLoader.load(golden(KEURSTAAT)).resolvedRegels.get(3).category());
+        assertEquals(ResolvedRule.Kind.KENMERKTOEKENNING,
+                IrLoader.load(golden(PENNINGDREMPEL)).resolvedRegels.get(0).category());
+        assertEquals(ResolvedRule.Kind.INITIALISATIE, IrLoader.load(golden(WAARDERING)).resolvedRegels.get(1).category());
         // the tag is read as written: equation on the same version is the other computing kind
         ObjectNode ir = golden(PREMIEVENSTER);
         ((ObjectNode) ir.at(VERSION)).put("presentation", "equation");
-        assertEquals(ResolvedRegel.Soort.GELIJKSTELLING, IrLoader.load(ir).resolvedRegels.get(0).soort());
+        assertEquals(ResolvedRule.Kind.GELIJKSTELLING, IrLoader.load(ir).resolvedRegels.get(0).category());
     }
 
     @Test void a_fact_creation_reads_its_target_kind_and_its_path() throws Exception {
         ObjectNode ir = golden(MASTSEIN);
-        ResolvedFactCreation fc = IrLoader.load(ir).feitCreaties.get(0);
-        assertEquals("Sein", fc.doel().naam, "the declared filler of targetRole 'vaksein' in 'vakbeseining'");
+        ResolvedFactCreation fc = IrLoader.load(ir).factCreations.get(0);
+        assertEquals("Sein", fc.target().naam, "the declared filler of targetRole 'vaksein' in 'vakbeseining'");
         assertEquals("Kustvak", fc.anchor().naam);
-        assertEquals("vakbeseining", fc.feittype());
+        assertEquals("vakbeseining", fc.factType());
         assertEquals("seinvak", fc.anchorRole());
         assertEquals("vaksein", fc.targetRole());
         List<RoleBindingRef> steps = new ArrayList<>();
@@ -610,7 +610,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         ArrayNode path = (ArrayNode) ir.at("/rules/factCreations/0/versions/0/path");
         path.remove(0);
         path.remove(0);
-        fc = IrLoader.load(ir).feitCreaties.get(0);
+        fc = IrLoader.load(ir).factCreations.get(0);
         assertEquals(List.of(), fc.pathSteps());
         assertEquals(new RoleBindingRef("seinvoering", "sein"), fc.path());
     }
@@ -619,18 +619,18 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         ObjectNode ir = golden(KUSTREGISTER);
         RegelSpraakModel m = IrLoader.load(ir);
         assertEquals(List.of("eenmalig kaveletiket", "eenmalige sectiecode"),
-                m.uniciteiten.stream().map(ResolvedUniqueness::naam).toList());
+                m.uniquenesses.stream().map(ResolvedUniqueness::naam).toList());
         assertEquals(List.of("eenmalig vondstnummer", "eenmalige bakencode"),
-                m.uniciteitUnies.stream().map(ResolvedUniquenessUnion::naam).toList());
-        ResolvedUniqueness single = m.uniciteiten.get(0);
+                m.uniquenessUnions.stream().map(ResolvedUniquenessUnion::naam).toList());
+        ResolvedUniqueness single = m.uniquenesses.get(0);
         assertEquals("Kavel", single.subject().naam);
         assertEquals(List.of("etiket"), single.keys());
         assertEquals(new RoleBindingRef("kavelindeling", "gemeente"), single.scopeBinding());
         assertNull(single.scopeField());
-        ResolvedUniquenessUnion union = m.uniciteitUnies.get(1);
+        ResolvedUniquenessUnion union = m.uniquenessUnions.get(1);
         assertEquals(List.of("Baken", "Baken"), union.sources().stream().map(b -> b.type().naam).toList());
         assertEquals(List.of(List.of("landcode"), List.of("zeecode")),
-                union.sources().stream().map(ResolvedUniquenessUnion.Bron::keys).toList());
+                union.sources().stream().map(ResolvedUniquenessUnion.Source::keys).toList());
         // the order of the one list carries no meaning: the unions first split the same
         ArrayNode list = IrPath.rulesList(ir, "uniquenesses");
         ArrayNode reversed = JSON.createArrayNode();
@@ -638,22 +638,22 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         IrPath.rules(ir).set("uniquenesses", reversed);
         m = IrLoader.load(ir);
         assertEquals(List.of("eenmalige sectiecode", "eenmalig kaveletiket"),
-                m.uniciteiten.stream().map(ResolvedUniqueness::naam).toList());
+                m.uniquenesses.stream().map(ResolvedUniqueness::naam).toList());
         assertEquals(List.of("eenmalige bakencode", "eenmalig vondstnummer"),
-                m.uniciteitUnies.stream().map(ResolvedUniquenessUnion::naam).toList());
+                m.uniquenessUnions.stream().map(ResolvedUniquenessUnion::naam).toList());
     }
 
     @Test void both_function_nodes_become_the_one_function_record() throws Exception {
         Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class,
-                IrLoader.load(golden(BOOTBERGING)).resolvedRegels.get(1).waarde());
+                IrLoader.load(golden(BOOTBERGING)).resolvedRegels.get(1).value());
         assertEquals(Expr.FunctionKind.SOM, sum.kind());
         assertEquals("Vondst", sum.elementObjectType().naam);
         assertNotNull(sum.emptyFallback(), "emptyFallback");
         assertNull(sum.granulariteit(), "a fold carries no granularity");
         Expr.FunctionCall part = assertInstanceOf(Expr.FunctionCall.class,
-                IrLoader.load(golden(PACHTVENSTER)).resolvedRegels.get(0).waarde());
+                IrLoader.load(golden(PACHTVENSTER)).resolvedRegels.get(0).value());
         assertEquals(Expr.FunctionKind.TIJDSEVENREDIG_DEEL, part.kind());
-        assertEquals(Spelling.GRANULARITY.waarde("BuiltinCall.granularity",
+        assertEquals(Spelling.GRANULARITY.value("BuiltinCall.granularity",
                         golden(PACHTVENSTER).at(VALUE + "/granularity").asText()),
                 part.granulariteit());
         assertNotNull(part.filter(), "filter");
@@ -663,24 +663,24 @@ class RuleAndExpressionLayerRefusalWitnessTest {
     }
 
     @Test void a_literal_keeps_the_lexeme_of_its_variant() throws Exception {
-        assertEquals("1", ((Expr.Literal) IrLoader.load(golden(PREMIEVENSTER)).resolvedRegels.get(0).waarde()).waarde());
+        assertEquals("1", ((Expr.Literal) IrLoader.load(golden(PREMIEVENSTER)).resolvedRegels.get(0).value()).valueText());
         assertEquals("waar",
-                ((Expr.Literal) IrLoader.load(golden(PENNINGDREMPEL)).resolvedRegels.get(0).waarde()).waarde());
-        assertEquals("gaaf", ((Expr.Literal) IrLoader.load(golden(KEURSTAAT)).resolvedRegels.get(3).waarde()).waarde());
+                ((Expr.Literal) IrLoader.load(golden(PENNINGDREMPEL)).resolvedRegels.get(0).value()).valueText());
+        assertEquals("gaaf", ((Expr.Literal) IrLoader.load(golden(KEURSTAAT)).resolvedRegels.get(3).value()).valueText());
         ObjectNode ir = golden(PREMIEVENSTER);
         set(ir, VALUE, "{\"node\":\"Literal\",\"value\":{\"boolean\":false},\"type\":{\"node\":\"Boolean\"},"
                 + "\"source\":{\"snippet\":\"onwaar\"}}");
-        assertEquals("onwaar", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+        assertEquals("onwaar", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value()).valueText());
         // the text variant admits the empty string: its spelling is the case format's
         ir = golden(PREMIEVENSTER);
         set(ir, VALUE, "{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"''\"}}");
-        assertEquals("", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+        assertEquals("", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value()).valueText());
     }
 
     @Test void the_bound_day_is_the_constant_the_day() throws Exception {
         ObjectNode ir = golden(PREMIEVENSTER);
         set(ir, VALUE, "{\"node\":\"BoundDay\",\"type\":" + DAG + ",\"source\":{\"snippet\":\"de dag\"}}");
-        Expr.Constante c = assertInstanceOf(Expr.Constante.class, IrLoader.load(ir).resolvedRegels.get(0).waarde());
+        Expr.Constant c = assertInstanceOf(Expr.Constant.class, IrLoader.load(ir).resolvedRegels.get(0).value());
         assertEquals("de dag", c.naam());
         assertInstanceOf(Datatype.DatumInDagen.class, c.type());
         assertNotNull(IrLoader.load(golden(HAVENROOSTER)), "a day-kind definition that compares the bound day loads");
@@ -717,15 +717,15 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         o.set(path.substring(slash + 1), JSON.readTree(json));
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+    private static IrLoader.DocumentError refuses(JsonNode ir, String site) {
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
         assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 
     private static void unknownField(JsonNode ir, String site, String node) {
-        IrLoader.Documentfout e = refuses(ir, site);
+        IrLoader.DocumentError e = refuses(ir, site);
         assertTrue(e.getMessage().endsWith(": unknown field on " + node), e.getMessage());
     }
 

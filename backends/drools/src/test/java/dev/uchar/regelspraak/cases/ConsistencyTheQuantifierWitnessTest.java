@@ -69,11 +69,11 @@ class ConsistencyTheQuantifierWitnessTest {
     }
 
     /** One case: consistent, or the rule violated on {@code geschonden}. */
-    private static JsonNode caseDocument(String instanties, String geschonden) throws Exception {
-        String verwacht = geschonden == null ? "{ \"kind\": \"consistent\" }"
+    private static JsonNode caseDocument(String instances, String geschonden) throws Exception {
+        String expected = geschonden == null ? "{ \"kind\": \"consistent\" }"
                 : "{ \"kind\": \"inconsistent\", \"rule\": \"" + NAME + "\", \"label\": \"" + geschonden + "\" }";
         return JSON.readTree("{ \"format\": \"uchar-case-v0\", \"asOfDate\": null, \"input\": { \"instances\": "
-                + instanties + ", \"parameters\": {} }, \"expected\": [ " + verwacht + " ] }");
+                + instances + ", \"parameters\": {} }, \"expected\": [ " + expected + " ] }");
     }
 
     private static Path temporary(ObjectNode ir) throws Exception {

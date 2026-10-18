@@ -25,7 +25,7 @@ import java.util.Random;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.has;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,7 +86,7 @@ class TmsJustificationWitnessTest {
             Path ir = TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), order);
             assertNull(CaseRunner.playCase(ir, caseDocument(), DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
             DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-            vuur(b, b.kieBase(), "documentvolgorde " + names);
+            fire(b, b.kieBase(), "documentvolgorde " + names);
             orders++;
         }
         assertEquals(6, orders);
@@ -95,15 +95,15 @@ class TmsJustificationWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), RULES),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         List<List<Rule>> orders = new ArrayList<>();
-        orders.add(gegenereerd);
-        List<Rule> reversed = new ArrayList<>(gegenereerd);
+        orders.add(generated);
+        List<Rule> reversed = new ArrayList<>(generated);
         Collections.reverse(reversed);
         orders.add(reversed);
         Random chance = new Random(20261008L);
         for (int i = 0; i < 100; i++) {
-            List<Rule> v = new ArrayList<>(gegenereerd);
+            List<Rule> v = new ArrayList<>(generated);
             Collections.shuffle(v, chance);
             orders.add(v);
         }
@@ -112,7 +112,7 @@ class TmsJustificationWitnessTest {
             ModelImpl m = new ModelImpl(b.execModelTranspiler().model().getName());
             order.forEach(m::addRule);
             KieBase kb = KieBaseBuilder.createKieBaseFromModel(m, EqualityBehaviorOption.EQUALITY);
-            if (vuur(b, kb, "volgorde " + order.stream().map(Rule::getName).toList())) byTheFallingJustification++;
+            if (fire(b, kb, "volgorde " + order.stream().map(Rule::getName).toList())) byTheFallingJustification++;
         }
         assertTrue(byTheFallingJustification > 0, "geen volgorde vuurde '" + NON_BLOCKED + "' op J1");
     }
@@ -120,53 +120,53 @@ class TmsJustificationWitnessTest {
     /** Fires the four Jutters in {@code kb}, checks the facts and their justifications in the session and the beans after
      *  the write-back, and says whether the rule on "niet geblokkeerd" fired on J1, whose geblokkeerd holds at the end:
      *  that firing is the path through the falling justification. */
-    private static boolean vuur(DroolsBackend.Build b, KieBase kb, String where) throws Exception {
+    private static boolean fire(DroolsBackend.Build b, KieBase kb, String where) throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = kb.newKieSession();
+        KieSession session = kb.newKieSession();
         try {
             List<Object> jutters = new ArrayList<>();
-            for (List<String> invoer : INVOER) jutters.add(TmsDocuments.jutterBean(b.beanLoader(), invoer));
+            for (List<String> input : INVOER) jutters.add(TmsDocuments.jutterBean(b.beanLoader(), input));
             boolean[] viaNot = {false};
-            sessie.addEventListener(new DefaultAgendaEventListener() {
+            session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals(NON_BLOCKED)
                             && e.getMatch().getObjects().stream().anyMatch(o -> o == jutters.get(0)))
                         viaNot[0] = true;
                 }
             });
-            for (Object j : jutters) sessie.insert(j);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in " + where);
+            for (Object j : jutters) session.insert(j);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), () -> "geen fixpunt in " + where);
             for (int i = 0; i < jutters.size(); i++) {
                 Object j = jutters.get(i);
-                List<Object> facts = new ArrayList<>(sessie.getObjects(o -> o instanceof HasCharacteristic h
-                        && h.onderwerp() == j && h.kenmerk().naam().equals("vergund")));
+                List<Object> facts = new ArrayList<>(session.getObjects(o -> o instanceof HasCharacteristic h
+                        && h.onderwerp() == j && h.characteristic().naam().equals("vergund")));
                 String label = "J" + (i + 1) + " in " + where;
                 assertEquals(VERGUND[i] ? 1 : 0, facts.size(), () -> label + ": " + facts);
-                if (VERGUND[i]) assertEquals(JUSTIFICATIONS[i], justifications(sessie, facts.get(0)), label);
+                if (VERGUND[i]) assertEquals(JUSTIFICATIONS[i], justifications(session, facts.get(0)), label);
             }
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            DroolsBackend.setDerivedValues(b, session);
             for (int i = 0; i < jutters.size(); i++)
                 assertEquals(VERGUND[i], has(jutters.get(i), "vergund"), "J" + (i + 1) + " vergund in " + where);
             return viaNot[0];
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
     /** How many activations justify the logical fact {@code feit}: the size of its belief set. */
-    private static int justifications(KieSession sessie, Object fact) {
-        InternalFactHandle h = (InternalFactHandle) sessie.getFactHandle(fact);
+    private static int justifications(KieSession session, Object fact) {
+        InternalFactHandle h = (InternalFactHandle) session.getFactHandle(fact);
         return ((TruthMaintenanceSystemEqualityKey) h.getEqualityKey()).getBeliefSet().size();
     }
 
     private static JsonNode caseDocument() throws Exception {
-        List<String> jutters = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> jutters = new ArrayList<>(), expected = new ArrayList<>();
         for (int i = 0; i < INVOER.size(); i++) {
             jutters.add(TmsDocuments.jutter("J" + (i + 1), INVOER.get(i)));
-            verwacht.add(verwacht("J" + (i + 1), "vergund", VERGUND[i]));
+            expected.add(expected("J" + (i + 1), "vergund", VERGUND[i]));
         }
-        return TmsDocuments.caseDocument(jutters, verwacht);
+        return TmsDocuments.caseDocument(jutters, expected);
     }
 }

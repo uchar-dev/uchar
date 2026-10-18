@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.model.Datatype;
-import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.UnitSystem;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * granularity.
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
- * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
+ * refusal is an {@link IrLoader.DocumentError} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
  * document here is ill-formed, a parameter timeline of more than one period included, which the verifier refuses
  * (WF-005) while multi-period grids are open.
  */
@@ -135,20 +135,20 @@ class TypeSystemRefusalWitnessTest {
         for (String form : forms) {
             ObjectNode ir = golden(PENNINGJAAR);
             ((ObjectNode) ir.at(UNIT)).set("factorToCanonical", JSON.readTree(form));
-            IrLoader.Documentfout e = refuses(ir, FACTOR);
+            IrLoader.DocumentError e = refuses(ir, FACTOR);
             assertTrue(e.getMessage().endsWith(": " + IrLoader.FACTOR_FORM + form), form + ": " + e.getMessage());
         }
         // the bound the sentence names is admitted itself: 2^62 - 1 loads, 2^62 (above) does not
         ObjectNode bound = golden(PENNINGJAAR);
         ((ObjectNode) bound.at(UNIT)).set("factorToCanonical",
                 JSON.readTree("{\"num\":4611686018427387903,\"den\":1}"));
-        Eenheid large = ((Datatype.Numeriek) IrLoader.load(bound).parameters.get("penningbedrag").datatype()).eenheid();
+        Unit large = ((Datatype.Numeriek) IrLoader.load(bound).parameters.get("penningbedrag").datatype()).eenheid();
         assertEquals("4611686018427387903", large.factorNaarCanoniek().toPlainString());
 
         // not in lowest terms is WF-092 (c), the verifier's: the loader reads the value
         ObjectNode ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(UNIT)).set("factorToCanonical", JSON.readTree("{\"num\":2,\"den\":4}"));
-        Eenheid half = ((Datatype.Numeriek) IrLoader.load(ir).parameters.get("penningbedrag").datatype()).eenheid();
+        Unit half = ((Datatype.Numeriek) IrLoader.load(ir).parameters.get("penningbedrag").datatype()).eenheid();
         assertEquals("0.5", half.factorNaarCanoniek().toPlainString());
     }
 
@@ -295,10 +295,10 @@ class TypeSystemRefusalWitnessTest {
         assertNull(m.parameters.get("vondstdrempel").granulariteit());
         assertEquals(Granulariteit.JAAR, m.parameters.get("penningbedrag").granulariteit());
         UnitSystem unitSystem = m.unitSystems.get("Munt");
-        Eenheid eur = unitSystem.units.get("EUR");
+        Unit eur = unitSystem.units.get("EUR");
         assertEquals(List.of("EUR"), List.copyOf(unitSystem.units.keySet()));
         assertEquals(List.of("€", "euro", "euros"), List.copyOf(unitSystem.spellings.keySet()));
-        for (Eenheid e : unitSystem.spellings.values()) assertEquals(eur, e);
+        for (Unit e : unitSystem.spellings.values()) assertEquals(eur, e);
         assertEquals(eur, ((Datatype.Numeriek) m.parameters.get("penningbedrag").datatype()).eenheid());
 
         // a number with the unit '%' is the record's percentage, tagged or not, and its unit is the built-in one
@@ -306,13 +306,13 @@ class TypeSystemRefusalWitnessTest {
         Datatype.Percentage rate = assertInstanceOf(Datatype.Percentage.class,
                 m.objecttypen.get("Vondst").attributen.get("vondsttarief"));
         assertEquals(Datatype.Percentage.PERCENT, rate.eenheid());
-        assertInstanceOf(Datatype.Percentage.class, m.resolvedRegels.get(0).waarde().type());
+        assertInstanceOf(Datatype.Percentage.class, m.resolvedRegels.get(0).value().type());
 
         // the two precisions are the two date records
         ObjectNode ir = golden(MELDSTIP);
         String date = first(ir, "Date", "");
         assertEquals("millisecond", ir.at(date + "/precision").asText());
-        assertTrue(contains(IrLoader.load(ir), Datatype.DatumTijd.class));
+        assertTrue(contains(IrLoader.load(ir), Datatype.DateTime.class));
         ((ObjectNode) ir.at(date)).put("precision", "day");
         assertTrue(contains(IrLoader.load(ir), Datatype.DatumInDagen.class));
     }
@@ -346,15 +346,15 @@ class TypeSystemRefusalWitnessTest {
         ((ObjectNode) ir.at(path.substring(0, slash))).set(path.substring(slash + 1), JSON.readTree(json));
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+    private static IrLoader.DocumentError refuses(JsonNode ir, String site) {
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
         assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 
     private static void unknownField(JsonNode ir, String site, String node) {
-        IrLoader.Documentfout e = refuses(ir, site);
+        IrLoader.DocumentError e = refuses(ir, site);
         assertTrue(e.getMessage().contains("unknown field on " + node), e.getMessage());
     }
 

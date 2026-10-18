@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.schema;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.schema.FactModelGenerator.Member;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,10 +21,10 @@ public final class ContractValidator {
     private ContractValidator() {}
 
     /** Every bean↔model violation, as human-readable messages; empty when the contract holds. */
-    public static List<String> valideer(RegelSpraakModel model, ClassLoader cl) {
+    public static List<String> validate(RegelSpraakModel model, ClassLoader cl) {
         List<String> out = new ArrayList<>();
         for (Objecttype ot : model.objecttypen.values()) {
-            String javaClass = FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true);
+            String javaClass = FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true);
             Class<?> c;
             try { c = Class.forName(javaClass, false, cl); }
             catch (ClassNotFoundException e) {
@@ -63,7 +63,7 @@ public final class ContractValidator {
             boolean temporal = model.objecttypen.values().stream().anyMatch(ot ->
                     !ot.attribuutGranulariteit.isEmpty() || !ot.kenmerkGranulariteit.isEmpty());
             if (temporal) requireSegment(cl, out);
-            if (!model.consistenties.isEmpty() || !model.uniciteiten.isEmpty() || !model.uniciteitUnies.isEmpty())
+            if (!model.consistenties.isEmpty() || !model.uniquenesses.isEmpty() || !model.uniquenessUnions.isEmpty())
                 requireInconsistency(cl, out);
         }
         return out;
@@ -71,12 +71,12 @@ public final class ContractValidator {
 
     private static void requireSegment(ClassLoader cl, List<String> out) {
         try {
-            Class<?> seg = Class.forName(FactModelGenerator.PAKKET + ".Segment", false, cl);
+            Class<?> seg = Class.forName(FactModelGenerator.PACKAGE + ".Segment", false, cl);
             seg.getConstructor(java.time.LocalDate.class, java.time.LocalDate.class, java.math.BigDecimal.class);
             for (String m : new String[]{"getVan", "getTot", "getWaarde"})
                 if (find(seg, m, 0) == null) out.add("Segment." + m + "() ontbreekt (temporeel model)");
         } catch (ClassNotFoundException e) {
-            out.add("temporeel model zonder " + FactModelGenerator.PAKKET + ".Segment op het classpath");
+            out.add("temporeel model zonder " + FactModelGenerator.PACKAGE + ".Segment op het classpath");
         } catch (NoSuchMethodException e) {
             out.add("Segment(LocalDate, LocalDate, BigDecimal) constructor ontbreekt (temporeel model)");
         }
@@ -84,10 +84,10 @@ public final class ContractValidator {
 
     private static void requireInconsistency(ClassLoader cl, List<String> out) {
         try {
-            Class<?> inc = Class.forName(FactModelGenerator.PAKKET + ".Inconsistentie", false, cl);
+            Class<?> inc = Class.forName(FactModelGenerator.PACKAGE + ".Inconsistentie", false, cl);
             inc.getConstructor(String.class, Object.class);
         } catch (ClassNotFoundException e) {
-            out.add("consistentie-/uniciteitsregels zonder " + FactModelGenerator.PAKKET + ".Inconsistentie op het classpath");
+            out.add("consistentie-/uniciteitsregels zonder " + FactModelGenerator.PACKAGE + ".Inconsistentie op het classpath");
         } catch (NoSuchMethodException e) {
             out.add("Inconsistentie(String, Object) constructor ontbreekt (consistentie-/uniciteitsregels)");
         }
@@ -102,10 +102,10 @@ public final class ContractValidator {
     /** Does the actual class satisfy the expected SOURCE type name? Erasure-level: a generic
      *  {@code Map<String,BigDecimal>}/{@code List<Segment>} checks its raw type; {@code boolean} admits both
      *  the primitive and the wrapper; a reference field checks the simple fact-class name. */
-    private static boolean typeOk(String verwacht, Class<?> real) {
-        if (verwacht.startsWith("java.util.Map")) return java.util.Map.class.isAssignableFrom(real);
-        if (verwacht.startsWith("java.util.List")) return java.util.List.class.isAssignableFrom(real);
-        return switch (verwacht) {
+    private static boolean typeOk(String expected, Class<?> real) {
+        if (expected.startsWith("java.util.Map")) return java.util.Map.class.isAssignableFrom(real);
+        if (expected.startsWith("java.util.List")) return java.util.List.class.isAssignableFrom(real);
+        return switch (expected) {
             // a Booleaan ATTRIBUTE is three-valued (waar/onwaar/LEEG): the bean member must be the nullable
             // wrapper — a primitive boolean silently coerces leeg, exactly the drift this validator exists
             // to catch. A scalar KENMERK ("boolean") is genuinely two-valued, so either form serves it.
@@ -113,8 +113,8 @@ public final class ContractValidator {
             case "boolean" -> real == boolean.class || real == Boolean.class;
             case "String" -> real == String.class;
             case "Object" -> true;   // an Onbekend datatype claims nothing
-            default -> real.getName().equals(verwacht)                       // fully-qualified scalar
-                    || real.getSimpleName().equals(verwacht);                // a fact-class reference by simple name
+            default -> real.getName().equals(expected)                       // fully-qualified scalar
+                    || real.getSimpleName().equals(expected);                // a fact-class reference by simple name
         };
     }
 }

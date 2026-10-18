@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.RulePlan;
@@ -181,13 +181,13 @@ public class TestTermWitnessTest {
                         + "groter dan 3'",
                 "werf een opvolger CONDITION 0.1.0 SlotValue",
                 "werf een opvolger CONDITION 0.1.1 SlotValue",
-                "werf een opvolger CONDITION 0.1.2 Const Kwantor",
+                "werf een opvolger CONDITION 0.1.2 Const Quantifier",
                 "werf een opvolger CONDITION 0.1.3 Const Integer",
                 "werf een opvolger CONDITION 0.2 Call bron 'alle ploegleden van de Wachter hebben een merk "
                         + "groter dan 1'",
                 "werf een opvolger CONDITION 0.2.0 SlotValue",
                 "werf een opvolger CONDITION 0.2.1 SlotValue",
-                "werf een opvolger CONDITION 0.2.2 Const Kwantor",
+                "werf een opvolger CONDITION 0.2.2 Const Quantifier",
                 "werf een opvolger CONDITION 0.2.3 Const Integer"), fields(plans));
     }
 
@@ -353,13 +353,13 @@ public class TestTermWitnessTest {
         Term trueTerm = new Term.Const(Boolean.TRUE, null, null);
         assertFalse(ClosureRendering.test(new Term.WithoutFault(fails, null)).test(new Object[0]));
         assertTrue(ClosureRendering.test(new Term.WithoutFault(trueTerm, null)).test(new Object[0]));
-        Term kenmerk = new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(0, null), trueTerm), null);
+        Term characteristic = new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(0, null), trueTerm), null);
         Object[] noTruthValue = {"geen waarheidswaarde"};
         assertThrows(ClassCastException.class,
-                () -> ClosureRendering.test(new Term.WithoutFault(kenmerk, null)).test(noTruthValue));
-        Term vorm = new Term.Compound(Conditie.Kwantor.ALLE, 0, List.of(new Term.WithoutFault(fails, null), fails),
+                () -> ClosureRendering.test(new Term.WithoutFault(characteristic, null)).test(noTruthValue));
+        Term form = new Term.Compound(Condition.Quantifier.ALLE, 0, List.of(new Term.WithoutFault(fails, null), fails),
                 null);
-        assertFalse(ClosureRendering.test(vorm).test(new Object[0]));
+        assertFalse(ClosureRendering.test(form).test(new Object[0]));
     }
 
     private static JsonNode golden(String naam) throws Exception {
@@ -369,7 +369,7 @@ public class TestTermWitnessTest {
     /** The plans of the rules of the forms of {@code document}, in the order of the model. */
     private static List<RulePlan> plans(JsonNode document) {
         return DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler().modelplan()
-                .rules().stream().filter(p -> p.vorm() != null).toList();
+                .rules().stream().filter(p -> p.form() != null).toList();
     }
 
     /** The tests of {@code p}, in the order of its left-hand side. */
@@ -385,7 +385,7 @@ public class TestTermWitnessTest {
         List<String> out = new ArrayList<>();
         for (RulePlan p : plans) {
             List<TestItem> tests = tests(p);
-            if (tests.isEmpty()) out.add(p.vorm() + ": geen toets");
+            if (tests.isEmpty()) out.add(p.form() + ": geen toets");
             for (TestItem t : tests) out.add(naam(p, t) + ": " + TermTree.tree(t.test()));
         }
         return out;
@@ -401,16 +401,16 @@ public class TestTermWitnessTest {
             for (TestItem t : tests(p)) {
                 List<String> rules = new ArrayList<>();
                 TermTree.fields("", t.test(), "0", rules);
-                if (p.vorm().equals(previousForm) && rules.equals(previous))
+                if (p.form().equals(previousForm) && rules.equals(previous))
                     out.add(naam(p, t) + ": zoals de vorige toets");
                 else for (String r : rules) out.add(naam(p, t) + r);
-                previousForm = p.vorm();
+                previousForm = p.form();
                 previous = rules;
             }
         return out;
     }
 
     private static String naam(RulePlan p, TestItem t) {
-        return p.vorm() + " " + t.rol() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
+        return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
     }
 }

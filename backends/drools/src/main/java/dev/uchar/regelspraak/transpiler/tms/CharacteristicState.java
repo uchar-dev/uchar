@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 
 import java.util.Objects;
 
@@ -19,23 +19,23 @@ import java.util.Objects;
  * with it. Keyed and compared as {@link HasCharacteristic} is: the characteristic on its declaring type, the subject by
  * identity.
  */
-public record CharacteristicState(Object onderwerp, ElementSleutel kenmerk, boolean holds) {
+public record CharacteristicState(Object onderwerp, ElementKey characteristic, boolean holds) {
 
     public CharacteristicState {
         Objects.requireNonNull(onderwerp, "onderwerp");
-        Objects.requireNonNull(kenmerk, "kenmerk");
+        Objects.requireNonNull(characteristic, "kenmerk");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof CharacteristicState s && s.onderwerp == onderwerp && s.kenmerk.equals(kenmerk) && s.holds == holds;
+        return o instanceof CharacteristicState s && s.onderwerp == onderwerp && s.characteristic.equals(characteristic) && s.holds == holds;
     }
 
     @Override public int hashCode() {
-        return (31 * System.identityHashCode(onderwerp) + kenmerk.hashCode()) * 2 + (holds ? 1 : 0);
+        return (31 * System.identityHashCode(onderwerp) + characteristic.hashCode()) * 2 + (holds ? 1 : 0);
     }
 
     @Override public String toString() {
-        return "KenmerkStand(" + FactNames.object(onderwerp) + ", " + FactNames.member(kenmerk) + ", "
+        return "KenmerkStand(" + FactNames.object(onderwerp) + ", " + FactNames.member(characteristic) + ", "
                 + (holds ? "waar" : "onwaar") + ")";
     }
 }

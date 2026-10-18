@@ -54,9 +54,9 @@ class AllocationRoleWitnessTest {
     // ---------------- the repeated pair: only the binding answers ----------------
 
     @Test void the_derivation_reads_the_binding_where_the_type_pair_is_silent() throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(lees(TOEZICHT));
+        IrLoader.Loaded l = IrLoader.loadAll(read(TOEZICHT));
         RegelSpraakModel m = l.model();
-        var v = m.verdelingen.get(0);
+        var v = m.allocations.get(0);
         assertNull(m.connectingRole(v.targetType(), v.sourceType()), "two fact types relate Berger and Berging");
         assertEquals(new FactModelGenerator.AllocationJoin("berging", null),
                 FactModelGenerator.allocationJoin(m, v, l.roleBindings().get(v)),
@@ -82,7 +82,7 @@ class AllocationRoleWitnessTest {
     @Test void a_binding_with_many_sister_is_refused_on_the_storage_direction() throws Exception {
         // bergingstoezicht binds Berger as toezichthouder; the source side 'bewaakte berging' is to-many, so the
         // relation is stored on Berging and Berger carries no field to join on
-        ObjectNode ir = lees(TOEZICHT);
+        ObjectNode ir = read(TOEZICHT);
         allocation(ir).set("connectingRole", binding("bergingstoezicht", "toezichthouder"));
         BothBranches.refused(temporary("toezicht-twist", ir), goldenCase(TOEZICHT),
                 "verdeling: verdeel de opbrengst van een berging — een verdeling over de enkelvoudige ontvangerrol"
@@ -95,21 +95,21 @@ class AllocationRoleWitnessTest {
         // maat, so each receives the other's whole vondstwaarde; J3 has none. Verifier PASS, ref PASS.
         ObjectNode ir = maatschapWithAllocation();
         IrLoader.Loaded l = IrLoader.loadAll(ir);
-        var v = l.model().verdelingen.get(0);
+        var v = l.model().allocations.get(0);
         assertEquals(new FactModelGenerator.AllocationJoin("maat", null),
                 FactModelGenerator.allocationJoin(l.model(), v, l.roleBindings().get(v)),
                 "a reciprocal role is its own sibling");
         ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(MAATSCHAP.resolve("case1.json")));
-        ArrayNode verwacht = (ArrayNode) c.get("expected");
-        verwacht.insert(verwacht.size() - 1, measurePart("J1", "12"));
-        verwacht.insert(verwacht.size() - 1, measurePart("J2", "30"));
+        ArrayNode expected = (ArrayNode) c.get("expected");
+        expected.insert(expected.size() - 1, measurePart("J1", "12"));
+        expected.insert(expected.size() - 1, measurePart("J2", "30"));
         BothBranches.green(temporary("maatschap", ir), c, "the reciprocal binding joins on the maat field");
     }
 
     // ---------------- a unique pair: the twist is read, not overruled ----------------
 
     @Test void a_binding_on_the_source_role_is_not_overwritten_by_the_type_pair() throws Exception {
-        ObjectNode ir = lees(BERGING);
+        ObjectNode ir = read(BERGING);
         allocation(ir).set("connectingRole", binding("bergingsdeelname", "berging"));
         BothBranches.refused(temporary("bronrol", ir), goldenCase(BERGING),
                 "verdeling: verdeel de opbrengst van een berging — de join van de verdeling heeft geen beanveld — het"
@@ -117,7 +117,7 @@ class AllocationRoleWitnessTest {
     }
 
     @Test void a_binding_that_does_not_resolve_is_refused() throws Exception {
-        ObjectNode ir = lees(BERGING);
+        ObjectNode ir = read(BERGING);
         allocation(ir).set("connectingRole", binding("bergingsdeelname", "bewaker"));
         BothBranches.refused(temporary("los", ir), goldenCase(BERGING), "verdeling: verdeel de opbrengst van een"
                         + " berging — de connectingRole van de verdeling noemt geen gedeclareerde rol (bergingsdeelname,"
@@ -128,9 +128,9 @@ class AllocationRoleWitnessTest {
     @Test void without_binding_the_allocation_does_not_load() throws Exception {
         // IR-SPEC ch. 3.2: the recipient join IS the binding, and no reader derives a missing one from the type
         // pair, unique or not — the document is refused at load, by name
-        ObjectNode ir = lees(BERGING);
+        ObjectNode ir = read(BERGING);
         allocation(ir).remove("connectingRole");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/allocations/0/versions/0", e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'connectingRole'"), e.getMessage());
     }
@@ -138,12 +138,12 @@ class AllocationRoleWitnessTest {
     // ---------------- fixtures ----------------
 
     private static ObjectNode maatschapWithAllocation() throws Exception {
-        ObjectNode ir = lees(MAATSCHAP);
+        ObjectNode ir = read(MAATSCHAP);
         ObjectNode jutter = IrPath.objectType(ir, "Jutter");
         IrPath.addAttribute(jutter, "maatdeel", IrPath.attribute(jutter, "maatwaarde").get("datatype").deepCopy());
-        ObjectNode vorm = IrPath.rules(ir).putArray("allocations").addObject();
-        vorm.put("node", "Allocation").put("name", "verdeel de vondstwaarde over de maat");
-        ObjectNode v = vorm.putArray("versions").addObject();
+        ObjectNode form = IrPath.rules(ir).putArray("allocations").addObject();
+        form.put("node", "Allocation").put("name", "verdeel de vondstwaarde over de maat");
+        ObjectNode v = form.putArray("versions").addObject();
         v.put("sourceType", "Jutter").put("sourceAttribute", "vondstwaarde")
                 .put("targetType", "Jutter").put("targetAttribute", "maatdeel").put("method", "equalShares")
                 .put("descending", false);
@@ -152,15 +152,15 @@ class AllocationRoleWitnessTest {
         return ir;
     }
 
-    private static ObjectNode measurePart(String label, String waarde) {
+    private static ObjectNode measurePart(String label, String value) {
         ObjectNode e = JSON.createObjectNode().put("kind", "attributeValue").put("label", label).put("attribute", "maatdeel");
-        e.putObject("value").put("number", waarde);
+        e.putObject("value").put("number", value);
         return e;
     }
 
     /** bergingstoezicht with a third Berging-Berger relation, whose to-one side sits on Berger. */
     private static ObjectNode reserve() throws Exception {
-        ObjectNode ir = lees(TOEZICHT);
+        ObjectNode ir = read(TOEZICHT);
         ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", "reservedeelname").put("reciprocal", false);
         ArrayNode roles = ft.putArray("roles");
         roles.addObject().put("node", "Role").put("name", "reserveberging").put("objectType", "Berging")
@@ -184,11 +184,11 @@ class AllocationRoleWitnessTest {
         return IrPath.version(ir, "allocations", 0, 0);
     }
 
-    private static ObjectNode binding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
+    private static ObjectNode binding(String factType, String role) {
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", factType).put("role", role);
     }
 
-    private static ObjectNode lees(Path golden) throws Exception {
+    private static ObjectNode read(Path golden) throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(golden.resolve("ir.json")));
     }
 

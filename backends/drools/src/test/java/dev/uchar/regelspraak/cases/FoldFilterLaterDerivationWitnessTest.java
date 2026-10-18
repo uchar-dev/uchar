@@ -54,7 +54,7 @@ class FoldFilterLaterDerivationWitnessTest {
         String ir = document(rules(zwaarste("Vondst", maximum(subselection(predicate("empty", own("afgeleide dag"))),
                 TWO_ROLES))), GROUP);
         assertNull(play(ir, caseDocument(STRAND, dateValue("V2", "afgeleide dag", "2026-03-01") + ", "
-                        + waarde("V1", "zwaarste gewicht", "10"))),
+                        + value("V1", "zwaarste gewicht", "10"))),
                 "de vouw herziet na de defaultsgroep");
     }
 
@@ -62,19 +62,19 @@ class FoldFilterLaterDerivationWitnessTest {
         // The same fold with "Regel afgeleid" as an ordinary rule declared after it. ref and clingo: 10 for V1 and V2.
         String ir = document(rules(zwaarste("Vondst", maximum(subselection(predicate("empty", own("afgeleide dag"))),
                 TWO_ROLES)), DERIVED), "");
-        assertNull(play(ir, caseDocument(STRAND, waarde("V1", "zwaarste gewicht", "10") + ", "
-                        + waarde("V2", "zwaarste gewicht", "10"))),
+        assertNull(play(ir, caseDocument(STRAND, value("V1", "zwaarste gewicht", "10") + ", "
+                        + value("V2", "zwaarste gewicht", "10"))),
                 "de schrijver na de vouw");
     }
 
     @Test void a_negated_characteristic_check_in_the_subselection() throws Exception {
         // "... die aan de volgende voorwaarde voldoen: hij is niet gedateerd", with "Een Vondst is gedateerd indien zijn
         // vinddag gevuld is" declared after the fold. ref and clingo: V2 gedateerd, 10 for V1 and V2.
-        String ir = document(rules(zwaarste("Vondst", maximum(subselection(kenmerk("gedateerd", true)), TWO_ROLES)),
+        String ir = document(rules(zwaarste("Vondst", maximum(subselection(characteristic("gedateerd", true)), TWO_ROLES)),
                 DATED), "");
         assertNull(play(ir, caseDocument(STRAND, "{\"kind\":\"characteristicPresent\",\"label\":\"V2\",\"characteristic\":"
-                        + "\"gedateerd\"}, " + waarde("V1", "zwaarste gewicht", "10") + ", "
-                        + waarde("V2", "zwaarste gewicht", "10"))),
+                        + "\"gedateerd\"}, " + value("V1", "zwaarste gewicht", "10") + ", "
+                        + value("V2", "zwaarste gewicht", "10"))),
                 "het ontkende kenmerk");
     }
 
@@ -84,10 +84,10 @@ class FoldFilterLaterDerivationWitnessTest {
         // own condition makes the subject pattern react to the rule's own write. ref and clingo: 10.
         String ir = document(rules(regel("zwaarste", "Berging", "zwaarste gewicht",
                 maximum(subselection(predicate("empty", own("afgeleide dag"))), ROLE),
-                predicate("filled", attribuut("openingsdag", "Berging")), "calculation"), DERIVED), "");
+                predicate("filled", attribute("openingsdag", "Berging")), "calculation"), DERIVED), "");
         String b = "{\"label\":\"B\",\"objectType\":\"Berging\",\"attributes\":{\"openingsdag\":{\"date\":\"2026-01-01\"}},"
                 + "\"roles\":{},\"characteristics\":[]}";
-        assertNull(play(ir, caseDocument(List.of(b, V1, V2), waarde("B", "zwaarste gewicht", "10"))),
+        assertNull(play(ir, caseDocument(List.of(b, V1, V2), value("B", "zwaarste gewicht", "10"))),
                 "de eigen voorwaarde op een rol afstand");
     }
 
@@ -96,8 +96,8 @@ class FoldFilterLaterDerivationWitnessTest {
         // writer after it: the fold as an operand, read from its slot. ref and clingo: 11 for V1 and V2.
         String ir = document(rules(zwaarste("Vondst", plus(number("1"),
                 maximum(subselection(predicate("empty", own("afgeleide dag"))), TWO_ROLES))), DERIVED), "");
-        assertNull(play(ir, caseDocument(STRAND, waarde("V1", "zwaarste gewicht", "11") + ", "
-                        + waarde("V2", "zwaarste gewicht", "11"))),
+        assertNull(play(ir, caseDocument(STRAND, value("V1", "zwaarste gewicht", "11") + ", "
+                        + value("V2", "zwaarste gewicht", "11"))),
                 "de vouw als operand");
     }
 
@@ -114,8 +114,8 @@ class FoldFilterLaterDerivationWitnessTest {
                 + "\"opgegeven dag\":{\"date\":\"2026-01-01\"},\"gewicht\":{\"number\":\"20\"}},\"roles\":{\"berging\":"
                 + "[\"B\"]},\"characteristics\":[]}";
         assertNull(play(ir, caseDocument(List.of(BERGING, vondst("V1", "2026-04-01", "10"), v2),
-                        dateValue("V2", "afgeleide dag", "2026-01-01") + ", " + waarde("V1", "zwaarste gewicht", "10") + ", "
-                        + waarde("V2", "zwaarste gewicht", "10"))),
+                        dateValue("V2", "afgeleide dag", "2026-01-01") + ", " + value("V1", "zwaarste gewicht", "10") + ", "
+                        + value("V2", "zwaarste gewicht", "10"))),
                 "de herziening tussen twee gevulde waarden");
     }
 
@@ -128,7 +128,7 @@ class FoldFilterLaterDerivationWitnessTest {
                 ROLE)), DERIVED), "");
         String b = "{\"label\":\"B\",\"objectType\":\"Berging\",\"attributes\":{\"zwaarste gewicht\":{\"number\":\"99\"}},"
                 + "\"roles\":{},\"characteristics\":[]}";
-        assertNull(play(ir, caseDocument(List.of(b, vondst("V1", "2026-02-01", "10"), V2), waarde("B", "zwaarste gewicht", "99"))),
+        assertNull(play(ir, caseDocument(List.of(b, vondst("V1", "2026-02-01", "10"), V2), value("B", "zwaarste gewicht", "99"))),
                 "de invoer op het doel");
     }
 
@@ -140,10 +140,10 @@ class FoldFilterLaterDerivationWitnessTest {
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"zwaar\",\"subjectType\":\"Berging\","
                 + "\"source\":{\"snippet\":\"Een Berging is zwaar\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":"
                 + "true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"zwaar\"}},\"condition\":"
-                + comparison("greater", attribuut("zwaarste gewicht", "Berging"), number("15")) + ",\"initialisation\":false}]}";
+                + comparison("greater", attribute("zwaarste gewicht", "Berging"), number("15")) + ",\"initialisation\":false}]}";
         String ir = document(rules(zwaarste("Berging", maximum(subselection(predicate("empty", own("afgeleide dag"))),
                 ROLE)), zwaar, DERIVED), "");
-        assertNull(play(ir, caseDocument(STRAND, waarde("B", "zwaarste gewicht", "10") + ", {\"kind\":\"characteristicAbsent\","
+        assertNull(play(ir, caseDocument(STRAND, value("B", "zwaarste gewicht", "10") + ", {\"kind\":\"characteristicAbsent\","
                         + "\"label\":\"B\",\"characteristic\":\"zwaar\"}")),
                 "het kenmerk op de vouw");
     }
@@ -192,8 +192,8 @@ class FoldFilterLaterDerivationWitnessTest {
         // A flank: the writer declared before the fold fires first. ref and clingo: 10 for V1 and V2.
         String ir = document(rules(DERIVED, zwaarste("Vondst",
                 maximum(subselection(predicate("empty", own("afgeleide dag"))), TWO_ROLES))), "");
-        assertNull(play(ir, caseDocument(STRAND, waarde("V1", "zwaarste gewicht", "10") + ", "
-                        + waarde("V2", "zwaarste gewicht", "10"))),
+        assertNull(play(ir, caseDocument(STRAND, value("V1", "zwaarste gewicht", "10") + ", "
+                        + value("V2", "zwaarste gewicht", "10"))),
                 "de schrijver eerst in de bron");
     }
 
@@ -202,8 +202,8 @@ class FoldFilterLaterDerivationWitnessTest {
         // the fold before the fix as well. ref and clingo: 20 for V1 and V2.
         String ir = document(rules(zwaarste("Vondst", maximum(subselection(predicate("filled", own("afgeleide dag"))),
                 TWO_ROLES)), DERIVED), "");
-        assertNull(play(ir, caseDocument(STRAND, waarde("V1", "zwaarste gewicht", "20") + ", "
-                        + waarde("V2", "zwaarste gewicht", "20"))),
+        assertNull(play(ir, caseDocument(STRAND, value("V1", "zwaarste gewicht", "20") + ", "
+                        + value("V2", "zwaarste gewicht", "20"))),
                 "de vondst komt erbij");
     }
 
@@ -212,7 +212,7 @@ class FoldFilterLaterDerivationWitnessTest {
         // dag is leeg kleiner is dan 15" becomes true once V2 has left, and the rule fires then. ref and clingo: 1.
         String ir = document(rules(lichtClass(quantifierFold("all", -1, subselection(predicate("empty", own("afgeleide dag"))),
                 comparison("less", own("gewicht"), number("15")))), DERIVED), "");
-        assertNull(play(ir, caseDocument(STRAND, waarde("B", "lichtklasse", "1"))), "de kwantor wordt waar");
+        assertNull(play(ir, caseDocument(STRAND, value("B", "lichtklasse", "1"))), "de kwantor wordt waar");
     }
 
     // ---------------- documents ----------------
@@ -223,12 +223,12 @@ class FoldFilterLaterDerivationWitnessTest {
     /** Vondst (vinddag, opgegeven dag, afgeleide dag, gewicht, zwaarste gewicht, lichtklasse; kenmerk gedateerd),
      *  Berging (zwaarste gewicht, lichtklasse, openingsdag; kenmerk zwaar), one berging betreft meerdere vondsten. */
     private static final String MODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
-            + "\"plural\":\"Vondsten\",\"attributes\":[" + veld("vinddag", DAG) + "," + veld("opgegeven dag", DAG) + ","
-            + veld("afgeleide dag", DAG) + "," + veld("gewicht", WHOLE) + "," + veld("zwaarste gewicht", WHOLE) + ","
-            + veld("lichtklasse", WHOLE) + "],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gedateerd\","
+            + "\"plural\":\"Vondsten\",\"attributes\":[" + field("vinddag", DAG) + "," + field("opgegeven dag", DAG) + ","
+            + field("afgeleide dag", DAG) + "," + field("gewicht", WHOLE) + "," + field("zwaarste gewicht", WHOLE) + ","
+            + field("lichtklasse", WHOLE) + "],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gedateerd\","
             + "\"kind\":\"adjectival\"}]},{\"node\":\"ObjectType\",\"name\":\"Berging\",\"animate\":false,\"plural\":"
-            + "\"Bergingen\",\"attributes\":[" + veld("zwaarste gewicht", WHOLE) + "," + veld("lichtklasse", WHOLE) + ","
-            + veld("openingsdag", DAG) + "],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"zwaar\","
+            + "\"Bergingen\",\"attributes\":[" + field("zwaarste gewicht", WHOLE) + "," + field("lichtklasse", WHOLE) + ","
+            + field("openingsdag", DAG) + "],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"zwaar\","
             + "\"kind\":\"adjectival\"}]}],\"factTypes\":[{\"node\":\"FactType\",\"name\":"
             + "\"BergingBetreftVondst\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\"berging\","
             + "\"objectType\":\"Berging\",\"many\":false},{\"node\":\"Role\",\"name\":\"vondst\",\"objectType\":\"Vondst\","
@@ -271,17 +271,17 @@ class FoldFilterLaterDerivationWitnessTest {
             + "\"Default\",\"justification\":" + predicate("filled", own("vinddag")) + ",\"consequence\":" + own("vinddag")
             + "}],\"validity\":{\"node\":\"Validity\"}}]";
 
-    private static String veld(String naam, String datatype) {
+    private static String field(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String attribuut(String naam, String type) {
+    private static String attribute(String naam, String type) {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"" + naam + "\",\"subjectType\":\"" + type
                 + "\",\"source\":{\"snippet\":\"zijn " + naam + "\"}}";
     }
 
     /** A read of the Vondst's own attribute: in a subselection or a matrix the element is the subject. */
-    private static String own(String naam) { return attribuut(naam, "Vondst"); }
+    private static String own(String naam) { return attribute(naam, "Vondst"); }
 
     private static String number(String n) {
         return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + n + "\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\""
@@ -298,9 +298,9 @@ class FoldFilterLaterDerivationWitnessTest {
                 + ",\"source\":{\"snippet\":\"plus\"}}";
     }
 
-    private static String predicate(String soort, String operand) {
-        return "{\"node\":\"Predicate\",\"kind\":\"" + soort + "\",\"operand\":" + operand
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + soort + "\"}}";
+    private static String predicate(String category, String operand) {
+        return "{\"node\":\"Predicate\",\"kind\":\"" + category + "\",\"operand\":" + operand
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + category + "\"}}";
     }
 
     private static String comparison(String op, String left, String right) {
@@ -308,7 +308,7 @@ class FoldFilterLaterDerivationWitnessTest {
                 + ",\"source\":{\"snippet\":\"" + op + "\"}}";
     }
 
-    private static String kenmerk(String naam, boolean negated) {
+    private static String characteristic(String naam, boolean negated) {
         return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + naam + "\",\"negated\":" + negated
                 + ",\"source\":{\"snippet\":\"hij is " + (negated ? "niet " : "") + naam + "\"}}";
     }
@@ -333,22 +333,22 @@ class FoldFilterLaterDerivationWitnessTest {
                 + quantifier + " van de vondsten\"}," + ROLE + "}";
     }
 
-    /** One rule with one version; {@code voorwaarde} null for none. */
-    private static String regel(String naam, String type, String doel, String waarde, String voorwaarde, String presentation) {
+    /** One rule with one version; {@code condition} null for none. */
+    private static String regel(String naam, String type, String target, String value, String condition, String presentation) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
-                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"De " + doel + " van een " + type + "\"}},\"value\":" + waarde
-                + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde) + ",\"initialisation\":false,\"presentation\":\""
+                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"De " + target + " van een " + type + "\"}},\"value\":" + value
+                + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\""
                 + presentation + "\"}]}";
     }
 
-    private static String zwaarste(String type, String waarde) {
-        return regel("zwaarste", type, "zwaarste gewicht", waarde, null, "calculation");
+    private static String zwaarste(String type, String value) {
+        return regel("zwaarste", type, "zwaarste gewicht", value, null, "calculation");
     }
 
-    /** "De lichtklasse van een Berging moet berekend worden als 1 indien {@code voorwaarde}." */
-    private static String lichtClass(String voorwaarde) {
-        return regel("lichtklasse", "Berging", "lichtklasse", number("1"), voorwaarde, "calculation");
+    /** "De lichtklasse van een Berging moet berekend worden als 1 indien {@code condition}." */
+    private static String lichtClass(String condition) {
+        return regel("lichtklasse", "Berging", "lichtklasse", number("1"), condition, "calculation");
     }
 
     private static String rules(String... rules) { return String.join(",", rules); }
@@ -379,23 +379,23 @@ class FoldFilterLaterDerivationWitnessTest {
                 + weight + "\"}},\"roles\":{\"berging\":[\"B\"]},\"characteristics\":[]}";
     }
 
-    private static String waarde(String label, String attribuut, String number) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut
+    private static String value(String label, String attribute, String number) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute
                 + "\",\"value\":{\"number\":\"" + number + "\"}}";
     }
 
-    private static String dateValue(String label, String attribuut, String date) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut
+    private static String dateValue(String label, String attribute, String date) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute
                 + "\",\"value\":{\"date\":\"" + date + "\"}}";
     }
 
-    private static String empty(String label, String attribuut) {
-        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\"}";
+    private static String empty(String label, String attribute) {
+        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\"}";
     }
 
-    private static String caseDocument(List<String> instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(List<String> instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

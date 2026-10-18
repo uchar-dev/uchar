@@ -58,7 +58,7 @@ class DrlTextCorpusWitnessTest {
             goldens = s.filter(p -> p.getFileName().toString().equals("ir.json")).map(Path::getParent).sorted().toList();
         }
         Map<String, Integer> count = new TreeMap<>();
-        List<String> fout = new ArrayList<>(), differences = new ArrayList<>();
+        List<String> fault = new ArrayList<>(), differences = new ArrayList<>();
         int withoutCases = 0;
         for (Path g : goldens) {
             List<Path> cases;
@@ -71,7 +71,7 @@ class DrlTextCorpusWitnessTest {
             try {
                 r = CaseRunner.viaDrlText(g.resolve("ir.json"), cases);
             } catch (RuntimeException e) {
-                fout.add(naam + ": " + e);
+                fault.add(naam + ": " + e);
                 continue;
             }
             switch (r.status()) {
@@ -85,10 +85,10 @@ class DrlTextCorpusWitnessTest {
                             differences.add(naam + ": drl " + r.reason() + " | exec-model " + exec);
                     }
                 }
-                default -> fout.add(naam + ": " + r);
+                default -> fault.add(naam + ": " + r);
             }
         }
-        assertEquals(List.of(), fout, "goldens die de tak draagt maar verkeerd uitrekent, of waarvan de tekst niet"
+        assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent, of waarvan de tekst niet"
                 + " compileert");
         assertEquals(List.of(), differences, "weigeringen van de gedeelde analyse die van de exec-model-tak verschillen");
         int played = count.getOrDefault("PLAYED", 0), without = withoutCases;
@@ -99,21 +99,21 @@ class DrlTextCorpusWitnessTest {
     /** The family of a refusal: the form the rendering does not carry, the kind of form the manifest
      *  refuses first, the label of a branch (a cycle, two rules of one name), the loader, or two names on one bean
      *  member. */
-    private static String family(String reden) {
-        if (reden.startsWith("drl: de DRL-weergave draagt ")) {
-            int stillNot = reden.indexOf(" nog niet");
-            return stillNot < 0 ? reden : reden.substring(0, stillNot);
+    private static String family(String reason) {
+        if (reason.startsWith("drl: de DRL-weergave draagt ")) {
+            int stillNot = reason.indexOf(" nog niet");
+            return stillNot < 0 ? reason : reason.substring(0, stillNot);
         }
-        if (reden.startsWith("transpiler SKIP: ")) {
-            String rest = reden.substring("transpiler SKIP: ".length());
+        if (reason.startsWith("transpiler SKIP: ")) {
+            String rest = reason.substring("transpiler SKIP: ".length());
             int colon = rest.indexOf(':');
             return colon < 0 ? "transpiler" : rest.substring(0, colon);
         }
-        if (reden.startsWith("drl: ")) return "drl";
+        if (reason.startsWith("drl: ")) return "drl";
         // a cycle, refused by the shared analysis in its own words
-        if (reden.startsWith("exec-model: ")) return "exec-model";
-        if (reden.startsWith("loader: ")) return "loader";
-        if (reden.startsWith("beannaambotsing: ")) return "beannaambotsing";
-        return "anders: " + reden;
+        if (reason.startsWith("exec-model: ")) return "exec-model";
+        if (reason.startsWith("loader: ")) return "loader";
+        if (reason.startsWith("beannaambotsing: ")) return "beannaambotsing";
+        return "anders: " + reason;
     }
 }

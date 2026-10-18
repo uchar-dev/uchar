@@ -102,17 +102,17 @@ class PreRoundedFactorWitnessTest {
         String rounding = ("{\"node\":\"Rounding\",\"base\":%s,\"mode\":\"%s\",\"decimals\":0,\"type\":%s,"
                 + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter %s afgerond op 0 decimalen\"}}")
                 .formatted(addition, mode, number(true, 0, baseUnit), left, right, modeSource);
-        String objecttype = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+        String objectType = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[%s,%s,%s,%s],\"characteristics\":[]}").formatted(
-                attribuut(left, sumType), attribuut(right, number(false, 2, partUnit)), attribuut(sum, sumType),
-                attribuut(rounded, number(true, 0, baseUnit)));
+                attribute(left, sumType), attribute(right, number(false, 2, partUnit)), attribute(sum, sumType),
+                attribute(rounded, number(true, 0, baseUnit)));
         String units = "[" + declared(baseUnit, baseWord) + "," + declared(partUnit, partWord) + "]";
         String doc = ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[],\"parameters\":[],"
                 + "\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"%s\",\"units\":%s}],"
                 + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{\"rules\":[%s,%s],"
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
-                + "\"ruleGroups\":[]},\"diagnostics\":[]}").formatted(objecttype, system, units,
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}").formatted(objectType, system, units,
                 regel(sum, addition), regel(rounded, rounding));
         Path tmp = Files.createTempFile("voorafgeronde-factor", ".json");
         tmp.toFile().deleteOnExit();
@@ -136,18 +136,18 @@ class PreRoundedFactorWitnessTest {
                 .formatted(whole, decimals, unit);
     }
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
-    private static String ownRead(String attribuut) {
+    private static String ownRead(String attribute) {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"de %s van de Jutter\"}}"
-                .formatted(attribuut, attribuut);
+                .formatted(attribute, attribute);
     }
 
-    private static String regel(String doel, String waarde) {
-        return IrPath.regel(doel, "BEREKENING", ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
-                + "\"source\":{\"snippet\":\"De %s van een Jutter\"}}").formatted(doel, doel), waarde, "null");
+    private static String regel(String target, String value) {
+        return IrPath.regel(target, "BEREKENING", ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
+                + "\"source\":{\"snippet\":\"De %s van een Jutter\"}}").formatted(target, target), value, "null");
     }
 
     /** One Jutter with the two addends, and the EXACT values of the sum and the rounded sum as expectations. */

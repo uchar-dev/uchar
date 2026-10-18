@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -112,7 +112,7 @@ class NameNormWitnessTest {
         // (the tuples (7,3) and (9,3) differ); clingo agrees. A wider norm counted two and raised the ch. 5.9
         // form fault on a shape all three executors accept. Re-measured 2026-09-23 on the M1 form: verifier
         // PASS, ref and clingo PASS (1 expectations), both Drools branches PLAYED 1.
-        assertEquals(Set.of(), flags(ariteit(), mixedKeyCase()),
+        assertEquals(Set.of(), flags(arity(), mixedKeyCase()),
                 "the guard must count the temporal components ref counts, not one more");
     }
 
@@ -128,7 +128,7 @@ class NameNormWitnessTest {
         for (String spelling : java.util.List.of(
                 "VONDSTNUMMER", "Vondstnummer", "vondstNummer", "VOndstnummer", "vondstnummeR")) {
             Path ir = edited(STRANDREGISTER, o -> {
-                IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add(spelling));
+                IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add(spelling));
                 IrPath.rulesList(o, "uniquenesses").remove(1);
             });
             assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
@@ -140,7 +140,7 @@ class NameNormWitnessTest {
     @Test void a_case_variant_of_a_union_key_finds_the_same_collision() throws Exception {
         // the union's own key site resolves through the same contract. ref on this model: PASS (2
         // expectations) — both Strandvondsten flagged within the one source; clingo agrees.
-        Path ir = edited(NUMMERREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
+        Path ir = edited(NUMMERREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
         assertEquals(Set.of("eenmalig vondstnummer @ S1", "eenmalig vondstnummer @ S2"),
                 flags(ir, twoTimelines()),
                 "a union source's key resolves to its declared spelling before the bean is read");
@@ -153,7 +153,7 @@ class NameNormWitnessTest {
         // written key would render "vondstNummer", a field the fact class does not carry. Since card
         // drl-teksttak-op-truth-maintenance the text is the analysis rendered, which reads the key through the standing
         // of the declared member, and the standing reads the bean field.
-        Path ir = edited(STRANDREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
+        Path ir = edited(STRANDREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
         String drl = drl(ir);
         assertTrue(drl.contains(".Strandvondst( $invoer : (ComputeHelpers.periods(vondstnummer)) )"), drl);
         assertFalse(drl.contains("vondstNummer"), "the written spelling must not reach the DRL text: " + drl);
@@ -213,7 +213,7 @@ class NameNormWitnessTest {
     }
 
     /** The diacritic model with a TWO-component key: scalar {@code coördinaat} + temporal {@code kavelnummer}. */
-    private static Path ariteit() throws Exception {
+    private static Path arity() throws Exception {
         return edited(STRANDREGISTER, o -> {
             renameAttribute(o, "coördinaat");
             granularityUnder(o, "coördinaat", "COÖRDINAAT");
@@ -242,14 +242,14 @@ class NameNormWitnessTest {
 
     /** Keep only the first uniciteit (the scoped second one plays no part here) and give it {@code keyNames}. */
     private static void singleUniqueness(ObjectNode ir, JsonNode keyNames) {
-        var lijst = IrPath.rulesList(ir, "uniquenesses");
-        while (lijst.size() > 1) lijst.remove(1);
-        IrPath.bron(ir, 0, 0).set("keys", keyNames);
+        var list = IrPath.rulesList(ir, "uniquenesses");
+        while (list.size() > 1) list.remove(1);
+        IrPath.source(ir, 0, 0).set("keys", keyNames);
     }
 
     /** A corpus {@code ir.json} with one authored edit, written to a temp file. */
-    private static Path edited(Path bron, Consumer<ObjectNode> edit) throws Exception {
-        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(bron));
+    private static Path edited(Path source, Consumer<ObjectNode> edit) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(source));
         edit.accept(ir);
         Path out = Files.createTempFile(tmp, "naamnorm", ".json");
         Files.writeString(out, ir.toString());
@@ -325,7 +325,7 @@ class NameNormWitnessTest {
             if (!"Inconsistentie".equals(f.getClass().getSimpleName())) continue;
             Object subject = f.getClass().getMethod("getSubject").invoke(f);
             String label = "?";
-            for (Map.Entry<String, Object> e : after.invoer().entrySet())
+            for (Map.Entry<String, Object> e : after.input().entrySet())
                 if (e.getValue() == subject) label = e.getKey();
             out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ " + label);
         }

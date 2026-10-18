@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.transpiler.tms.Outcome.Kind;
 
 import java.util.ArrayList;
@@ -34,26 +34,26 @@ public sealed interface Consequence {
      *  it stays when the match goes. */
     enum Insertion { LOGICAL, STATED }
 
-    /** The names of a fault: the form whose fault it is ({@code Fout.regel}) and the rule its sentence names. */
-    record FaultName(String vorm, String regel) {}
+    /** The names of a fault: the form whose fault it is ({@code Fault.regel}) and the rule its sentence names. */
+    record FaultName(String form, String regel) {}
 
     /** The §9.5 deposit (RUNTIME-SEMANTICS ch. 1.2) of the evaluation of a value: the probe in slot {@code depositFlag} of the
      *  value array hears the places the evaluation reaches, and where it heard one the consequence inserts the
-     *  inconsistency of the form {@code vorm} on its object. */
-    record Deposit(int depositFlag, String vorm) {}
+     *  inconsistency of the form {@code form} on its object. */
+    record Deposit(int depositFlag, String form) {}
 
     /**
      * The value of attribute {@code doel} of the object {@code onderwerp} binds, written by {@code writer}: the
      * consequence evaluates {@code waarde} over a value array of {@code grootte} slots with the bound values at
      * {@code slots}, collapses an exact rational to a decimal where {@code collapse}, and inserts the value where it is
      * gevuld, or also where it is leeg (null, or a timeline without a segment) where {@code writesEmpty}. Where the
-     * evaluation faults, an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under {@code fout} in
+     * evaluation faults, an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under {@code fault} in
      * place of the value and of a deposit; otherwise the deposit first ({@code deposit}: the rule's probe, which
      * hears only the places the evaluation of the value reaches, so a probe of the condition alone hears nothing here;
      * null where the rule has no probe).
      */
-    record Value(String onderwerp, ElementSleutel doel, String writer, Term waarde, List<Integer> slots,
-                  int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fout,
+    record Value(String onderwerp, ElementKey target, String writer, Term value, List<Integer> slots,
+                  int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault,
                   Insertion insertion) implements Consequence {
         public Value {
             slots = List.copyOf(slots);
@@ -61,49 +61,49 @@ public sealed interface Consequence {
     }
 
     /** The characteristic {@code kenmerk} of the object {@code onderwerp} binds. */
-    record Characteristic(String onderwerp, ElementSleutel kenmerk, Insertion insertion) implements Consequence {}
+    record Characteristic(String onderwerp, ElementKey characteristic, Insertion insertion) implements Consequence {}
 
     /**
      * The fault of a condition, evaluated again over the value array of {@code grootte} slots with the bound values at
-     * {@code slots}, asking it {@code rol}: its evaluation fault ({@link TestItem.Role#FAULT}), which the test of the
-     * rule found, inserted under {@code fout} on the object {@code onderwerp} binds. That the evaluation answers here is
+     * {@code slots}, asking it {@code role}: its evaluation fault ({@link TestItem.Role#FAULT}), which the test of the
+     * rule found, inserted under {@code fault} on the object {@code onderwerp} binds. That the evaluation answers here is
      * a broken contract, since the test faulted over the same values.
      */
-    record TestFault(String onderwerp, Term test, TestItem.Role rol, List<Integer> slots, int size, FaultName fout,
+    record TestFault(String onderwerp, Term test, TestItem.Role role, List<Integer> slots, int size, FaultName fault,
                      Insertion insertion) implements Consequence {
         public TestFault {
             slots = List.copyOf(slots);
-            if (rol != TestItem.Role.FAULT)
-                throw new IllegalArgumentException("een gevolg vraagt van een voorwaarde alleen haar fout, niet " + rol);
+            if (role != TestItem.Role.FAULT)
+                throw new IllegalArgumentException("een gevolg vraagt van een voorwaarde alleen haar fout, niet " + role);
         }
     }
 
-    /** A fixed evaluation fault of the branch ({@code Rekenfout}) with the sentence {@code sentence}, under {@code fout}, on
+    /** A fixed evaluation fault of the branch ({@code ComputeFault}) with the sentence {@code sentence}, under {@code fault}, on
      *  the object {@code onderwerp} binds. */
-    record Fout(String onderwerp, String sentence, FaultName fout, Insertion insertion) implements Consequence {}
+    record Fault(String onderwerp, String sentence, FaultName fault, Insertion insertion) implements Consequence {}
 
-    /** The §9.5 inconsistency of the form {@code vorm} on the object {@code onderwerp} binds. */
-    record Inconsistency(String onderwerp, String vorm, Insertion insertion) implements Consequence {}
+    /** The §9.5 inconsistency of the form {@code form} on the object {@code onderwerp} binds. */
+    record Inconsistency(String onderwerp, String form, Insertion insertion) implements Consequence {}
 
     /**
      * The fault of two or more writers of attribute {@code doel} that stand on one object with different values
      * (RUNTIME-SEMANTICS ch. 5.7), on the object {@code onderwerp} binds, over the value facts the slot {@code waarden}
      * holds: the writers in the order of the document's rules {@code documentOrder}, each named once, and a writer
-     * the document has no rule of after them by name; the attribute named {@code attribuut} as declared; and the
-     * object's own type, named by the type in {@code typen} whose bean class's simple name stands at the same place in
+     * the document has no rule of after them by name; the attribute named {@code attribute} as declared; and the
+     * object's own type, named by the type in {@code types} whose bean class's simple name stands at the same place in
      * {@code typeClasses}, the types of the document in its order. The fault is the first writer's, made by the route
      * {@link Route#WRITERS_CONFLICT}.
      */
-    record Schrijversconflict(String onderwerp, int waarden, ElementSleutel doel, String attribuut,
-                              List<String> documentOrder, List<String> typeClasses, List<String> typen,
+    record WritersConflict(String onderwerp, int waarden, ElementKey target, String attribute,
+                              List<String> documentOrder, List<String> typeClasses, List<String> types,
                               Insertion insertion) implements Consequence {
-        public Schrijversconflict {
+        public WritersConflict {
             documentOrder = List.copyOf(documentOrder);
             typeClasses = List.copyOf(typeClasses);
-            typen = List.copyOf(typen);
-            if (typeClasses.size() != typen.size())
+            types = List.copyOf(types);
+            if (typeClasses.size() != types.size())
                 throw new IllegalArgumentException("de typen en hun klassen staan in paren: " + typeClasses + ", "
-                        + typen);
+                        + types);
         }
     }
 
@@ -126,44 +126,44 @@ public sealed interface Consequence {
      * waar from the input or from a derivation ({@code bron}), onwaar where neither holds. Where both hold, the two
      * waar standings are equal facts, which truth maintenance keeps as one with a justification each.
      */
-    record InsertCharacteristicState(String onderwerp, ElementSleutel kenmerk, StateSource bron, boolean holds, Insertion insertion)
+    record InsertCharacteristicState(String onderwerp, ElementKey characteristic, StateSource source, boolean holds, Insertion insertion)
             implements Consequence {
         public InsertCharacteristicState {
-            if (bron != StateSource.INVOER && bron != StateSource.DERIVATION && bron != StateSource.GEEN
-                    || holds == (bron == StateSource.GEEN))
+            if (source != StateSource.INVOER && source != StateSource.DERIVATION && source != StateSource.GEEN
+                    || holds == (source == StateSource.GEEN))
                 throw new IllegalArgumentException("een kenmerkstand is waar uit de invoer of een afleiding en onwaar"
-                        + " uit geen van beide, niet " + holds + " uit " + bron);
+                        + " uit geen van beide, niet " + holds + " uit " + source);
         }
     }
 
     /**
-     * The standing of attribute {@code attribuut} on the object {@code onderwerp} binds: the value in slot
+     * The standing of attribute {@code attribute} on the object {@code onderwerp} binds: the value in slot
      * {@code waarde} of the value array, from {@code bron}, a derivation's value or the input on the bean. Where
-     * {@code emmerscalair}, the input, a timeline, stands as the asOfDate-bucket scalar the case gave
+     * {@code bucketScalar}, the input, a timeline, stands as the asOfDate-bucket scalar the case gave
      * ({@code BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline.
      */
-    record State(String onderwerp, ElementSleutel attribuut, StateSource bron, int waarde, boolean emmerscalair,
+    record State(String onderwerp, ElementKey attribute, StateSource source, int value, boolean bucketScalar,
                  Insertion insertion) implements Consequence {
         public State {
-            if (bron != StateSource.INVOER && bron != StateSource.DERIVATION || emmerscalair && bron != StateSource.INVOER)
+            if (source != StateSource.INVOER && source != StateSource.DERIVATION || bucketScalar && source != StateSource.INVOER)
                 throw new IllegalArgumentException("een stand komt uit de invoer of een afleiding, en alleen de invoer"
-                        + " staat als emmerscalair, niet " + bron + (emmerscalair ? " als emmerscalair" : ""));
+                        + " staat als emmerscalair, niet " + source + (bucketScalar ? " als emmerscalair" : ""));
         }
     }
 
     /**
-     * The standing of member {@code lid} at the end of the path {@code pad} on the object {@code onderwerp} binds:
+     * The standing of member {@code lid} at the end of the path {@code path} on the object {@code onderwerp} binds:
      * where every link on the path is present ({@code bron} {@code REACHED}), the value in slot {@code waarde} of the
      * value array, the member's standing on the object the path reaches; where a link is absent
      * ({@code MISSING_LINK}), null, and {@code waarde} is -1.
      */
-    record InsertPathState(String onderwerp, String pad, ElementSleutel member, StateSource bron, int waarde, Insertion insertion)
+    record InsertPathState(String onderwerp, String path, ElementKey member, StateSource source, int value, Insertion insertion)
             implements Consequence {
         public InsertPathState {
-            if (bron != StateSource.REACHED && bron != StateSource.MISSING_LINK
-                    || (bron == StateSource.REACHED) != (waarde >= 0))
+            if (source != StateSource.REACHED && source != StateSource.MISSING_LINK
+                    || (source == StateSource.REACHED) != (value >= 0))
                 throw new IllegalArgumentException("een padstand neemt de stand op het bereikte object uit een slot, of"
-                        + " is leeg bij een ontbrekende link, zonder slot; niet " + bron + " met slot " + waarde);
+                        + " is leeg bij een ontbrekende link, zonder slot; niet " + source + " met slot " + value);
         }
     }
 
@@ -175,7 +175,7 @@ public sealed interface Consequence {
      * {@code scope}, -1 for a form without a scope; and where the component at position {@code timeline} is on a
      * timeline (-1: none), one key per value that timeline ever carries (ever-uniqueness).
      */
-    record UniquenessKey(String onderwerp, String uniqueness, int bron, List<Term> components, int timeline,
+    record UniquenessKey(String onderwerp, String uniqueness, int source, List<Term> components, int timeline,
                              int scope, List<Integer> slots, int size, Insertion insertion) implements Consequence {
         public UniquenessKey {
             components = List.copyOf(components);
@@ -188,8 +188,8 @@ public sealed interface Consequence {
     record UniquenessViolation(String onderwerp, String uniqueness, Insertion insertion) implements Consequence {}
 
     /** The fault of the form of an input on the object {@code onderwerp} binds, the sentence {@code voor}, the object
-     *  and {@code na}, under {@code fout}, made by the route {@link Route#INPUT_FORM_FAULT}. */
-    record Invoervormfout(String onderwerp, String before, String after, FaultName fout, Insertion insertion)
+     *  and {@code na}, under {@code fault}, made by the route {@link Route#INPUT_FORM_FAULT}. */
+    record InputFormFault(String onderwerp, String before, String after, FaultName fault, Insertion insertion)
             implements Consequence {}
 
     /** The standing of the §9.5 channel of the form {@code producer} (ch. 5.6), {@code inconsistent} or consistent: a
@@ -198,40 +198,40 @@ public sealed interface Consequence {
 
     /** A recipient of the allocation {@code verdeling} for the source {@code onderwerp} binds (ch. 4.1): the recipient
      *  in slot {@code ontvanger}, and its weight, its ordering key and its cap in the slots {@code gewicht},
-     *  {@code sleutel} and {@code maximum}, each -1 where the allocation declares none, so that the fact carries null
+     *  {@code key} and {@code maximum}, each -1 where the allocation declares none, so that the fact carries null
      *  there. */
-    record Recipient(String onderwerp, String allocation, int recipient, int weight, int sleutel, int maximum,
+    record Recipient(String onderwerp, String allocation, int recipient, int weight, int key, int maximum,
                      Insertion insertion) implements Consequence {}
 
     /**
      * The distribution of an allocation over the recipients of the source {@code onderwerp} binds (ch. 4.2 to 4.4),
-     * computed by the route {@link Route#PAYOUT}, which calls {@code Allocation.bereken}: by {@code methode}, of the
+     * computed by the route {@link Route#PAYOUT}, which calls {@code Allocation.bereken}: by {@code method}, of the
      * pot in slot {@code pot} over the list of {@code Ontvanger} facts in slot {@code lijst}, {@code gewogen} where the
      * allocation declares a ratio attribute, {@code capped} where it declares a cap, {@code descending} the ordered
      * method's direction, {@code decimals} the floor's decimals (null: none). Each share is a value of {@code aandeel}
      * on its recipient and the rest a value of {@code rest} on the source (null: the allocation writes no rest), both
-     * written by {@code writer}; each degradation is the §9.5 inconsistency of the form {@code vorm} on its
+     * written by {@code writer}; each degradation is the §9.5 inconsistency of the form {@code form} on its
      * recipient.
      */
-    record Payout(String onderwerp, String vorm, ResolvedVerdeling.Methode methode, int pot, int lijst,
-                     boolean gewogen, boolean capped, boolean descending, Integer decimals, ElementSleutel aandeel,
-                     ElementSleutel rest, String writer, Insertion insertion) implements Consequence {}
+    record Payout(String onderwerp, String form, ResolvedAllocation.Method method, int pot, int list,
+                     boolean gewogen, boolean capped, boolean descending, Integer decimals, ElementKey aandeel,
+                     ElementKey rest, String writer, Insertion insertion) implements Consequence {}
 
     /**
      * A member's place in the order of a fold, as a rule of the fold binds it, computed by the route
      * {@link Route#FOLD_PLACE}: the number {@code selection} of the selection of an instance-set union (0 for any other
      * fold), then per to-many step of the member's route, in order, the least place of the step's member in its list
-     * ({@link Step}). {@code reden} is what the rule needs the place for, which names the broken contract where the
+     * ({@link Step}). {@code reason} is what the rule needs the place for, which names the broken contract where the
      * input states no place of a step.
      */
-    record FoldPlace(int selection, List<Step> steps, PlaceReason reden) {
+    record FoldPlace(int selection, List<Step> steps, PlaceReason reason) {
         public FoldPlace {
             steps = List.copyOf(steps);
         }
 
-        /** One to-many step: the reference field {@code veld} its member links through, and the slots of the count of
+        /** One to-many step: the reference field {@code field} its member links through, and the slots of the count of
          *  that member's {@code ListPlace} facts under the field and of the least place among them. */
-        public record Step(String veld, int aantal, int place) {}
+        public record Step(String field, int count, int place) {}
     }
 
     /** What a rule of a fold needs a member's place for: the first fault among the members' filters
@@ -261,7 +261,7 @@ public sealed interface Consequence {
          *  leeg; where {@code totaal} is not null the slot holds the member's timeline, which contributes its total over
          *  time per that unit, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code filled},
          *  the member without a value, a count of the members whose value is gevuld. */
-        record MemberValue(int waarde, String totaal, boolean filled) implements Input {}
+        record MemberValue(int value, String total, boolean filled) implements Input {}
 
         /** The verdict of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot
          *  fault or deposit: 1 where it holds, 0 where it does not. */
@@ -274,9 +274,9 @@ public sealed interface Consequence {
          *  place breaks the contract before the matrix is evaluated. */
         record MemberTest(Term matrix, int depositFlag, FoldPlace place) implements Input {
             public MemberTest {
-                if (place.reden() != PlaceReason.QUANTIFIER)
+                if (place.reason() != PlaceReason.QUANTIFIER)
                     throw new IllegalArgumentException("de plaats van een lidtoets is die van de kwantor, niet "
-                            + place.reden());
+                            + place.reason());
             }
         }
     }
@@ -297,9 +297,9 @@ public sealed interface Consequence {
                       int size, Insertion insertion) implements Consequence {
         public FilterFault {
             slots = List.copyOf(slots);
-            if (place.reden() != PlaceReason.FILTER_FAULT)
+            if (place.reason() != PlaceReason.FILTER_FAULT)
                 throw new IllegalArgumentException("de plaats van een filterfout is die van het filter, niet "
-                        + place.reden());
+                        + place.reason());
         }
     }
 
@@ -311,8 +311,8 @@ public sealed interface Consequence {
     record MemberFault(String onderwerp, String fold, int member, FoldPlace place, String before, String after,
                    Insertion insertion) implements Consequence {
         public MemberFault {
-            if (place.reden() != PlaceReason.MEMBER_FAULT)
-                throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + place.reden());
+            if (place.reason() != PlaceReason.MEMBER_FAULT)
+                throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + place.reason());
         }
     }
 
@@ -324,7 +324,7 @@ public sealed interface Consequence {
      *   <li>the creation depth of the new object, made by the route {@link Route#CREATION_DEPTH} from {@code diepte}:
      *       past the budget it throws, the fault at the making, before anything is made;</li>
      *   <li>the value of each of {@code initialisations}, in order, each collapsed from an exact rational to a decimal;
-     *       where one raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), that fault, named under {@code fout} and
+     *       where one raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), that fault, named under {@code fault} and
      *       inserted on the subject as {@code faultInsertion}, is all the creation does, as in the reference
      *       interpreter, which then makes nothing;</li>
      *   <li>the construction of the new object ({@code construction}): a bean of its class, on which the attribute
@@ -339,8 +339,8 @@ public sealed interface Consequence {
      * other order fails loudly. A creation states everything it makes, the fault at the making among it
      * (RUNTIME-SEMANTICS ch. 5.5): the constructor refuses an insertion that is not {@link Insertion#STATED}.
      */
-    record Creation(String onderwerp, String creatie, CreationDepth depth, List<Initialisation> initialisations,
-                   FaultName fout, Insertion faultInsertion, Construction construction, int phase,
+    record Creation(String onderwerp, String creation, CreationDepth depth, List<Initialisation> initialisations,
+                   FaultName fault, Insertion faultInsertion, Construction construction, int phase,
                    List<Insert> insertions, List<Integer> slots, int size) implements Consequence {
         public Creation {
             initialisations = List.copyOf(initialisations);
@@ -358,7 +358,7 @@ public sealed interface Consequence {
                         + " regel tegen: de foutinvoeging " + faultInsertion + " is niet gesteld");
             int[] time = new int[initialisations.size()];
             for (Construction.Setting z : construction.settings()) {
-                if (initialisations.get(z.initialisatie()).member().kenmerk())
+                if (initialisations.get(z.initialisatie()).member().characteristic())
                     throw new IllegalArgumentException("een kenmerkinitialisatie wordt ingevoegd, niet gezet: "
                             + initialisations.get(z.initialisatie()).member());
                 time[z.initialisatie()]++;
@@ -372,7 +372,7 @@ public sealed interface Consequence {
                     case Insert.Mark m -> marks++;
                     case Insert.Link l -> left++;
                     case Insert.Characteristic k -> {
-                        if (!initialisations.get(k.initialisatie()).member().kenmerk())
+                        if (!initialisations.get(k.initialisatie()).member().characteristic())
                             throw new IllegalArgumentException("een attribuutinitialisatie wordt gezet, niet ingevoegd: "
                                     + initialisations.get(k.initialisatie()).member());
                         time[k.initialisatie()]++;
@@ -390,7 +390,7 @@ public sealed interface Consequence {
             // rendering into DRL text has no other source for the order of the facts the agenda then sees
             List<Integer> attributes = new ArrayList<>(), kenmerken = new ArrayList<>();
             for (int i = 0; i < initialisations.size(); i++)
-                (initialisations.get(i).member().kenmerk() ? kenmerken : attributes).add(i);
+                (initialisations.get(i).member().characteristic() ? kenmerken : attributes).add(i);
             List<Integer> setInitialisations = construction.settings().stream().map(Construction.Setting::initialisatie).toList();
             if (!setInitialisations.equals(attributes))
                 throw new IllegalArgumentException("een creatie zet haar attribuutinitialisaties in hun volgorde "
@@ -413,7 +413,7 @@ public sealed interface Consequence {
 
     /** One member initialisation of an object creation: the member {@code lid} of the new object, and its value
      *  {@code waarde}, evaluated over the bound values of the rule. */
-    record Initialisation(ElementSleutel member, Term waarde) {}
+    record Initialisation(ElementKey member, Term value) {}
 
     /** How an object creation makes its new object: a bean of {@code klasse}, by its constructor without arguments, on
      *  which each of {@code settings} is set, in order, before the bean is inserted. */
@@ -423,8 +423,8 @@ public sealed interface Consequence {
         }
 
         /** The value of the attribute initialisation at index {@code initialisatie}, set on the new bean through the
-         *  setter of the bean property {@code veld} where the value is gevuld; a leeg value leaves the member unset. */
-        public record Setting(int initialisatie, Binding.Field veld) {}
+         *  setter of the bean property {@code field} where the value is gevuld; a leeg value leaves the member unset. */
+        public record Setting(int initialisatie, Binding.Field field) {}
     }
 
     /** One insertion of an object creation, after its construction, with how it goes into working memory. */
@@ -452,7 +452,7 @@ public sealed interface Consequence {
      *  whose second end is the object {@code tweede} binds, so the relation's order of roles decides the direction,
      *  carrying the creation phase in slot {@code phase} of the value array, or phase 0, the input's, where {@code phase}
      *  is -1: a link a reference field on a bean of the input carries, or the link a fact creation makes. */
-    record RelationLink(String relation, String eerste, String tweede, int phase, Insertion insertion) implements Consequence {}
+    record RelationLink(String relation, String first, String second, int phase, Insertion insertion) implements Consequence {}
 
     /** The fault of a second distinct filler of a to-one role (RUNTIME-SEMANTICS ch. 5.5), a fault of the program and
      *  no overwrite: on the object {@code onderwerp} binds, the near end of two links of one relation to different
@@ -468,37 +468,37 @@ public sealed interface Consequence {
      * from what the rule bound; or the decision of the first deciding member chain, bound off its outcome
      * ({@link ReadKind#DECISION}). The consequence inserts each of {@code facts} with it, in order, as {@code insertion}
      * says. Where the evaluation raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under
-     * {@code fout} on the object in place of the decision; {@code fout} is null where the value is a constant or a bound
+     * {@code fault} on the object in place of the decision; {@code fault} is null where the value is a constant or a bound
      * decision, which cannot fault, and such a fault would be a broken contract. Where the value is null, a leeg
      * consequence, the default decides nothing and inserts nothing, so the lower defaults decide (ch. 7.1).
      */
-    record Decision(String onderwerp, Term waarde, List<Integer> slots, int size, boolean collapse, FaultName fout,
+    record Decision(String onderwerp, Term value, List<Integer> slots, int size, boolean collapse, FaultName fault,
                   List<StackFact> facts, Insertion insertion) implements Consequence {
         public Decision {
             slots = List.copyOf(slots);
             facts = List.copyOf(facts);
             if (facts.isEmpty()) throw new IllegalArgumentException("een besluit voegt ten minste één feit in");
             for (StackFact f : facts)
-                if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.soort() != Kind.DECIDED)
+                if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.category() != Kind.DECIDED)
                     throw new IllegalArgumentException("een besluit voegt geen conflict in: " + f);
         }
     }
 
     /**
      * The conflict of a reconciliation in a defaults stack (RUNTIME-SEMANTICS ch. 7.2, 7.9), on the object
-     * {@code onderwerp} binds, under the key {@code sleutel} evaluates to over a value array of {@code grootte} slots
+     * {@code onderwerp} binds, under the key {@code key} evaluates to over a value array of {@code grootte} slots
      * with the bound values at {@code slots}: the key of the reconciliation itself where two of its members decide
      * differently, a constant, or the key of the first conflicting member chain, bound off its outcome
      * ({@link ReadKind#CONFLICT_KEY}), which passes on unchanged. The consequence inserts {@code feit} with the key,
      * as {@code insertion} says: the outcome of the default that reconciles, of the kind {@code CONFLICT}, which the
      * reconciliation above it reads, or at the root of the stack the §9.5 inconsistency under the key.
      */
-    record Conflict(String onderwerp, Term sleutel, List<Integer> slots, int size, StackFact fact,
+    record Conflict(String onderwerp, Term key, List<Integer> slots, int size, StackFact fact,
                     Insertion insertion) implements Consequence {
         public Conflict {
             slots = List.copyOf(slots);
             if (!(fact instanceof StackFact.Inconsistency
-                    || fact instanceof StackFact.Outcome u && u.soort() == Kind.CONFLICT))
+                    || fact instanceof StackFact.Outcome u && u.category() == Kind.CONFLICT))
                 throw new IllegalArgumentException("een conflict voegt zijn uitkomst of de inconsistentie in, niet " + fact);
         }
     }
@@ -508,11 +508,11 @@ public sealed interface Consequence {
 
         /** The value of the stack's target attribute {@code doel}, the decision, written by {@code writer}, the
          *  stack: a {@code Waarde}. */
-        record Value(ElementSleutel doel, String writer) implements StackFact {}
+        record Value(ElementKey target, String writer) implements StackFact {}
 
         /** The attribution of the stack's target characteristic {@code kenmerk}: a {@code HasCharacteristic}. The analysis
          *  plans it only where the decision is an attribution, true. */
-        record Characteristic(ElementSleutel kenmerk) implements StackFact {}
+        record Characteristic(ElementKey characteristic) implements StackFact {}
 
         /** The control fact of the simple form: default {@code index} of the stack {@code stapel} decided, a
          *  {@code Beslist}. The analysis plans it only where a lower default of the stack has a rule, which carries the
@@ -523,7 +523,7 @@ public sealed interface Consequence {
         /** The control fact of the general form: the default at {@code positie} in chain {@code keten} of the stack
          *  {@code stapel} settled as {@code soort} says, {@code BESLIST} with the decision as its value or
          *  {@code CONFLICT} with the key of the conflict: an {@code Uitkomst}. */
-        record Outcome(String stack, int chain, int positie, Kind soort) implements StackFact {}
+        record Outcome(String stack, int chain, int position, Kind category) implements StackFact {}
 
         /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the
          *  route {@link Route#INCONSISTENCY}. */

@@ -6,12 +6,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.IrPath;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedConsistency;
-import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
+import dev.uchar.regelspraak.ir.ResolvedRuleGroup;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * checked and dropped; the defaults layer's source text as the string its records keep, null where there is none.
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
- * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
+ * refusal is an {@link IrLoader.DocumentError} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
  * document here is ill-formed.
  */
 class SourceReferenceRefusalWitnessTest {
@@ -176,7 +176,7 @@ class SourceReferenceRefusalWitnessTest {
             for (String[] row : rows) {
                 ObjectNode ir = golden(site[0]);
                 ((ObjectNode) ir.at(p)).set("source", JSON.readTree(row[0]));
-                IrLoader.Documentfout f = refuses(ir, row[1]);
+                IrLoader.DocumentError f = refuses(ir, row[1]);
                 assertTrue(f.getMessage().endsWith(": " + row[2]), row[0] + " at " + p + ": " + f.getMessage());
             }
         }
@@ -197,7 +197,7 @@ class SourceReferenceRefusalWitnessTest {
         for (String[] m : markers) {
             ObjectNode ir = golden(m[0]);
             set(ir, m[1], m[2]);
-            IrLoader.Documentfout f = refuses(ir, m[1]);
+            IrLoader.DocumentError f = refuses(ir, m[1]);
             assertTrue(f.getMessage().endsWith(": " + IrLoader.MARKER_WITHOUT_SOURCE), m[2] + ": " + f.getMessage());
             for (String snippet : List.of("de onbekende vondstwaarde", " ")) {
                 ObjectNode with = (ObjectNode) JSON.readTree(m[2]);
@@ -215,9 +215,9 @@ class SourceReferenceRefusalWitnessTest {
         // the marker reads the snippet as any other node does
         ObjectNode ir = golden(PENNINGDREMPEL);
         set(ir, CONDITION, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"de onbekende vondstwaarde\"}}");
-        Conditie.Unresolved o = assertInstanceOf(Conditie.Unresolved.class,
-                IrLoader.load(ir).resolvedRegels.get(0).voorwaarde());
-        assertEquals("de onbekende vondstwaarde", o.bron().snippet());
+        Condition.Unresolved o = assertInstanceOf(Condition.Unresolved.class,
+                IrLoader.load(ir).resolvedRegels.get(0).condition());
+        assertEquals("de onbekende vondstwaarde", o.source().snippet());
     }
 
     // ---------------- what the records hold ----------------
@@ -225,19 +225,19 @@ class SourceReferenceRefusalWitnessTest {
     @Test void the_snippet_is_the_anchor_of_the_record_and_a_line_elsewhere_falls_away() throws Exception {
         ObjectNode ir = golden(PREMIEVENSTER);
         String snippet = ir.at(VALUE + "/source/snippet").asText();
-        Expr.Literal l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde();
-        assertEquals(snippet, l.bron().snippet());
-        assertNull(l.bron().file(), "the wire carries no file");
-        assertEquals(0, l.bron().line());
+        Expr.Literal l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value();
+        assertEquals(snippet, l.source().snippet());
+        assertNull(l.source().file(), "the wire carries no file");
+        assertEquals(0, l.source().line());
         // a line on a node that keeps none is admitted by the record and dropped
         ((ObjectNode) ir.at(VALUE + "/source")).put("line", 7);
-        l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde();
-        assertEquals(snippet, l.bron().snippet());
-        assertEquals(0, l.bron().line());
+        l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value();
+        assertEquals(snippet, l.source().snippet());
+        assertEquals(0, l.source().line());
         // a node without a record holds the empty anchor, as a null bron did before the record landed
         ((ObjectNode) ir.at(VALUE)).remove("source");
-        l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde();
-        assertEquals("", l.bron().snippet());
+        l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value();
+        assertEquals("", l.source().snippet());
     }
 
     @Test void the_rule_goes_to_the_consistency_and_the_rule_group() throws Exception {
@@ -247,33 +247,33 @@ class SourceReferenceRefusalWitnessTest {
         ObjectNode ir = golden(WACHTERSKETEN);
         RegelSpraakModel m = IrLoader.load(ir);
         assertEquals(1, m.consistenties.get(0).line());
-        assertEquals(ir.at(CONSISTENCY + "/source/snippet").asText(), m.consistenties.get(0).bron().snippet());
-        ResolvedRegelGroep g = m.regelGroepen.get(0);
+        assertEquals(ir.at(CONSISTENCY + "/source/snippet").asText(), m.consistenties.get(0).source().snippet());
+        ResolvedRuleGroup g = m.ruleGroups.get(0);
         assertEquals(0, g.line(), "a rule group without a record has no line");
-        assertEquals("", g.bron().snippet());
+        assertEquals("", g.source().snippet());
 
         ((ObjectNode) ir.at(CONSISTENCY + "/source")).remove("line");
         ((ObjectNode) ir.at(GROUP)).set("source", IrPath.sourceReference("berging").put("line", 5));
         m = IrLoader.load(ir);
         assertEquals(0, m.consistenties.get(0).line(), "a record without a line: the records' 0");
-        assertEquals(5, m.regelGroepen.get(0).line());
-        assertEquals("berging", m.regelGroepen.get(0).bron().snippet());
+        assertEquals(5, m.ruleGroups.get(0).line());
+        assertEquals("berging", m.ruleGroups.get(0).source().snippet());
 
         ((ObjectNode) ir.at(CONSISTENCY)).remove("source");
         m = IrLoader.load(ir);
         assertEquals(0, m.consistenties.get(0).line());
-        assertEquals("", m.consistenties.get(0).bron().snippet());
+        assertEquals("", m.consistenties.get(0).source().snippet());
     }
 
     @Test void the_defaults_layer_keeps_the_source_text_as_a_string() throws Exception {
         ObjectNode ir = golden(TOELAGEGRONDEN);
         PrioritizedDefaults g = IrLoader.loadAll(ir).prioritizedDefaults().get(0);
         JsonNode wire = ir.at("/rules/prioritizedDefaults/0");
-        assertEquals(wire.at("/source/snippet").asText(), g.bron());
-        assertEquals(wire.at("/defaults/0/source/snippet").asText(), g.defaults().get(0).bron());
+        assertEquals(wire.at("/source/snippet").asText(), g.source());
+        assertEquals(wire.at("/defaults/0/source/snippet").asText(), g.defaults().get(0).source());
         for (PrioritizedDefaults withoutSource : IrLoader.loadAll(golden(WACHTGELD)).prioritizedDefaults()) {
-            assertNull(withoutSource.bron(), withoutSource.naam());
-            for (Default d : withoutSource.defaults()) assertNull(d.bron(), withoutSource.naam());
+            assertNull(withoutSource.source(), withoutSource.naam());
+            for (Default d : withoutSource.defaults()) assertNull(d.source(), withoutSource.naam());
         }
     }
 
@@ -314,15 +314,15 @@ class SourceReferenceRefusalWitnessTest {
         o.set(path.substring(slash + 1), JSON.readTree(json));
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode ir, String site) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+    private static IrLoader.DocumentError refuses(JsonNode ir, String site) {
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + site);
         assertEquals(site, e.site(), e.getMessage());
         return e;
     }
 
     private static void unknownField(JsonNode ir, String site, String node) {
-        IrLoader.Documentfout e = refuses(ir, site);
+        IrLoader.DocumentError e = refuses(ir, site);
         assertTrue(e.getMessage().endsWith(": unknown field" + node), e.getMessage());
     }
 

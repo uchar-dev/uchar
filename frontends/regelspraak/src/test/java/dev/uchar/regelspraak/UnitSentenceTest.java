@@ -44,49 +44,49 @@ class UnitSentenceTest {
         return m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList();
     }
 
-    private static List<String> fout(String sentence) { return List.of("ERROR 20 " + sentence); }
+    private static List<String> error(String sentence) { return List.of("ERROR 20 " + sentence); }
 
     @Test void compute_gets_the_sentence_of_wf_035() {
         String sentence = "plus: additive operands have incompatible units";
-        assertEquals(fout(sentence), meldingen(" met eenheid €",
+        assertEquals(error(sentence), meldingen(" met eenheid €",
                 "De uitkomst van een Jutter moet berekend worden als zijn vondstwaarde plus zijn telling."));
-        assertEquals(fout(sentence), meldingen(" met eenheid €",
+        assertEquals(error(sentence), meldingen(" met eenheid €",
                 "De uitkomst van een Jutter moet berekend worden als zijn vondstwaarde plus zijn ruilwaarde."));
     }
 
     @Test void compare_gets_the_sentences_of_wf_036() {
         String ordering = "voorwaarde: vergelijking: ordering operands have incompatible units";
-        assertEquals(fout(ordering), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde groter is dan zijn telling."));
-        assertEquals(fout(ordering), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde groter is dan zijn ruilwaarde."));
+        assertEquals(error(ordering), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde groter is dan zijn telling."));
+        assertEquals(error(ordering), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde groter is dan zijn ruilwaarde."));
         String equality = "voorwaarde: gelijk: equality operands have incompatible units";
-        assertEquals(fout(equality), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde gelijk is aan zijn telling."));
-        assertEquals(fout(equality), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde gelijk is aan zijn ruilwaarde."));
+        assertEquals(error(equality), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde gelijk is aan zijn telling."));
+        assertEquals(error(equality), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde gelijk is aan zijn ruilwaarde."));
     }
 
     @Test void assign_gets_the_sentence_of_wf_023() {
         String sentence = "gelijkstelling: toekenning: assignment across incompatible units";
-        assertEquals(fout(sentence), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn telling."));
-        assertEquals(fout(sentence), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn ruilwaarde."));
+        assertEquals(error(sentence), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn telling."));
+        assertEquals(error(sentence), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn ruilwaarde."));
     }
 
     @Test void a_unitless_literal_beside_a_unit_keeps_its_own_sentence_of_regelspraak() {
         // the verifier admits this pair (the literal adopts the unit), so it has no sentence for it
-        assertEquals(fout("plus: als één operand een eenheid heeft, moeten beide er een hebben"),
+        assertEquals(error("plus: als één operand een eenheid heeft, moeten beide er een hebben"),
                 meldingen(" met eenheid €", "De uitkomst van een Jutter moet berekend worden als zijn vondstwaarde plus 5."));
-        assertEquals(fout("gelijkstelling: toekenning: als één operand een eenheid heeft, moeten beide er een hebben"),
+        assertEquals(error("gelijkstelling: toekenning: als één operand een eenheid heeft, moeten beide er een hebben"),
                 meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op 5."));
         assertEquals(List.of(), meldingen("", "Een Jutter is waardevol indien zijn vondstwaarde groter is dan 5."));
     }
 
     @Test void a_non_numeric_clamp_gets_the_sentence_of_wf035() {
-        assertEquals(fout("clamp base is text, must be numeric"), meldingen("",
+        assertEquals(error("clamp base is text, must be numeric"), meldingen("",
                 "De naamkopie van een Jutter moet gesteld worden op zijn naam, met een minimum van 0."));
-        assertEquals(fout("clamp base is date-day, must be numeric"), meldingen("",
+        assertEquals(error("clamp base is date-day, must be numeric"), meldingen("",
                 "De datumkopie van een Jutter moet gesteld worden op zijn vondstdatum, met een minimum van 0."));
-        assertEquals(fout("clamp minimum is text, must be numeric"), meldingen("",
+        assertEquals(error("clamp minimum is text, must be numeric"), meldingen("",
                 "De uitkomst van een Jutter moet gesteld worden op zijn telling, met een minimum van zijn naam."));
         // the base is one position, reported once as the verifier reports it, however many bounds the clamp has
-        assertEquals(fout("clamp base is text, must be numeric"), meldingen("",
+        assertEquals(error("clamp base is text, must be numeric"), meldingen("",
                 "De naamkopie van een Jutter moet gesteld worden op zijn naam, met een minimum van 0 en een maximum van 5."));
     }
 }

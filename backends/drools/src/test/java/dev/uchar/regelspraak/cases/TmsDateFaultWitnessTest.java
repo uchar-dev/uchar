@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE_TIME;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
@@ -26,7 +26,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.valueJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,8 +73,8 @@ class TmsDateFaultWitnessTest {
 
     private static final String WHOLE = numberType(true, 0, null), DAGEN = numberType(true, 0, unit("dagen"));
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("vinddatum", DATE), attribuut("wachtdagen", DAGEN), attribuut("meldtermijn", DATE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("vinddatum", DATE), attribute("wachtdagen", DAGEN), attribute("meldtermijn", DATE)),
             List.of("gemeld", "erkend"))), List.of());
 
     private static final String TOO_LARGE = "18446744073709551617";
@@ -85,8 +85,8 @@ class TmsDateFaultWitnessTest {
             binary("plus", ownRead("vinddatum", "Vondst"), ownRead("wachtdagen", "Vondst"), DATE), "null");
 
     static final String WACHTDAGEN = attributeGroup("wachtdagen van een vondst", "Vondst", "wachtdagen", List.of(
-            standaard(check("erkend", false), literal("3", WHOLE)),
-            standaard(check("gemeld", false), literal(TOO_LARGE, WHOLE))));
+            defaultEntry(check("erkend", false), literal("3", WHOLE)),
+            defaultEntry(check("gemeld", false), literal(TOO_LARGE, WHOLE))));
 
     static JsonNode caseDocument() throws Exception {
         return TmsDocuments.caseOn(null, List.of(instanceWith("V1", "Vondst",
@@ -95,14 +95,14 @@ class TmsDateFaultWitnessTest {
     }
 
     @Test void a_count_that_lies_outside_the_range_only_on_an_intermediate_state_does_not_count() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(ERKENNING, MELDTERMIJN))) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(MODEL, order, List.of(),
                     List.of(WACHTDAGEN)), caseDocument(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertIntermediateState(TmsDocuments.document(MODEL, List.of(ERKENNING, MELDTERMIJN), List.of(), List.of(WACHTDAGEN)));
     }
 
@@ -112,11 +112,11 @@ class TmsDateFaultWitnessTest {
         String three = literal("3", DAGEN), large = literal(TOO_LARGE, DAGEN);
         return List.of(
                 attributeGroup("meldtermijn van een vondst", "Vondst", "meldtermijn", List.of(
-                        standaard(check("erkend", false), binary("plus", vinddatum, three, DATE)),
-                        standaard(check("gemeld", false), binary("plus", vinddatum, large, DATE)))),
+                        defaultEntry(check("erkend", false), binary("plus", vinddatum, three, DATE)),
+                        defaultEntry(check("gemeld", false), binary("plus", vinddatum, large, DATE)))),
                 attributeGroup("meldtermijn van een vondst", "Vondst", "meldtermijn", List.of(
-                        standaard(check("erkend", false), binary("plus", vinddatum, three, DATE)),
-                        standaard(comparison("later", binary("plus", vinddatum, large, DATE),
+                        defaultEntry(check("erkend", false), binary("plus", vinddatum, three, DATE)),
+                        defaultEntry(comparison("later", binary("plus", vinddatum, large, DATE),
                                 literal("2026-01-01", DATE)), vinddatum))));
     }
 
@@ -137,25 +137,25 @@ class TmsDateFaultWitnessTest {
         for (List<Rule> order : TmsDocuments.sample(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of("gemeld"));
-            v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.kern.Namen.setter("vinddatum"),
+            v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.core.Namen.setter("vinddatum"),
                     java.time.LocalDate.class).invoke(v1, java.time.LocalDate.of(2026, 3, 1));
             TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(v1), sessie -> sessie.addEventListener(facts)),
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(v1), session -> session.addEventListener(facts)),
                     () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertEquals(java.time.LocalDate.of(2026, 3, 4), TmsDocuments.lees(v1, "meldtermijn"),
+            assertEquals(java.time.LocalDate.of(2026, 3, 4), TmsDocuments.read(v1, "meldtermijn"),
                     () -> "meldtermijn in volgorde " + names);
-            if (facts.fouten > 0) intermediateState++;
+            if (facts.faults > 0) intermediateState++;
             orders++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet de lagere default eerst beslissen");
         assertTrue(orders > 2);
     }
 
-    private static final String TIME_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Getijpost", List.of(
-            attribuut("meldtijdstip", DATE_TIME), attribuut("wachttijd", numberType(true, 0, unit("uur"))),
-            attribuut("sluittijdstip", DATE_TIME), attribuut("vinddatum", DATE), attribuut("wachtdagen", DAGEN),
-            attribuut("meldtermijn", DATE)), List.of())), List.of());
+    private static final String TIME_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Getijpost", List.of(
+            attribute("meldtijdstip", DATE_TIME), attribute("wachttijd", numberType(true, 0, unit("uur"))),
+            attribute("sluittijdstip", DATE_TIME), attribute("vinddatum", DATE), attribute("wachtdagen", DAGEN),
+            attribute("meldtermijn", DATE)), List.of())), List.of());
 
     @Test void a_standing_date_fault_gives_the_sentence_of_the_reference() throws Exception {
         String close = computingRule("sluittijdstip", "BEREKENING", "Getijpost", "sluittijdstip",
@@ -168,9 +168,9 @@ class TmsDateFaultWitnessTest {
         JsonNode days = TmsDocuments.caseOn(null, List.of(instanceWith("G1", "Getijpost", Map.of(
                 "vinddatum", dateValue("2026-03-01"), "wachtdagen", numberValue(TOO_LARGE)), List.of())),
                 List.of(consistent()));
-        assertEquals(List.of("Rekenfout: fout in de regel \"sluittijdstip\": datum-tijd arithmetic leaves the"
+        assertEquals(List.of("ComputeFault: fout in de regel \"sluittijdstip\": datum-tijd arithmetic leaves the"
                         + " representable millisecond range",
-                        "Rekenfout: fout in de regel \"meldtermijn\": duration count " + TOO_LARGE + " is out of range"),
+                        "ComputeFault: fout in de regel \"meldtermijn\": duration count " + TOO_LARGE + " is out of range"),
                 List.of(TmsFaultWitnessTest.play(TmsDocuments.document(TIME_MODEL, List.of(close)), hours,
                                 DroolsBackend.Branch.EXEC_MODEL),
                         TmsFaultWitnessTest.play(TmsDocuments.document(TIME_MODEL, List.of(report)), days,

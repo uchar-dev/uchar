@@ -53,16 +53,16 @@ class FoldOperandSentenceTest {
         return m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList();
     }
 
-    static List<String> fout(String sentence) { return List.of("ERROR 26 " + sentence); }
+    static List<String> error(String sentence) { return List.of("ERROR 26 " + sentence); }
 
     @Test void orderingFolds() {
         String u = "De uitkomst van een Jutter moet berekend worden als ";
-        assertEquals(fout("maximale waarde van: operand of the maximum ordering fold is text, must be a number or a date"),
+        assertEquals(error("maximale waarde van: operand of the maximum ordering fold is text, must be a number or a date"),
                 meldingen(u + "de maximale waarde van zijn telling en zijn naam."));
-        assertEquals(fout("maximale waarde van: maximum orders operands of two comparable families, numbers and dates, "
+        assertEquals(error("maximale waarde van: maximum orders operands of two comparable families, numbers and dates, "
                         + "which share no ordering"),
                 meldingen(u + "de maximale waarde van zijn telling en zijn vondstdag."));
-        assertEquals(fout("eerste van: operand of the first ordering fold is text, must be a number or a date"),
+        assertEquals(error("eerste van: operand of the first ordering fold is text, must be a number or a date"),
                 meldingen("De dag van een Jutter moet berekend worden als de eerste van zijn vondstdag en zijn naam."));
         // RegelSpraak admits no date in a maximum at all; the verifier refuses only the mix of two precisions
         assertTrue(meldingen(u + "de maximale waarde van zijn vondstdag en zijn vondstmoment.").contains(
@@ -82,7 +82,7 @@ class FoldOperandSentenceTest {
         assertTrue(meldingen(o + "het totaal van de vondstnaam van alle vondsten van de Jutter.").contains(
                 "ERROR 26 totaal van: the total of 'vondstnaam' on 'Vondst' folds Text values: a total, sum or "
                         + "pro-rata part is arithmetic over a Number, and Text values are not amounts"));
-        assertEquals(fout("leegwaarde-alternatief van een sommatie: sum fallback is text, must be numeric"),
+        assertEquals(error("leegwaarde-alternatief van een sommatie: sum fallback is text, must be numeric"),
                 meldingen(o + "de som van de vondstwaarde van alle vondsten van de Jutter of zijn naam als die er niet "
                         + "zijn."));
         // the verifier names a parameter by its name and any other operand by its position
@@ -96,9 +96,9 @@ class FoldOperandSentenceTest {
 
     @Test void easter_sunday_and_duration() {
         String d = "De dag van een Jutter moet berekend worden als ";
-        assertEquals(fout("eerste paasdag van: easterSunday operand is number, must be a whole unitless number"),
+        assertEquals(error("eerste paasdag van: easterSunday operand is number, must be a whole unitless number"),
                 meldingen(d + "de eerste paasdag van zijn telling."));
-        assertEquals(fout("eerste paasdag van: easterSunday operand is text, must be a whole unitless number"),
+        assertEquals(error("eerste paasdag van: easterSunday operand is text, must be a whole unitless number"),
                 meldingen(d + "de eerste paasdag van zijn naam."));
         assertTrue(meldingen("Een Jutter is waardevol indien de tijdsduur van zijn vondstdag tot zijn telling in hele "
                         + "dagen groter is dan 5.")
@@ -111,14 +111,14 @@ class FoldOperandSentenceTest {
      *  a maximum and a last over one parameter and for a sum over one literal. */
     @Test void a_value_fold_without_range_with_an_operand() {
         String u = "De uitkomst van een Jutter moet berekend worden als ";
-        assertEquals(fout("som van: value fold with fewer than two operands"), meldingen(u + "de som van de havenprijs."));
-        assertEquals(fout("totaal van: value fold with fewer than two operands"),
+        assertEquals(error("som van: value fold with fewer than two operands"), meldingen(u + "de som van de havenprijs."));
+        assertEquals(error("totaal van: value fold with fewer than two operands"),
                 meldingen(u + "het totaal van de havenprijs."));
-        assertEquals(fout("maximale waarde van: value fold with fewer than two operands"),
+        assertEquals(error("maximale waarde van: value fold with fewer than two operands"),
                 meldingen(u + "de maximale waarde van de havenprijs."));
-        assertEquals(fout("laatste van: value fold with fewer than two operands"),
+        assertEquals(error("laatste van: value fold with fewer than two operands"),
                 meldingen("De dag van een Jutter moet berekend worden als de laatste van de havendag."));
-        assertEquals(fout("som van: value fold with fewer than two operands"), meldingen(u + "de som van 5."));
+        assertEquals(error("som van: value fold with fewer than two operands"), meldingen(u + "de som van 5."));
         // a fold with an element type ranges over instances and is no listed form
         assertEquals(List.of(), meldingen(u + "de som van de vondstwaarde van alle vondsten van de Jutter."));
         assertEquals(List.of(), meldingen(u + "het totaal van zijn telling."));
@@ -127,10 +127,10 @@ class FoldOperandSentenceTest {
     @Test void a_defect_in_a_condition_is_reported_once() {
         // the condition's type check builds its operands a second time; the verifier reports each defect once, and
         // the same defect on both sides of one comparison twice, at two pointers
-        assertEquals(fout("maximale waarde van: operand of the maximum ordering fold is text, must be a number or a date"),
+        assertEquals(error("maximale waarde van: operand of the maximum ordering fold is text, must be a number or a date"),
                 meldingen("Een Jutter is waardevol indien de maximale waarde van zijn telling en zijn naam groter is dan 5."));
         String duration = "de (absolute) tijdsduur van … tot …: duration operand is number, must be a date";
-        assertEquals(fout(duration), meldingen("Een Jutter is waardevol indien de tijdsduur van zijn vondstdag tot zijn "
+        assertEquals(error(duration), meldingen("Een Jutter is waardevol indien de tijdsduur van zijn vondstdag tot zijn "
                 + "telling in hele dagen groter is dan 5."));
         assertEquals(List.of("ERROR 26 " + duration, "ERROR 26 " + duration), meldingen("Een Jutter is waardevol indien de "
                 + "tijdsduur van zijn vondstdag tot zijn telling in hele dagen groter is dan de tijdsduur van zijn "
@@ -144,16 +144,16 @@ class FoldOperandSentenceTest {
      *  (millisecond precision required)}. */
     @Test void the_unit_of_a_duration() {
         String w = "Een Jutter is waardevol indien de tijdsduur van %s in hele %s groter is dan 5.";
-        assertEquals(fout("de (absolute) tijdsduur van … tot …: duration: the counted unit 'kopjes' is neither a "
+        assertEquals(error("de (absolute) tijdsduur van … tot …: duration: the counted unit 'kopjes' is neither a "
                         + "recognised time unit nor a declared day kind"),
                 meldingen(w.formatted("zijn vondstdag tot zijn dag", "kopjes")));
-        assertEquals(fout("de (absolute) tijdsduur van … tot …: sub-day duration unit on day-precision operands "
+        assertEquals(error("de (absolute) tijdsduur van … tot …: sub-day duration unit on day-precision operands "
                         + "(millisecond precision required)"),
                 meldingen(w.formatted("zijn vondstdag tot zijn dag", "uren")));
         assertEquals(List.of(), meldingen(w.formatted("zijn vondstdag tot zijn dag", "dagen")));
         assertEquals(List.of(), meldingen(w.formatted("zijn vondstmoment tot zijn vondstmoment", "uren")));
         // the verifier names the builtin's own kind: the absolute duration speaks its own sentence
-        assertEquals(fout("de (absolute) tijdsduur van … tot …: sub-day absoluteDuration unit on day-precision operands "
+        assertEquals(error("de (absolute) tijdsduur van … tot …: sub-day absoluteDuration unit on day-precision operands "
                         + "(millisecond precision required)"),
                 meldingen("Een Jutter is waardevol indien de absolute tijdsduur van zijn vondstdag tot zijn dag in hele "
                         + "uren groter is dan 5."));
@@ -161,23 +161,23 @@ class FoldOperandSentenceTest {
 
     @Test void what_the_verifier_admits_keeps_its_own_sentence() {
         String u = "De uitkomst van een Jutter moet berekend worden als ";
-        assertEquals(fout("maximale waarde van vereist numerieke operanden, kreeg Percentage"),
+        assertEquals(error("maximale waarde van vereist numerieke operanden, kreeg Percentage"),
                 meldingen(u + "de maximale waarde van zijn telling en zijn aandeel."));
-        assertEquals(fout("eerste van vereist datumexpressies, kreeg Numeriek"),
+        assertEquals(error("eerste van vereist datumexpressies, kreeg Numeriek"),
                 meldingen(u + "de eerste van zijn telling en zijn hulp."));
-        assertEquals(fout("leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg Percentage (§5.8.2)"),
+        assertEquals(error("leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg Percentage (§5.8.2)"),
                 meldingen(u + "de som van de vondstwaarde van alle vondsten van de Jutter of zijn aandeel als die er "
                         + "niet zijn."));
         // a percentage is a number to the verifier, which admits it under a square root and an absolute value
-        assertEquals(fout("de wortel van vereist numerieke operanden, kreeg Percentage"),
+        assertEquals(error("de wortel van vereist numerieke operanden, kreeg Percentage"),
                 meldingen(u + "de wortel van zijn aandeel naar beneden afgerond op 2 decimalen."));
     }
 
     @Test void square_root_and_absolute_value() {
         String u = "De uitkomst van een Jutter moet berekend worden als ";
-        assertEquals(fout("de wortel van: squareRoot operand is text, must be a number"),
+        assertEquals(error("de wortel van: squareRoot operand is text, must be a number"),
                 meldingen(u + "de wortel van zijn naam naar beneden afgerond op 2 decimalen."));
-        assertEquals(fout("de absolute waarde van: absoluteValue operand is date-day, must be a number"),
+        assertEquals(error("de absolute waarde van: absoluteValue operand is date-day, must be a number"),
                 meldingen("De dag van een Jutter moet berekend worden als de absolute waarde van (zijn vondstdag)."));
     }
 }

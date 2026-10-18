@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
-import dev.uchar.regelspraak.model.RegelSpraakModel.GegenereerdUit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Herkomstvorm;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
+import dev.uchar.regelspraak.model.RegelSpraakModel.GeneratedFrom;
+import dev.uchar.regelspraak.model.RegelSpraakModel.OriginForm;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,35 +41,35 @@ class OriginWitnessTest {
         return JSON.readTree(Files.readString(GOLDEN.resolve(name).resolve("ir.json")));
     }
 
-    private static String element(Benoembaar b) {
-        return b.soort() + " " + (b.eigenaar() == null ? "" : b.eigenaar() + ".") + b.naam();
+    private static String element(Designatable b) {
+        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.naam();
     }
 
     /** The table as lines "<element> <- <source element> (<key>)", in the order of the map. */
     private static List<String> table(RegelSpraakModel m) {
         List<String> out = new ArrayList<>();
-        for (Map.Entry<Benoembaar, GegenereerdUit> e : m.gegenereerd.entrySet())
-            out.add(element(e.getKey()) + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel()
+        for (Map.Entry<Designatable, GeneratedFrom> e : m.generated.entrySet())
+            out.add(element(e.getKey()) + " <- " + element(e.getValue().source()) + " (" + e.getValue().form().key()
                     + ")");
         return out;
     }
 
     @Test void the_origin_of_a_decision_table_row_also_comes_into_the_model() throws Exception {
         RegelSpraakModel m = IrLoader.load(golden("jutterswet-opgave-vormen"));
-        assertEquals(20, m.gegenereerd.size());
-        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.attribuut("Vondst", "waarde"),
-                        Herkomstvorm.OPGAVE_BOVEN_BEREKENING)),
-                m.gegenereerdUit(Benoembaar.attribuut("Vondst", "berekende waarde")));
-        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.attribuut("Aanspoelsel", "stukprijs"),
-                        Herkomstvorm.OPGAVE_BOVEN_BEREKENING)),
-                m.gegenereerdUit(Benoembaar.kenmerk("Aanspoelsel", "afwijkende opgave stukprijs")));
+        assertEquals(20, m.generated.size());
+        assertEquals(Optional.of(new GeneratedFrom(Designatable.attribute("Vondst", "waarde"),
+                        OriginForm.OPGAVE_BOVEN_BEREKENING)),
+                m.generatedFrom(Designatable.attribute("Vondst", "berekende waarde")));
+        assertEquals(Optional.of(new GeneratedFrom(Designatable.attribute("Aanspoelsel", "stukprijs"),
+                        OriginForm.OPGAVE_BOVEN_BEREKENING)),
+                m.generatedFrom(Designatable.characteristic("Aanspoelsel", "afwijkende opgave stukprijs")));
         // the table is a form in the model, as the frontend records it
-        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.vorm("stukprijs van een aanspoelsel"),
-                        Herkomstvorm.BESLISTABELRIJ)),
-                m.gegenereerdUit(Benoembaar.vorm("stukprijs van een aanspoelsel 2")));
+        assertEquals(Optional.of(new GeneratedFrom(Designatable.form("stukprijs van een aanspoelsel"),
+                        OriginForm.BESLISTABELRIJ)),
+                m.generatedFrom(Designatable.form("stukprijs van een aanspoelsel 2")));
         // a group under the name of the base rule the author wrote, and a written member of an unordered block
-        assertEquals(Optional.empty(), m.gegenereerdUit(Benoembaar.vorm("waardering")));
-        assertEquals(Optional.empty(), m.gegenereerdUit(Benoembaar.vorm("wachtgeld voor kustwachters")));
+        assertEquals(Optional.empty(), m.generatedFrom(Designatable.form("waardering")));
+        assertEquals(Optional.empty(), m.generatedFrom(Designatable.form("wachtgeld voor kustwachters")));
     }
 
     @Test void the_group_of_a_subtype_and_the_member_of_a_fold() throws Exception {
@@ -92,8 +92,8 @@ class OriginWitnessTest {
         o.put("form", "startPoint");
         o.putObject("from").put("kind", "namedForm").put("name", "afwijking opgave waarde");
         RegelSpraakModel m = IrLoader.load(ir);
-        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.vorm("afwijking opgave waarde"), Herkomstvorm.START_POINT)),
-                m.gegenereerdUit(Benoembaar.attribuut("Vondst", "waarde")));
+        assertEquals(Optional.of(new GeneratedFrom(Designatable.form("afwijking opgave waarde"), OriginForm.START_POINT)),
+                m.generatedFrom(Designatable.attribute("Vondst", "waarde")));
     }
 
     @Test void a_form_or_kind_outside_its_set_is_refused_by_the_loader_in_the_sentence_of_the_shared_loader()
@@ -101,7 +101,7 @@ class OriginWitnessTest {
         JsonNode ir = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Vondst"), "berekende waarde").get("origin"))
                 .put("form", "opgaveBovenBerekening");
-        IrLoader.Documentfout form = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
+        IrLoader.DocumentError form = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(ir));
         assertEquals("/model/objectTypes/0/attributes/4/origin/form", form.site());
         assertTrue(form.getMessage().endsWith("the origin form 'opgaveBovenBerekening' is none of the forms of IR-SPEC "
                 + "ch. 2.13 ('inputAboveComputation', 'exceptionForSubtype', 'decisionTableRow', 'stepsAfterSet', "
@@ -110,7 +110,7 @@ class OriginWitnessTest {
         JsonNode ir2 = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPath.attribute(IrPath.objectType(ir2, "Vondst"), "berekende waarde").get("origin").get("from"))
                 .put("kind", "form");
-        IrLoader.Documentfout kind = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
+        IrLoader.DocumentError kind = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(ir2));
         assertEquals("/model/objectTypes/0/attributes/4/origin/from/kind", kind.site());
         assertTrue(kind.getMessage().endsWith("the origin's source kind 'form' is none of the kinds of IR-SPEC "
                 + "ch. 2.13 ('objectType', 'attribute', 'characteristic', 'factType', 'role', 'enumerationValue', "
@@ -125,26 +125,26 @@ class OriginWitnessTest {
         van.put("kind", "decisionTable").put("name", "waard");
         van.remove("owner");
         RegelSpraakModel m = IrLoader.load(ir);
-        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.vorm("waard"), Herkomstvorm.OPGAVE_BOVEN_BEREKENING)),
-                m.gegenereerdUit(Benoembaar.attribuut("Vondst", "berekende waarde")));
+        assertEquals(Optional.of(new GeneratedFrom(Designatable.form("waard"), OriginForm.OPGAVE_BOVEN_BEREKENING)),
+                m.generatedFrom(Designatable.attribute("Vondst", "berekende waarde")));
     }
 
     @Test void the_origin_is_read_structurally() throws Exception {
         JsonNode ir = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Vondst"), "berekende waarde")).putNull("origin");
-        IrLoader.Documentfout empty = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir));
+        IrLoader.DocumentError empty = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(ir));
         assertTrue(empty.getMessage().contains("written whole or not at all"), empty.getMessage());
 
         JsonNode ir2 = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPath.attribute(IrPath.objectType(ir2, "Vondst"), "berekende waarde").get("origin").get("from"))
                 .put("line", 3);
-        IrLoader.Documentfout foreign = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir2));
+        IrLoader.DocumentError foreign = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(ir2));
         assertEquals("/model/objectTypes/0/attributes/4/origin/from/line", foreign.site());
 
         JsonNode ir3 = golden("jutterswet-opgave-bedrag");
         ((ObjectNode) IrPath.attribute(IrPath.objectType(ir3, "Vondst"), "berekende waarde").get("origin").get("from"))
                 .remove("name");
-        IrLoader.Documentfout withoutSource = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(ir3));
+        IrLoader.DocumentError withoutSource = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(ir3));
         assertEquals("/model/objectTypes/0/attributes/4/origin/from", withoutSource.site());
     }
 }

@@ -25,8 +25,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.dayCount;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.kenmerk;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.characteristic;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.period;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.segment;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.timeAttribute;
@@ -74,16 +74,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsEverUniquenessWitnessTest {
 
-    static final String MODEL = TmsDocuments.model(List.of(objecttype("Vondst", List.of(
-                    TmsDocuments.attribuut("code", WHOLE), timeAttribute("nummer", WHOLE, "year")),
-            List.of(timeCharacteristic("bewaard", "month"), kenmerk("geregistreerd")))), List.of());
+    static final String MODEL = TmsDocuments.model(List.of(objectType("Vondst", List.of(
+                    TmsDocuments.attribute("code", WHOLE), timeAttribute("nummer", WHOLE, "year")),
+            List.of(timeCharacteristic("bewaard", "month"), characteristic("geregistreerd")))), List.of());
 
     static final String REGISTRATIE = characteristicRule("registratie", "Vondst", "geregistreerd",
             comparison("greater", ownRead("code", "Vondst"), number("0")));
     static final String NUMBER = computingRule("nummer", "BEREKENING", "Vondst", "nummer",
             dayCount(check("bewaard", false), "year"), check("geregistreerd", false));
     static final String EENMALIG = TmsUniquenessWitnessTest.uniqueness("eenmalig nummer",
-            List.of(TmsUniquenessWitnessTest.bron("Vondst", List.of("nummer"))), null,
+            List.of(TmsUniquenessWitnessTest.source("Vondst", List.of("nummer"))), null,
             "De nummers van alle Vondsten moeten uniek zijn.");
 
     static final List<String> RULES = List.of(REGISTRATIE, NUMBER);
@@ -94,11 +94,11 @@ class TmsEverUniquenessWitnessTest {
     }
 
     /** A Vondst of the case with the code {@code code}, bewaard on {@code [van, tot)} where {@code van} is not null, and
-     *  the nummer {@code invoer} as input where it is not empty. */
-    static String vondst(String label, String code, String van, String to, List<String> invoer) {
+     *  the nummer {@code inputData} as input where it is not empty. */
+    static String vondst(String label, String code, String van, String to, List<String> inputData) {
         Map<String, String> waarden = new LinkedHashMap<>();
         waarden.put("code", numberValue(code));
-        if (!invoer.isEmpty()) waarden.put("nummer", timeline(invoer));
+        if (!inputData.isEmpty()) waarden.put("nummer", timeline(inputData));
         return instance(label, "Vondst", waarden, List.of(),
                 van == null ? Map.of() : Map.of("bewaard", List.of(period(van, to))), Map.of());
     }
@@ -128,14 +128,14 @@ class TmsEverUniquenessWitnessTest {
 
     @Test void a_value_that_ever_stood_on_the_timeline_collides_in_both_orders_of_the_rules() throws Exception {
         JsonNode caseDocument = caseDocument();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL, order, List.of(EENMALIG));
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_channel_holds_at_the_fixpoint_exactly_the_collisions_of_the_derived_keys() throws Exception {
@@ -160,11 +160,11 @@ class TmsEverUniquenessWitnessTest {
                 Object v = TmsDocuments.beanObject(l, "Vondst", Map.of("code", (String) o[1]), List.of());
                 if (o[2] != null) TmsTimelineDocuments.set(v, "bewaard",
                         List.of(TmsTimelineDocuments.beanSegment(l, (String) o[2], (String) o[3], null)));
-                String[] invoer = (String[]) o[4];
+                String[] inputData = (String[]) o[4];
                 List<Object> segments = new ArrayList<>();
-                for (int i = 0; i < invoer.length; i += 2) {
-                    int j = Integer.parseInt(invoer[i]);
-                    segments.add(TmsTimelineDocuments.beanSegment(l, j + "-01-01", (j + 1) + "-01-01", invoer[i + 1]));
+                for (int i = 0; i < inputData.length; i += 2) {
+                    int j = Integer.parseInt(inputData[i]);
+                    segments.add(TmsTimelineDocuments.beanSegment(l, j + "-01-01", (j + 1) + "-01-01", inputData[i + 1]));
                 }
                 if (!segments.isEmpty()) TmsTimelineDocuments.set(v, "nummer", segments);
                 labels.put(v, (String) o[0]);
@@ -173,7 +173,7 @@ class TmsEverUniquenessWitnessTest {
             Object v5 = beans.get(4);
             int[] intermediate = {0};
             List<String> channel = new ArrayList<>();
-            TmsDocuments.vuur(b, order, beans, sessie -> sessie.addEventListener(
+            TmsDocuments.fire(b, order, beans, session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
                             Object f = e.getObject();
@@ -185,7 +185,7 @@ class TmsEverUniquenessWitnessTest {
                                 }
                             }
                         }
-                    }), sessie -> channel.addAll(TmsDocuments.inconsistenties(sessie, labels)));
+                    }), session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
             assertEquals(List.of("eenmalig nummer @ V1", "eenmalig nummer @ V2", "eenmalig nummer @ V3",
                     "eenmalig nummer @ V4", "eenmalig nummer @ V6"), channel, () -> "volgorde " + names);
             assertEquals(List.of("[2027-01-01, 2028-01-01)=2"), TmsTimelineWitnessTest.timelineOf(beans.get(6), "nummer"),

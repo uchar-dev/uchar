@@ -286,8 +286,8 @@ class NestedFoldSourceTest {
             + "blijft onopgelost (§13.4.1/§13.4.17) — 'de minimale waarde van het gewicht van alle geborgen "
             + "vondsten van de Jutter'";
 
-    private static List<Diagnostic> foldSourceDiagnostics(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static List<Diagnostic> foldSourceDiagnostics(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         return m.diagnostics.stream()
                 .filter(d -> d.message().startsWith(CHAIN_HEAD)
                         || d.message().startsWith("tussenstap in een vouwbron")
@@ -296,8 +296,8 @@ class NestedFoldSourceTest {
                 .toList();
     }
 
-    private static String ir(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String ir(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.isOk(), () -> "model draagt fouten: " + m.diagnostics);
         return IrEmitter.emit(m);
     }
@@ -427,14 +427,14 @@ class NestedFoldSourceTest {
         """;
 
     /** A rule on the Jutter that folds the gewicht over {@code bron}. */
-    private static String regel(String bron) {
+    private static String regel(String source) {
         return "\n\nRegel laagste vondstgewicht\n    geldig altijd\n        Het laagste vondstgewicht van een Jutter "
-                + "moet berekend worden als de minimale waarde van het gewicht van " + bron + ".\n";
+                + "moet berekend worden als de minimale waarde van het gewicht van " + source + ".\n";
     }
 
     /** The one refusal the chain gets, whole. */
-    private static void onlyMessage(String bron, String message) {
-        List<Diagnostic> ds = foldSourceDiagnostics(bron);
+    private static void onlyMessage(String source, String message) {
+        List<Diagnostic> ds = foldSourceDiagnostics(source);
         assertEquals(1, ds.size(), () -> "verwacht één vouwbron-diagnose, kreeg " + ds);
         assertEquals(message, ds.get(0).message());
     }
@@ -467,9 +467,9 @@ class NestedFoldSourceTest {
     /** The way out works: with both plurals declared the same sentence is a two-step path. */
     @Test
     void with_both_plural_declared_same_sentence_becomes_a_source_path() {
-        String bron = SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter");
-        assertEquals(List.of(), foldSourceDiagnostics(bron));
-        assertSourcePath(ir(bron), "bemanning", "sloep", "berging", "geborgen vondst");
+        String source = SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter");
+        assertEquals(List.of(), foldSourceDiagnostics(source));
+        assertSourcePath(ir(source), "bemanning", "sloep", "berging", "geborgen vondst");
     }
 
     /** A chain with a to-ONE step and the same undeclared plural. Until 2026-09-27 this got route (b)'s sentence,
@@ -588,13 +588,13 @@ class NestedFoldSourceTest {
      *  names that step, and the fold is the marker. */
     @Test
     void an_unknown_to_one_step_not_more_falls_silent_away() {
-        String bron = MODEL_B + regel("alle aangemelde vondsten van de kotter van de Jutter");
-        onlyMessage(bron,
+        String source = MODEL_B + regel("alle aangemelde vondsten van de kotter van de Jutter");
+        onlyMessage(source,
                 CHAIN_HEAD + "in 'alle aangemelde vondsten van de kotter van de Jutter' bindt de stap 'kotter' vanaf "
                         + "Jutter geen rol: geen rol die vanaf Jutter te bereiken is, heet 'kotter' of declareert dat "
                         + "als meervoud" + CHAIN_TAIL + " — 'de minimale waarde van het gewicht van alle "
                         + "aangemelde vondsten van de kotter van de Jutter'");
-        String json = ir(bron);
+        String json = ir(source);
         assertFalse(json.contains("\"sourceRole\""), "de wire mag de geschreven stap niet laten vallen");
         assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
     }
@@ -740,7 +740,7 @@ class NestedFoldSourceTest {
     // ---------------- the severity, and the wire ----------------
 
     /** The level is the one knob this check has, pinned so a promotion is a visible edit. WARNING keeps the
-     *  document on disk with its own defect stated; ERROR would make {@code Resolver.irModus} write nothing
+     *  document on disk with its own defect stated; ERROR would make {@code Resolver.irMode} write nothing
      *  at all. Either way no wrong answer survives — the marker is not a fold. */
     @Test
     void the_diagnostic_is_a_warning_and_no_error() {
@@ -757,9 +757,9 @@ class NestedFoldSourceTest {
      *  the failure lands as a loud evaluation fault in every executor. Measured on all three routes. */
     @Test
     void the_marking_carries_its_own_result_type() {
-        for (String bron : List.of(MODEL_B + MIXED_CHAIN_RULE, MODEL_B + COLLIDING_ONE_STEP_RULE,
+        for (String source : List.of(MODEL_B + MIXED_CHAIN_RULE, MODEL_B + COLLIDING_ONE_STEP_RULE,
                 MODEL_B + FOREIGN_ANCHOR_RULE)) {
-            String json = ir(bron);
+            String json = ir(source);
             assertTrue(json.contains("\"node\": \"Unresolved\""), "verwacht een markering");
             assertTrue(java.util.regex.Pattern.compile("\"node\": \"Unresolved\",\\s*\"type\": \\{").matcher(json).find(),
                     "de markering hoort haar eigen resultaattype te dragen");
@@ -779,15 +779,15 @@ class NestedFoldSourceTest {
      *  the assertion is on the ORDER because a range read backwards walks a different chain. */
     private static void assertSourcePath(String json, String... factTypeAndRole) {
         assertTrue(json.contains("\"sourcePath\""), () -> "verwacht een sourcePath op de wire:\n" + json);
-        int vanaf = json.indexOf("\"sourcePath\"");
+        int from = json.indexOf("\"sourcePath\"");
         for (int i = 0; i < factTypeAndRole.length; i += 2) {
             String step = "\"factType\": \"" + factTypeAndRole[i] + "\"";
             String roleName = factTypeAndRole[i + 1];
-            int here = json.indexOf(step, vanaf);
+            int here = json.indexOf(step, from);
             assertTrue(here >= 0, () -> "verwacht stap " + step + " in het pad:\n" + json);
-            int rol = json.indexOf("\"role\": \"" + roleName + "\"", here);
-            assertTrue(rol > here, () -> "stap " + step + " moet rol '" + roleName + "' binden");
-            vanaf = rol;
+            int role = json.indexOf("\"role\": \"" + roleName + "\"", here);
+            assertTrue(role > here, () -> "stap " + step + " moet rol '" + roleName + "' binden");
+            from = role;
         }
     }
 }

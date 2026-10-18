@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.transpiler.tms.Fout;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
 
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
@@ -24,7 +24,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -125,9 +125,9 @@ class TmsWritersWitnessTest {
             computingRule("doel volgens b", "GELIJKSTELLING", "Vondst", "doel", B, predicate("filled", B)),
             computingRule("doel volgens c", "GELIJKSTELLING", "Vondst", "doel", C, comparison("less", BETWEEN, number("5"))));
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("a", WHOLE), attribuut("b", WHOLE), attribuut("c", WHOLE), attribuut("tussen", WHOLE),
-                    attribuut("doel", WHOLE)), List.of())), List.of());
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("a", WHOLE), attribute("b", WHOLE), attribute("c", WHOLE), attribute("tussen", WHOLE),
+                    attribute("doel", WHOLE)), List.of())), List.of());
 
     @Test void three_writers_in_every_order_of_the_document() throws Exception {
         int orders = 0;
@@ -136,10 +136,10 @@ class TmsWritersWitnessTest {
             List<String> names = TmsDocuments.ruleNames(order);
             assertNull(CaseRunner.playCase(ir, threeCase(), DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
             assertEquals(conflict(names, "doel volgens tussen", "21", "doel volgens b", "5", "doel", "V6, een Vondst"),
-                    fout(ir, caseOf("V6", "Vondst", Map.of("a", "20", "b", "5"))),
+                    fault(ir, caseOf("V6", "Vondst", Map.of("a", "20", "b", "5"))),
                     () -> "volgorde " + names);
             assertEquals(conflict(names, "doel volgens b", "7", "doel volgens c", "leeg", "doel", "V7, een Vondst"),
-                    fout(ir, caseOf("V7", "Vondst", Map.of("a", "1", "b", "7"))),
+                    fault(ir, caseOf("V7", "Vondst", Map.of("a", "1", "b", "7"))),
                     () -> "volgorde " + names);
             orders++;
         }
@@ -151,23 +151,23 @@ class TmsWritersWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, THREE),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(7, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(7, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int onTheIntermediateState = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261009L, 60)) {
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261009L, 60)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = beanObject(b, Map.of("a", "20")), v2 = beanObject(b, Map.of("a", "1", "doel", "99")),
                     v3 = beanObject(b, Map.of("a", "20", "b", "21")), v4 = beanObject(b, Map.of("a", "7", "b", "7")),
                     v5 = beanObject(b, Map.of("a", "7", "tussen", "3", "b", "5", "c", "9"));
             List<Object> conflictOpV5 = new ArrayList<>();
-            TmsDocuments.vuur(b, order, List.of(v1, v2, v3, v4, v5), s -> s.addEventListener(
+            TmsDocuments.fire(b, order, List.of(v1, v2, v3, v4, v5), s -> s.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof Fout f && f.onderwerp() == v5
-                                    && f.fout().getClass().getSimpleName().equals("Schrijversconflict"))
+                            if (e.getObject() instanceof Fault f && f.onderwerp() == v5
+                                    && f.fault().getClass().getSimpleName().equals("WritersConflict"))
                                 conflictOpV5.add(f);
                         }
-                    }), s -> assertTrue(s.getObjects(o -> o instanceof Fout).isEmpty(), "een fout aan het fixpunt"));
+                    }), s -> assertTrue(s.getObjects(o -> o instanceof Fault).isEmpty(), "een fout aan het fixpunt"));
             String where = " in volgorde " + names;
             assertNumber("21", v1, "doel", "V1" + where);
             assertNumber(null, v2, "doel", "V2" + where);
@@ -178,7 +178,7 @@ class TmsWritersWitnessTest {
             if (!conflictOpV5.isEmpty()) onTheIntermediateState++;
             Object v6 = beanObject(b, Map.of("a", "20", "b", "5"));
             IllegalStateException e = assertThrows(IllegalStateException.class,
-                    () -> TmsDocuments.vuur(b, order, List.of(v6), s -> {}, s -> {}), () -> "V6" + where);
+                    () -> TmsDocuments.fire(b, order, List.of(v6), s -> {}, s -> {}), () -> "V6" + where);
             assertEquals("geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"doel volgens"
                     + " tussen\" schrijft 21 en de regel \"doel volgens b\" schrijft 5 in het attribuut doel van een Vondst"
                     + " (Vondst@" + Integer.toHexString(System.identityHashCode(v6)) + "); divergentie is een fout"
@@ -195,8 +195,8 @@ class TmsWritersWitnessTest {
                         instance("V4", "Vondst", Map.of("a", "7", "b", "7"), List.of(), Map.of()),
                         instance("V5", "Vondst", Map.of("a", "7", "tussen", "3", "b", "5", "c", "9"), List.of(),
                                 Map.of())),
-                List.of(waarde("V1", "doel", "21"), waarde("V2", "doel", null), waarde("V3", "doel", "21"),
-                        waarde("V4", "doel", "7"), waarde("V5", "doel", "5"), waarde("V5", "tussen", "8")));
+                List.of(value("V1", "doel", "21"), value("V2", "doel", null), value("V3", "doel", "21"),
+                        value("V4", "doel", "7"), value("V5", "doel", "5"), value("V5", "tussen", "8")));
     }
 
     // ---------------- writers on sister subtypes and their supertype ----------------
@@ -210,8 +210,8 @@ class TmsWritersWitnessTest {
             computingRule("a van een vondst", "BEREKENING", "Vondst", "a", binary("plus", C, number("1")), "null"));
 
     private static final String SISTER_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("a", WHOLE), attribuut("c", WHOLE),
-                    attribuut("doel", WHOLE)), List.of()),
+            TmsDocuments.objectType("Vondst", List.of(attribute("a", WHOLE), attribute("c", WHOLE),
+                    attribute("doel", WHOLE)), List.of()),
             TmsDocuments.subtype("Drijfgoed", "Vondst", List.of(), List.of()),
             TmsDocuments.subtype("Wrakgoed", "Vondst", List.of(), List.of())), List.of());
 
@@ -221,8 +221,8 @@ class TmsWritersWitnessTest {
                         instance("W1", "Wrakgoed", Map.of("c", "1"), List.of(), Map.of()),
                         instance("V1", "Vondst", Map.of("c", "1", "doel", "4"), List.of(), Map.of()),
                         instance("V2", "Vondst", Map.of("c", "200"), List.of(), Map.of())),
-                List.of(waarde("D1", "doel", "2"), waarde("W1", "doel", "12"), waarde("V1", "doel", "4"),
-                        waarde("V2", "doel", "5")));
+                List.of(value("D1", "doel", "2"), value("W1", "doel", "12"), value("V1", "doel", "4"),
+                        value("V2", "doel", "5")));
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(SISTERS)) {
             Path ir = TmsDocuments.document(SISTER_MODEL, order);
@@ -230,7 +230,7 @@ class TmsWritersWitnessTest {
             assertNull(CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
             assertEquals(conflict(names, "doel van drijfgoed", "201", "doel van een grote vondst", "5", "doel",
                             "D2, een Drijfgoed"),
-                    fout(ir, caseOf("D2", "Drijfgoed", Map.of("c", "200"))),
+                    fault(ir, caseOf("D2", "Drijfgoed", Map.of("c", "200"))),
                     () -> "volgorde " + names);
             orders++;
         }
@@ -257,8 +257,8 @@ class TmsWritersWitnessTest {
                         instance("W1", "Wrakgoed", Map.of("c", "1"), List.of(), Map.of()),
                         instance("D2", "Drijfgoed", Map.of("c", "1", "doel", "5"), List.of(), Map.of()),
                         instance("V1", "Vondst", Map.of("c", "1"), List.of(), Map.of())),
-                List.of(waarde("D1", "doel", "2"), waarde("W1", "doel", "7"), waarde("D2", "doel", "5"),
-                        waarde("V1", "doel", null)));
+                List.of(value("D1", "doel", "2"), value("W1", "doel", "7"), value("D2", "doel", "5"),
+                        value("V1", "doel", null)));
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(SISTER_INITIALISATIONS)) {
             List<String> names = TmsDocuments.ruleNames(order);
@@ -291,18 +291,18 @@ class TmsWritersWitnessTest {
                         instance("V2", "Vondst", Map.of("a", "20", "doel", "9"), List.of(), Map.of()),
                         instance("V3", "Vondst", Map.of("a", "1", "c", "1"), List.of(), Map.of()),
                         instance("V4", "Vondst", Map.of("a", "1", "c", "1", "doel", "9"), List.of(), Map.of())),
-                List.of(waarde("V1", "doel", "7"), waarde("V2", "doel", null), waarde("V3", "doel", "3"),
-                        waarde("V4", "doel", "9")));
+                List.of(value("V1", "doel", "7"), value("V2", "doel", null), value("V3", "doel", "3"),
+                        value("V4", "doel", "9")));
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(BESIDE_INITIALISATION)) {
             Path ir = TmsDocuments.document(MODEL, order);
             List<String> names = TmsDocuments.ruleNames(order);
             assertNull(CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
             for (String label : List.of("V5", "V6")) {
-                Map<String, String> invoer = label.equals("V5") ? Map.of("a", "20", "c", "1")
+                Map<String, String> input = label.equals("V5") ? Map.of("a", "20", "c", "1")
                         : Map.of("a", "20", "c", "1", "doel", "9");
                 assertEquals(conflict(names, "doel volgens b", "leeg", "standaarddoel", "3", "doel", label + ", een Vondst"),
-                        fout(ir, caseOf(label, "Vondst", invoer)),
+                        fault(ir, caseOf(label, "Vondst", input)),
                         () -> label + " in volgorde " + names);
             }
             orders++;
@@ -315,14 +315,14 @@ class TmsWritersWitnessTest {
     @Test void beside_a_conditional_initialisation_in_a_sample_of_generated_orders() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, BESIDE_INITIALISATION),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(6, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261009L, 60)) {
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(6, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261009L, 60)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = beanObject(b, Map.of("a", "20", "b", "7", "c", "1", "tussen", "3")),
                     v2 = beanObject(b, Map.of("a", "20", "doel", "9")), v3 = beanObject(b, Map.of("a", "1", "c", "1")),
                     v4 = beanObject(b, Map.of("a", "1", "c", "1", "doel", "9"));
-            TmsDocuments.vuur(b, order, List.of(v1, v2, v3, v4), s -> {}, s -> {});
+            TmsDocuments.fire(b, order, List.of(v1, v2, v3, v4), s -> {}, s -> {});
             String where = " in volgorde " + names;
             assertNumber("7", v1, "doel", "V1" + where);
             assertNumber(null, v2, "doel", "V2" + where);
@@ -330,7 +330,7 @@ class TmsWritersWitnessTest {
             assertNumber("9", v4, "doel", "V4" + where);
             Object v5 = beanObject(b, Map.of("a", "20", "c", "1"));
             IllegalStateException e = assertThrows(IllegalStateException.class,
-                    () -> TmsDocuments.vuur(b, order, List.of(v5), s -> {}, s -> {}), () -> "V5" + where);
+                    () -> TmsDocuments.fire(b, order, List.of(v5), s -> {}, s -> {}), () -> "V5" + where);
             assertEquals("geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"doel volgens"
                     + " b\" schrijft leeg en de regel \"standaarddoel\" schrijft 3 in het attribuut doel van een Vondst"
                     + " (Vondst@" + Integer.toHexString(System.identityHashCode(v5)) + "); divergentie is een fout"
@@ -353,7 +353,7 @@ class TmsWritersWitnessTest {
             JsonNode c = TmsDocuments.JSON.readTree(Files.readString(z));
             String pin = c.path("expectedFault").path("drools").asText();
             assertTrue(pin.startsWith("twee schrijvers van één doel"), () -> z + ": " + pin);
-            String sentence = fout(DOUBLE_MESSAGE.resolve("ir.json"), c);
+            String sentence = fault(DOUBLE_MESSAGE.resolve("ir.json"), c);
             assertTrue(sentence.contains(pin), () -> z + ": de zin\n" + sentence + "\nbevat de pin niet\n" + pin);
         }
     }
@@ -365,34 +365,34 @@ class TmsWritersWitnessTest {
     private static String conflict(List<String> names, String a, String valueA, String b, String valueB, String member,
                                    String object) {
         boolean aFirst = names.indexOf(a) < names.indexOf(b);
-        String eerste = aFirst ? a : b, tweede = aFirst ? b : a;
+        String first = aFirst ? a : b, second = aFirst ? b : a;
         String firstValue = aFirst ? valueA : valueB, secondValue = aFirst ? valueB : valueA;
-        return "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"" + eerste
-                + "\" schrijft " + firstValue + " en de regel \"" + tweede + "\" schrijft " + secondValue
+        return "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"" + first
+                + "\" schrijft " + firstValue + " en de regel \"" + second + "\" schrijft " + secondValue
                 + " in het attribuut " + member + " van " + object + "; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)";
     }
 
     /** The message of the fault the replay of {@code caseDocument} on this branch ends in. */
-    private static String fout(Path ir, JsonNode caseDocument) {
+    private static String fault(Path ir, JsonNode caseDocument) {
         RuntimeException e = assertThrows(RuntimeException.class,
                 () -> CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
         return e.getMessage();
     }
 
     /** A case of one instance whose replay faults: its expectation is never read. */
-    private static JsonNode caseOf(String label, String type, Map<String, String> invoer) throws Exception {
-        return TmsDocuments.caseDocument(List.of(instance(label, type, invoer, List.of(), Map.of())),
-                List.of(waarde(label, "doel", "0")));
+    private static JsonNode caseOf(String label, String type, Map<String, String> input) throws Exception {
+        return TmsDocuments.caseDocument(List.of(instance(label, type, input, List.of(), Map.of())),
+                List.of(value(label, "doel", "0")));
     }
 
     private static Object beanObject(DroolsBackend.Build b, Map<String, String> numbers) throws Exception {
         return TmsDocuments.beanObject(b.beanLoader(), "Vondst", numbers, List.of());
     }
 
-    private static void assertNumber(String verwacht, Object beanObject, String attribuut, String description) throws Exception {
-        Object werkelijk = TmsDocuments.lees(beanObject, attribuut);
-        if (verwacht == null) assertNull(werkelijk, description + " " + attribuut);
-        else assertEquals(0, new java.math.BigDecimal(verwacht).compareTo((java.math.BigDecimal) werkelijk),
-                () -> description + " " + attribuut + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    private static void assertNumber(String expected, Object beanObject, String attribute, String description) throws Exception {
+        Object actual = TmsDocuments.read(beanObject, attribute);
+        if (expected == null) assertNull(actual, description + " " + attribute);
+        else assertEquals(0, new java.math.BigDecimal(expected).compareTo((java.math.BigDecimal) actual),
+                () -> description + " " + attribute + ": verwacht " + expected + ", werkelijk " + actual);
     }
 }

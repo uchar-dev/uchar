@@ -69,10 +69,10 @@ class TimelineClipFoldWitnessTest {
 
     /** K1 is wachtplichtig through July 2023. {@code waarde} null: no value timeline; otherwise one value on
      *  [2024-01-01, 2024-02-01), disjoint from the clip, so the clip removes all of it. */
-    private static JsonNode caseDocument(String waarde, String soort, String verwacht) throws Exception {
-        String attributes = waarde == null ? "{}"
+    private static JsonNode caseDocument(String value, String category, String expected) throws Exception {
+        String attributes = value == null ? "{}"
                 : "{\"wachtvergoeding per maand\": {\"timeline\": [{\"from\": \"2024-01-01\", \"to\": \"2024-02-01\","
-                        + " \"value\": " + waarde + "}]}}";
+                        + " \"value\": " + value + "}]}}";
         return JSON.readTree("""
                 {"format": "uchar-case-v0", "asOfDate": null,
                  "input": {"instances": [{"label": "K1", "objectType": "Klipjutter", "attributes": %s,
@@ -80,6 +80,6 @@ class TimelineClipFoldWitnessTest {
                      "characteristicTimelines": {"wachtplichtig": [{"from": "2023-07-01", "to": "2023-08-01"}]}}],
                   "parameters": {}},
                  "expected": [{"kind": %s, "label": "K1", "attribute": "wachtsom"%s}]}
-                """.formatted(attributes, soort, verwacht));
+                """.formatted(attributes, category, expected));
     }
 }

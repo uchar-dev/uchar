@@ -40,9 +40,9 @@ class LetReportSiteWitnessTest {
         // ref on both models (inkomen 10,00, restpost ABSENT): uit leeg, INCONSISTENT — §6.5 Tabel 12 degrades
         // "waarde gedeeld door leeg" to leeg AND deposits the Fout, and the read of the need does not change
         // which site ran. The bare spelling played in both branches all along; the bound one is the fix.
-        String verwacht = empty() + ", " + inconsistent();
-        BothBranches.green(write(bareModel()), jutter(INKOMEN, verwacht), "de kale deling door leeg");
-        BothBranches.green(write(letModel()), jutter(INKOMEN, verwacht), "dezelfde deling onder een Let");
+        String expected = empty() + ", " + inconsistent();
+        BothBranches.green(write(bareModel()), jutter(INKOMEN, expected), "de kale deling door leeg");
+        BothBranches.green(write(letModel()), jutter(INKOMEN, expected), "dezelfde deling onder een Let");
     }
 
     @Test void the_bound_division_does_not_report_if_the_divisor_is_filled() throws Exception {
@@ -50,7 +50,7 @@ class LetReportSiteWitnessTest {
         // ref (inkomen 10,00, restpost 2,00): uit 5.0000, CONSISTENT. A companion that fired on the divisor's
         // leegte alone — or on the binding's mere presence — answers INCONSISTENT here.
         BothBranches.green(write(letModel()), jutter(INKOMEN + ", " + n("restpost", "2.00"),
-                waarde("5.0000") + ", " + consistent()), "de gebonden deling rekent gewoon");
+                valueJson("5.0000") + ", " + consistent()), "de gebonden deling rekent gewoon");
     }
 
     // ---------------- ch. 10.6 clause 2: the need's own barrier still cuts the report off ----------------
@@ -67,7 +67,7 @@ class LetReportSiteWitnessTest {
         BothBranches.green(write(barrierModel()), jutter(n("saldo", "8.00"), empty() + ", " + consistent()),
                 "de lege behoefte kapt af voor de deling");
         BothBranches.green(write(barrierModel()), jutter(INKOMEN + ", " + n("saldo", "8.00"),
-                waarde("10.0000") + ", " + inconsistent()), "de gevulde behoefte laat de deling draaien");
+                valueJson("10.0000") + ", " + inconsistent()), "de gevulde behoefte laat de deling draaien");
     }
 
     // ---------------- ch. 10.2: the site under an arm, in the corpus shape ----------------
@@ -79,7 +79,7 @@ class LetReportSiteWitnessTest {
         //   inkomen  5,00 -> the anders-arm runs: ref uit leeg, INCONSISTENT.
         // Both the need guard and the arm guard have to reach the companion, and the arm guard has to read the
         // binder through the need (a separate rule sees no consequence local) — drop either and one flank falls.
-        BothBranches.green(write(armModel()), jutter(n("inkomen", "40.00"), waarde("5.0000") + ", " + consistent()),
+        BothBranches.green(write(armModel()), jutter(n("inkomen", "40.00"), valueJson("5.0000") + ", " + consistent()),
                 "de niet-betreden arm meldt niet");
         BothBranches.green(write(armModel()), jutter(n("inkomen", "5.00"), empty() + ", " + inconsistent()),
                 "de betreden arm meldt");
@@ -113,11 +113,11 @@ class LetReportSiteWitnessTest {
 
     private static final String INKOMEN = "\"inkomen\": { \"number\": \"10.00\" }";
 
-    private static String n(String attribuut, String number) {
-        return "\"%s\": { \"number\": \"%s\" }".formatted(attribuut, number);
+    private static String n(String attribute, String number) {
+        return "\"%s\": { \"number\": \"%s\" }".formatted(attribute, number);
     }
 
-    private static com.fasterxml.jackson.databind.JsonNode jutter(String attributes, String verwacht) throws Exception {
+    private static com.fasterxml.jackson.databind.JsonNode jutter(String attributes, String expected) throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -126,10 +126,10 @@ class LetReportSiteWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(attributes, verwacht));
+                """.formatted(attributes, expected));
     }
 
-    private static String waarde(String number) {
+    private static String valueJson(String number) {
         return "{ \"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"uit\", \"value\": { \"number\": \"%s\" } }"
                 .formatted(number);
     }
@@ -153,8 +153,8 @@ class LetReportSiteWitnessTest {
     }
     private static String attr(String naam) { return attr(naam, pos(2)); }
 
-    private static String lit(String waarde, String type) {
-        return IrPath.literal(waarde, type, waarde);
+    private static String lit(String valueJson, String type) {
+        return IrPath.literal(valueJson, type, valueJson);
     }
 
     private static String binary(String op, String left, String right, String type) {
@@ -177,7 +177,7 @@ class LetReportSiteWitnessTest {
                 + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(type, condition, then, otherwise);
     }
 
-    private static String verg(String op, String left, String right) {
+    private static String compare(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, left, right, op.toLowerCase(java.util.Locale.ROOT));
     }
@@ -185,7 +185,7 @@ class LetReportSiteWitnessTest {
     private static final String NAME = "uit van een jutter";
 
     /** A one-objecttype document over {@code Jutter} with "uit van een jutter" as its only rule. */
-    private static String model(String waarde) {
+    private static String model(String valueJson) {
         return ("{\"format\":\"uchar-ir-v1\","
                 + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
                 + "\"plural\":\"Jutters\",\"attributes\":["
@@ -202,7 +202,7 @@ class LetReportSiteWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
-                .formatted(pos(2), pos(2), num(2), num(4), NAME, attr("uit", num(4)), waarde);
+                .formatted(pos(2), pos(2), num(2), num(4), NAME, attr("uit", num(4)), valueJson);
     }
 
     // ---------------- the models (each ref-replayed, and clingo-replayed, before its values were pinned) ----------------
@@ -226,9 +226,9 @@ class LetReportSiteWitnessTest {
 
     /** "Let k = inkomen in (als k groter dan 10,00 dan 5,0000 anders (k gedeeld door restpost))". */
     private static String armModel() {
-        String keuze = ite(verg("greater", bref("k", pos(2)), lit("10.00", pos(2))),
+        String choice = ite(compare("greater", bref("k", pos(2)), lit("10.00", pos(2))),
                 lit("5.0000", num(4)), boundDivision(), num(4));
-        return model(let("k", attr("inkomen"), keuze, num(4)));
+        return model(let("k", attr("inkomen"), choice, num(4)));
     }
 
     /** "100,00 gedeeld door de restpost" — a LITERAL dividend, no `Let` in sight. */

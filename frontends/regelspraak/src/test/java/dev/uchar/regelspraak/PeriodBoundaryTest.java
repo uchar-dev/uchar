@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p><b>Own means: written on the subject.</b> This frontend writes an own read — an inherited attribute
  * included — with the SUBJECT as its object type ("zijn peildatum" in a Klipjutter rule is an
- * {@code AttribuutRef} on Klipjutter). A read naming any other type, a supertype of the subject included, goes
+ * {@code AttributeReference} on Klipjutter). A read naming any other type, a supertype of the subject included, goes
  * out as a navigation (by-pair bindings when a fact type relates the two types), which the verifier refuses as
  * navigated (WF-111). Where no fact type relates them the emitter refuses the model, so no document carries the
  * read (measured 2026-09-25), and the refusal keeps its Dutch words: the sub- and supertype rows below, whose model
@@ -76,14 +76,14 @@ class PeriodBoundaryTest {
     })
     void a_bound_outside_the_two_forms_is_refused(String subject, String window, String fragment) {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel(subject, window));
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout voor '" + window + "', kreeg: " + m.diagnostics);
-        String t = fouten.get(0).message();
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout voor '" + window + "', kreeg: " + m.diagnostics);
+        String t = faults.get(0).message();
         // the verifier's WF-111 sentence; a sub- or supertype read that no relation reaches has no wire form, so that
         // refusal keeps its own words, which cite the rule
         assertTrue(t.contains(" bound of a time window is ") || t.contains("WF-111") && t.contains("§8.4.3"), t);
         assertTrue(t.contains(fragment), () -> "de melding noemt '" + fragment + "' niet: " + t);
-        // an ERROR keeps the document off disk: Resolver.irModus writes nothing
+        // an ERROR keeps the document off disk: Resolver.irMode writes nothing
         assertFalse(m.isOk());
     }
 

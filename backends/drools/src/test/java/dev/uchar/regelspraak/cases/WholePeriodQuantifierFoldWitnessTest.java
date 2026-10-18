@@ -166,11 +166,11 @@ class WholePeriodQuantifierFoldWitnessTest {
     // ---------------- the loader's two per-form refusals (WF-108) ----------------
 
     @Test void a_source_path_is_refused_per_form() throws Exception {
-        String pad = """
+        String path = """
                 "sourcePath": [ { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" },
                              { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" } ]""";
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> IrLoader.load(JSON.readTree(ir(foldNode("all", "null", pad)))),
+                () -> IrLoader.load(JSON.readTree(ir(foldNode("all", "null", path)))),
                 "een meerstaps bereik hoort een benoemde per-vorm-weigering te zijn, geen genegeerd veld");
         assertEquals("Kwantorvouw.bronPad", r.form(),
                 "de weigering noemt de vorm, zodat gate 12 haar met reden in de kanaalvloer zet");
@@ -190,14 +190,14 @@ class WholePeriodQuantifierFoldWitnessTest {
      */
     @Test void the_definite_quantifier_is_refused_by_name() throws Exception {
         String site = "/rules/rules/0/versions/0/condition/quantifier";
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                 () -> IrLoader.load(JSON.readTree(ir(foldNode("the", "null", SOURCE_ROLE)))),
                 "kwantor the is geen kwantificatie over een verzameling en hoort te worden geweigerd");
         assertEquals(site, e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": quantifier fold with quantifier the: the bare definite is a description"
                 + " of ONE member, not a quantification over the set — a fold over it has no reading"), e.getMessage());
         for (String kw : new String[]{"SOMMIGE", "DE", "ALLE"}) {
-            e = assertThrows(IrLoader.Documentfout.class,
+            e = assertThrows(IrLoader.DocumentError.class,
                     () -> IrLoader.load(JSON.readTree(ir(foldNode(kw, "null", SOURCE_ROLE)))), kw);
             assertEquals(site, e.site(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": unknown quantifier value \"" + kw + "\""), e.getMessage());
@@ -417,17 +417,17 @@ class WholePeriodQuantifierFoldWitnessTest {
      */
     @Test void a_mutant_per_golden_is_rejected_by_both_branches() throws Exception {
         for (String[] row : MUTANTS) {
-            String naam = row[0], caseName = row[1], kenmerk = row[2];
-            Path bron = CORPUS.resolve(naam).resolve(caseName);
-            ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(bron));
+            String naam = row[0], caseName = row[1], characteristic = row[2];
+            Path source = CORPUS.resolve(naam).resolve(caseName);
+            ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(source));
             boolean touched = false;
             for (JsonNode e : doc.withArray("expected"))
                 if ("characteristicPresent".equals(e.path("kind").asText())
-                        && kenmerk.equals(e.path("characteristic").asText())) {
+                        && characteristic.equals(e.path("characteristic").asText())) {
                     ((ObjectNode) e).put("kind", "characteristicAbsent");
                     touched = true;
                 }
-            assertTrue(touched, naam + "/" + caseName + " hoort '" + kenmerk + "' AANWEZIG te verwachten — "
+            assertTrue(touched, naam + "/" + caseName + " hoort '" + characteristic + "' AANWEZIG te verwachten — "
                     + "anders muteert deze rij niets");
             Path mutant = tmp.resolve(naam + "-mutant.json");
             Files.writeString(mutant, doc.toPrettyString());
@@ -473,13 +473,13 @@ class WholePeriodQuantifierFoldWitnessTest {
      * text that wrote a clause before it refused went with that lowering.
      */
     @Test void the_earlier_refusal_axes_get_a_verdict_on_both_branches() throws Exception {
-        Path aanwezig = write("case-grens.json", caseDoc(schepen(
+        Path present = write("case-grens.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicPresent"));
         Path absent = write("case-grens-afwezig.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicAbsent"));
         Path bound = write("ir-grens.json", nonScalarBound());
         assertEquals("PLAYED", sameVerdict(bound, absent).status(), "de niet-scalaire grens, zoals ref");
-        assertEquals("FAIL", sameVerdict(bound, aanwezig).status(), "de niet-scalaire grens met de oude DRL-case");
+        assertEquals("FAIL", sameVerdict(bound, present).status(), "de niet-scalaire grens met de oude DRL-case");
 
         Path hoists = write("case-filterhijs.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
@@ -489,7 +489,7 @@ class WholePeriodQuantifierFoldWitnessTest {
         for (boolean wholePeriod : new boolean[]{true, false}) {
             String description = wholePeriod ? "heelperiodematrix" : "niet-temporele matrix";
             Path ir = write("ir-disjunctie-" + wholePeriod + ".json", foldUnderDisjunction(wholePeriod));
-            assertEquals("PLAYED", sameVerdict(ir, aanwezig).status(), description + ": de niet-conjunctieve kwantor, zoals ref");
+            assertEquals("PLAYED", sameVerdict(ir, present).status(), description + ": de niet-conjunctieve kwantor, zoals ref");
         }
     }
 
@@ -702,22 +702,22 @@ class WholePeriodQuantifierFoldWitnessTest {
     private record Schuit(String label, String json) {}
 
     /** One Schuit: a MAAND-granular {@code wachtwaarde} timeline over [van, tot). */
-    private static Schuit schuit(String label, String waarde, String van, String to) {
-        return schuit(label, waarde, van, to, false);
+    private static Schuit schuit(String label, String value, String van, String to) {
+        return schuit(label, value, van, to, false);
     }
 
-    private static Schuit schuit(String label, String waarde, String van, String to, boolean zeegaand) {
+    private static Schuit schuit(String label, String value, String van, String to, boolean zeegaand) {
         return new Schuit(label, """
                 { "label": "%s", "objectType": "Schuit",
                   "attributes": { "wachtwaarde": { "timeline": [
                       { "from": "%s", "to": "%s", "value": { "number": "%s" } } ] } },
                   "roles": {}, "characteristics": [%s] }"""
-                .formatted(label, van, to, waarde, zeegaand ? " \"zeegaand\" " : ""));
+                .formatted(label, van, to, value, zeegaand ? " \"zeegaand\" " : ""));
     }
 
     /** Een Schuit met TWEE segmenten van dezelfde waarde en een GAT ertussen — de dekking is niet aan een
      *  rand afgeknipt maar van binnen doorbroken. */
-    private static Schuit gapSchuit(String label, String waarde, String van1, String to1,
+    private static Schuit gapSchuit(String label, String value, String van1, String to1,
             String van2, String to2) {
         return new Schuit(label, """
                 { "label": "%s", "objectType": "Schuit",
@@ -725,7 +725,7 @@ class WholePeriodQuantifierFoldWitnessTest {
                       { "from": "%s", "to": "%s", "value": { "number": "%s" } },
                       { "from": "%s", "to": "%s", "value": { "number": "%s" } } ] } },
                   "roles": {}, "characteristics": [] }"""
-                .formatted(label, van1, to1, waarde, van2, to2, waarde));
+                .formatted(label, van1, to1, value, van2, to2, value));
     }
 
     /** Een Schuit ZONDER tijdlijn: het lid bestaat en de relatie bereikt het, maar het raakt geen bucket. */
@@ -765,11 +765,11 @@ class WholePeriodQuantifierFoldWitnessTest {
      * that exactly one of the two complementary expectations holds is what turns an absence into a verdict.
      */
     private boolean zeewaardig(String ir, String instances) throws Exception {
-        String aanwezig = play(ir, instances, "characteristicPresent");
+        String present = play(ir, instances, "characteristicPresent");
         String absent = play(ir, instances, "characteristicAbsent");
-        assertTrue((aanwezig == null) != (absent == null),
-                "precies één van beide verwachtingen hoort te halen — aanwezig=" + aanwezig + ", afwezig=" + absent);
-        return aanwezig == null;
+        assertTrue((present == null) != (absent == null),
+                "precies één van beide verwachtingen hoort te halen — aanwezig=" + present + ", afwezig=" + absent);
+        return present == null;
     }
 
     /**

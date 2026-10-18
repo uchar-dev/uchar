@@ -8,7 +8,7 @@ import java.util.List;
  * attribute of {@link #onderwerp}); {@link #defaults} are in DESCENDING priority and the highest default that
  * decides wins (attribute defaults fall through on a leeg consequence; the initialisation default, lowest, is
  * justified iff the target is empty in the input). Multiple defaults groups on ONE target are admissible only
- * as a declared-{@link #ongeordend} group (ch. 7.2), whose differing simultaneous decisions route to the §9.5
+ * as a declared-{@link #unordered} group (ch. 7.2), whose differing simultaneous decisions route to the §9.5
  * channel. The RegelSpraak resolver builds it from the dialect's own blocks only — {@code Uitzondering op},
  * {@code Afwijking van} and {@code Uitzonderingen ongeordend} ({@code grammar/DIVERGENCES.md} §4; a flat rule family
  * is never folded into one), one group per tree of blocks under a base rule, nested exceptions as
@@ -27,15 +27,15 @@ import java.util.List;
  *                   every one
  * @param defaults   the priority chain, highest first
  * @param bron       the statute/source annotation, or null
- * @param geldigheid the §13.4.2.5 validity window ({@link Geldigheid#ALTIJD} = always), or null
+ * @param geldigheid the §13.4.2.5 validity window ({@link Validity#ALTIJD} = always), or null
  */
-public record PrioritizedDefaults(String naam, String onderwerp, String kenmerk, String attribuut,
-                                  boolean ongeordend, List<Default> defaults, String bron,
-                                  Geldigheid geldigheid) {
+public record PrioritizedDefaults(String naam, String onderwerp, String characteristic, String attribute,
+                                  boolean unordered, List<Default> defaults, String source,
+                                  Validity validity) {
 
     /** Whether this group writes a characteristic (true) or an attribute (false). */
-    public boolean isKenmerk() { return kenmerk != null; }
+    public boolean isCharacteristic() { return characteristic != null; }
 
     /** The bare target name — the characteristic or the attribute, whichever this group carries. */
-    public String doel() { return kenmerk != null ? kenmerk : attribuut; }
+    public String target() { return characteristic != null ? characteristic : attribute; }
 }

@@ -42,7 +42,7 @@ class InstanceUnionPopulationWitnessTest {
      *  <p>Rood-eerst, measured 2026-09-22 on {@code corpus/negatief/wf110-unie-als-regelwaarde}: ref answered an
      *  EVALUATION FAULT and the ASP backend a TRANSLATION FAULT, both citing WF-110; the exec-model branch
      *  skipped with the GENERIC {@code regel (waarde buiten scope)}, which names no construct; and the DRL-TEXT
-     *  branch CRASHED — {@code NullPointerException} on {@code r.waarde().type().isNumber()}, because the
+     *  branch CRASHED — {@code NullPointerException} on {@code r.value().type().isNumber()}, because the
      *  union is the only loadable expression node whose {@code type()} is null by construction and the §4 unit
      *  restate read it unguarded. A crash names no form and reaches the gate as an ERROR instead of as a
      *  channel with a reason. This row is the fence for both halves: both branches refuse, and both name the
@@ -58,12 +58,12 @@ class InstanceUnionPopulationWitnessTest {
     private static final String WHOLE =
             "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
 
-    private static String objecttype(String naam, String mv) {
+    private static String objectType(String naam, String mv) {
         return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":false,\"plural\":\"%s\","
                 + "\"attributes\":[],\"characteristics\":[]}").formatted(naam, mv);
     }
 
-    private static String feittype(String naam, String oneRole, String manyRole, String manyType, String manyMv) {
+    private static String factType(String naam, String oneRole, String manyRole, String manyType, String manyMv) {
         return ("{\"node\":\"FactType\",\"name\":\"%s\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"%s\",\"objectType\":\"Jutter\","
                 + "\"many\":false},"
@@ -71,20 +71,20 @@ class InstanceUnionPopulationWitnessTest {
                 + "\"many\":true}]}").formatted(naam, oneRole, manyRole, manyType, manyMv);
     }
 
-    private static String branch(String elementType, String feittype, String rol) {
+    private static String branch(String elementType, String factType, String role) {
         return ("{\"node\":\"InstanceSetBranch\",\"elementType\":\"%s\","
                 + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"%s\",\"role\":\"%s\"},"
-                + "\"filter\":null,\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, feittype, rol);
+                + "\"filter\":null,\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, factType, role);
     }
 
     private static final String DOC = ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":["
             + "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
             + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":" + WHOLE + "}],"
             + "\"characteristics\":[]},"
-            + objecttype("Vondst", "Vondsten") + "," + objecttype("Kavel", "Kavels")
+            + objectType("Vondst", "Vondsten") + "," + objectType("Kavel", "Kavels")
             + "],\"factTypes\":["
-            + feittype("vondstaanmelding", "aanmelder", "aangemelde vondst", "Vondst", "aangemelde vondsten")
-            + "," + feittype("kaveltoewijzing", "kavelhouder", "duinkavel", "Kavel", "duinkavels")
+            + factType("vondstaanmelding", "aanmelder", "aangemelde vondst", "Vondst", "aangemelde vondsten")
+            + "," + factType("kaveltoewijzing", "kavelhouder", "duinkavel", "Kavel", "duinkavels")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
             + "\"dayKinds\":[]},"
             + "\"rules\":{\"rules\":[{\"node\":\"Rule\",\"name\":\"aantal strandvondsten\","

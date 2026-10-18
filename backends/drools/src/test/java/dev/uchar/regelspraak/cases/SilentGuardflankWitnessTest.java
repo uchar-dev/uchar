@@ -71,7 +71,7 @@ class SilentGuardflankWitnessTest {
         JsonNode c = caseOf("[\"risicopost\"]", "[]", "0");
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
             RuntimeException e = assertThrows(RuntimeException.class, () -> CaseRunner.playCase(ir, c, branch));
-            assertEquals("Rekenfout", e.getClass().getSimpleName(), () -> branch + ": " + e);
+            assertEquals("ComputeFault", e.getClass().getSimpleName(), () -> branch + ": " + e);
             assertTrue(e.getMessage().contains("Unresolved condition reached in evaluation"), branch + ": " + e.getMessage());
         }
     }
@@ -151,14 +151,14 @@ class SilentGuardflankWitnessTest {
         return tmp;
     }
 
-    /** The same model, with {@code kenmerk} first DECLARED on {@code objecttype} — WF-100's declaration half, which
+    /** The same model, with {@code kenmerk} first DECLARED on {@code objectType} — WF-100's declaration half, which
      *  the two flank guards need and the third-type guard already has from the golden. */
-    private Path withCharacteristicOnType(String objecttype, String kenmerk, ObjectNode guard) throws Exception {
+    private Path withCharacteristicOnType(String objectType, String characteristic, ObjectNode guard) throws Exception {
         Path p = withGuard(guard);
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(p));
-        ObjectNode ot = IrPath.objectType(ir, objecttype);
+        ObjectNode ot = IrPath.objectType(ir, objectType);
         ot.putArray("characteristics").addObject()
-                .put("node", "Characteristic").put("name", kenmerk).put("kind", "adjectival");
+                .put("node", "Characteristic").put("name", characteristic).put("kind", "adjectival");
         Files.writeString(p, ir.toString());
         return p;
     }
@@ -167,24 +167,24 @@ class SilentGuardflankWitnessTest {
         return JSON.createObjectNode().put("node", "Unresolved").set("source", IrPath.sourceReference("het sein het sein is"));
     }
 
-    private static ObjectNode characteristicGuard(String kenmerk, String eigenaar, String bron) {
-        ObjectNode k = JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", kenmerk);
-        k.put("negated", false).put("host", eigenaar);
-        k.set("source", IrPath.sourceReference(bron));
+    private static ObjectNode characteristicGuard(String characteristic, String owner, String source) {
+        ObjectNode k = JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", characteristic);
+        k.put("negated", false).put("host", owner);
+        k.set("source", IrPath.sourceReference(source));
         return k;
     }
 
     /** One Kustvak with one Post carrying two Seinen — the creation's whole reach — expecting {@code vakseinaantal}. */
-    private static JsonNode caseOf(String postCharacteristics, String s1Characteristics, String verwacht) throws Exception {
-        return rawCase("[]", postCharacteristics, s1Characteristics, verwacht);
+    private static JsonNode caseOf(String postCharacteristics, String s1Characteristics, String expected) throws Exception {
+        return rawCase("[]", postCharacteristics, s1Characteristics, expected);
     }
 
     /** The same population with the characteristic on the KUSTVAK instead. */
-    private static JsonNode caseWithVak(String vakCharacteristics, String verwacht) throws Exception {
-        return rawCase(vakCharacteristics, "[]", "[]", verwacht);
+    private static JsonNode caseWithVak(String vakCharacteristics, String expected) throws Exception {
+        return rawCase(vakCharacteristics, "[]", "[]", expected);
     }
 
-    private static JsonNode rawCase(String vakCharacteristics, String postCharacteristics, String s1Characteristics, String verwacht)
+    private static JsonNode rawCase(String vakCharacteristics, String postCharacteristics, String s1Characteristics, String expected)
             throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
@@ -202,6 +202,6 @@ class SilentGuardflankWitnessTest {
                       { "kind": "attributeValue", "label": "V1", "attribute": "vakseinaantal",
                         "value": { "number": "%s" } },
                       { "kind": "consistent" } ] }
-                """.formatted(vakCharacteristics, postCharacteristics, s1Characteristics, verwacht));
+                """.formatted(vakCharacteristics, postCharacteristics, s1Characteristics, expected));
     }
 }

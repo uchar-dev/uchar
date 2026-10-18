@@ -182,13 +182,13 @@ class UniquenessKeyFormWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** The exec-model branch refuses the uniqueness {@code vorm} of {@code ir} by name: its key {@code sleutel}
+    /** The exec-model branch refuses the uniqueness {@code form} of {@code ir} by name: its key {@code key}
      *  is a second temporal component. */
-    private static void refused(Path ir, String caseJson, String vorm, String sleutel) throws Exception {
+    private static void refused(Path ir, String caseJson, String form, String key) throws Exception {
         JsonNode c = JSON.readTree(caseJson);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(ir, c, DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains(vorm + " — een uniciteitssleutel '" + sleutel + "' van Strandvondst op een"
+        assertTrue(e.getMessage().contains(form + " — een uniciteitssleutel '" + key + "' van Strandvondst op een"
                 + " tijdlijn naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel"), e.getMessage());
     }
 

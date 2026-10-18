@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -28,7 +28,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -82,19 +82,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsQuantifierFoldWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Ploeg", List.of(), List.of("sterk", "zwak", "bezet", "krap", "paraat",
+            TmsDocuments.objectType("Ploeg", List.of(), List.of("sterk", "zwak", "bezet", "krap", "paraat",
                     "gekwalificeerd", "rustig", "volledig", "keurbaar")),
-            TmsDocuments.objecttype("Wacht", List.of(attribuut("dienstjaren", WHOLE), attribuut("klachten", WHOLE),
-                    attribuut("opgave", WHOLE), attribuut("punten", WHOLE), attribuut("aanmelding", WHOLE),
-                    attribuut("deelnemers", WHOLE)), List.of("geschorst", "bevoegd", "gediplomeerd"))),
+            TmsDocuments.objectType("Wacht", List.of(attribute("dienstjaren", WHOLE), attribute("klachten", WHOLE),
+                    attribute("opgave", WHOLE), attribute("punten", WHOLE), attribute("aanmelding", WHOLE),
+                    attribute("deelnemers", WHOLE)), List.of("geschorst", "bevoegd", "gediplomeerd"))),
             List.of(factTypeOneToMany("ploegindeling", "ploeg", "Ploeg", "wacht", "Wacht", "wachten")));
 
     /** A quantifier fold over the Wachten of the Ploeg; a threshold of 0 writes none (all, none). */
-    static String quantifierFold(String quantifier, int threshold, String filter, String test, String bron) {
+    static String quantifierFold(String quantifier, int threshold, String filter, String test, String source) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\""
                 + (threshold > 0 ? ",\"threshold\":" + threshold : "") + ",\"elementType\":\"Wacht\""
                 + (filter == null ? "" : ",\"filter\":" + filter) + ",\"test\":" + test + ","
-                + sourceRole("ploegindeling", "wacht") + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + sourceRole("ploegindeling", "wacht") + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     static final String SCHORSING = characteristicRule("schorsing", "Wacht", "geschorst",
@@ -138,7 +138,7 @@ class TmsQuantifierFoldWitnessTest {
     static final String KRAP_PER_PARTICIPANT = characteristicRule("krapte", "Ploeg", "krap", quantifierFold("atMost", 1, null,
             perParticipant(), "ten hoogste 1 van de wachten van de Ploeg aan de volgende voorwaarde voldoet: zijn opgave"
                     + " gedeeld door zijn deelnemers is groter dan 2"));
-    static final String BEZET_PER_PARTICIPANT = characteristicRule("bezetting", "Ploeg", "bezet", quantifierFold("atLeast", 2,
+    static final String OCCUPIED_PER_PARTICIPANT = characteristicRule("bezetting", "Ploeg", "bezet", quantifierFold("atLeast", 2,
             null, perParticipant(), "ten minste 2 van de wachten van de Ploeg aan de volgende voorwaarde voldoen: zijn"
                     + " opgave gedeeld door zijn deelnemers is groter dan 2"));
     static final String CHECKABLE = characteristicRule("keurbaarheid", "Ploeg", "keurbaar", quantifierFold("all", 0,
@@ -182,51 +182,51 @@ class TmsQuantifierFoldWitnessTest {
             "zwak", List.of(false, true), "bezet", List.of(true, false), "krap", List.of(false, true),
             "paraat", List.of(false, false), "gekwalificeerd", List.of(true, true));
 
-    static JsonNode caseDocument(List<String> world, String kenmerk, List<Boolean> outcome) throws Exception {
-        List<String> verwachtingen = new ArrayList<>();
-        for (int i = 0; i < outcome.size(); i++) verwachtingen.add(verwacht("P" + (i + 1), kenmerk, outcome.get(i)));
-        verwachtingen.add(verwacht("W1", "bevoegd", true));
-        verwachtingen.add(verwacht("W2", "geschorst", true));
-        verwachtingen.add(verwacht("W2", "bevoegd", false));
-        verwachtingen.add(consistent());
-        return TmsDocuments.caseDocument(world, verwachtingen);
+    static JsonNode caseDocument(List<String> world, String characteristic, List<Boolean> outcome) throws Exception {
+        List<String> expectations = new ArrayList<>();
+        for (int i = 0; i < outcome.size(); i++) expectations.add(expected("P" + (i + 1), characteristic, outcome.get(i)));
+        expectations.add(expected("W1", "bevoegd", true));
+        expectations.add(expected("W2", "geschorst", true));
+        expectations.add(expected("W2", "bevoegd", false));
+        expectations.add(consistent());
+        return TmsDocuments.caseDocument(world, expectations);
     }
 
     @Test void every_quantifier_over_a_characteristic_that_later_lapses() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> k : QUANTIFIERS) {
-            String kenmerk = k.get(0);
+            String characteristic = k.get(0);
             for (List<String> order : TmsDocuments.permutations(List.of(SCHORSING, BEVOEGDHEID, k.get(1)))) {
                 List<String> names = TmsDocuments.ruleNames(order);
                 Path ir = TmsDocuments.document(MODEL, order);
-                for (JsonNode caseDocument : List.of(caseDocument(worldA(), kenmerk, OUTCOME_A.get(kenmerk)),
-                        caseDocument(worldB(), kenmerk, OUTCOME_B.get(kenmerk)))) {
+                for (JsonNode caseDocument : List.of(caseDocument(worldA(), characteristic, OUTCOME_A.get(characteristic)),
+                        caseDocument(worldB(), characteristic, OUTCOME_B.get(characteristic)))) {
                     outcomes.add(k.get(2) + " " + names + " "
                             + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-                    verwacht.add(k.get(2) + " " + names + " gespeeld");
+                    expected.add(k.get(2) + " " + names + " gespeeld");
                 }
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void a_filter_and_a_matrix_over_later_derived_values() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(SCHORSING, BEVOEGDHEID, POINTS, QUALIFIED))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (JsonNode caseDocument : List.of(caseDocument(worldA(), "gekwalificeerd", OUTCOME_A.get("gekwalificeerd")),
                     caseDocument(worldB(), "gekwalificeerd", OUTCOME_B.get("gekwalificeerd")))) {
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " gespeeld");
+                expected.add(names + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void a_characteristic_that_lapses_intermediate_does_not_count_in_every_order_of_the_generated_rules() throws Exception {
         for (List<String> k : QUANTIFIERS) {
-            String kenmerk = k.get(0);
+            String characteristic = k.get(0);
             DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL,
                     List.of(SCHORSING, BEVOEGDHEID, k.get(1))), DroolsBackend.Branch.EXEC_MODEL);
             int intermediate = 0;
@@ -239,15 +239,15 @@ class TmsQuantifierFoldWitnessTest {
                         List.of());
                 for (Object w : List.of(w1, w2, w6)) setRole(w, "ploeg", p1);
                 int[] bevoegd = {0};
-                TmsDocuments.vuur(b, order, List.of(p1, w1, w2, w6), sessie -> sessie.addEventListener(
+                TmsDocuments.fire(b, order, List.of(p1, w1, w2, w6), session -> session.addEventListener(
                         new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
                                 if (e.getObject() instanceof HasCharacteristic h && h.onderwerp() == w2
-                                        && h.kenmerk().naam().equals("bevoegd")) bevoegd[0]++;
+                                        && h.characteristic().naam().equals("bevoegd")) bevoegd[0]++;
                             }
-                        }), sessie -> { });
-                assertEquals(OUTCOME_B.get(kenmerk).get(0), TmsDocuments.has(p1, kenmerk),
-                        () -> kenmerk + " van P1 in volgorde " + names);
+                        }), session -> { });
+                assertEquals(OUTCOME_B.get(characteristic).get(0), TmsDocuments.has(p1, characteristic),
+                        () -> characteristic + " van P1 in volgorde " + names);
                 assertEquals(false, TmsDocuments.has(w2, "bevoegd"), () -> "W2 in volgorde " + names);
                 if (bevoegd[0] > 0) intermediate++;
             }
@@ -255,13 +255,13 @@ class TmsQuantifierFoldWitnessTest {
         }
     }
 
-    private static void setRole(Object beanObject, String rol, Object doel) throws Exception {
+    private static void setRole(Object beanObject, String role, Object target) throws Exception {
         for (java.lang.reflect.Method m : beanObject.getClass().getMethods())
-            if (m.getName().equals(dev.uchar.regelspraak.transpiler.kern.Namen.setter(rol)) && m.getParameterCount() == 1) {
-                m.invoke(beanObject, doel);
+            if (m.getName().equals(dev.uchar.regelspraak.transpiler.core.Namen.setter(role)) && m.getParameterCount() == 1) {
+                m.invoke(beanObject, target);
                 return;
             }
-        throw new AssertionError("geen setter voor " + rol + " op " + beanObject.getClass());
+        throw new AssertionError("geen setter voor " + role + " op " + beanObject.getClass());
     }
 
     static final String A = melder("A", 10, 1, false), B = melder("B", 10, null, false),
@@ -274,63 +274,63 @@ class TmsQuantifierFoldWitnessTest {
     }
 
     /** {@code regel} beside the derivation of the deelnemers, in both orders, over P1 with {@code leden} in that order
-     *  (and the members' instances {@code instanties}), with the expectations {@code verwachtingen}; each outcome is
+     *  (and the members' instances {@code instances}), with the expectations {@code expectations}; each outcome is
      *  {@code uitkomst}. */
-    private static void playBoth(String regel, List<String> members, List<String> instanties, List<String> verwachtingen,
-                                   String outcome, List<String> outcomes, List<String> verwacht) throws Exception {
+    private static void playBoth(String regel, List<String> members, List<String> instances, List<String> expectations,
+                                   String outcome, List<String> outcomes, List<String> expected) throws Exception {
         for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, regel))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             List<String> world = new ArrayList<>(List.of(ploeg("P1", members)));
-            world.addAll(instanties);
-            JsonNode caseDocument = TmsDocuments.caseDocument(world, verwachtingen);
+            world.addAll(instances);
+            JsonNode caseDocument = TmsDocuments.caseDocument(world, expectations);
             outcomes.add(names + " " + members + " " + TmsFaultWitnessTest.play(ir, caseDocument,
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " " + members + " " + outcome);
+            expected.add(names + " " + members + " " + outcome);
         }
     }
 
     @Test void the_matrix_deposits_only_for_a_member_that_reaches_the_short_circuit() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
-        playBoth(CALM, List.of("A", "B"), List.of(A, B), List.of(verwacht("P1", "rustig", false), consistent()),
-                "gespeeld", outcomes, verwacht);
-        playBoth(CALM, List.of("B", "A"), List.of(A, B), List.of(verwacht("P1", "rustig", false),
-                inconsistent("rustigheid", "P1")), "gespeeld", outcomes, verwacht);
-        playBoth(COMPLETE, List.of("A", "B"), List.of(A, B), List.of(verwacht("P1", "volledig", false),
-                inconsistent("volledigheid", "P1")), "gespeeld", outcomes, verwacht);
-        playBoth(COMPLETE, List.of("B", "A"), List.of(A, B), List.of(verwacht("P1", "volledig", false),
-                inconsistent("volledigheid", "P1")), "gespeeld", outcomes, verwacht);
-        assertEquals(verwacht, outcomes);
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        playBoth(CALM, List.of("A", "B"), List.of(A, B), List.of(expected("P1", "rustig", false), consistent()),
+                "gespeeld", outcomes, expected);
+        playBoth(CALM, List.of("B", "A"), List.of(A, B), List.of(expected("P1", "rustig", false),
+                inconsistent("rustigheid", "P1")), "gespeeld", outcomes, expected);
+        playBoth(COMPLETE, List.of("A", "B"), List.of(A, B), List.of(expected("P1", "volledig", false),
+                inconsistent("volledigheid", "P1")), "gespeeld", outcomes, expected);
+        playBoth(COMPLETE, List.of("B", "A"), List.of(A, B), List.of(expected("P1", "volledig", false),
+                inconsistent("volledigheid", "P1")), "gespeeld", outcomes, expected);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_matrix_fails_only_for_a_member_that_reaches_the_short_circuit() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
-        playBoth(CALM, List.of("A", "C"), List.of(A, C), List.of(verwacht("P1", "rustig", false), consistent()),
-                "gespeeld", outcomes, verwacht);
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        playBoth(CALM, List.of("A", "C"), List.of(A, C), List.of(expected("P1", "rustig", false), consistent()),
+                "gespeeld", outcomes, expected);
         playBoth(CALM, List.of("C", "A"), List.of(A, C), List.of(consistent()), division("rustigheid"), outcomes,
-                verwacht);
+                expected);
         playBoth(COMPLETE, List.of("A", "C"), List.of(A, C), List.of(consistent()), division("volledigheid"), outcomes,
-                verwacht);
+                expected);
         playBoth(COMPLETE, List.of("C", "A"), List.of(A, C), List.of(consistent()), division("volledigheid"), outcomes,
-                verwacht);
+                expected);
         // the empty prefix (ch. 5.10): at most 1 over one contributor cannot be exceeded, at least 2 is out of reach
-        playBoth(KRAP_PER_PARTICIPANT, List.of("C"), List.of(C), List.of(verwacht("P1", "krap", true), consistent()),
-                "gespeeld", outcomes, verwacht);
-        playBoth(BEZET_PER_PARTICIPANT, List.of("C"), List.of(C), List.of(verwacht("P1", "bezet", false), consistent()),
-                "gespeeld", outcomes, verwacht);
-        playBoth(KRAP_PER_PARTICIPANT, List.of("B"), List.of(B), List.of(verwacht("P1", "krap", true), consistent()),
-                "gespeeld", outcomes, verwacht);
-        assertEquals(verwacht, outcomes);
+        playBoth(KRAP_PER_PARTICIPANT, List.of("C"), List.of(C), List.of(expected("P1", "krap", true), consistent()),
+                "gespeeld", outcomes, expected);
+        playBoth(OCCUPIED_PER_PARTICIPANT, List.of("C"), List.of(C), List.of(expected("P1", "bezet", false), consistent()),
+                "gespeeld", outcomes, expected);
+        playBoth(KRAP_PER_PARTICIPANT, List.of("B"), List.of(B), List.of(expected("P1", "krap", true), consistent()),
+                "gespeeld", outcomes, expected);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_filter_of_each_member_is_read_before_the_matrix() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> members : List.of(List.of("D", "B"), List.of("B", "D")))
-            playBoth(CHECKABLE, members, List.of(D, B), List.of(verwacht("P1", "keurbaar", false),
-                    inconsistent("keurbaarheid", "P1")), "gespeeld", outcomes, verwacht);
+            playBoth(CHECKABLE, members, List.of(D, B), List.of(expected("P1", "keurbaar", false),
+                    inconsistent("keurbaarheid", "P1")), "gespeeld", outcomes, expected);
         // without B the filter deposits nothing, and D alone decides
-        playBoth(CHECKABLE, List.of("D"), List.of(D), List.of(verwacht("P1", "keurbaar", false), consistent()),
-                "gespeeld", outcomes, verwacht);
-        assertEquals(verwacht, outcomes);
+        playBoth(CHECKABLE, List.of("D"), List.of(D), List.of(expected("P1", "keurbaar", false), consistent()),
+                "gespeeld", outcomes, expected);
+        assertEquals(expected, outcomes);
     }
 }

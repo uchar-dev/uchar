@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 import dev.uchar.regelspraak.transpiler.tms.TextOrder;
 import dev.uchar.regelspraak.transpiler.tms.Value;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.decision;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
@@ -31,19 +31,19 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.jutterBean;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.lees;
+import static dev.uchar.regelspraak.cases.TmsDocuments.read;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The write-back of the exec-model branch ({@code DroolsBackend.zetAfgeleideWaarden}). The branch derives with
+ * The write-back of the exec-model branch ({@code DroolsBackend.setDerivedValues}). The branch derives with
  * logical inserts and never writes a bean while it fires, so a derived characteristic reaches the bean through this call
  * only, after the fire. "Een Jutter is vergund indien hij erkend is" over J1 (erkend in the input), J2 (vergund in the
  * input, not erkend) and J3 (neither): before the call J1's bean is not vergund, though the session holds the
@@ -116,9 +116,9 @@ class TmsWriteBackWitnessTest {
             assertNull(CaseRunner.playCase(document(), TmsDocuments.caseDocument(
                     List.of(TmsDocuments.jutter("J1", List.of("erkend")), TmsDocuments.jutter("J2", List.of("vergund")),
                             TmsDocuments.jutter("J3", List.of())),
-                    List.of(verwacht("J1", "vergund", true), verwacht("J1", "erkend", true),
-                            verwacht("J2", "vergund", true), verwacht("J2", "erkend", false),
-                            verwacht("J3", "vergund", false), verwacht("J3", "erkend", false))), branch), branch.toString());
+                    List.of(expected("J1", "vergund", true), expected("J1", "erkend", true),
+                            expected("J2", "vergund", true), expected("J2", "erkend", false),
+                            expected("J3", "vergund", false), expected("J3", "erkend", false))), branch), branch.toString());
     }
 
     @Test void only_after_the_write_back_the_bean_carries_the_derived_characteristic() throws Exception {
@@ -128,20 +128,20 @@ class TmsWriteBackWitnessTest {
     private static void setCharacteristicBack(DroolsBackend.Build b) throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = b.kieBase().newKieSession();
+        KieSession session = b.kieBase().newKieSession();
         try {
             Object j1 = jutterBean(b.beanLoader(), List.of("erkend"));
             Object j2 = jutterBean(b.beanLoader(), List.of("vergund"));
             Object j3 = jutterBean(b.beanLoader(), List.of());
-            for (Object j : List.of(j1, j2, j3)) sessie.insert(j);
+            for (Object j : List.of(j1, j2, j3)) session.insert(j);
             String branch = b.branch() + ": ";
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), branch + "the fixpoint");
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), branch + "the fixpoint");
             // the derivation is a fact of the session, and the bean does not carry it yet
-            List<Object> derived = new ArrayList<>(sessie.getObjects(o -> o instanceof HasCharacteristic));
-            assertEquals(List.of(new HasCharacteristic(j1, ElementSleutel.van("Jutter", "vergund", true))), derived,
+            List<Object> derived = new ArrayList<>(session.getObjects(o -> o instanceof HasCharacteristic));
+            assertEquals(List.of(new HasCharacteristic(j1, ElementKey.van("Jutter", "vergund", true))), derived,
                     branch + "the derivation");
             assertFalse(has(j1, "vergund"), branch + "J1 is vergund before the write-back");
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            DroolsBackend.setDerivedValues(b, session);
             assertTrue(has(j1, "vergund"), branch + "J1 vergund");
             assertTrue(has(j1, "erkend"), branch + "J1 erkend, the input, stays");
             assertTrue(has(j2, "vergund"), branch + "J2 vergund, the input, stays");
@@ -149,7 +149,7 @@ class TmsWriteBackWitnessTest {
             assertFalse(has(j3, "vergund"), branch + "J3 vergund");
             assertFalse(has(j3, "erkend"), branch + "J3 erkend");
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -161,9 +161,9 @@ class TmsWriteBackWitnessTest {
 
     // ---------------- attributes: a computation, an initialisation and two defaults groups ----------------
 
-    private static final String VONDST = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("gewicht", WHOLE), attribuut("uitkering", WHOLE), attribuut("vindloon", WHOLE),
-                    attribuut("heffing", WHOLE)),
+    private static final String VONDST = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("gewicht", WHOLE), attribute("uitkering", WHOLE), attribute("vindloon", WHOLE),
+                    attribute("heffing", WHOLE)),
             List.of("zwaar", "nx", "ny", "vrijgesteld"))), List.of());
 
     private static final List<String> RULES = List.of(
@@ -174,7 +174,7 @@ class TmsWriteBackWitnessTest {
 
     private static final List<String> GROUPS = List.of(
             attributeGroup("heffing van een vondst", "Vondst", "heffing",
-                    List.of(standaard(check("zwaar", false), number("40")))),
+                    List.of(defaultEntry(check("zwaar", false), number("40")))),
             characteristicGroup("vrijstelling van een vondst", "Vondst", "vrijgesteld",
                     List.of(decision(check("ny", false), false), decision(check("nx", false), true))));
 
@@ -212,16 +212,16 @@ class TmsWriteBackWitnessTest {
      *  {@code DRL_TEXT} with the rules of its text in each order. */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(vondstdocument(RULES, GROUPS), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int orders = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261013L, 100)) {
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261013L, 100)) {
             fireAndSetBack(b, TmsDocuments.kieBase(b, order), " op " + b.branch() + " in volgorde "
                     + order.stream().map(Rule::getName).toList());
             orders++;
         }
         DroolsBackend.Build t = DroolsBackend.build(vondstdocument(RULES, GROUPS), DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         for (List<String> order : TmsDocuments.sample(rules, 20261013L, 100)) {
             fireAndSetBack(t, TextOrder.kieBase(t, order), " op " + t.branch() + " in volgorde " + order);
             orders++;
@@ -235,39 +235,39 @@ class TmsWriteBackWitnessTest {
     private static void fireAndSetBack(DroolsBackend.Build b, KieBase kieBase, String where) throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = kieBase.newKieSession();
+        KieSession session = kieBase.newKieSession();
         try {
             List<Object> v = new ArrayList<>();
             for (int i = 0; i < NUMBERS.size(); i++)
                 v.add(beanObject(b.beanLoader(), "Vondst", NUMBERS.get(i), INPUT_CHARACTERISTICS.get(i)));
-            for (Object beanObject : v) sessie.insert(beanObject);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), "geen fixpunt" + where);
+            for (Object beanObject : v) session.insert(beanObject);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), "geen fixpunt" + where);
             // the session holds the derivations, and each bean still holds its input only
-            assertNumber("40", sessionValue(sessie, v.get(0), "heffing"), "V1 heffing in the session" + where);
-            assertNumber("15", sessionValue(sessie, v.get(0), "vindloon"), "V1 vindloon in the session" + where);
-            assertNumber("20", sessionValue(sessie, v.get(0), "uitkering"), "V1 uitkering in the session" + where);
-            assertTrue(sessie.getObjects(o -> o instanceof HasCharacteristic h && h.onderwerp() == v.get(1)).size() == 1,
+            assertNumber("40", sessionValue(session, v.get(0), "heffing"), "V1 heffing in the session" + where);
+            assertNumber("15", sessionValue(session, v.get(0), "vindloon"), "V1 vindloon in the session" + where);
+            assertNumber("20", sessionValue(session, v.get(0), "uitkering"), "V1 uitkering in the session" + where);
+            assertTrue(session.getObjects(o -> o instanceof HasCharacteristic h && h.onderwerp() == v.get(1)).size() == 1,
                     "V2 vrijgesteld in the session" + where);
-            assertNull(lees(v.get(0), "uitkering"), "V1 uitkering before the write-back" + where);
-            assertNull(lees(v.get(0), "vindloon"), "V1 vindloon before the write-back" + where);
-            assertNumber("7", lees(v.get(0), "heffing"), "V1 heffing before the write-back" + where);
+            assertNull(read(v.get(0), "uitkering"), "V1 uitkering before the write-back" + where);
+            assertNull(read(v.get(0), "vindloon"), "V1 vindloon before the write-back" + where);
+            assertNumber("7", read(v.get(0), "heffing"), "V1 heffing before the write-back" + where);
             assertFalse(has(v.get(1), "vrijgesteld"), "V2 vrijgesteld before the write-back" + where);
-            assertNull(lees(v.get(2), "uitkering"), "V3 uitkering before the write-back" + where);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
-            assertNumber("20", lees(v.get(0), "uitkering"), "V1 uitkering" + where);
-            assertNumber("15", lees(v.get(0), "vindloon"), "V1 vindloon" + where);
-            assertNumber("40", lees(v.get(0), "heffing"), "V1 heffing" + where);
+            assertNull(read(v.get(2), "uitkering"), "V3 uitkering before the write-back" + where);
+            DroolsBackend.setDerivedValues(b, session);
+            assertNumber("20", read(v.get(0), "uitkering"), "V1 uitkering" + where);
+            assertNumber("15", read(v.get(0), "vindloon"), "V1 vindloon" + where);
+            assertNumber("40", read(v.get(0), "heffing"), "V1 heffing" + where);
             assertTrue(has(v.get(0), "vrijgesteld"), "V1 vrijgesteld, the input, stays" + where);
-            assertNumber("20", lees(v.get(1), "uitkering"), "V2 uitkering" + where);
-            assertNumber("3", lees(v.get(1), "vindloon"), "V2 vindloon, the input, stays" + where);
-            assertNumber("7", lees(v.get(1), "heffing"), "V2 heffing, the input, stays" + where);
+            assertNumber("20", read(v.get(1), "uitkering"), "V2 uitkering" + where);
+            assertNumber("3", read(v.get(1), "vindloon"), "V2 vindloon, the input, stays" + where);
+            assertNumber("7", read(v.get(1), "heffing"), "V2 heffing, the input, stays" + where);
             assertTrue(has(v.get(1), "vrijgesteld"), "V2 vrijgesteld" + where);
-            assertNumber("8", lees(v.get(2), "uitkering"), "V3 uitkering" + where);
-            assertNumber("9", lees(v.get(2), "vindloon"), "V3 vindloon" + where);
-            assertNull(lees(v.get(2), "heffing"), "V3 heffing" + where);
+            assertNumber("8", read(v.get(2), "uitkering"), "V3 uitkering" + where);
+            assertNumber("9", read(v.get(2), "vindloon"), "V3 vindloon" + where);
+            assertNull(read(v.get(2), "heffing"), "V3 heffing" + where);
             assertFalse(has(v.get(2), "vrijgesteld"), "V3 vrijgesteld" + where);
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -279,7 +279,7 @@ class TmsWriteBackWitnessTest {
         for (DroolsBackend.Branch branch : BRANCHES) {
             List<String> sentences = new ArrayList<>();
             Object v1 = twoWriters(branch, new BigDecimal("20"), new BigDecimal("7"), sentences);
-            Object written = lees(v1, "uitkering");
+            Object written = read(v1, "uitkering");
             assertEquals(2, sentences.size(), () -> branch + ": a failure in each order, got " + sentences + ", V1 uitkering "
                     + written);
             assertEquals("geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel"
@@ -297,36 +297,36 @@ class TmsWriteBackWitnessTest {
             List<String> sentences = new ArrayList<>();
             Object v1 = twoWriters(branch, new BigDecimal("20"), new BigDecimal("20.0"), sentences);
             assertEquals(List.of(), sentences, branch.toString());
-            assertNumber("20", lees(v1, "uitkering"), branch + ": V1 uitkering");
+            assertNumber("20", read(v1, "uitkering"), branch + ": V1 uitkering");
         }
     }
 
     /** Puts a Waarde of {@code eerste} by the rule "uitkering" and one of {@code tweede} by another writer on the
      *  uitkering of one Vondst, in both orders, each in a fresh session of {@code branch}, writes back, and collects the
      *  failures. */
-    private static Object twoWriters(DroolsBackend.Branch branch, BigDecimal eerste, BigDecimal tweede,
+    private static Object twoWriters(DroolsBackend.Branch branch, BigDecimal first, BigDecimal second,
                                          List<String> sentences) throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(vondstdocument(RULES, GROUPS), branch);
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         try {
             Object v1 = beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
-            ElementSleutel uitkering = ElementSleutel.van("Vondst", "uitkering", false);
-            Value a = new Value(v1, uitkering, eerste, "uitkering");
-            Value z = new Value(v1, uitkering, tweede, "uitkering volgens een tweede regel");
+            ElementKey uitkering = ElementKey.van("Vondst", "uitkering", false);
+            Value a = new Value(v1, uitkering, first, "uitkering");
+            Value z = new Value(v1, uitkering, second, "uitkering volgens een tweede regel");
             for (List<Value> order : List.of(List.of(a, z), List.of(z, a))) {
-                KieSession sessie = b.kieBase().newKieSession();
+                KieSession session = b.kieBase().newKieSession();
                 try {
-                    order.forEach(sessie::insert);
+                    order.forEach(session::insert);
                     // no rule reads a Waarde without its Vondst in the session, so the fire leaves the two as they are
-                    assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fixpoint");
+                    assertNull(DroolsBackend.fire(b, session).noFixpoint(), "the fixpoint");
                     try {
-                        DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                        DroolsBackend.setDerivedValues(b, session);
                     } catch (IllegalStateException e) {
                         sentences.add(e.getMessage());
                     }
                 } finally {
-                    sessie.dispose();
+                    session.dispose();
                 }
             }
             return v1;
@@ -340,32 +340,32 @@ class TmsWriteBackWitnessTest {
     }
 
     private static JsonNode vondstCase() throws Exception {
-        List<String> instanties = new ArrayList<>();
+        List<String> instances = new ArrayList<>();
         for (int i = 0; i < NUMBERS.size(); i++)
-            instanties.add(instance("V" + (i + 1), "Vondst", NUMBERS.get(i), INPUT_CHARACTERISTICS.get(i), Map.of()));
-        return TmsDocuments.caseDocument(instanties,
-                List.of(waarde("V1", "uitkering", "20"), waarde("V1", "vindloon", "15"), waarde("V1", "heffing", "40"),
-                        verwacht("V1", "vrijgesteld", true),
-                        waarde("V2", "uitkering", "20"), waarde("V2", "vindloon", "3"), waarde("V2", "heffing", "7"),
-                        verwacht("V2", "vrijgesteld", true),
-                        waarde("V3", "uitkering", "8"), waarde("V3", "vindloon", "9"), waarde("V3", "heffing", null),
-                        verwacht("V3", "vrijgesteld", false)));
+            instances.add(instance("V" + (i + 1), "Vondst", NUMBERS.get(i), INPUT_CHARACTERISTICS.get(i), Map.of()));
+        return TmsDocuments.caseDocument(instances,
+                List.of(value("V1", "uitkering", "20"), value("V1", "vindloon", "15"), value("V1", "heffing", "40"),
+                        expected("V1", "vrijgesteld", true),
+                        value("V2", "uitkering", "20"), value("V2", "vindloon", "3"), value("V2", "heffing", "7"),
+                        expected("V2", "vrijgesteld", true),
+                        value("V3", "uitkering", "8"), value("V3", "vindloon", "9"), value("V3", "heffing", null),
+                        expected("V3", "vrijgesteld", false)));
     }
 
     private static String documentOrder(List<String> rules, List<String> groups) throws Exception {
         return " in documentvolgorde " + TmsDocuments.ruleNames(rules) + " " + TmsDocuments.ruleNames(groups);
     }
 
-    /** The value of the one {@link Value} the session holds on {@code attribuut} of {@code beanObject}, or null. */
-    private static Object sessionValue(KieSession sessie, Object beanObject, String attribuut) {
-        List<Object> w = new ArrayList<>(sessie.getObjects(o -> o instanceof Value x && x.onderwerp() == beanObject
-                && x.attribuut().naam().equals(attribuut)));
-        assertTrue(w.size() <= 1, () -> "meer dan één Waarde op " + attribuut + ": " + w);
-        return w.isEmpty() ? null : ((Value) w.get(0)).waarde();
+    /** The value of the one {@link Value} the session holds on {@code attribute} of {@code beanObject}, or null. */
+    private static Object sessionValue(KieSession session, Object beanObject, String attribute) {
+        List<Object> w = new ArrayList<>(session.getObjects(o -> o instanceof Value x && x.onderwerp() == beanObject
+                && x.attribute().naam().equals(attribute)));
+        assertTrue(w.size() <= 1, () -> "meer dan één Waarde op " + attribute + ": " + w);
+        return w.isEmpty() ? null : ((Value) w.get(0)).value();
     }
 
-    private static void assertNumber(String verwacht, Object werkelijk, String description) {
-        assertTrue(werkelijk instanceof BigDecimal w && new BigDecimal(verwacht).compareTo(w) == 0,
-                () -> description + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    private static void assertNumber(String expected, Object actual, String description) {
+        assertTrue(actual instanceof BigDecimal w && new BigDecimal(expected).compareTo(w) == 0,
+                () -> description + ": verwacht " + expected + ", werkelijk " + actual);
     }
 }

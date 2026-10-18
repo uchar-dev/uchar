@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import dev.uchar.regelspraak.cases.CaseRunner;
 import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Subject;
@@ -71,7 +71,7 @@ class PlanOrderWitnessTest {
             DroolsBackend.Build b;
             try {
                 b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-            } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded refused) {
+            } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded refused) {
                 continue;
             }
             String golden = GOLDEN.relativize(ir.getParent()).toString();
@@ -96,19 +96,19 @@ class PlanOrderWitnessTest {
                 DroolsBackend.Build b;
                 try {
                     b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-                } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded refused) {
+                } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded refused) {
                     continue;
                 }
-                List<String> typen = new ArrayList<>();
-                for (String type : b.model().objecttypen.keySet()) typen.add(Namen.ident(type, true));
+                List<String> types = new ArrayList<>();
+                for (String type : b.model().objecttypen.keySet()) types.add(Namen.ident(type, true));
                 for (List<String> names : classesOutsideStack(b)) {
                     sets++;
                     List<Integer> places = new ArrayList<>();
-                    for (String n : names) places.add(typen.indexOf(n));
+                    for (String n : names) places.add(types.indexOf(n));
                     List<Integer> sorted = new ArrayList<>(places);
                     sorted.sort(null);
                     if (places.contains(-1) || !places.equals(sorted))
-                        outsideOrder.add(GOLDEN.relativize(ir.getParent()) + " | " + names + " | typen " + typen);
+                        outsideOrder.add(GOLDEN.relativize(ir.getParent()) + " | " + names + " | typen " + types);
                 }
             }
         }
@@ -147,7 +147,7 @@ class PlanOrderWitnessTest {
                         for (Alpha.FieldTest t : a.tests())
                             if (t.op() == Alpha.Comparator.CLASS_NOT_IN) {
                                 List<String> names = new ArrayList<>();
-                                for (Object k : (Collection<?>) t.waarde()) names.add(((Class<?>) k).getSimpleName());
+                                for (Object k : (Collection<?>) t.value()) names.add(((Class<?>) k).getSimpleName());
                                 out.add(names);
                             }
         return out;

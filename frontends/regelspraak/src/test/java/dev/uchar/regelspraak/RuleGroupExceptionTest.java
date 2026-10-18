@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * base rule, its {@code Uitzondering op} and a third rule — emitted {@code leden: ["bergingsbevoegd bij
  * quotum"]} with {@code diagnostics: []}: the exception and the rule after it fell outside the group without a
  * word, and because the lowering lifts the base into a defaults group, the verifier then refused the document
- * with {@code WF-033 FAIL /regelGroepen/0: group member 'bergingsbevoegd bij quotum' does not resolve to a rule
+ * with {@code WF-033 FAIL /ruleGroups/0: group member 'bergingsbevoegd bij quotum' does not resolve to a rule
  * form} — the author got the fault on the wrong line and without its cause. (The pre-M1 path; since M1,
- * 2026-09-23, the verifier names the position /rules/regelGroepen/0.)
+ * 2026-09-23, the verifier names the position /rules/ruleGroups/0.)
  *
  * <p><b>Two arms, each measured.</b> The POSITIONAL arm refuses a block standing directly after a group's last
  * member: that is where the group would still read on if the block were a rule, and where it ends in silence.
@@ -98,16 +98,16 @@ class RuleGroupExceptionTest {
 
     /** The single ERROR, asserting there is exactly one — the test pins THIS refusal and no bystander. */
     private static Diagnostic onlyError(RegelSpraakModel m) {
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + fouten);
-        return fouten.get(0);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + faults);
+        return faults.get(0);
     }
 
     // -------------------------------------------------------------------- the refusals
 
     @Test void m5_exception_in_the_scope_refuses_at_its_head() {
         RegelSpraakModel m = Resolver.resolve(M5);
-        // An ERROR is what stops Resolver.irModus writing the document at all: the WF-033 document of M5
+        // An ERROR is what stops Resolver.irMode writing the document at all: the WF-033 document of M5
         // never reaches disk.
         assertFalse(m.isOk(), () -> "het M5-document hoort geweigerd te worden, diagnostiek: " + m.diagnostics);
         Diagnostic d = onlyError(m);
@@ -229,13 +229,13 @@ class RuleGroupExceptionTest {
 
         """;
 
-    private static String exceptionOn(String basis) {
+    private static String exceptionOn(String base) {
         return """
             Uitzondering op %s: bergingspremie bij noodweer
                 geldig altijd
                     De bergingspremie van een Jutter moet gesteld worden op 50
                     indien hij noodweer verklaard is.
-            """.formatted(basis);
+            """.formatted(base);
     }
 
     @Test void a_row_of_a_grouped_decision_table_as_base_is_refused() {
@@ -306,7 +306,7 @@ class RuleGroupExceptionTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.prioritizedDefaults.size(), "de basis en haar uitzondering horen één defaults-groep te worden");
-        assertEquals(List.of("bergingspremie"), m.regelGroepen.get(0).leden());
+        assertEquals(List.of("bergingspremie"), m.ruleGroups.get(0).members());
     }
 
     @Test void block_behind_a_definition_that_closes_the_group_stays_clean() {
@@ -315,6 +315,6 @@ class RuleGroupExceptionTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.prioritizedDefaults.size());
-        assertEquals(List.of("bergingspremie"), m.regelGroepen.get(0).leden());
+        assertEquals(List.of("bergingspremie"), m.ruleGroups.get(0).members());
     }
 }

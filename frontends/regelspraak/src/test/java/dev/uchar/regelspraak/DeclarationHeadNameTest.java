@@ -5,13 +5,13 @@ import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Feittype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.FactType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Rol;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Role;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.resolver.Resolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -36,8 +36,8 @@ class DeclarationHeadNameTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-premierecht");
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.diagnostics.isEmpty(), () -> "verwacht geen diagnose, kreeg: " + m.diagnostics);
         return m;
     }
@@ -108,7 +108,7 @@ class DeclarationHeadNameTest {
     /** One model, one name: 'Recht op premie' as a head, an extension head, the parent of an 'is een' clause, a role's
      *  filler, the subject of a rule target, a reading and a condition, and the type of a scenario instance. */
     @Test void recht_premie_works_on_every_place() {
-        String bron = """
+        String source = """
             Objecttype het Recht op premie (mv: Rechten op premie)
                 het vondstgewicht Numeriek (geheel getal);
                 de premie Numeriek (geheel getal);
@@ -133,11 +133,11 @@ class DeclarationHeadNameTest {
                 geldig altijd
                     Het premiebedrag van een Jutter moet berekend worden als de som van de premie van alle rechten op premie van de Jutter of 0 als die er niet zijn.
             """;
-        RegelSpraakModel m = clean(bron);
+        RegelSpraakModel m = clean(source);
         Objecttype recht = m.objecttypen.get("Recht op premie");
         assertTrue(recht.kenmerken.contains("toegekend"), "de extensiekop bereikt het objecttype niet");
         assertSame(recht, m.objecttypen.get("Recht op premie bij eb").supertype);
-        Feittype ft = m.feittypen.get("jutter heeft premierecht");
+        FactType ft = m.feittypen.get("jutter heeft premierecht");
         assertEquals("Recht op premie", ft.rollen.get(1).objecttypeNaam());
         String ir = ir(m);
         assertEquals(0, count(ir, "\"node\":\"Unresolved\""), ir);
@@ -149,7 +149,7 @@ class DeclarationHeadNameTest {
         assertTrue(ir.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"jutterheeftpremierecht\","
                 + "\"role\":\"rechtoppremie\"}"), ir);
 
-        ScenarioBundel b = ScenarioResolver.resolve(bron + """
+        ScenarioBundle b = ScenarioResolver.resolve(source + """
             Scenario een recht
             Gegeven is de volgende situatie:
             een Jutter J
@@ -162,8 +162,8 @@ class DeclarationHeadNameTest {
             """);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         ResolvedScenario s = b.scenarios().get(0);
-        assertEquals("Recht op premie", s.situatie().instanties().get(1).objecttype().naam);
-        assertEquals("rechten op premie", s.situatie().instanties().get(0).rollen().get(0).sleutel());
+        assertEquals("Recht op premie", s.situation().instances().get(1).objectType().naam);
+        assertEquals("rechten op premie", s.situation().instances().get(0).rollen().get(0).key());
         String cas = CaseEmitter.emit(s).replaceAll("\\s+", "");
         assertTrue(cas.contains("{\"label\":\"R1\",\"objectType\":\"Rechtoppremie\""), cas);
     }
@@ -187,9 +187,9 @@ class DeclarationHeadNameTest {
             """);
         assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").plural);
         assertEquals("premies per dag", m.objecttypen.get("Jutter").attributePlural.get("premie per dag"));
-        Rol rol = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
-        assertEquals("rechten op premie", rol.plural());
-        assertTrue(rol.meervoudig(), "de kardinaliteitsregel noemt de rol in haar meervoud");
+        Role role = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
+        assertEquals("rechten op premie", role.plural());
+        assertTrue(role.meervoudig(), "de kardinaliteitsregel noemt de rol in haar meervoud");
         String ir = ir(m);
         assertEquals(0, count(ir, "\"node\":\"Unresolved\""), ir);
         assertTrue(ir.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"jutterheeftpremierecht\","
@@ -220,7 +220,7 @@ class DeclarationHeadNameTest {
         assertEquals(List.of("jutter heeft vondst", "vondst is gemeld bij jutter", "jutters hebben vondsten die zijn geborgen"),
                 new ArrayList<>(m.feittypen.keySet()));
         assertEquals(List.of("vinder", "vondst"),
-                m.feittypen.get("jutter heeft vondst").rollen.stream().map(Rol::naam).toList());
+                m.feittypen.get("jutter heeft vondst").rollen.stream().map(Role::naam).toList());
     }
 
     /** 'de' and 'het' open the role line, so a fact-type name still ends there, and the line check refuses the role
@@ -365,18 +365,18 @@ class DeclarationHeadNameTest {
     /** A filler the document declares nowhere is one file of a model that declares its types in another: a WARNING,
      *  and read together with that file, nothing. A type declared after the fact type binds, as a supertype does. */
     @Test void a_role_filler_that_is_declared_nowhere_is_a_warning() {
-        String feittype = """
+        String factType = """
             Feittype vondstaanmelding
                 de aanmelder Jutter
                 de vondst (mv: vondsten) Vondst
             Eén aanmelder heeft meerdere vondsten
             """;
-        RegelSpraakModel m = Resolver.resolve(feittype);
+        RegelSpraakModel m = Resolver.resolve(factType);
         assertTrue(m.errors().isEmpty(), () -> m.errors().toString());
         onlyMessage(m, Severity.WARNING, 2, "feittype 'vondstaanmelding': de rol 'aanmelder' heeft als objecttype "
                 + "'Jutter', en dat is nergens als objecttype gedeclareerd — WF-003: de vuller van een rol is een "
                 + "gedeclareerd objecttype; staat het in een ander bestand van het model, lees de bestanden dan samen");
-        clean(feittype + """
+        clean(factType + """
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de naam Tekst;
             Objecttype de Vondst (mv: Vondsten)
@@ -450,8 +450,8 @@ class DeclarationHeadNameTest {
         assertEquals(List.of("Jutter", "Recht op premie"), new ArrayList<>(m.objecttypen.keySet()));
         assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").plural);
         assertEquals(List.of("jutter heeft premierecht"), new ArrayList<>(m.feittypen.keySet()));
-        Rol rol = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
-        assertEquals(new Rol("recht op premie", "Recht op premie", "rechten op premie", true), rol);
+        Role role = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
+        assertEquals(new Role("recht op premie", "Recht op premie", "rechten op premie", true), role);
         assertEquals(5, m.resolvedRegels.size());
         assertEquals(0, count(ir(m), "\"node\":\"Unresolved\""));
         assertTrue(Files.readString(GOLDEN.resolve("scenario.rgs")).contains("een Recht op premie R1\n"));

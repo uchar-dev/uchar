@@ -26,9 +26,9 @@ class CreationRoleTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    private static String rol(String feittype, String rol) {
+    private static String role(String factType, String role) {
         return "\"validity\":{\"node\":\"Validity\"},\"connectingRole\":{\"node\":\"RoleBinding\",\"factType\":\""
-                + feittype + "\",\"role\":\"" + rol + "\"}}";
+                + factType + "\",\"role\":\"" + role + "\"}}";
     }
 
     @Test void a_named_role_that_also_derives_the_type_pair_is_written() {
@@ -48,7 +48,7 @@ class CreationRoleTest {
                 geldig altijd
                     Een Wrakrecht heeft een geboekt strandrecht met grondslag gelijk aan zijn bergingsvergoeding.
             """);
-        assertTrue(c.contains(rol("wrakboeking", "geboektstrandrecht")), () -> "de genoemde rol:\n" + c);
+        assertTrue(c.contains(role("wrakboeking", "geboektstrandrecht")), () -> "de genoemde rol:\n" + c);
     }
 
     @Test void the_self_typed_creation_writes_the_role_that_the_sentence_names() {
@@ -67,7 +67,7 @@ class CreationRoleTest {
                     Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1
                     indien de rang van de Wachter kleiner is dan 5.
             """);
-        assertTrue(c.contains(rol("opvolging", "opvolger")), () -> "de rol van de zelfgetypeerde creatie:\n" + c);
+        assertTrue(c.contains(role("opvolging", "opvolger")), () -> "de rol van de zelfgetypeerde creatie:\n" + c);
     }
 
     @Test void the_named_role_chooses_between_two_fact_types_over_the_same_pair() {
@@ -92,7 +92,7 @@ class CreationRoleTest {
                 geldig altijd
                     Een Jutter heeft een bewaard insigne met graad gelijk aan zijn rang.
             """);
-        assertTrue(c.contains(rol("bewaring", "bewaardinsigne")), () -> "de rol tussen twee feittypen:\n" + c);
+        assertTrue(c.contains(role("bewaring", "bewaardinsigne")), () -> "de rol tussen twee feittypen:\n" + c);
     }
 
     /** A self-typed creation whose sentence names the TYPE leaves the back-link to the type pair, and over a

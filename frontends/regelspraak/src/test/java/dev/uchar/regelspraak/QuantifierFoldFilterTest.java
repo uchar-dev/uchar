@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>What this file pins is a correctness boundary, not a missing feature. Before this card the
  * frontend PARSED the subselectie (it shows up in the operand's {@code bron}), lowered the sentence to
- * a {@link dev.uchar.regelspraak.ir.Conditie.QuantifierFold} — and wrote {@code filter: null}
+ * a {@link dev.uchar.regelspraak.ir.Condition.QuantifierFold} — and wrote {@code filter: null}
  * with no diagnostic at all. A sentence that quantifies over the AANGEMELDE vondsten produced a
  * document that quantifies over ALL of them: a verifier-clean wire form carrying the wrong set, which
  * every executor then answers consistently and wrongly.
@@ -64,8 +64,8 @@ class QuantifierFoldFilterTest {
                 indien het gewicht van %s vondsten van de Jutter%s gedurende het gehele jaar groter is dan 5 kg.
         """;
 
-    private static RegelSpraakModel resolve(String kwantor, String subselection) {
-        return Resolver.resolve(MODEL + SENTENCE.formatted(kwantor, subselection));
+    private static RegelSpraakModel resolve(String quantifier, String subselection) {
+        return Resolver.resolve(MODEL + SENTENCE.formatted(quantifier, subselection));
     }
 
     /** Sets the model's ERRORs aside ({@link Emission}): several rows read the node a REFUSED sentence built. */
@@ -74,7 +74,7 @@ class QuantifierFoldFilterTest {
     }
 
     /** The emitted condition of the single rule's version, compacted. */
-    private static String voorwaarde(RegelSpraakModel m) {
+    private static String condition(RegelSpraakModel m) {
         String c = emitCompact(m);
         int van = c.indexOf("\"condition\":");
         assertTrue(van >= 0, () -> "geen voorwaarde in de emissie:\n" + c);
@@ -94,7 +94,7 @@ class QuantifierFoldFilterTest {
     @Test void the_characteristic_subselection_becomes_the_filter_on_the_wire() {
         RegelSpraakModel m = resolve("alle", " die aangemeld zijn");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"node\":\"QuantifierFold\""), () -> "geen kwantorvouw:\n" + v);
         assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"aangemeld\""),
                 () -> "de die/dat-deelselectie hoort als filter op de wire te staan:\n" + v);
@@ -108,7 +108,7 @@ class QuantifierFoldFilterTest {
         // aangemelde" as "geen van de".
         RegelSpraakModel m = resolve("geen van de", " die aangemeld zijn");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"quantifier\":\"none\""), () -> "verkeerde kwantor:\n" + v);
         assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"aangemeld\""),
                 () -> "ook onder GEEN hoort de deelselectie op de wire te staan:\n" + v);
@@ -118,7 +118,7 @@ class QuantifierFoldFilterTest {
         // ch. 4.5: the filter is evaluated PER CONTRIBUTOR with the element as subject. So it carries
         // no navigation — a navigated read would be a hop from the Jutter inside a condition whose
         // subject is the Vondst, the same trap the toets avoids.
-        String v = voorwaarde(resolve("alle", " die aangemeld zijn"));
+        String v = condition(resolve("alle", " die aangemeld zijn"));
         int i = v.indexOf("\"filter\":");
         String f = v.substring(i, v.indexOf("\"test\":", i));
         assertTrue(f.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"aangemeld\",\"negated\":false,"),
@@ -198,7 +198,7 @@ class QuantifierFoldFilterTest {
                     gedurende het gehele jaar groter is dan 5 kg.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"filter\":{\"node\":\"Compound\",\"quantifier\":\"all\""),
                 () -> "de samengestelde deelselectie hoort als filter op de wire te staan:\n" + v);
         assertTrue(v.contains("\"characteristic\":\"aangemeld\"") && v.contains("\"characteristic\":\"geborgen\""),
@@ -211,7 +211,7 @@ class QuantifierFoldFilterTest {
         // break every existing §8.2 golden.
         RegelSpraakModel m = resolve("alle", "");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertFalse(voorwaarde(m).contains("\"filter\""),
-                () -> "zonder geschreven deelselectie hoort er geen filter te staan:\n" + voorwaarde(m));
+        assertFalse(condition(m).contains("\"filter\""),
+                () -> "zonder geschreven deelselectie hoort er geen filter te staan:\n" + condition(m));
     }
 }

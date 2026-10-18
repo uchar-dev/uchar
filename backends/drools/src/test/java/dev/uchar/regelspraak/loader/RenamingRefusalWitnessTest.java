@@ -7,13 +7,13 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedDayKindDefinition;
 import dev.uchar.regelspraak.ir.ResolvedObjectCreation;
-import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
+import dev.uchar.regelspraak.ir.ResolvedRuleGroup;
 import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Positions come from a sweep over the corpus goldens this backend loads (the first of each node kind, of each
  * version record and of each enumeration field, in document order), and from rows at a rule's value or condition for
- * the kinds no loadable golden carries. Every refusal is an {@link IrLoader.Documentfout}: a document in a v0 spelling
+ * the kinds no loadable golden carries. Every refusal is an {@link IrLoader.DocumentError}: a document in a v0 spelling
  * is no document of this format, never a form this backend does not carry.
  */
 class RenamingRefusalWitnessTest {
@@ -164,7 +164,7 @@ class RenamingRefusalWitnessTest {
                         : datatype.contains(v0) ? "unknown datatype node \"" + v0 + "\""
                         : part.contains(v0) ? "unknown TextCompositionPart node \"" + v0 + "\""
                         : "expected \"" + l5 + "\", got \"" + v0 + "\"";
-                IrLoader.Documentfout e = refuses(doc, v0);
+                IrLoader.DocumentError e = refuses(doc, v0);
                 assertEquals(p.path() + "/node", e.site(), v0 + ": " + e.getMessage());
                 assertTrue(e.getMessage().endsWith(": " + sentence), v0 + ": " + e.getMessage());
                 rows++;
@@ -183,7 +183,7 @@ class RenamingRefusalWitnessTest {
                 Site p = kind.equals("TemporalRead") ? synthetic("TemporalRead") : site(kind);
                 ObjectNode doc = p.document();
                 node(doc, p.path()).put(key, 1);
-                IrLoader.Documentfout e = refuses(doc, kind + "." + key);
+                IrLoader.DocumentError e = refuses(doc, kind + "." + key);
                 assertEquals(p.path() + "/" + key, e.site(), kind + "." + key + ": " + e.getMessage());
                 String sentence = kind.equals(UITZONDERINGEN) ? ": unknown field" : ": unknown field on " + kind;
                 assertTrue(e.getMessage().endsWith(sentence), kind + "." + key + ": " + e.getMessage());
@@ -210,7 +210,7 @@ class RenamingRefusalWitnessTest {
             ObjectNode renamed = JSON.createObjectNode();
             rules.properties().forEach(e -> renamed.set(e.getKey().equals(l[0]) ? l[1] : e.getKey(), e.getValue()));
             doc.set("rules", renamed);
-            IrLoader.Documentfout e = refuses(doc, l[1]);
+            IrLoader.DocumentError e = refuses(doc, l[1]);
             assertEquals("/rules/" + l[1], e.site(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": unknown field"), e.getMessage());
         }
@@ -228,7 +228,7 @@ class RenamingRefusalWitnessTest {
             if (f == Spelling.DATE_PRECISION) continue;
             List<Object> v0 = new ArrayList<>();
             for (Object k : f.rows().keySet()) v0.add(k);
-            for (Object k : f.geweigerd().keySet()) v0.add(k);
+            for (Object k : f.refused().keySet()) v0.add(k);
             for (String place : f.places()) {
                 Site p = place.equals("ContextValue.name") ? synthetic("ContextValue")
                         : place.equals("QuantifierFold.quantifier") ? site("QuantifierFold")
@@ -239,7 +239,7 @@ class RenamingRefusalWitnessTest {
                     JsonNode value = k instanceof Boolean b ? BooleanNode.valueOf(b)
                             : TextNode.valueOf(k instanceof Enum<?> e ? e.name() : k.toString());
                     node(doc, p.path()).set(field, value);
-                    IrLoader.Documentfout e = refuses(doc, place + " " + value);
+                    IrLoader.DocumentError e = refuses(doc, place + " " + value);
                     assertEquals(p.path() + "/" + field, e.site(), place + " " + value + ": " + e.getMessage());
                     String sentence = place.equals("ContextValue.name")
                             ? "context value '" + k + "' is not one of the two admissible names evaluationDate,"
@@ -265,7 +265,7 @@ class RenamingRefusalWitnessTest {
             Site p = site(kind);
             ObjectNode doc = p.document();
             node(doc, p.path()).putNull(field);
-            IrLoader.Documentfout e = refuses(doc, place);
+            IrLoader.DocumentError e = refuses(doc, place);
             assertEquals(p.path() + "/" + field, e.site(), place + ": " + e.getMessage());
             assertTrue(e.getMessage().endsWith(": " + NULL_SENTENCE), place + ": " + e.getMessage());
         }
@@ -280,7 +280,7 @@ class RenamingRefusalWitnessTest {
         Site fold = site("QuantifierFold");
         ObjectNode doc = fold.document();
         node(doc, fold.path()).put("quantifier", "the");
-        IrLoader.Documentfout e = refuses(doc, "the");
+        IrLoader.DocumentError e = refuses(doc, "the");
         assertEquals(fold.path() + "/quantifier", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": quantifier fold with quantifier the: the bare definite is a description of"
                 + " ONE member, not a quantification over the set — a fold over it has no reading"), e.getMessage());
@@ -313,13 +313,13 @@ class RenamingRefusalWitnessTest {
         ObjectNode doc = golden(PENNINGDREMPEL);
         set(doc, V, "{\"node\":\"Regelversie\",\"regel\":\"penningdrempel\",\"inconsistent\":true,"
                 + "\"source\":{\"snippet\":\"regelversie penningdrempel is inconsistent\"}}");
-        Conditie.RuleStatusCheck rv = assertInstanceOf(Conditie.RuleStatusCheck.class,
-                IrLoader.load(doc).resolvedRegels.get(0).voorwaarde());
+        Condition.RuleStatusCheck rv = assertInstanceOf(Condition.RuleStatusCheck.class,
+                IrLoader.load(doc).resolvedRegels.get(0).condition());
         assertEquals("penningdrempel", rv.regel());
         assertTrue(rv.inconsistent());
-        assertEquals("regelversie penningdrempel is inconsistent", rv.bron().snippet());
+        assertEquals("regelversie penningdrempel is inconsistent", rv.source().snippet());
         node(doc, V).put("rule", "penningdrempel");
-        IrLoader.Documentfout e = refuses(doc, "Regelversie.rule");
+        IrLoader.DocumentError e = refuses(doc, "Regelversie.rule");
         assertEquals(V + "/rule", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown field on Regelversie"), e.getMessage());
     }
@@ -335,7 +335,7 @@ class RenamingRefusalWitnessTest {
         }
         ObjectNode doc = p.document();
         node(doc, p.path()).put("granularity", "week");
-        IrLoader.Documentfout e = refuses(doc, "week");
+        IrLoader.DocumentError e = refuses(doc, "week");
         assertTrue(e.getMessage().endsWith(": unknown granularity value \"week\""), e.getMessage());
     }
 
@@ -350,10 +350,10 @@ class RenamingRefusalWitnessTest {
                 + "\"source\":{\"snippet\":\"hij niet gedurende de gehele maand penninggerechtigd is\"},"
                 + "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"f\",\"role\":\"r\"}}");
         IrLoader.Loaded l = IrLoader.loadAll(doc);
-        Conditie.Kenmerk k = assertInstanceOf(Conditie.Kenmerk.class, l.model().resolvedRegels.get(0).voorwaarde());
-        assertEquals("penninggerechtigd", k.kenmerk());
-        assertTrue(k.negatie());
-        assertEquals("Jutter", k.eigenaar().naam);
+        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, l.model().resolvedRegels.get(0).condition());
+        assertEquals("penninggerechtigd", k.characteristic());
+        assertTrue(k.negation());
+        assertEquals("Jutter", k.owner().naam);
         assertFalse(k.periode().year(), "month is the record's jaar false");
         assertTrue(k.periode().negated());
         assertEquals(List.of(new RoleBindingRef("f", "r")), l.navigationBindings().get(k));
@@ -361,8 +361,8 @@ class RenamingRefusalWitnessTest {
         ObjectNode bare = golden(PENNINGDREMPEL);
         set(bare, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"
                 + "\"source\":{\"snippet\":\"hij penninggerechtigd is\"}}");
-        Conditie.Kenmerk k2 = (Conditie.Kenmerk) IrLoader.load(bare).resolvedRegels.get(0).voorwaarde();
-        assertNull(k2.eigenaar());
+        Condition.CharacteristicCheck k2 = (Condition.CharacteristicCheck) IrLoader.load(bare).resolvedRegels.get(0).condition();
+        assertNull(k2.owner());
         assertNull(k2.periode());
     }
 
@@ -379,22 +379,22 @@ class RenamingRefusalWitnessTest {
                 + "\"left\":" + one + ",\"right\":" + two + ",\"type\":" + number + ",\"source\":{\"snippet\":\"1 maal 2\"}},"
                 + "\"minimum\":" + one + ",\"type\":" + number + ",\"source\":{\"snippet\":\"minimaal 1\"}},"
                 + "\"mode\":\"towardZero\",\"decimals\":1,\"type\":" + number + ",\"source\":{\"snippet\":\"afgerond\"}}");
-        Expr.Afgerond a = assertInstanceOf(Expr.Afgerond.class, IrLoader.load(doc).resolvedRegels.get(0).waarde());
-        assertEquals(Expr.AfrondModus.RICHTING_NUL, a.modus());
+        Expr.Rounding a = assertInstanceOf(Expr.Rounding.class, IrLoader.load(doc).resolvedRegels.get(0).value());
+        assertEquals(Expr.RoundingMode.RICHTING_NUL, a.mode());
         assertEquals(1, a.decimalen());
-        Expr.Begrensd b = assertInstanceOf(Expr.Begrensd.class, a.basis());
+        Expr.Clamp b = assertInstanceOf(Expr.Clamp.class, a.base());
         assertNotNull(b.minimum());
         assertNull(b.maximum(), "an absent bound is no bound on that side");
-        Expr.Binair bin = assertInstanceOf(Expr.Binair.class, b.basis());
+        Expr.Binary bin = assertInstanceOf(Expr.Binary.class, b.base());
         assertEquals(Expr.BinOp.MAAL, bin.op());
-        assertEquals("1", ((Expr.Literal) bin.links()).waarde());
-        assertEquals("2", ((Expr.Literal) bin.rechts()).waarde());
+        assertEquals("1", ((Expr.Literal) bin.left()).valueText());
+        assertEquals("2", ((Expr.Literal) bin.right()).valueText());
 
         doc = golden(PREMIEVENSTER);
         set(doc, W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"vondst \"},"
                 + "{\"node\":\"EmbeddedExpression\",\"expr\":" + one + "}],\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"vondst 1\"}}");
-        Expr.TextComposition t = assertInstanceOf(Expr.TextComposition.class, IrLoader.load(doc).resolvedRegels.get(0).waarde());
+        Expr.TextComposition t = assertInstanceOf(Expr.TextComposition.class, IrLoader.load(doc).resolvedRegels.get(0).value());
         assertEquals("vondst ", ((Expr.TextComposition.LiteralChunk) t.parts().get(0)).tekst());
         assertInstanceOf(Expr.Literal.class, ((Expr.TextComposition.EmbeddedExpression) t.parts().get(1)).expr());
 
@@ -402,7 +402,7 @@ class RenamingRefusalWitnessTest {
         doc = golden(PREMIEVENSTER);
         set(doc, W, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
         ObjectNode varDoc = doc;
-        IrLoader.Documentfout vr = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(varDoc));
+        IrLoader.DocumentError vr = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(varDoc));
         assertEquals(W, vr.site(), vr.getMessage());
         assertTrue(vr.getMessage().endsWith(": " + IrLoader.variableReferenceRefusal("x")), vr.getMessage());
     }
@@ -421,23 +421,23 @@ class RenamingRefusalWitnessTest {
                 + "\"negated\":true,\"digits\":3,\"source\":{\"snippet\":\"b\"}},"
                 + "{\"node\":\"TimeWindow\",\"to\":" + one + ",\"toInclusive\":true,\"source\":{\"snippet\":\"c\"}}],"
                 + "\"source\":{\"snippet\":\"ten minste een\"}}");
-        Conditie.Samengesteld s = assertInstanceOf(Conditie.Samengesteld.class,
-                IrLoader.load(doc).resolvedRegels.get(0).voorwaarde());
-        assertEquals(Conditie.Kwantor.TEN_MINSTE, s.kwantor());
+        Condition.Compound s = assertInstanceOf(Condition.Compound.class,
+                IrLoader.load(doc).resolvedRegels.get(0).condition());
+        assertEquals(Condition.Quantifier.TEN_MINSTE, s.quantifier());
         assertEquals(1, s.threshold());
-        Conditie.Vergelijking v = assertInstanceOf(Conditie.Vergelijking.class, s.onderdelen().get(0));
-        assertEquals(Conditie.Operator.KLEINER_OF_GELIJK, v.op());
-        assertNotNull(v.links());
-        assertNotNull(v.rechts());
+        Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, s.components().get(0));
+        assertEquals(Condition.Operator.KLEINER_OF_GELIJK, v.op());
+        assertNotNull(v.left());
+        assertNotNull(v.right());
         assertTrue(v.periode().year());
-        Conditie.Predicaat p = assertInstanceOf(Conditie.Predicaat.class, s.onderdelen().get(1));
-        assertEquals(Conditie.PredicateKind.DAGSOORT, p.soort());
+        Condition.Predicate p = assertInstanceOf(Condition.Predicate.class, s.components().get(1));
+        assertEquals(Condition.PredicateKind.DAGSOORT, p.category());
         assertEquals("feestdag", p.dayKind());
-        assertTrue(p.negatie());
+        assertTrue(p.negation());
         assertEquals(3, p.digits());
-        Conditie.Periode w = assertInstanceOf(Conditie.Periode.class, s.onderdelen().get(2));
-        assertNull(w.vanaf(), "an absent bound is open on that side");
-        assertNotNull(w.tot());
+        Condition.TimeWindow w = assertInstanceOf(Condition.TimeWindow.class, s.components().get(2));
+        assertNull(w.from(), "an absent bound is open on that side");
+        assertNotNull(w.until());
         assertTrue(w.toInclusive());
     }
 
@@ -455,32 +455,32 @@ class RenamingRefusalWitnessTest {
                 JsonNode w = rules.get("dayKindDefinitions").get(i);
                 ResolvedDayKindDefinition d = m.resolvedDayKindDefinitions.get(i);
                 assertEquals(w.get("dayKind").asText(null), d.naam(), path.toString());
-                assertEquals(w.get("condition").isNull(), d.voorwaarde() == null, path.toString());
+                assertEquals(w.get("condition").isNull(), d.condition() == null, path.toString());
             }
             for (int i = 0; i < rules.get("startPointDeterminations").size(); i++, startPoints++) {
                 JsonNode w = rules.get("startPointDeterminations").get(i);
                 ResolvedStartPointDetermination sp = m.resolvedStartPointDeterminations.get(i);
                 assertEquals(w.get("timeline").asText(null), sp.tijdlijn(), path.toString());
-                assertEquals(w.get("objectType").asText(null), sp.objecttype(), path.toString());
+                assertEquals(w.get("objectType").asText(null), sp.objectType(), path.toString());
                 assertEquals(w.get("member").asText(null), sp.member(), path.toString());
             }
             for (int i = 0; i < rules.get("ruleGroups").size(); i++, groups++) {
                 JsonNode w = rules.get("ruleGroups").get(i);
-                ResolvedRegelGroep g = m.regelGroepen.get(i);
+                ResolvedRuleGroup g = m.ruleGroups.get(i);
                 assertEquals(w.get("name").asText(null), g.naam(), path.toString());
                 assertEquals(w.get("recursive").asBoolean(), g.recursive(), path.toString());
-                assertEquals(w.get("members").size(), g.leden().size(), path.toString());
+                assertEquals(w.get("members").size(), g.members().size(), path.toString());
             }
             int oc = 0;
             for (JsonNode form : rules.get("objectCreations"))
                 for (JsonNode version : form.get("versions")) {
-                    ResolvedObjectCreation c = m.objectCreaties.get(oc++);
+                    ResolvedObjectCreation c = m.objectCreations.get(oc++);
                     for (int j = 0; j < version.get("initialisations").size(); j++, initialisations++) {
                         JsonNode w = version.get("initialisations").get(j);
                         ResolvedObjectCreation.MemberInit t = c.initialisations().get(j);
-                        assertEquals(w.get("member").asText(null), t.attribuut(), path.toString());
-                        assertEquals(w.get("characteristic").asBoolean(), t.kenmerk(), path.toString());
-                        assertEquals(w.get("value").isNull(), t.waarde() == null, path.toString());
+                        assertEquals(w.get("member").asText(null), t.attribute(), path.toString());
+                        assertEquals(w.get("characteristic").asBoolean(), t.characteristic(), path.toString());
+                        assertEquals(w.get("value").isNull(), t.value() == null, path.toString());
                     }
                 }
             JsonNode pds = rules.get("prioritizedDefaults");
@@ -489,10 +489,10 @@ class RenamingRefusalWitnessTest {
                 PrioritizedDefaults pd = l.prioritizedDefaults().get(i);
                 assertEquals(w.get("name").asText(null), pd.naam(), path.toString());
                 assertEquals(w.get("subject").asText(), pd.onderwerp(), path.toString());
-                assertEquals(w.has("characteristic") ? w.get("characteristic").asText() : null, pd.kenmerk(),
+                assertEquals(w.has("characteristic") ? w.get("characteristic").asText() : null, pd.characteristic(),
                         path.toString());
-                assertEquals(w.has("attribute") ? w.get("attribute").asText() : null, pd.attribuut(), path.toString());
-                assertEquals(w.path("unordered").asBoolean(false), pd.ongeordend(), path.toString());
+                assertEquals(w.has("attribute") ? w.get("attribute").asText() : null, pd.attribute(), path.toString());
+                assertEquals(w.path("unordered").asBoolean(false), pd.unordered(), path.toString());
                 defaults += compare(w.get("defaults"), pd.defaults(), path.toString());
             }
         }
@@ -511,16 +511,16 @@ class RenamingRefusalWitnessTest {
             JsonNode w = wire.get(i);
             Default d = records.get(i);
             assertEquals(w.has("decision") ? w.get("decision").asBoolean() : null, d.decision(), where);
-            assertEquals(w.has("justification"), d.voorwaarde() != null, where);
-            assertEquals(w.has("consequence"), d.consequentie() != null, where);
+            assertEquals(w.has("justification"), d.condition() != null, where);
+            assertEquals(w.has("consequence"), d.consequence() != null, where);
             assertEquals(w.path("initialisation").asBoolean(false), d.initialisatie(), where);
             assertEquals(w.has("exceptions"), d.exceptions() != null, where);
             if (w.has("exceptions")) {
-                assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.exceptions().ongeordend(), where);
+                assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.exceptions().unordered(), where);
                 JsonNode members = w.get("exceptions").get("members");
-                assertEquals(members.size(), d.exceptions().leden().size(), where);
+                assertEquals(members.size(), d.exceptions().members().size(), where);
                 for (int j = 0; j < members.size(); j++)
-                    n += compare(members.get(j).get("defaults"), d.exceptions().leden().get(j).defaults(), where);
+                    n += compare(members.get(j).get("defaults"), d.exceptions().members().get(j).defaults(), where);
             }
         }
         return n;
@@ -638,10 +638,10 @@ class RenamingRefusalWitnessTest {
         }
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode doc, String what) {
+    private static IrLoader.DocumentError refuses(JsonNode doc, String what) {
         try {
             IrLoader.loadAll(doc);
-        } catch (IrLoader.Documentfout f) {
+        } catch (IrLoader.DocumentError f) {
             return f;
         } catch (IrLoader.Refusal r) {
             fail(what + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());

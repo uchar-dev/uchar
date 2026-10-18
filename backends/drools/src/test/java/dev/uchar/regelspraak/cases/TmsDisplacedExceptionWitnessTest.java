@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
@@ -31,9 +31,9 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -88,31 +88,31 @@ class TmsDisplacedExceptionWitnessTest {
     private static final String REKENJAAR = "the evaluationYear context value needs an evaluation date; the case"
             + " carries asOfDate null";
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("heffing", WHOLE), attribuut("vinddatum", DATE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("heffing", WHOLE), attribute("vinddatum", DATE)),
             List.of("wrak", "gestrand", "aangespoeld", "geregistreerd"))), List.of());
 
     private static final List<String> RULES = List.of(
             characteristicRule("stranding", "Vondst", "gestrand", check("aangespoeld", false)),
             characteristicRule("wrakverklaring", "Vondst", "wrak", check("gestrand", false)));
 
-    private static final String TEN = standaard(check("wrak", false), number("10"));
-    private static final String THIRTY = standaard(check("geregistreerd", false), number("30"));
+    private static final String TEN = defaultEntry(check("wrak", false), number("10"));
+    private static final String THIRTY = defaultEntry(check("geregistreerd", false), number("30"));
 
     /** A default that faults where it is evaluated, and the sentence the reference interpreter faults with there. */
-    private record Fout(String naam, String standaard, String sentence) {}
+    private record Fault(String naam, String defaultEntry, String sentence) {}
 
-    private static final List<Fout> FAULTS = List.of(
-            new Fout("het rekenjaar in de rechtvaardiging", standaard(comparison("greater",
+    private static final List<Fault> FAULTS = List.of(
+            new Fault("het rekenjaar in de rechtvaardiging", defaultEntry(comparison("greater",
                     contextValue("evaluationYear", WHOLE), literal("2025", WHOLE)), number("20")), REKENJAAR),
-            new Fout("het rekenjaar als gevolg", standaard(check("geregistreerd", false),
+            new Fault("het rekenjaar als gevolg", defaultEntry(check("geregistreerd", false),
                     contextValue("evaluationYear", WHOLE)), REKENJAAR),
-            new Fout("een onopgeloste waarde als gevolg", standaard(check("geregistreerd", false),
+            new Fault("een onopgeloste waarde als gevolg", defaultEntry(check("geregistreerd", false),
                     "{\"node\":\"Unresolved\",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"het niet-gemodelleerde"
                             + " tarief\"}}"), "Unresolved reached in evaluation: this rule fails observably"),
-            new Fout("een onopgeloste rechtvaardiging", standaard("{\"node\":\"Unresolved\",\"source\":{\"snippet\":"
+            new Fault("een onopgeloste rechtvaardiging", defaultEntry("{\"node\":\"Unresolved\",\"source\":{\"snippet\":"
                     + "\"een niet-gemodelleerde grond\"}}", number("20")), "Unresolved condition reached in evaluation"),
-            new Fout("een datumstap buiten het bereik in de rechtvaardiging", standaard(comparison("later",
+            new Fault("een datumstap buiten het bereik in de rechtvaardiging", defaultEntry(comparison("later",
                     binary("plus", ownRead("vinddatum", "Vondst"), literal(TOO_LARGE, DAGEN), DATE),
                     literal("2026-01-01", DATE)), number("20")), "duration count " + TOO_LARGE + " is out of range"));
 
@@ -131,15 +131,15 @@ class TmsDisplacedExceptionWitnessTest {
             new Place("het tweede van twee leden van de lagere default",
                     f -> List.of(TEN, groupDefault(List.of(List.of(THIRTY), List.of(f))))));
 
-    private static String group(Place p, Fout f) {
-        return attributeGroup("heffing van een vondst", "Vondst", "heffing", p.defaults().apply(f.standaard()));
+    private static String group(Place p, Fault f) {
+        return attributeGroup("heffing van een vondst", "Vondst", "heffing", p.defaults().apply(f.defaultEntry()));
     }
 
     /** V1: the higher default decides 10 once wrak is derived. */
     private static JsonNode displaced() throws Exception {
         return TmsDocuments.caseOn(null, List.of(instanceWith("V1", "Vondst",
                         Map.of("vinddatum", dateValue("2026-03-01")), List.of("aangespoeld", "geregistreerd"))),
-                List.of(waarde("V1", "heffing", "10"), consistent()));
+                List.of(value("V1", "heffing", "10"), consistent()));
     }
 
     /** V2: nothing displaces the lower default, so its exception groups are evaluated. */
@@ -148,39 +148,39 @@ class TmsDisplacedExceptionWitnessTest {
                 Map.of("vinddatum", dateValue("2026-03-01")), List.of("geregistreerd"))), List.of(consistent()));
     }
 
-    private static String fout(Fout f) {
-        return "Rekenfout: fout in de regel \"" + STACK + "\": " + f.sentence();
+    private static String fault(Fault f) {
+        return "ComputeFault: fout in de regel \"" + STACK + "\": " + f.sentence();
     }
 
     @Test void the_document_of_the_lens() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-                List.of(attribuut("heffing", WHOLE)), List.of("wrak"))), List.of());
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+                List.of(attribute("heffing", WHOLE)), List.of("wrak"))), List.of());
         Path ir = TmsDocuments.document(model, List.of(), List.of(), List.of(group(PLACES.get(0), FAULTS.get(0))));
         JsonNode wrak = TmsDocuments.caseOn(null, List.of(instanceWith("V1", "Vondst", Map.of(), List.of("wrak"))),
-                List.of(waarde("V1", "heffing", "10"), consistent()));
+                List.of(value("V1", "heffing", "10"), consistent()));
         JsonNode noWrak = TmsDocuments.caseOn(null, List.of(instanceWith("V2", "Vondst", Map.of(), List.of())),
                 List.of(consistent()));
         for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
-            assertEquals(List.of("gespeeld", fout(FAULTS.get(0))), List.of(TmsFaultWitnessTest.play(ir, wrak, branch),
+            assertEquals(List.of("gespeeld", fault(FAULTS.get(0))), List.of(TmsFaultWitnessTest.play(ir, wrak, branch),
                     TmsFaultWitnessTest.play(ir, noWrak, branch)), branch.toString());
     }
 
     @Test void every_place_and_every_fault_in_every_order_of_the_rules() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Place p : PLACES)
-            for (Fout f : FAULTS)
+            for (Fault f : FAULTS)
                 for (List<String> order : TmsDocuments.permutations(RULES)) {
                     Path ir = TmsDocuments.document(MODEL, order, List.of(), List.of(group(p, f)));
                     for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL,
                             DroolsBackend.Branch.DRL_TEXT)) {
                         String description = branch + ", " + p.naam() + ", " + f.naam() + ", " + TmsDocuments.ruleNames(order);
                         outcomes.add(description + ", V1: " + TmsFaultWitnessTest.play(ir, displaced(), branch));
-                        verwacht.add(description + ", V1: gespeeld");
+                        expected.add(description + ", V1: gespeeld");
                         outcomes.add(description + ", V2: " + TmsFaultWitnessTest.play(ir, reaches(), branch));
-                        verwacht.add(description + ", V2: " + fout(f));
+                        expected.add(description + ", V2: " + fault(f));
                     }
                 }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(PLACES.size() * FAULTS.size() * 2 * 2 * 2, outcomes.size());
     }
 
@@ -194,20 +194,20 @@ class TmsDisplacedExceptionWitnessTest {
      */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         for (Place p : PLACES)
-            for (Fout f : FAULTS.subList(0, 2)) {
+            for (Fault f : FAULTS.subList(0, 2)) {
                 String description = p.naam() + ", " + f.naam();
                 DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES, List.of(),
                         List.of(group(p, f))), DroolsBackend.Branch.EXEC_MODEL);
                 int intermediateState = 0;
-                List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-                for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261009L, 40))
+                List<Rule> generated = b.execModelTranspiler().model().getRules();
+                for (List<Rule> order : TmsDocuments.sample(generated, 20261009L, 40))
                     if (fireSample(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName)
                             .toList(), description)) intermediateState++;
                 assertTrue(intermediateState > 0, description + ": geen volgorde rekende de verdrongen uitzonderingsgroep eerst uit");
                 DroolsBackend.Build t = DroolsBackend.build(TmsDocuments.document(MODEL, RULES, List.of(),
                         List.of(group(p, f))), DroolsBackend.Branch.DRL_TEXT);
                 List<String> rules = TextOrder.rules(t);
-                assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, description + ": de regels van de tekst");
+                assertEquals(generated.stream().map(Rule::getName).toList(), rules, description + ": de regels van de tekst");
                 int inTheText = 0;
                 for (List<String> order : TmsDocuments.sample(rules, 20261009L, 40))
                     if (fireSample(t, TextOrder.kieBase(t, order), order, description)) inTheText++;
@@ -222,44 +222,44 @@ class TmsDisplacedExceptionWitnessTest {
             throws Exception {
         String where = description + " op " + b.branch() + ", volgorde " + names;
         Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of("aangespoeld", "geregistreerd"));
-        TmsFaultWitnessTest.FaultFacts fouten = new TmsFaultWitnessTest.FaultFacts();
+        TmsFaultWitnessTest.FaultFacts faults = new TmsFaultWitnessTest.FaultFacts();
         List<Object> outcomes = new ArrayList<>();
-        vuur(b, kieBase, v1, fouten, outcomes, where);
-        assertEquals(fouten.inserted, fouten.withdrawn, () -> where + ": een fout staat aan het fixpunt");
+        fire(b, kieBase, v1, faults, outcomes, where);
+        assertEquals(faults.inserted, faults.withdrawn, () -> where + ": een fout staat aan het fixpunt");
         for (Object u : outcomes)
-            assertTrue(((Outcome) u).waarde() instanceof BigDecimal w && w.compareTo(BigDecimal.TEN) == 0,
+            assertTrue(((Outcome) u).value() instanceof BigDecimal w && w.compareTo(BigDecimal.TEN) == 0,
                     () -> where + ": " + u + " staat aan het fixpunt");
-        TmsFaultWitnessTest.assertNumber("10", TmsDocuments.lees(v1, "heffing"), where + ": heffing");
-        return fouten.inserted > 0;
+        TmsFaultWitnessTest.assertNumber("10", TmsDocuments.read(v1, "heffing"), where + ": heffing");
+        return faults.inserted > 0;
     }
 
     /** Fires {@code beanObject} through {@code kieBase}, which holds the rules of {@code b}: the fire must reach its fixpoint
      *  without throwing, the write-back must raise no fault, and {@code outcomes} receives the {@link Outcome} facts
      *  of the fixpoint. */
-    private static void vuur(DroolsBackend.Build b, KieBase kieBase, Object beanObject,
-                             TmsFaultWitnessTest.FaultFacts fouten, List<Object> outcomes, String description) {
+    private static void fire(DroolsBackend.Build b, KieBase kieBase, Object beanObject,
+                             TmsFaultWitnessTest.FaultFacts faults, List<Object> outcomes, String description) {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = kieBase.newKieSession();
+        KieSession session = kieBase.newKieSession();
         try {
-            sessie.addEventListener(fouten);
-            sessie.insert(beanObject);
-            DroolsBackend.Vuring firing;
+            session.addEventListener(faults);
+            session.insert(beanObject);
+            DroolsBackend.Firing firing;
             try {
-                firing = DroolsBackend.vuur(b, sessie, 100_000);
+                firing = DroolsBackend.fire(b, session, 100_000);
             } catch (RuntimeException e) {
                 fail(description + ": de fire wierp " + e);
                 return;
             }
-            assertTrue(firing.geenFixpunt() == null, () -> description + ": geen fixpunt");
+            assertTrue(firing.noFixpoint() == null, () -> description + ": geen fixpunt");
             try {
-                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                DroolsBackend.setDerivedValues(b, session);
             } catch (RuntimeException e) {
                 fail(description + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
             }
-            outcomes.addAll(sessie.getObjects(o -> o instanceof Outcome));
+            outcomes.addAll(session.getObjects(o -> o instanceof Outcome));
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }

@@ -134,7 +134,7 @@ class BranchEqualityWitnessTest {
         IrPath.version(doc, "factCreations", 0, 0).put("targetRole", "vlaggenmast");
         Path ir = model("feitcreatie-zonder-doelsoort", doc), c = ir(POSTWACHT).resolveSibling("case.json");
         for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                     () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c)), viaDrl));
             assertEquals("/rules/factCreations/0/versions/0/targetRole", e.site(), e.getMessage());
             assertTrue(e.getMessage().contains("'vlaggenmast' is not a role of 'vakbeseining'"), e.getMessage());
@@ -164,7 +164,7 @@ class BranchEqualityWitnessTest {
     @Test void the_drl_fact_creation_refuses_an_unnamed_creation() throws Exception {
         // `naam` is a wire-nullable position of this construct that no well-formedness rule covered when this row was
         // written: WF-034 gated setField, joinField and the tussenstappen until L2 and crosses the symbolic block since,
-        // and WF-094 clause (d) gated the five KEYED tables while feitCreaties is a LIST. Since then WF-107 covers it:
+        // and WF-094 clause (d) gated the five KEYED tables while factCreations is a LIST. Since then WF-107 covers it:
         // the verifier rejects a nameless form ("form in factCreations carries no name", measured 2026-10-10), so the
         // document is NOT well-formed, and the exec-model branch refuses it by name. ref and clingo still run
         // it. Measured on the pre-fix jar:
@@ -240,7 +240,7 @@ class BranchEqualityWitnessTest {
      *  and clingo-clean. */
     private static Path aggregationJoinUnderived() throws Exception {
         ObjectNode ir = goldenIr(VONDSTTELLING);
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "vondstaanmelding").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "vondstaanmelding").get("roles"))
             if ("aanmelder".equals(r.get("name").asText())) {
                 ((ObjectNode) r).put("many", true);
                 ((ObjectNode) r).put("plural", "aanmelders");
@@ -274,10 +274,10 @@ class BranchEqualityWitnessTest {
     }
 
     /** jutterswet-postwacht with a wire-nullable position of the feitcreatie's version set to null. */
-    private static Path factCreationWithout(String positie) throws Exception {
+    private static Path factCreationWithout(String position) throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        IrPath.version(ir, "factCreations", 0, 0).putNull(positie);
-        return model("feitcreatie-zonder-" + positie, ir);
+        IrPath.version(ir, "factCreations", 0, 0).putNull(position);
+        return model("feitcreatie-zonder-" + position, ir);
     }
 
     /** jutterswet-postwacht with the feitcreatie's name set to null (WF-107's position, nullable on the form). */

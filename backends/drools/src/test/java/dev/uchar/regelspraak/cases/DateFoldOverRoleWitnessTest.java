@@ -131,10 +131,10 @@ class DateFoldOverRoleWitnessTest {
         // J3, S2 beheert J2, S3 beheert J4, S4 niemand. ref and clingo: S1 05-03-2026 and 20-03-2026, S3 31-12-2025.
         String ir = document(regel("eerste vinddag", "Strandvoogd", "eerste vinddag", pathFold("first", "vinddag")),
                 regel("laatste vinddag", "Strandvoogd", "laatste vinddag", pathFold("last", "vinddag")));
-        List<String> verwacht = new ArrayList<>();
-        verwacht.addAll(perVoogd("eerste vinddag", date("2026-03-05"), null, date("2025-12-31"), null));
-        verwacht.addAll(perVoogd("laatste vinddag", date("2026-03-20"), null, date("2025-12-31"), null));
-        assertNull(play(ir, caseDocument(situation(true, false, null), verwacht)), "de vouw over een pad van twee rollen");
+        List<String> expected = new ArrayList<>();
+        expected.addAll(perVoogd("eerste vinddag", date("2026-03-05"), null, date("2025-12-31"), null));
+        expected.addAll(perVoogd("laatste vinddag", date("2026-03-20"), null, date("2025-12-31"), null));
+        assertNull(play(ir, caseDocument(situation(true, false, null), expected)), "de vouw over een pad van twee rollen");
     }
 
     @Test void a_date_and_time() throws Exception {
@@ -174,8 +174,8 @@ class DateFoldOverRoleWitnessTest {
 
     @Test void the_number_folds_that_already_played_play_equally() throws Exception {
         // A flank, green before and after: the count plus 1 (the card's k1b), the sum plus 1, the sum reduced by 1.
-        String aantal = document(regel("telling", "Jutter", "telling", binary("plus", count(), numberLiteral("1"), WHOLE)));
-        assertNull(play(aantal, caseDocument(situation(true, false, null), perJutter("telling", number("5"), number("1"), number("2"), number("2")))),
+        String count = document(regel("telling", "Jutter", "telling", binary("plus", count(), numberLiteral("1"), WHOLE)));
+        assertNull(play(count, caseDocument(situation(true, false, null), perJutter("telling", number("5"), number("1"), number("2"), number("2")))),
                 "het aantal plus 1");
         String sum = document(regel("telling", "Jutter", "telling", binary("plus", fold("sum", "gewicht", null), numberLiteral("1"), WHOLE)));
         assertNull(play(sum, caseDocument(situation(true, false, null), perJutter("telling", number("20"), number("1"), number("1"), number("10")))),
@@ -241,31 +241,31 @@ class DateFoldOverRoleWitnessTest {
     /** Strandvoogd, Jutter and Vondst; one jutter heeft meerdere vondsten, one strandvoogd beheert meerdere beheerde
      *  jutters. */
     private static final String MODEL = "{\"objectTypes\":["
-            + objecttype("Strandvoogd", "Strandvoogden", true, List.of(attr("eerste vinddag", DATE), attr("laatste vinddag", DATE),
+            + objectType("Strandvoogd", "Strandvoogden", true, List.of(attr("eerste vinddag", DATE), attr("laatste vinddag", DATE),
                     attr("bonus", WHOLE)), "")
-            + "," + objecttype("Jutter", "Jutters", true, List.of(attr("eerste vinddag", DATE), attr("laatste vinddag", DATE),
+            + "," + objectType("Jutter", "Jutters", true, List.of(attr("eerste vinddag", DATE), attr("laatste vinddag", DATE),
                     attr("laatste bergdag", DATE), attr("meldgrens", DATE), attr("startdag", DATE), attr("telling", WHOLE),
                     attr("uitkomst", "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}"),
                     attr("spanne", DAGEN), attr("eerste vindtijdstip", TIJDSTIP), attr("gewicht", WHOLE)),
                     "{\"node\":\"Characteristic\",\"name\":\"vroeg\",\"kind\":\"adjectival\"}")
-            + "," + objecttype("Vondst", "Vondsten", false, List.of(attr("vinddag", DATE), attr("bergdag", DATE),
+            + "," + objectType("Vondst", "Vondsten", false, List.of(attr("vinddag", DATE), attr("bergdag", DATE),
                     attr("vindtijdstip", TIJDSTIP), attr("gewicht", WHOLE), attr("zoekduur", DAGEN)),
                     "{\"node\":\"Characteristic\",\"name\":\"zwaar\",\"kind\":\"adjectival\"}")
             + "],\"factTypes\":["
-            + feittype("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
-            + feittype("StrandvoogdBeheertJutter", "strandvoogd", "Strandvoogd", "beheerde jutter", "beheerde jutters", "Jutter")
+            + factType("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
+            + factType("StrandvoogdBeheertJutter", "strandvoogd", "Strandvoogd", "beheerde jutter", "beheerde jutters", "Jutter")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String objecttype(String naam, String plural, boolean animate, List<String> attributes, String kenmerk) {
+    private static String objectType(String naam, String plural, boolean animate, List<String> attributes, String characteristic) {
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
-                + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + kenmerk + "]}";
+                + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + characteristic + "]}";
     }
 
     private static String attr(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String feittype(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\",\"plural\":\"" + manyPlural
@@ -292,8 +292,8 @@ class DateFoldOverRoleWitnessTest {
         return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + left + ",\"right\":" + right + ",\"type\":" + type + "}";
     }
 
-    private static String let(String binder, String waarde, String body, String type) {
-        return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + waarde
+    private static String let(String binder, String value, String body, String type) {
+        return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + value
                 + ",\"body\":" + body + "}";
     }
 
@@ -337,29 +337,29 @@ class DateFoldOverRoleWitnessTest {
     }
 
     /** A computing rule ("moet berekend worden als"). */
-    private static String regel(String naam, String type, String doel, String waarde) {
-        return version(naam, type, doel, waarde, null, "calculation");
+    private static String regel(String naam, String type, String target, String value) {
+        return version(naam, type, target, value, null, "calculation");
     }
 
     /** A computing rule written "moet gesteld worden op". */
-    private static String set(String naam, String type, String doel, String waarde) {
-        return version(naam, type, doel, waarde, null, "equation");
+    private static String set(String naam, String type, String target, String value) {
+        return version(naam, type, target, value, null, "equation");
     }
 
-    private static String initialisatie(String naam, String type, String doel, String waarde) {
-        return version(naam, type, doel, waarde, null, null);
+    private static String initialisatie(String naam, String type, String target, String value) {
+        return version(naam, type, target, value, null, null);
     }
 
-    private static String characteristicRule(String kenmerk, String type, String voorwaarde) {
-        return version(kenmerk, type, kenmerk, "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"}}",
-                voorwaarde, "");
+    private static String characteristicRule(String characteristic, String type, String condition) {
+        return version(characteristic, type, characteristic, "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"}}",
+                condition, "");
     }
 
     /** One rule with one version: {@code presentation} a computing rule's tag, null for an initialisation, empty for a
      *  characteristic attribution. */
-    private static String version(String naam, String type, String doel, String waarde, String voorwaarde, String presentation) {
+    private static String version(String naam, String type, String target, String value, String condition, String presentation) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
-                + own(doel, type) + ",\"value\":" + waarde + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde)
+                + own(target, type) + ",\"value\":" + value + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"initialisation\":" + (presentation == null)
                 + (presentation == null || presentation.isEmpty() ? "" : ",\"presentation\":\"" + presentation + "\"") + "}]}";
     }
@@ -417,30 +417,30 @@ class DateFoldOverRoleWitnessTest {
 
     private static String number(String n) { return "{\"number\":\"" + n + "\"}"; }
 
-    /** One expectation per Jutter J1–J4 on {@code attribuut}; a null value expects leeg. */
-    private static List<String> perJutter(String attribuut, String... waarden) {
-        return per(List.of("J1", "J2", "J3", "J4"), attribuut, waarden);
+    /** One expectation per Jutter J1–J4 on {@code attribute}; a null value expects leeg. */
+    private static List<String> perJutter(String attribute, String... waarden) {
+        return per(List.of("J1", "J2", "J3", "J4"), attribute, waarden);
     }
 
-    private static List<String> perVoogd(String attribuut, String... waarden) {
-        return per(List.of("S1", "S2", "S3", "S4"), attribuut, waarden);
+    private static List<String> perVoogd(String attribute, String... waarden) {
+        return per(List.of("S1", "S2", "S3", "S4"), attribute, waarden);
     }
 
-    private static List<String> per(List<String> labels, String attribuut, String... waarden) {
+    private static List<String> per(List<String> labels, String attribute, String... waarden) {
         List<String> out = new ArrayList<>();
         for (int i = 0; i < labels.size(); i++)
             out.add(waarden[i] == null
-                    ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + labels.get(i) + "\",\"attribute\":\"" + attribuut + "\"}"
-                    : "{\"kind\":\"attributeValue\",\"label\":\"" + labels.get(i) + "\",\"attribute\":\"" + attribuut
+                    ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + labels.get(i) + "\",\"attribute\":\"" + attribute + "\"}"
+                    : "{\"kind\":\"attributeValue\",\"label\":\"" + labels.get(i) + "\",\"attribute\":\"" + attribute
                       + "\",\"value\":" + waarden[i] + "}");
         return out;
     }
 
     @SafeVarargs
-    private static String caseDocument(List<String> instanties, List<String>... verwacht) {
+    private static String caseDocument(List<String> instances, List<String>... expected) {
         List<String> all = new ArrayList<>();
-        for (List<String> v : verwacht) all.addAll(v);
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
+        for (List<String> v : expected) all.addAll(v);
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
                 + "],\"parameters\":{}},\"expected\":[" + String.join(",", all) + "]}";
     }
 

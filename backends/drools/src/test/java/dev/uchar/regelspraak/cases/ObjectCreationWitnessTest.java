@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
-import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
+import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * wrong while the total still lands: a mint linked in ONE direction only (the defect this card fixed — the
  * fold found it, the navigation read leeg), a member written on the subject instead of the mint, a second
  * mint where the fact base already answered the question. Those are asserted directly here, on the
- * exec-model branch, through the entry a consumer uses: one {@link DroolsBackend#vuur} to the fixpoint, the
- * objects and links the creations made as {@link DroolsBackend#lees} gives them, and the beans after
- * {@link DroolsBackend#zetAfgeleideWaarden}, which puts the derived values and the links on them (the branch writes no
+ * exec-model branch, through the entry a consumer uses: one {@link DroolsBackend#fire} to the fixpoint, the
+ * objects and links the creations made as {@link DroolsBackend#read} gives them, and the beans after
+ * {@link DroolsBackend#setDerivedValues}, which puts the derived values and the links on them (the branch writes no
  * bean while it fires).
  *
  * <p>What the backend must reproduce is {@code RUNTIME-SEMANTICS.md} ch. 5.5, NOT the ported production
@@ -88,7 +88,7 @@ class ObjectCreationWitnessTest {
         // production lowering writes only the first of these two; without the second the navigated read below
         // reads leeg, which is exactly how this card's defect showed up.
         After after = afterFire(ir(REKENKAMER), jutter("240", "90"));
-        Object jutter = after.invoer().get("J1");
+        Object jutter = after.input().get("J1");
         Object mint = onlyMint(after);
 
         assertSame(jutter, RegelSpraakRuntime.get(mint, "opdrachtgever"),
@@ -104,9 +104,9 @@ class ObjectCreationWitnessTest {
                 "a to-one navigation from the subject must reach the mint");
 
         // and the assertion is not vacuous: the comparator does reject the wrong value on this very case.
-        String fout = play(ir(REKENKAMER), jutterWithExpectation("240", "90", "149"));
-        assertNotNull(fout, "the navigated read must be observably 150, not merely unasserted");
-        assertTrue(fout.contains("heffing"), fout);
+        String fault = play(ir(REKENKAMER), jutterWithExpectation("240", "90", "149"));
+        assertNotNull(fault, "the navigated read must be observably 150, not merely unasserted");
+        assertTrue(fault.contains("heffing"), fault);
     }
 
     @Test void a_subject_mints_exactly_one_object() throws Exception {
@@ -142,7 +142,7 @@ class ObjectCreationWitnessTest {
         // kamer's own rule).
         After after = afterFire(ir(REKENKAMER), linkOnSubject("6"));
         assertTrue(mints(after).isEmpty(), "an already-linked 1:1 subject mints nothing: " + mints(after));
-        assertSame(after.invoer().get("R1"), RegelSpraakRuntime.get(after.invoer().get("J1"), "rekenkamer"),
+        assertSame(after.input().get("R1"), RegelSpraakRuntime.get(after.input().get("J1"), "rekenkamer"),
                 "and the supplied link is left as delivered");
         assertNull(play(ir(REKENKAMER), linkOnSubject("6")));
     }
@@ -154,7 +154,7 @@ class ObjectCreationWitnessTest {
         // the arm above — one relation, one outcome, two spellings.
         After after = afterFire(ir(REKENKAMER), linkOnMintedSide("6"));
         assertTrue(mints(after).isEmpty(), "the relation reaches the subject through its far leg too: " + mints(after));
-        assertSame(after.invoer().get("R1"), RegelSpraakRuntime.get(after.invoer().get("J1"), "rekenkamer"),
+        assertSame(after.input().get("R1"), RegelSpraakRuntime.get(after.input().get("J1"), "rekenkamer"),
                 "and the forward field points at the SUPPLIED kamer, not at a mint");
         assertNull(play(ir(REKENKAMER), linkOnMintedSide("6")));
         assertNotNull(play(ir(REKENKAMER), linkOnMintedSide("150")),
@@ -236,8 +236,8 @@ class ObjectCreationWitnessTest {
         After after = afterFire(ir, jutter("240", "90"));
         Object mint = onlyMint(after);
 
-        assertSame(after.invoer().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"));
-        assertSame(mint, RegelSpraakRuntime.get(after.invoer().get("J1"), "rekenkamer"));
+        assertSame(after.input().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"));
+        assertSame(mint, RegelSpraakRuntime.get(after.input().get("J1"), "rekenkamer"));
         assertNull(RegelSpraakRuntime.get(mint, "grondslag"), "no toekenning wrote a member");
         // and the empty mint propagates as leeg, not as a fault — ref pins the same on this model+case.
         assertNull(play(ir, jutterWithEmptyExpectation("240", "90")));
@@ -257,7 +257,7 @@ class ObjectCreationWitnessTest {
         Path ir = withCondition();
         After after = afterFire(ir, jutter("50", "20"));
         assertTrue(mints(after).isEmpty(), "an unmet condition creates nothing: " + mints(after));
-        assertNull(RegelSpraakRuntime.get(after.invoer().get("J1"), "rekenkamer"),
+        assertNull(RegelSpraakRuntime.get(after.input().get("J1"), "rekenkamer"),
                 "and no forward link is written either");
         assertNull(play(ir, jutterWithEmptyExpectation("50", "20")));
     }
@@ -276,7 +276,7 @@ class ObjectCreationWitnessTest {
         // assertSames below separate them. ref on this model+case: W1.opvolgerrang = 5, rangdetector violated
         // (by the mint, rank 5).
         After after = afterFire(ir(WACHTERSKETEN), wachter("4"));
-        Object w1 = after.invoer().get("W1");
+        Object w1 = after.input().get("W1");
         Object mint = onlyMint(after);
 
         assertEquals("Wachter", mint.getClass().getSimpleName());
@@ -335,7 +335,7 @@ class ObjectCreationWitnessTest {
         Path ir = manySubjectRole();
         After after = afterFire(ir, jutter("240", "90"));
         Object mint = onlyMint(after);
-        assertSame(mint, RegelSpraakRuntime.get(after.invoer().get("J1"), "rekenkamer"),
+        assertSame(mint, RegelSpraakRuntime.get(after.input().get("J1"), "rekenkamer"),
                 "the writable end still links subject and mint");
         // and the un-writable end is SKIPPED, not attempted: the created type has no such member at all, so a
         // symmetric "write both ends" would reach a setter no bean carries (the fire-time ERROR this replaces).
@@ -367,7 +367,7 @@ class ObjectCreationWitnessTest {
         After after = afterFire(ir, jutterWithEmptyExpectation("240", "90"));
         Object mint = onlyMint(after);
         assertEquals("Rekenkamer", mint.getClass().getSimpleName());
-        assertSame(after.invoer().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"),
+        assertSame(after.input().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"),
                 "the writable end (the back-reference) links mint and subject");
         assertNull(play(ir, jutterWithEmptyExpectation("240", "90")));
     }
@@ -473,7 +473,7 @@ class ObjectCreationWitnessTest {
         Path ir = from2030();
         After after = afterFire(ir, jutterOp("2026-01-01", null));
         assertTrue(mints(after).isEmpty(), "outside its window the creation mints nothing: " + mints(after));
-        assertNull(RegelSpraakRuntime.get(after.invoer().get("J1"), "rekenkamer"), "and links nothing");
+        assertNull(RegelSpraakRuntime.get(after.input().get("J1"), "rekenkamer"), "and links nothing");
         assertNull(play(ir, jutterOp("2026-01-01", null)));
     }
 
@@ -497,30 +497,30 @@ class ObjectCreationWitnessTest {
     }
 
     /** One case of {@code irPath} on the exec-model branch, as a consumer plays it through the entry: the input
-     *  through {@link DroolsBackend#voegIn} (the replay's set-up), one {@link DroolsBackend#vuur} to the fixpoint, the
-     *  fixpoint {@link DroolsBackend#lees} gives, and then {@link DroolsBackend#zetAfgeleideWaarden}, so that the beans
+     *  through {@link DroolsBackend#insert} (the replay's set-up), one {@link DroolsBackend#fire} to the fixpoint, the
+     *  fixpoint {@link DroolsBackend#read} gives, and then {@link DroolsBackend#setDerivedValues}, so that the beans
      *  of the input and of the made objects carry the derived values and the links. */
     private static After afterFire(Path irPath, JsonNode c) throws Exception {
         return CaseRunner.forMeasurement(irPath, DroolsBackend.Branch.EXEC_MODEL).withSession(c,
-                (bouw, sessie, labels) -> {
-            DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie);
-            if (firing.geenFixpunt() != null) throw new IllegalStateException(firing.geenFixpunt());
-            Fixpunt fixpunt = DroolsBackend.lees(bouw, sessie);
-            DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
-            return new After(new LinkedHashMap<>(labels), fixpunt);
+                (build, session, labels) -> {
+            DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
+            if (firing.noFixpoint() != null) throw new IllegalStateException(firing.noFixpoint());
+            Fixpoint fixpoint = DroolsBackend.fixpointOf(build, session);
+            DroolsBackend.setDerivedValues(build, session);
+            return new After(new LinkedHashMap<>(labels), fixpoint);
         });
     }
 
     /** The input beans of a case by label, and the fixpoint of its session. */
-    private record After(Map<String, Object> invoer, Fixpunt fixpunt) {}
+    private record After(Map<String, Object> input, Fixpoint fixpoint) {}
 
     /** The §9.5 deposits of the fixpoint as "regel @ label", sorted; an object a creation made, which no case label
      *  names, as "gemaakt". */
     private static List<String> violations(After after) throws Exception {
         Map<Object, String> label = new java.util.IdentityHashMap<>();
-        after.invoer().forEach((l, bean) -> label.put(bean, l));
+        after.input().forEach((l, bean) -> label.put(bean, l));
         List<String> out = new java.util.ArrayList<>();
-        for (Object f : after.fixpunt().inconsistenties())
+        for (Object f : after.fixpoint().inconsistencies())
             out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ "
                     + label.getOrDefault(f.getClass().getMethod("getSubject").invoke(f), "gemaakt"));
         out.sort(null);
@@ -538,7 +538,7 @@ class ObjectCreationWitnessTest {
 
     /** The objects the creations made, as the fixpoint gives them. */
     private static List<Object> mints(After after) {
-        return after.fixpunt().objecten().stream().map(Fixpunt.GemaaktObject::object).toList();
+        return after.fixpoint().objects().stream().map(Fixpoint.MadeObject::object).toList();
     }
 
     private static Object onlyMint(After after) {
@@ -677,7 +677,7 @@ class ObjectCreationWitnessTest {
      *  (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
     private static com.fasterxml.jackson.databind.node.ObjectNode withCardinality(boolean subjectMany, boolean mintedMany) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        JsonNode roles = IrPath.declaratie(ir, "factTypes", "taxatieopdracht").get("roles");
+        JsonNode roles = IrPath.declaration(ir, "factTypes", "taxatieopdracht").get("roles");
         ((com.fasterxml.jackson.databind.node.ObjectNode) roles.get(0)).put("many", subjectMany);
         ((com.fasterxml.jackson.databind.node.ObjectNode) roles.get(1)).put("many", mintedMany);
         return ir;
@@ -817,10 +817,10 @@ class ObjectCreationWitnessTest {
         return write(ir, "dossier-aantal");
     }
 
-    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode lijst, String naam) {
+    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode list, String naam) {
         var kept = JSON.createArrayNode();
-        for (JsonNode n : lijst) if (!naam.equals(n.path("name").asText())) kept.add(n);
-        if (kept.size() != lijst.size() - 1) throw new AssertionError("'" + naam + "' is not in the list");
+        for (JsonNode n : list) if (!naam.equals(n.path("name").asText())) kept.add(n);
+        if (kept.size() != list.size() - 1) throw new AssertionError("'" + naam + "' is not in the list");
         return kept;
     }
 
@@ -845,7 +845,7 @@ class ObjectCreationWitnessTest {
     }
 
     /** One dossierless Jutter against the rewritten dossier assertion: the count is 0 and the assertion violated. */
-    private static JsonNode jutterWithDossierExpectation(boolean gerechtigd, String aantal) throws Exception {
+    private static JsonNode jutterWithDossierExpectation(boolean gerechtigd, String count) throws Exception {
         return JSON.readTree(("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
@@ -853,7 +853,7 @@ class ObjectCreationWitnessTest {
                       "characteristics": [%s] } ], "parameters": {} },
                   "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "aantal dossiers",
                                   "value": { "number": "%s" } }, %s ] }
-                """).formatted(gerechtigd ? "\"penninggerechtigd\"" : "", aantal,
+                """).formatted(gerechtigd ? "\"penninggerechtigd\"" : "", count,
                 gerechtigd ? "{ \"kind\": \"consistent\" }"
                            : "{ \"kind\": \"inconsistent\", \"rule\": \"houderscontrole\", \"label\": \"J1\" }"));
     }

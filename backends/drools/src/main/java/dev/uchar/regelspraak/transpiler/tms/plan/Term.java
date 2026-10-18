@@ -1,8 +1,8 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.model.Datatype;
-import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.Unit;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,13 +29,13 @@ import java.util.function.Predicate;
  * analysis sets it to -1, so a place there deposits nothing and a rendering reads no slot that nobody fills.
  *
  * <p>A node that stands for a node of the IR carries that node's source fragment, the IR's {@code source.snippet}
- * ({@link #bron}): a rendering into DRL text puts it above the text as a comment. It is null where the IR has none, and
+ * ({@link #source}): a rendering into DRL text puts it above the text as a comment. It is null where the IR has none, and
  * on a node the analysis adds without a node of its own in the IR, such as the arguments of a helper.
  */
 public sealed interface Term {
 
     /** The source fragment of the IR node this term stands for, or null. */
-    String bron();
+    String source();
 
     /**
      * The value {@code waarde}, exactly as the analysis made it: a number as a {@code BigDecimal} with its scale or as
@@ -44,25 +44,25 @@ public sealed interface Term {
      * for a constant of the analysis that an argument of a {@link StaticFunction} takes (a number of decimals, a rounding mode,
      * a unit of time, a label, a class), and for an absent bound, whose value is null.
      */
-    record Const(Object waarde, Datatype type, String bron) implements Term {}
+    record Const(Object value, Datatype type, String source) implements Term {}
 
     /** The value the left-hand side binds at slot {@code slot} of the value array ({@link ReadTable}). */
-    record SlotValue(int slot, String bron) implements Term {}
+    record SlotValue(int slot, String source) implements Term {}
 
     /**
-     * The input member {@code veld} on the bean of the object that {@code object} gives, read as {@code vorm}
+     * The input member {@code field} on the bean of the object that {@code object} gives, read as {@code form}
      * ({@link Binding.ReadForm}): an input that a test the form composes itself reads where it evaluates, with no
      * pattern that binds it, such as the target in the guard of an initialisation. The read has no effect and cannot
      * fault.
      */
-    record Invoer(Term object, Binding.Field veld, Binding.ReadForm vorm, String bron) implements Term {}
+    record Input(Term object, Binding.Field field, Binding.ReadForm form, String source) implements Term {}
 
     /**
      * The read of the binder {@code naam} of the {@link Let} whose slot is {@code slot} (RUNTIME-SEMANTICS ch. 10.6): the
      * first read evaluates the {@code Let}'s value and every further one reads that result; a leeg value ends that
      * {@code Let} with leeg.
      */
-    record Binder(int slot, String naam, String bron) implements Term {}
+    record Binder(int slot, String naam, String source) implements Term {}
 
     /**
      * {@code body} with the binder {@code naam} bound to {@code waarde} as a need (RUNTIME-SEMANTICS ch. 10.6): the
@@ -72,14 +72,14 @@ public sealed interface Term {
      * the same faults and the same deposits; a rendering that cannot evaluate by need may then evaluate it first. The
      * rendering into closures evaluates by need always.
      */
-    record Let(int slot, String naam, Term waarde, Term body, boolean eager, String bron) implements Term {}
+    record Let(int slot, String naam, Term value, Term body, boolean eager, String source) implements Term {}
 
-    /** The condition {@code voorwaarde}, then exactly the branch it chooses: {@code dan} where it holds, {@code anders}
+    /** The condition {@code condition}, then exactly the branch it chooses: {@code dan} where it holds, {@code anders}
      *  where not (RUNTIME-SEMANTICS ch. 10.2). The other branch evaluates nothing. */
-    record Choice(Term voorwaarde, Term then, Term otherwise, String bron) implements Term {}
+    record Choice(Term condition, Term then, Term otherwise, String source) implements Term {}
 
     /** The function {@code function} on the values of {@code arguments}, evaluated in that order. */
-    record Call(StaticFunction function, List<Term> arguments, String bron) implements Term {
+    record Call(StaticFunction function, List<Term> arguments, String source) implements Term {
         public Call {
             arguments = List.copyOf(arguments);
         }
@@ -92,8 +92,8 @@ public sealed interface Term {
      * {@code noemer} is null, times the single ratio {@code teller} of the two units. A leeg value and a value that is
      * no number pass unchanged. The analysis adds no node where no restatement is due.
      */
-    record Restate(StaticFunction function, Term term, Eenheid van, Eenheid naar, BigDecimal counter, BigDecimal denominator,
-                     String bron) implements Term {
+    record Restate(StaticFunction function, Term term, Unit van, Unit destination, BigDecimal counter, BigDecimal denominator,
+                     String source) implements Term {
         public Restate {
             boolean exact = function == StaticFunction.RESTATE_EXACT;
             if (!exact && function != StaticFunction.RESTATE || exact != (denominator != null))
@@ -108,25 +108,25 @@ public sealed interface Term {
      * dividend meets a leeg divisor the probe in slot {@code depositFlag} of the value array hears it, and with {@code depositFlag}
      * -1 the place does not deposit (RUNTIME-SEMANTICS ch. 1.2). A numeric zero divisor is the fault of ch. 1.4.
      */
-    record Division(StaticFunction function, Term left, Term right, int depositFlag, String bron) implements Term {}
+    record Division(StaticFunction function, Term left, Term right, int depositFlag, String source) implements Term {}
 
     /**
      * A square root of {@code radicand} through {@code function} ({@link StaticFunction#SQUARE_ROOT} under a rounding,
      * {@link StaticFunction#EXACT_SQUARE_ROOT} without one) with the probe of the rule's §6.6 deposit: where the radicand is
      * negative the probe in slot {@code depositFlag} hears it, and with {@code depositFlag} -1 the place does not deposit.
      */
-    record SquareRoot(StaticFunction function, Term radicand, int depositFlag, String bron) implements Term {}
+    record SquareRoot(StaticFunction function, Term radicand, int depositFlag, String source) implements Term {}
 
-    /** The evaluation fault {@code sentence}, a {@code Rekenfout}, wherever the evaluation reaches this node: an
+    /** The evaluation fault {@code sentence}, a {@code ComputeFault}, wherever the evaluation reaches this node: an
      *  {@code Unresolved} node (RUNTIME-SEMANTICS ch. 5.7, WF-044) or the bound day outside a day kind (ch. 8.2). */
-    record Fail(String sentence, String bron) implements Term {}
+    record Fail(String sentence, String source) implements Term {}
 
     /** The value of {@code waarde}, and the evaluation fault {@code sentence} where it is leeg: the evaluation date in a
      *  session without one (RUNTIME-SEMANTICS ch. 8.2). */
-    record Required(Term waarde, String sentence, String bron) implements Term {}
+    record Required(Term value, String sentence, String source) implements Term {}
 
     /** The texts of {@code parts}, in order, joined: a text composition or a concatenation (IR-SPEC ch. 4.2). */
-    record TextComposition(List<Term> parts, String bron) implements Term {
+    record TextComposition(List<Term> parts, String source) implements Term {
         public TextComposition {
             parts = List.copyOf(parts);
         }
@@ -137,7 +137,7 @@ public sealed interface Term {
      * evaluated, from leeg before the first: {@link StaticFunction#SMALLEST} keeps the least, {@link StaticFunction#LARGEST} the
      * greatest, a leeg operand skipped and a tie taking the later operand; leeg where every operand is.
      */
-    record ListedFold(StaticFunction function, List<Term> operands, String bron) implements Term {
+    record ListedFold(StaticFunction function, List<Term> operands, String source) implements Term {
         public ListedFold {
             if (function != StaticFunction.SMALLEST && function != StaticFunction.LARGEST)
                 throw new IllegalArgumentException("een gelijste vouw neemt KLEINSTE of GROOTSTE als stap, niet " + function);
@@ -152,7 +152,7 @@ public sealed interface Term {
      * fault bound at slot {@code memberFault} stands, its fault; then the fold's value {@code uitkomst}. A slot of -1: the
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
-    record FoldRead(Term outcome, int depositCount, int depositFlag, int filterFault, int memberFault, String bron)
+    record FoldRead(Term outcome, int depositCount, int depositFlag, int filterFault, int memberFault, String source)
             implements Term {}
 
     /**
@@ -163,7 +163,7 @@ public sealed interface Term {
      * member after it is not evaluated: it raises no fault and deposits nothing. Where no trigger stops it, every member
      * is read and the verdict is the quantifier's over them ({@code ComputeHelpers.endVerdict}).
      */
-    record Compound(Conditie.Kwantor quantifier, int threshold, List<Term> members, String bron) implements Term {
+    record Compound(Condition.Quantifier quantifier, int threshold, List<Term> members, String source) implements Term {
         public Compound {
             members = List.copyOf(members);
         }
@@ -179,8 +179,8 @@ public sealed interface Term {
      * matrix faulted; one that is not reached does neither. A fold whose matrix can do neither is an {@link Call} of
      * {@link StaticFunction#QUANTIFIER_VERDICT} over the count and the sum of the verdicts, where the order does not show.
      */
-    record QuantifierRead(StaticFunction function, Term aantal, Term contributions, Conditie.Kwantor quantifier, int threshold, int depositFlag,
-                         String bron) implements Term {
+    record QuantifierRead(StaticFunction function, Term count, Term contributions, Condition.Quantifier quantifier, int threshold, int depositFlag,
+                         String source) implements Term {
         public QuantifierRead {
             if (function != StaticFunction.QUANTIFIER_READ)
                 throw new IllegalArgumentException("een kwantorlezing neemt KWANTORLEZING als functie, niet " + function);
@@ -188,13 +188,13 @@ public sealed interface Term {
     }
 
     /**
-     * The condition {@code voorwaarde} where its evaluation answers, and not holding where it faults
+     * The condition {@code condition} where its evaluation answers, and not holding where it faults
      * (RUNTIME-SEMANTICS ch. 5.2): a part of a test a form composes itself, where another rule takes the fault. An
      * exception that is no evaluation fault is a broken contract and passes.
      */
-    record WithoutFault(Term voorwaarde, String bron) implements Term {}
+    record WithoutFault(Term condition, String source) implements Term {}
 
     /** The predicate of the day kind {@code naam} over a calendar day: a constant of the document, which reads nothing
      *  of working memory (IR-SPEC ch. 3.7, WF-031). */
-    record DayKind(String naam, Predicate<LocalDate> datePredicate, String bron) implements Term {}
+    record DayKind(String naam, Predicate<LocalDate> datePredicate, String source) implements Term {}
 }

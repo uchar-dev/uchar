@@ -1,13 +1,13 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -35,16 +35,16 @@ final class Stapels {
 
     /** One effective stack: the groups that run on instances of exactly {@code eigenaar}, more than one only for a
      *  declared-unordered root. */
-    record Stack(Objecttype eigenaar, List<PrioritizedDefaults> members) {}
+    record Stack(Objecttype owner, List<PrioritizedDefaults> members) {}
 
     /** A composition this branch does not lower, with the reason. */
     static final class Uncomposable extends RuntimeException {
-        Uncomposable(String reden) { super(reden); }
+        Uncomposable(String reason) { super(reason); }
     }
 
     /** The vacuously true justification an unconditional rule gets when it becomes a base, the shape of the ch. 7.7
      *  desugaring. */
-    private static final Conditie ALTIJD = new Conditie.Samengesteld(Conditie.Kwantor.ALLE, 0, List.of(), null);
+    private static final Condition ALTIJD = new Condition.Compound(Condition.Quantifier.ALLE, 0, List.of(), null);
 
     private final RegelSpraakModel model;
     private final List<PrioritizedDefaults> defaults;
@@ -68,16 +68,16 @@ final class Stapels {
     }
 
     /** The level default {@code d} of a stack owned by {@code eigenaar} is read on. */
-    Objecttype levelOf(Default d, Objecttype eigenaar) {
-        return origin.getOrDefault(d, eigenaar);
+    Objecttype levelOf(Default d, Objecttype owner) {
+        return origin.getOrDefault(d, owner);
     }
 
     /** Whether {@code otype} itself declares a group on its attribute {@code attr}: a rule beside it is not
      *  inheritance but WF-050's single-writer lift, which the fold leaves alone. */
     boolean ownGroup(Objecttype otype, String attr) {
-        String sleutel = "A:" + Namen.norm(attr);
+        String stackKey = "A:" + Namen.norm(attr);
         for (PrioritizedDefaults l : defaults)
-            if (model.objecttypeOpNaam(l.onderwerp()) == otype && sleutel(l).equals(sleutel)) return true;
+            if (model.objectTypeByName(l.onderwerp()) == otype && stackKey(l).equals(stackKey)) return true;
         return false;
     }
 
@@ -86,10 +86,10 @@ final class Stapels {
      *  {@code otype} itself declares one ({@link #ownGroup}). */
     List<Objecttype> absorbedOn(Objecttype otype, String attr) {
         if (ownGroup(otype, attr)) return List.of();
-        String sleutel = "A:" + Namen.norm(attr);
+        String stackKey = "A:" + Namen.norm(attr);
         List<Objecttype> out = new ArrayList<>();
         for (Objecttype t : model.objecttypen.values())
-            if (t.isEen(otype) && chainGroupKeys(t).contains(sleutel)) out.add(t);
+            if (t.isA(otype) && chainGroupKeys(t).contains(stackKey)) out.add(t);
         return out;
     }
 
@@ -99,7 +99,7 @@ final class Stapels {
         LinkedHashMap<String, List<PrioritizedDefaults>> own = new LinkedHashMap<>();
         for (PrioritizedDefaults l : defaults)
             if (Namen.norm(l.onderwerp()).equals(Namen.norm(type.naam))) {
-                own.computeIfAbsent(sleutel(l), k -> new ArrayList<>()).add(l);
+                own.computeIfAbsent(stackKey(l), k -> new ArrayList<>()).add(l);
                 for (Default d : l.defaults()) origin.put(d, type);
             }
         for (String k : absorb)
@@ -136,25 +136,25 @@ final class Stapels {
      *  on the target is collected and refused by name where it cannot fold, since the fold takes it out of the rule
      *  circuit: a rule passed over would be silenced without becoming a base. */
     private PrioritizedDefaults ruleMember(Objecttype level, String key) {
-        List<ResolvedRegel> comps = new ArrayList<>(), inits = new ArrayList<>(), all = new ArrayList<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            if (!(r.doel() instanceof Expr.AttribuutRef d) || d.attribuut() == null) continue;
-            if (d.objecttype() != level || !("A:" + Namen.norm(d.attribuut())).equals(key)) continue;
-            switch (r.soort()) {
+        List<ResolvedRule> comps = new ArrayList<>(), inits = new ArrayList<>(), all = new ArrayList<>();
+        for (ResolvedRule r : model.resolvedRegels) {
+            if (!(r.target() instanceof Expr.AttributeReference d) || d.attribute() == null) continue;
+            if (d.objectType() != level || !("A:" + Namen.norm(d.attribute())).equals(key)) continue;
+            switch (r.category()) {
                 case GELIJKSTELLING, BEREKENING -> { comps.add(r); all.add(r); }
                 case INITIALISATIE -> { inits.add(r); all.add(r); }
                 default -> { }
             }
         }
         if (all.isEmpty()) return null;
-        for (ResolvedRegel r : all)
-            if (r.geldigheid() != null && !r.geldigheid().always())
+        for (ResolvedRule r : all)
+            if (r.validity() != null && !r.validity().always())
                 throw new Uncomposable("het doel " + targetName(key) + " op " + level.naam + " wordt naast een geërfde"
                         + " defaultsstapel geschreven door de regel \"" + r.naam() + "\" met een geldigheidsvenster: een"
                         + " basis met een venster zet versiekeuze in de stapel, die ch. 7.4 van verdedigbaarheid scheidt"
                         + " (RUNTIME-SEMANTICS ch. 7.10)");
-        for (ResolvedRegel r : all)
-            if (r.waarde() == null)
+        for (ResolvedRule r : all)
+            if (r.value() == null)
                 throw new Uncomposable("het doel " + targetName(key) + " op " + level.naam + " wordt naast een geërfde"
                         + " defaultsstapel geschreven door de regel \"" + r.naam() + "\" zonder waarde: een basis zonder"
                         + " consequentie beslist niets en wordt niet gevouwen (RUNTIME-SEMANTICS ch. 7.10)");
@@ -165,15 +165,15 @@ final class Stapels {
                     + " die prioritized defaults vervangen (RUNTIME-SEMANTICS ch. 7.10)");
         List<Default> ds = new ArrayList<>();
         String attr = null;
-        for (ResolvedRegel r : comps) {
-            attr = ((Expr.AttribuutRef) r.doel()).attribuut();
-            ds.add(new Default(null, r.voorwaarde() != null ? r.voorwaarde() : ALTIJD, r.waarde(), false, null, r.naam()));
+        for (ResolvedRule r : comps) {
+            attr = ((Expr.AttributeReference) r.target()).attribute();
+            ds.add(new Default(null, r.condition() != null ? r.condition() : ALTIJD, r.value(), false, null, r.naam()));
         }
         // the initialisation keeps its condition: justified where the target is empty in the input and the condition
         // holds; folded without it, it wrote its value where the condition failed
-        for (ResolvedRegel r : inits) {
-            attr = ((Expr.AttribuutRef) r.doel()).attribuut();
-            ds.add(new Default(null, r.voorwaarde(), r.waarde(), true, null, r.naam()));
+        for (ResolvedRule r : inits) {
+            attr = ((Expr.AttributeReference) r.target()).attribute();
+            ds.add(new Default(null, r.condition(), r.value(), true, null, r.naam()));
         }
         for (Default d : ds) origin.put(d, level);
         return new PrioritizedDefaults("regel als basis: " + attr + " van " + level.naam, level.naam, null, attr, false,
@@ -184,8 +184,8 @@ final class Stapels {
     private Set<String> chainGroupKeys(Objecttype t) {
         Set<String> out = new LinkedHashSet<>();
         for (PrioritizedDefaults l : defaults) {
-            Objecttype onderwerp = model.objecttypeOpNaam(l.onderwerp());
-            if (onderwerp != null && t.isEen(onderwerp)) out.add(sleutel(l));
+            Objecttype onderwerp = model.objectTypeByName(l.onderwerp());
+            if (onderwerp != null && t.isA(onderwerp)) out.add(stackKey(l));
         }
         return out;
     }
@@ -199,17 +199,17 @@ final class Stapels {
         if (base != null) out.add(base);
         out.addAll(initialisations(inherited));
         out.addAll(initialisations(own));
-        return new PrioritizedDefaults(own.naam(), own.onderwerp(), own.kenmerk(), own.attribuut(),
-                own.ongeordend(), List.copyOf(out), own.bron(), own.geldigheid());
+        return new PrioritizedDefaults(own.naam(), own.onderwerp(), own.characteristic(), own.attribute(),
+                own.unordered(), List.copyOf(out), own.source(), own.validity());
     }
 
     /** The lowest ordinary default, and only when it decides something itself: a group-default delegates to its
      *  exception groups and is no base, and a declared-unordered member has no lowest one, so its block travels whole. */
     private static Default baseOf(PrioritizedDefaults l) {
-        if (l.ongeordend()) return null;
+        if (l.unordered()) return null;
         Default last = null;
         for (Default d : l.defaults()) if (!d.initialisatie()) last = d;
-        return last != null && last.heeftEigenInhoud() ? last : null;
+        return last != null && last.hasOwnContent() ? last : null;
     }
 
     private static List<Default> exceptions(PrioritizedDefaults l) {
@@ -226,11 +226,11 @@ final class Stapels {
     }
 
     /** The kind-discriminated key of a group's target: a characteristic and an attribute of one name stay apart. */
-    static String sleutel(PrioritizedDefaults l) {
-        return (l.isKenmerk() ? "K:" : "A:") + Namen.norm(l.doel());
+    static String stackKey(PrioritizedDefaults l) {
+        return (l.isCharacteristic() ? "K:" : "A:") + Namen.norm(l.target());
     }
 
-    private static String targetName(String sleutel) {
-        return (sleutel.startsWith("K:") ? "kenmerk '" : "attribuut '") + sleutel.substring(2) + "'";
+    private static String targetName(String stackKey) {
+        return (stackKey.startsWith("K:") ? "kenmerk '" : "attribuut '") + stackKey.substring(2) + "'";
     }
 }

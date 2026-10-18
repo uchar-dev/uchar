@@ -18,7 +18,7 @@ in tests.
 - `runtime/` — the production runtime (`RegelSpraakRuntime`, `Breuk`, `Accessors`, …). It
   lives **only here**; `ref/` and `spec/verifier/` share no code with it (gate 1's
   no-share tripwire enforces this).
-- `schema/`, `graaf/`, `engine/` — the fact-model contract + bean generation, the rule
+- `schema/`, `graph/`, `engine/` — the fact-model contract + bean generation, the rule
   graph, and the fire-layer support (in-memory bean compiler, parameterset loader).
 - `loader/IrLoader.java` — **the heart**: the inverse of the frontend's `IrEmitter`. It
   parses `uchar-ir-v1` JSON in its L5 shape — every node, key and list under `rules` in
@@ -29,7 +29,7 @@ in tests.
   datatype union with no record here — a v1 struct/list/match, a temporal read, …) is a
   **loud per-form `Refusal`**; a document that is not well-formed — a node name outside
   the schema's union at its position, a v0 node name among them, or a v0 key, list or
-  enumeration value — is a `Documentfout` naming its JSON pointer, in the shared OCaml
+  enumeration value — is a `DocumentError` naming its JSON pointer, in the shared OCaml
   loader's words, never a `Refusal`.
 - `cases/CaseRunner.java`, `cases/DroolsBackendMain.java` — the case runner and the
   jar-only CLI the gate drives.
@@ -47,7 +47,7 @@ returns a `Build` record: the model, the bean class loader, the analysis (`execM
 branch its DRL text (`drl()`; null on the exec-model branch), the coverage manifest of the analysis and the `KieBase`
 (`Branch` has two values, `EXEC_MODEL` and `DRL_TEXT`, the two renderings of the analysis). It is the whole prelude of the case
 runner, which builds every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the
-replay's sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). On the DRL-text branch it
+replay's sentences (`IrLoader.Refusal`, `IrLoader.DocumentError`, `CaseRunner.Excluded`). On the DRL-text branch it
 also refuses a kind the rendering does not carry, an `Excluded` after the label `drl:` (section "The DRL-text
 branch"). A DRL text that the Drools compiler rejects is no such refusal but a fault of the rendering: the build throws
 an `IllegalStateException`, "drl: de DRL-tekst van de weergave compileert niet, een fout van de weergave: …". Until
@@ -67,182 +67,182 @@ consumer does.
 
 1. A fresh `KieSession` of `build.kieBase()`, with `build.beanLoader()` as the thread's context class loader while the
    beans are made and the session fires. The globals go on it before the fire: each parameter under its name as an
-   identifier (`Namen.ident(name, false)`), the evaluation date as `rekendatum` (a `LocalDate`; a session without one
-   sets none), and on the DRL-text branch every entry of `build.dagsoortGlobalen()`. A global the KieBase does not
+   identifier (`Namen.ident(name, false)`), the evaluation date as `evaluationDate` (a `LocalDate`; a session without one
+   sets none), and on the DRL-text branch every entry of `build.dayKindGlobals()`. A global the KieBase does not
    declare is one no rule reads; `setGlobal` refuses it, and the replay passes it over. A global keeps its value from
-   the first `vuur` on: the branch states it as a fact once, at the first fire,
-   so `vuur`, `lees` and `zetAfgeleideWaarden` refuse a session whose global changed after it.
-2. `DroolsBackend.voegIn(build, session, invoer)`, with an `Invoer` that holds the beans, instances of the classes
+   the first `fire` on: the branch states it as a fact once, at the first fire,
+   so `fire`, `fixpointOf` and `setDerivedValues` refuse a session whose global changed after it.
+2. `DroolsBackend.voegIn(build, session, invoer)`, with an `Input` that holds the beans, instances of the classes
    `build.beanLoader()` loads with their attributes, characteristics and reference fields set, and what the branch
    reads beside them: `emmerscalair(bean, attribute)` for every attribute on
    a timeline whose input the bean holds as the asOfDate-bucket scalar, the one segment of the period of the
    attribute's grid that holds the evaluation date (RUNTIME-SEMANTICS ch. 8.4), and `lijst(holder, role, members)`
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
-   of the reference field each member holds toward it. `voegIn` states the facts the branch reads from these
+   of the reference field each member holds toward it. `insert` states the facts the branch reads from these
    (`BucketInput`, `ListPlace`), so a consumer states no fact class of the branch itself.
-   `CaseInvoer.van(build, case)` makes that `Invoer` from a `uchar-case-v0` case, as the replay makes it for every
+   `CaseInvoer.van(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
    far field as well; a to-many role in the far end's field; the reverse leg of a reciprocal role in a separate
-   pass), and gives `beans()` by label, `typen()` and `invoer()`, every to-many list in the order the reference
+   pass), and gives `beans()` by label, `types()` and `input()`, every to-many list in the order the reference
    interpreter folds over. A consumer with a request of its own, such as a decision service, writes the request as
    the `instances` of a case with its ids as labels. A role link the bean model cannot hold is a
-   `CaseInvoer.Rolweigering` (a `CaseRunner.Excluded`), a second, different target on a to-one field (WF-013) a
-   `CaseInvoer.Rolbotsing` (an `IllegalArgumentException`); both name the link the case wrote, its instance, role key
-   and target (`CaseInvoer.Rolfout`), and both come from `van`, before anything goes into a session (witness
+   `CaseInput.RoleRefusal` (a `CaseRunner.Excluded`), a second, different target on a to-one field (WF-013) a
+   `CaseInput.RoleCollision` (an `IllegalArgumentException`); both name the link the case wrote, its instance, role key
+   and target (`CaseInput.RoleError`), and both come from `van`, before anything goes into a session (witness
    `CaseInputWitnessTest`). The parameters and the evaluation date stay the caller's, as globals (step 1).
 3. `DroolsBackend.vuur(build, session)`, which fires to the fixpoint under a cap, a model with a creation in
-   generations per stratum (below), and returns a `Vuring`: the firings, the cap, and `geenFixpunt`, the sentence of a
+   generations per stratum (below), and returns a `Firing`: the firings, the cap, and `noFixpoint`, the sentence of a
    run without a fixpoint, at the cap or at the creation budget, or null. The cap is `max(10 000, FACTOR × R × N0)`,
    with R the rules of
    the KieBase and N0 the facts just before the fire, computed again at the start of every creation phase and never
    lowered; FACTOR is 4, at least twice the largest number of firings per rule per fact measured over the played
    goldens and the scale model (`DroolsBackend.FACTOR`, with the measurement). The cap is a safeguard against a fault
    of the lowering, not a norm: the build refuses a cycle (`Cycles`), and a chain of creations ends at the creation
-   budget. Nothing can be read of a run without a fixpoint: `lees` and `zetAfgeleideWaarden` refuse it.
+   budget. Nothing can be read of a run without a fixpoint: `fixpointOf` and `setDerivedValues` refuse it.
    `DroolsBackend.vuur(build, session, observer)` fires the same run and records what it fired in a
-   `DroolsBackend.Waarnemer`, made with a function that gives the label of an input bean and null for any other
-   object: `vuringen()`, per form of the document without its version suffix, how often its rules fired and the labels
-   their matches bound, and `vormen()`, the exact names of the forms that fired, from which
+   `DroolsBackend.Observer`, made with a function that gives the label of an input bean and null for any other
+   object: `firings()`, per form of the document without its version suffix, how often its rules fired and the labels
+   their matches bound, and `forms()`, the exact names of the forms that fired, from which
    `DroolsBackend.dekking(build, vormen)` gives per manifest entry `GEVUURD` or `NIET_GERAAKT`. The scenario report
-   (`CaseRunner.rapport`) is made from these two. A waarnemer belongs to one session and is refused at a `vuur` of
-   another, and its listener is on the session only during that `vuur`, so parallel sessions of one build each record
+   (`CaseRunner.report`) is made from these two. A waarnemer belongs to one session and is refused at a `fire` of
+   another, and its listener is on the session only during that `fire`, so parallel sessions of one build each record
    their own firings (witness `ObserverWitnessTest`).
 4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.zetAfgeleideWaarden(build, session)`; or
    `lees(build, session, label)` and `zetAfgeleideWaarden(build, session, label)` with a function that gives the
    label of an input bean, and null for a made object, by which a fault then names its object as the reference
    interpreter does ("V, een Vondst"), where without labels it names the type and the identity. Both read only a
-   session whose last `vuur` reached its fixpoint and in which nothing happened outside `vuur` since (below), so what
-   `lees` gives is always a fixpoint, that of the input as the session knows it: an attribute or a characteristic set
+   session whose last `fire` reached its fixpoint and in which nothing happened outside `fire` since (below), so what
+   `fixpointOf` gives is always a fixpoint, that of the input as the session knows it: an attribute or a characteristic set
    without `session.update` is not seen (below). After the write-back, `DroolsBackend.vergelijk(build, session, label,
    expected)` compares the `expected` of a `uchar-case-v0` case with the session and returns a
-   `DroolsBackend.Vergelijking`: per expectation a `ScenarioResultaat.VerwachtingResultaat`, the diagnose of the
+   `DroolsBackend.Comparison`: per expectation a `ScenarioResult.ExpectationResult`, the diagnose of the
    scenario report, and `pass()`. `label` is a function as above, and an expectation names the bean to which it gives
    the expectation's label, so the labels may be the ids of a request rather than those of a case file. It reads the
-   beans, which carry the fixpoint only after `zetAfgeleideWaarden`, and refuses a session that was not written back,
-   one whose fixpoint carries evaluation faults, what `lees` refuses, a label given to two beans, an expectation on a
+   beans, which carry the fixpoint only after `setDerivedValues`, and refuses a session that was not written back,
+   one whose fixpoint carries evaluation faults, what `fixpointOf` refuses, a label given to two beans, an expectation on a
    member of a label no bean carries, and, as `CaseRunner.Excluded` in the replay's sentence, a form it does not
    compare. The replay and the scenario report compare through it (witness `ComparisonWitnessTest`).
 
 **One write-back per session.** The beans hold the input alone until the write-back.
-`lees` reads what stands at the fixpoint without writing anything, as a `Fixpunt` (`transpiler/tms`): per object the
+`fixpointOf` reads what stands at the fixpoint without writing anything, as a `Fixpoint` (`transpiler/tms`): per object the
 derived attribute values in the form the bean field takes them (a timeline as the bean model's `Segment`s, a leeg as
 null), the derived characteristics, the objects the creations made with the creation and its subject, the links they
 laid with the fact type and both roles, the evaluation faults that stand, as data, and the §9.5 deposits.
-`zetAfgeleideWaarden` writes exactly that on the beans, read by the same code: each value and characteristic, and each
+`setDerivedValues` writes exactly that on the beans, read by the same code: each value and characteristic, and each
 link a creation laid on the reference fields that hold it, so that a consumer that reads the beans reaches a made
-object as it reaches one of the input. Then it closes the session with a stated mark, and `vuur` refuses it from then
-on with a sentence that says what to do instead. `vuur` leaves a stated mark of its own after every run, of how the run
-ended, and `lees` and `zetAfgeleideWaarden` refuse a session without one, fired with a plain `fireAllRules` or not at
-all, a session whose last `vuur` ended at the cap, at the creation budget or with an exception, and a session in which
-something happened outside `vuur` after its last run (below), each with a sentence that says what is missing. Both
+object as it reaches one of the input. Then it closes the session with a stated mark, and `fire` refuses it from then
+on with a sentence that says what to do instead. `fire` leaves a stated mark of its own after every run, of how the run
+ended, and `fixpointOf` and `setDerivedValues` refuse a session without one, fired with a plain `fireAllRules` or not at
+all, a session whose last `fire` ended at the cap, at the creation budget or with an exception, and a session in which
+something happened outside `fire` after its last run (below), each with a sentence that says what is missing. Both
 branches do so alike: the DRL-text branch renders the same analysis, and its rules write no bean either.
 
 **Firing again.** A consumer that fires one session more than once changes an attribute or a characteristic of a
-bean `voegIn` put in between the fires, with `session.update(handle, bean)`, fires with `vuur`, and reads every answer
-with `lees`; the write-back comes once, after the last fire. A derivation whose reads changed lapses, a fault arises or
+bean `insert` put in between the fires, with `session.update(handle, bean)`, fires with `fire`, and reads every answer
+with `fixpointOf`; the write-back comes once, after the last fire. A derivation whose reads changed lapses, a fault arises or
 lapses, and an initialisation fires again, since its target stayed empty on the bean (witness
 `TmsRepeatedFireWitnessTest`). Two rules hold a session to that order. The entry keeps both with a watch on the
-session (`Watch`), a listener that `vuur` takes off while it fires itself, so that Drools makes no event for it and
+session (`Watch`), a listener that `fire` takes off while it fires itself, so that Drools makes no event for it and
 it costs a fire nothing per firing; what Drools reports by no event, a cleared agenda group and a call on a group that
 waits for the next fire, the watch reads from Drools' agenda (`org.drools.core`, the one place the backend reads an
 internal class of Drools). An action of another kind on the agenda's propagation list than an insert, update or delete
 of a fact or one of those two calls on a group, which another version of Drools could queue there, makes the watch
 refuse in a sentence that names its class, since it cannot tell what that action does to the agenda.
 
-- `lees` and `zetAfgeleideWaarden` refuse a session in which something happened outside `vuur` after the last
-  `vuur`: a fact inserted, updated or deleted, or a rule that fired, by a plain `fireAllRules` among others. Their
-  sentence names what happened and the way on: fire again with `vuur`, or open a fresh session where `vuur` refuses
+- `fixpointOf` and `setDerivedValues` refuse a session in which something happened outside `fire` after the last
+  `fire`: a fact inserted, updated or deleted, or a rule that fired, by a plain `fireAllRules` among others. Their
+  sentence names what happened and the way on: fire again with `fire`, or open a fresh session where `fire` refuses
   this one (a model with a creation, a session written back, input that came or went). So an update shows only after
-  the next `vuur`, and a plain fire never takes the place of one (witness `TmsConsumerWitnessTest`).
-- `vuur` refuses a session in which, since `voegIn` or the last `vuur`, more happened outside it than an update of an
-  attribute or a characteristic of a bean `voegIn` put in, naming what happened, and sends the consumer to a fresh
-  session with all beans in one `Invoer`; `lees` and `zetAfgeleideWaarden` then give that way too. That is: a fact
+  the next `fire`, and a plain fire never takes the place of one (witness `TmsConsumerWitnessTest`).
+- `fire` refuses a session in which, since `insert` or the last `fire`, more happened outside it than an update of an
+  attribute or a characteristic of a bean `insert` put in, naming what happened, and sends the consumer to a fresh
+  session with all beans in one `Input`; `fixpointOf` and `setDerivedValues` then give that way too. That is: a fact
   inserted or deleted, a bean, a bucket input or a list place among them, or a fact of the branch, which the branch
   states itself; an update of a fact that is no such bean; an update that changed a relation, a reference field, since
-  `voegIn` numbers the places of a list over the relations of one input, and a relation changed later keeps a place
+  `insert` numbers the places of a list over the relations of one input, and a relation changed later keeps a place
   it no longer has or has none, so the first fault of a fold names the wrong member or the fold stops the fire; a
   plain `fireAllRules`, which fires without the cap and the generations; and a change of the agenda, `Agenda.clear`,
   `AgendaGroup.clear` or `AgendaGroup.setFocus`, which drops what the network had to fire or fires another group
-  first. After the first `vuur` it refuses as well a global that changed, and a session from which a consumer took the
-  watch, where what happened is not to be seen. `vuur` also repeats the reference check of `voegIn` over the beans of
-  the session, which a reference field set without an update can fail, and refuses in the sentence of `voegIn`. It
-  compares the reference fields of the beans `voegIn` put in with what they held then: a relation changed without an
-  update makes no event, and Drools keeps reading the old relation, so `vuur`, `lees` and `zetAfgeleideWaarden` refuse
+  first. After the first `fire` it refuses as well a global that changed, and a session from which a consumer took the
+  watch, where what happened is not to be seen. `fire` also repeats the reference check of `insert` over the beans of
+  the session, which a reference field set without an update can fail, and refuses in the sentence of `insert`. It
+  compares the reference fields of the beans `insert` put in with what they held then: a relation changed without an
+  update makes no event, and Drools keeps reading the old relation, so `fire`, `fixpointOf` and `setDerivedValues` refuse
   such a session, naming the field and the two objects, and send the consumer to a fresh session. The links a creation
   lays on those fields at the write-back count as none (witness `TmsRepeatedFireWitnessTest`).
 
-A session of a model with a creation fires once, and `vuur` refuses it at every later call: an object or a fact
+A session of a model with a creation fires once, and `fire` refuses it at every later call: an object or a fact
 creation is stated and never lapses, and so are its initialisations, its links and the fault of a failed
 initialisation (RUNTIME-SEMANTICS ch. 5.5), so after an input change a second fire would keep them beside an input they
 no longer follow from, a state no fresh evaluation gives. A consumer of such a model opens a fresh session per input.
 Written back between the fires, a derived value would be read as input by the next fire and keep an initialisation
 from firing; that is why the write-back closes the session. A changed relation asks a fresh session, since the places
-`voegIn` numbered decide which member a fault names; another convention of a timeline input asks a fresh session too.
+`insert` numbered decide which member a fault names; another convention of a timeline input asks a fresh session too.
 After
 the write-back the beans hold derived values beside their input, so a fresh session takes beans that hold the input
 alone.
 
-**Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire: `lees` gives it as data (`Fixpunt.fouten`, the subject, the rule and the exception), and `zetAfgeleideWaarden`
+**Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire: `fixpointOf` gives it as data (`Fixpoint.faults`, the subject, the rule and the exception), and `setDerivedValues`
 throws what stands before it writes anything, and then writes nothing: one fault as its own exception, a
-`Breuk.DelingDoorNul` (an `ArithmeticException`) for a division by a numeric zero, a `Rekenfout` for a fault of a
-computation or of the evaluation date, a `Schrijversconflict` (an `IllegalStateException`) for two writers of one
-attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `Invoervormfout` for a timeline input in the other
-convention (ch. 8.4); two or more as `Evaluatiefouten`, with each fault in `fouten()`. Any other exception is no
+`Breuk.DelingDoorNul` (an `ArithmeticException`) for a division by a numeric zero, a `ComputeFault` for a fault of a
+computation or of the evaluation date, a `WritersConflict` (an `IllegalStateException`) for two writers of one
+attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `InputFormFault` for a timeline input in the other
+convention (ch. 8.4); two or more as `EvaluationFaults`, with each fault in `faults()`. Any other exception is no
 evaluation fault: a broken contract or a bug.
 
 **Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistentie`, with
-the rule and the subject: `lees` gives them, and on both branches a consumer reads them from the working memory. A made
-object is a bean in the working memory of the session; on the exec-model branch `lees` names it with its creation and
+the rule and the subject: `fixpointOf` gives them, and on both branches a consumer reads them from the working memory. A made
+object is a bean in the working memory of the session; on the exec-model branch `fixpointOf` names it with its creation and
 subject, and after the write-back the reference fields reach it.
 
 **What a consumer can forget, and what happens.**
 
 - A bucket scalar: the branch reads that input as a full timeline of one segment, which is valid input it cannot tell
   apart. A form that needs the full timeline, such as the base of a pro-rata part, then computes over that one segment,
-  without a fault, where the stated bucket scalar faults with an `Invoervormfout`; a form that needs the bucket scalar,
-  the subject's own total without a clip, faults with an `Invoervormfout`.
+  without a fault, where the stated bucket scalar faults with an `InputFormFault`; a form that needs the bucket scalar,
+  the subject's own total without a clip, faults with an `InputFormFault`.
 - A list: its members keep the order of the beans, which decides only which member a fault names.
-- A member in a list it gives: `voegIn` refuses by name, before it inserts anything; so it refuses every statement that
+- A member in a list it gives: `insert` refuses by name, before it inserts anything; so it refuses every statement that
   does not fit the beans or the model, but for the shape of a bucket scalar's timeline (next), a bean of another bean
   model, a bean twice, and a session that is not fresh.
-- The one segment of a bucket scalar: `voegIn` checks that the attribute lies on a timeline, not that the bean holds it
+- The one segment of a bucket scalar: `insert` checks that the attribute lies on a timeline, not that the bean holds it
   as one segment, the period of the evaluation date (RUNTIME-SEMANTICS ch. 8.4). A bucket scalar on an empty or a longer
-  timeline, given so or set so by an update between two fires, stops the next `vuur` with an `IllegalStateException`
+  timeline, given so or set so by an update between two fires, stops the next `fire` with an `IllegalStateException`
   in Drools' `ConsequenceException` ("een emmerscalair staat op de bean als het ene segment van de periode van de
   rekendatum, niet als …").
 - `session.update` after a change of an attribute or a characteristic: Drools does not see a field set without an
-  update, and neither does the entry, which compares only the reference fields with what `voegIn` put in. `vuur` then
-  reaches the fixpoint of the old value, and `lees` and `zetAfgeleideWaarden` give it without a refusal; step 4 of card
+  update, and neither does the entry, which compares only the reference fields with what `insert` put in. `fire` then
+  reaches the fixpoint of the old value, and `fixpointOf` and `setDerivedValues` give it without a refusal; step 4 of card
   tms-omschakeling measured it with the second fire of `ScaleTrial` and a mutant without the update.
-- An object a bean refers to: `voegIn` refuses a reference field that holds an object outside the input, naming the
+- An object a bean refers to: `insert` refuses a reference field that holds an object outside the input, naming the
   bean, the field and the object's type, before it inserts anything. The branch derives nothing for an object outside
   the session, so every value read through the field would stay empty, and the link the field gives would still block
-  a creation. `vuur` repeats the check over the beans of the session, so a relation that an update set to an object
+  a creation. `fire` repeats the check over the beans of the session, so a relation that an update set to an object
   outside the session is refused there, in the same sentence.
-- `voegIn` itself, with the beans inserted by `session.insert`: no bucket scalars, so every timeline input reads as a
+- `insert` itself, with the beans inserted by `session.insert`: no bucket scalars, so every timeline input reads as a
   full timeline, and no places, so a rule that needs one stops the fire with an `IllegalStateException` ("… heeft geen
   Lijstplaats …").
-- A fresh session for a new or a removed object, or a changed relation: `vuur` refuses a session into which a bean,
-  a bucket input or a list place came, or from which one went, outside `voegIn`, one in which an update changed a
-  reference field, naming it, after `voegIn` as between two fires, and, with `lees` and `zetAfgeleideWaarden`, one in
+- A fresh session for a new or a removed object, or a changed relation: `fire` refuses a session into which a bean,
+  a bucket input or a list place came, or from which one went, outside `insert`, one in which an update changed a
+  reference field, naming it, after `insert` as between two fires, and, with `fixpointOf` and `setDerivedValues`, one in
   which a reference field changed without an update.
-- A fresh session for another global: `vuur`, `lees` and `zetAfgeleideWaarden` refuse a session whose global changed
-  after the first `vuur`, naming the global with both values; without that refusal the next fire kept the old value
+- A fresh session for another global: `fire`, `fixpointOf` and `setDerivedValues` refuse a session whose global changed
+  after the first `fire`, naming the global with both values; without that refusal the next fire kept the old value
   (measured 2026-10-10: aanvoergeld 322.50 where a fresh session gives 332.50).
-- The facts of the branch and the agenda: `vuur` refuses a session in which a consumer inserted, deleted or updated a
+- The facts of the branch and the agenda: `fire` refuses a session in which a consumer inserted, deleted or updated a
   fact of the branch, or cleared the agenda or a group of it, or moved the focus, naming it.
-- `vuur`, with a plain `fireAllRules`: `lees` and `zetAfgeleideWaarden` refuse the session, on every model, with a
-  sentence that names `vuur`; on a model with a creation the creations never fired.
-- `vuur` after an update, or after a plain fire that follows a `vuur`: `lees` and `zetAfgeleideWaarden` refuse the
-  session, naming the first fact that changed and the first rule that fired since the last `vuur`, and write nothing;
-  after an update of an attribute or a characteristic alone the next `vuur` makes the session readable again, and
-  after a plain fire `vuur` refuses the session too, so the way is a fresh session.
-- The write-back: the beans hold the input alone, and `lees` holds the answer.
-- `geenFixpunt`: a run at the cap or at the creation budget has no answer, and `lees` and `zetAfgeleideWaarden`
-  refuse the session with the sentence of that run, as they refuse one whose `vuur` threw. Without a creation a further
-  `vuur` that reaches the fixpoint makes the session readable again; with one the way is a fresh session.
-- A second `vuur` on a model with a creation: refused, with the reason and the way, a fresh session per input.
+- `fire`, with a plain `fireAllRules`: `fixpointOf` and `setDerivedValues` refuse the session, on every model, with a
+  sentence that names `fire`; on a model with a creation the creations never fired.
+- `fire` after an update, or after a plain fire that follows a `fire`: `fixpointOf` and `setDerivedValues` refuse the
+  session, naming the first fact that changed and the first rule that fired since the last `fire`, and write nothing;
+  after an update of an attribute or a characteristic alone the next `fire` makes the session readable again, and
+  after a plain fire `fire` refuses the session too, so the way is a fresh session.
+- The write-back: the beans hold the input alone, and `fixpointOf` holds the answer.
+- `noFixpoint`: a run at the cap or at the creation budget has no answer, and `fixpointOf` and `setDerivedValues`
+  refuse the session with the sentence of that run, as they refuse one whose `fire` threw. Without a creation a further
+  `fire` that reaches the fixpoint makes the session readable again; with one the way is a fresh session.
+- A second `fire` on a model with a creation: refused, with the reason and the way, a fresh session per input.
 
 ## Build (the shaded runtime uber-jar — decision V2-B)
 
@@ -299,7 +299,7 @@ same names, the same facts, the same truth maintenance and the same driver, so e
 a session treats it as the exec-model branch, and what this README says of that branch holds
 for it. Every RegelSpraak comparison or computation is a Java function of the text, with the
 source sentence above it; the structural constraints stay DRL. The predicates of the day kinds
-are globals of the text (`Build.dagsoortGlobalen()`). It refuses three kinds of its own,
+are globals of the text (`Build.dayKindGlobals()`). It refuses three kinds of its own,
 after the label `drl:` (`DrlRendering.Refusal`): a member whose name Drools reads as
 something else where a pattern spells it (a word of DRL or MVEL such as `in`, or a variable of
 a consequence such as `drools`), a day kind whose global is no Java identifier, and a bean class
@@ -367,14 +367,14 @@ characteristic stands, since nothing writes false; a derived value replaces inpu
 of a standing writer writes nothing, so the input stands (ch. 7.1, 7.8), and a computed leeg of a writer outside the
 standing domain empties the attribute (ch. 1.2g). Two different values on one attribute of one object have no common
 fixpoint: they stand as a fault (below), and the write-back never chooses. The replay passes the case labels to
-`zetAfgeleideWaarden`, so that the fault names its object as the reference interpreter does, and `lees` takes the same
-labels; a consumer without labels gets the type and the identity. It writes what `DroolsBackend.lees` reads, a link a
+`setDerivedValues`, so that the fault names its object as the reference interpreter does, and `fixpointOf` takes the same
+labels; a consumer without labels gets the type and the identity. It writes what `DroolsBackend.fixpointOf` reads, a link a
 creation laid on the reference fields among it, once, after the last fire of the session, which it then closes: the
-beans then hold values the network never saw arrive, and `DroolsBackend.vuur` refuses the session (above, "One
+beans then hold values the network never saw arrive, and `DroolsBackend.fire` refuses the session (above, "One
 write-back per session").
 
 **Evaluation faults are logical facts.** A division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) is a fault,
-and so is every fault of `Rekenfout`: a date step or a duration count outside the range of ch. 3.8, a walk over the
+and so is every fault of `ComputeFault`: a date step or a duration count outside the range of ch. 3.8, a walk over the
 days of a day kind that passes its reach (ch. 3.8), a context value
 or a validity window in a session without an evaluation date (ch. 8.1, 8.2), an `Unresolved` node the evaluation
 reaches (ch. 5.7, WF-044), an argument a date builtin cannot take (easterSunday of a year that is not whole,
@@ -383,19 +383,19 @@ reference interpreter computes a rational one exactly. A fault, like a value, be
 2026-10-09, "Faults and deposits count at the fixpoint"). This branch has no strata and passes intermediate states
 the reference interpreter does not see, such as a divisor a lower default set to 0 before a higher one decides, and a
 fault thrown out of the fire there could not be withdrawn when the state passes. So no consequence throws an
-evaluation fault: the consequence that computes a value inserts the fault logically as a `Fout`, in place of the value,
+evaluation fault: the consequence that computes a value inserts the fault logically as a `Fault`, in place of the value,
 and the fault goes when a read it rested on changes. A condition is tested in the left-hand side, where Drools cannot
 take an exception as a fact; there the test answers that the condition does not hold where it faults, and a rule of the
 form's own, `<rule>: fout in de voorwaarde`, with the same left-hand side and the test that the condition faults,
-inserts the `Fout`. The write-back reports the faults that stand at the fixpoint before it writes anything: one division
+inserts the `Fault`. The write-back reports the faults that stand at the fixpoint before it writes anything: one division
 as a `DelingDoorNul`, named after the rule, in the sentence the destructive DRL-text lowering gave it out of its fire
-until card `drl-teksttak-op-truth-maintenance` ("deling door nul in de regel "aandeel": 100 gedeeld door 0 — …"), one other fault as its `Rekenfout`, named
+until card `drl-teksttak-op-truth-maintenance` ("deling door nul in de regel "aandeel": 100 gedeeld door 0 — …"), one other fault as its `ComputeFault`, named
 after the rule and in the reference interpreter's sentence wherever that executor names the fault ("fout in de regel
-"meldtermijn": duration count … is out of range"), two or more as `Evaluatiefouten`, ordered by the name of the form and
+"meldtermijn": duration count … is out of range"), two or more as `EvaluationFaults`, ordered by the name of the form and
 then by the sentence, so the report does not depend on the order of the rules. That message opens with a head that names
 the rule of every fault ("aan het fixpunt staan 2 evaluatiefouten, in de regels "aandeel", "verhouding""), and the CLI's
 ERROR line bounds only the sentences after it, so no fault drops off the line. A consumer meets the fault at
-`zetAfgeleideWaarden`, or as data in `DroolsBackend.lees`, not out of the fire. Witnesses `TmsFaultWitnessTest`,
+`setDerivedValues`, or as data in `DroolsBackend.fixpointOf`, not out of the fire. Witnesses `TmsFaultWitnessTest`,
 `TmsConditionFaultWitnessTest` and, for the date faults, `TmsDateFaultWitnessTest`, among them a duration count that
 lies outside the range only on an intermediate state, where the branch threw out of the fire until 2026-10-09. Other
 exceptions are no evaluation fault and still leave the fire: a broken contract and a bug.
@@ -415,7 +415,7 @@ clamp, the builtins outside the folds, a text composition of texts, percentages 
 whole exponent, the restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
 exact-digit tests compute through the runtime's helpers from bound values; the last three and the sub-day extractors,
 dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend computes them. The
-evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `rekendatum` the case
+evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `evaluationDate` the case
 runner sets, with a null date in a time-free session. A version with a bounded validity gates on it with a pattern that
 admits the date (ch. 8.2) and beside it a rule inserts the fault where the session carries no date, as the reference
 interpreter faults when it evaluates the form, with or without a subject; a defaults group with a dated validity gates
@@ -453,7 +453,7 @@ step, and gives the fact its place in the fold order, the number of the selectio
 Two routes to one member stay two facts, so the least is the member's first reach, as the dedup of the reference
 interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `FilterFault` on its subject beside the
 contributions, the first in fold order, and where its own evaluation reaches the fold while one stands, that
-evaluation faults as a division in it would; the `Fout` is that rule's, inserted by its consequence or by its fault
+evaluation faults as a division in it would; the `Fault` is that rule's, inserted by its consequence or by its fault
 rule, named after it, and withdrawn when the `FilterFault` goes. A member whose place the input did not state makes the
 rule fail loudly. Witness `TmsFilterErrorWitnessTest`.
 
@@ -498,7 +498,7 @@ it the rule inserts a `Value` that carries leeg (ch. 1.2g), which takes the inpu
 another writer can disagree with. Where two writers stand on one object with different values, a rule per attribute
 on which two can stand (two computing rules, or one outside the standing domain beside an initialisation; an
 accumulate over the attribute's `Value` facts on the object) inserts a logical
-`Fout` with a `Schrijversconflict`: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
+`Fault` with a `WritersConflict`: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
 "melding op vinddag" schrijft 2026-03-04 en de regel "melding op aanspoeldag" schrijft 2026-03-01 in het attribuut
 meldingsdatum van V, een Vondst; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", the writers in the order of the
 document and the object by its case label, as the reference interpreter names them, so the Drools pin of
@@ -549,7 +549,7 @@ the reference interpreter compares two timelines (`write_timeline`): 7 and 7.00 
 another cut are another; its `hashCode` agrees with it, since the KieBase in EQUALITY merges equal logical facts. The
 generated bean `Segment` has no value equality and is mutable, so the branch converts at two boundaries only: where it
 binds a timeline off a bean, the input of an attribute or the true periods of a characteristic, and where
-`zetAfgeleideWaarden` puts a derived timeline on the bean as its `Segment`s. `Period` has the getters and the
+`setDerivedValues` puts a derived timeline on the bean as its `Segment`s. `Period` has the getters and the
 constructor the runtime's helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdTotaal`,
 `rsTijdKnip`, `rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side
 like any read, an attribute through its standing, derived or input, and read whole: by the temporal total of the
@@ -571,16 +571,16 @@ RUNTIME-SEMANTICS ch. 8.4 keeps the two apart: the bucket scalar serves the subj
 full timeline every other read, and "an executor that needs the one and finds the other faults — never guesses". The
 bean shows a bucket scalar as the one segment of its period, which a full timeline of one segment would be as well, so
 on this branch the case runner states an `BucketInput(bean, attribute)` beside the beans for each bucket scalar, the
-attribute keyed by its declaring type as `ProducentConsument.elementVan` gives it. Two input rules of the attribute's
+attribute keyed by its declaring type as `ProducerConsumer.elementOf` gives it. Two input rules of the attribute's
 standing join that fact, under `exists` and under `not`, and the input stands as an `BucketScalar` or as a
 `List<Period>`; a timeline a form derives replaces it, as any input. A form that finds the other convention faults
-where the evaluation reaches it, an `Invoervormfout` inserted logically as a `Fout`, in the reference interpreter's
+where the evaluation reaches it, an `InputFormFault` inserted logically as a `Fault`, in the reference interpreter's
 words and naming the object, by its case label where the write-back has one: the own total without a clip over a full
 timeline; and over a bucket scalar the clip of a total, the timeline a comparison clip compares, the base of a
 pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `MemberFault`), an
 ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
-it, and the timeline the whole-period qualifier folds (below). `DroolsBackend.voegIn` states the same facts for a
-consumer, from the bucket scalars and the lists its `Invoer` names (above, "A session in four calls"): an `BucketInput`
+it, and the timeline the whole-period qualifier folds (below). `DroolsBackend.insert` states the same facts for a
+consumer, from the bucket scalars and the lists its `Input` names (above, "A session in four calls"): an `BucketInput`
 per bucket scalar, without which the branch reads every input timeline as a full timeline, and where a rule reads them
 (`TmsTranspiler.listFields`) a `ListPlace` per member of every to-many list, without which the fire stops with
 Drools' `ConsequenceException` around an `IllegalStateException` ("… heeft geen Lijstplaats onder het veld …") as soon as
@@ -620,7 +620,7 @@ and a definition is no form of the manifest. A date or a date-time plus or minus
 calendar (`rsDatumPlusDagsoort`, `rsDatumTijdPlusDagsoort`, ch. 3.8), and a duration in whole days of a kind between
 two dates counts them (`rsTijdsduurDagsoort`), from the date and the count that the rule binds, a derived one through
 its standing. A walk that passes the reach of ch. 3.8 without a day of the kind is an evaluation fault in the
-reference interpreter's sentence ("day-kind walk: no day of the kind within 40000 calendar days of …"), a `Fout` that
+reference interpreter's sentence ("day-kind walk: no day of the kind within 40000 calendar days of …"), a `Fault` that
 counts only where it stands at the fixpoint. A definition that does not compile refuses nothing while no form uses
 it, so `jutterswet-schouwkalender`, whose hoogschouwdag tests a day kind on another day than the bound day, plays.
 Witness `TmsDayKindWitnessTest`.
@@ -634,7 +634,7 @@ object it makes, as the reference interpreter reads them: they go on the new bea
 no rule sees the object without them and no bean in the session changes; a writer of the member displaces them as it
 displaces case input, a leeg written outside the standing domain erases them, and an initialisation finds the member
 filled. So the creation rules sit in two agenda groups of their own,
-`TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.vuur` fires the session
+`TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.fire` fires the session
 in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then, per
 evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `CreationPhase` with its
 number and its stratum, puts both groups on the focus stack, the fact creations on top, and fires; that fires the fact
@@ -713,11 +713,11 @@ the phase it fires in, so a recursive chain advances one generation per phase, a
 fixpoint over what the previous phase made. Every relation a form creates is read through `RelationLink` facts, the links
 of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation through a
 `PathState` over a chain of patterns, the range of a fold through an `exists` over the link. A second distinct filler of
-a to-one role of such a relation is a `Fout` at the fixpoint ("een tweede vulling is een fout, geen overschrijving", ch.
+a to-one role of such a relation is a `Fault` at the fixpoint ("een tweede vulling is een fout, geen overschrijving", ch.
 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
 without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The replay and a
-consumer fire through `DroolsBackend.vuur`; `lees` and `zetAfgeleideWaarden` refuse a session that `vuur` did not fire
-to its fixpoint, or in which something happened outside `vuur` since, and on a build with a creation `vuur` fires a
+consumer fire through `DroolsBackend.fire`; `fixpointOf` and `setDerivedValues` refuse a session that `fire` did not fire
+to its fixpoint, or in which something happened outside `fire` since, and on a build with a creation `fire` fires a
 session once, since what a creation made is stated. The
 write-back puts each link a creation laid on the reference fields that hold it, so a consumer that reads the beans
 reaches a made object. Witnesses `TmsCreationWitnessTest`, `TmsConsumerWitnessTest` and `TmsRepeatedFireWitnessTest`.
@@ -785,7 +785,7 @@ never as a silent fall:
   ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power
   that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112), in
   the sentence of the destructive DRL-text lowering;
-- a parameter whose Java name is `rekendatum` beside a form that reads the evaluation date, since the case runner sets
+- a parameter whose Java name is `evaluationDate` beside a form that reads the evaluation date, since the case runner sets
   the date under that name;
 - what the design cannot carry: two initialisations on one target that apply to one instance, on one type or on a
   type and its ancestor, which nothing ranks (ch. 5.4, WF-079); a rule beside a defaults group of its type on its
@@ -815,14 +815,14 @@ The loader and the bean model refuse on both branches alike, before the analysis
 
 ## The rule graph and gate 15
 
-`graaf/RegelGraaf` draws which form of the rule layer writes and which reads which attribute or characteristic:
+`graph/RuleGraph` draws which form of the rule layer writes and which reads which attribute or characteristic:
 the rules, object creations, allocations, consistencies, uniquenesses, fact creations and defaults groups of
-IR-SPEC ch. 5.1, a member keyed on the type that declares it (`ProducentConsument.elementVan`), so a write on a
+IR-SPEC ch. 5.1, a member keyed on the type that declares it (`ProducerConsumer.elementOf`), so a write on a
 supertype and a read on a subtype meet on one node. It is built from the records the loader rebuilds from
 `ir.json`, and each route to a model supplies what rides beside it: the defaults groups (`model.prioritizedDefaults`
 of a resolver's model, `Loaded.prioritizedDefaults()` beside a loaded one) and the type a navigated characteristic
-check reaches (`ProducentConsument.bronNavigatie(model)` from the role the record names,
-`ProducentConsument.wireNavigatie(loaded)` from the binding beside the model). `scripts/check-graaf.sh` holds it:
+check reaches (`ProducerConsumer.sourceNavigation(model)` from the role the record names,
+`ProducerConsumer.wireNavigation(loaded)` from the binding beside the model). `scripts/check-graaf.sh` holds it:
 over every golden the loader reads, the graph's dependencies (`GraphProjection`) must equal the verifier's ch. 5
 edges (`verifier --dependency-edges`) over an attribute or characteristic node, whatever forms they join, and the
 graph of every golden with a `bron.rgs` must render the same from the source as from the wire. Outside the
@@ -838,8 +838,8 @@ What a defaults group reads is public per default too, since 2026-10-01: `Produc
 navigation)` gives, per default of the group in the order of the group and each default before those of its exception
 groups, its path in the tree (`[i]`, `[i, g, j]`, …), the default itself, and what its justification and its consequence
 read. A consumer that names the default where a read falls outside a scope reads it there, with the source text the
-default and its parts carry. `vormen()` takes the group's reads from it, so their union is exactly the group's
-`Vorm.leest()`; `GraphDefaultReadTest` holds that on every defaults group of the corpus and on the forms a group
+default and its parts carry. `forms()` takes the group's reads from it, so their union is exactly the group's
+`Form.reads()`; `GraphDefaultReadTest` holds that on every defaults group of the corpus and on the forms a group
 takes: a member and a characteristic check in a justification, a member in a consequence, one and two roles away, a
 nested exception group, a member of `Uitzonderingen ongeordend op` and the group-default of `<basis> voor <subtype>`.
 
@@ -848,7 +848,7 @@ nested exception group, a member of `Uitzonderingen ongeordend op` and the group
 Two rules that write one attribute of one object and whose conditions both hold there have no common fixpoint when
 they write different values (RUNTIME-SEMANTICS ch. 5.1, 5.7); WF-079 refuses two unconditional writers, so two
 conditional ones reach the engine. On the exec-model branch each writer's value is a logical fact, and two different
-values that stand on one object at the fixpoint are a fault, a `Schrijversconflict` that `lees` gives as data and the
+values that stand on one object at the fixpoint are a fault, a `WritersConflict` that `fixpointOf` gives as data and the
 write-back throws (above, "Writers of one target"): "geen fixpunt: twee schrijvers van één doel geven verschillende
 waarden — de regel "melding op vinddag" schrijft 2026-03-04 en de regel "melding op aanspoeldag" schrijft 2026-03-01 in
 het attribuut meldingsdatum van V, een Vondst; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", the writers in the
@@ -879,7 +879,7 @@ On both branches the fault is a logical fact of the fixpoint (above, "Evaluation
 consequence that computes a value inserts the fault in place of the value, a condition that divides gets the rule
 `<rule>: fout in de voorwaarde`, and a fold's filter that divides makes the form that reads the fold fault where its
 evaluation reaches the fold, so a division by zero on an intermediate state, or in a filter no form reaches, is no
-fault. At the fixpoint `lees` gives the fault as data and `zetAfgeleideWaarden` throws it before it writes anything,
+fault. At the fixpoint `fixpointOf` gives the fault as data and `setDerivedValues` throws it before it writes anything,
 named as above. A division in a default is refused by name (above, "What it refuses"). Witnesses `ZeroDivisorWitnessTest`,
 `ZeroDivisorConditionWitnessTest`, `TmsFaultWitnessTest`, `TmsConditionFaultWitnessTest` and `TmsFilterErrorWitnessTest`.
 
@@ -896,5 +896,5 @@ Measured 2026-10-02, when this backend set such a handler, in the distribution's
 (`GoldenOverQuarkusTest`): `ClassCastException: class dev.uchar.regelspraak.cases.DroolsBackend$Nuldelingmelder cannot
 be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `DefaultAgenda.<init>`, on every request;
 the packaged Quarkus service and the JDK service opened their sessions. The KieBases `DroolsBackend` builds therefore
-keep Drools' default handler. A consumer meets the fault in `lees` or at `zetAfgeleideWaarden`, on either branch.
+keep Drools' default handler. A consumer meets the fault in `fixpointOf` or at `setDerivedValues`, on either branch.
 Witness `ZeroDivisorConsumerWitnessTest`.

@@ -10,7 +10,7 @@ import java.util.function.IntPredicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -48,37 +48,37 @@ class TmsCompoundWitnessTest {
 
     /** GEEN of (ALLE of gemeld and vergund) and geschorst: neither both, nor geschorst. */
     @Test void nested() throws Exception {
-        String voorwaarde = compound("none", 0, List.of(
+        String condition = compound("none", 0, List.of(
                 compound("all", 0, List.of(check("gemeld", false), check("vergund", false))),
                 check("geschorst", false)));
-        List<String> jutters = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> jutters = new ArrayList<>(), expected = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             boolean erkend = (i & 1) != 0, reported = (i & 2) != 0, geschorst = (i & 4) != 0;
             jutters.add(jutter(i, erkend, reported, geschorst));
-            verwacht.add(verwacht("J" + i, "ingedeeld", !(reported && erkend) && !geschorst));
+            expected.add(expected("J" + i, "ingedeeld", !(reported && erkend) && !geschorst));
         }
-        playDocument(voorwaarde, jutters, verwacht);
+        playDocument(condition, jutters, expected);
     }
 
-    /** The document with {@code voorwaarde} over the eight Jutters, ingedeeld where {@code oordeel} holds of the number
+    /** The document with {@code condition} over the eight Jutters, ingedeeld where {@code oordeel} holds of the number
      *  of the three members that hold. */
-    private static void play(String voorwaarde, IntPredicate verdict) throws Exception {
-        List<String> jutters = new ArrayList<>(), verwacht = new ArrayList<>();
+    private static void play(String condition, IntPredicate verdict) throws Exception {
+        List<String> jutters = new ArrayList<>(), expected = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             boolean erkend = (i & 1) != 0, reported = (i & 2) != 0, geschorst = (i & 4) != 0;
             int touch = (reported ? 1 : 0) + (geschorst ? 0 : 1) + (erkend ? 1 : 0);
             jutters.add(jutter(i, erkend, reported, geschorst));
-            verwacht.add(verwacht("J" + i, "vergund", erkend));
-            verwacht.add(verwacht("J" + i, "ingedeeld", verdict.test(touch)));
+            expected.add(expected("J" + i, "vergund", erkend));
+            expected.add(expected("J" + i, "ingedeeld", verdict.test(touch)));
         }
-        playDocument(voorwaarde, jutters, verwacht);
+        playDocument(condition, jutters, expected);
     }
 
-    private static void playDocument(String voorwaarde, List<String> jutters, List<String> verwacht) throws Exception {
+    private static void playDocument(String condition, List<String> jutters, List<String> expected) throws Exception {
         Path ir = TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), List.of(
                 characteristicRule("vergund indien erkend", "vergund", check("erkend", false)),
-                characteristicRule("ingedeeld", "ingedeeld", voorwaarde)));
-        var caseDocument = TmsDocuments.caseDocument(jutters, verwacht);
+                characteristicRule("ingedeeld", "ingedeeld", condition)));
+        var caseDocument = TmsDocuments.caseDocument(jutters, expected);
         assertNull(CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
     }
 

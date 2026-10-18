@@ -41,7 +41,7 @@ class CountAttributeNameTest {
             """.formatted(expressie);
     }
 
-    private static List<Diagnostic> fouten(RegelSpraakModel m) {
+    private static List<Diagnostic> faults(RegelSpraakModel m) {
         return m.diagnostics.stream().filter(d -> d.severity() == Severity.ERROR).toList();
     }
 
@@ -53,7 +53,7 @@ class CountAttributeNameTest {
     })
     void the_collision_with_a_declared_attribute_is_named(String expressie) {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel(expressie));
-        List<Diagnostic> ds = fouten(m);
+        List<Diagnostic> ds = faults(m);
         assertEquals(1, ds.size(), () -> "verwacht één fout voor '" + expressie + "', kreeg: " + m.diagnostics);
         String sentence = ds.get(0).message();
         // the collision in the Dutch context, the count without an element type in the verifier's WF-037 sentence
@@ -67,14 +67,14 @@ class CountAttributeNameTest {
         // the advice must be true: the article-less form resolves clean to the declared attribute
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("aantal gewogen posten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, m.resolvedRegels.get(0).waarde());
-        assertEquals("aantal gewogen posten", a.attribuut());
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, m.resolvedRegels.get(0).value());
+        assertEquals("aantal gewogen posten", a.attribute());
     }
 
     @Test void without_a_count_attribute_the_general_sentence_stays() {
         // "gewogen vangst" is declared, "aantal gewogen vangst" is not: no collision to name
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal gewogen vangst van de Jutter"));
-        List<Diagnostic> ds = fouten(m);
+        List<Diagnostic> ds = faults(m);
         assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
         assertTrue(ds.get(0).message().startsWith("telling zonder bron 'het aantal gewogen vangst van de Jutter': "),
                 ds.get(0).message());

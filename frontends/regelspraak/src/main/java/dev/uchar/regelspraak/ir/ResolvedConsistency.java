@@ -14,5 +14,5 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
  * rules (the §9.6 "is inconsistent" regelpredicaat). Compound criteria
  * (samengesteld / uniciteit) are a separate, not-yet-lifted form.
  */
-public record ResolvedConsistency(String naam, Objecttype subject, Conditie assertie, Bron bron,
-                                   int line, Geldigheid geldigheid) {}
+public record ResolvedConsistency(String naam, Objecttype subject, Condition assertie, Source source,
+                                   int line, Validity validity) {}

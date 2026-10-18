@@ -8,7 +8,7 @@ import java.util.Objects;
  * ({@link BucketInput}, RUNTIME-SEMANTICS ch. 8.4): the period of the attribute's grid that holds the evaluation date,
  * with the scalar as its value. It is not a timeline: it states no period of its own beyond that one, so it serves the
  * subject's own total without a clip, where the session's date is the horizon (ch. 3.6), and every form that reads the
- * full timeline faults on it ({@link Invoervormfout}). Compared by the period, as {@link Period} is.
+ * full timeline faults on it ({@link InputFormFault}). Compared by the period, as {@link Period} is.
  */
 public record BucketScalar(Period bucket) {
 
@@ -19,7 +19,7 @@ public record BucketScalar(Period bucket) {
     /** The bucket scalar the bean of an {@link BucketInput} carries as {@code segments}: the case input lays it there
      *  as the one segment of the evaluation date's period. Anything else breaks that contract. */
     static BucketScalar van(List<?> segments) {
-        List<Period> timeline = Period.lijst(segments);
+        List<Period> timeline = Period.list(segments);
         if (timeline == null || timeline.size() != 1)
             throw new IllegalStateException("een emmerscalair staat op de bean als het ene segment van de periode van de"
                     + " rekendatum, niet als " + timeline);

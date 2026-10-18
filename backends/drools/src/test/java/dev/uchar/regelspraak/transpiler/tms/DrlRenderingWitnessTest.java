@@ -59,14 +59,14 @@ class DrlRenderingWitnessTest {
     @Test void the_text_of_every_golden_compiles_or_the_rendering_refuses_a_kind() throws Exception {
         String dump = System.getProperty("uchar.drlvorm");
         Map<String, List<String>> refused = new TreeMap<>();
-        List<String> fouten = new ArrayList<>(), forbidden = new ArrayList<>();
+        List<String> faults = new ArrayList<>(), forbidden = new ArrayList<>();
         int goldens = 0, compiled = 0;
         long nanos = 0;
         for (Path g : goldens()) {
             DroolsBackend.Build b;
             try {
                 b = DroolsBackend.build(g.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
-            } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded notPlayed) {
+            } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded notPlayed) {
                 continue;
             }
             goldens++;
@@ -75,7 +75,7 @@ class DrlRenderingWitnessTest {
             try {
                 text = DrlRendering.text(b.execModelTranspiler().modelplan());
             } catch (DrlRendering.Refusal w) {
-                refused.computeIfAbsent(w.soort(), k -> new ArrayList<>()).add(naam);
+                refused.computeIfAbsent(w.category(), k -> new ArrayList<>()).add(naam);
                 continue;
             }
             if (dump != null) Files.writeString(Path.of(dump).resolve(naam.replace('/', '_') + ".drl"), text);
@@ -84,7 +84,7 @@ class DrlRenderingWitnessTest {
             List<String> f = compile(text, b.beanLoader());
             nanos += System.nanoTime() - start;
             if (f.isEmpty()) compiled++;
-            else fouten.add(naam + ": " + f.size() + " fouten, de eerste " + f.get(0));
+            else faults.add(naam + ": " + f.size() + " fouten, de eerste " + f.get(0));
         }
         StringBuilder overview = new StringBuilder("drlvorm: " + goldens + " goldens, " + compiled
                 + " gecompileerd in " + nanos / 1_000_000 + " ms; geweigerd per soort:");
@@ -92,7 +92,7 @@ class DrlRenderingWitnessTest {
             overview.append("\n  ").append(e.getKey()).append(" ").append(e.getValue().size()).append(": ")
                     .append(e.getValue());
         System.out.println(overview);
-        assertEquals(List.of(), fouten, "teksten die niet compileren");
+        assertEquals(List.of(), faults, "teksten die niet compileren");
         assertEquals(List.of(), forbidden, "teksten met een verboden vorm");
         int n = goldens, c = compiled;
         assertTrue(n >= EXPECTED_MIN_GOLDENS, () -> n + " goldens, onder de vloer " + EXPECTED_MIN_GOLDENS);
@@ -113,13 +113,13 @@ class DrlRenderingWitnessTest {
      *  of the refused kinds. A rule's text depends on the rule alone, so the rules a golden carries make a text of
      *  their own, with the globals of the plan. */
     @Test void the_carried_rules_of_every_golden_compile() throws Exception {
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         int rules = 0, withRules = 0, refused = 0;
         for (Path g : goldens()) {
             DroolsBackend.Build b;
             try {
                 b = DroolsBackend.build(g.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
-            } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded notPlayed) {
+            } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded notPlayed) {
                 continue;
             }
             Modelplan plan = b.execModelTranspiler().modelplan();
@@ -136,11 +136,11 @@ class DrlRenderingWitnessTest {
             withRules++;
             rules += carried.size();
             List<String> f = compile(DrlRendering.text(new Modelplan(plan.globals(), carried)), b.beanLoader());
-            if (!f.isEmpty()) fouten.add(GOLDEN.relativize(g) + ": " + f.size() + " fouten, de eerste " + f.get(0));
+            if (!f.isEmpty()) faults.add(GOLDEN.relativize(g) + ": " + f.size() + " fouten, de eerste " + f.get(0));
         }
         System.out.println("drlvorm, gedragen regels: " + rules + " in " + withRules + " goldens; " + refused
                 + " regels geweigerd");
-        assertEquals(List.of(), fouten, "gedragen regels die niet compileren");
+        assertEquals(List.of(), faults, "gedragen regels die niet compileren");
         int r = rules, m = withRules;
         assertTrue(r >= EXPECTED_MIN_CARRIED_RULES, () -> r + " gedragen regels, onder de vloer "
                 + EXPECTED_MIN_CARRIED_RULES);
@@ -170,8 +170,8 @@ class DrlRenderingWitnessTest {
         if (dump != null) Files.writeString(Path.of(dump).resolve("_vormenplan.drl"), text);
         assertEquals(List.of(), compile(text, b.beanLoader()), () -> "de vormentekst compileert niet:\n" + text);
         for (String v : FORBIDDEN) assertTrue(!text.contains(v), () -> v + " in de vormentekst");
-        for (String vorm : FormsPlan.FORMS)
-            assertTrue(text.contains(vorm), () -> "de vormentekst mist " + vorm + ":\n" + text);
+        for (String form : FormsPlan.FORMS)
+            assertTrue(text.contains(form), () -> "de vormentekst mist " + form + ":\n" + text);
     }
 
     /**
@@ -197,8 +197,8 @@ class DrlRenderingWitnessTest {
         if (dump != null) Files.writeString(Path.of(dump).resolve("_vouwenplan.drl"), text);
         assertEquals(List.of(), compile(text, b.beanLoader()), () -> "de vouwentekst compileert niet:\n" + text);
         for (String v : FORBIDDEN) assertTrue(!text.contains(v), () -> v + " in de vouwentekst");
-        for (String vorm : FormsPlan.FOLD_FORMS)
-            assertTrue(text.contains(vorm), () -> "de vouwentekst mist " + vorm + ":\n" + text);
+        for (String form : FormsPlan.FOLD_FORMS)
+            assertTrue(text.contains(form), () -> "de vouwentekst mist " + form + ":\n" + text);
     }
 
     /**
@@ -224,8 +224,8 @@ class DrlRenderingWitnessTest {
         if (dump != null) Files.writeString(Path.of(dump).resolve("_kanaalplan.drl"), text);
         assertEquals(List.of(), compile(text, b.beanLoader()), () -> "de kanaaltekst compileert niet:\n" + text);
         for (String v : FORBIDDEN) assertTrue(!text.contains(v), () -> v + " in de kanaaltekst");
-        for (String vorm : FormsPlan.CHANNEL_FORMS)
-            assertTrue(text.contains(vorm), () -> "de kanaaltekst mist " + vorm + ":\n" + text);
+        for (String form : FormsPlan.CHANNEL_FORMS)
+            assertTrue(text.contains(form), () -> "de kanaaltekst mist " + form + ":\n" + text);
     }
 
     /**
@@ -250,8 +250,8 @@ class DrlRenderingWitnessTest {
         if (dump != null) Files.writeString(Path.of(dump).resolve("_defaultsplan.drl"), text);
         assertEquals(List.of(), compile(text, b.beanLoader()), () -> "de defaultstekst compileert niet:\n" + text);
         for (String v : FORBIDDEN) assertTrue(!text.contains(v), () -> v + " in de defaultstekst");
-        for (String vorm : FormsPlan.DEFAULTS_FORMS)
-            assertTrue(text.contains(vorm), () -> "de defaultstekst mist " + vorm + ":\n" + text);
+        for (String form : FormsPlan.DEFAULTS_FORMS)
+            assertTrue(text.contains(form), () -> "de defaultstekst mist " + form + ":\n" + text);
     }
 
     /**
@@ -278,8 +278,8 @@ class DrlRenderingWitnessTest {
         if (dump != null) Files.writeString(Path.of(dump).resolve("_creatieplan.drl"), text);
         assertEquals(List.of(), compile(text, b.beanLoader()), () -> "de creatietekst compileert niet:\n" + text);
         for (String v : FORBIDDEN) assertTrue(!text.contains(v), () -> v + " in de creatietekst");
-        for (String vorm : FormsPlan.CREATION_FORMS)
-            assertTrue(text.contains(vorm), () -> "de creatietekst mist " + vorm + ":\n" + text);
+        for (String form : FormsPlan.CREATION_FORMS)
+            assertTrue(text.contains(form), () -> "de creatietekst mist " + form + ":\n" + text);
     }
 
     /**
@@ -303,8 +303,8 @@ class DrlRenderingWitnessTest {
         if (dump != null) Files.writeString(Path.of(dump).resolve("_verdelingsplan.drl"), text);
         assertEquals(List.of(), compile(text, b.beanLoader()), () -> "de verdelingstekst compileert niet:\n" + text);
         for (String v : FORBIDDEN) assertTrue(!text.contains(v), () -> v + " in de verdelingstekst");
-        for (String vorm : FormsPlan.ALLOCATION_FORMS)
-            assertTrue(text.contains(vorm), () -> "de verdelingstekst mist " + vorm + ":\n" + text);
+        for (String form : FormsPlan.ALLOCATION_FORMS)
+            assertTrue(text.contains(form), () -> "de verdelingstekst mist " + form + ":\n" + text);
     }
 
     /** Every kind of consequence of the plan stands in a plan of {@link FormsPlan}, so that every kind compiles, also
@@ -339,11 +339,11 @@ class DrlRenderingWitnessTest {
             helper.setClassLoader(beans);
             helper.addContent(text, DrlRendering.PATH);
             Results result = helper.verify();
-            List<String> fouten = new ArrayList<>();
+            List<String> faults = new ArrayList<>();
             for (Message m : result.getMessages(Message.Level.ERROR))
-                fouten.add("r. " + m.getLine() + ": " + m.getText().replace('\n', ' '));
-            if (fouten.isEmpty()) assertNotNull(helper.build(EqualityBehaviorOption.EQUALITY));
-            return fouten;
+                faults.add("r. " + m.getLine() + ": " + m.getText().replace('\n', ' '));
+            if (faults.isEmpty()) assertNotNull(helper.build(EqualityBehaviorOption.EQUALITY));
+            return faults;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.PERCENT;
 import static dev.uchar.regelspraak.cases.TmsDocuments.rounding;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.clamp;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -24,8 +24,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -75,9 +75,9 @@ class TmsComputeFormWitnessTest {
 
     // ---------------- the value forms ----------------
 
-    private static final String VALUE_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("basis", TWO), attribuut("waarde", THREE), attribuut("afgerond", WHOLE),
-            attribuut("begrensd", THREE), attribuut("kwadraat", SIX), attribuut("aandeel", THREE)), List.of())), List.of());
+    private static final String VALUE_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("basis", TWO), attribute("waarde", THREE), attribute("afgerond", WHOLE),
+            attribute("begrensd", THREE), attribute("kwadraat", SIX), attribute("aandeel", THREE)), List.of())), List.of());
 
     private static final String VALUE = ownRead("waarde", "Vondst");
 
@@ -97,16 +97,16 @@ class TmsComputeFormWitnessTest {
     static final String PERCENT_OF = computingRule("aandeel van een vondst", "BEREKENING", "Vondst", "aandeel",
             binary("percentageOf", literal("20", numberType(true, 0, PERCENT)), VALUE, THREE), "null");
 
-    static JsonNode valueCase(String doel, List<String> waarden) throws Exception {
-        List<String> verwachtingen = new ArrayList<>();
+    static JsonNode valueCase(String target, List<String> waarden) throws Exception {
+        List<String> expectations = new ArrayList<>();
         String[] labels = {"V1", "V2", "V3", "V4"};
-        for (int i = 0; i < labels.length; i++) verwachtingen.add(waarde(labels[i], doel, waarden.get(i)));
-        verwachtingen.add(consistent());
+        for (int i = 0; i < labels.length; i++) expectations.add(value(labels[i], target, waarden.get(i)));
+        expectations.add(consistent());
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("basis", numberValue("12.34"), "waarde", numberValue("100")), List.of()),
                 instanceWith("V2", "Vondst", Map.of("basis", numberValue("20.00")), List.of()),
                 instanceWith("V3", "Vondst", Map.of("basis", numberValue("4.00")), List.of()),
-                instanceWith("V4", "Vondst", Map.of(), List.of())), verwachtingen);
+                instanceWith("V4", "Vondst", Map.of(), List.of())), expectations);
     }
 
     @Test void a_rounding_over_a_later_derived_value() throws Exception {
@@ -133,8 +133,8 @@ class TmsComputeFormWitnessTest {
 
     private static final String PCT = numberType(true, 0, PERCENT);
 
-    private static final String PERCENT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst", List.of(
-            attribuut("basis", TWO), attribuut("grondtarief", PCT), attribuut("tarief", PCT), attribuut("toeslag", FOUR)),
+    private static final String PERCENT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
+            attribute("basis", TWO), attribute("grondtarief", PCT), attribute("tarief", PCT), attribute("toeslag", FOUR)),
             List.of("duur"))), List.of());
 
     static final List<String> PERCENT_RULES = List.of(
@@ -151,8 +151,8 @@ class TmsComputeFormWitnessTest {
                         "tarief", numberValue("50")), List.of()),
                 instanceWith("V2", "Vondst", Map.of("grondtarief", numberValue("10"), "basis", numberValue("20.00")),
                         List.of())),
-                List.of(waarde("V1", "tarief", "23"), waarde("V1", "toeslag", "2.8382"), verwacht("V1", "duur", true),
-                        waarde("V2", "tarief", "15"), waarde("V2", "toeslag", "3"), verwacht("V2", "duur", false),
+                List.of(value("V1", "tarief", "23"), value("V1", "toeslag", "2.8382"), expected("V1", "duur", true),
+                        value("V2", "tarief", "15"), value("V2", "toeslag", "3"), expected("V2", "duur", false),
                         consistent()));
     }
 
@@ -165,9 +165,9 @@ class TmsComputeFormWitnessTest {
     private static final String METER = unit("m", "Afstand", "m", 1, 1), KILOMETER = unit("km", "Afstand", "m", 1000, 1);
     private static final String M = numberType(true, 0, METER);
 
-    static final String UNIT_MODEL = TmsDocuments.modelWith(List.of(TmsDocuments.objecttype("Sleepbaan", List.of(
-            attribuut("grondaanloop", M), attribuut("aanloop", M), attribuut("sleeplengte", M),
-            attribuut("begrensde aanloop", M), attribuut("ruimste aanloop", M)), List.of("lang"))), List.of(), List.of(),
+    static final String UNIT_MODEL = TmsDocuments.modelWith(List.of(TmsDocuments.objectType("Sleepbaan", List.of(
+            attribute("grondaanloop", M), attribute("aanloop", M), attribute("sleeplengte", M),
+            attribute("begrensde aanloop", M), attribute("ruimste aanloop", M)), List.of("lang"))), List.of(), List.of(),
             List.of(unitSystem("Afstand", List.of(METER, KILOMETER))));
 
     static final List<String> UNIT_RULES = List.of(
@@ -187,10 +187,10 @@ class TmsComputeFormWitnessTest {
                 instanceWith("S1", "Sleepbaan", Map.of("grondaanloop", numberValue("150"), "aanloop", numberValue("5000")),
                         List.of()),
                 instanceWith("S2", "Sleepbaan", Map.of("grondaanloop", numberValue("400")), List.of())),
-                List.of(waarde("S1", "aanloop", "300"), waarde("S1", "sleeplengte", "2800"),
-                        waarde("S1", "begrensde aanloop", "200"), verwacht("S1", "lang", false),
-                        waarde("S2", "aanloop", "800"), waarde("S2", "sleeplengte", "3300"),
-                        waarde("S2", "begrensde aanloop", "200"), verwacht("S2", "lang", true), consistent()));
+                List.of(value("S1", "aanloop", "300"), value("S1", "sleeplengte", "2800"),
+                        value("S1", "begrensde aanloop", "200"), expected("S1", "lang", false),
+                        value("S2", "aanloop", "800"), value("S2", "sleeplengte", "3300"),
+                        value("S2", "begrensde aanloop", "200"), expected("S2", "lang", true), consistent()));
     }
 
     @Test void units_are_recomputed_over_a_later_derived_aanloop() throws Exception {
@@ -209,7 +209,7 @@ class TmsComputeFormWitnessTest {
                 instanceWith("S1", "Sleepbaan", Map.of("grondaanloop", numberValue("150"), "aanloop", numberValue("5000")),
                         List.of()),
                 instanceWith("S2", "Sleepbaan", Map.of("grondaanloop", numberValue("400")), List.of())),
-                List.of(waarde("S1", "ruimste aanloop", "500"), waarde("S2", "ruimste aanloop", "800"), consistent())));
+                List.of(value("S1", "ruimste aanloop", "500"), value("S2", "ruimste aanloop", "800"), consistent())));
     }
 
     /** "De totale lengte van een Sleepbaan moet berekend worden als de som van de lengte van alle baandelen van de
@@ -223,20 +223,20 @@ class TmsComputeFormWitnessTest {
      *  herrekend moeten worden (km naar m): de truth-maintenance-tak draagt deze vorm nog niet". */
     @Test void the_fallback_value_of_a_sum_is_recomputed_beside_later_derived_lengths() throws Exception {
         String model = TmsDocuments.modelWith(List.of(
-                TmsDocuments.objecttype("Sleepbaan", List.of(attribuut("totale lengte", M)), List.of()),
-                TmsDocuments.objecttype("Baandeel", List.of(attribuut("grondlengte", M), attribuut("lengte", M)),
+                TmsDocuments.objectType("Sleepbaan", List.of(attribute("totale lengte", M)), List.of()),
+                TmsDocuments.objectType("Baandeel", List.of(attribute("grondlengte", M), attribute("lengte", M)),
                         List.of())),
                 List.of(TmsDocuments.factTypeOneToMany("baanindeling", "baan", "Sleepbaan", "baandeel", "Baandeel",
                         "baandelen")),
                 List.of(), List.of(unitSystem("Afstand", List.of(METER, KILOMETER))));
         String length = computingRule("lengte van een baandeel", "BEREKENING", "Baandeel", "lengte",
                 ownRead("grondlengte", "Baandeel"), "null");
-        String totaal = computingRule("totale lengte van een sleepbaan", "BEREKENING", "Sleepbaan", "totale lengte",
+        String total = computingRule("totale lengte van een sleepbaan", "BEREKENING", "Sleepbaan", "totale lengte",
                 TmsDocuments.aggregation("sum", ownRead("lengte", "Baandeel"), "Baandeel",
                         TmsDocuments.sourceRole("baanindeling", "baandeel"), "null",
                         literal("1", numberType(true, 0, KILOMETER)), M,
                         "de som van de lengte van alle baandelen van de Sleepbaan of 1 km als die er niet zijn"), "null");
-        assertEveryOrder(model, List.of(length, totaal), TmsDocuments.caseOn(null, List.of(
+        assertEveryOrder(model, List.of(length, total), TmsDocuments.caseOn(null, List.of(
                 TmsDocuments.instanceWithRoles("S1", "Sleepbaan", Map.of(), List.of(),
                         Map.of("baandelen", List.of("G1", "G2"))),
                 TmsDocuments.instanceWithRoles("S2", "Sleepbaan", Map.of(), List.of(), Map.of()),
@@ -245,21 +245,21 @@ class TmsComputeFormWitnessTest {
                 TmsDocuments.instanceWithRoles("G2", "Baandeel", Map.of("grondlengte", "200", "lengte", "999"), List.of(),
                         Map.of()),
                 TmsDocuments.instanceWithRoles("G3", "Baandeel", Map.of(), List.of(), Map.of())),
-                List.of(waarde("S1", "totale lengte", "500"), waarde("S2", "totale lengte", "1000"),
-                        waarde("S3", "totale lengte", "1000"), consistent())));
+                List.of(value("S1", "totale lengte", "500"), value("S2", "totale lengte", "1000"),
+                        value("S3", "totale lengte", "1000"), consistent())));
     }
 
     // ---------------- helpers ----------------
 
     /** Every order of {@code rules} in the document of {@code model} plays {@code caseDocument}. */
     static void assertEveryOrder(String model, List<String> rules, JsonNode caseDocument) throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(rules)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(model, order), caseDocument,
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 }

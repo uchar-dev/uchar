@@ -712,6 +712,7 @@ class FileModel:
         self.opens = []                                # OCaml opened module paths
         self.anon_supertypes = []
         self.labels = set()                            # OCaml record labels (_ocaml_labels)
+        self.further = {}                              # offset of a further declarator -> offset of the first one
         if lang == 'java':
             _java_analyse(self)
         elif lang == 'ocaml':
@@ -1061,8 +1062,8 @@ def _java_visible_declarations(m, k, fields_only=False):
 def _java_written_type(m, offset):
     """The type written before the declaration of the name at `offset`, with its type arguments (`List<Bron>`,
     `Map.Entry<String,Eenheid>`, `Expr.Functie`, `B[]`; for a method its return type); None where the code writes
-    none (a lambda parameter, `var`)."""
-    k = m.code_pos.get(offset)
+    none (a lambda parameter, `var`). A further declarator (`A x = a, y = b`) has the type of the first."""
+    k = m.code_pos.get(m.further.get(offset, offset))
     if not k:
         return None
     start = _java_type_start(m.code, k - 1)
@@ -1139,6 +1140,12 @@ JAVA_LANG_TYPES = frozenset('Object String Integer Long Short Byte Character Boo
 # Library methods that make their result of their arguments (a function, an identity): on a value whose code sees
 # nothing of the zone, their result can still be a zone value
 LIBRARY_FOREIGN_RESULT = frozenset('map flatMap mapMulti mapToObj collect reduce toArray'.split())
+# Library methods that give the element of a collection or of an Optional (List<Bron>.get(i) is a Bron), and the value
+# of a map (Map<K,V>.get(k) is a V): the type of such a read is the type argument (card rename-public-api)
+LIBRARY_ELEMENT_RESULT = frozenset('get getFirst getLast peek poll pop element orElse orElseThrow next removeFirst removeLast'.split())
+LIBRARY_MAP_RESULT = frozenset('get getOrDefault'.split())
+LIBRARY_ELEMENT_HEADS = frozenset('List ArrayList LinkedList Deque ArrayDeque Queue Optional Supplier Iterator ListIterator'.split())
+LIBRARY_MAP_HEADS = frozenset('Map HashMap LinkedHashMap TreeMap SortedMap NavigableMap'.split())
 # Library methods whose lambda can take a zone value though their receiver sees nothing of the zone (an accumulator)
 LIBRARY_FOREIGN_LAMBDA = frozenset('reduce collect'.split())
 
@@ -1281,6 +1288,7 @@ def _java_declarators(m, code, j, kind='variable'):
     a name after a comma at the declaration's own depth, followed by `=`, `,` or `;`."""
     n = len(code)
     depth = 0
+    first = m.further.get(code[j - 1].start, code[j - 1].start)
     while j < n:
         x = code[j].text
         if x in ('(', '[', '{'):
@@ -1294,6 +1302,7 @@ def _java_declarators(m, code, j, kind='variable'):
         elif depth == 0 and x == ',' and j + 2 < n and code[j + 1].kind == tk.IDENT \
                 and code[j + 1].text not in JAVA_KEYWORDS and code[j + 2].text in ('=', ',', ';'):
             m.declare(code[j + 1].text, kind, code[j + 1].start)
+            m.further[code[j + 1].start] = first
         j += 1
 
 
@@ -1994,6 +2003,15 @@ class Classifier:
         static = cls == 'static'
         if static:
             cls = self.type_class(mm, written)
+        if not static and written is not None and cls in ('library', 'blind', 'outside'):
+            head, args = _java_type_parts(written)
+            elem = None
+            if head in LIBRARY_ELEMENT_HEADS and len(args) == 1 and name in LIBRARY_ELEMENT_RESULT:
+                elem = args[0]
+            elif head in LIBRARY_MAP_HEADS and len(args) == 2 and name in LIBRARY_MAP_RESULT:
+                elem = args[1]
+            if elem and elem != '?' and self.index.java_type_file(mm, head) is None:
+                return (self.type_class(mm, elem), mm, elem)
         if cls not in ('zone', 'outside', 'blind'):
             return UNKNOWN_TYPE
         if written is None or self.index.java_type_file(mm, _java_type_parts(written)[0]) is None:
@@ -4103,6 +4121,21 @@ def run_check(repo, table, classpath=None, out=None):
             if not external:
                 occurs[r.line] += 1
                 langs_of_row[r.line].add(repo.model(f).lang)
+    # a row of a file may stand for the strings and comments of that file alone (card rename-public-api: a test that
+    # pins the spelling of a constant in a string)
+    dashes = dash_pattern(plan)
+    for f in zone.code_files:
+        m = repo.model(f)
+        aliases = plan.aliases(f)
+        for t in m.tokens:
+            if t.kind not in (tk.COMMENT, tk.STRING):
+                continue
+            for word, offset, qualified, qualifier, dashed in text_occurrences(dashes, t.text, t.start):
+                if word in plan.by_old:
+                    r = plan.name_row(f, word, offset, aliases)
+                    if r is not None:
+                        occurs[r.line] += 1
+                        langs_of_row[r.line].add(m.lang)
     for f, n in plan.file_renames():
         r = plan.name_row(f, file_name_key(f))
         if r is not None:
@@ -4938,7 +4971,9 @@ def cmd_merge(args):
         words = obj.get('words') or item['words']
         scope = obj.get('scope') or '*'
         reason = re.sub(r'\s+', ' ', (obj.get('reason') or '').strip())
-        if not lex.analyse(item['name']).is_dutch():
+        if not lex.analyse(item['name']).is_dutch() and not (obj.get('scope') and reason):
+            # a name that is no Dutch name is left out, unless the session answers it for one scope with a reason: an
+            # owner's choice for a name the glossary does not know (gevuurd) or that is a lexer token (card rename-public-api)
             gone.append(item['name'])
             continue
         if flag:

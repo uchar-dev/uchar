@@ -74,9 +74,9 @@ class PeriodTest {
     }
 
     @Test void list_makes_an_immutable_timeline_and_lets_an_absent_be_absent() {
-        assertNull(Period.lijst(null));
+        assertNull(Period.list(null));
         List<Object> segments = new ArrayList<>(List.of(new Period(JAN, FEB, BigDecimal.ONE)));
-        List<Period> timeline = Period.lijst(segments);
+        List<Period> timeline = Period.list(segments);
         segments.clear();
         assertEquals(List.of(new Period(JAN, FEB, BigDecimal.ONE)), timeline);
         assertThrows(UnsupportedOperationException.class, () -> timeline.add(new Period(FEB, MRT, BigDecimal.ONE)));

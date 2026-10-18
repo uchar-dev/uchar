@@ -1,10 +1,10 @@
 package dev.uchar.regelspraak;
 
-import dev.uchar.regelspraak.ir.ResolvedScenario.Instantie;
-import dev.uchar.regelspraak.ir.ResolvedScenario.RolWaarde;
-import dev.uchar.regelspraak.ir.ResolvedScenario.Situatie;
+import dev.uchar.regelspraak.ir.ResolvedScenario.Instance;
+import dev.uchar.regelspraak.ir.ResolvedScenario.RoleValue;
+import dev.uchar.regelspraak.ir.ResolvedScenario.Situation;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -77,45 +77,45 @@ class ScenarioRoleFactTypeTest {
         - de naam van J is "jutter"
         """;
 
-    private static Situatie situatie() {
-        ScenarioBundel b = ScenarioResolver.resolve(MODEL + SCENARIO);
+    private static Situation situation() {
+        ScenarioBundle b = ScenarioResolver.resolve(MODEL + SCENARIO);
         assertTrue(b.isOk(), () -> "het scenario hoort schoon te resolven: " + b.model().errors());
-        return b.scenarios().get(0).situatie();
+        return b.scenarios().get(0).situation();
     }
 
-    private static RolWaarde rol(Situatie sit, String label, String sleutel) {
-        Instantie i = sit.instantie(label);
+    private static RoleValue role(Situation sit, String label, String key) {
+        Instance i = sit.instantie(label);
         assertNotNull(i, label);
-        return i.rollen().stream().filter(r -> r.sleutel().equals(sleutel)).findFirst()
-                .orElseGet(() -> fail("instantie " + label + " heeft geen rol '" + sleutel + "': " + i.rollen()));
+        return i.rollen().stream().filter(r -> r.key().equals(key)).findFirst()
+                .orElseGet(() -> fail("instantie " + label + " heeft geen rol '" + key + "': " + i.rollen()));
     }
 
     @Test void the_role_name_vergunning_belongs_per_instance_to_another_fact_type() {
-        Situatie sit = situatie();
-        assertEquals("vergunninghouderschap", rol(sit, "J", "vergunningen").feittype().naam);
-        assertEquals("vergunde vondst", rol(sit, "V", "vergunning").feittype().naam);
-        assertEquals("vergunde strook", rol(sit, "S", "vergunning").feittype().naam);
+        Situation sit = situation();
+        assertEquals("vergunninghouderschap", role(sit, "J", "vergunningen").factType().naam);
+        assertEquals("vergunde vondst", role(sit, "V", "vergunning").factType().naam);
+        assertEquals("vergunde strook", role(sit, "S", "vergunning").factType().naam);
     }
 
     @Test void the_other_side_carries_the_same_fact_type() {
-        Situatie sit = situatie();
-        assertEquals("vergunninghouderschap", rol(sit, "G", "houder").feittype().naam);
-        assertEquals("vergunde vondst", rol(sit, "G", "vondsten").feittype().naam);
-        assertEquals("vergunde strook", rol(sit, "G", "strook").feittype().naam);
+        Situation sit = situation();
+        assertEquals("vergunninghouderschap", role(sit, "G", "houder").factType().naam);
+        assertEquals("vergunde vondst", role(sit, "G", "vondsten").factType().naam);
+        assertEquals("vergunde strook", role(sit, "G", "strook").factType().naam);
     }
 
     @Test void a_reciprocal_fact_type() {
-        assertEquals("strandmaatschap", rol(situatie(), "J", "strandmaat").feittype().naam);
+        assertEquals("strandmaatschap", role(situation(), "J", "strandmaat").factType().naam);
     }
 
     @Test void the_fact_type_is_that_of_the_model() {
-        ScenarioBundel b = ScenarioResolver.resolve(MODEL + SCENARIO);
+        ScenarioBundle b = ScenarioResolver.resolve(MODEL + SCENARIO);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Situatie sit = b.scenarios().get(0).situatie();
+        Situation sit = b.scenarios().get(0).situation();
         for (String[] pair : List.of(new String[]{"J", "vergunningen"}, new String[]{"V", "vergunning"},
                 new String[]{"S", "vergunning"}, new String[]{"G", "houder"}, new String[]{"J", "strandmaat"})) {
-            RolWaarde r = rol(sit, pair[0], pair[1]);
-            assertSame(b.model().feittypen.get(r.feittype().naam), r.feittype(), pair[0] + " " + pair[1]);
+            RoleValue r = role(sit, pair[0], pair[1]);
+            assertSame(b.model().feittypen.get(r.factType().naam), r.factType(), pair[0] + " " + pair[1]);
         }
     }
 }

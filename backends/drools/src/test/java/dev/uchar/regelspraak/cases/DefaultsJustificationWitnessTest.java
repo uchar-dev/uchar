@@ -116,9 +116,9 @@ class DefaultsJustificationWitnessTest {
         String group = characteristicGroup("ijver", "Jutter", "ijverig",
                 decision(greater(count(characteristicCheck("zwaar")), number(1)), false), decision(ALTIJD, true));
         String ir = document(VONDSTMODEL, List.of(ZWAARTE), List.of(group));
-        String verwacht = String.join(",", kenmerk("J1", "ijverig", false), kenmerk("J2", "ijverig", true),
-                kenmerk("J3", "ijverig", true), kenmerk("J4", "ijverig", false), kenmerk("J5", "ijverig", true));
-        assertNull(play(ir, caseDocument(vondstPicture(false), verwacht, "")), "ijverig na de telling");
+        String expected = String.join(",", characteristic("J1", "ijverig", false), characteristic("J2", "ijverig", true),
+                characteristic("J3", "ijverig", true), characteristic("J4", "ijverig", false), characteristic("J5", "ijverig", true));
+        assertNull(play(ir, caseDocument(vondstPicture(false), expected, "")), "ijverig na de telling");
     }
 
     // ---------------- reads over more than one role ----------------
@@ -134,21 +134,21 @@ class DefaultsJustificationWitnessTest {
     @Test void three_roles_far() throws Exception {
         // "Uitzondering op controlepremie: … als 20 indien de premie van de jutter van de vondst van de melding van de
         // Controle groter is dan 5". C1 reaches J1 (premie 8). ref and clingo: C1 20, the others 10.
-        String check = objecttype("Controle", "Controles", false, List.of(attribuut("controlepremie")), List.of());
+        String check = objectType("Controle", "Controles", false, List.of(attribute("controlepremie")), List.of());
         String model = model(List.of(JUTTER, VONDST, MESSAGE, check), List.of(JUTTER_VONDST, VONDST_MESSAGE,
-                feittype("MeldingHeeftControle", "melding", "Melding", "controle", "controles", "Controle")), "");
-        String chain = pad("premie", "Jutter", "de premie van de jutter van de vondst van de melding van de Controle",
+                factType("MeldingHeeftControle", "melding", "Melding", "controle", "controles", "Controle")), "");
+        String chain = path("premie", "Jutter", "de premie van de jutter van de vondst van de melding van de Controle",
                 "MeldingHeeftControle/melding", "VondstHeeftMelding/vondst", "JutterHeeftVondst/jutter");
         String group = group("controlepremie", "Controle", "controlepremie",
-                standaard(greater(chain, number(5)), number(20)), standaard(ALTIJD, number(10)));
+                defaultEntry(greater(chain, number(5)), number(20)), defaultEntry(ALTIJD, number(10)));
         List<String> inst = new ArrayList<>(reportInstances("premie"));
         inst.add(instance("C1", "Controle", "", "\"melding\":[\"M1\"]", ""));
         inst.add(instance("C2", "Controle", "", "\"melding\":[\"M2\"]", ""));
         inst.add(instance("C3", "Controle", "", "\"melding\":[\"M3\"]", ""));
         inst.add(instance("C4", "Controle", "", "", ""));
-        String verwacht = String.join(",", waarde("C1", "controlepremie", 20), waarde("C2", "controlepremie", 10),
-                waarde("C3", "controlepremie", 10), waarde("C4", "controlepremie", 10));
-        assertNull(play(document(model, List.of(), List.of(group)), caseDocument(inst, verwacht, "")), "drie rollen ver");
+        String expected = String.join(",", value("C1", "controlepremie", 20), value("C2", "controlepremie", 10),
+                value("C3", "controlepremie", 10), value("C4", "controlepremie", 10));
+        assertNull(play(document(model, List.of(), List.of(group)), caseDocument(inst, expected, "")), "drie rollen ver");
     }
 
     @Test void two_roles_far_a_later_derived_value_on_a_characteristic_target() throws Exception {
@@ -158,24 +158,24 @@ class DefaultsJustificationWitnessTest {
         String group = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(5)), false), decision(ALTIJD, true));
         String ir = document(REPORT_MODEL, List.of(PREMIE_OUT_RAW_PREMIE), List.of(group));
-        String verwacht = String.join(",", kenmerk("M1", "dringend", false), kenmerk("M2", "dringend", true),
-                kenmerk("M3", "dringend", true), kenmerk("M4", "dringend", true));
-        assertNull(play(ir, caseDocument(reportInstances("ruwe premie"), verwacht, "")), "dringend na de afleiding van de premie");
+        String expected = String.join(",", characteristic("M1", "dringend", false), characteristic("M2", "dringend", true),
+                characteristic("M3", "dringend", true), characteristic("M4", "dringend", true));
+        assertNull(play(ir, caseDocument(reportInstances("ruwe premie"), expected, "")), "dringend na de afleiding van de premie");
         // The group with the threshold 15, over a premie that a defaults group writes (20 where the drempel of the
         // Jutter is above 0, else 10), with the Melding declared first, so the reading group is built first. ref and
         // clingo: M1 (J1, drempel 1, premie 20) not dringend, M2 (J2, no drempel, premie 10) dringend.
         group = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(15)), false), decision(ALTIJD, true));
         String premie = group("premie", "Jutter", "premie",
-                standaard(greater(own("drempel", "Jutter"), number(0)), number(20)), standaard(ALTIJD, number(10)));
+                defaultEntry(greater(own("drempel", "Jutter"), number(0)), number(20)), defaultEntry(ALTIJD, number(10)));
         String model = model(List.of(MESSAGE, VONDST, JUTTER), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         List<String> inst = List.of(instance("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
                 instance("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""),
                 vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
                 instance("J1", "Jutter", "\"drempel\":{\"number\":\"1\"}", "", ""), instance("J2", "Jutter", "", "", ""));
         assertNull(play(document(model, List.of(), List.of(group, premie)), caseDocument(inst,
-                        String.join(",", kenmerk("M1", "dringend", false), kenmerk("M2", "dringend", true),
-                                waarde("J1", "premie", 20), waarde("J2", "premie", 10)), "")),
+                        String.join(",", characteristic("M1", "dringend", false), characteristic("M2", "dringend", true),
+                                value("J1", "premie", 20), value("J2", "premie", 10)), "")),
                 "dringend over een premie uit een latere groep");
     }
 
@@ -186,7 +186,7 @@ class DefaultsJustificationWitnessTest {
         // threshold 15. The premie rule is the producer the group reads; in its band, 0, the group would read the
         // premie before the bonuspremie is written. It waits in the band of the bonuspremie instead. ref and clingo:
         // J1 (not ijverig) premie 20 and M1 20; J2 (ijverig) premie leeg and M2 10.
-        String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
+        String jutter = objectType("Jutter", "Jutters", true, List.of(attribute("premie"), attribute("bonuspremie")),
                 List.of("ijverig"));
         String model = model(List.of(jutter, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
@@ -198,10 +198,10 @@ class DefaultsJustificationWitnessTest {
                 vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
                 instance("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
                 instance("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
-        String verwacht = String.join(",", waarde("J1", "premie", 20),
+        String expected = String.join(",", value("J1", "premie", 20),
                 "{\"kind\":\"attributeEmpty\",\"label\":\"J2\",\"attribute\":\"premie\"}",
-                waarde("M1", "gemelde premie", 20), waarde("M2", "gemelde premie", 10));
-        assertNull(play(ir, caseDocument(inst, verwacht, "")), "de gemelde premie na de late premie");
+                value("M1", "gemelde premie", 20), value("M2", "gemelde premie", 10));
+        assertNull(play(ir, caseDocument(inst, expected, "")), "de gemelde premie na de late premie");
     }
 
     @Test void a_characteristic_target_waits_for_the_band_of_a_far_side_producer() throws Exception {
@@ -210,7 +210,7 @@ class DefaultsJustificationWitnessTest {
         // in band 0 but waits on the bonuspremie, a negated read in band -1; a group that decided in band 0 attributed
         // dringend to M1 before the premie was 20, and the join cannot withdraw it. ref and clingo: M1 not dringend,
         // M2 dringend.
-        String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
+        String jutter = objectType("Jutter", "Jutters", true, List.of(attribute("premie"), attribute("bonuspremie")),
                 List.of("ijverig"));
         String model = model(List.of(jutter, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
@@ -224,8 +224,8 @@ class DefaultsJustificationWitnessTest {
                 instance("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
                 instance("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
         assertNull(play(document(model, rules, List.of(group)), caseDocument(inst,
-                        String.join(",", waarde("J1", "premie", 20), kenmerk("M1", "dringend", false),
-                                kenmerk("M2", "dringend", true)), "")),
+                        String.join(",", value("J1", "premie", 20), characteristic("M1", "dringend", false),
+                                characteristic("M2", "dringend", true)), "")),
                 "dringend na de late premie");
     }
 
@@ -236,9 +236,9 @@ class DefaultsJustificationWitnessTest {
         // placed strictly below its producers would share band -1 with the reader, which as an ordinary rule fires
         // first and attributes rustig to every melding. ref and clingo: M1 not dringend and rustig, M2 dringend and not
         // rustig.
-        String melding = objecttype("Melding", "Meldingen", false, List.of(attribuut("gemelde premie")),
+        String message = objectType("Melding", "Meldingen", false, List.of(attribute("gemelde premie")),
                 List.of("dringend", "rustig"));
-        String model = model(List.of(JUTTER, VONDST, melding), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
+        String model = model(List.of(JUTTER, VONDST, message), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         String notDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
         String rest = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
@@ -251,8 +251,8 @@ class DefaultsJustificationWitnessTest {
                 instance("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
                 instance("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
         assertNull(play(document(model, List.of(rest, PREMIE_OUT_RAW_PREMIE), List.of(group)), caseDocument(inst,
-                        String.join(",", kenmerk("M1", "dringend", false), kenmerk("M1", "rustig", true),
-                                kenmerk("M2", "dringend", true), kenmerk("M2", "rustig", false)), "")),
+                        String.join(",", characteristic("M1", "dringend", false), characteristic("M1", "rustig", true),
+                                characteristic("M2", "dringend", true), characteristic("M2", "rustig", false)), "")),
                 "rustig na de beslissing over dringend");
     }
 
@@ -263,8 +263,8 @@ class DefaultsJustificationWitnessTest {
         // its own type, and in the band of a premie two roles away that waits on a negated read. In one band the
         // reader, an ordinary rule, fires first and attributes rustig before dringend is decided. ref and clingo: M1
         // not dringend and rustig, M2 dringend and not rustig, in both documents.
-        String melding = objecttype("Melding", "Meldingen", false,
-                List.of(attribuut("meldpremie"), attribuut("ruwe meldpremie")), List.of("dringend", "rustig"));
+        String message = objectType("Melding", "Meldingen", false,
+                List.of(attribute("meldpremie"), attribute("ruwe meldpremie")), List.of("dringend", "rustig"));
         String notDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
         String rest = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
@@ -272,13 +272,13 @@ class DefaultsJustificationWitnessTest {
         String meldpremie = regel("meldpremie", "Melding", "meldpremie", own("ruwe meldpremie", "Melding"), null, "equation");
         String ownGroup = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(own("meldpremie", "Melding"), number(5)), false), decision(ALTIJD, true));
-        String verwacht = String.join(",", kenmerk("M1", "dringend", false), kenmerk("M1", "rustig", true),
-                kenmerk("M2", "dringend", true), kenmerk("M2", "rustig", false));
-        assertNull(play(document(model(List.of(melding), List.of(), ""), List.of(meldpremie, rest), List.of(ownGroup)),
+        String expected = String.join(",", characteristic("M1", "dringend", false), characteristic("M1", "rustig", true),
+                characteristic("M2", "dringend", true), characteristic("M2", "rustig", false));
+        assertNull(play(document(model(List.of(message), List.of(), ""), List.of(meldpremie, rest), List.of(ownGroup)),
                         caseDocument(List.of(instance("M1", "Melding", "\"ruwe meldpremie\":{\"number\":\"8\"}", "", ""),
-                                instance("M2", "Melding", "\"ruwe meldpremie\":{\"number\":\"3\"}", "", "")), verwacht, "")),
+                                instance("M2", "Melding", "\"ruwe meldpremie\":{\"number\":\"3\"}", "", "")), expected, "")),
                 "rustig na dringend, op het eigen type");
-        String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
+        String jutter = objectType("Jutter", "Jutters", true, List.of(attribute("premie"), attribute("bonuspremie")),
                 List.of("ijverig"));
         String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
@@ -290,8 +290,8 @@ class DefaultsJustificationWitnessTest {
                 vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
                 instance("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
                 instance("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
-        assertNull(play(document(model(List.of(jutter, VONDST, melding), List.of(JUTTER_VONDST, VONDST_MESSAGE), ""),
-                        rules, List.of(farSideGroup)), caseDocument(inst, verwacht, "")),
+        assertNull(play(document(model(List.of(jutter, VONDST, message), List.of(JUTTER_VONDST, VONDST_MESSAGE), ""),
+                        rules, List.of(farSideGroup)), caseDocument(inst, expected, "")),
                 "rustig na dringend, twee rollen ver in de band van een negatielezer");
     }
 
@@ -304,13 +304,13 @@ class DefaultsJustificationWitnessTest {
         String model = model(List.of(JUTTER, VONDST), List.of(JUTTER_VONDST),
                 parameter("vondstdrempel") + "," + parameter("gewichtsgrens"));
         String bonus = group("bonus", "Vondst", "bonus",
-                standaard(greater(own("gewicht", "Vondst"), parameterRef("gewichtsgrens")), number(2)),
-                standaard(ALTIJD, number(1)));
+                defaultEntry(greater(own("gewicht", "Vondst"), parameterRef("gewichtsgrens")), number(2)),
+                defaultEntry(ALTIJD, number(1)));
         String ir = document(model, List.of(), List.of(premieGroup(greater(count(null), parameterRef("vondstdrempel"))), bonus));
-        StringBuilder verwacht = new StringBuilder(premies("J1"));
+        StringBuilder expected = new StringBuilder(premies("J1"));
         for (String[] v : VONDSTEN)
-            verwacht.append(",").append(waarde(v[0], "bonus", Integer.parseInt(v[2]) > 5 ? 2 : 1));
-        assertNull(play(ir, caseDocument(vondstPicture(true), verwacht.toString(),
+            expected.append(",").append(value(v[0], "bonus", Integer.parseInt(v[2]) > 5 ? 2 : 1));
+        assertNull(play(ir, caseDocument(vondstPicture(true), expected.toString(),
                         "\"vondstdrempel\":{\"number\":\"2\"},\"gewichtsgrens\":{\"number\":\"5\"}")),
                 "de vondstdrempel en de gewichtsgrens");
     }
@@ -324,15 +324,15 @@ class DefaultsJustificationWitnessTest {
         // ijverig", "Uitzondering: niet ijverig indien de premie van de Jutter groter is dan 15". ref and clingo: V1
         // (jutter J1, drempel 1) not zwaar, V2 zwaar; J1 not ijverig, J2 ijverig.
         String premie = group("premie", "Jutter", "premie",
-                standaard(greater(own("drempel", "Jutter"), number(0)), number(20)), standaard(ALTIJD, number(10)));
+                defaultEntry(greater(own("drempel", "Jutter"), number(0)), number(20)), defaultEntry(ALTIJD, number(10)));
         String zwaar = characteristicGroup("zwaarte", "Vondst", "zwaar",
                 decision(greater(viaJutter("premie"), number(15)), false), decision(ALTIJD, true));
         String model = model(List.of(VONDST, JUTTER), List.of(JUTTER_VONDST), "");
         List<String> inst = List.of(vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
                 instance("J1", "Jutter", "\"drempel\":{\"number\":\"1\"}", "", ""), instance("J2", "Jutter", "", "", ""));
         assertNull(play(document(model, List.of(), List.of(zwaar, premie)), caseDocument(inst,
-                        String.join(",", kenmerk("V1", "zwaar", false), kenmerk("V2", "zwaar", true),
-                                waarde("J1", "premie", 20), waarde("J2", "premie", 10)), "")),
+                        String.join(",", characteristic("V1", "zwaar", false), characteristic("V2", "zwaar", true),
+                                value("J1", "premie", 20), value("J2", "premie", 10)), "")),
                 "een rol ver, de lezende groep eerst");
         String ijver = characteristicGroup("ijver", "Jutter", "ijverig",
                 decision(greater(own("premie", "Jutter"), number(15)), false), decision(ALTIJD, true));
@@ -340,7 +340,7 @@ class DefaultsJustificationWitnessTest {
                         List.of(ijver, premie)),
                 caseDocument(List.of(instance("J1", "Jutter", "\"drempel\":{\"number\":\"1\"}", "", ""),
                                 instance("J2", "Jutter", "", "", "")),
-                        String.join(",", kenmerk("J1", "ijverig", false), kenmerk("J2", "ijverig", true)), "")),
+                        String.join(",", characteristic("J1", "ijverig", false), characteristic("J2", "ijverig", true)), "")),
                 "op het eigen type, de lezende groep eerst");
     }
 
@@ -350,14 +350,14 @@ class DefaultsJustificationWitnessTest {
         // group. Before zwaar is derived the count of zware vondsten is 0 and both grounds hold, which is a conflict
         // the fixpoint does not have. ref and clingo: J4 (two zware) 20 and consistent; J5 (one zware) no premie
         // and inconsistent.
-        String a = groupUnordered("grond veel vondsten", standaard(greater(count(null), number(1)), number(20)));
+        String a = groupUnordered("grond veel vondsten", defaultEntry(greater(count(null), number(1)), number(20)));
         String b = groupUnordered("grond weinig zware vondsten",
-                standaard(comparison("less", count(characteristicCheck("zwaar")), number(2)), number(30)));
+                defaultEntry(comparison("less", count(characteristicCheck("zwaar")), number(2)), number(30)));
         String ir = document(VONDSTMODEL, List.of(ZWAARTE), List.of(a, b));
         assertNull(play(ir, caseDocument(List.of(instance("J4", "Jutter", "", "", ""),
                         vondst("V5", "J4", "\"gewicht\":{\"number\":\"7\"}", false),
                         vondst("V6", "J4", "\"gewicht\":{\"number\":\"8\"}", false)),
-                        waarde("J4", "premie", 20) + ",{\"kind\":\"consistent\"}", "")), "zonder conflict");
+                        value("J4", "premie", 20) + ",{\"kind\":\"consistent\"}", "")), "zonder conflict");
         assertNull(play(ir, caseDocument(List.of(instance("J5", "Jutter", "", "", ""),
                         vondst("V7", "J5", "\"gewicht\":{\"number\":\"3\"}", false),
                         vondst("V8", "J5", "\"gewicht\":{\"number\":\"12\"}", false)),
@@ -372,14 +372,14 @@ class DefaultsJustificationWitnessTest {
     private static final String ALTIJD = "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],"
             + "\"source\":{\"snippet\":\"altijd\"}}";
 
-    private static final String JUTTER = objecttype("Jutter", "Jutters", true,
-            List.of(attribuut("premie"), attribuut("drempel"), attribuut("ruwe premie")), List.of("ijverig"));
-    private static final String VONDST = objecttype("Vondst", "Vondsten", false,
-            List.of(attribuut("gewicht"), attribuut("ruwgewicht"), attribuut("bonus")), List.of("zwaar"));
-    private static final String MESSAGE = objecttype("Melding", "Meldingen", false,
-            List.of(attribuut("gemelde premie")), List.of("dringend"));
-    private static final String JUTTER_VONDST = feittype("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst");
-    private static final String VONDST_MESSAGE = feittype("VondstHeeftMelding", "vondst", "Vondst", "melding", "meldingen", "Melding");
+    private static final String JUTTER = objectType("Jutter", "Jutters", true,
+            List.of(attribute("premie"), attribute("drempel"), attribute("ruwe premie")), List.of("ijverig"));
+    private static final String VONDST = objectType("Vondst", "Vondsten", false,
+            List.of(attribute("gewicht"), attribute("ruwgewicht"), attribute("bonus")), List.of("zwaar"));
+    private static final String MESSAGE = objectType("Melding", "Meldingen", false,
+            List.of(attribute("gemelde premie")), List.of("dringend"));
+    private static final String JUTTER_VONDST = factType("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst");
+    private static final String VONDST_MESSAGE = factType("VondstHeeftMelding", "vondst", "Vondst", "melding", "meldingen", "Melding");
     private static final String VONDSTMODEL = model(List.of(JUTTER, VONDST), List.of(JUTTER_VONDST), "");
     private static final String REPORT_MODEL = model(List.of(JUTTER, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
 
@@ -399,18 +399,18 @@ class DefaultsJustificationWitnessTest {
             {"V1", "J1", "6", "zwaar"}, {"V2", "J1", "4", ""}, {"V3", "J1", "9", "zwaar"}, {"V4", "J2", "2", ""},
             {"V5", "J4", "7", "zwaar"}, {"V6", "J4", "8", "zwaar"}, {"V7", "J5", "3", ""}, {"V8", "J5", "12", ""}};
 
-    private static String attribuut(String naam) {
+    private static String attribute(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String objecttype(String naam, String plural, boolean animate, List<String> attributes, List<String> kenmerken) {
+    private static String objectType(String naam, String plural, boolean animate, List<String> attributes, List<String> kenmerken) {
         List<String> k = new ArrayList<>();
         for (String n : kenmerken) k.add("{\"node\":\"Characteristic\",\"name\":\"" + n + "\",\"kind\":\"adjectival\"}");
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", k) + "]}";
     }
 
-    private static String feittype(String naam, String role1, String type1, String role2, String plural2, String type2) {
+    private static String factType(String naam, String role1, String type1, String role2, String plural2, String type2) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + role1 + "\",\"objectType\":\"" + type1 + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + role2 + "\",\"objectType\":\"" + type2 + "\",\"plural\":\"" + plural2
@@ -421,8 +421,8 @@ class DefaultsJustificationWitnessTest {
         return "{\"node\":\"Parameter\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String model(List<String> typen, List<String> factTypes, String parameters) {
-        return "{\"objectTypes\":[" + String.join(",", typen) + "],\"factTypes\":[" + String.join(",", factTypes)
+    private static String model(List<String> types, List<String> factTypes, String parameters) {
+        return "{\"objectTypes\":[" + String.join(",", types) + "],\"factTypes\":[" + String.join(",", factTypes)
                 + "],\"parameters\":[" + parameters + "],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]}";
     }
@@ -431,40 +431,40 @@ class DefaultsJustificationWitnessTest {
         return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + n + "\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"" + n + "\"}}";
     }
 
-    private static String own(String attribuut, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"de " + attribuut + " van de " + type + "\"}}";
+    private static String own(String attribute, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"de " + attribute + " van de " + type + "\"}}";
     }
 
     private static String parameterRef(String naam) {
         return "{\"node\":\"ParameterReference\",\"parameter\":\"" + naam + "\",\"source\":{\"snippet\":\"de " + naam + "\"}}";
     }
 
-    /** A navigated read of {@code attribuut} on {@code type} over the hops, each "FactType/role". */
-    private static String pad(String attribuut, String type, String snippet, String... hops) {
+    /** A navigated read of {@code attribute} on {@code type} over the hops, each "FactType/role". */
+    private static String path(String attribute, String type, String snippet, String... hops) {
         List<String> h = new ArrayList<>();
         for (String hop : hops) {
             String[] d = hop.split("/");
             h.add("{\"node\":\"RoleBinding\",\"factType\":\"" + d[0] + "\",\"role\":\"" + d[1] + "\"}");
         }
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type
                 + "\",\"source\":{\"snippet\":\"" + snippet + "\"},\"path\":[" + String.join(",", h) + "]}";
     }
 
     /** "de &lt;attribuut&gt; van de jutter van de Vondst": one hop. */
-    private static String viaJutter(String attribuut) {
-        return pad(attribuut, "Jutter", "de " + attribuut + " van de jutter van de Vondst", "JutterHeeftVondst/jutter");
+    private static String viaJutter(String attribute) {
+        return path(attribute, "Jutter", "de " + attribute + " van de jutter van de Vondst", "JutterHeeftVondst/jutter");
     }
 
     /** "de &lt;attribuut&gt; van de jutter van de vondst van de Melding": two hops. */
-    private static String viaVondstJutter(String attribuut) {
-        return pad(attribuut, "Jutter", "de " + attribuut + " van de jutter van de vondst van de Melding",
+    private static String viaVondstJutter(String attribute) {
+        return path(attribute, "Jutter", "de " + attribute + " van de jutter van de vondst van de Melding",
                 "VondstHeeftMelding/vondst", "JutterHeeftVondst/jutter");
     }
 
-    private static String characteristicCheck(String kenmerk) {
-        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + kenmerk + "\",\"negated\":false,"
-                + "\"source\":{\"snippet\":\"" + kenmerk + " zijn\"}}";
+    private static String characteristicCheck(String characteristic) {
+        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + characteristic + "\",\"negated\":false,"
+                + "\"source\":{\"snippet\":\"" + characteristic + " zijn\"}}";
     }
 
     private static final String VONDST_RANGE = "\"elementType\":\"Vondst\",\"sourceRole\":{\"node\":\"RoleBinding\","
@@ -478,10 +478,10 @@ class DefaultsJustificationWitnessTest {
     }
 
     /** "de som van / de minimale waarde van / de maximale waarde van het &lt;attribuut&gt; van alle vondsten van de Jutter". */
-    private static String fold(String soort, String attribuut, String filter) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"" + soort + "\",\"arguments\":[" + own(attribuut, "Vondst") + "],"
+    private static String fold(String category, String attribute, String filter) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + category + "\",\"arguments\":[" + own(attribute, "Vondst") + "],"
                 + VONDST_RANGE + (filter == null ? "" : ",\"filter\":" + filter) + ",\"type\":" + WHOLE
-                + ",\"source\":{\"snippet\":\"de " + soort + " van het " + attribuut + " van alle vondsten van de Jutter\"}}";
+                + ",\"source\":{\"snippet\":\"de " + category + " van het " + attribute + " van alle vondsten van de Jutter\"}}";
     }
 
     private static String greater(String left, String right) { return comparison("greater", left, right); }
@@ -491,27 +491,27 @@ class DefaultsJustificationWitnessTest {
                 + ",\"source\":{\"snippet\":\"vergelijking\"}}";
     }
 
-    /** An ordinary rule with one version; {@code voorwaarde} null for none, {@code presentation} null on a
+    /** An ordinary rule with one version; {@code condition} null for none, {@code presentation} null on a
      *  characteristic assignment ("calculation" for "berekend worden als", "equation" for "gesteld worden op"). */
-    private static String regel(String naam, String type, String doel, String waarde, String voorwaarde, String presentation) {
+    private static String regel(String naam, String type, String target, String value, String condition, String presentation) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
-                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
-                + "\"source\":{\"snippet\":\"de " + doel + "\"}},\"value\":" + waarde
-                + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde) + ",\"initialisation\":false"
+                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
+                + "\"source\":{\"snippet\":\"de " + target + "\"}},\"value\":" + value
+                + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false"
                 + (presentation == null ? "" : ",\"presentation\":\"" + presentation + "\"") + "}]}";
     }
 
-    private static String standaard(String rechtvaardiging, String consequence) {
-        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequence + "}";
+    private static String defaultEntry(String justification, String consequence) {
+        return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence + "}";
     }
 
-    private static String decision(String rechtvaardiging, boolean decision) {
-        return "{\"node\":\"Default\",\"decision\":" + decision + ",\"justification\":" + rechtvaardiging + "}";
+    private static String decision(String justification, boolean decision) {
+        return "{\"node\":\"Default\",\"decision\":" + decision + ",\"justification\":" + justification + "}";
     }
 
-    private static String group(String naam, String type, String attribuut, String... defaults) {
+    private static String group(String naam, String type, String attribute, String... defaults) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":\""
-                + attribuut + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
+                + attribute + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
     private static String groupUnordered(String naam, String... defaults) {
@@ -519,19 +519,19 @@ class DefaultsJustificationWitnessTest {
                 + "\"unordered\":true,\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    private static String characteristicGroup(String naam, String type, String kenmerk, String... defaults) {
+    private static String characteristicGroup(String naam, String type, String characteristic, String... defaults) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"characteristic\":\""
-                + kenmerk + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
+                + characteristic + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    /** The premie of a Jutter: 20 where {@code rechtvaardiging} holds, else 10. */
-    private static String premieGroup(String rechtvaardiging) {
-        return group("premie", "Jutter", "premie", standaard(rechtvaardiging, number(20)), standaard(ALTIJD, number(10)));
+    /** The premie of a Jutter: 20 where {@code justification} holds, else 10. */
+    private static String premieGroup(String justification) {
+        return group("premie", "Jutter", "premie", defaultEntry(justification, number(20)), defaultEntry(ALTIJD, number(10)));
     }
 
-    /** The gemelde premie of a Melding: 20 where {@code rechtvaardiging} holds, else 10. */
-    private static String reportedGroup(String rechtvaardiging) {
-        return group("gemelde premie", "Melding", "gemelde premie", standaard(rechtvaardiging, number(20)), standaard(ALTIJD, number(10)));
+    /** The gemelde premie of a Melding: 20 where {@code justification} holds, else 10. */
+    private static String reportedGroup(String justification) {
+        return group("gemelde premie", "Melding", "gemelde premie", defaultEntry(justification, number(20)), defaultEntry(ALTIJD, number(10)));
     }
 
     private static String document(String model, List<String> rules, List<String> groups) {
@@ -582,33 +582,33 @@ class DefaultsJustificationWitnessTest {
 
     private static List<String> messagePicture(String premieAttribute) { return reportInstances(premieAttribute); }
 
-    private static String waarde(String label, String attribuut, int number) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut
+    private static String value(String label, String attribute, int number) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute
                 + "\",\"value\":{\"number\":\"" + number + "\"}}";
     }
 
-    private static String kenmerk(String label, String kenmerk, boolean aanwezig) {
-        return "{\"kind\":\"characteristic" + (aanwezig ? "Present" : "Absent") + "\",\"label\":\"" + label
-                + "\",\"characteristic\":\"" + kenmerk + "\"}";
+    private static String characteristic(String label, String characteristic, boolean present) {
+        return "{\"kind\":\"characteristic" + (present ? "Present" : "Absent") + "\",\"label\":\"" + label
+                + "\",\"characteristic\":\"" + characteristic + "\"}";
     }
 
     /** The premie of J1..J5: 20 for the named jutters, 10 for the others. */
     private static String premies(String... twenty) {
         List<String> t = List.of(twenty), out = new ArrayList<>();
-        for (int i = 1; i <= 5; i++) out.add(waarde("J" + i, "premie", t.contains("J" + i) ? 20 : 10));
+        for (int i = 1; i <= 5; i++) out.add(value("J" + i, "premie", t.contains("J" + i) ? 20 : 10));
         return String.join(",", out);
     }
 
     /** The gemelde premie of M1..M4: 20 for the named meldingen, 10 for the others. */
     private static String reported(String... twenty) {
         List<String> t = List.of(twenty), out = new ArrayList<>();
-        for (int i = 1; i <= 4; i++) out.add(waarde("M" + i, "gemelde premie", t.contains("M" + i) ? 20 : 10));
+        for (int i = 1; i <= 4; i++) out.add(value("M" + i, "gemelde premie", t.contains("M" + i) ? 20 : 10));
         return String.join(",", out);
     }
 
-    private static String caseDocument(List<String> instanties, String verwacht, String parameters) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{" + parameters + "}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(List<String> instances, String expected, String parameters) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{" + parameters + "}},\"expected\":[" + expected + "]}";
     }
 
     /** The verdict on one case of the exec-model branch and of {@code DRL_TEXT}, which must be the same: null when

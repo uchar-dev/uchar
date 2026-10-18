@@ -1,11 +1,11 @@
 package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.Datatype;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
-import dev.uchar.regelspraak.model.RegelSpraakModel.GegenereerdUit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
+import dev.uchar.regelspraak.model.RegelSpraakModel.GeneratedFrom;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Herkomstvorm;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype.KenmerkSoort;
+import dev.uchar.regelspraak.model.RegelSpraakModel.OriginForm;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype.CharacteristicKind;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 
 import java.util.Collections;
@@ -36,7 +36,7 @@ public final class Spelling {
 
     /**
      * One family: a bijection between in-memory values and their wire spellings. {@link #rows} are the values
-     * every place of the family admits. {@link #geweigerd} are spelled like the others but refused by name at the
+     * every place of the family admits. {@link #refused} are spelled like the others but refused by name at the
      * places in {@link #refusedOn} and admitted elsewhere: a reader that meets one must name it, not call it
      * unknown. An in-memory value the family cannot spell stands in {@link #unwritten} with its reason, so the
      * table accounts for every constant of the enum it maps. A place in {@link #nullStays} admits {@code null};
@@ -46,7 +46,7 @@ public final class Spelling {
         private final String naam;
         private final List<String> places;
         private final Map<K, String> rows = new LinkedHashMap<>();
-        private final Map<K, String> geweigerd = new LinkedHashMap<>();
+        private final Map<K, String> refused = new LinkedHashMap<>();
         private final Set<String> refusedOn = new LinkedHashSet<>();
         private final Set<String> nullStays = new LinkedHashSet<>();
         private boolean free;
@@ -58,34 +58,34 @@ public final class Spelling {
             this.places = List.of(places);
         }
 
-        private Family<K> row(K waarde, String spelling) {
-            add(rows, waarde, spelling);
+        private Family<K> row(K value, String spelling) {
+            add(rows, value, spelling);
             return this;
         }
 
-        private Family<K> geweigerd(K waarde, String spelling) {
-            add(geweigerd, waarde, spelling);
+        private Family<K> refused(K value, String spelling) {
+            add(refused, value, spelling);
             return this;
         }
 
-        private void add(Map<K, String> doel, K waarde, String spelling) {
-            if (known(waarde) || back.containsKey(spelling))
-                throw new IllegalStateException("Spelling: the family " + naam + " spells '" + waarde + "' or '"
+        private void add(Map<K, String> target, K value, String spelling) {
+            if (known(value) || back.containsKey(spelling))
+                throw new IllegalStateException("Spelling: the family " + naam + " spells '" + value + "' or '"
                         + spelling + "' twice; a family is a bijection");
-            doel.put(waarde, spelling);
-            back.put(spelling, waarde);
+            target.put(value, spelling);
+            back.put(spelling, value);
         }
 
-        private Family<K> unwritten(K waarde, String reason) {
-            if (known(waarde))
+        private Family<K> unwritten(K value, String reason) {
+            if (known(value))
                 throw new IllegalStateException("Spelling: the family " + naam + " both spells and leaves '"
-                        + waarde + "' unspelled");
-            unwritten.put(waarde, reason);
+                        + value + "' unspelled");
+            unwritten.put(value, reason);
             return this;
         }
 
-        private boolean known(K waarde) {
-            return rows.containsKey(waarde) || geweigerd.containsKey(waarde) || unwritten.containsKey(waarde);
+        private boolean known(K value) {
+            return rows.containsKey(value) || refused.containsKey(value) || unwritten.containsKey(value);
         }
 
         private Family<K> refusedOn(String... op) {
@@ -120,7 +120,7 @@ public final class Spelling {
         public Map<K, String> rows() { return Collections.unmodifiableMap(rows); }
 
         /** In-memory value to spelling, for the values the places of {@link #refusedOn()} refuse by name. */
-        public Map<K, String> geweigerd() { return Collections.unmodifiableMap(geweigerd); }
+        public Map<K, String> refused() { return Collections.unmodifiableMap(refused); }
 
         public Set<String> refusedOn() { return Collections.unmodifiableSet(refusedOn); }
 
@@ -134,21 +134,21 @@ public final class Spelling {
         /** The wire spelling of an in-memory value. Where it stands is the caller's affair, so a value some place
          *  refuses by name is spelled too. A value this family does not spell is a defect of the caller, refused
          *  rather than written by its enum name, which would put a v0 spelling on the wire. */
-        public String spelling(K waarde) {
-            String s = rows.containsKey(waarde) ? rows.get(waarde) : geweigerd.get(waarde);
+        public String spelling(K value) {
+            String s = rows.containsKey(value) ? rows.get(value) : refused.get(value);
             if (s == null)
                 throw new IllegalArgumentException("Spelling: the family " + naam + " has no wire spelling for '"
-                        + waarde + "'" + (unwritten.containsKey(waarde) ? ": " + unwritten.get(waarde) : ""));
+                        + value + "'" + (unwritten.containsKey(value) ? ": " + unwritten.get(value) : ""));
             return s;
         }
 
         /** The in-memory value a wire spelling names at {@code place}, or null where that place does not admit
          *  it: refused by name there ({@link #refusesByName}), or not a spelling of this family at all, a v0
          *  value included. Never a default in place of an unknown value; the caller refuses the document. */
-        public K waarde(String place, String spelling) {
+        public K value(String place, String spelling) {
             ownPlace(place);
             K k = back.get(spelling);
-            if (k == null || geweigerd.containsKey(k) && refusedOn.contains(place)) return null;
+            if (k == null || refused.containsKey(k) && refusedOn.contains(place)) return null;
             return k;
         }
 
@@ -157,7 +157,7 @@ public final class Spelling {
         public boolean refusesByName(String place, String spelling) {
             ownPlace(place);
             K k = back.get(spelling);
-            return k != null && geweigerd.containsKey(k) && refusedOn.contains(place);
+            return k != null && refused.containsKey(k) && refusedOn.contains(place);
         }
 
         /** Whether {@code place} admits {@code null}. */
@@ -173,11 +173,11 @@ public final class Spelling {
             .row(Datatype.Teken.NIET_NEGATIEF, "nonNegative")
             .row(Datatype.Teken.POSITIEF, "positive");
 
-    public static final Family<KenmerkSoort> CHARACTERISTIC_KIND = new Family<KenmerkSoort>("Characteristic.kind",
+    public static final Family<CharacteristicKind> CHARACTERISTIC_KIND = new Family<CharacteristicKind>("Characteristic.kind",
             "Characteristic.kind")
-            .row(KenmerkSoort.BIJVOEGLIJK, "adjectival")
-            .row(KenmerkSoort.BEZITTELIJK, "possessive")
-            .row(KenmerkSoort.ZELFSTANDIG, "nominal");
+            .row(CharacteristicKind.BIJVOEGLIJK, "adjectival")
+            .row(CharacteristicKind.BEZITTELIJK, "possessive")
+            .row(CharacteristicKind.ZELFSTANDIG, "nominal");
 
     public static final Family<Granulariteit> GRANULARITY = new Family<Granulariteit>("granularity",
             "TimelineFacet.granularity", "Timeline.granularity", "BuiltinCall.granularity")
@@ -188,36 +188,36 @@ public final class Spelling {
             .row(Granulariteit.JAAR, "year")
             .nullStays("Timeline.granularity");
 
-    public static final Family<ResolvedRegel.Soort> PRESENTATION = new Family<ResolvedRegel.Soort>(
+    public static final Family<ResolvedRule.Kind> PRESENTATION = new Family<ResolvedRule.Kind>(
             "RuleVersion.presentation", "RuleVersion.presentation")
-            .row(ResolvedRegel.Soort.GELIJKSTELLING, "equation")
-            .row(ResolvedRegel.Soort.BEREKENING, "calculation")
-            .unwritten(ResolvedRegel.Soort.INITIALISATIE,
+            .row(ResolvedRule.Kind.GELIJKSTELLING, "equation")
+            .row(ResolvedRule.Kind.BEREKENING, "calculation")
+            .unwritten(ResolvedRule.Kind.INITIALISATIE,
                     "an initialisation writes initialisation true and no presentation tag (IR-SPEC ch. 3.1)")
-            .unwritten(ResolvedRegel.Soort.KENMERKTOEKENNING,
+            .unwritten(ResolvedRule.Kind.KENMERKTOEKENNING,
                     "a characteristic attribution writes neither the flag nor a presentation tag (IR-SPEC ch. 3.1)");
 
-    public static final Family<ResolvedVerdeling.Methode> METHOD = new Family<ResolvedVerdeling.Methode>(
+    public static final Family<ResolvedAllocation.Method> METHOD = new Family<ResolvedAllocation.Method>(
             "AllocationVersion.method", "AllocationVersion.method")
-            .row(ResolvedVerdeling.Methode.GELIJKE_DELEN, "equalShares")
-            .row(ResolvedVerdeling.Methode.NAAR_RATO, "proportional")
-            .row(ResolvedVerdeling.Methode.OP_VOLGORDE, "ordered")
-            .unwritten(ResolvedVerdeling.Methode.COMPLEX,
+            .row(ResolvedAllocation.Method.GELIJKE_DELEN, "equalShares")
+            .row(ResolvedAllocation.Method.NAAR_RATO, "proportional")
+            .row(ResolvedAllocation.Method.OP_VOLGORDE, "ordered")
+            .unwritten(ResolvedAllocation.Method.COMPLEX,
                     "the frontend decided none of the three methods, so the allocation has no document (IR-SPEC "
                             + "ch. 3.2) and a warning names it");
 
-    public static final Family<Conditie.Operator> COMPARISON_OP = new Family<Conditie.Operator>("Comparison.op",
+    public static final Family<Condition.Operator> COMPARISON_OP = new Family<Condition.Operator>("Comparison.op",
             "Comparison.op")
-            .row(Conditie.Operator.KLEINER, "less")
-            .row(Conditie.Operator.KLEINER_OF_GELIJK, "lessOrEqual")
-            .row(Conditie.Operator.GROTER, "greater")
-            .row(Conditie.Operator.GROTER_OF_GELIJK, "greaterOrEqual")
-            .row(Conditie.Operator.GELIJK, "equal")
-            .row(Conditie.Operator.ONGELIJK, "notEqual")
-            .row(Conditie.Operator.EERDER, "earlier")
-            .row(Conditie.Operator.EERDER_OF_GELIJK, "earlierOrEqual")
-            .row(Conditie.Operator.LATER, "later")
-            .row(Conditie.Operator.LATER_OF_GELIJK, "laterOrEqual");
+            .row(Condition.Operator.KLEINER, "less")
+            .row(Condition.Operator.KLEINER_OF_GELIJK, "lessOrEqual")
+            .row(Condition.Operator.GROTER, "greater")
+            .row(Condition.Operator.GROTER_OF_GELIJK, "greaterOrEqual")
+            .row(Condition.Operator.GELIJK, "equal")
+            .row(Condition.Operator.ONGELIJK, "notEqual")
+            .row(Condition.Operator.EERDER, "earlier")
+            .row(Condition.Operator.EERDER_OF_GELIJK, "earlierOrEqual")
+            .row(Condition.Operator.LATER, "later")
+            .row(Condition.Operator.LATER_OF_GELIJK, "laterOrEqual");
 
     public static final Family<Expr.BinOp> BINARY_OP = new Family<Expr.BinOp>("Binary.op", "Binary.op")
             .row(Expr.BinOp.PLUS, "plus")
@@ -229,13 +229,13 @@ public final class Spelling {
             .row(Expr.BinOp.TOT_DE_MACHT, "power")
             .row(Expr.BinOp.PERCENTAGE_VAN, "percentageOf");
 
-    public static final Family<Expr.AfrondModus> ROUNDING_MODE = new Family<Expr.AfrondModus>("Rounding.mode",
+    public static final Family<Expr.RoundingMode> ROUNDING_MODE = new Family<Expr.RoundingMode>("Rounding.mode",
             "Rounding.mode")
-            .row(Expr.AfrondModus.NAAR_BENEDEN, "floor")
-            .row(Expr.AfrondModus.NAAR_BOVEN, "ceiling")
-            .row(Expr.AfrondModus.RICHTING_NUL, "towardZero")
-            .row(Expr.AfrondModus.WEG_VAN_NUL, "awayFromZero")
-            .row(Expr.AfrondModus.REKENKUNDIG, "halfAwayFromZero");
+            .row(Expr.RoundingMode.NAAR_BENEDEN, "floor")
+            .row(Expr.RoundingMode.NAAR_BOVEN, "ceiling")
+            .row(Expr.RoundingMode.RICHTING_NUL, "towardZero")
+            .row(Expr.RoundingMode.WEG_VAN_NUL, "awayFromZero")
+            .row(Expr.RoundingMode.REKENKUNDIG, "halfAwayFromZero");
 
     /** The eight fold kinds of IR-SPEC ch. 4.3; every other function kind is a {@link #BUILTIN_KIND}, and the two
      *  families split the one enum between them. */
@@ -278,24 +278,24 @@ public final class Spelling {
         }
     }
 
-    public static final Family<Conditie.PredicateKind> PREDICATE_KIND = new Family<Conditie.PredicateKind>(
+    public static final Family<Condition.PredicateKind> PREDICATE_KIND = new Family<Condition.PredicateKind>(
             "Predicate.kind", "Predicate.kind")
-            .row(Conditie.PredicateKind.LEEG, "empty")
-            .row(Conditie.PredicateKind.GEVULD, "filled")
-            .row(Conditie.PredicateKind.ELFPROEF, "elevenTest")
-            .row(Conditie.PredicateKind.NUMERIEK_MET_EXACT, "exactDigits")
-            .row(Conditie.PredicateKind.DAGSOORT, "dayKind");
+            .row(Condition.PredicateKind.LEEG, "empty")
+            .row(Condition.PredicateKind.GEVULD, "filled")
+            .row(Condition.PredicateKind.ELFPROEF, "elevenTest")
+            .row(Condition.PredicateKind.NUMERIEK_MET_EXACT, "exactDigits")
+            .row(Condition.PredicateKind.DAGSOORT, "dayKind");
 
     /** One family on two nodes: {@code the} is a quantifier of a compound condition, and a quantifier fold
      *  refuses it by name (WF-108 (a)). */
-    public static final Family<Conditie.Kwantor> QUANTIFIER = new Family<Conditie.Kwantor>("quantifier",
+    public static final Family<Condition.Quantifier> QUANTIFIER = new Family<Condition.Quantifier>("quantifier",
             "Compound.quantifier", "QuantifierFold.quantifier")
-            .row(Conditie.Kwantor.ALLE, "all")
-            .row(Conditie.Kwantor.GEEN, "none")
-            .row(Conditie.Kwantor.TEN_MINSTE, "atLeast")
-            .row(Conditie.Kwantor.TEN_HOOGSTE, "atMost")
-            .row(Conditie.Kwantor.PRECIES, "exactly")
-            .geweigerd(Conditie.Kwantor.DE, "the")
+            .row(Condition.Quantifier.ALLE, "all")
+            .row(Condition.Quantifier.GEEN, "none")
+            .row(Condition.Quantifier.TEN_MINSTE, "atLeast")
+            .row(Condition.Quantifier.TEN_HOOGSTE, "atMost")
+            .row(Condition.Quantifier.PRECIES, "exactly")
+            .refused(Condition.Quantifier.DE, "the")
             .refusedOn("QuantifierFold.quantifier");
 
     /** The two session values by their in-memory names. The wire field is a free string that WF-098 closes byte
@@ -318,8 +318,8 @@ public final class Spelling {
     public static final Family<Severity> SEVERITY = new Family<Severity>("Diagnostic.severity",
             "Diagnostic.severity")
             .row(Severity.WARNING, "warning")
-            .geweigerd(Severity.ERROR, "error")
-            .geweigerd(Severity.INFO, "info")
+            .refused(Severity.ERROR, "error")
+            .refused(Severity.INFO, "info")
             .refusedOn("Diagnostic.severity")
             .nullStays("Diagnostic.severity");
 
@@ -327,33 +327,33 @@ public final class Spelling {
      *  component-free, so every instance of one is equal to every other). */
     public static final Family<Datatype> DATE_PRECISION = new Family<Datatype>("Date.precision", "Date.precision")
             .row(new Datatype.DatumInDagen(), "day")
-            .row(new Datatype.DatumTijd(), "millisecond");
+            .row(new Datatype.DateTime(), "millisecond");
 
     /** The form of an origin (IR-SPEC ch. 2.13): the five forms by which the frontend makes a declaration of its own
-     *  ({@code RegelSpraakModel.gegenereerd}). The Drools backend's two keys name entries of its coverage manifest,
+     *  ({@code RegelSpraakModel.generated}). The Drools backend's two keys name entries of its coverage manifest,
      *  which are no declarations of the document and so never carry an origin. */
-    public static final Family<Herkomstvorm> ORIGIN_FORM = new Family<Herkomstvorm>("Origin.form", "Origin.form")
-            .row(Herkomstvorm.OPGAVE_BOVEN_BEREKENING, "inputAboveComputation")
-            .row(Herkomstvorm.EXCEPTION_FOR_SUBTYPE, "exceptionForSubtype")
-            .row(Herkomstvorm.BESLISTABELRIJ, "decisionTableRow")
-            .row(Herkomstvorm.STEPS_AFTER_SET, "stepsAfterSet")
-            .row(Herkomstvorm.START_POINT, "startPoint")
-            .unwritten(Herkomstvorm.DEFAULTS_STACK, "a name of the Drools backend's coverage manifest, no declaration")
-            .unwritten(Herkomstvorm.VERSION, "a name of the Drools backend's coverage manifest, no declaration");
+    public static final Family<OriginForm> ORIGIN_FORM = new Family<OriginForm>("Origin.form", "Origin.form")
+            .row(OriginForm.OPGAVE_BOVEN_BEREKENING, "inputAboveComputation")
+            .row(OriginForm.EXCEPTION_FOR_SUBTYPE, "exceptionForSubtype")
+            .row(OriginForm.BESLISTABELRIJ, "decisionTableRow")
+            .row(OriginForm.STEPS_AFTER_SET, "stepsAfterSet")
+            .row(OriginForm.START_POINT, "startPoint")
+            .unwritten(OriginForm.DEFAULTS_STACK, "a name of the Drools backend's coverage manifest, no declaration")
+            .unwritten(OriginForm.VERSION, "a name of the Drools backend's coverage manifest, no declaration");
 
     /** The kind of the declaration an origin comes from (IR-SPEC ch. 2.13). The wire has a tenth kind,
      *  {@link #ORIGIN_DECISION_TABLE}, which is no kind of declaration: see {@link #originKind}. */
-    public static final Family<Benoembaar.Soort> ORIGIN_KIND = new Family<Benoembaar.Soort>("OriginSource.kind",
+    public static final Family<Designatable.Kind> ORIGIN_KIND = new Family<Designatable.Kind>("OriginSource.kind",
             "OriginSource.kind")
-            .row(Benoembaar.Soort.OBJECTTYPE, "objectType")
-            .row(Benoembaar.Soort.ATTRIBUUT, "attribute")
-            .row(Benoembaar.Soort.KENMERK, "characteristic")
-            .row(Benoembaar.Soort.FEITTYPE, "factType")
-            .row(Benoembaar.Soort.ROL, "role")
-            .row(Benoembaar.Soort.ENUMERATIEWAARDE, "enumerationValue")
-            .row(Benoembaar.Soort.PARAMETER, "parameter")
-            .row(Benoembaar.Soort.VORM, "namedForm")
-            .row(Benoembaar.Soort.REGELGROEP, "ruleGroup");
+            .row(Designatable.Kind.OBJECTTYPE, "objectType")
+            .row(Designatable.Kind.ATTRIBUUT, "attribute")
+            .row(Designatable.Kind.KENMERK, "characteristic")
+            .row(Designatable.Kind.FEITTYPE, "factType")
+            .row(Designatable.Kind.ROL, "role")
+            .row(Designatable.Kind.ENUMERATIEWAARDE, "enumerationValue")
+            .row(Designatable.Kind.PARAMETER, "parameter")
+            .row(Designatable.Kind.VORM, "namedForm")
+            .row(Designatable.Kind.REGELGROEP, "ruleGroup");
 
     /** The wire kind of a decision table, the source of each of its rows. */
     public static final String ORIGIN_DECISION_TABLE = "decisionTable";
@@ -362,21 +362,21 @@ public final class Spelling {
      *  element of the model (its rows are) and the table has no kind of its own there; on the wire it is
      *  {@link #ORIGIN_DECISION_TABLE}, so that a row's {@code from} never names a form, which would be a form that does
      *  not exist or another one under the table's name. Every other source is its kind's spelling. */
-    public static String originKind(GegenereerdUit generatedFrom) {
-        if (generatedFrom.vorm() == Herkomstvorm.BESLISTABELRIJ) {
-            if (generatedFrom.bron().soort() != Benoembaar.Soort.VORM)
+    public static String originKind(GeneratedFrom generatedFrom) {
+        if (generatedFrom.form() == OriginForm.BESLISTABELRIJ) {
+            if (generatedFrom.source().category() != Designatable.Kind.VORM)
                 throw new IllegalArgumentException("Spelling: a decision table row comes from a table, recorded as a "
-                        + "form, and this one comes from " + generatedFrom.bron());
+                        + "form, and this one comes from " + generatedFrom.source());
             return ORIGIN_DECISION_TABLE;
         }
-        return ORIGIN_KIND.spelling(generatedFrom.bron().soort());
+        return ORIGIN_KIND.spelling(generatedFrom.source().category());
     }
 
     /** The in-memory kind a wire kind names at {@code OriginSource.kind}: a decision table is a form, as the model
      *  records it ({@link #originKind}); null for a spelling that is no kind, which the caller refuses. */
-    public static Benoembaar.Soort originKindFromWire(String kind) {
-        if (ORIGIN_DECISION_TABLE.equals(kind)) return Benoembaar.Soort.VORM;
-        return ORIGIN_KIND.waarde("OriginSource.kind", kind);
+    public static Designatable.Kind originKindFromWire(String kind) {
+        if (ORIGIN_DECISION_TABLE.equals(kind)) return Designatable.Kind.VORM;
+        return ORIGIN_KIND.value("OriginSource.kind", kind);
     }
 
     /** Every family, in the order of the section {@code waarden}. */

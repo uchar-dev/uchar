@@ -65,49 +65,49 @@ class NavigationChoiceTest {
     private static final String WITHOUT_PATH = "an attribute reference without a path is the subject's own read, so its "
             + "subjectType is the subject type 'Schuit' — 'Haven' names another type, which only a navigation reaches";
 
-    private static String regel(String waarde) {
+    private static String regel(String value) {
         return """
 
             Regel ligprijs van een schuit
                 geldig altijd
                     De ligprijs van een Schuit moet gesteld worden op %s.
-            """.formatted(waarde);
+            """.formatted(value);
     }
 
-    private static String pad(String feittype, String rol) {
-        return "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}]";
+    private static String path(String factType, String role) {
+        return "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}]";
     }
 
-    private static String emitCompact(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String emitCompact(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    private static List<String> fouten(String bron) {
-        return Resolver.resolve(bron).errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();
+    private static List<String> faults(String source) {
+        return Resolver.resolve(source).errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();
     }
 
     // ---------------- two relations between Schuit and Haven ----------------
 
     @Test void two_relations_the_written_role_name_binds() {
         String c = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van zijn winterhaven"));
-        assertTrue(c.contains(pad("winterberging", "winterhaven")), () -> "de rolnaam wijst één relatie aan:\n" + c);
+        assertTrue(c.contains(path("winterberging", "winterhaven")), () -> "de rolnaam wijst één relatie aan:\n" + c);
         String d = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van de thuishaven van de Schuit"));
-        assertTrue(d.contains(pad("thuisligging", "thuishaven")), () -> "ook als lezing met lidwoord:\n" + d);
+        assertTrue(d.contains(path("thuisligging", "thuishaven")), () -> "ook als lezing met lidwoord:\n" + d);
     }
 
     @Test void two_relations_the_type_name_is_refused() {
         assertEquals(List.of("genavigeerde lezing 'het kadegeld van de Haven' zonder binding (2 relaties verbinden Schuit "
                         + "met Haven, en 'de Haven' noemt geen rol die er precies één aanwijst): " + WITHOUT_PATH),
-                fouten(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van de Haven")));
+                faults(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van de Haven")));
     }
 
     @Test void two_relations_a_role_name_that_is_the_type_name_binds() {
         // "de haven" names the type and the role of havenligging; the pair decides nothing, the role does
         for (String written : List.of("het kadegeld van de haven", "het kadegeld van de Haven")) {
             String c = emitCompact(TYPES + HAVENLIGGING + WINTERBERGING + regel(written));
-            assertTrue(c.contains(pad("havenligging", "haven")), () -> "'" + written + "' bindt de rol:\n" + c);
+            assertTrue(c.contains(path("havenligging", "haven")), () -> "'" + written + "' bindt de rol:\n" + c);
         }
     }
 
@@ -116,14 +116,14 @@ class NavigationChoiceTest {
     @Test void a_relation_role_name_and_type_name_both_bind() {
         for (String written : List.of("het kadegeld van zijn thuishaven", "het kadegeld van de Haven")) {
             String c = emitCompact(TYPES + THUISLIGGING + regel(written));
-            assertTrue(c.contains(pad("thuisligging", "thuishaven")), () -> "'" + written + "' bindt:\n" + c);
+            assertTrue(c.contains(path("thuisligging", "thuishaven")), () -> "'" + written + "' bindt:\n" + c);
         }
     }
 
     @Test void no_relation_is_refused() {
         assertEquals(List.of("genavigeerde lezing 'het kadegeld van de Haven' zonder binding (geen relatie verbindt "
                         + "Schuit met Haven): " + WITHOUT_PATH),
-                fouten(TYPES + regel("het kadegeld van de Haven")));
+                faults(TYPES + regel("het kadegeld van de Haven")));
     }
 
     @Test void a_written_role_that_points_to_two_relations_is_refused_in_the_words_of_the_frontend() {
@@ -132,7 +132,7 @@ class NavigationChoiceTest {
         assertEquals(List.of("genavigeerde lezing 'de romplengte van zijn sleper' zonder binding (de geschreven rol "
                         + "'sleper' wijst vanaf Schuit niet precies één relatie aan): zonder pad zou de wire haar lezen "
                         + "als een eigen attribuut van het onderwerp, en dat is niet wat er staat"),
-                fouten(TYPES + """
+                faults(TYPES + """
 
                     Feittype sleepverband
                         de sleper Schuit
@@ -152,7 +152,7 @@ class NavigationChoiceTest {
         assertEquals(List.of("genavigeerde lezing 'de romplengte van de ligger' over een meervoudige rol: hop 0 reaches "
                         + "the to-many role 'ligger' in a scalar slot — a to-many step needs an aggregation, never a "
                         + "silent first pick"),
-                fouten(TYPES + THUISLIGGING + """
+                faults(TYPES + THUISLIGGING + """
 
                     Regel kadegeld van een haven
                         geldig altijd
@@ -166,7 +166,7 @@ class NavigationChoiceTest {
         assertEquals(List.of("genavigeerde lezing 'de romplengte van de schuit' over een meervoudige rol: hop 0 reaches "
                         + "the to-many role 'schuit' in a scalar slot — a to-many step needs an aggregation, never a "
                         + "silent first pick"),
-                fouten(TYPES + WINTERBERGING + """
+                faults(TYPES + WINTERBERGING + """
 
                     Feittype schuitligging
                         de thuishaven Haven
@@ -196,7 +196,7 @@ class NavigationChoiceTest {
                         + "verbinden Haven met Schuit, en 'alle Schuiten van de Haven' noemt geen rol die er precies één "
                         + "aanwijst): a single-argument fold with an elementType carries its range (sourceRole or "
                         + "sourcePath) under every kind but total: the range is written, never derived"),
-                fouten(TYPES + THUISLIGGING + WINTERBERGING + fold.formatted("Schuiten")));
+                faults(TYPES + THUISLIGGING + WINTERBERGING + fold.formatted("Schuiten")));
     }
 
     /** A fold over the element type's plural binds by the type pair where one relation joins the two types, as a
@@ -223,7 +223,7 @@ class NavigationChoiceTest {
                         + "dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet): a "
                         + "single-argument fold with an elementType carries its range (sourceRole or sourcePath) under "
                         + "every kind but total: the range is written, never derived"),
-                fouten(TYPES + THUISLIGGING + """
+                faults(TYPES + THUISLIGGING + """
 
                     Regel ligprijs van een schuit
                         geldig altijd
@@ -252,7 +252,7 @@ class NavigationChoiceTest {
                         + "without a range is not the fold subject 'Schuit': without a range the fold is the subject's own "
                         + "read, so its elementType must name the subject type"});
         for (String[] fold : folds)
-            assertEquals(List.of(fold[1]), fouten(TYPES + THUISLIGGING + regel(fold[0])), fold[0]);
+            assertEquals(List.of(fold[1]), faults(TYPES + THUISLIGGING + regel(fold[0])), fold[0]);
     }
 
     // ---------------- a quantifier fold's range ----------------
@@ -262,17 +262,17 @@ class NavigationChoiceTest {
      *  a marker whose WARNING said no fact type joined the two types. A type plural over two relations stays a marker,
      *  and its WARNING now says what did not bind. */
     @Test void a_quantifier_fold_over_two_relations_binds_by_the_written_role() {
-        String kwantor = """
+        String quantifier = """
 
             Regel veilige haven
                 geldig altijd
                     Een Haven is veilig
                     indien %s van de Haven gekeurd zijn.
             """;
-        String c = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + kwantor.formatted("ten minste twee van de liggers"));
+        String c = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + quantifier.formatted("ten minste twee van de liggers"));
         assertTrue(c.contains("\"quantifier\":\"atLeast\",\"threshold\":2") && c.contains("\"sourceRole\":{\"node\":"
                 + "\"RoleBinding\",\"factType\":\"thuisligging\",\"role\":\"ligger\"}"), c);
-        RegelSpraakModel m = Resolver.resolve(TYPES + THUISLIGGING + WINTERBERGING + kwantor.formatted("alle Schuiten"));
+        RegelSpraakModel m = Resolver.resolve(TYPES + THUISLIGGING + WINTERBERGING + quantifier.formatted("alle Schuiten"));
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().startsWith("de kwantorvouw over 'alle Schuiten van de "
                 + "Haven' wordt NIET gelowerd: 2 relaties verbinden Haven met Schuit, en 'alle Schuiten van de Haven' "
                 + "noemt geen rol die er precies één aanwijst")), () -> m.diagnostics.toString());
@@ -300,7 +300,7 @@ class NavigationChoiceTest {
             """;
         assertEquals(List.of("rolcheck 'hij een ligger heeft' zonder binding (2 feittypen kennen de rol 'thuishaven' "
                         + "van Haven tegenover Schuit): missing field 'factType'"),
-                fouten(TYPES + THUISLIGGING + second + regel));
+                faults(TYPES + THUISLIGGING + second + regel));
         String c = emitCompact(TYPES + THUISLIGGING + regel);
         assertTrue(c.contains("{\"node\":\"RoleMembership\",\"factType\":\"thuisligging\",\"role\":\"thuishaven\""),
                 () -> "met één relatie bindt de rolcheck:\n" + c);
@@ -349,7 +349,7 @@ class NavigationChoiceTest {
         assertEquals(List.of("verdeling 'verdeel de opbrengst van een berging' zonder verbindende rol (2 relaties "
                         + "verbinden Berging met Berger, en 'Bergers' noemt geen rol die er precies één aanwijst): "
                         + "missing field 'connectingRole'"),
-                fouten(BERGINGEN.formatted("Bergers")));
+                faults(BERGINGEN.formatted("Bergers")));
     }
 
     // ---------------- a parent-scoped uniqueness's scope ----------------
@@ -372,8 +372,8 @@ class NavigationChoiceTest {
             """.formatted(element);
     }
 
-    private static String scope(String feittype) {
-        return "\"scope\":{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"thuishaven\"}";
+    private static String scope(String factType) {
+        return "\"scope\":{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"thuishaven\"}";
     }
 
     /** "de thuishaven" is a role in two relations, and the element role the sentence writes names one of them; where
@@ -423,7 +423,7 @@ class NavigationChoiceTest {
      *  writes a read at, from the subject it writes it from. Each ends in exactly that one ERROR — the resolver's
      *  walk reaches the position — and the model is refused before the emitter's own refusal could speak. */
     @Test void every_write_position_ends_in_a_diagnostic() {
-        List<String[]> vormen = List.of(
+        List<String[]> forms = List.of(
                 new String[]{"Schuit", "De ligprijs van een Schuit moet gesteld worden op het peil van de Vuurtoren."},
                 new String[]{"Schuit", """
                         De ligprijs van een Schuit moet gesteld worden op 1
@@ -443,16 +443,16 @@ class NavigationChoiceTest {
                 new String[]{"Schuit", """
                         Een Haven is veilig
                         indien de romplengte van alle liggers van de Haven groter is dan het peil van de Vuurtoren."""});
-        for (String[] vorm : vormen) {
-            String bron = TYPES + THUISLIGGING + WINTERBERGING + """
+        for (String[] form : forms) {
+            String source = TYPES + THUISLIGGING + WINTERBERGING + """
 
                 Regel p
                     geldig altijd
-                """ + vorm[1].indent(8);
-            assertEquals(List.of(levelError(vorm[0])), fouten(bron), () -> "positie:\n" + vorm[1]);
+                """ + form[1].indent(8);
+            assertEquals(List.of(levelError(form[0])), faults(source), () -> "positie:\n" + form[1]);
         }
         // an exception to a rule is lifted into the defaults, and its condition is walked there
-        assertEquals(List.of(levelError("Schuit")), fouten(TYPES + regel("5") + """
+        assertEquals(List.of(levelError("Schuit")), faults(TYPES + regel("5") + """
 
             Uitzondering op ligprijs van een schuit: dure ligprijs
                 geldig altijd

@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Rood-eerst end-to-end proof of the eenheid-identiteit typerfix (besluit 16Y + 17b): the
  * dimensionless "1" is the group identity and absorbs under multiplication (1 × E = E), while a
- * unit the {@link dev.uchar.regelspraak.model.Eenheid} model cannot spell is a LOUD
+ * unit the {@link dev.uchar.regelspraak.model.Unit} model cannot spell is a LOUD
  * resolver error — never the old Onbekend degradation that silently rode a Binair onto the wire.
  *
  * <p>Each test was RED on the pre-fix code: (a) the product's type emitted as

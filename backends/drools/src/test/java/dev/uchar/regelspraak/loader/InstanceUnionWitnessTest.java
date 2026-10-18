@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 
 import org.junit.jupiter.api.Test;
@@ -42,21 +42,21 @@ class InstanceUnionWitnessTest {
         assertEquals(2, u.branches().size());
         // the two selections walk DIFFERENT relations and both are read from the wire: a by-pair search
         // over (Jutter, Vondst) is ambiguous here by construction, which is exactly why the field exists
-        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().feittype());
-        assertEquals("aangemelde vondst", u.branches().get(0).sourceRole().rol());
-        assertEquals("vondstberging", u.branches().get(1).sourceRole().feittype());
-        assertEquals("geborgen vondst", u.branches().get(1).sourceRole().rol());
+        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().factType());
+        assertEquals("aangemelde vondst", u.branches().get(0).sourceRole().role());
+        assertEquals("vondstberging", u.branches().get(1).sourceRole().factType());
+        assertEquals("geborgen vondst", u.branches().get(1).sourceRole().role());
         assertEquals("Vondst", u.branches().get(0).elementType().naam);
         assertEquals("Vondst", u.branches().get(1).elementType().naam);
-        assertNotNull(u.bron(), "bron");
+        assertNotNull(u.source(), "bron");
     }
 
     @Test void a_selection_filter_lands_on_the_selection_and_not_on_the_count() throws Exception {
         Expr.FunctionCall f = countOf(doc(union(BRANCH_GEMERKT, BRANCH_GEBORGEN)));
         assertNull(f.filter(), "de telling draagt geen eigen filter (WF-110 (c))");
         Expr.InstanceSetUnion u = (Expr.InstanceSetUnion) f.arguments().get(0);
-        Conditie.Kenmerk k = assertInstanceOf(Conditie.Kenmerk.class, u.branches().get(0).filter());
-        assertEquals("gemerkt", k.kenmerk());
+        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, u.branches().get(0).filter());
+        assertEquals("gemerkt", k.characteristic());
         assertNull(u.branches().get(1).filter(), "een selectie zonder deelselectie draagt er geen");
     }
 
@@ -82,7 +82,7 @@ class InstanceUnionWitnessTest {
         // Since L2 of the v1 wire migration a selection's relation is required and non-null (IR-SPEC ch. 4.3):
         // a selection without one is not a form this backend declines but a document that is not uchar-ir-v1,
         // so it is a defect at its pointer, never the gate's auto-excluded channel.
-        IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class,
+        IrLoader.DocumentError f = assertThrows(IrLoader.DocumentError.class,
                 () -> countOf(doc(union(BRANCH_AANGEMELD,
                         "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":null,"
                                 + "\"filter\":null,\"source\":{\"snippet\":\"geborgen vondsten van de Jutter\"}}"))));
@@ -106,7 +106,7 @@ class InstanceUnionWitnessTest {
     private static Expr.FunctionCall countOf(String ir) throws Exception {
         var model = IrLoader.loadAll(JSON.readTree(ir)).model();
         assertEquals(1, model.resolvedRegels.size(), "één regel in dit document");
-        return assertInstanceOf(Expr.FunctionCall.class, model.resolvedRegels.get(0).waarde());
+        return assertInstanceOf(Expr.FunctionCall.class, model.resolvedRegels.get(0).value());
     }
 
     private static String branch(String elementType, String factType, String role, String filter) {

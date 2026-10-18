@@ -11,11 +11,11 @@ import static org.junit.jupiter.api.Assertions.*;
  *  (precision) and the transpiler (lowering). Pins each form and the -0_b/c sign subtlety. */
 class RationalTest {
 
-    private static void assertRational(String bron, String numerator, String denominator) {
-        BigDecimal[] r = RationalParser.van(bron);
-        assertNotNull(r, () -> "geen getal in: " + bron);
-        assertEquals(0, new BigDecimal(numerator).compareTo(r[0]), () -> "teller van " + bron + " = " + r[0]);
-        assertEquals(0, new BigDecimal(denominator).compareTo(r[1]), () -> "noemer van " + bron + " = " + r[1]);
+    private static void assertRational(String source, String numerator, String denominator) {
+        BigDecimal[] r = RationalParser.van(source);
+        assertNotNull(r, () -> "geen getal in: " + source);
+        assertEquals(0, new BigDecimal(numerator).compareTo(r[0]), () -> "teller van " + source + " = " + r[0]);
+        assertEquals(0, new BigDecimal(denominator).compareTo(r[1]), () -> "noemer van " + source + " = " + r[1]);
     }
 
     @Test void integer_decimal_rational_and_mixed() {

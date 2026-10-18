@@ -57,8 +57,8 @@ class ExtensionRedeclarationTest {
         assertEquals(regel, d.line(), () -> "de melding staat op de verkeerde regel: " + d);
     }
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.diagnostics.isEmpty(), () -> "verwachtte geen diagnose, kreeg: " + m.diagnostics);
         return m;
     }
@@ -93,7 +93,7 @@ class ExtensionRedeclarationTest {
         onlyError(m, 7, "objecttype 'Vondst': de extensie declareert het kenmerk 'waardevol' (bronregel 7), dat Vondst "
                 + "al draagt (bronregel 4), en 'het waardevol kenmerk (bezittelijk)' is niet letterlijk 'is waardevol "
                 + "kenmerk (bijvoeglijk)'" + TAIL);
-        assertEquals(Objecttype.KenmerkSoort.BIJVOEGLIJK, m.objecttypen.get("Vondst").kenmerkSoort("waardevol"));
+        assertEquals(Objecttype.CharacteristicKind.BIJVOEGLIJK, m.objecttypen.get("Vondst").characteristicKind("waardevol"));
     }
 
     @Test void an_extension_for_the_head_is_also_refused() {
@@ -199,7 +199,7 @@ class ExtensionRedeclarationTest {
     }
 
     @Test void a_repetition_with_the_marking_carries_the_designations_of_the_attribute() {
-        String bron = """
+        String source = """
             Vocabulaire handboek
 
             Objecttype de Vondst (mv: Vondsten)
@@ -209,7 +209,7 @@ class ExtensionRedeclarationTest {
             Extensie van objecttype de Vondst
                 de meldingsdatum (handboek: datum van melding) Datum in dagen (mag opgegeven worden);
             """ + MESSAGE;
-        RegelSpraakModel m = clean(bron);
+        RegelSpraakModel m = clean(source);
         assertTrue(m.objecttypen.get("Vondst").attributen.containsKey("opgegeven meldingsdatum"));
         // one designation in the side table; the consistency's source quotes the marked declaration as written
         String ir = IrEmitter.emit(m);
@@ -257,10 +257,10 @@ class ExtensionRedeclarationTest {
         // supertype's attribute for every instance, and the opgave does not compose along the chain.
         RegelSpraakModel m = Resolver.resolve(WRAK + "    " + member + "\n");
         assertFalse(m.isOk(), () -> "verwachtte een weigering: " + m.diagnostics);
-        List<Diagnostic> fouten = m.errors();
-        assertEquals(1, fouten.size(), () -> "verwachtte één fout: " + fouten);
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte één fout: " + faults);
         assertEquals("objecttype 'Wrak': attribuut 'waarde' (bronregel 8) is al gedeclareerd op 'Vondst' (bronregel "
-                + "2) hogerop in de keten" + WF105, fouten.get(0).message());
-        assertEquals(8, fouten.get(0).line());
+                + "2) hogerop in de keten" + WF105, faults.get(0).message());
+        assertEquals(8, faults.get(0).line());
     }
 }

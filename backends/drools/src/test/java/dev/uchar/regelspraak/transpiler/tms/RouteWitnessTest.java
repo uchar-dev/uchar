@@ -44,22 +44,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RouteWitnessTest {
 
     @Test void every_route_is_the_only_public_static_method_of_its_name() {
-        List<String> fout = new ArrayList<>();
+        List<String> fault = new ArrayList<>();
         for (Route r : Route.values()) {
             List<Method> methods = Arrays.stream(r.javaClass().getMethods())
-                    .filter(m -> m.getName().equals(r.methode())).toList();
+                    .filter(m -> m.getName().equals(r.method())).toList();
             if (methods.size() != 1 || !Modifier.isStatic(methods.get(0).getModifiers())
                     || !Modifier.isPublic(r.javaClass().getModifiers()))
-                fout.add(r + " " + r.javaClass().getName() + "." + r.methode() + ": " + methods);
+                fault.add(r + " " + r.javaClass().getName() + "." + r.method() + ": " + methods);
         }
-        assertEquals(List.of(), fout);
+        assertEquals(List.of(), fault);
     }
 
     @Test void the_routes_with_their_signature() {
         List<String> out = new ArrayList<>();
         for (Route r : Route.values())
             for (Method m : r.javaClass().getMethods())
-                if (m.getName().equals(r.methode()))
+                if (m.getName().equals(r.method()))
                     out.add(r + ": " + m.getReturnType().getSimpleName() + " " + r.javaClass().getSimpleName() + "."
                             + m.getName() + Arrays.stream(m.getParameterTypes()).map(Class::getSimpleName).toList());
         assertEquals(List.of(
@@ -67,13 +67,13 @@ class RouteWitnessTest {
                 "REPORT: void ComputeHelpers.report[Object]",
                 "REPORTED: boolean ComputeHelpers.reported[Object]",
                 "IS_EMPTY: boolean ComputeHelpers.isEmpty[Object]",
-                "COMPUTE_FAULT: Rekenfout ComputeHelpers.computeFault[String, String]",
+                "COMPUTE_FAULT: ComputeFault ComputeHelpers.computeFault[String, String]",
                 "INCONSISTENCY: Object ComputeHelpers.inconsistency[String, Object]",
                 "BUCKET_SCALAR: BucketScalar ComputeHelpers.bucketScalarOf[Object]",
-                "INPUT_FORM_FAULT: Invoervormfout ComputeHelpers.inputFormFault[String, Object, String, String]",
+                "INPUT_FORM_FAULT: InputFormFault ComputeHelpers.inputFormFault[String, Object, String, String]",
                 "UNIQUENESS_KEYS: List ComputeHelpers.uniquenessKeys[String, int, Object, Object, List, int]",
-                "PAYOUT: List ComputeHelpers.payout[String, Object, Methode, Object, Object, boolean, boolean,"
-                        + " boolean, Integer, ElementSleutel, ElementSleutel, String]",
+                "PAYOUT: List ComputeHelpers.payout[String, Object, Method, Object, Object, boolean, boolean,"
+                        + " boolean, Integer, ElementKey, ElementKey, String]",
                 "CONTRIBUTION: Contribution ComputeHelpers.contribution[String, Object, Object, Object, String, boolean]",
                 "FOLD_PLACE: List ComputeHelpers.foldPlace[PlaceReason, String, Object, int, List, List, List]",
                 "CREATION_DEPTH: int ComputeHelpers.creationDepth[String, int, String, List, int]",
@@ -85,7 +85,7 @@ class RouteWitnessTest {
                 "FAIL: Object ComputeHelpers.fail[String]",
                 "REQUIRED: Object ComputeHelpers.required[Object, String]",
                 "TEXT_COMPOSITION: String ComputeHelpers.textComposition[List]",
-                "READ: Object ComputeHelpers.lees[Object, String]",
+                "READ: Object ComputeHelpers.readProperty[Object, String]",
                 "ALONG: Object ComputeHelpers.along[Object, List]",
                 "WAAR: boolean ComputeHelpers.holds[Object]",
                 "PERIODS: List ComputeHelpers.periods[Object]",
@@ -99,11 +99,11 @@ class RouteWitnessTest {
                 "FILL_BINDER_CELL: Object ComputeHelpers.fillBinderCell[Object, Object]",
                 "BINDER_VALUE: Object ComputeHelpers.binderValue[Object]",
                 "INTERCEPTED: Object ComputeHelpers.intercepted[EmptyBarrier, Object]",
-                "ESTABLISHED: Boolean ComputeHelpers.established[Kwantor, int, int, int, int]",
-                "END_VERDICT: boolean ComputeHelpers.endVerdict[Kwantor, int, long, long]",
+                "ESTABLISHED: Boolean ComputeHelpers.established[Quantifier, int, int, int, int]",
+                "END_VERDICT: boolean ComputeHelpers.endVerdict[Quantifier, int, long, long]",
                 "VERDICT: BigDecimal ComputeHelpers.verdict[boolean]",
                 "CONTRACT_BREACH: Object ComputeHelpers.contractBreach[String]",
-                "WRITERS_CONFLICT: Fout ComputeHelpers.writersConflict[Object, Object, String, List, List, List]",
+                "WRITERS_CONFLICT: Fault ComputeHelpers.writersConflict[Object, Object, String, List, List, List]",
                 "LIST0: List ComputeHelpers.list0[]",
                 "LIST1: List ComputeHelpers.list1[Object]",
                 "LIST2: List ComputeHelpers.list2[Object, Object]",
@@ -129,17 +129,17 @@ class RouteWitnessTest {
     /** The routes of the faults and the texts: an evaluation fault is caught, named and recognised, any other exception
      *  passes on; a sentence and a leeg required value fault; texts join in order. */
     @Test void the_routes_of_a_fault_and_a_text() {
-        Rekenfout fout = assertThrows(Rekenfout.class, () -> ComputeHelpers.fail("geen dag"));
-        assertEquals("geen dag", fout.sentence());
-        assertTrue(ComputeHelpers.isEvaluationFault(fout));
+        ComputeFault fault = assertThrows(ComputeFault.class, () -> ComputeHelpers.fail("geen dag"));
+        assertEquals("geen dag", fault.sentence());
+        assertTrue(ComputeHelpers.isEvaluationFault(fault));
         assertFalse(ComputeHelpers.isEvaluationFault(new IllegalStateException("contract")));
         assertFalse(ComputeHelpers.isEvaluationFault("geen fout"));
-        assertSame(fout, ComputeHelpers.caught(fout));
+        assertSame(fault, ComputeHelpers.caught(fault));
         IllegalStateException breach = new IllegalStateException("contract");
         assertSame(breach, assertThrows(IllegalStateException.class, () -> ComputeHelpers.caught(breach)));
-        assertEquals("fout in de regel \"r\": geen dag", ComputeHelpers.designate(fout, "r").getMessage());
+        assertEquals("fout in de regel \"r\": geen dag", ComputeHelpers.designate(fault, "r").getMessage());
         assertEquals(5, ComputeHelpers.required(5, "leeg"));
-        assertEquals("leeg", assertThrows(Rekenfout.class, () -> ComputeHelpers.required(null, "leeg")).sentence());
+        assertEquals("leeg", assertThrows(ComputeFault.class, () -> ComputeHelpers.required(null, "leeg")).sentence());
         assertEquals("ab", ComputeHelpers.textComposition(List.of("a", "b")));
         assertEquals("x", assertThrows(IllegalStateException.class, () -> ComputeHelpers.contractBreach("x")).getMessage());
     }
@@ -149,11 +149,11 @@ class RouteWitnessTest {
      *  a validity window with open bounds. */
     @Test void the_routes_of_a_read() {
         Member b = new Member(null, BigDecimal.TEN), a = new Member(b, BigDecimal.ONE);
-        assertEquals(BigDecimal.ONE, ComputeHelpers.lees(a, "amount"));
-        assertNull(ComputeHelpers.lees(null, "amount"));
+        assertEquals(BigDecimal.ONE, ComputeHelpers.readProperty(a, "amount"));
+        assertNull(ComputeHelpers.readProperty(null, "amount"));
         assertSame(b, ComputeHelpers.along(a, List.of("next")));
         assertNull(ComputeHelpers.along(a, List.of("next", "next", "next")));
-        assertEquals(BigDecimal.TEN, ComputeHelpers.lees(ComputeHelpers.along(a, List.of("next")), "amount"));
+        assertEquals(BigDecimal.TEN, ComputeHelpers.readProperty(ComputeHelpers.along(a, List.of("next")), "amount"));
         assertTrue(ComputeHelpers.holds(Boolean.TRUE));
         assertFalse(ComputeHelpers.holds(null));
         assertNull(ComputeHelpers.periods(null));

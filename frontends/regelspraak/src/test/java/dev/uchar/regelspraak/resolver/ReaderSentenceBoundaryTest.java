@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * places refusals are written; the English of {@code ir/Spelling} is its tables' own consistency checks, thrown when
  * the class loads and never a refusal of a document. A literal is split at its format specifiers, a producer prefix is
  * taken off (the emitter's name, a WF arm tag, a pointer, a Dutch context segment before {@code ": "}) and a trailing
- * {@code " — "} joiner, and what is left is English when it holds two words or more, a word of {@link #ENGELS} and no
+ * {@code " — "} joiner, and what is left is English when it holds two words or more, a word of {@link #ENGLISH} and no
  * word of {@link #NEDERLANDS}. The verifier's side is every string literal of {@code spec/verifier/lib}, escapes
  * decoded and split at its Printf specifiers; a fragment passes when it stands in one of those pieces.
  *
  * <p><b>Its edges.</b> A sentence the verifier builds around a variable is written in the frontend with the same
  * template, so that its fixed pieces are the verifier's (Typering's clamp and keuzetype-domain sentences). An English
- * literal without a word of {@link #ENGELS} escapes; the list holds the words of the sentences the frontend speaks,
+ * literal without a word of {@link #ENGLISH} escapes; the list holds the words of the sentences the frontend speaks,
  * measured when this test was written and again when the structural refusals took the verifier's sentences. The two
  * sources are found by walking up from the working directory, and a missing source FAILS, as in
  * {@link FoldKindsBoundaryTest}.
@@ -48,7 +48,7 @@ class ReaderSentenceBoundaryTest {
     private static final String FRONTEND = "frontends/regelspraak/src/main/java/dev/uchar/regelspraak";
 
     /** Words that make a fragment English; none of them is a Dutch word. */
-    private static final Set<String> ENGELS = Set.of(("the must operand operands fold folds value values unit units "
+    private static final Set<String> ENGLISH = Set.of(("the must operand operands fold folds value values unit units "
             + "target date dates number numbers text precision precisions duration ordering equality assignment "
             + "arithmetic clamp base sign restriction literal source line snippet marker diagnostic severity qualifier "
             + "window bound quantifier threshold creation group timeline point counted characteristic initialisation "
@@ -90,18 +90,18 @@ class ReaderSentenceBoundaryTest {
 
     @Test void every_english_sentence_of_the_frontend_is_in_the_verifier() throws IOException {
         List<String> pieces = verifierPieces(root());
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         int read = 0;
         for (Fragment f : frontendFragments(root())) {
             if (WITHOUT_READER.containsKey(f.tekst())) { seen.add(f.tekst()); continue; }
             read++;
             if (pieces.stream().noneMatch(s -> s.contains(f.tekst())))
-                fouten.add(f.file() + ":" + f.regel() + " '" + f.tekst() + "'");
+                faults.add(f.file() + ":" + f.regel() + " '" + f.tekst() + "'");
         }
-        assertTrue(fouten.isEmpty(), () -> "Engelse frontendzinnen die niet (meer) in " + VERIFIER + " staan — de "
+        assertTrue(faults.isEmpty(), () -> "Engelse frontendzinnen die niet (meer) in " + VERIFIER + " staan — de "
                 + "verifier formuleerde ze anders, of de frontend schrijft een eigen Engelse zin:\n  "
-                + String.join("\n  ", fouten));
+                + String.join("\n  ", faults));
         int count = read;
         assertTrue(count >= MIN_FRAGMENTS, () -> "slechts " + count + " Engelse fragmenten gelezen, ondergrens "
                 + MIN_FRAGMENTS + " — het uitlezen sluit niet meer aan op de bron");
@@ -205,10 +205,10 @@ class ReaderSentenceBoundaryTest {
     private static List<Fragment> frontendFragments(Path w) throws IOException {
         List<Fragment> result = new ArrayList<>();
         for (Path p : frontendSources(w)) {
-            String bron = Files.readString(p, UTF_8);
-            for (int[] position : javaLiteralPositions(bron)) {
-                String literal = javaLiteral(bron, position[0], position[1]);
-                int regel = 1 + (int) bron.substring(0, position[0]).chars().filter(ch -> ch == '\n').count();
+            String source = Files.readString(p, UTF_8);
+            for (int[] position : javaLiteralPositions(source)) {
+                String literal = javaLiteral(source, position[0], position[1]);
+                int regel = 1 + (int) source.substring(0, position[0]).chars().filter(ch -> ch == '\n').count();
                 for (String part : SPECIFIER.split(literal, -1)) {
                     String kern = kern(part);
                     if (kern != null) result.add(new Fragment(p.getFileName().toString(), regel, kern));
@@ -258,17 +258,17 @@ class ReaderSentenceBoundaryTest {
     static String kern(String part) {
         String r = part.replaceFirst("^IrEmitter: ", "").replaceFirst("^WF-\\d+ \\([a-z]\\)( —)? ?", "");
         List<String> segments = new ArrayList<>(List.of(r.split(": ", -1)));
-        while (segments.size() > 1 && (segments.get(0).startsWith("/") || !engels(segments.get(0))))
+        while (segments.size() > 1 && (segments.get(0).startsWith("/") || !english(segments.get(0))))
             segments.remove(0);
         r = String.join(": ", segments).replaceFirst(" — $", "");
-        return engels(r) ? r : null;
+        return english(r) ? r : null;
     }
 
-    private static boolean engels(String tekst) {
+    private static boolean english(String tekst) {
         List<String> words = new ArrayList<>();
         Matcher m = WORD.matcher(tekst);
         while (m.find()) words.add(m.group().toLowerCase(Locale.ROOT));
         return words.size() >= 2 && words.stream().noneMatch(NEDERLANDS::contains)
-                && words.stream().anyMatch(ENGELS::contains);
+                && words.stream().anyMatch(ENGLISH::contains);
     }
 }

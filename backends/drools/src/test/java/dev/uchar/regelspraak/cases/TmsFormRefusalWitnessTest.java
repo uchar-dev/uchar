@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class TmsFormRefusalWitnessTest {
 
-    private static String selection(String filter, String bron) {
+    private static String selection(String filter, String source) {
         return "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":" + roleBinding("aanmelding",
-                "vondst") + ",\"filter\":" + filter + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                "vondst") + ",\"filter\":" + filter + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     @Test void a_union_at_a_value_site_is_refused_like_the_other_branches_refuse_it() throws Exception {

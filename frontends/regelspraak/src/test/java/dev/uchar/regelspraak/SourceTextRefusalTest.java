@@ -1,9 +1,9 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
-import dev.uchar.regelspraak.ir.Bron;
+import dev.uchar.regelspraak.ir.Source;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
@@ -37,9 +37,9 @@ class SourceTextRefusalTest {
     private static RegelSpraakModel withValue(java.util.function.Function<Expr, Expr> replace) {
         RegelSpraakModel m = Resolver.resolve(SOURCE);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedRegel r = m.resolvedRegels.get(0);
-        m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), replace.apply(r.waarde()),
-                r.voorwaarde(), r.geldigheid()));
+        ResolvedRule r = m.resolvedRegels.get(0);
+        m.resolvedRegels.set(0, new ResolvedRule(r.naam(), r.category(), r.target(), replace.apply(r.value()),
+                r.condition(), r.validity()));
         return m;
     }
 
@@ -49,10 +49,10 @@ class SourceTextRefusalTest {
 
     @Test void an_empty_snippet_gets_the_sentence_of_the_loader() {
         RegelSpraakModel m = withValue(w -> {
-            Expr.Binair b = (Expr.Binair) w;
-            Expr.Literal l = (Expr.Literal) b.rechts();
-            return new Expr.Binair(b.op(), b.links(), new Expr.Literal(l.waarde(), l.type(), Bron.synthetic("")),
-                    b.type(), b.bron());
+            Expr.Binary b = (Expr.Binary) w;
+            Expr.Literal l = (Expr.Literal) b.right();
+            return new Expr.Binary(b.op(), b.left(), new Expr.Literal(l.valueText(), l.type(), Source.synthetic("")),
+                    b.type(), b.source());
         });
         assertEquals(EMPTY_SNIPPET, refusal(m));
     }
@@ -64,14 +64,14 @@ class SourceTextRefusalTest {
                 + "absent, since nearly every message contains it and a message about another marker would account "
                 + "for this one";
         Object[][] cases = {
-                { null, withoutSource }, { Bron.synthetic(null), withoutSource },
-                { Bron.synthetic("   "), blanco }, { Bron.synthetic(""), EMPTY_SNIPPET } };
+                { null, withoutSource }, { Source.synthetic(null), withoutSource },
+                { Source.synthetic("   "), blanco }, { Source.synthetic(""), EMPTY_SNIPPET } };
         for (Object[] g : cases) {
-            Bron bron = (Bron) g[0];
-            RegelSpraakModel m = withValue(w -> new Expr.Unresolved(w.type(), bron, "test"));
+            Source source = (Source) g[0];
+            RegelSpraakModel m = withValue(w -> new Expr.Unresolved(w.type(), source, "test"));
             m.diagnostics.add(new Diagnostic(Severity.WARNING, "een melding", 1));
             assertEquals(g[1], refusal(m), () -> "de marker met bron "
-                    + (bron == null ? "null" : bron.snippet() == null ? "zonder snippet" : "'" + bron.snippet() + "'"));
+                    + (source == null ? "null" : source.snippet() == null ? "zonder snippet" : "'" + source.snippet() + "'"));
         }
     }
 }

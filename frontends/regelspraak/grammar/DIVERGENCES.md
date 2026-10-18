@@ -2978,7 +2978,7 @@ prefix `scenario: `, placeholders in angle brackets:
 
 The frontend suite: `ScenarioParseTest` (the forms and the two fences),
 `ScenarioTypeGateTest` (one refusal per defect on its line, and the merge,
-the restatement, the role key and the timelines), `ScenarioMutatieTest`
+the restatement, the role key and the timelines), `ScenarioMutationTest`
 (a clean document and nine mutations of it, a cycle and a duplicate among
 them), `ScenarioLoweringTest` (a case file written by hand from the
 schema, the file name, the scope and its IR document, the CLI) and
@@ -3032,7 +3032,7 @@ negated as a negative edge (`resolver/FeitcreatieRandenTest`).
 
 A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
 2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
-members the author wrote (`RecursieTest`, `SelfReadCycleTest`). Measured before, on the frontend of `b3861896`:
+members the author wrote (`RecursionTest`, `SelfReadCycleTest`). Measured before, on the frontend of `b3861896`:
 "Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is penninggerechtigd indien hij
 niet uitgesloten is" passed `check` with that WARNING alone, the verifier refused the document under WF-045 and twice
 under WF-046, and the ASP backend found two stable models for a Jutter without input. No golden, no source of the
@@ -3368,7 +3368,7 @@ member, beside groups the frontend names `<base> voor <subtype>` elsewhere).
 **The table.** `RegelSpraakModel.gegenereerd` maps an element of
 `benoembaar()` (kind, owner, name, spelled as that list spells it) to
 `GegenereerdUit(bron, vorm)`: the declared element it comes from and a
-`Herkomstvorm`, each with a fixed key. Read it through
+`OriginForm`, each with a fixed key. Read it through
 `RegelSpraakModel.gegenereerdUit`, under the name identity of IR-SPEC ch. 2.1.
 
 | Key | Elements | Source |

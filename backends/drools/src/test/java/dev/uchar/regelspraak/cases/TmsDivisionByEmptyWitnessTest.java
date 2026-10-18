@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -25,8 +25,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,8 +64,8 @@ class TmsDivisionByEmptyWitnessTest {
                     binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")),
                     check("vrij", false)));
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("opbrengst", WHOLE), attribuut("deelnemers", WHOLE), attribuut("aandeel", WHOLE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("opbrengst", WHOLE), attribute("deelnemers", WHOLE), attribute("aandeel", WHOLE)),
             List.of("gemeld", "geclaimd", "vrij"))), List.of());
 
     @Test void every_order_of_the_rules_in_the_document() throws Exception {
@@ -84,52 +84,52 @@ class TmsDivisionByEmptyWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(9, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(9, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int throughTheIntermediateState = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
-            if (vuur(b, order)) throughTheIntermediateState++;
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
+            if (fire(b, order)) throughTheIntermediateState++;
         assertTrue(throughTheIntermediateState > 0, "geen volgorde vuurde de aandeelregel op V2");
     }
 
     /** Fires V2, V3 and V4 with the rules in {@code order}, checks that no inconsistency stands at the fixpoint and
      *  the beans after the write-back, and says whether the aandeel rule fired on V2, whose vrij is onwaar at the end:
      *  that firing deposited on the transient path. */
-    private static boolean vuur(DroolsBackend.Build b, List<Rule> order) throws Exception {
+    private static boolean fire(DroolsBackend.Build b, List<Rule> order) throws Exception {
         List<String> names = order.stream().map(Rule::getName).toList();
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocuments.kieBase(b, order).newKieSession();
+        KieSession session = TmsDocuments.kieBase(b, order).newKieSession();
         try {
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "100"), List.of("gemeld"));
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
             Object v4 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "4"),
                     List.of());
             boolean[] intermediateState = {false};
-            sessie.addEventListener(new DefaultAgendaEventListener() {
+            session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("aandeel")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o == v2))
                         intermediateState[0] = true;
                 }
             });
-            sessie.insert(v2);
-            sessie.insert(v3);
-            sessie.insert(v4);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + names);
+            session.insert(v2);
+            session.insert(v3);
+            session.insert(v4);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), () -> "geen fixpunt in volgorde " + names);
             String where = " in volgorde " + names;
-            String inconsistency = FactModelGenerator.PAKKET + ".Inconsistentie";
-            assertEquals(List.of(), List.copyOf(sessie.getObjects(o -> o.getClass().getName().equals(inconsistency))),
+            String inconsistency = FactModelGenerator.PACKAGE + ".Inconsistentie";
+            assertEquals(List.of(), List.copyOf(session.getObjects(o -> o.getClass().getName().equals(inconsistency))),
                     "inconsistenties" + where);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            DroolsBackend.setDerivedValues(b, session);
             assertEquals(List.of(true, false), List.of(TmsDocuments.has(v2, "geclaimd"), TmsDocuments.has(v2, "vrij")),
                     "V2" + where);
-            assertNull(TmsDocuments.lees(v2, "aandeel"), "V2 aandeel" + where);
-            assertEquals(0, BigDecimal.ZERO.compareTo((BigDecimal) TmsDocuments.lees(v3, "aandeel")), "V3 aandeel" + where);
-            assertEquals(0, new BigDecimal("25").compareTo((BigDecimal) TmsDocuments.lees(v4, "aandeel")), "V4 aandeel" + where);
+            assertNull(TmsDocuments.read(v2, "aandeel"), "V2 aandeel" + where);
+            assertEquals(0, BigDecimal.ZERO.compareTo((BigDecimal) TmsDocuments.read(v3, "aandeel")), "V3 aandeel" + where);
+            assertEquals(0, new BigDecimal("25").compareTo((BigDecimal) TmsDocuments.read(v4, "aandeel")), "V4 aandeel" + where);
             return intermediateState[0];
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -137,7 +137,7 @@ class TmsDivisionByEmptyWitnessTest {
     private static JsonNode withDeposit() throws Exception {
         return TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("opbrengst", "100"), List.of(), Map.of())),
-                List.of(verwacht("V1", "vrij", true), waarde("V1", "aandeel", null), inconsistent("aandeel", "V1")));
+                List.of(expected("V1", "vrij", true), value("V1", "aandeel", null), inconsistent("aandeel", "V1")));
     }
 
     private static JsonNode withoutDeposit() throws Exception {
@@ -145,9 +145,9 @@ class TmsDivisionByEmptyWitnessTest {
                 List.of(instance("V2", "Vondst", Map.of("opbrengst", "100"), List.of("gemeld"), Map.of()),
                         instance("V3", "Vondst", Map.of(), List.of(), Map.of()),
                         instance("V4", "Vondst", Map.of("opbrengst", "100", "deelnemers", "4"), List.of(), Map.of())),
-                List.of(consistent(), verwacht("V2", "vrij", false), waarde("V2", "aandeel", null),
-                        verwacht("V3", "vrij", true), waarde("V3", "aandeel", "0"),
-                        verwacht("V4", "vrij", true), waarde("V4", "aandeel", "25")));
+                List.of(consistent(), expected("V2", "vrij", false), value("V2", "aandeel", null),
+                        expected("V3", "vrij", true), value("V3", "aandeel", "0"),
+                        expected("V4", "vrij", true), value("V4", "aandeel", "25")));
     }
 
     private static List<String> names(List<String> rules) throws Exception {

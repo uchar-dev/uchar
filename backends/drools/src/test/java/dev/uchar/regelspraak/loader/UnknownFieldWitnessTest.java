@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Every node kind this loader reads refuses a field the schema does not give it, at its JSON pointer. The sweep takes
  * each node kind the corpus goldens carry, in the first golden that loads and carries it, adds one field no node has,
- * and asks for the {@link IrLoader.Documentfout} naming that field. A kind whose twisted document still loads is read
+ * and asks for the {@link IrLoader.DocumentError} naming that field. A kind whose twisted document still loads is read
  * past; the list of such kinds must be empty.
  *
  * <p>Before L2's fix round most rule-side node kinds — the fold, the quantifier fold, the verdeling and a union's
@@ -66,7 +66,7 @@ class UnknownFieldWitnessTest {
             try {
                 IrLoader.loadAll(doc);
                 admitted.add(e.getKey() + " (" + name(site.ir()) + " " + site.path() + ")");
-            } catch (IrLoader.Documentfout f) {
+            } catch (IrLoader.DocumentError f) {
                 assertEquals(site.path() + "/" + FOREIGN, f.site(), e.getKey() + ": " + f.getMessage());
                 assertTrue(f.getMessage().contains("unknown field"), e.getKey() + ": " + f.getMessage());
             }
@@ -107,7 +107,7 @@ class UnknownFieldWitnessTest {
             int slash = row[0].lastIndexOf('/');
             String parent = row[0].substring(0, slash), field = row[0].substring(slash + 1);
             ((ObjectNode) doc.at(parent)).set(field, JSON.readTree(row[1]));
-            IrLoader.Documentfout f = refuses(doc, r.getKey());
+            IrLoader.DocumentError f = refuses(doc, r.getKey());
             assertEquals(row[2] + "/" + FOREIGN, f.site(), r.getKey() + ": " + f.getMessage());
             assertTrue(f.getMessage().contains("unknown field"), r.getKey() + ": " + f.getMessage());
         }
@@ -120,7 +120,7 @@ class UnknownFieldWitnessTest {
         JsonNode doc = golden(PENNINGDREMPEL);
         ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("condition", JSON.readTree(
                 "{\"node\":\"Unresolved\",\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
-        IrLoader.Documentfout f = refuses(doc, "conditiemarker met type");
+        IrLoader.DocumentError f = refuses(doc, "conditiemarker met type");
         assertEquals("/rules/rules/0/versions/0/condition/type", f.site(), f.getMessage());
         assertTrue(f.getMessage().contains("unknown field on Unresolved"), f.getMessage());
 
@@ -148,7 +148,7 @@ class UnknownFieldWitnessTest {
         for (Map.Entry<String, String> r : rows.entrySet()) {
             JsonNode doc = golden(PENNINGDREMPEL);
             ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("value", JSON.readTree(r.getValue()));
-            IrLoader.Documentfout f = refuses(doc, r.getKey());
+            IrLoader.DocumentError f = refuses(doc, r.getKey());
             // the shared loader's sentence, at the discriminator
             assertEquals(w + "/type/node", f.site(), r.getKey() + ": " + f.getMessage());
             assertTrue(f.getMessage().endsWith(": unknown datatype node \"Onbekend\""),
@@ -167,7 +167,7 @@ class UnknownFieldWitnessTest {
         for (String[] row : rows) {
             JsonNode doc = golden(PENNINGDREMPEL);
             ((ObjectNode) doc.at(row[0])).put(row[1], 1);
-            IrLoader.Documentfout f = refuses(doc, row[1]);
+            IrLoader.DocumentError f = refuses(doc, row[1]);
             assertEquals(row[2], f.site(), row[1] + ": " + f.getMessage());
             assertTrue(f.getMessage().contains("expected a JSON object, got 1"), row[1] + ": " + f.getMessage());
         }
@@ -175,7 +175,7 @@ class UnknownFieldWitnessTest {
         JsonNode doc = golden(PENNINGDREMPEL);
         ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("value", JSON.readTree("{\"node\":\"Aggregation\","
                 + "\"kind\":\"sum\",\"arguments\":[1],\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
-        IrLoader.Documentfout f = refuses(doc, "arguments");
+        IrLoader.DocumentError f = refuses(doc, "arguments");
         assertEquals("/rules/rules/0/versions/0/value/arguments/0", f.site(), f.getMessage());
     }
 
@@ -185,10 +185,10 @@ class UnknownFieldWitnessTest {
         return doc;
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode doc, String what) {
+    private static IrLoader.DocumentError refuses(JsonNode doc, String what) {
         try {
             IrLoader.loadAll(doc);
-        } catch (IrLoader.Documentfout f) {
+        } catch (IrLoader.DocumentError f) {
             return f;
         } catch (IrLoader.Refusal r) {
             fail(what + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());

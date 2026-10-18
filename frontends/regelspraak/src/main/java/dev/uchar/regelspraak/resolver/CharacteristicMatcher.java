@@ -47,13 +47,13 @@ final class CharacteristicMatcher {
      *  fits a kenmerk here and another one hop up binds NEITHER, never the nearer one. */
     static String find(Objecttype ot, String written) {
         if (ot == null || written == null) return null;
-        String basis = ot.kenmerkNaam(written);            // base form — always preferred
-        if (basis != null) return basis;
+        String base = ot.characteristicName(written);            // base form — always preferred
+        if (base != null) return base;
         String only = null;                                  // the single kenmerk this form inflects from
-        for (Objecttype t : ot.keten())
+        for (Objecttype t : ot.chain())
             for (String k : t.kenmerken)
-                for (String vorm : inflectedForms(k))
-                    if (vorm.equalsIgnoreCase(written)) {
+                for (String form : inflectedForms(k))
+                    if (form.equalsIgnoreCase(written)) {
                         if (only != null && !only.equalsIgnoreCase(k)) return null;  // ambiguous → marker
                         only = k;
                     }
@@ -68,9 +68,9 @@ final class CharacteristicMatcher {
      *  adjective is the first word, the rest a prepositional/complement tail — so "vaarbare bij eb",
      *  not the tail-inflected non-word "vaarbaar bij ebe". So the head word is inflected and the
      *  tail re-appended verbatim; a single-word phrase is just the head with no tail. */
-    static List<String> inflectedForms(String basis) {
+    static List<String> inflectedForms(String base) {
         List<String> result = new ArrayList<>();
-        String b = basis.toLowerCase();
+        String b = base.toLowerCase();
         int space = b.indexOf(' ');
         if (space > 0) {                                     // multi-word: inflect the head, keep the tail
             String suffix = b.substring(space);              // includes the leading space
@@ -86,8 +86,8 @@ final class CharacteristicMatcher {
         if (n >= 3) {
             char last = b.charAt(n - 1);
             char v1 = b.charAt(n - 3), v2 = b.charAt(n - 2);
-            boolean digraf = v1 == v2 && (v1 == 'a' || v1 == 'e' || v1 == 'o' || v1 == 'u');
-            if (digraf && isConsonant(last)) {
+            boolean digraph = v1 == v2 && (v1 == 'a' || v1 == 'e' || v1 == 'o' || v1 == 'u');
+            if (digraph && isConsonant(last)) {
                 result.add(b.substring(0, n - 3) + v1 + last + "e");
                 return result;
             }

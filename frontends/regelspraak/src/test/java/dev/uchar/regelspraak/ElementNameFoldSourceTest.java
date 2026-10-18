@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -67,19 +67,19 @@ class ElementNameFoldSourceTest {
                 Het zwaarste gewicht van een Berging moet berekend worden als de maximale waarde van het gewicht van alle vondsten van de Berging.
         """;
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::toString).toList());
         return m;
     }
 
     /** The fold of the rule's value: its element type, and the steps of its written range (empty for one step). */
     private static void foldsOver(RegelSpraakModel m, String regel, String element, List<String> steps) {
-        ResolvedRegel r = m.resolvedRegels.stream().filter(x -> x.naam().equals(regel)).findFirst().orElseThrow();
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, r.waarde());
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, f.arguments().get(0));
-        assertEquals(element, a.objecttype().naam, "het elementtype");
-        assertEquals(steps, a.rangePath().stream().map(b -> b.feittype() + "." + b.rol()).toList());
+        ResolvedRule r = m.resolvedRegels.stream().filter(x -> x.naam().equals(regel)).findFirst().orElseThrow();
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, r.value());
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, f.arguments().get(0));
+        assertEquals(element, a.objectType().naam, "het elementtype");
+        assertEquals(steps, a.rangePath().stream().map(b -> b.factType() + "." + b.role()).toList());
     }
 
     private static final List<String> VIA_THE_BERGING =

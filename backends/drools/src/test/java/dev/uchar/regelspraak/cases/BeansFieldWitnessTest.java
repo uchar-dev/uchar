@@ -42,14 +42,14 @@ class BeansFieldWitnessTest {
     // ---------------- setField: the field the creation writes ----------------
 
     @Test void a_write_field_beside_the_binding_is_refused_by_name() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
-        creatie(ir, 0, "winterberging").put("zetVeld", "keurhaven");
+        ObjectNode ir = read(DUBBELVERBINDING);
+        creation(ir, 0, "winterberging").put("zetVeld", "keurhaven");
         unknownField(ir, "/rules/factCreations/0/versions/0/zetVeld", "FactCreationVersion");
     }
 
     @Test void set_field_follows_the_made_role() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
-        creatie(ir, 0, "winterberging").put("factType", "keurberging").put("anchorRole", "keurhaven")
+        ObjectNode ir = read(DUBBELVERBINDING);
+        creation(ir, 0, "winterberging").put("factType", "keurberging").put("anchorRole", "keurhaven")
                 .put("targetRole", "keurschuit");
         BothBranches.red(temporary("zet-binding", ir), goldenCase(DUBBELVERBINDING, "case1"), "attribuut wintertal: verwacht 2, werkelijk 0",
                 "the creation must write the bound keurberging relation");
@@ -58,15 +58,15 @@ class BeansFieldWitnessTest {
     // ---------------- joinField: the field the doel joins on ----------------
 
     @Test void a_link_field_beside_the_binding_is_refused_by_name() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
-        creatie(ir, 0, "winterberging").put("joinVeld", "vlaghaven");
+        ObjectNode ir = read(DUBBELVERBINDING);
+        creation(ir, 0, "winterberging").put("joinVeld", "vlaghaven");
         unknownField(ir, "/rules/factCreations/0/versions/0/joinVeld", "FactCreationVersion");
     }
 
     @Test void join_field_follows_the_join_binding() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
-        ArrayNode pad = (ArrayNode) creatie(ir, 0, "winterberging").get("path");
-        pad.set(pad.size() - 1, binding("vlagvoering", "vlaggenschip"));
+        ObjectNode ir = read(DUBBELVERBINDING);
+        ArrayNode path = (ArrayNode) creation(ir, 0, "winterberging").get("path");
+        path.set(path.size() - 1, binding("vlagvoering", "vlaggenschip"));
         BothBranches.red(temporary("join-binding", ir), goldenCase(DUBBELVERBINDING, "case1"), "attribuut wintertal: verwacht 2, werkelijk 1",
                 "the join must read the bound vlagvoering relation");
     }
@@ -76,16 +76,16 @@ class BeansFieldWitnessTest {
     @Test void a_step_carries_only_its_binding() throws Exception {
         // the step's field, its side and its type are the backend's own derivation from the binding, so each one
         // written beside it is an unknown field
-        for (String veld : new String[] { "veld", "viaOuderVeld", "type" }) {
-            ObjectNode ir = lees(POSTWACHT);
-            step(ir).put(veld, veld.equals("viaOuderVeld") ? "true" : "Sein");
-            unknownField(ir, "/rules/factCreations/0/versions/0/path/0/" + veld, "RoleBinding");
+        for (String field : new String[] { "veld", "viaOuderVeld", "type" }) {
+            ObjectNode ir = read(POSTWACHT);
+            step(ir).put(field, field.equals("viaOuderVeld") ? "true" : "Sein");
+            unknownField(ir, "/rules/factCreations/0/versions/0/path/0/" + field, "RoleBinding");
         }
     }
 
     @Test void path_step_follows_the_hop_binding() throws Exception {
         ObjectNode ir = postwachtWithReserve();
-        ((ArrayNode) creatie(ir, 0, null).get("path")).set(0, binding("reserveligging", "reservepost"));
+        ((ArrayNode) creation(ir, 0, null).get("path")).set(0, binding("reserveligging", "reservepost"));
         BothBranches.red(temporary("hop-binding", ir), goldenCase(POSTWACHT, "case"), "attribuut vakseinaantal: verwacht 2, werkelijk 0",
                 "the hop must walk the bound reserveligging relation");
     }
@@ -96,8 +96,8 @@ class BeansFieldWitnessTest {
         // what this row pins is the CHOICE, in the one derivation both branches execute. The parent side is the
         // side the frontend picks for an objectcreatie-placed link; the only other witness sits in the
         // parity zone. Verifier-clean, ref PASS.
-        ObjectNode ir = lees(POSTWACHT);
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "kustligging").get("roles"))
+        ObjectNode ir = read(POSTWACHT);
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "kustligging").get("roles"))
             if (r.get("name").asText().equals("post")) ((ObjectNode) r).put("many", false);
         ObjectNode c = (ObjectNode) goldenCase(POSTWACHT, "case");
         for (JsonNode i : c.get("input").get("instances")) {
@@ -105,8 +105,8 @@ class BeansFieldWitnessTest {
             if (roles.has("posten")) roles.set("post", roles.remove("posten"));
         }
         RegelSpraakModel m = IrLoader.loadAll(ir).model();
-        FactModelGenerator.CreationFields v = FactModelGenerator.creationFields(m, m.feitCreaties.get(0));
-        assertEquals(new FactModelGenerator.CreationHop(m.objecttypeOpNaam("Post"), "post", true), v.hops().get(0),
+        FactModelGenerator.CreationFields v = FactModelGenerator.creationFields(m, m.factCreations.get(0));
+        assertEquals(new FactModelGenerator.CreationHop(m.objectTypeByName("Post"), "post", true), v.hops().get(0),
                 "a 1:1 hop reads the parent's field, named after the bound role");
         BothBranches.green(temporary("hop-een-op-een", ir), c, "the 1:1 hop plays over the parent side");
     }
@@ -114,7 +114,7 @@ class BeansFieldWitnessTest {
     // ---------------- scopeField: the uniqueness scope ----------------
 
     @Test void a_scope_field_beside_the_binding_is_refused_by_name() throws Exception {
-        ObjectNode ir = lees(KUSTREGISTER);
+        ObjectNode ir = read(KUSTREGISTER);
         kaveletiket(ir).put("scopeVeld", "sectiecode");
         unknownField(ir, "/rules/uniquenesses/" + kaveletiketIndex(ir) + "/versions/0/scopeVeld", "UniquenessVersion");
     }
@@ -122,8 +122,8 @@ class BeansFieldWitnessTest {
     @Test void scope_field_follows_the_scope_binding() throws Exception {
         // wijkindeling relates Kavel and Gemeente a second time; no case fills it, so no Kavel has that scope
         // and none participates
-        ObjectNode ir = lees(KUSTREGISTER);
-        IrPath.modelList(ir, "factTypes").add(feittype("wijkindeling",
+        ObjectNode ir = read(KUSTREGISTER);
+        IrPath.modelList(ir, "factTypes").add(factType("wijkindeling",
                 "wijkgemeente", "Gemeente", false, "wijkkavel", "Kavel", true));
         kaveletiket(ir).set("scope", binding("wijkindeling", "wijkgemeente"));
         BothBranches.red(temporary("scope-binding", ir), goldenCase(KUSTREGISTER, "case3"), "werkelijk consistent",
@@ -134,10 +134,10 @@ class BeansFieldWitnessTest {
 
     @Test void the_bindings_only_play_the_document() throws Exception {
         // the golden as the wire now carries it: every construct on its bindings, no storage field anywhere
-        ObjectNode ir = lees(POSTWACHT);
-        ObjectNode fc = creatie(ir, 0, null);
-        for (String veld : new String[] { "zetVeld", "joinVeld" })
-            assertTrue(!fc.has(veld), "no storage field on the creation: " + fc);
+        ObjectNode ir = read(POSTWACHT);
+        ObjectNode fc = creation(ir, 0, null);
+        for (String field : new String[] { "zetVeld", "joinVeld" })
+            assertTrue(!fc.has(field), "no storage field on the creation: " + fc);
         for (JsonNode t : fc.get("path")) {
             java.util.List<String> fields = new java.util.ArrayList<>();
             t.fieldNames().forEachRemaining(fields::add);
@@ -150,22 +150,22 @@ class BeansFieldWitnessTest {
         // IR-SPEC ch. 3.4: the symbolic block IS the creation, so a creation missing any part of it — here each of
         // the four, and a step's binding — is no document; ref and clingo fault on it, and before L2 both branches
         // refused it as unresolved
-        for (String veld : new String[] { "factType", "anchorRole", "targetRole", "path" }) {
-            ObjectNode ir = lees(POSTWACHT);
-            creatie(ir, 0, null).remove(veld);
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        for (String field : new String[] { "factType", "anchorRole", "targetRole", "path" }) {
+            ObjectNode ir = read(POSTWACHT);
+            creation(ir, 0, null).remove(field);
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
             assertEquals("/rules/factCreations/0/versions/0", e.site(), e.getMessage());
-            assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
+            assertTrue(e.getMessage().contains("missing field '" + field + "'"), e.getMessage());
         }
-        ObjectNode ir = lees(POSTWACHT);
+        ObjectNode ir = read(POSTWACHT);
         step(ir).remove("factType");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/factCreations/0/versions/0/path/0", e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'factType'"), e.getMessage());
     }
 
     @Test void a_scope_binding_that_does_not_resolve_does_not_fall_back_on_the_scope_field() throws Exception {
-        ObjectNode ir = lees(KUSTREGISTER);
+        ObjectNode ir = read(KUSTREGISTER);
         kaveletiket(ir).set("scope", binding("wijkindeling", "gemeente"));
         BothBranches.refused(temporary("scope-los", ir), goldenCase(KUSTREGISTER, "case3"),
                 "uniciteit: eenmalig kaveletiket — de scope van een Uniqueness noemt geen gedeclareerde rol (wijkindeling,"
@@ -177,22 +177,22 @@ class BeansFieldWitnessTest {
 
     /** postwacht with a second Kustvak-Post relation, so Post also carries a {@code reservevak} field. */
     private static ObjectNode postwachtWithReserve() throws Exception {
-        ObjectNode ir = lees(POSTWACHT);
-        IrPath.modelList(ir, "factTypes").add(feittype("reserveligging",
+        ObjectNode ir = read(POSTWACHT);
+        IrPath.modelList(ir, "factTypes").add(factType("reserveligging",
                 "reservevak", "Kustvak", false, "reservepost", "Post", true));
         return ir;
     }
 
     /** The first hop of the creation's path, a step before the final hop. */
     private static ObjectNode step(ObjectNode ir) {
-        ObjectNode t = (ObjectNode) creatie(ir, 0, null).get("path").get(0);
+        ObjectNode t = (ObjectNode) creation(ir, 0, null).get("path").get(0);
         assertTrue(t.get("factType").asText().equals("kustligging"), t.toString());
         return t;
     }
 
     /** The loader refuses a field the L2 shape does not have, at its own pointer, as an unknown field. */
     private static void unknownField(ObjectNode ir, String site, String nodeKind) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
         assertEquals(site, e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("unknown field on " + nodeKind), e.getMessage());
     }
@@ -204,9 +204,9 @@ class BeansFieldWitnessTest {
     }
 
     /** The one version of the {@code i}-th fact creation. */
-    private static ObjectNode creatie(ObjectNode ir, int i, String feittype) {
+    private static ObjectNode creation(ObjectNode ir, int i, String factType) {
         ObjectNode fc = IrPath.version(ir, "factCreations", i, 0);
-        if (feittype != null) assertTrue(fc.get("factType").asText().equals(feittype), fc.toString());
+        if (factType != null) assertTrue(fc.get("factType").asText().equals(factType), fc.toString());
         return fc;
     }
 
@@ -215,7 +215,7 @@ class BeansFieldWitnessTest {
         return IrPath.version(ir, "uniquenesses", "eenmalig kaveletiket");
     }
 
-    private static ObjectNode feittype(String naam, String role1, String ot1, boolean many1,
+    private static ObjectNode factType(String naam, String role1, String ot1, boolean many1,
                                        String role2, String ot2, boolean many2) {
         ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", naam).put("reciprocal", false);
         ArrayNode roles = ft.putArray("roles");
@@ -229,11 +229,11 @@ class BeansFieldWitnessTest {
         return ft;
     }
 
-    private static ObjectNode binding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
+    private static ObjectNode binding(String factType, String role) {
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", factType).put("role", role);
     }
 
-    private static ObjectNode lees(Path golden) throws Exception {
+    private static ObjectNode read(Path golden) throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(golden.resolve("ir.json")));
     }
 

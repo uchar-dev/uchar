@@ -71,7 +71,7 @@ class CountSourceArmWitnessTest {
      *  shared loader's sentence, before the fold's source arm is reached — as ref and the ASP backend do. */
     @Test void a_variable_as_count_source_is_refused() throws Exception {
         String arg = SITE + "/arguments/0";
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                 () -> IrLoader.loadAll(negative("wf037-aantal-elementtype-variabele")));
         assertEquals(arg, e.site(), e.getMessage());
         assertEquals("malformed uchar-ir-v1 document at '" + arg + "': "
@@ -282,7 +282,7 @@ class CountSourceArmWitnessTest {
     }
 
     private static void refusedAt(ObjectNode ir, String site, String sentence) {
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
         assertEquals(site, e.site(), e.getMessage());
         assertEquals("malformed uchar-ir-v1 document at '" + site + "': " + sentence, e.getMessage());
     }

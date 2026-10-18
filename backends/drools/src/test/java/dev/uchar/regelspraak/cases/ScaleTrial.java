@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
-import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
-import dev.uchar.regelspraak.transpiler.tms.Fout;
+import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
 
 import org.kie.api.KieBase;
 import org.kie.api.definition.KiePackage;
@@ -55,7 +55,7 @@ import java.util.Map;
  * creation chain, emitted the same way: the same declarations, so the same case serves both, and the same answers on
  * every input object. The second fire runs on it. A creation is stated and does not lapse (RUNTIME-SEMANTICS ch. 5.5),
  * so after a change of the input a second fire would keep what the first made and initialised, where a fresh session
- * evaluates the creations anew; {@link DroolsBackend#vuur} therefore refuses a second fire on a model with a creation.
+ * evaluates the creations anew; {@link DroolsBackend#fire} therefore refuses a second fire on a model with a creation.
  *
  * <p><b>The case</b> ({@link #caseDocument}): one Kustwacht {@code K}; N Wachters {@code W1}…{@code WN} of rang 0, each a
  * Wachter of {@code K}; ten Vondsten {@code Vi_j} per Wachter, of gewicht 5 + ((7i + 11j) mod 36), so between 5 and 40;
@@ -70,8 +70,8 @@ import java.util.Map;
  * ({@link DroolsBackend#build}: load, beans, lowering, KieBase), once to warm up and then the median of three, the beans
  * cached per JVM by content so that javac counts in the warm-up only; R, the rules in the KieBase; and one warm-up fire
  * and three measured ones, each in a fresh session that {@link CaseRunner#withSession} sets up as the replay does, through
- * {@link DroolsBackend#voegIn}. Of a fire it measures the firings and the cap of the public {@link DroolsBackend#vuur},
- * the cap a consumer gets, the time of that fire and that of {@link DroolsBackend#zetAfgeleideWaarden} apart, N0 (the
+ * {@link DroolsBackend#insert}. Of a fire it measures the firings and the cap of the public {@link DroolsBackend#fire},
+ * the cap a consumer gets, the time of that fire and that of {@link DroolsBackend#setDerivedValues} apart, N0 (the
  * facts just before the fire), the peak of the facts during the fire (a listener that counts insertions and deletions
  * from N0 on and keeps the running maximum; at the end its count must equal the session's), and the heap in use after
  * {@code System.gc()} with the session open. The kusttotaal and the number of inconsistencies go with every point, so
@@ -86,12 +86,12 @@ import java.util.Map;
  *
  * <p><b>A point of the second fire</b> is one N on the model without (g), in a JVM of its own with {@code -Xmx16g}, one
  * warm-up and three measured rounds. A round fills a session through the public entry, fires it ({@link
- * DroolsBackend#vuur}) and reads it ({@link DroolsBackend#lees}), makes the change on the bean of {@code V1_1} and tells
+ * DroolsBackend#fire}) and reads it ({@link DroolsBackend#read}), makes the change on the bean of {@code V1_1} and tells
  * the session ({@code update}), fires again and reads again; beside it a fresh session with the changed case, filled,
  * fired and read. The two readings after the change must be equal, every value, characteristic, fault and
  * inconsistency named by its case label, and the reading must differ from the one before the change; else the point
  * fails loudly. It measures the first fire, the second (the change and the fire together), and the fresh session, its
- * set-up (session, beans from the case, {@code voegIn}) and its fire apart.
+ * set-up (session, beans from the case, {@code insert}) and its fire apart.
  *
  * <p>Run it from the root of the repository; without arguments it measures every point of the exec-model branch, each
  * in a child JVM, and prints Markdown on standard output:
@@ -117,7 +117,7 @@ public final class ScaleTrial {
     static final List<Integer> NS = List.of(100, 1_000, 10_000);
 
     /** The exec-model branch: the one the points measure by default, and the only one that reads a session between two
-     *  fires ({@link DroolsBackend#lees}). */
+     *  fires ({@link DroolsBackend#read}). */
     static final DroolsBackend.Branch BRANCH = DroolsBackend.Branch.EXEC_MODEL;
 
     private static final int WARM_UP = 1, REPETITIONS = 3;
@@ -140,7 +140,7 @@ public final class ScaleTrial {
         }
         switch (args[0]) {
             case "punt" -> System.exit(point(DroolsBackend.Branch.valueOf(args[1]), Integer.parseInt(args[2])));
-            case "tweede" -> System.exit(tweede());
+            case "tweede" -> System.exit(second());
             case "tweedepunt" -> System.exit(secondPoint(Integer.parseInt(args[1])));
             case "controle" -> System.exit(check(Integer.parseInt(args[1])));
             case "case" -> Files.writeString(Path.of(args[2]), JSON.writerWithDefaultPrettyPrinter().writeValueAsString(
@@ -152,18 +152,18 @@ public final class ScaleTrial {
     // ---------------- the model and the case ----------------
 
     static Path model() throws Exception {
-        return bron("/scale/ir.json");
+        return source("/scale/ir.json");
     }
 
     /** The model without (g), the creation chain: the model of the second fire. */
     static Path modelWithoutCreation() throws Exception {
-        return bron("/scale/without-creation/ir.json");
+        return source("/scale/without-creation/ir.json");
     }
 
-    private static Path bron(String pad) throws Exception {
-        java.net.URL url = ScaleTrial.class.getResource(pad);
+    private static Path source(String path) throws Exception {
+        java.net.URL url = ScaleTrial.class.getResource(path);
         if (url == null)
-            throw new IllegalStateException(pad.substring(1) + " niet op het klassepad: draai eerst test-compile");
+            throw new IllegalStateException(path.substring(1) + " niet op het klassepad: draai eerst test-compile");
         return Path.of(url.toURI());
     }
 
@@ -172,17 +172,17 @@ public final class ScaleTrial {
     }
 
     /** The case of {@code n} Wachters, with {@code changed} the one after the change of the second fire; with
-     *  {@code verwacht} also every value the model derives on an input object, and the inconsistency of every Wachter
+     *  {@code expected} also every value the model derives on an input object, and the inconsistency of every Wachter
      *  whose wachtsom reaches the bound, as the case schema spells them. */
-    static ObjectNode caseDocument(int n, boolean verwacht, boolean changed) {
+    static ObjectNode caseDocument(int n, boolean expected, boolean changed) {
         JsonNodeFactory f = JsonNodeFactory.instance;
         ObjectNode doc = f.objectNode();
         doc.put("format", "uchar-case-v0");
         doc.putNull("asOfDate");
         ObjectNode input = doc.putObject("input");
-        ArrayNode instanties = input.putArray("instances");
-        ArrayNode verwachtingen = f.arrayNode();
-        instanties.add(instance(f, "K", "Kustwacht", f.objectNode(), f.objectNode()));
+        ArrayNode instances = input.putArray("instances");
+        ArrayNode expectations = f.arrayNode();
+        instances.add(instance(f, "K", "Kustwacht", f.objectNode(), f.objectNode()));
         BigDecimal kusttotaal = new BigDecimal("0.00");
         boolean inconsistent = false;
         for (int i = 1; i <= n; i++) {
@@ -191,7 +191,7 @@ public final class ScaleTrial {
             attributes.putObject("rang").put("number", "0");
             ObjectNode roles = f.objectNode();
             roles.putArray("kustwacht").add("K");
-            instanties.add(instance(f, wachter, "Wachter", attributes, roles));
+            instances.add(instance(f, wachter, "Wachter", attributes, roles));
             BigDecimal wachtsom = new BigDecimal("0.00"), highest = null;
             for (int j = 1; j <= VONDSTEN_PER_WACHTER; j++) {
                 String vondst = "V" + i + "_" + j;
@@ -201,26 +201,26 @@ public final class ScaleTrial {
                 va.putObject("gewicht").put("number", weight.toPlainString());
                 ObjectNode vr = f.objectNode();
                 vr.putArray("beheerder").add(wachter);
-                instanties.add(instance(f, vondst, "Vondst", va, vr));
-                BigDecimal waarde = weight.multiply(VONDSTFACTOR);
-                BigDecimal beloning = waarde.compareTo(THRESHOLD) > 0 ? waarde : LOWER_BELONING;
+                instances.add(instance(f, vondst, "Vondst", va, vr));
+                BigDecimal value = weight.multiply(VONDSTFACTOR);
+                BigDecimal beloning = value.compareTo(THRESHOLD) > 0 ? value : LOWER_BELONING;
                 wachtsom = wachtsom.add(beloning);
                 highest = highest == null || beloning.compareTo(highest) > 0 ? beloning : highest;
-                waarde(verwachtingen, vondst, "waarde", waarde);
-                waarde(verwachtingen, vondst, "beloning", beloning);
+                value(expectations, vondst, "waarde", value);
+                value(expectations, vondst, "beloning", beloning);
             }
-            waarde(verwachtingen, wachter, "wachtsom", wachtsom);
-            waarde(verwachtingen, wachter, "hoogste beloning", highest);
+            value(expectations, wachter, "wachtsom", wachtsom);
+            value(expectations, wachter, "hoogste beloning", highest);
             if (wachtsom.compareTo(WACHTSOMGRENS) >= 0) {
                 inconsistent = true;
-                verwachtingen.addObject().put("kind", "inconsistent").put("rule", "wachtsomgrens").put("label", wachter);
+                expectations.addObject().put("kind", "inconsistent").put("rule", "wachtsomgrens").put("label", wachter);
             }
             kusttotaal = kusttotaal.add(wachtsom);
         }
-        waarde(verwachtingen, "K", "kusttotaal", kusttotaal);
-        if (!inconsistent) verwachtingen.addObject().put("kind", "consistent");
+        value(expectations, "K", "kusttotaal", kusttotaal);
+        if (!inconsistent) expectations.addObject().put("kind", "consistent");
         input.putObject("parameters").putObject("vondstfactor").put("number", VONDSTFACTOR.toPlainString());
-        doc.set("expected", verwacht ? verwachtingen : f.arrayNode());
+        doc.set("expected", expected ? expectations : f.arrayNode());
         return doc;
     }
 
@@ -235,26 +235,26 @@ public final class ScaleTrial {
         return i;
     }
 
-    private static void waarde(ArrayNode verwachtingen, String label, String attribuut, BigDecimal waarde) {
-        ObjectNode v = verwachtingen.addObject();
-        v.put("kind", "attributeValue").put("label", label).put("attribute", attribuut);
-        v.putObject("value").put("number", waarde.toPlainString());
+    private static void value(ArrayNode expectations, String label, String attribute, BigDecimal value) {
+        ObjectNode v = expectations.addObject();
+        v.put("kind", "attributeValue").put("label", label).put("attribute", attribute);
+        v.putObject("value").put("number", value.toPlainString());
     }
 
     /** Replays the case of {@code n} Wachters and the changed case, each with its expected values, through the
      *  exec-model branch on the model and on the model without (g), the replay's own comparison: the check that the
      *  harness measures models the branch answers as the cases say. */
     private static int check(int n) throws Exception {
-        int fout = 0;
+        int fault = 0;
         for (Path ir : List.of(model(), modelWithoutCreation()))
             for (boolean changed : List.of(false, true)) {
                 JsonNode c = caseDocument(n, true, changed);
                 String verdict = CaseRunner.playCase(ir, c, BRANCH);
                 System.out.println(ir.getParent().getFileName() + (changed ? ", gewijzigd" : "") + ", " + BRANCH
                         + ": " + (verdict == null ? "gelijk aan de verwachting" : verdict));
-                if (verdict != null) fout = 1;
+                if (verdict != null) fault = 1;
             }
-        return fout;
+        return fault;
     }
 
     // ---------------- one point ----------------
@@ -262,7 +262,7 @@ public final class ScaleTrial {
     /** One fire of the case: its firings and the cap it fired under, the fire and the write-back in nanoseconds, the
      *  facts just before the fire and their peak during it, the heap in use after a collection with the session open,
      *  and two outcomes that every point must give alike. */
-    record FireMeasurement(int vuringen, int cap, long fireNanos, long writeBackNanos, long n0, long peak, long heap,
+    record FireMeasurement(int firings, int cap, long fireNanos, long writeBackNanos, long n0, long peak, long heap,
                       String kusttotaal, int inconsistent) {}
 
     /** Measures one point in this JVM and prints one line, {@code PUNT} with its fields tab-separated,
@@ -270,13 +270,13 @@ public final class ScaleTrial {
      *  sentence of the driver where a fire ends without its fixpoint. */
     private static int point(DroolsBackend.Branch branch, int n) throws Exception {
         Path ir = model();
-        long[] bouw = new long[REPETITIONS];
+        long[] build = new long[REPETITIONS];
         DroolsBackend.Build b = null;
         try {
             for (int i = -WARM_UP; i < REPETITIONS; i++) {
                 long begin = System.nanoTime();
                 b = DroolsBackend.build(ir, branch);
-                if (i >= 0) bouw[i] = System.nanoTime() - begin;
+                if (i >= 0) build[i] = System.nanoTime() - begin;
             }
         } catch (CaseRunner.Excluded e) {
             System.out.println("WEIGERT\t" + branch + "\t" + n + "\t" + e.getMessage());
@@ -291,49 +291,49 @@ public final class ScaleTrial {
         List<FireMeasurement> metingen = new ArrayList<>();
         try {
             for (int i = -WARM_UP; i < REPETITIONS; i++) {
-                FireMeasurement m = runner.withSession(c, ScaleTrial::vuur);
+                FireMeasurement m = runner.withSession(c, ScaleTrial::fire);
                 if (i >= 0) metingen.add(m);
             }
         } catch (NoFixpoint e) {
-            System.out.println("GEENFIXPUNT\t" + branch + "\t" + n + "\tna " + e.vuringen + " vuringen in "
+            System.out.println("GEENFIXPUNT\t" + branch + "\t" + n + "\tna " + e.firings + " vuringen in "
                     + ms(e.nanos) + " ms: " + e.getMessage());
             return 3;
         }
-        FireMeasurement eerste = metingen.get(0);
+        FireMeasurement first = metingen.get(0);
         for (FireMeasurement m : metingen)
-            if (m.n0() != eerste.n0() || m.cap() != eerste.cap() || !m.kusttotaal().equals(eerste.kusttotaal())
-                    || m.inconsistent() != eerste.inconsistent())
+            if (m.n0() != first.n0() || m.cap() != first.cap() || !m.kusttotaal().equals(first.kusttotaal())
+                    || m.inconsistent() != first.inconsistent())
                 throw new IllegalStateException("herhalingen verschillen in invoer, plafond of uitkomst: " + metingen);
         System.out.println(String.join("\t", "PUNT", branch.name(), String.valueOf(n),
-                range(metingen, FireMeasurement::vuringen),
+                range(metingen, FireMeasurement::firings),
                 ms(median(metingen, FireMeasurement::fireNanos)), ms(median(metingen, FireMeasurement::writeBackNanos)),
                 ms(median(metingen, m -> m.fireNanos() + m.writeBackNanos())),
                 range(metingen, m -> (int) m.peak()), String.valueOf(median(metingen, FireMeasurement::heap) >> 20),
-                ms(median(bouw)), String.valueOf(rules), String.valueOf(eerste.n0()), eerste.kusttotaal(),
-                String.valueOf(eerste.inconsistent()), String.valueOf(eerste.cap())));
+                ms(median(build)), String.valueOf(rules), String.valueOf(first.n0()), first.kusttotaal(),
+                String.valueOf(first.inconsistent()), String.valueOf(first.cap())));
         return 0;
     }
 
     /** Fires one set-up session through the public driver, under the cap a consumer gets, writes back, and measures.
      *  A run that reaches no fixpoint fails with the sentence of the driver, since its numbers would measure the cap. */
-    private static FireMeasurement vuur(DroolsBackend.Build bouw, KieSession sessie, Map<String, Object> labels) {
-        FactCounter counter = new FactCounter(sessie.getFactCount());
-        sessie.addEventListener(counter);
+    private static FireMeasurement fire(DroolsBackend.Build build, KieSession session, Map<String, Object> labels) {
+        FactCounter counter = new FactCounter(session.getFactCount());
+        session.addEventListener(counter);
         long begin = System.nanoTime();
-        DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie);
+        DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
         long fired = System.nanoTime();
-        sessie.removeEventListener(counter);
-        if (firing.geenFixpunt() != null) throw new NoFixpoint(firing, fired - begin);
+        session.removeEventListener(counter);
+        if (firing.noFixpoint() != null) throw new NoFixpoint(firing, fired - begin);
         // counted before the write-back, which states the mark that closes the session on the exec-model branch
-        if (counter.state != sessie.getFactCount())
+        if (counter.state != session.getFactCount())
             throw new IllegalStateException("de feitenteller staat op " + counter.state + ", de sessie houdt "
-                    + sessie.getFactCount() + " feiten");
-        DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+                    + session.getFactCount() + " feiten");
+        DroolsBackend.setDerivedValues(build, session);
         long writtenBack = System.nanoTime();
         long heap = used();
         Object kusttotaal = RegelSpraakRuntime.get(labels.get("K"), "kusttotaal");
-        int inconsistent = sessie.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie")).size();
-        return new FireMeasurement(firing.vuringen(), firing.cap(), fired - begin, writtenBack - fired, counter.n0,
+        int inconsistent = session.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie")).size();
+        return new FireMeasurement(firing.firings(), firing.cap(), fired - begin, writtenBack - fired, counter.n0,
                 counter.peak, heap, kusttotaal instanceof BigDecimal d ? d.toPlainString() : String.valueOf(kusttotaal),
                 inconsistent);
     }
@@ -341,12 +341,12 @@ public final class ScaleTrial {
     /** A fire that ended without its fixpoint, at the cap or at the creation budget: its numbers would measure the
      *  cap, so the point reports the sentence of the driver instead, with the firings and the time it took. */
     private static final class NoFixpoint extends RuntimeException {
-        final int vuringen;
+        final int firings;
         final long nanos;
 
-        NoFixpoint(DroolsBackend.Vuring firing, long nanos) {
-            super(firing.geenFixpunt());
-            this.vuringen = firing.vuringen();
+        NoFixpoint(DroolsBackend.Firing firing, long nanos) {
+            super(firing.noFixpoint());
+            this.firings = firing.firings();
             this.nanos = nanos;
         }
     }
@@ -392,7 +392,7 @@ public final class ScaleTrial {
                             long secondNanos, List<String> before, List<String> after) {}
 
     /** The fresh session with the changed case: its firings, its set-up and its fire in nanoseconds, and its reading. */
-    private record Fresh(int vuringen, long setupNanos, long fireNanos, List<String> read) {}
+    private record Fresh(int firings, long setupNanos, long fireNanos, List<String> read) {}
 
     /** One round of the second fire. */
     private record Second(Repeated repeated, Fresh fresh) {}
@@ -409,20 +409,20 @@ public final class ScaleTrial {
             Second t = ronde(runner, c, changed);
             if (i >= 0) rounds.add(t);
         }
-        Repeated eerste = rounds.get(0).repeated();
+        Repeated first = rounds.get(0).repeated();
         for (Second t : rounds)
-            if (!t.repeated().after().equals(eerste.after()) || t.repeated().n0() != eerste.n0()
-                    || t.repeated().secondCap() != eerste.secondCap())
+            if (!t.repeated().after().equals(first.after()) || t.repeated().n0() != first.n0()
+                    || t.repeated().secondCap() != first.secondCap())
                 throw new IllegalStateException("de rondes verschillen in invoer, plafond of lezing");
-        int difference = difference(eerste.before(), eerste.after()).size();
+        int difference = difference(first.before(), first.after()).size();
         System.out.println(String.join("\t", "TWEEDE", String.valueOf(n), String.valueOf(rules),
-                String.valueOf(eerste.n0()), range(rounds, t -> t.repeated().firstFirings()),
-                range(rounds, t -> t.repeated().secondFirings()), range(rounds, t -> t.fresh().vuringen()),
-                String.valueOf(eerste.secondCap()),
+                String.valueOf(first.n0()), range(rounds, t -> t.repeated().firstFirings()),
+                range(rounds, t -> t.repeated().secondFirings()), range(rounds, t -> t.fresh().firings()),
+                String.valueOf(first.secondCap()),
                 ms(medianOf(rounds, t -> t.repeated().firstNanos())),
                 ms(medianOf(rounds, t -> t.repeated().secondNanos())),
                 ms(medianOf(rounds, t -> t.fresh().setupNanos())), ms(medianOf(rounds, t -> t.fresh().fireNanos())),
-                String.valueOf(eerste.after().size()), String.valueOf(difference)));
+                String.valueOf(first.after().size()), String.valueOf(difference)));
         return 0;
     }
 
@@ -430,32 +430,32 @@ public final class ScaleTrial {
      *  session with case {@code changed}, filled, fired and read. Fails where the reading after the change differs
      *  from the fresh one, or equals the one before it. */
     private static Second ronde(CaseRunner runner, JsonNode c, JsonNode changed) {
-        Repeated a = runner.withSession(c, (bouw, sessie, labels) -> {
-            long n0 = sessie.getFactCount();
+        Repeated a = runner.withSession(c, (build, session, labels) -> {
+            long n0 = session.getFactCount();
             long begin = System.nanoTime();
-            DroolsBackend.Vuring eerste = DroolsBackend.vuur(bouw, sessie);
+            DroolsBackend.Firing first = DroolsBackend.fire(build, session);
             long fired = System.nanoTime();
-            if (eerste.geenFixpunt() != null) throw new IllegalStateException("eerste fire: " + eerste.geenFixpunt());
-            List<String> before = describe(DroolsBackend.lees(bouw, sessie), labels);
+            if (first.noFixpoint() != null) throw new IllegalStateException("eerste fire: " + first.noFixpoint());
+            List<String> before = describe(DroolsBackend.fixpointOf(build, session), labels);
             Object vondst = labels.get(CHANGED_VONDST);
             long change = System.nanoTime();
             RegelSpraakRuntime.set(vondst, "gewicht", CHANGED_WEIGHT);
-            sessie.update(sessie.getFactHandle(vondst), vondst);
-            DroolsBackend.Vuring tweede = DroolsBackend.vuur(bouw, sessie);
+            session.update(session.getFactHandle(vondst), vondst);
+            DroolsBackend.Firing second = DroolsBackend.fire(build, session);
             long refiredAt = System.nanoTime();
-            if (tweede.geenFixpunt() != null) throw new IllegalStateException("tweede fire: " + tweede.geenFixpunt());
-            List<String> after = describe(DroolsBackend.lees(bouw, sessie), labels);
-            return new Repeated(eerste.vuringen(), tweede.vuringen(), tweede.cap(), n0, fired - begin,
+            if (second.noFixpoint() != null) throw new IllegalStateException("tweede fire: " + second.noFixpoint());
+            List<String> after = describe(DroolsBackend.fixpointOf(build, session), labels);
+            return new Repeated(first.firings(), second.firings(), second.cap(), n0, fired - begin,
                     refiredAt - change, before, after);
         });
         long[] start = {System.nanoTime()};
-        Fresh v = runner.withSession(changed, (bouw, sessie, labels) -> {
+        Fresh v = runner.withSession(changed, (build, session, labels) -> {
             long setUp = System.nanoTime();
-            DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie);
+            DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
             long fired = System.nanoTime();
-            if (firing.geenFixpunt() != null) throw new IllegalStateException("verse sessie: " + firing.geenFixpunt());
-            List<String> read = describe(DroolsBackend.lees(bouw, sessie), labels);
-            return new Fresh(firing.vuringen(), setUp - start[0], fired - setUp, read);
+            if (firing.noFixpoint() != null) throw new IllegalStateException("verse sessie: " + firing.noFixpoint());
+            List<String> read = describe(DroolsBackend.fixpointOf(build, session), labels);
+            return new Fresh(firing.firings(), setUp - start[0], fired - setUp, read);
         });
         if (!a.after().equals(v.read())) {
             List<String> differences = difference(a.after(), v.read());
@@ -472,19 +472,19 @@ public final class ScaleTrial {
     /** {@code f} as sorted lines, every object named by its case label: a derived value as its bean field takes it, a
      *  derived characteristic, a fault and an inconsistency. The model without (g) makes no object and lays no link,
      *  so a reading with one fails. */
-    private static List<String> describe(Fixpunt f, Map<String, Object> labels) {
+    private static List<String> describe(Fixpoint f, Map<String, Object> labels) {
         Map<Object, String> label = new IdentityHashMap<>();
         labels.forEach((l, beanObject) -> label.put(beanObject, l));
-        if (!f.objecten().isEmpty() || !f.koppelingen().isEmpty())
-            throw new IllegalStateException("het model zonder (g) maakte " + f.objecten().size() + " objecten en "
-                    + f.koppelingen().size() + " koppelingen");
+        if (!f.objects().isEmpty() || !f.links().isEmpty())
+            throw new IllegalStateException("het model zonder (g) maakte " + f.objects().size() + " objecten en "
+                    + f.links().size() + " koppelingen");
         List<String> out = new ArrayList<>();
-        for (Fixpunt.AfgeleideWaarde w : f.waarden())
-            out.add(naam(label, w.object()) + "." + w.attribuut() + " = "
-                    + (w.waarde() instanceof BigDecimal d ? d.toPlainString() : String.valueOf(w.waarde())));
-        for (Fixpunt.AfgeleidKenmerk k : f.kenmerken()) out.add(naam(label, k.object()) + " is " + k.kenmerk());
-        for (Fout fout : f.fouten()) out.add("fout: " + naam(label, fout.onderwerp()) + ": " + fout.melding());
-        for (Object i : f.inconsistenties())
+        for (Fixpoint.DerivedValue w : f.waarden())
+            out.add(naam(label, w.object()) + "." + w.attribute() + " = "
+                    + (w.value() instanceof BigDecimal d ? d.toPlainString() : String.valueOf(w.value())));
+        for (Fixpoint.DerivedCharacteristic k : f.kenmerken()) out.add(naam(label, k.object()) + " is " + k.characteristic());
+        for (Fault fault : f.faults()) out.add("fout: " + naam(label, fault.onderwerp()) + ": " + fault.message());
+        for (Object i : f.inconsistencies())
             out.add("inconsistent: " + RegelSpraakRuntime.get(i, "regel") + " @ "
                     + naam(label, RegelSpraakRuntime.get(i, "subject")));
         out.sort(null);
@@ -510,7 +510,7 @@ public final class ScaleTrial {
     /** A point as its child JVM reported it: the fields of its {@code PUNT} or {@code TWEEDE} line, or the refusal or
      *  fault, and the load of the machine when it started. */
     private record Result(DroolsBackend.Branch branch, int n, String belasting, String[] fields, String failure) {
-        String veld(int i) {
+        String field(int i) {
             return fields[i];
         }
 
@@ -520,7 +520,7 @@ public final class ScaleTrial {
     }
 
     /** Runs one point in a child JVM with {@code -Xmx16g}, after reading the load of the machine. */
-    private static Result kind(DroolsBackend.Branch branch, int n, String soort, String... arguments) throws Exception {
+    private static Result kind(DroolsBackend.Branch branch, int n, String category, String... arguments) throws Exception {
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
         String cp = System.getProperty("java.class.path");
         String belasting = belasting();
@@ -529,10 +529,10 @@ public final class ScaleTrial {
         Process p = new ProcessBuilder(task).redirectError(ProcessBuilder.Redirect.INHERIT).start();
         String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         int code = p.waitFor();
-        String regel = out.lines().filter(l -> l.startsWith(soort + "\t") || l.startsWith("WEIGERT\t")
+        String regel = out.lines().filter(l -> l.startsWith(category + "\t") || l.startsWith("WEIGERT\t")
                 || l.startsWith("GEENFIXPUNT\t")).reduce((a, z) -> z).orElse(null);
         System.err.println("schaalproef: " + String.join(" ", arguments) + " klaar");
-        if (code == 0 && regel != null && regel.startsWith(soort + "\t"))
+        if (code == 0 && regel != null && regel.startsWith(category + "\t"))
             return new Result(branch, n, belasting, regel.split("\t"), null);
         return new Result(branch, n, belasting, null, regel != null ? regel.replace('\t', ' ')
                 : "kind-JVM eindigde met code " + code + " zonder regel");
@@ -572,7 +572,7 @@ public final class ScaleTrial {
             Result a = perN.get(1_000), z = perN.get(10_000);
             boolean zGemeten = z != null && z.failure() == null;
             boolean both = zGemeten && a != null && a.failure() == null;
-            return new Floor(zGemeten ? eerste(z.veld(3)) / Double.parseDouble(z.veld(14)) : Double.NaN,
+            return new Floor(zGemeten ? first(z.field(3)) / Double.parseDouble(z.field(14)) : Double.NaN,
                     both ? Math.log10(z.ms(6) / a.ms(6)) : Double.NaN);
         }
 
@@ -600,16 +600,16 @@ public final class ScaleTrial {
                     out.append(u.failure().replace("|", "\\|")).append(" |").append(" |".repeat(13)).append('\n');
                     continue;
                 }
-                String vuringen = u.veld(3);
-                double r = Double.parseDouble(u.veld(10)), n0 = Double.parseDouble(u.veld(11)),
-                        cap = Double.parseDouble(u.veld(14));
-                out.append(vuringen).append(" | ").append(u.veld(4)).append(" | ").append(u.veld(5)).append(" | ")
-                        .append(u.veld(6)).append(" | ").append(u.veld(7)).append(" | ").append(u.veld(8)).append(" | ")
-                        .append(u.veld(9)).append(" | ").append(u.veld(10)).append(" | ").append(u.veld(11)).append(" | ")
-                        .append(String.format(Locale.ROOT, "%.3f", eerste(vuringen) / (r * n0))).append(" | ")
-                        .append(u.veld(14)).append(" | ")
-                        .append(String.format(Locale.ROOT, "%.3f", eerste(vuringen) / cap)).append(" | ")
-                        .append(u.veld(12)).append(" | ").append(u.veld(13)).append(" |\n");
+                String firings = u.field(3);
+                double r = Double.parseDouble(u.field(10)), n0 = Double.parseDouble(u.field(11)),
+                        cap = Double.parseDouble(u.field(14));
+                out.append(firings).append(" | ").append(u.field(4)).append(" | ").append(u.field(5)).append(" | ")
+                        .append(u.field(6)).append(" | ").append(u.field(7)).append(" | ").append(u.field(8)).append(" | ")
+                        .append(u.field(9)).append(" | ").append(u.field(10)).append(" | ").append(u.field(11)).append(" | ")
+                        .append(String.format(Locale.ROOT, "%.3f", first(firings) / (r * n0))).append(" | ")
+                        .append(u.field(14)).append(" | ")
+                        .append(String.format(Locale.ROOT, "%.3f", first(firings) / cap)).append(" | ")
+                        .append(u.field(12)).append(" | ").append(u.field(13)).append(" |\n");
             }
         out.append('\n');
         for (Map.Entry<DroolsBackend.Branch, Map<Integer, Result>> e : results.entrySet()) {
@@ -629,7 +629,7 @@ public final class ScaleTrial {
 
     /** Measures every point of the second fire, each in a child JVM of its own, and prints the table. Returns 1 where a
      *  point failed, which the table shows. */
-    private static int tweede() throws Exception {
+    private static int second() throws Exception {
         StringBuilder out = new StringBuilder("# Schaalproef, de tweede fire (kaart tms-omschakeling, punt 9)\n\n");
         jvm(out);
         out.append("- Model zonder (g), de creatieketen (`schaal/zonder-creatie/`); tak ").append(BRANCH).append(". Per punt ")
@@ -655,12 +655,12 @@ public final class ScaleTrial {
                 out.append(u.failure().replace("|", "\\|")).append(" |").append(" |".repeat(12)).append('\n');
                 continue;
             }
-            out.append(u.veld(2)).append(" | ").append(u.veld(3)).append(" | ").append(u.veld(4)).append(" | ")
-                    .append(u.veld(5)).append(" | ").append(u.veld(6)).append(" | ").append(u.veld(7)).append(" | ")
-                    .append(u.veld(8)).append(" | ").append(u.veld(9)).append(" | ").append(u.veld(10)).append(" | ")
-                    .append(u.veld(11)).append(" | ")
+            out.append(u.field(2)).append(" | ").append(u.field(3)).append(" | ").append(u.field(4)).append(" | ")
+                    .append(u.field(5)).append(" | ").append(u.field(6)).append(" | ").append(u.field(7)).append(" | ")
+                    .append(u.field(8)).append(" | ").append(u.field(9)).append(" | ").append(u.field(10)).append(" | ")
+                    .append(u.field(11)).append(" | ")
                     .append(String.format(Locale.ROOT, "%.3f", u.ms(9) / u.ms(11))).append(" | ")
-                    .append(u.veld(12)).append(" | ").append(u.veld(13)).append(" |\n");
+                    .append(u.field(12)).append(" | ").append(u.field(13)).append(" |\n");
         }
         System.out.print(out);
         return complete ? 0 : 1;
@@ -687,22 +687,22 @@ public final class ScaleTrial {
         return s[s.length / 2];
     }
 
-    private static long median(List<FireMeasurement> metingen, java.util.function.ToLongFunction<FireMeasurement> veld) {
-        return median(metingen.stream().mapToLong(veld).toArray());
+    private static long median(List<FireMeasurement> metingen, java.util.function.ToLongFunction<FireMeasurement> field) {
+        return median(metingen.stream().mapToLong(field).toArray());
     }
 
-    private static <T> long medianOf(List<T> rounds, java.util.function.ToLongFunction<T> veld) {
-        return median(rounds.stream().mapToLong(veld).toArray());
+    private static <T> long medianOf(List<T> rounds, java.util.function.ToLongFunction<T> field) {
+        return median(rounds.stream().mapToLong(field).toArray());
     }
 
     /** The value of a count over the repetitions, or its range where they differ. */
-    private static <T> String range(List<T> metingen, java.util.function.ToIntFunction<T> veld) {
-        int min = metingen.stream().mapToInt(veld).min().orElseThrow();
-        int max = metingen.stream().mapToInt(veld).max().orElseThrow();
+    private static <T> String range(List<T> metingen, java.util.function.ToIntFunction<T> field) {
+        int min = metingen.stream().mapToInt(field).min().orElseThrow();
+        int max = metingen.stream().mapToInt(field).max().orElseThrow();
         return min == max ? String.valueOf(min) : min + "–" + max;
     }
 
-    private static double eerste(String range) {
+    private static double first(String range) {
         int streep = range.indexOf('–');
         return Double.parseDouble(streep < 0 ? range : range.substring(0, streep));
     }

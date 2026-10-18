@@ -42,7 +42,7 @@ class QuantifierConditionOperandWitnessTest {
                 sluitdag(maximum(own("laatste bergdag"), own("gemelde dag")), allBergDaysFilled()),
                 BERGDAG, LAST_BERGDAG), "");
         assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V", "B", "30")),
-                        waarde("B", "laatste bergdag", "31") + ", " + waarde("B", "sluitdag", "31"))),
+                        value("B", "laatste bergdag", "31") + ", " + value("B", "sluitdag", "31"))),
                 "het maximum van twee eigen operanden onder de kwantor alle");
     }
 
@@ -53,7 +53,7 @@ class QuantifierConditionOperandWitnessTest {
                 sluitdag(plus(own("laatste bergdag"), number("1")), allBergDaysFilled()),
                 BERGDAG, LAST_BERGDAG), "");
         assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V", "B", "30")),
-                        waarde("B", "laatste bergdag", "31") + ", " + waarde("B", "sluitdag", "32"))),
+                        value("B", "laatste bergdag", "31") + ", " + value("B", "sluitdag", "32"))),
                 "de som met een operand die later wordt afgeleid");
     }
 
@@ -66,14 +66,14 @@ class QuantifierConditionOperandWitnessTest {
                         quantifierFold("atLeast", 1, predicate("filled", element("bergdag")))),
                 BERGDAG, LAST_BERGDAG), "");
         assertNull(play(atLeast, caseDocument(List.of(berging("B", ""), vondst("V1", "B", "30"), vondst("V2", "B", null)),
-                        waarde("B", "sluitdag", "32"))),
+                        value("B", "sluitdag", "32"))),
                 "ten minste één");
         String none = document(BERGINGMODEL, rules(
                 sluitdag(plus(own("laatste bergdag"), number("1")),
                         quantifierFold("none", -1, predicate("empty", element("vinddag")))),
                 BERGDAG, LAST_BERGDAG), "");
         assertNull(play(none, caseDocument(List.of(berging("B", ""), vondst("V1", "B", "30"), vondst("V2", "B", "20")),
-                        waarde("B", "sluitdag", "32"))),
+                        value("B", "sluitdag", "32"))),
                 "geen");
     }
 
@@ -93,7 +93,7 @@ class QuantifierConditionOperandWitnessTest {
                 sluitdag(plus(own("gemelde dag"), number("1")),
                         quantifierFold("all", -1, predicate("filled", element("vinddag"))))), group);
         assertNull(play(ir, caseDocument(List.of(berging("B", number("openingsdag", "25")), vondst("V", "B", "30")),
-                        waarde("B", "gemelde dag", "35") + ", " + waarde("B", "sluitdag", "36"))),
+                        value("B", "gemelde dag", "35") + ", " + value("B", "sluitdag", "36"))),
                 "de operand uit een defaultsgroep");
     }
 
@@ -110,7 +110,7 @@ class QuantifierConditionOperandWitnessTest {
         String v1 = "{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{" + number("vinddag", "30")
                 + "},\"roles\":{\"berging\":[\"B\"]},\"characteristics\":[\"geborgen\"]}";
         assertNull(play(ir, caseDocument(List.of(berging("B", ""), v1, vondst("V2", "B", null)),
-                        waarde("B", "gemelde dag", "36") + ", " + waarde("B", "sluitdag", "37"))),
+                        value("B", "gemelde dag", "36") + ", " + value("B", "sluitdag", "37"))),
                 "de schrijver van de operand in de band van de regel");
     }
 
@@ -123,7 +123,7 @@ class QuantifierConditionOperandWitnessTest {
                 sluitdag(number("21"), comparison("greater", bergdagMaximum(), own("gemelde dag"))),
                 BERGDAG, regel("gemelde dag", "gemelde dag", plus(own("openingsdag"), number("5")), null)), "");
         assertNull(play(ir, caseDocument(List.of(berging("B", number("openingsdag", "20")), vondst("V", "B", "30")),
-                        waarde("B", "gemelde dag", "25") + ", " + waarde("B", "sluitdag", "21"))),
+                        value("B", "gemelde dag", "25") + ", " + value("B", "sluitdag", "21"))),
                 "de eigen drempel van een aggregatievergelijking");
     }
 
@@ -135,7 +135,7 @@ class QuantifierConditionOperandWitnessTest {
                         + "\"BergingBetreftVondst\",\"role\":\"berging\",\"negated\":false,\"source\":{\"snippet\":"
                         + "\"hij een berging is\"}}"),
                 BERGDAG, LAST_BERGDAG), "");
-        assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V", "B", "30")), waarde("B", "sluitdag", "32"))),
+        assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V", "B", "30")), value("B", "sluitdag", "32"))),
                 "de rolcheck aan de overkant");
     }
 
@@ -143,7 +143,7 @@ class QuantifierConditionOperandWitnessTest {
         // The card's R2, a flank: the rule declared after the writers of its operands fires after them. ref: 31.
         String ir = document(BERGINGMODEL, rules(BERGDAG, LAST_BERGDAG,
                 sluitdag(maximum(own("laatste bergdag"), own("gemelde dag")), allBergDaysFilled())), "");
-        assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V", "B", "30")), waarde("B", "sluitdag", "31"))),
+        assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V", "B", "30")), value("B", "sluitdag", "31"))),
                 "de schrijvers eerst in de bron");
     }
 
@@ -153,7 +153,7 @@ class QuantifierConditionOperandWitnessTest {
         String ir = document(BERGINGMODEL, rules(
                 sluitdag(plus(own("laatste bergdag"), number("1")), allBergDaysFilled()), BERGDAG, LAST_BERGDAG), "");
         assertNull(play(ir, caseDocument(List.of(berging("B", ""), vondst("V1", "B", "30"), vondst("V2", "B", null)),
-                        waarde("B", "laatste bergdag", "31") + ", " + emptyExpected("B", "sluitdag"))),
+                        value("B", "laatste bergdag", "31") + ", " + emptyExpected("B", "sluitdag"))),
                 "de kwantor blijft onwaar");
     }
 
@@ -175,8 +175,8 @@ class QuantifierConditionOperandWitnessTest {
     /** "De bergdag van een Vondst moet berekend worden als zijn vinddag plus 1 indien zijn vinddag gevuld is." */
     private static final String BERGDAG = "{\"node\":\"Rule\",\"name\":\"bergdag\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
             + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"bergdag\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":"
-            + "\"De bergdag van een Vondst\"}},\"value\":" + plus(attribuut("vinddag", "Vondst"), number("1"))
-            + ",\"condition\":" + predicate("filled", attribuut("vinddag", "Vondst"))
+            + "\"De bergdag van een Vondst\"}},\"value\":" + plus(attribute("vinddag", "Vondst"), number("1"))
+            + ",\"condition\":" + predicate("filled", attribute("vinddag", "Vondst"))
             + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     /** "De laatste bergdag van een Berging moet berekend worden als de maximale waarde van de bergdag van alle vondsten
      *  van de Berging." */
@@ -184,25 +184,25 @@ class QuantifierConditionOperandWitnessTest {
 
     private static String model(String vondstCharacteristic) {
         return "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Berging\",\"animate\":false,\"plural\":\"Bergingen\","
-                + "\"attributes\":[" + veld("laatste bergdag") + "," + veld("gemelde dag") + "," + veld("openingsdag") + ","
-                + veld("sluitdag") + "],\"characteristics\":[]},{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
-                + "\"plural\":\"Vondsten\",\"attributes\":[" + veld("vinddag") + "," + veld("bergdag") + "],\"characteristics\":["
+                + "\"attributes\":[" + field("laatste bergdag") + "," + field("gemelde dag") + "," + field("openingsdag") + ","
+                + field("sluitdag") + "],\"characteristics\":[]},{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
+                + "\"plural\":\"Vondsten\",\"attributes\":[" + field("vinddag") + "," + field("bergdag") + "],\"characteristics\":["
                 + vondstCharacteristic + "]}],\"factTypes\":[" + FEITTYPE + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],"
                 + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
     }
 
-    private static String veld(String naam) {
+    private static String field(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String attribuut(String naam, String type) {
+    private static String attribute(String naam, String type) {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"" + naam + "\",\"subjectType\":\"" + type
                 + "\",\"source\":{\"snippet\":\"zijn " + naam + "\"}}";
     }
 
-    private static String own(String naam) { return attribuut(naam, "Berging"); }
+    private static String own(String naam) { return attribute(naam, "Berging"); }
 
-    private static String element(String naam) { return attribuut(naam, "Vondst"); }
+    private static String element(String naam) { return attribute(naam, "Vondst"); }
 
     private static String number(String n) {
         return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + n + "\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"" + n + "\"}}";
@@ -225,9 +225,9 @@ class QuantifierConditionOperandWitnessTest {
                 + "\"sourceRole\":" + SOURCE_ROLE + ",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"de maximale waarde van de bergdag\"}}";
     }
 
-    private static String predicate(String soort, String operand) {
-        return "{\"node\":\"Predicate\",\"kind\":\"" + soort + "\",\"operand\":" + operand
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + soort + "\"}}";
+    private static String predicate(String category, String operand) {
+        return "{\"node\":\"Predicate\",\"kind\":\"" + category + "\",\"operand\":" + operand
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"" + category + "\"}}";
     }
 
     private static String comparison(String op, String left, String right) {
@@ -247,15 +247,15 @@ class QuantifierConditionOperandWitnessTest {
         return quantifierFold("all", -1, predicate("filled", element("bergdag")));
     }
 
-    /** One rule on the Berging with one version; {@code voorwaarde} null for none. */
-    private static String regel(String naam, String doel, String waarde, String voorwaarde) {
+    /** One rule on the Berging with one version; {@code condition} null for none. */
+    private static String regel(String naam, String target, String value, String condition) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
-                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"Berging\","
-                + "\"source\":{\"snippet\":\"De " + doel + " van een Berging\"}},\"value\":" + waarde
-                + (voorwaarde == null ? "" : ",\"condition\":" + voorwaarde) + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
+                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"Berging\","
+                + "\"source\":{\"snippet\":\"De " + target + " van een Berging\"}},\"value\":" + value
+                + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     }
 
-    private static String sluitdag(String waarde, String voorwaarde) { return regel("sluitdag", "sluitdag", waarde, voorwaarde); }
+    private static String sluitdag(String value, String condition) { return regel("sluitdag", "sluitdag", value, condition); }
 
     private static String rules(String... rules) { return String.join(",", rules); }
 
@@ -281,22 +281,22 @@ class QuantifierConditionOperandWitnessTest {
                 + "\"]},\"characteristics\":[]}";
     }
 
-    private static String number(String attribuut, String waarde) {
-        return "\"" + attribuut + "\":{\"number\":\"" + waarde + "\"}";
+    private static String number(String attribute, String value) {
+        return "\"" + attribute + "\":{\"number\":\"" + value + "\"}";
     }
 
-    private static String waarde(String label, String attribuut, String number) {
-        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut
+    private static String value(String label, String attribute, String number) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute
                 + "\",\"value\":{\"number\":\"" + number + "\"}}";
     }
 
-    private static String emptyExpected(String label, String attribuut) {
-        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\"}";
+    private static String emptyExpected(String label, String attribute) {
+        return "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\"}";
     }
 
-    private static String caseDocument(List<String> instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(List<String> instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

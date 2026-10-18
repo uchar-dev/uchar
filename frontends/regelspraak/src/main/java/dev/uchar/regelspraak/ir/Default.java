@@ -6,8 +6,8 @@ import java.util.List;
  * §6.1 one default of a {@link PrioritizedDefaults} group (or of an {@link ExceptionGroup}) — a
  * (justification, consequence) pair aimed at the group's target. On characteristic defaults a justified
  * default decides {@link #decision} (true = attribute, false = do-not-attribute); on attribute defaults a
- * justified default decides {@link #consequentie} when it evaluates gevuld, and FALLS THROUGH on a leeg. The
- * {@link #initialisatie} default (lowest only) has a null {@link #voorwaarde}: it is justified iff the target
+ * justified default decides {@link #consequence} when it evaluates gevuld, and FALLS THROUGH on a leeg. The
+ * {@link #initialisatie} default (lowest only) has a null {@link #condition}: it is justified iff the target
  * is empty in the input facts (ch. 7.3). A default carrying {@link #exceptions} is a nested exception group
  * (ch. 7.9): a group-default (no own besluit/consequentie — its exception groups are its decision) or a form-a
  * default (own content too — the exception groups decide first, its own decision the fall-back when
@@ -23,14 +23,14 @@ import java.util.List;
  *                      attribute the default reads ({@code opgegeven X}, {@code berekende X}), so an explanation
  *                      can name the deciding block
  */
-public record Default(Boolean decision, Conditie voorwaarde, Expr consequentie,
-                      boolean initialisatie, Exceptions exceptions, String bron) {
+public record Default(Boolean decision, Condition condition, Expr consequence,
+                      boolean initialisatie, Exceptions exceptions, String source) {
 
     /** A default's nested exception groups: one or more {@link ExceptionGroup} members that reconcile as a
-     *  declared-{@link #ongeordend} group at this default's level (WF-075). */
-    public record Exceptions(boolean ongeordend, List<ExceptionGroup> leden) {}
+     *  declared-{@link #unordered} group at this default's level (WF-075). */
+    public record Exceptions(boolean unordered, List<ExceptionGroup> members) {}
 
     /** Whether this default carries its OWN decision content (a besluit or a consequentie) — false for a
      *  group-default whose only content is its {@link #exceptions} exception groups. */
-    public boolean heeftEigenInhoud() { return decision != null || consequentie != null; }
+    public boolean hasOwnContent() { return decision != null || consequence != null; }
 }

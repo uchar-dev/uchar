@@ -142,10 +142,10 @@ class WindowNestingWitnessTest {
                 + String.join(", ", parts) + " ], \"source\": {\"snippet\": \"de volgende voorwaarden\"} }";
     }
 
-    private static String fold(String quantifier, String elem, String rol, String filter, String test) {
+    private static String fold(String quantifier, String elem, String role, String filter, String test) {
         return "{ \"node\": \"QuantifierFold\", \"quantifier\": \"" + quantifier + "\", \"elementType\": \"" + elem + "\","
                 + (filter == null ? "" : " \"filter\": " + filter + ",") + " \"test\": " + test + ","
-                + " \"source\": {\"snippet\": \"de vouw over " + elem + "\"}, \"sourceRole\": " + rol + " }";
+                + " \"source\": {\"snippet\": \"de vouw over " + elem + "\"}, \"sourceRole\": " + role + " }";
     }
 
     private static String noneFold(String test) {
@@ -166,10 +166,10 @@ class WindowNestingWitnessTest {
                 + n + "\"} }, \"source\": {\"snippet\": \"de som groter is dan " + n + "\"} }";
     }
 
-    /** The golden's document with the condition of "bevoegd bij diploma" replaced by {@code voorwaarde}. */
-    private Path document(String voorwaarde) throws Exception {
+    /** The golden's document with the condition of "bevoegd bij diploma" replaced by {@code condition}. */
+    private Path document(String condition) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
-        IrPath.version(doc, "rules", "bevoegd bij diploma").set("condition", JSON.readTree(voorwaarde));
+        IrPath.version(doc, "rules", "bevoegd bij diploma").set("condition", JSON.readTree(condition));
         return write(doc);
     }
 

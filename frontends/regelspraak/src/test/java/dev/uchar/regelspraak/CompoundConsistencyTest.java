@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedConsistency;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -52,20 +52,20 @@ class CompoundConsistencyTest {
             "'precies één van de', PRECIES, 1",
             "'geen van de', GEEN, 0"
     })
-    void the_compound_consistency_goes_to_the_wire(String kwantificatie, Conditie.Kwantor kwantor, int threshold) {
+    void the_compound_consistency_goes_to_the_wire(String kwantificatie, Condition.Quantifier quantifier, int threshold) {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel(kwantificatie));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(1, m.consistenties.size());
         ResolvedConsistency c = m.consistenties.get(0);
         assertEquals("Vondst", c.subject().naam);
-        Conditie.Samengesteld s = assertInstanceOf(Conditie.Samengesteld.class, c.assertie());
-        assertEquals(kwantor, s.kwantor());
+        Condition.Compound s = assertInstanceOf(Condition.Compound.class, c.assertie());
+        assertEquals(quantifier, s.quantifier());
         assertEquals(threshold, s.threshold());
-        assertEquals(3, s.onderdelen().size());
-        for (Conditie part : s.onderdelen()) {
-            Conditie.Vergelijking v = assertInstanceOf(Conditie.Vergelijking.class, part);
-            Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, v.links());
-            assertEquals("Vondst", a.objecttype().naam, "\"zijn …\" reads the onderwerp");
+        assertEquals(3, s.components().size());
+        for (Condition part : s.components()) {
+            Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, part);
+            Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, v.left());
+            assertEquals("Vondst", a.objectType().naam, "\"zijn …\" reads the onderwerp");
         }
     }
 
@@ -79,8 +79,8 @@ class CompoundConsistencyTest {
                     - de lengte van de Vondst is groter dan 10.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Conditie.Samengesteld s = assertInstanceOf(Conditie.Samengesteld.class, m.consistenties.get(0).assertie());
-        assertEquals(Conditie.Kwantor.TEN_MINSTE, s.kwantor());
+        Condition.Compound s = assertInstanceOf(Condition.Compound.class, m.consistenties.get(0).assertie());
+        assertEquals(Condition.Quantifier.TEN_MINSTE, s.quantifier());
         assertEquals(2, s.threshold());
     }
 

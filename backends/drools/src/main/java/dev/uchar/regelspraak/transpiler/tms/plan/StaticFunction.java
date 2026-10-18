@@ -12,7 +12,7 @@ import dev.uchar.regelspraak.transpiler.tms.Period;
  * overloaded. Every argument is a value, evaluated before the call in the order of
  * {@link Term.Call#arguments}; a constant of the analysis (a number of decimals, a rounding mode, a unit of time, a
  * class) is a {@link Term.Const}. {@link #canFail} says whether the function can raise an evaluation fault, a division by a
- * numeric zero or a {@code Rekenfout} or an {@code Invoervormfout} of the branch (RUNTIME-SEMANTICS ch. 5.2).
+ * numeric zero or a {@code ComputeFault} or an {@code InputFormFault} of the branch (RUNTIME-SEMANTICS ch. 5.2).
  */
 public enum StaticFunction {
     /** A sum, a leeg operand 0 (ch. 1.2), exact where an operand is a rational. */
@@ -67,7 +67,7 @@ public enum StaticFunction {
     /** The true days per bucket of a grid from the anchor of a fixed start point, a {@code LocalDate} constant (ch. 3.2). */
     RS_DAY_COUNT_FROM(RegelSpraakRuntime.class, "rsAantalDagenInVanaf", false),
     /** A timeline as this branch carries it, a list of {@code Period}, from the segments a runtime helper returns. */
-    PERIOD_LIST(Period.class, "lijst", false),
+    PERIOD_LIST(Period.class, "list", false),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero the fault; the exact quotient. The function of a {@link Term.Division}. */
     DIVIDED(ComputeHelpers.class, "divided", true),
@@ -108,7 +108,7 @@ public enum StaticFunction {
      *  known; a leeg value and a value that is no number pass unchanged. The function of a {@link Term.Restate}. */
     RESTATE(ComputeHelpers.class, "restate", false),
     /** One step of a listed fold that keeps the least operand (ch. 1.2e): from the value so far and the next operand,
-     *  a leeg operand skipped, a tie taking the later one, compared exactly ({@code ComputeHelpers.vergelijk}). The function
+     *  a leeg operand skipped, a tie taking the later one, compared exactly ({@code ComputeHelpers.compare}). The function
      *  of a {@link Term.ListedFold}. */
     SMALLEST(ComputeHelpers.class, "smallest", false),
     /** As {@link #SMALLEST}, keeping the greatest operand. */
@@ -116,7 +116,7 @@ public enum StaticFunction {
     /** A value, or the fallback where it is leeg. */
     FALLBACK(ComputeHelpers.class, "fallback", false),
     /** A count bound off an accumulate, as a number. */
-    COUNT(ComputeHelpers.class, "aantal", false),
+    COUNT(ComputeHelpers.class, "countOf", false),
     /** The value of a fold from its count, its folded value and its fallback: the fallback over no contribution. */
     FOLD_VALUE(ComputeHelpers.class, "foldValue", false),
     /** The subject's own total over time without a clip (ch. 3.6): from the asOfDate-bucket scalar of the input, the
@@ -135,7 +135,7 @@ public enum StaticFunction {
      *  {@code String} constant as {@code Operators.symbol} spells it. */
     RS_AGG_COMPARE(RegelSpraakRuntime.class, "rsAggVergelijk", false),
     /** A comparison of two dates or two date-times, a value that is no date reading as leeg, the operator a
-     *  {@code Conditie.Operator} constant: an ordering with a leeg operand is onwaar, two leeg dates are not equal
+     *  {@code Condition.Operator} constant: an ordering with a leeg operand is onwaar, two leeg dates are not equal
      *  (§5.3 Tabel 38), and they are unequal where exactly one is leeg (§5.6 Tabel 44). */
     DATE_COMPARE(ComputeHelpers.class, "dateCompare", false),
     /** The equality of two texts, enumeration labels or truth values with the empty operand of ch. 1.2, a
@@ -156,7 +156,7 @@ public enum StaticFunction {
     NUMERIEK_MET_EXACT(ComputeHelpers.class, "exactDigits", false),
     /** A characteristic check of the subject (ch. 5.8): its truth value off a total standing, which a {@code Boolean}
      *  constant must equal: false for a negated check. */
-    KENMERK(ComputeHelpers.class, "kenmerk", false),
+    KENMERK(ComputeHelpers.class, "characteristic", false),
     /** A characteristic check of the object a path of roles reaches, as {@link #KENMERK}; over an absent link, whose
      *  read is leeg, it holds in neither polarity (ch. 5.8 rule 3). */
     CHARACTERISTIC_CHECK_ALONG_PATH(ComputeHelpers.class, "characteristicCheckAlongPath", false),
@@ -175,7 +175,7 @@ public enum StaticFunction {
      *  {@code Boolean} constant says the qualifier is negated. */
     WHOLE_PERIOD(ComputeHelpers.class, "wholePeriod", false),
     /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (ch. 3.9a), from the count of its
-     *  contributors and the sum of their verdicts, 1 or 0 each, under a {@code Conditie.Kwantor} constant with an
+     *  contributors and the sum of their verdicts, 1 or 0 each, under a {@code Condition.Quantifier} constant with an
      *  {@code Integer} threshold; over no contributor the sum is not read. */
     QUANTIFIER_VERDICT(ComputeHelpers.class, "quantifierVerdict", false),
     /** The verdict of a quantifier fold whose matrix can fault or deposit, read over the outcome per contributor in
@@ -190,10 +190,10 @@ public enum StaticFunction {
     NIET(ComputeHelpers.class, "not", false),
     /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
      *  constant must equal: a part of a test a form composes itself. */
-    BUCKET_SCALAR(ComputeHelpers.class, "emmerscalair", false),
+    BUCKET_SCALAR(ComputeHelpers.class, "bucketScalar", false),
     /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): another writer wrote
      *  leeg on the subject, by a count of such writers, or the subject's input on the target, which the plan reads off
-     *  the bean ({@link Term.Invoer}), is leeg. A part of a test a form composes itself. */
+     *  the bean ({@link Term.Input}), is leeg. A part of a test a form composes itself. */
     TARGET_EMPTY(ComputeHelpers.class, "targetEmpty", false),
     /** Whether the value facts on one attribute of one object hold two different values, leeg among them, numbers by
      *  value (RUNTIME-SEMANTICS ch. 5.7). A test a form composes itself. */
@@ -235,12 +235,12 @@ public enum StaticFunction {
     OTHER_DECISION(ComputeHelpers.class, "anotherDecision", false);
 
     private final Class<?> javaClass;
-    private final String methode;
+    private final String method;
     private final boolean canFail;
 
-    StaticFunction(Class<?> javaClass, String methode, boolean canFail) {
+    StaticFunction(Class<?> javaClass, String method, boolean canFail) {
         this.javaClass = javaClass;
-        this.methode = methode;
+        this.method = method;
         this.canFail = canFail;
     }
 
@@ -248,7 +248,7 @@ public enum StaticFunction {
     public Class<?> javaClass() { return javaClass; }
 
     /** The name of the method. */
-    public String methode() { return methode; }
+    public String method() { return method; }
 
     /** Whether a call can raise an evaluation fault. */
     public boolean canFail() { return canFail; }

@@ -256,7 +256,7 @@ verwachting
     | bullet DE_GEGEVENS_ZIJN CONSISTENT                             DOT? # verwachtConsistent        // de gegevens zijn consistent
     ;
 // The optional key of an inconsistency expectation: the rule whose channel fact is expected,
-// written as a text literal because a conflict channel's name ('Jutter.vrijgesteld/0') is no
+// written as a text literal because a conflict channel's name ('Jutter.exempt/0') is no
 // token run, and optionally the flagged instance. 'volgens' is no keyword token (a name may
 // carry the word), so the word is matched on its text here, on this one position only.
 inconsistentieSleutel : volgensWoord tekstWaarde ( VOOR UPPER_ID )? ;
@@ -991,7 +991,7 @@ vergelijkingsTekenGesplitst
 
 // §8.1 Tabel 16: the elfproef and numeriek-met-exact predicates have a NEGATED form — "voldoet NIET aan de
 // elfproef", "is NIET numeriek met exact N cijfers" (stellende) / "NIET aan de elfproef voldoet" (vragende). The
-// NIET sits between the verb and the predicate keyword; the resolver carries it as Predicaat.negatie.
+// NIET sits between the verb and the predicate keyword; the resolver carries it as Predicate.negation.
 nonToplevelOperator // §13.4.15.71-.100 (verb-leading), unified across types
     : ( IS | ZIJN ) gehelePeriodevergelijking? ( LEEG | GEVULD )
     | ( VOLDOET | VOLDOEN ) gehelePeriodevergelijking? NIET? AAN_DE_ELFPROEF

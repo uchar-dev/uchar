@@ -2,10 +2,10 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.CaseEmitter;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
-import dev.uchar.regelspraak.ir.ResolvedScenario.ParameterWaarde;
+import dev.uchar.regelspraak.ir.ResolvedScenario.ParameterValue;
 import dev.uchar.regelspraak.parser.RegelSpraak;
 import dev.uchar.regelspraak.parser.RegelSpraakLexer;
-import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
+import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -37,13 +37,13 @@ class ScenarioParameterSetTest {
         de parameter het penningbedrag is 275 van 01-01-2026 tot 01-01-2027
         """;
 
-    /** A scenario named {@code naam} on one Jutter, with header lines {@code head} and expectation {@code verwacht}. */
-    private static String scenario(String naam, String head, String verwacht) {
+    /** A scenario named {@code naam} on one Jutter, with header lines {@code head} and expectation {@code expected}. */
+    private static String scenario(String naam, String head, String expected) {
         return "Scenario " + naam + "\n" + head + "Gegeven is de volgende situatie:\neen Jutter J\n"
-                + "- het vondstgewicht is 12,00 kg\nMet als verwacht resultaat:\n" + verwacht;
+                + "- het vondstgewicht is 12,00 kg\nMet als verwacht resultaat:\n" + expected;
     }
 
-    private static ResolvedScenario only(ScenarioBundel b) {
+    private static ResolvedScenario only(ScenarioBundle b) {
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         assertEquals(1, b.scenarios().size());
         return b.scenarios().get(0);
@@ -51,20 +51,20 @@ class ScenarioParameterSetTest {
 
     private static List<String> parameters(ResolvedScenario s) {
         List<String> result = new ArrayList<>();
-        for (ParameterWaarde p : s.situatie().parameters())
-            result.add(p.parameter() + "=" + (p.tijdlijn() != null ? "tijdlijn" + p.tijdlijn().size() : p.waarde().getal()));
+        for (ParameterValue p : s.situation().parameters())
+            result.add(p.parameter() + "=" + (p.tijdlijn() != null ? "tijdlijn" + p.tijdlijn().size() : p.value().number()));
         return result;
     }
 
-    private static void fout(String scenarioText, String merker, String fragment) {
-        ScenarioBundel b = resolve(scenarioText);
+    private static void error(String scenarioText, String merker, String fragment) {
+        ScenarioBundle b = resolve(scenarioText);
         errorOnLine(b, MODEL + scenarioText, merker, fragment);
         assertFalse(b.isOk());
     }
 
     // ---------------- the grammar ----------------
 
-    private static int syntaxErrors(String bron, Function<RegelSpraak, ParseTree> start) {
+    private static int syntaxErrors(String source, Function<RegelSpraak, ParseTree> start) {
         List<String> meldingen = new ArrayList<>();
         BaseErrorListener l = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col, String msg,
@@ -72,7 +72,7 @@ class ScenarioParameterSetTest {
                 meldingen.add(line + ":" + col + " " + msg);
             }
         };
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(bron));
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         lexer.removeErrorListeners(); lexer.addErrorListener(l);
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(lexer));
         parser.removeErrorListeners(); parser.addErrorListener(l);
@@ -88,8 +88,8 @@ class ScenarioParameterSetTest {
         return n;
     }
 
-    private static List<String> tokens(String bron) {
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(bron));
+    private static List<String> tokens(String source) {
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         List<String> result = new ArrayList<>();
         for (Token t : lexer.getAllTokens())
             if (t.getChannel() == Token.DEFAULT_CHANNEL) result.add(RegelSpraakLexer.VOCABULARY.getSymbolicName(t.getType()));
@@ -97,9 +97,9 @@ class ScenarioParameterSetTest {
     }
 
     @Test void the_set_and_the_choice_parse_under_testDocument() {
-        String bron = JAREN + scenario("oudejaar", "met peildatum 31-12-2025\nmet parameterset jaren\n",
+        String source = JAREN + scenario("oudejaar", "met peildatum 31-12-2025\nmet parameterset jaren\n",
                 "- de kustwachtbonus van J is 12\n");
-        assertEquals(0, syntaxErrors(bron, RegelSpraak::testDocument));
+        assertEquals(0, syntaxErrors(source, RegelSpraak::testDocument));
     }
 
     @Test void a_parameter_set_block_is_no_production_document() {
@@ -120,14 +120,14 @@ class ScenarioParameterSetTest {
      *  UPPER_ID, and a number written without a unit takes one as its unit, so a header word that lexed as an UPPER_ID
      *  would be read into either. */
     @Test void a_set_header_after_a_characteristic_name_or_a_number_without_unit_opens_a_new_block() {
-        String bron = "Situatie zwaar:\neen Jutter J\n- het vondstgewicht is 12,00 kg\n"
+        String source = "Situatie zwaar:\neen Jutter J\n- het vondstgewicht is 12,00 kg\n"
                 + "Parameterset reeks noord:\nde parameter de vondstdrempel is 3\n"
                 + "Parameterset reeks zuid:\nde parameter de vondstdrempel is 4\n"
                 + "Scenario strandrecht\nmet peildatum 01-06-2025\nmet parameterset reeks noord\n"
                 + "gebaseerd op de situatie zwaar\nMet als verwacht resultaat:\n- J heeft strandrecht\n"
                 + "Parameterset reeks oost:\nde parameter de vondstdrempel is 5\n";
-        assertEquals(0, syntaxErrors(bron, RegelSpraak::testDocument));
-        assertEquals(List.of("vondstdrempel=3"), parameters(only(resolve(bron))));
+        assertEquals(0, syntaxErrors(source, RegelSpraak::testDocument));
+        assertEquals(List.of("vondstdrempel=3"), parameters(only(resolve(source))));
     }
 
     @Test void the_choice_ends_the_scenario_name_and_the_name_of_a_single_rule() {
@@ -135,11 +135,11 @@ class ScenarioParameterSetTest {
                 "toetst de regel bonus bij drempel\nmet peildatum 31-12-2025\nmet parameterset jaren\n",
                 "- de kustwachtbonus van J is 12\n")));
         assertEquals("oudejaar met een staart", s.naam());
-        assertEquals(List.of("bonus bij drempel"), s.scope().vormen());
+        assertEquals(List.of("bonus bij drempel"), s.scope().forms());
         ResolvedScenario withoutAsOfDate = only(resolve("Parameterset vast:\nde parameter de vondstdrempel is 3\n"
                 + scenario("vast", "toetst de regel bonus bij drempel\nmet parameterset vast\n",
                 "- de kustwachtbonus van J is 3\n")));
-        assertEquals(List.of("bonus bij drempel"), withoutAsOfDate.scope().vormen());
+        assertEquals(List.of("bonus bij drempel"), withoutAsOfDate.scope().forms());
     }
 
     // ---------------- the lowering ----------------
@@ -206,7 +206,7 @@ class ScenarioParameterSetTest {
     }
 
     @Test void the_period_of_a_vintage_counts_to_and_not_up_to_and_including() {
-        ScenarioBundel b = resolve(JAREN
+        ScenarioBundle b = resolve(JAREN
                 + scenario("oudejaar", "met peildatum 31-12-2025\nmet parameterset jaren\n", "- de kustwachtbonus van J is 12\n")
                 + scenario("nieuwjaar", "met peildatum 01-01-2026\nmet parameterset jaren\n", "- de kustwachtbonus van J is 14\n"));
         assertTrue(b.isOk(), () -> b.model().errors().toString());
@@ -227,7 +227,7 @@ class ScenarioParameterSetTest {
         ResolvedScenario s = only(resolve("Parameterset vast:\nde parameter de vondstdrempel is 3\n"
                 + scenario("vast", "toetst de regel bonus bij drempel\nmet parameterset vast\n",
                 "- de kustwachtbonus van J is 3\n")));
-        assertNull(s.peildatum());
+        assertNull(s.asOfDate());
         assertEquals(List.of("vondstdrempel=3"), parameters(s));
     }
 
@@ -241,7 +241,7 @@ class ScenarioParameterSetTest {
 
     @Test void a_value_in_a_set_is_typed_as_in_the_situation() {
         String set = "Parameterset eenheid:\nde parameter de vondstdrempel is 6/8 van 01-01-2025 tot 01-01-2026\n";
-        ScenarioBundel b = resolve(set + scenario("breuk", "met peildatum 01-06-2025\nmet parameterset eenheid\n",
+        ScenarioBundle b = resolve(set + scenario("breuk", "met peildatum 01-06-2025\nmet parameterset eenheid\n",
                 "- de kustwachtbonus van J is 1\n"));
         // the parameter is a whole number, so a fraction is refused in the typing's own sentence, as in a situation
         errorOnLine(b, MODEL + set, "6/8", "de parameter 'vondstdrempel': het toe te kennen resultaat heeft meer "
@@ -256,7 +256,7 @@ class ScenarioParameterSetTest {
                 + "de parameter de vondstdrempel is 14 van 31-12-2025 tot 01-01-2027\n";
         String tekst = set + scenario("nieuwjaar", "met peildatum 01-01-2026\nmet parameterset overlap\n",
                 "- de kustwachtbonus van J is 14\n");
-        fout(tekst, "van 31-12-2025 tot 01-01-2027", "de parameterset 'overlap' geeft de parameter 'vondstdrempel' "
+        error(tekst, "van 31-12-2025 tot 01-01-2027", "de parameterset 'overlap' geeft de parameter 'vondstdrempel' "
                 + "twee jaargangen die elkaar overlappen (van 2025-01-01 tot 2026-01-01 en van 2025-12-31 tot 2027-01-01); "
                 + "de peildatum van een scenario kiest precies één jaargang");
         // the refused row is not a gap a peildatum could fall in: one ERROR, not two
@@ -267,14 +267,14 @@ class ScenarioParameterSetTest {
         String set = "Parameterset los:\n"
                 + "de parameter de vondstdrempel is 12 van 01-01-2025 tot 01-01-2026\n"
                 + "de parameter de vondstdrempel is 13\n";
-        fout(set, "vondstdrempel is 13", "de parameterset 'los' geeft de parameter 'vondstdrempel' twee jaargangen die "
+        error(set, "vondstdrempel is 13", "de parameterset 'los' geeft de parameter 'vondstdrempel' twee jaargangen die "
                 + "elkaar overlappen (van 2025-01-01 tot 2026-01-01 en zonder periode)");
     }
 
     @Test void no_vintage_on_the_as_of_date() {
         String tekst = JAREN + scenario("te laat", "met peildatum 01-06-2027\nmet parameterset jaren\n",
                 "- de kustwachtbonus van J is 14\n");
-        fout(tekst, "met parameterset jaren", "de parameterset 'jaren' heeft voor de parameter 'vondstdrempel' geen "
+        error(tekst, "met parameterset jaren", "de parameterset 'jaren' heeft voor de parameter 'vondstdrempel' geen "
                 + "jaargang die de peildatum 2027-06-01 van het scenario 'te laat' bevat");
         // a timeline is carried whole and the executors hold its coverage: no gap is reported for it here
         assertTrue(resolve(tekst).model().errors().stream().noneMatch(d -> d.message().contains("'penningbedrag'")));
@@ -284,12 +284,12 @@ class ScenarioParameterSetTest {
         String tekst = JAREN + "Situatie met drempel:\neen Jutter J\nde parameter de vondstdrempel is 13\n"
                 + "Scenario dubbel\nmet peildatum 01-06-2025\nmet parameterset jaren\ngebaseerd op de situatie met drempel\n"
                 + "Met als verwacht resultaat:\n- de kustwachtbonus van J is 13\n";
-        fout(tekst, "met parameterset jaren", "de parameter 'vondstdrempel' krijgt een waarde uit de parameterset 'jaren' "
+        error(tekst, "met parameterset jaren", "de parameter 'vondstdrempel' krijgt een waarde uit de parameterset 'jaren' "
                 + "en uit de situatie van het scenario 'dubbel'; een parameter krijgt zijn waarde uit één van beide");
     }
 
     @Test void scenario_without_as_of_date() {
-        fout(JAREN + scenario("tijdloos", "toetst de regel bonus bij drempel\nmet parameterset jaren\n",
+        error(JAREN + scenario("tijdloos", "toetst de regel bonus bij drempel\nmet parameterset jaren\n",
                         "- de kustwachtbonus van J is 12\n"),
                 "met parameterset jaren", "de parameter 'vondstdrempel' heeft in de parameterset 'jaren' jaargangen, maar "
                         + "het scenario 'tijdloos' heeft geen peildatum die er één kiest (voeg 'met peildatum <datum>' toe)");
@@ -298,33 +298,33 @@ class ScenarioParameterSetTest {
     @Test void unknown_parameter_set() {
         String tekst = scenario("wees", "met peildatum 01-06-2025\nmet parameterset nergens\n",
                 "- de kustwachtbonus van J is 12\n");
-        fout(tekst, "met parameterset nergens", "de parameterset 'nergens' is nergens in het document gedeclareerd");
+        error(tekst, "met parameterset nergens", "de parameterset 'nergens' is nergens in het document gedeclareerd");
         // what the missing set would have given cannot be said, so the parameter gate stays quiet
         assertEquals(1, resolve(tekst).model().errors().size(), () -> resolve(tekst).model().errors().toString());
     }
 
     @Test void duplicate_parameter_set() {
         // the names compare as the scenario layer compares names, so 'Jaren' is 'jaren'
-        fout(JAREN + "Parameterset Jaren:\nde parameter de vondstdrempel is 3\n", "Parameterset Jaren",
+        error(JAREN + "Parameterset Jaren:\nde parameter de vondstdrempel is 3\n", "Parameterset Jaren",
                 "de parameterset 'Jaren' is meer dan eens gedeclareerd");
     }
 
     @Test void the_parameter_gate_names_the_set() {
         String set = "Parameterset bedragen:\nde parameter het penningbedrag is 250 van 01-01-2025 tot 01-01-2026\n";
-        fout(set + scenario("zonder drempel", "met peildatum 01-06-2025\nmet parameterset bedragen\n",
+        error(set + scenario("zonder drempel", "met peildatum 01-06-2025\nmet parameterset bedragen\n",
                         "- de kustwachtbonus van J is 3\n"),
                 "Scenario zonder drempel", "de regel 'bonus bij drempel' leest de parameter 'vondstdrempel', die in de "
                         + "situatie van het scenario 'zonder drempel' en in de parameterset 'bedragen' geen waarde heeft");
     }
 
     @Test void a_timeline_in_a_set_follows_the_rules_of_the_situation() {
-        fout("Parameterset raster:\nde parameter het penningbedrag is 250 van 01-07-2025 tot 01-01-2026\n",
+        error("Parameterset raster:\nde parameter het penningbedrag is 250 van 01-07-2025 tot 01-01-2026\n",
                 "van 01-07-2025", "de periodegrens 2025-07-01 van de parameter 'penningbedrag' ligt niet op het jaarraster "
                         + "van de declaratie");
-        fout("Parameterset volgorde:\nde parameter het penningbedrag is 275 van 01-01-2026 tot 01-01-2027\n"
+        error("Parameterset volgorde:\nde parameter het penningbedrag is 275 van 01-01-2026 tot 01-01-2027\n"
                         + "de parameter het penningbedrag is 250 van 01-01-2025 tot 01-01-2026\n",
                 "is 250 van", "de periode van 2025-01-01 tot 2026-01-01 begint vóór het einde van de vorige (2027-01-01)");
-        fout("Parameterset gemengd:\nde parameter het penningbedrag is 250\n"
+        error("Parameterset gemengd:\nde parameter het penningbedrag is 250\n"
                         + "de parameter het penningbedrag is 275 van 01-01-2026 tot 01-01-2027\n",
                 "is 275 van", "de parameter 'penningbedrag' krijgt in dit blok zowel een vaste waarde als perioden");
     }
@@ -334,7 +334,7 @@ class ScenarioParameterSetTest {
     @Test void an_incomplete_period_is_only_a_syntax_error() {
         for (String tekst : List.of("Parameterset p:\nde parameter de vondstdrempel is 3 van 01-01-2025\n",
                 "Situatie s:\nde parameter het penningbedrag is 7 van 01-01-2024\n")) {
-            ScenarioBundel b = resolve(tekst);
+            ScenarioBundle b = resolve(tekst);
             assertFalse(b.isOk());
             assertTrue(b.model().errors().stream().allMatch(d -> d.message().startsWith("syntaxfout: ")),
                     () -> b.model().errors().toString());
@@ -342,7 +342,7 @@ class ScenarioParameterSetTest {
     }
 
     @Test void an_unchosen_set_is_nevertheless_checked() {
-        fout("Parameterset ongebruikt:\nde parameter de getijdendrempel is 4\n", "getijdendrempel",
+        error("Parameterset ongebruikt:\nde parameter de getijdendrempel is 4\n", "getijdendrempel",
                 "de parameter 'de getijdendrempel' is niet gedeclareerd");
     }
 }

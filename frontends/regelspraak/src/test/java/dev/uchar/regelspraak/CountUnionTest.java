@@ -166,21 +166,21 @@ class CountUnionTest {
     void the_cardinality_plural_with_own_role_name_binds_via_the_type_pair() {
         RegelSpraakModel m = Resolver.resolve(CARDINALITY_MODEL);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
         assertEquals(1, f.arguments().size(), "de unie is ÉÉN argument");
         Expr.InstanceSetUnion u = assertInstanceOf(Expr.InstanceSetUnion.class, f.arguments().get(0));
         assertEquals(2, u.branches().size());
         // the derived relation is written out per selection — the wire never omits it (WF-110 (e))
         for (Expr.InstanceSetUnion.Branch t : u.branches()) {
             assertNotNull(t.sourceRole(), "elke selectie noemt haar relatie op de wire");
-            assertEquals("vondstmelding", t.sourceRole().feittype());
-            assertEquals("vondst", t.sourceRole().rol(), "de wire noemt de GEDECLAREERDE enkelvoudsrol");
+            assertEquals("vondstmelding", t.sourceRole().factType());
+            assertEquals("vondst", t.sourceRole().role(), "de wire noemt de GEDECLAREERDE enkelvoudsrol");
             assertEquals("Vondst", t.elementType().naam);
         }
-        assertEquals("gemerkt", assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
-                u.branches().get(0).filter()).kenmerk());
-        assertEquals("gekeurd", assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
-                u.branches().get(1).filter()).kenmerk());
+        assertEquals("gemerkt", assertInstanceOf(dev.uchar.regelspraak.ir.Condition.CharacteristicCheck.class,
+                u.branches().get(0).filter()).characteristic());
+        assertEquals("gekeurd", assertInstanceOf(dev.uchar.regelspraak.ir.Condition.CharacteristicCheck.class,
+                u.branches().get(1).filter()).characteristic());
     }
 
     /** The narrowing the fallback must NOT have loosened: a by-NAME binding still refuses a guessed
@@ -212,7 +212,7 @@ class CountUnionTest {
     }
 
     private static Expr.InstanceSetUnion unionOf(RegelSpraakModel m) {
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals(1, f.arguments().size(), "de unie is ÉÉN argument, niet een operandenlijst");
         assertNull(f.elementObjectType(), "de telling boven een unie noemt geen eigen bron (WF-110 (c))");
@@ -220,7 +220,7 @@ class CountUnionTest {
         return assertInstanceOf(Expr.InstanceSetUnion.class, f.arguments().get(0));
     }
 
-    private static List<Diagnostic> fouten(String regels) {
+    private static List<Diagnostic> faults(String regels) {
         return Resolver.resolve(MODEL + regels).errors();
     }
 
@@ -232,10 +232,10 @@ class CountUnionTest {
         assertEquals("Vondst", u.branches().get(1).elementType().naam);
         // the two selections walk DIFFERENT relations: this is the shape the OR-filter form cannot
         // express, and the reason the union node exists rather than a composite filter
-        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().feittype());
-        assertEquals("aangemelde vondst", u.branches().get(0).sourceRole().rol());
-        assertEquals("vondstberging", u.branches().get(1).sourceRole().feittype());
-        assertEquals("geborgen vondst", u.branches().get(1).sourceRole().rol());
+        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().factType());
+        assertEquals("aangemelde vondst", u.branches().get(0).sourceRole().role());
+        assertEquals("vondstberging", u.branches().get(1).sourceRole().factType());
+        assertEquals("geborgen vondst", u.branches().get(1).sourceRole().role());
         assertNull(u.branches().get(0).filter());
         assertNull(u.branches().get(1).filter());
     }
@@ -246,14 +246,14 @@ class CountUnionTest {
         assertEquals(2, u.branches().size());
         // one relation, two filters — and the filters sit on the SELECTIONS, never OR-ed onto the
         // count, which is what keeps one written form on one wire form
-        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().feittype());
-        assertEquals("vondstaanmelding", u.branches().get(1).sourceRole().feittype());
+        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().factType());
+        assertEquals("vondstaanmelding", u.branches().get(1).sourceRole().factType());
         assertEquals("gemerkt",
-                assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
-                        u.branches().get(0).filter()).kenmerk());
+                assertInstanceOf(dev.uchar.regelspraak.ir.Condition.CharacteristicCheck.class,
+                        u.branches().get(0).filter()).characteristic());
         assertEquals("gekeurd",
-                assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
-                        u.branches().get(1).filter()).kenmerk());
+                assertInstanceOf(dev.uchar.regelspraak.ir.Condition.CharacteristicCheck.class,
+                        u.branches().get(1).filter()).characteristic());
     }
 
     @Test
@@ -270,7 +270,7 @@ class CountUnionTest {
     void the_comma_spelling_builds_three_branches() {
         Expr.InstanceSetUnion u = unionOf(clean(COMMA_TRIPLE));
         assertEquals(3, u.branches().size(), "de komma-spelling verloor een selectie");
-        assertEquals("vondstberging", u.branches().get(2).sourceRole().feittype());
+        assertEquals("vondstberging", u.branches().get(2).sourceRole().factType());
     }
 
     @Test
@@ -293,7 +293,7 @@ class CountUnionTest {
 
     @Test
     void differing_element_types_are_refused_by_name() {
-        List<Diagnostic> ds = fouten(NOT_EQUAL_ELEMENT_TYPES);
+        List<Diagnostic> ds = faults(NOT_EQUAL_ELEMENT_TYPES);
         assertEquals(1, ds.size(), () -> "verwacht één fout, kreeg: " + ds);
         assertEquals(Severity.ERROR, ds.get(0).severity());
         String msg = ds.get(0).message();
@@ -305,7 +305,7 @@ class CountUnionTest {
 
     @Test
     void an_unsolvable_subselection_is_refused_by_name() {
-        List<Diagnostic> ds = fouten(UNSOLVABLE_SUBSELECTION);
+        List<Diagnostic> ds = faults(UNSOLVABLE_SUBSELECTION);
         assertEquals(1, ds.size(), () -> "verwacht één fout, kreeg: " + ds);
         String msg = ds.get(0).message();
         assertTrue(msg.contains("lost niet op naar een kenmerk"),
@@ -316,7 +316,7 @@ class CountUnionTest {
     @Test
     void the_value_operands_keep_their_own_refusal() {
         // the half that did not move: the arity refusal, in the verifier's WF-037 sentence
-        List<Diagnostic> ds = fouten(VALUE_OPERANDS);
+        List<Diagnostic> ds = faults(VALUE_OPERANDS);
         assertEquals(1, ds.size(), () -> "verwacht één fout, kreeg: " + ds);
         String msg = ds.get(0).message();
         assertTrue(msg.contains("this node carries 2 operands"), () -> "de melding telt de operanden niet: " + msg);
@@ -331,7 +331,7 @@ class CountUnionTest {
 
     @Test
     void the_ordinary_count_stays_clean() {
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, clean(ORDINARY_COUNT).resolvedRegels.get(0).waarde());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, clean(ORDINARY_COUNT).resolvedRegels.get(0).value());
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals(1, f.arguments().size());
         assertNotNull(f.elementObjectType(), "de eenargumentstelling verloor haar elementtype");
@@ -353,9 +353,9 @@ class CountUnionTest {
     @Test
     void the_union_count_is_also_in_a_condition() {
         RegelSpraakModel m = clean(IN_CONDITION);
-        var v = assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Vergelijking.class,
-                m.resolvedRegels.get(0).voorwaarde());
-        Expr.FunctionCall count = assertInstanceOf(Expr.FunctionCall.class, v.links());
+        var v = assertInstanceOf(dev.uchar.regelspraak.ir.Condition.Comparison.class,
+                m.resolvedRegels.get(0).condition());
+        Expr.FunctionCall count = assertInstanceOf(Expr.FunctionCall.class, v.left());
         assertEquals(Expr.FunctionKind.AANTAL, count.kind());
         assertEquals(2, assertInstanceOf(Expr.InstanceSetUnion.class, count.arguments().get(0)).branches().size());
     }

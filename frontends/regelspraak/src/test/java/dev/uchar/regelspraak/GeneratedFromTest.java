@@ -1,9 +1,9 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
-import dev.uchar.regelspraak.model.RegelSpraakModel.GegenereerdUit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Herkomstvorm;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
+import dev.uchar.regelspraak.model.RegelSpraakModel.GeneratedFrom;
+import dev.uchar.regelspraak.model.RegelSpraakModel.OriginForm;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
@@ -15,40 +15,40 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Every element the frontend makes itself — a name no declaration in the source carries — says in the model which
- * declared element it comes from, and by which form ({@link RegelSpraakModel#gegenereerd}). A consumer may not tell
+ * declared element it comes from, and by which form ({@link RegelSpraakModel#generated}). A consumer may not tell
  * from the name: an author can write "berekende" or " voor " in a name of his own, and such an element carries no
  * entry. The table is a side table without semantics, like the designations: the emitter writes nothing of it.
  */
 class GeneratedFromTest {
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.errors().stream().map(RegelSpraakModel.Diagnostic::toString).toList());
         return m;
     }
 
-    private static String element(Benoembaar b) {
-        return b.soort() + " " + (b.eigenaar() == null ? "" : b.eigenaar() + ".") + b.naam();
+    private static String element(Designatable b) {
+        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.naam();
     }
 
     /** The table as lines "<element> <- <source element> (<key>)", in the order of the map. */
     private static List<String> table(RegelSpraakModel m) {
         List<String> result = new ArrayList<>();
-        for (Map.Entry<Benoembaar, GegenereerdUit> e : m.gegenereerd.entrySet())
-            result.add(element(e.getKey()) + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel()
+        for (Map.Entry<Designatable, GeneratedFrom> e : m.generated.entrySet())
+            result.add(element(e.getKey()) + " <- " + element(e.getValue().source()) + " (" + e.getValue().form().key()
                     + ")");
         return result;
     }
 
-    /** Every key is an element of the model, as {@link RegelSpraakModel#benoembaar()} spells it, and the lookup by
+    /** Every key is an element of the model, as {@link RegelSpraakModel#designatable()} spells it, and the lookup by
      *  the name identity finds it in another case. */
     private static void keysAreElements(RegelSpraakModel m) {
-        List<Benoembaar> all = m.benoembaar();
-        for (Benoembaar b : m.gegenereerd.keySet()) {
+        List<Designatable> all = m.designatable();
+        for (Designatable b : m.generated.keySet()) {
             assertTrue(all.contains(b), () -> element(b) + " staat in de tabel en is geen element van het model");
-            Benoembaar upperCased = new Benoembaar(b.soort(), b.eigenaar() == null ? null : b.eigenaar().toUpperCase(),
+            Designatable upperCased = new Designatable(b.category(), b.owner() == null ? null : b.owner().toUpperCase(),
                     b.naam().toUpperCase());
-            assertEquals(m.gegenereerd.get(b), m.gegenereerdUit(upperCased).orElseThrow());
+            assertEquals(m.generated.get(b), m.generatedFrom(upperCased).orElseThrow());
         }
     }
 
@@ -78,9 +78,9 @@ class GeneratedFromTest {
                 "VORM opgave boven berekening waarde <- ATTRIBUUT Vondst.waarde (opgave-boven-berekening)"),
                 table(m));
         // the author's 'berekende taxatie', attribute and rule, is no generated element
-        assertTrue(m.gegenereerdUit(Benoembaar.attribuut("Vondst", "berekende taxatie")).isEmpty());
-        assertTrue(m.gegenereerdUit(Benoembaar.vorm("berekende taxatie")).isEmpty());
-        assertTrue(m.gegenereerdUit(Benoembaar.attribuut("Vondst", "waarde")).isEmpty());
+        assertTrue(m.generatedFrom(Designatable.attribute("Vondst", "berekende taxatie")).isEmpty());
+        assertTrue(m.generatedFrom(Designatable.form("berekende taxatie")).isEmpty());
+        assertTrue(m.generatedFrom(Designatable.attribute("Vondst", "waarde")).isEmpty());
         keysAreElements(m);
     }
 
@@ -91,7 +91,7 @@ class GeneratedFromTest {
                 de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden);
             """);
         assertEquals(1, m.diagnostics.size(), m.diagnostics::toString);
-        assertEquals(Map.of(), m.gegenereerd);
+        assertEquals(Map.of(), m.generated);
     }
 
     @Test void the_group_of_a_subtype_comes_out_of_the_base_rule() {
@@ -120,7 +120,7 @@ class GeneratedFromTest {
         assertEquals(List.of("VORM meldtermijn voor Strandjutter <- VORM meldtermijn (uitzondering-voor-subtype)"),
                 table(m));
         // the group of the tree carries the name of its base rule, a name the author wrote
-        assertTrue(m.benoembaar().contains(Benoembaar.vorm("meldtermijn")));
+        assertTrue(m.designatable().contains(Designatable.form("meldtermijn")));
         keysAreElements(m);
     }
 
@@ -142,8 +142,8 @@ class GeneratedFromTest {
                     Het wachtgeld van een Jutter moet gesteld worden op 45
                     indien hij havenmeester is.
             """);
-        assertTrue(m.benoembaar().contains(Benoembaar.vorm("wachtgeld voor kustwachters")));
-        assertEquals(Map.of(), m.gegenereerd);
+        assertTrue(m.designatable().contains(Designatable.form("wachtgeld voor kustwachters")));
+        assertEquals(Map.of(), m.generated);
     }
 
     @Test void every_row_of_a_decision_table_comes_out_of_the_table() {
@@ -164,7 +164,7 @@ class GeneratedFromTest {
                 "VORM Bonustabel 2 <- VORM Bonustabel (beslistabelrij)"),
                 table(m));
         // the table itself is no element of the model: its rows are
-        assertFalse(m.benoembaar().contains(Benoembaar.vorm("Bonustabel")));
+        assertFalse(m.designatable().contains(Designatable.form("Bonustabel")));
         keysAreElements(m);
     }
 
@@ -230,17 +230,17 @@ class GeneratedFromTest {
         keysAreElements(m);
         // an author who declares the anchor himself wrote its name
         RegelSpraakModel own = clean(START_POINT.formatted("    het startpunt penningjaar Datum in dagen;\n"));
-        assertEquals(Map.of(), own.gegenereerd);
+        assertEquals(Map.of(), own.generated);
     }
 
     @Test void a_document_without_generated_names_has_an_empty_table() {
         RegelSpraakModel m = clean(VONDST.replace(" (mag opgegeven worden)", ""));
-        assertEquals(Map.of(), m.gegenereerd);
+        assertEquals(Map.of(), m.generated);
     }
 
     @Test void the_keys_of_the_forms_lie_fixed() {
         assertEquals(List.of("opgave-boven-berekening", "uitzondering-voor-subtype", "beslistabelrij",
                         "stappen-na-de-verzameling", "startpunt", "defaultsstapel", "versie"),
-                java.util.Arrays.stream(Herkomstvorm.values()).map(Herkomstvorm::sleutel).toList());
+                java.util.Arrays.stream(OriginForm.values()).map(OriginForm::key).toList());
     }
 }

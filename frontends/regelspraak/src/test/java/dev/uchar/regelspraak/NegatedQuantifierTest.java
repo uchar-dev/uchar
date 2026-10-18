@@ -120,12 +120,12 @@ class NegatedQuantifierTest {
      * draws the register warning of the unquantified check, and only on a negated check, as there.
      */
     @Test void every_quantifier_each_kind_every_negation_each_verb() {
-        record Kwantor(String sentence, String wire, boolean plural) {}
-        record Kenmerk(String naam, boolean possessive) {}
-        for (Kwantor q : List.of(new Kwantor("alle vondsten van de Jutter", "all", true),
-                                 new Kwantor("geen van de vondsten van de Jutter", "none", false),
-                                 new Kwantor("ten minste één van de vondsten van de Jutter", "atLeast", false)))
-            for (Kenmerk k : List.of(new Kenmerk("drijfvermogen", true), new Kenmerk("waardevol", false)))
+        record Quantifier(String sentence, String wire, boolean plural) {}
+        record CharacteristicCheck(String naam, boolean possessive) {}
+        for (Quantifier q : List.of(new Quantifier("alle vondsten van de Jutter", "all", true),
+                                 new Quantifier("geen van de vondsten van de Jutter", "none", false),
+                                 new Quantifier("ten minste één van de vondsten van de Jutter", "atLeast", false)))
+            for (CharacteristicCheck k : List.of(new CharacteristicCheck("drijfvermogen", true), new CharacteristicCheck("waardevol", false)))
                 for (String negation : List.of("", "niet ", "geen "))
                     for (boolean have : List.of(true, false)) {
                         String verb = have ? (q.plural() ? "hebben" : "heeft") : (q.plural() ? "zijn" : "is");
@@ -133,9 +133,9 @@ class NegatedQuantifierTest {
                         RegelSpraakModel m = Resolver.resolve(MODEL.formatted(sentence));
                         boolean isNegated = !negation.isEmpty();
                         assertEquals(q.wire() + ": " + k.naam() + (isNegated ? " ontkend" : " bevestigd"), fold(m), sentence);
-                        int verwacht = isNegated && have != k.possessive() ? 1 : 0;
-                        assertEquals(verwacht, table16(m).size(), () -> sentence + " — " + m.diagnostics);
-                        assertEquals(verwacht, m.diagnostics.size(), () -> sentence + " — " + m.diagnostics);
+                        int expected = isNegated && have != k.possessive() ? 1 : 0;
+                        assertEquals(expected, table16(m).size(), () -> sentence + " — " + m.diagnostics);
+                        assertEquals(expected, m.diagnostics.size(), () -> sentence + " — " + m.diagnostics);
                     }
     }
 

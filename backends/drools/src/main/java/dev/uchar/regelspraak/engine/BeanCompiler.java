@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * exec-model transpiler's {@code build(model, classLoader)} passthrough so the compiled rules bind against these
  * beans, and to the {@link dev.uchar.regelspraak.schema.ContractValidator} so the contract is checked against them.
  *
- * <p>CHILD-FIRST for the classes it produced: the generated beans live in {@link FactModelGenerator#PAKKET}
+ * <p>CHILD-FIRST for the classes it produced: the generated beans live in {@link FactModelGenerator#PACKAGE}
  * (a shared package name), so a parent-first loader could let an unrelated same-named class on the parent shadow
  * the generated one. The rules and the runner must run against the GENERATED model.
  */
@@ -51,11 +51,11 @@ public final class BeanCompiler {
     /** Compile {@code bronnen} (simple class name → Java source) in memory; return a loader serving them.
      *  Identical {@code bronnen} within one JVM are compiled ONCE (content-keyed cache) and share the loader. */
     public static ClassLoader compile(Map<String, String> sources) {
-        return CACHE.computeIfAbsent(sleutel(sources), k -> compileUncached(sources));
+        return CACHE.computeIfAbsent(key(sources), k -> compileUncached(sources));
     }
 
     /** SHA-256 over the sorted (className → source) entries — the content key that decides cache identity. */
-    private static String sleutel(Map<String, String> sources) {
+    private static String key(Map<String, String> sources) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             for (Map.Entry<String, String> e : new TreeMap<>(sources).entrySet()) {
@@ -80,7 +80,7 @@ public final class BeanCompiler {
         List<JavaFileObject> units = new ArrayList<>();
         for (Map.Entry<String, String> e : sources.entrySet())
             units.add(new SimpleJavaFileObject(
-                    URI.create("string:///" + FactModelGenerator.PAKKET.replace('.', '/') + "/" + e.getKey() + ".java"),
+                    URI.create("string:///" + FactModelGenerator.PACKAGE.replace('.', '/') + "/" + e.getKey() + ".java"),
                     JavaFileObject.Kind.SOURCE) {
                 @Override public CharSequence getCharContent(boolean ignore) { return e.getValue(); }
             });
@@ -91,7 +91,7 @@ public final class BeanCompiler {
         StringBuilder diag = new StringBuilder();
         try (StandardJavaFileManager std = javac.getStandardFileManager(null, null, null);
              JavaFileManager fm = new ForwardingJavaFileManager<>(std) {
-                 @Override public JavaFileObject getJavaFileForOutput(Location loc, String naam, JavaFileObject.Kind kind, FileObject bron) {
+                 @Override public JavaFileObject getJavaFileForOutput(Location loc, String naam, JavaFileObject.Kind kind, FileObject source) {
                      ByteArrayOutputStream out = new ByteArrayOutputStream();
                      classes.put(naam, out);
                      return new SimpleJavaFileObject(URI.create("mem:///" + naam.replace('.', '/') + ".class"), kind) {

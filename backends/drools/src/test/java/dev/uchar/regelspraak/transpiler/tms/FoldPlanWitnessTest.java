@@ -114,13 +114,13 @@ class FoldPlanWitnessTest {
                 "regel seingewicht van een post: bijdrage aan vouw 1 | vorm seingewicht van een post |"
                         + " groep null",
                 "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $gewicht (eigen"
-                        + " ElementSleutel[objecttype=sein, naam=gewicht, kenmerk=false])]",
+                        + " ElementKey[objectType=sein, naam=gewicht, characteristic=false])]",
                 "  patroon Post $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Sein $onderwerp alfa [] join [bereik_6: post = $vouwonderwerp] beta [] bind [$gewicht"
                         + " = [] Sein.gewicht VALUE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=seingewicht van een post: vouw 1,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=false]",
+                "    inbreng Lidwaarde [value=1, total=null, gevuld=false]",
                 "regel vakseinaantal van een kustvak: bijdrage aan vouw 2 | vorm vakseinaantal van een"
                         + " kustvak | groep null",
                 "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf)]",
@@ -128,7 +128,7 @@ class FoldPlanWitnessTest {
                 "  onderwerp Sein $onderwerp alfa [] join [] beta [] bind []",
                 "  bestaat binnen [$koppeling_bereik_13] buiten [$onderwerp, $vouwonderwerp] [RelationLink"
                         + " $koppeling_bereik_13 alfa [bereik-koppeling_14: [[] relation VALUE GELIJK"
-                        + " vakbeseining]] join [bereik-lid_15: tweede = $onderwerp, bereik-drager_16: eerste ="
+                        + " vakbeseining]] join [bereik-lid_15: second = $onderwerp, bereik-drager_16: first ="
                         + " $vouwonderwerp] beta [] bind []]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=vakseinaantal van een kustvak: vouw"
                         + " 2, member=0, slots=[0], size=1, insertion=LOGICAL]",
@@ -140,16 +140,16 @@ class FoldPlanWitnessTest {
         assertEquals(List.of(
                 "regel keurlast van een jutter: bijdrage aan vouw 0 | vorm keurlast van een jutter |"
                         + " groep null",
-                "  lezingen [0 INVOER $gekeurd (eigen ElementSleutel[objecttype=vondst, naam=gekeurd,"
-                        + " kenmerk=true]), 1 SUBJECT $onderwerp (onderwerp zelf), 2 TIJDLIJN $tijdlijn_2"
-                        + " (tijdlijn ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false])]",
+                "  lezingen [0 INVOER $gekeurd (eigen ElementKey[objectType=vondst, naam=gekeurd,"
+                        + " characteristic=true]), 1 SUBJECT $onderwerp (onderwerp zelf), 2 TIJDLIJN $tijdlijn_2"
+                        + " (tijdlijn ElementKey[objectType=vondst, naam=keurtarief, characteristic=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: keurende jutter = $vouwonderwerp] beta []"
                         + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
-                "  patroon State $stand_2 alfa [stand_1: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false]]] join"
+                "  patroon State $stand_2 alfa [stand_1: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, naam=keurtarief, characteristic=false]]] join"
                         + " [stand-onderwerp_2: onderwerp = $onderwerp] beta [] bind [$tijdlijn_2 = []"
-                        + " State.waarde VALUE]",
+                        + " State.value VALUE]",
                 "  toets voorwaarde_3 CONDITION sonde -1 slots [0] grootte 3: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Call bron 'gekeurd zijn'",
@@ -157,26 +157,26 @@ class FoldPlanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
                         + " member=1, slots=[1, 2], size=3, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [waarde=2, totaal=MAAND, gevuld=false]",
+                "    inbreng Lidwaarde [value=2, total=MAAND, gevuld=false]",
                 "regel keurlast van een jutter: lidfout in vouw 0 | vorm keurlast van een jutter | groep"
                         + " null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_7 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_8 (lijstplaats 0), 2 INVOER $gekeurd (eigen"
-                        + " ElementSleutel[objecttype=vondst, naam=gekeurd, kenmerk=true]), 3 TIJDLIJN $tijdlijn_3"
-                        + " (tijdlijn ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false]), 4"
+                        + " ElementKey[objectType=vondst, naam=gekeurd, characteristic=true]), 3 TIJDLIJN $tijdlijn_3"
+                        + " (tijdlijn ElementKey[objectType=vondst, naam=keurtarief, characteristic=false]), 4"
                         + " SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_4: keurende jutter = $vouwonderwerp] beta []"
                         + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
-                "  accumulatie ListPlace $lijstplaats_plaats_5 alfa [plaats-veld_9: [[] veld VALUE"
+                "  accumulatie ListPlace $lijstplaats_plaats_5 alfa [plaats-veld_9: [[] field VALUE"
                         + " GELIJK keurendeJutter]] join [] beta [plaats-lid_10: PLACE_OF $onderwerp [] {List<>,"
                         + " type null, bron null}] bind [$lijstplaatswaarde_plaats_6 = [] ListPlace.place"
                         + " VALUE] functies [COUNT null -> $lijstplaatsen_plaats_7, MINIMUM"
                         + " $lijstplaatswaarde_plaats_6 -> $plaats_plaats_8]",
-                "  patroon State $stand_3 alfa [stand_11: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false]]] join"
+                "  patroon State $stand_3 alfa [stand_11: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, naam=keurtarief, characteristic=false]]] join"
                         + " [stand-onderwerp_12: onderwerp = $onderwerp] beta [] bind [$tijdlijn_3 = []"
-                        + " State.waarde VALUE]",
+                        + " State.value VALUE]",
                 "  toets voorwaarde_13 VORM sonde -1 slots [2, 3] grootte 5: Samengesteld ALLE"
                         + " 0(KENMERK(Lees 2, Const true), BUCKET_SCALAR(Lees 3, Const true))",
                 "    toets 0 Compound",
@@ -205,9 +205,9 @@ class FoldPlanWitnessTest {
                         + " slots=[0], size=1, insertion=LOGICAL]",
                 "    inbreng Telling",
                 "regel zware vondsten: bijdrage aan vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
-                        + " naam=deelnemers, kenmerk=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_5: aanmelder = $vouwonderwerp] beta [] bind"
@@ -229,13 +229,13 @@ class FoldPlanWitnessTest {
                 "regel zware vondsten: filterfout in vouw 1 | vorm zware vondsten | groep null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_10 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_11 (lijstplaats 0), 2 INVOER $gewicht (eigen"
-                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false]), 3 INVOER $deelnemers"
-                        + " (eigen ElementSleutel[objecttype=vondst, naam=deelnemers, kenmerk=false]), 4 DEPOSIT_FLAG null"
+                        + " ElementKey[objectType=vondst, naam=gewicht, characteristic=false]), 3 INVOER $deelnemers"
+                        + " (eigen ElementKey[objectType=vondst, naam=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_7: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  accumulatie ListPlace $lijstplaats_plaats_8 alfa [plaats-veld_12: [[] veld VALUE"
+                "  accumulatie ListPlace $lijstplaats_plaats_8 alfa [plaats-veld_12: [[] field VALUE"
                         + " GELIJK aanmelder]] join [] beta [plaats-lid_13: PLACE_OF $onderwerp [] {List<>, type"
                         + " null, bron null}] bind [$lijstplaatswaarde_plaats_9 = [] ListPlace.place VALUE]"
                         + " functies [COUNT null -> $lijstplaatsen_plaats_10, MINIMUM $lijstplaatswaarde_plaats_9"
@@ -265,9 +265,9 @@ class FoldPlanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel zware vondsten: filterdeponering in vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
-                        + " naam=deelnemers, kenmerk=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_15: aanmelder = $vouwonderwerp] beta [] bind"
@@ -286,9 +286,9 @@ class FoldPlanWitnessTest {
                 "  gevolg Filterdeponering [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1,"
                         + " member=3, insertion=LOGICAL]",
                 "regel drukte: bijdrage aan vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
-                        + " naam=deelnemers, kenmerk=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_31: aanmelder = $vouwonderwerp] beta [] bind"
@@ -310,13 +310,13 @@ class FoldPlanWitnessTest {
                 "regel drukte: filterfout in vouw 2 | vorm drukte | groep null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_36 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_37 (lijstplaats 0), 2 INVOER $gewicht (eigen"
-                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false]), 3 INVOER $deelnemers"
-                        + " (eigen ElementSleutel[objecttype=vondst, naam=deelnemers, kenmerk=false]), 4 DEPOSIT_FLAG null"
+                        + " ElementKey[objectType=vondst, naam=gewicht, characteristic=false]), 3 INVOER $deelnemers"
+                        + " (eigen ElementKey[objectType=vondst, naam=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_33: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  accumulatie ListPlace $lijstplaats_plaats_34 alfa [plaats-veld_38: [[] veld VALUE"
+                "  accumulatie ListPlace $lijstplaats_plaats_34 alfa [plaats-veld_38: [[] field VALUE"
                         + " GELIJK aanmelder]] join [] beta [plaats-lid_39: PLACE_OF $onderwerp [] {List<>, type"
                         + " null, bron null}] bind [$lijstplaatswaarde_plaats_35 = [] ListPlace.place VALUE]"
                         + " functies [COUNT null -> $lijstplaatsen_plaats_36, MINIMUM"
@@ -346,9 +346,9 @@ class FoldPlanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel drukte: filterdeponering in vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
-                        + " naam=deelnemers, kenmerk=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
+                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_41: aanmelder = $vouwonderwerp] beta [] bind"
@@ -374,14 +374,14 @@ class FoldPlanWitnessTest {
                 "regel laagste vondstgewicht van een jutter: bijdrage aan vouw 0 | vorm laagste"
                         + " vondstgewicht van een jutter | groep null",
                 "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $gewicht (eigen"
-                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false])]",
+                        + " ElementKey[objectType=vondst, naam=gewicht, characteristic=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [] beta [pad_0: MEETING $vouwonderwerp"
                         + " [bergendeBoot, schipper] {List<String>, type null, bron null} [] {List<>, type null,"
                         + " bron null}] bind [$gewicht = [] Vondst.gewicht VALUE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=laagste vondstgewicht van een jutter:"
                         + " vouw 0, member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=false]"),
+                "    inbreng Lidwaarde [value=1, total=null, gevuld=false]"),
                 plans(golden("jutterswet-vondstketen")));
     }
 
@@ -390,7 +390,7 @@ class FoldPlanWitnessTest {
                 "regel aantal gevulde bergplaatsen: bijdrage aan vouw 0 | vorm aantal gevulde"
                         + " bergplaatsen | groep null",
                 "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $vangstgewicht (eigen"
-                        + " ElementSleutel[objecttype=bergplaats, naam=vangstgewicht, kenmerk=false])]",
+                        + " ElementKey[objectType=bergplaats, naam=vangstgewicht, characteristic=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Bergplaats $onderwerp alfa [] join [] beta [] bind [$vangstgewicht = []"
                         + " Bergplaats.vangstgewicht VALUE]",
@@ -401,12 +401,12 @@ class FoldPlanWitnessTest {
                         + " type null, bron null}] bind []]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=aantal gevulde bergplaatsen: vouw 0,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=true]",
+                "    inbreng Lidwaarde [value=1, total=null, gevuld=true]",
                 "regel havengeldtotaal van een Jutter: bijdrage aan vouw 1 | vorm havengeldtotaal van"
                         + " een Jutter | groep null",
-                "  lezingen [0 INVOER $havengeld (eigen ElementSleutel[objecttype=haven, naam=havengeld,"
-                        + " kenmerk=false]), 1 INVOER $ligplaatsen (eigen ElementSleutel[objecttype=haven,"
-                        + " naam=ligplaatsen, kenmerk=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INVOER $havengeld (eigen ElementKey[objectType=haven, naam=havengeld,"
+                        + " characteristic=false]), 1 INVOER $ligplaatsen (eigen ElementKey[objectType=haven,"
+                        + " naam=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
@@ -432,13 +432,13 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.2 Const String",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw"
                         + " 1, member=3, slots=[0, 3], size=4, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [waarde=0, totaal=null, gevuld=false]",
+                "    inbreng Lidwaarde [value=0, total=null, gevuld=false]",
                 "regel havengeldtotaal van een Jutter: filterfout in vouw 1 | vorm havengeldtotaal van"
                         + " een Jutter | groep null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_20 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_21 (lijstplaats 0), 2 INVOER $havengeld (eigen"
-                        + " ElementSleutel[objecttype=haven, naam=havengeld, kenmerk=false]), 3 INVOER $ligplaatsen"
-                        + " (eigen ElementSleutel[objecttype=haven, naam=ligplaatsen, kenmerk=false]), 4 DEPOSIT_FLAG null"
+                        + " ElementKey[objectType=haven, naam=havengeld, characteristic=false]), 3 INVOER $ligplaatsen"
+                        + " (eigen ElementKey[objectType=haven, naam=ligplaatsen, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
@@ -450,7 +450,7 @@ class FoldPlanWitnessTest {
                         + " $tussen_pad_13 [] {List<>, type null, bron null} [losplaats] {List<String>, type null,"
                         + " bron null}, pad_17: MEETING $onderwerp [haven] {List<String>, type null, bron null}"
                         + " [] {List<>, type null, bron null}] bind []",
-                "  accumulatie ListPlace $lijstplaats_plaats_18 alfa [plaats-veld_22: [[] veld VALUE"
+                "  accumulatie ListPlace $lijstplaats_plaats_18 alfa [plaats-veld_22: [[] field VALUE"
                         + " GELIJK schipper]] join [] beta [plaats-lid_23: PLACE_OF $tussen_pad_13 [] {List<>,"
                         + " type null, bron null}] bind [$lijstplaatswaarde_plaats_19 = [] ListPlace.place"
                         + " VALUE] functies [COUNT null -> $lijstplaatsen_plaats_20, MINIMUM"
@@ -483,9 +483,9 @@ class FoldPlanWitnessTest {
                 "    filter 0.0.2 Const String",
                 "regel havengeldtotaal van een Jutter: filterdeponering in vouw 1 | vorm havengeldtotaal"
                         + " van een Jutter | groep null",
-                "  lezingen [0 INVOER $havengeld (eigen ElementSleutel[objecttype=haven, naam=havengeld,"
-                        + " kenmerk=false]), 1 INVOER $ligplaatsen (eigen ElementSleutel[objecttype=haven,"
-                        + " naam=ligplaatsen, kenmerk=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INVOER $havengeld (eigen ElementKey[objectType=haven, naam=havengeld,"
+                        + " characteristic=false]), 1 INVOER $ligplaatsen (eigen ElementKey[objectType=haven,"
+                        + " naam=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
@@ -518,21 +518,21 @@ class FoldPlanWitnessTest {
         assertEquals(List.of(
                 "regel rustigheid: bijdrage aan vouw 0 | vorm rustigheid | groep null",
                 "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $opgave (eigen"
-                        + " ElementSleutel[objecttype=wacht, naam=opgave, kenmerk=false]), 2 STATE $deelnemers"
-                        + " (eigen ElementSleutel[objecttype=wacht, naam=deelnemers, kenmerk=false]), 3 DEPOSIT_FLAG null"
+                        + " ElementKey[objectType=wacht, naam=opgave, characteristic=false]), 2 STATE $deelnemers"
+                        + " (eigen ElementKey[objectType=wacht, naam=deelnemers, characteristic=false]), 3 DEPOSIT_FLAG null"
                         + " (null), 4 LIST_PLACES $lijstplaatsen_plaats_5 (lijstplaatsen 4), 5 LIST_PLACE"
                         + " $plaats_plaats_6 (lijstplaats 4)]",
                 "  patroon Ploeg $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Wacht $onderwerp alfa [] join [bereik_2: ploeg = $vouwonderwerp] beta [] bind [$opgave"
                         + " = [] Wacht.opgave VALUE]",
-                "  accumulatie ListPlace $lijstplaats_plaats_3 alfa [plaats-veld_7: [[] veld VALUE"
+                "  accumulatie ListPlace $lijstplaats_plaats_3 alfa [plaats-veld_7: [[] field VALUE"
                         + " GELIJK ploeg]] join [] beta [plaats-lid_8: PLACE_OF $onderwerp [] {List<>, type"
                         + " null, bron null}] bind [$lijstplaatswaarde_plaats_4 = [] ListPlace.place VALUE]"
                         + " functies [COUNT null -> $lijstplaatsen_plaats_5, MINIMUM $lijstplaatswaarde_plaats_4"
                         + " -> $plaats_plaats_6]",
-                "  patroon State $stand_2 alfa [stand_0: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=wacht, naam=deelnemers, kenmerk=false]]] join"
-                        + " [stand-onderwerp_1: onderwerp = $onderwerp] beta [] bind [$deelnemers = [] State.waarde"
+                "  patroon State $stand_2 alfa [stand_0: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=wacht, naam=deelnemers, characteristic=false]]] join"
+                        + " [stand-onderwerp_1: onderwerp = $onderwerp] beta [] bind [$deelnemers = [] State.value"
                         + " VALUE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=rustigheid: vouw 0, member=0, slots=[0,"
                         + " 1, 2, 4, 5], size=6, insertion=LOGICAL]",
@@ -671,18 +671,18 @@ class FoldPlanWitnessTest {
         Class<?> measurement = Class.forName("dev.uchar.regelspraak.cases.CaseRunner$SessionMeasurement");
         Object reader = Proxy.newProxyInstance(measurement.getClassLoader(), new Class<?>[]{measurement}, (proxy, m, a) -> {
             if (!m.getName().equals("meet")) throw new UnsupportedOperationException(m.getName());
-            DroolsBackend.Build bouw = (DroolsBackend.Build) a[0];
-            KieSession sessie = (KieSession) a[1];
-            DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie);
-            if (firing.geenFixpunt() != null) throw new AssertionError(firing.geenFixpunt());
+            DroolsBackend.Build build = (DroolsBackend.Build) a[0];
+            KieSession session = (KieSession) a[1];
+            DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
+            if (firing.noFixpoint() != null) throw new AssertionError(firing.noFixpoint());
             Map<Object, String> label = new IdentityHashMap<>();
             ((Map<String, Object>) a[2]).forEach((l, beanObject) -> label.put(beanObject, l));
-            List<FilterFault> fouten = new ArrayList<>();
-            for (Object f : sessie.getObjects()) if (f instanceof FilterFault x) fouten.add(x);
-            fouten.sort(null);
+            List<FilterFault> faults = new ArrayList<>();
+            for (Object f : session.getObjects()) if (f instanceof FilterFault x) faults.add(x);
+            faults.sort(null);
             List<String> out = new ArrayList<>();
-            for (FilterFault x : fouten) {
-                RuntimeException named = Rekenfout.designate(x.fout(), x.fold());
+            for (FilterFault x : faults) {
+                RuntimeException named = ComputeFault.designate(x.fault(), x.fold());
                 out.add("Filterfout " + label.get(x.onderwerp()) + " " + label.get(x.element()) + " " + x.place()
                         + ": " + named.getClass().getSimpleName() + ": " + named.getMessage());
             }
@@ -699,7 +699,7 @@ class FoldPlanWitnessTest {
      *  item after it that names the value fails loudly instead of joining a value of the quantification. */
     @Test void the_scope_of_an_exists_includes_the_bindings_of_its_patterns() {
         FactPattern withBinding = new FactPattern(Value.class, "$waarde", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "waarde")));
+                List.of(Binding.van("$v", Value.class, "value")));
         IllegalArgumentException without = assertThrows(IllegalArgumentException.class,
                 () -> new Exists(List.of(withBinding), List.of("$waarde"), List.of()));
         assertEquals("een bestaat-item declareert de variabelen van zijn patronen en van hun bindingen,"
@@ -718,9 +718,9 @@ class FoldPlanWitnessTest {
      *  of the name as well, and an item after both that names the value still fails loudly. */
     @Test void two_quantifications_each_bind_the_same_local_name() {
         Exists exists = new Exists(List.of(new FactPattern(Value.class, "$eerste", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "waarde")))), List.of("$eerste", "$v"), List.of());
+                List.of(Binding.van("$v", Value.class, "value")))), List.of("$eerste", "$v"), List.of());
         Not not = new Not(new FactPattern(Value.class, "$tweede", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "waarde"))));
+                List.of(Binding.van("$v", Value.class, "value"))));
         Consequence channel = new Consequence.InsertChannelState("bestaan", true, Consequence.Insertion.LOGICAL);
         RulePlan two = new RulePlan("twee kwantificaties", null, null, new ReadTable(List.of()),
                 List.of(exists, not), channel);
@@ -762,7 +762,7 @@ class FoldPlanWitnessTest {
                 + " {\"snippet\": \"2\"}}, \"source\": {\"snippet\": \"zijn havengeld gedeeld door zijn ligplaatsen is"
                 + " groter dan 2\"}}], \"source\": {\"snippet\": \"aan de volgende voorwaarde voldoen: zijn havengeld"
                 + " gedeeld door zijn ligplaatsen is groter dan 2\"}}";
-        String pad = "[{\"node\": \"RoleBinding\", \"factType\": \"bemanning\", \"role\": \"gevoerde boot\"}, {\"node\":"
+        String path = "[{\"node\": \"RoleBinding\", \"factType\": \"bemanning\", \"role\": \"gevoerde boot\"}, {\"node\":"
                 + " \"RoleBinding\", \"factType\": \"lossing\", \"role\": \"losplaats\"}, {\"node\": \"RoleBinding\","
                 + " \"factType\": \"ligging\", \"role\": \"haven\"}]";
         ((ArrayNode) d.get("rules").get("rules")).add(JSON.readTree("{\"node\": \"Rule\", \"name\": \"havengeldtotaal van"
@@ -770,15 +770,15 @@ class FoldPlanWitnessTest {
                 + ref("havengeldtotaal", "Jutter", "Het havengeldtotaal van een Jutter") + ", \"value\": {\"node\":"
                 + " \"Aggregation\", \"kind\": \"sum\", \"arguments\": [" + ref("havengeld", "Haven", "het havengeld van"
                 + " alle havens van alle losplaatsen van alle gevoerde boten van de Jutter") + "], \"elementType\":"
-                + " \"Haven\", \"filter\": " + filter + ", \"sourcePath\": " + pad + ", \"type\": " + number + ","
+                + " \"Haven\", \"filter\": " + filter + ", \"sourcePath\": " + path + ", \"type\": " + number + ","
                 + " \"source\": {\"snippet\": \"de som van het havengeld van alle havens van alle losplaatsen van alle"
                 + " gevoerde boten van de Jutter die aan de volgende voorwaarde voldoen: zijn havengeld gedeeld door zijn"
                 + " ligplaatsen is groter dan 2\"}}, \"initialisation\": false, \"presentation\": \"calculation\"}]}"));
         return d;
     }
 
-    private static String ref(String attribuut, String type, String snippet) {
-        return "{\"node\": \"AttributeReference\", \"attribute\": \"" + attribuut + "\", \"subjectType\": \"" + type
+    private static String ref(String attribute, String type, String snippet) {
+        return "{\"node\": \"AttributeReference\", \"attribute\": \"" + attribute + "\", \"subjectType\": \"" + type
                 + "\", \"source\": {\"snippet\": \"" + snippet + "\"}}";
     }
 
@@ -791,11 +791,11 @@ class FoldPlanWitnessTest {
         Method document = Class.forName("dev.uchar.regelspraak.cases.TmsDocuments").getDeclaredMethod("document",
                 String.class, List.class);
         document.setAccessible(true);
-        Path ir = (Path) document.invoke(null, veld(k, "MODEL"), List.of(veld(k, "DEELNEMERS"), veld(k, "CALM")));
+        Path ir = (Path) document.invoke(null, field(k, "MODEL"), List.of(field(k, "DEELNEMERS"), field(k, "CALM")));
         return JSON.readTree(ir.toFile());
     }
 
-    private static String veld(Class<?> javaClass, String naam) throws ReflectiveOperationException {
+    private static String field(Class<?> javaClass, String naam) throws ReflectiveOperationException {
         Field f = javaClass.getDeclaredField(naam);
         f.setAccessible(true);
         return (String) f.get(null);
@@ -814,10 +814,10 @@ class FoldPlanWitnessTest {
             if (!(p.consequence() instanceof Consequence.Contribution || p.consequence() instanceof Consequence.FilterDeposit
                     || p.consequence() instanceof Consequence.FilterFault || p.consequence() instanceof Consequence.MemberFault))
                 continue;
-            out.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendaGroup());
+            out.add("regel " + p.naam() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
-            for (Read l : p.lezingen().slots())
-                slots.add(l.slot() + " " + l.soort() + " " + l.naam() + " (" + l.sleutel() + ")");
+            for (Read l : p.readings().slots())
+                slots.add(l.slot() + " " + l.category() + " " + l.naam() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -839,9 +839,9 @@ class FoldPlanWitnessTest {
                     + n.patterns().stream().map(FoldPlanWitnessTest::pattern).toList());
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(FoldPlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
+            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+                    + a.aggregations().stream().map(f -> f.category() + " " + f.source() + " -> " + f.target()).toList();
+            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
@@ -854,47 +854,47 @@ class FoldPlanWitnessTest {
     /** Each constraint between two objects with its id, its function, the variable on the other side and each of its
      *  constants with every field ({@link #constant}). */
     private static List<String> beta(List<BetaTest> beta) {
-        return beta.stream().map(t -> t.id() + ": " + t.function() + " " + t.doel()
+        return beta.stream().map(t -> t.id() + ": " + t.function() + " " + t.target()
                 + t.constants().stream().map(c -> " " + constant(c)).reduce("", String::concat)).toList();
     }
 
     /** A constant of the analysis with every field: its value, the class of its value (a list by the classes of its
      *  elements), its IR type and its source fragment, each null where the constant has none (fix round 1c-B2). */
     private static String constant(Term.Const c) {
-        return c.waarde() + " {" + javaClass(c.waarde()) + ", type " + c.type() + ", bron " + c.bron() + "}";
+        return c.value() + " {" + javaClass(c.value()) + ", type " + c.type() + ", bron " + c.source() + "}";
     }
 
-    private static String javaClass(Object waarde) {
-        if (waarde == null) return "null";
-        if (waarde instanceof List<?> l)
+    private static String javaClass(Object value) {
+        if (value == null) return "null";
+        if (value instanceof List<?> l)
             return "List<" + String.join(",", l.stream().map(e -> e == null ? "null" : e.getClass().getSimpleName())
                     .distinct().toList()) + ">";
-        return waarde.getClass().getSimpleName();
+        return value.getClass().getSimpleName();
     }
 
     private static List<String> joins(List<Join> joins) {
-        return joins.stream().map(j -> j.id() + ": " + j.veld() + " = " + j.doel()
-                + (j.targetField() == null ? "" : "." + veld(j.targetField()))).toList();
+        return joins.stream().map(j -> j.id() + ": " + j.field() + " = " + j.target()
+                + (j.targetField() == null ? "" : "." + field(j.targetField()))).toList();
     }
 
     private static List<String> alpha(List<Alpha> alpha) {
         List<String> out = new ArrayList<>();
         for (Alpha a : alpha)
-            out.add(a.id() + ": " + a.tests().stream().map(t -> fields(t.pad()) + " " + t.veld() + " " + t.vorm()
-                    + " " + t.op() + (t.waarde() == null ? "" : " " + t.waarde())).toList());
+            out.add(a.id() + ": " + a.tests().stream().map(t -> fields(t.path()) + " " + t.field() + " " + t.form()
+                    + " " + t.op() + (t.value() == null ? "" : " " + t.value())).toList());
         return out;
     }
 
     private static List<String> bindings(List<Binding> bindings) {
-        return bindings.stream().map(b -> b.doel() + " = " + fields(b.pad()) + " " + veld(b.veld()) + " " + b.vorm()
-                + (b.soort() == null ? "" : " " + b.soort().getSimpleName())).toList();
+        return bindings.stream().map(b -> b.target() + " = " + fields(b.path()) + " " + field(b.field()) + " " + b.form()
+                + (b.category() == null ? "" : " " + b.category().getSimpleName())).toList();
     }
 
-    private static String fields(List<Binding.Field> pad) {
-        return pad.stream().map(FoldPlanWitnessTest::veld).toList().toString();
+    private static String fields(List<Binding.Field> path) {
+        return path.stream().map(FoldPlanWitnessTest::field).toList().toString();
     }
 
-    private static String veld(Binding.Field v) {
+    private static String field(Binding.Field v) {
         return v.javaClass().getSimpleName() + "." + v.naam();
     }
 
@@ -907,8 +907,8 @@ class FoldPlanWitnessTest {
                         + ", slots=" + b.slots() + ", size=" + b.size() + ", insertion=" + b.insertion() + "]");
                 switch (b.input()) {
                     case Consequence.Input.Count t -> out.add("    inbreng Telling");
-                    case Consequence.Input.MemberValue l -> out.add("    inbreng Lidwaarde [waarde=" + l.waarde() + ", totaal="
-                            + l.totaal() + ", gevuld=" + l.filled() + "]");
+                    case Consequence.Input.MemberValue l -> out.add("    inbreng Lidwaarde [value=" + l.value() + ", total="
+                            + l.total() + ", gevuld=" + l.filled() + "]");
                     case Consequence.Input.Verdict o -> {
                         out.add("    inbreng Oordeel matrix " + TermTree.tree(o.matrix()));
                         TermTree.fields("      matrix", o.matrix(), "0", out);
@@ -936,7 +936,7 @@ class FoldPlanWitnessTest {
     }
 
     private static String place(Consequence.FoldPlace p) {
-        return "selectie " + p.selection() + " " + p.steps().stream().map(s -> s.veld() + " " + s.aantal() + " "
-                + s.place()).toList() + " " + p.reden();
+        return "selectie " + p.selection() + " " + p.steps().stream().map(s -> s.field() + " " + s.count() + " "
+                + s.place()).toList() + " " + p.reason();
     }
 }

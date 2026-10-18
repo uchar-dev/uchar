@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
@@ -61,9 +61,9 @@ class RoundTripWitnessTest {
 
         // the loaded model is a valid transpiler input: beans generate, the contract holds, and
         // the truth-maintenance back-end wholly lowers it (no marker/skip) — loader(emit(model)) round-trips.
-        Map<String, String> sources = FactModelGenerator.genereer(model);
+        Map<String, String> sources = FactModelGenerator.generate(model);
         ClassLoader cl = BeanCompiler.compile(sources);
-        List<String> violations = ContractValidator.valideer(model, cl);
+        List<String> violations = ContractValidator.validate(model, cl);
         assertTrue(violations.isEmpty(), golden + ": bean contract holds — " + violations);
 
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
@@ -71,8 +71,8 @@ class RoundTripWitnessTest {
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
                     loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
-            for (Dekking d : et.dekking())
-                assertTrue(d.lowered(), golden + ": construct lowered — " + d.sleutel() + " " + d.verdict());
+            for (Coverage d : et.coverage())
+                assertTrue(d.lowered(), golden + ": construct lowered — " + d.key() + " " + d.verdict());
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

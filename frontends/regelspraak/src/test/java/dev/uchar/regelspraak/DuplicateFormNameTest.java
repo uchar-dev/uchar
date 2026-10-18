@@ -38,8 +38,8 @@ class DuplicateFormNameTest {
 
     /** The line of the {@code n}-th declaration head (1-based) in {@code bron}: a line that opens with "Regel " or
      *  "Beslistabel ", after indentation. */
-    private static int head(String bron, int n) {
-        String[] regels = bron.split("\n", -1);
+    private static int head(String source, int n) {
+        String[] regels = source.split("\n", -1);
         int seen = 0;
         for (int i = 0; i < regels.length; i++) {
             String r = regels[i].stripLeading();
@@ -53,18 +53,18 @@ class DuplicateFormNameTest {
     }
 
     /** One ERROR on the line of the second head, naming the line of the first. */
-    private static void geweigerd(String regels, int first, int second, String sentence) {
-        String bron = MODEL + regels;
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static void refused(String regels, int first, int second, String sentence) {
+        String source = MODEL + regels;
+        RegelSpraakModel m = Resolver.resolve(source);
         List<Diagnostic> ds = nameErrors(m);
         assertEquals(1, ds.size(), () -> "verwacht één naamweigering, kreeg: " + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        assertEquals(head(bron, second), ds.get(0).line(), ds.get(0)::message);
-        assertEquals(sentence.replace("<n>", String.valueOf(head(bron, first))), ds.get(0).message());
+        assertEquals(head(source, second), ds.get(0).line(), ds.get(0)::message);
+        assertEquals(sentence.replace("<n>", String.valueOf(head(source, first))), ds.get(0).message());
     }
 
     @Test void two_lines_with_a_name() {
-        geweigerd("""
+        refused("""
             Regel actief
                 geldig altijd
                     Een Jutter is actief
@@ -78,7 +78,7 @@ class DuplicateFormNameTest {
     }
 
     @Test void the_name_in_another_spelling() {
-        geweigerd("""
+        refused("""
             Regel actief
                 geldig altijd
                     Een Jutter is actief
@@ -92,7 +92,7 @@ class DuplicateFormNameTest {
     }
 
     @Test void a_rule_and_a_consistency_rule() {
-        geweigerd("""
+        refused("""
             Regel gewicht
                 geldig altijd
                     Het gewicht van een Jutter moet gesteld worden op 3.
@@ -105,7 +105,7 @@ class DuplicateFormNameTest {
     }
 
     @Test void a_member_of_a_rule_group_and_a_rule() {
-        geweigerd("""
+        refused("""
             Regelgroep beoordeling
                 Regel actief
                     geldig altijd
@@ -120,7 +120,7 @@ class DuplicateFormNameTest {
     }
 
     @Test void a_row_of_a_decision_table_and_a_rule() {
-        geweigerd("""
+        refused("""
             Beslistabel premie
                 geldig altijd
             | | indien zijn gewicht groter is dan | de premie van een Jutter moet gesteld worden op |
@@ -135,7 +135,7 @@ class DuplicateFormNameTest {
     }
 
     @Test void two_blocks_with_a_version() {
-        geweigerd("""
+        refused("""
             Regel gewicht
                 geldig vanaf 01-01-2026
                     Het gewicht van een Jutter moet gesteld worden op 3.
@@ -149,7 +149,7 @@ class DuplicateFormNameTest {
 
     @Test void two_blocks_with_two_versions() {
         // before: the emitter's exception, "de versieachtervoegsels zijn [1, 1, 2, 2], niet precies 1 tot en met 4"
-        geweigerd("""
+        refused("""
             Regel gewicht
                 geldig vanaf 01-01-2026
                     Het gewicht van een Jutter moet gesteld worden op 3.

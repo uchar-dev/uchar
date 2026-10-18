@@ -61,15 +61,15 @@ class WindowGatePositionWitnessTest {
     }
 
     @Test void the_window_in_the_guard_of_an_object_creation_plays() throws Exception {
-        Path all = creatie(combined("all", 0, "{guard}", WINDOW));
+        Path all = creation(combined("all", 0, "{guard}", WINDOW));
         BothBranches.green(all, creationCase("2024-06-15", "2"), "ALLE[rang < 98, venster], binnen");
         BothBranches.green(all, creationCase(null, "0"), "ALLE[rang < 98, venster], tijdvrij: niets gemunt");
     }
 
     @Test void under_none_and_at_least_both_branches_refuse_the_object_creation_by_name() throws Exception {
-        BothBranches.refused(creatie(combined("none", 0, "{guard}", WINDOW)), creationCase(null, "0"),
+        BothBranches.refused(creation(combined("none", 0, "{guard}", WINDOW)), creationCase(null, "0"),
                 "periodevenster in een GEEN-samenstelling (WF-112)", "GEEN[rang < 98, venster] als creatieguard");
-        BothBranches.refused(creatie(combined("atLeast", 1, "{guard}", WINDOW)), creationCase(null, "0"),
+        BothBranches.refused(creation(combined("atLeast", 1, "{guard}", WINDOW)), creationCase(null, "0"),
                 "periodevenster in een TEN_MINSTE-samenstelling (WF-112)", "TEN MINSTE 1[rang < 98, venster]");
     }
 
@@ -96,7 +96,7 @@ class WindowGatePositionWitnessTest {
     }
 
     /** The creation golden with its guard replaced; a {@code {guard}} placeholder is the golden's own guard. */
-    private Path creatie(String guard) throws Exception {
+    private Path creation(String guard) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(CREATION.resolve("ir.json")));
         ObjectNode oc = IrPath.version(doc, "objectCreations", 0, 0);
         oc.set("condition", JSON.readTree(guard.replace("{guard}", oc.get("condition").toString())));
@@ -113,14 +113,14 @@ class WindowGatePositionWitnessTest {
     private static JsonNode allocationCase(String asOf, String j1, String j2, String j3, String j4) throws Exception {
         ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(VERDELING.resolve("case.json")));
         if (asOf == null) c.putNull("asOfDate"); else c.put("asOfDate", asOf);
-        var verwacht = c.putArray("expected");
+        var expected = c.putArray("expected");
         String[] labels = { "J1", "J2", "J3", "J4" }, waarden = { j1, j2, j3, j4 };
         for (int i = 0; i < 4; i++) {
-            ObjectNode e = verwacht.addObject().put("label", labels[i]).put("attribute", "bergdeel");
+            ObjectNode e = expected.addObject().put("label", labels[i]).put("attribute", "bergdeel");
             if (waarden[i] == null) e.put("kind", "attributeEmpty");
             else e.put("kind", "attributeValue").set("value", JSON.createObjectNode().put("number", waarden[i]));
         }
-        verwacht.addObject().put("kind", "consistent");
+        expected.addObject().put("kind", "consistent");
         return c;
     }
 

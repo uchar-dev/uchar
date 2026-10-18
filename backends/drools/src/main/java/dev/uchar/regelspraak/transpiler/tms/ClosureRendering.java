@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
@@ -39,27 +39,27 @@ final class ClosureRendering {
     static ValueFunction valueFunction(Term t) {
         return switch (t) {
             case Term.Const c -> {
-                Object v = c.waarde();
+                Object v = c.value();
                 yield w -> v;
             }
             case Term.SlotValue l -> {
                 int i = l.slot();
                 yield w -> w[i];
             }
-            case Term.Invoer i -> {
+            case Term.Input i -> {
                 ValueFunction object = valueFunction(i.object());
-                Function<Object, Object> lees = PatternDslRendering.inputReader(i.veld(), i.vorm(), null);
-                yield w -> lees.apply(object.van(w));
+                Function<Object, Object> read = PatternDslRendering.inputReader(i.field(), i.form(), null);
+                yield w -> read.apply(object.van(w));
             }
             case Term.Binder b -> {
                 int i = b.slot();
-                yield w -> ((Need) w[i]).lees();
+                yield w -> ((Need) w[i]).read();
             }
             case Term.Let l -> let(l);
             case Term.Choice k -> {
-                Predicate<Object[]> voorwaarde = test(k.voorwaarde());
+                Predicate<Object[]> condition = test(k.condition());
                 ValueFunction then = valueFunction(k.then()), otherwise = valueFunction(k.otherwise());
-                yield w -> voorwaarde.test(w) ? then.van(w) : otherwise.van(w);
+                yield w -> condition.test(w) ? then.van(w) : otherwise.van(w);
             }
             case Term.Call a -> call(a.function(), a.arguments());
             case Term.Restate h -> restate(h);
@@ -86,7 +86,7 @@ final class ClosureRendering {
                 yield w -> ComputeHelpers.fail(sentence);
             }
             case Term.Required v -> {
-                ValueFunction f = valueFunction(v.waarde());
+                ValueFunction f = valueFunction(v.value());
                 String sentence = v.sentence();
                 yield w -> ComputeHelpers.required(f.van(w), sentence);
             }
@@ -120,24 +120,24 @@ final class ClosureRendering {
      *  that test, any other term as its value, a truth value. */
     static Predicate<Object[]> test(Term t) {
         if (t instanceof Term.Compound s) return compound(s);
-        if (t instanceof Term.WithoutFault z) return withoutFault(test(z.voorwaarde()));
+        if (t instanceof Term.WithoutFault z) return withoutFault(test(z.condition()));
         ValueFunction f = valueFunction(t);
         return w -> (Boolean) f.van(w);
     }
 
-    /** The test of {@code t}, the condition of a rule's left-hand side, that asks {@code rol} of it
+    /** The test of {@code t}, the condition of a rule's left-hand side, that asks {@code role} of it
      *  ({@link TestItem}). */
     static Predicate<Object[]> test(TestItem t) {
-        return test(t.rol(), test(t.test()), t.depositFlag());
+        return test(t.role(), test(t.test()), t.depositFlag());
     }
 
-    /** The test of a rule's left-hand side that asks {@code rol} of the condition {@code toets}
+    /** The test of a rule's left-hand side that asks {@code role} of the condition {@code toets}
      *  ({@link TestItem.Role}); {@code depositFlag} is the probe's slot of a test of deposits. */
-    static Predicate<Object[]> test(TestItem.Role rol, Predicate<Object[]> test, int depositFlag) {
-        return switch (rol) {
+    static Predicate<Object[]> test(TestItem.Role role, Predicate<Object[]> test, int depositFlag) {
+        return switch (role) {
             case CONDITION, VORM -> test;
             case WITHOUT_FAULT -> withoutFault(test);
-            case FAULT -> w -> fout(test, w) != null;
+            case FAULT -> w -> fault(test, w) != null;
             case DEPOSIT -> w -> {
                 Object s = ComputeHelpers.depositFlag();
                 w[depositFlag] = s;
@@ -166,11 +166,11 @@ final class ClosureRendering {
     }
 
     /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. An evaluation fault is a
-     *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link Rekenfout}: a date step or a duration
+     *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link ComputeFault}: a date step or a duration
      *  count outside the range of ch. 3.8, a context value or a validity window without an evaluation date, an
      *  {@code Unresolved} node reached, and the other faults that class names. Any other exception is a broken contract
      *  or a bug and leaves the fire as it is. */
-    static RuntimeException fout(Predicate<Object[]> test, Object[] w) {
+    static RuntimeException fault(Predicate<Object[]> test, Object[] w) {
         try {
             test.test(w);
             return null;
@@ -213,12 +213,12 @@ final class ClosureRendering {
      * no state and one KieBase serves any number of sessions.
      */
     private static ValueFunction let(Term.Let l) {
-        ValueFunction waarde = valueFunction(l.waarde()), body = valueFunction(l.body());
+        ValueFunction value = valueFunction(l.value()), body = valueFunction(l.body());
         int slot = l.slot();
         return w -> {
             Barrier barrier = new Barrier();
             Object[] inside = w.clone();
-            inside[slot] = new Need(() -> waarde.van(w), barrier);
+            inside[slot] = new Need(() -> value.van(w), barrier);
             try {
                 return body.van(inside);
             } catch (Barrier b) {
@@ -233,7 +233,7 @@ final class ClosureRendering {
      *  evaluated. */
     private static Predicate<Object[]> compound(Term.Compound s) {
         List<Predicate<Object[]>> members = s.members().stream().map(ClosureRendering::test).toList();
-        Conditie.Kwantor kw = s.quantifier();
+        Condition.Quantifier kw = s.quantifier();
         int threshold = s.threshold();
         return w -> {
             int touch = 0;
@@ -250,12 +250,12 @@ final class ClosureRendering {
      *  the outcomes evaluated in that order, then the plan's function over them with the quantifier, the threshold and
      *  the probe in the node's slot, or nothing where the node has none. */
     private static ValueFunction quantifierRead(Term.QuantifierRead k) {
-        ValueFunction aantal = valueFunction(k.aantal()), contributions = valueFunction(k.contributions());
+        ValueFunction count = valueFunction(k.count()), contributions = valueFunction(k.contributions());
         Implementation f = implementation(k.function());
-        Conditie.Kwantor kw = k.quantifier();
+        Condition.Quantifier kw = k.quantifier();
         int threshold = k.threshold(), depositFlag = k.depositFlag();
         return w -> {
-            Object n = aantal.van(w), b = contributions.van(w);
+            Object n = count.van(w), b = contributions.van(w);
             return f.van(new Object[]{n, b, kw, threshold, depositFlag < 0 ? null : w[depositFlag]});
         };
     }
@@ -279,9 +279,9 @@ final class ClosureRendering {
         int depositCount = v.depositCount(), depositFlag = v.depositFlag(), filterFault = v.filterFault(), memberFault = v.memberFault();
         return w -> {
             if (depositFlag >= 0 && ((Number) w[depositCount]).longValue() > 0) ComputeHelpers.report(w[depositFlag]);
-            if (filterFault >= 0 && w[filterFault] != null) throw ((FilterFault) w[filterFault]).fout();
+            if (filterFault >= 0 && w[filterFault] != null) throw ((FilterFault) w[filterFault]).fault();
             // the reference interpreter reads the members' values once every member's filter is evaluated
-            if (memberFault >= 0 && w[memberFault] != null) throw ((MemberFault) w[memberFault]).fout();
+            if (memberFault >= 0 && w[memberFault] != null) throw ((MemberFault) w[memberFault]).fault();
             return outcome.van(w);
         };
     }
@@ -292,7 +292,7 @@ final class ClosureRendering {
     static org.drools.model.functions.Predicate2<Object, Object> betaTest(StaticFunction function,
                                                                           List<Term.Const> constants) {
         Implementation f = implementation(function);
-        Object[] c = constants.stream().map(Term.Const::waarde).toArray();
+        Object[] c = constants.stream().map(Term.Const::value).toArray();
         return (x, o) -> {
             Object[] a = new Object[2 + c.length];
             a[0] = x;
@@ -344,7 +344,7 @@ final class ClosureRendering {
                     (Class<?>) x[2]);
             case RS_DAY_COUNT_FROM -> x -> RegelSpraakRuntime.rsAantalDagenInVanaf((List<?>) x[0],
                     (String) x[1], (LocalDate) x[2], (Class<?>) x[3]);
-            case PERIOD_LIST -> x -> Period.lijst((List<?>) x[0]);
+            case PERIOD_LIST -> x -> Period.list((List<?>) x[0]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case SQUARE_ROOT -> x -> ComputeHelpers.squareRoot(x[0], x[1]);
@@ -365,19 +365,19 @@ final class ClosureRendering {
             case SMALLEST -> x -> ComputeHelpers.smallest(x[0], x[1]);
             case LARGEST -> x -> ComputeHelpers.largest(x[0], x[1]);
             case FALLBACK -> x -> ComputeHelpers.fallback(x[0], x[1]);
-            case COUNT -> x -> ComputeHelpers.aantal(x[0]);
+            case COUNT -> x -> ComputeHelpers.countOf(x[0]);
             case FOLD_VALUE -> x -> ComputeHelpers.foldValue(x[0], x[1], x[2]);
             case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4]);
             case COMPLETE -> x -> ComputeHelpers.complete(x[0], (String) x[1], x[2], (String) x[3]);
             case COLLAPSE -> x -> ComputeHelpers.collapse(x[0]);
             case RS_AGG_COMPARE -> x -> RegelSpraakRuntime.rsAggVergelijk(x[0], x[1], (String) x[2]);
-            case DATE_COMPARE -> x -> ComputeHelpers.dateCompare(x[0], x[1], (Conditie.Operator) x[2]);
+            case DATE_COMPARE -> x -> ComputeHelpers.dateCompare(x[0], x[1], (Condition.Operator) x[2]);
             case TEXT_EQUAL -> x -> ComputeHelpers.textEqual(x[0], x[1], (Boolean) x[2]);
             case RS_ENUM_NAME -> x -> RegelSpraakRuntime.rsEnumNaam(x[0]);
             case EMPTY_TEST -> x -> ComputeHelpers.emptyTest(x[0], (Boolean) x[1]);
             case ELEVEN_TEST -> x -> ComputeHelpers.elevenTest(x[0], (Boolean) x[1]);
             case NUMERIEK_MET_EXACT -> x -> ComputeHelpers.exactDigits(x[0], (Integer) x[1], (Boolean) x[2]);
-            case KENMERK -> x -> ComputeHelpers.kenmerk(x[0], (Boolean) x[1]);
+            case KENMERK -> x -> ComputeHelpers.characteristic(x[0], (Boolean) x[1]);
             case CHARACTERISTIC_CHECK_ALONG_PATH -> x -> ComputeHelpers.characteristicCheckAlongPath(x[0], (Boolean) x[1]);
             case ROLE_COUNT -> x -> ComputeHelpers.roleCount(x[0], (Boolean) x[1]);
             case ROLE_FIELD -> x -> ComputeHelpers.roleField(x[0], (Boolean) x[1]);
@@ -385,13 +385,13 @@ final class ClosureRendering {
                     (Boolean) x[4], x[5]);
             case WHOLE_PERIOD -> x -> ComputeHelpers.wholePeriod(x[0], x[1], (String) x[2], (Integer) x[3],
                     (Boolean) x[4]);
-            case QUANTIFIER_VERDICT -> x -> ComputeHelpers.quantifierVerdict(x[0], x[1], (Conditie.Kwantor) x[2],
+            case QUANTIFIER_VERDICT -> x -> ComputeHelpers.quantifierVerdict(x[0], x[1], (Condition.Quantifier) x[2],
                     (Integer) x[3]);
-            case QUANTIFIER_READ -> x -> ComputeHelpers.quantifierRead(x[0], x[1], (Conditie.Kwantor) x[2], (Integer) x[3],
+            case QUANTIFIER_READ -> x -> ComputeHelpers.quantifierRead(x[0], x[1], (Condition.Quantifier) x[2], (Integer) x[3],
                     x[4]);
             case CHANNEL -> x -> ComputeHelpers.channel(x[0]);
             case NIET -> x -> ComputeHelpers.not(x[0]);
-            case BUCKET_SCALAR -> x -> ComputeHelpers.emmerscalair(x[0], (Boolean) x[1]);
+            case BUCKET_SCALAR -> x -> ComputeHelpers.bucketScalar(x[0], (Boolean) x[1]);
             case TARGET_EMPTY -> x -> ComputeHelpers.targetEmpty(x[0], x[1]);
             case DIFFER -> x -> ComputeHelpers.differ(x[0]);
             case DUPLICATE -> x -> ComputeHelpers.duplicate(x[0]);
@@ -422,19 +422,19 @@ final class ClosureRendering {
      *  read. Made inside that evaluation and reached only through its copy of the value array, so it is never shared
      *  between sessions or threads. */
     private static final class Need {
-        private final Supplier<Object> waarde;
+        private final Supplier<Object> value;
         private final Barrier barrier;
         private boolean computed;
         private Object outcome;
 
-        Need(Supplier<Object> waarde, Barrier barrier) {
-            this.waarde = waarde;
+        Need(Supplier<Object> value, Barrier barrier) {
+            this.value = value;
             this.barrier = barrier;
         }
 
-        Object lees() {
+        Object read() {
             if (!computed) {
-                outcome = waarde.get();
+                outcome = value.get();
                 computed = true;
             }
             if (outcome == null) throw barrier;

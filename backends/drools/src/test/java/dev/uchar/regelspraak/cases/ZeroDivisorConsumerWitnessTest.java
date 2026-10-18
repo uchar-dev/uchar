@@ -35,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  * instead of Drools' exception, on both branches, and {@code benoem} did not exist.
  *
  * <p>The analysis with truth maintenance does not throw out of its fire: it inserts an evaluation fault as a fact, so
- * its consumer fires through {@code DroolsBackend.vuur} to the fixpoint, reads the fault as data with
- * {@code DroolsBackend.lees}, and {@code DroolsBackend.zetAfgeleideWaarden} throws the named {@code DelingDoorNul} there,
+ * its consumer fires through {@code DroolsBackend.fire} to the fixpoint, reads the fault as data with
+ * {@code DroolsBackend.read}, and {@code DroolsBackend.setDerivedValues} throws the named {@code DelingDoorNul} there,
  * the sentence the replay gives ({@code TmsFaultWitnessTest}). Since card drl-teksttak-op-truth-maintenance that holds on
  * both branches, and a consumer that fires a KieBase itself gets no exception out of the fire at all. The rows of
  * Drools' exception, and of {@code benoem} naming it, asked the DRL-text branch alone from card tms-omschakeling
@@ -61,13 +61,13 @@ class ZeroDivisorConsumerWitnessTest {
 
     @Test void both_branches_give_the_sentence_on_writing_back() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
-            CaseRunner.forMeasurement(document(), branch).withSession(JSON.readTree(ZERO_AND_ORDINARY), (bouw, sessie, labels) -> {
-                assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), branch + ": the fire reaches its fixpoint");
-                List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();
-                assertEquals(1, fouten.size(), fouten::toString);
-                assertEquals(SENTENCE, fouten.get(0).melding(), branch + ": the fault as data");
+            CaseRunner.forMeasurement(document(), branch).withSession(JSON.readTree(ZERO_AND_ORDINARY), (build, session, labels) -> {
+                assertNull(DroolsBackend.fire(build, session).noFixpoint(), branch + ": the fire reaches its fixpoint");
+                List<dev.uchar.regelspraak.transpiler.tms.Fault> faults = DroolsBackend.fixpointOf(build, session).faults();
+                assertEquals(1, faults.size(), faults::toString);
+                assertEquals(SENTENCE, faults.get(0).message(), branch + ": the fault as data");
                 assertEquals(SENTENCE, assertThrows(Breuk.DelingDoorNul.class,
-                        () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), branch + ": the fault thrown");
+                        () -> DroolsBackend.setDerivedValues(build, session)).getMessage(), branch + ": the fault thrown");
                 return null;
             });
     }
@@ -88,15 +88,15 @@ class ZeroDivisorConsumerWitnessTest {
         Map<String, Object> beans = CaseRunner.inputBeans(ir, JSON.readTree(ZERO_AND_ORDINARY));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = b.kieBase().newKieSession();
+        KieSession session = b.kieBase().newKieSession();
         try {
-            for (Object bean : beans.values()) sessie.insert(bean);
-            sessie.fireAllRules(100_000);
+            for (Object bean : beans.values()) session.insert(bean);
+            session.fireAllRules(100_000);
             return null;
         } catch (RuntimeException e) {
             return e;
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -105,8 +105,8 @@ class ZeroDivisorConsumerWitnessTest {
     private static RuntimeException designate(ConsequenceException e) throws Exception {
         try {
             return (RuntimeException) DroolsBackend.class.getMethod("designate", ConsequenceException.class).invoke(null, e);
-        } catch (InvocationTargetException fout) {
-            throw (Exception) fout.getCause();
+        } catch (InvocationTargetException fault) {
+            throw (Exception) fault.getCause();
         }
     }
 
@@ -114,20 +114,20 @@ class ZeroDivisorConsumerWitnessTest {
 
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
 
-    private static String attribuut(String naam) {
+    private static String attribute(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + TWO_DECIMALS + "}";
     }
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     /** The rule "verhouding": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht", without a condition. */
     private static Path document() throws Exception {
         String model = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\","
-                + "\"attributes\":[" + attribuut("geschatte gewicht") + "," + attribuut("gewogen gewicht") + ","
-                + attribuut("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
+                + "\"attributes\":[" + attribute("geschatte gewicht") + "," + attribute("gewogen gewicht") + ","
+                + attribute("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
                 + "\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
         String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + own("gewogen gewicht") + ",\"right\":"
                 + own("geschatte gewicht") + ",\"type\":" + TWO_DECIMALS + ",\"source\":{\"snippet\":\"zijn gewogen gewicht"

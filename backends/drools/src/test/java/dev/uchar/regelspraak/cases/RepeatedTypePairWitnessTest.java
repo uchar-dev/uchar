@@ -70,7 +70,7 @@ class RepeatedTypePairWitnessTest {
 
     @Test void the_by_pair_derivation_stays_ambiguous_and_does_not_guess() throws Exception {
         RegelSpraakModel m = model(ir(DUBBELVERBINDING));
-        Objecttype haven = m.objecttypeOpNaam("Haven"), schuit = m.objecttypeOpNaam("Schuit");
+        Objecttype haven = m.objectTypeByName("Haven"), schuit = m.objectTypeByName("Schuit");
         // The authority every bindingless consumer shares stays exactly as it was. Teaching it to pick a
         // winner would turn an honest ambiguity into a silent wrong join across the whole back-end —
         // RUNTIME-SEMANTICS ch. 5.5 forbids it and ref refuses the same derivation (connecting_pair).
@@ -85,16 +85,16 @@ class RepeatedTypePairWitnessTest {
 
     @Test void the_bean_model_carries_a_field_per_to_one_role() throws Exception {
         RegelSpraakModel m = model(ir(DUBBELVERBINDING));
-        Objecttype haven = m.objecttypeOpNaam("Haven"), schuit = m.objecttypeOpNaam("Schuit");
+        Objecttype haven = m.objectTypeByName("Haven"), schuit = m.objectTypeByName("Schuit");
         // FOUR Haven references on Schuit — one per to-one Haven role — each typed, each named after its role.
-        for (String rol : List.of("thuishaven", "winterhaven", "keurhaven", "vlaghaven"))
-            assertTrue(FactModelGenerator.hasReferenceField(m, schuit, rol, haven), rol);
+        for (String role : List.of("thuishaven", "winterhaven", "keurhaven", "vlaghaven"))
+            assertTrue(FactModelGenerator.hasReferenceField(m, schuit, role, haven), role);
         // and exactly ONE the other way: the three to-many Schuit roles store on the Schuit, the to-one
         // `vlaggenschip` is the 1:1 leg that needs a field of its own (ch. 5.7a, consequence 2).
         assertTrue(FactModelGenerator.hasReferenceField(m, haven, "vlaggenschip", schuit));
-        for (String rol : List.of("ligger", "winterschuit", "keurschuit"))
-            assertTrue(!FactModelGenerator.hasReferenceField(m, haven, rol, schuit),
-                    "a to-many role's storage is the far end's field: " + rol);
+        for (String role : List.of("ligger", "winterschuit", "keurschuit"))
+            assertTrue(!FactModelGenerator.hasReferenceField(m, haven, role, schuit),
+                    "a to-many role's storage is the far end's field: " + role);
     }
 
     // ---------------- 2. the fold over a WRITTEN element role (the old toolchain manifest's count) ------
@@ -155,7 +155,7 @@ class RepeatedTypePairWitnessTest {
         // another type than that subject — refused by the verifier and by ref (WF-053), and by this loader now,
         // in their sentence.
         JsonNode ir = JSON.readTree(Files.readString(creationVariant(targetComparison("romplengte", "8"), true)));
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/factCreations/0/versions/0/condition/left", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith("its subjectType is the subject type 'Haven' — 'Schuit' names another type,"
                 + " which only a navigation reaches"), e.getMessage());
@@ -217,9 +217,9 @@ class RepeatedTypePairWitnessTest {
         // type pair, which is the whole construct. On the exec-model branch, through the entry a consumer
         // uses: one vuur to the fixpoint, then the write-back, which puts the link the creation laid on the field.
         CaseRunner.forMeasurement(ir(DUBBELVERBINDING), DroolsBackend.Branch.EXEC_MODEL).withSession(
-                JSON.readTree(golden("case1-binnen-venster.json")), (bouw, sessie, labels) -> {
-                    assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
-                    DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+                JSON.readTree(golden("case1-binnen-venster.json")), (build, session, labels) -> {
+                    assertNull(DroolsBackend.fire(build, session).noFixpoint(), "the fixpoint");
+                    DroolsBackend.setDerivedValues(build, session);
                     assertSame(labels.get("H1"), RegelSpraakRuntime.get(labels.get("S1"), "winterhaven"),
                             "the creation wrote the winterberging leg");
                     assertSame(labels.get("H1"), RegelSpraakRuntime.get(labels.get("S1"), "thuishaven"),
@@ -314,7 +314,7 @@ class RepeatedTypePairWitnessTest {
         // ch. 4.3): the document is refused at load, by name, before any branch could guess. The bound flank is
         // in SourceRoleFoldWitnessTest, where the same fold PLAYS in both branches.
         for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                     () -> CaseRunner.playCase(sumOverLiggers(), JSON.readTree(twoRolesCase("2", "0", "0", "1")), viaDrl));
             assertTrue(e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
         }
@@ -336,14 +336,14 @@ class RepeatedTypePairWitnessTest {
         return IrLoader.loadAll(JSON.readTree(Files.readString(irPath))).model();
     }
 
-    private static ObjectNode lees(String golden) throws Exception {
+    private static ObjectNode read(String golden) throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
     }
 
     /** The golden reduced to its two counts — no creations, no navigated reads — so a supplied relation is
      *  read exactly as supplied and no rule writes a role field. */
     private static Path onlyCounts() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven", "wintertal van een haven");
         return temporary("dv-tellingen", ir);
@@ -352,12 +352,12 @@ class RepeatedTypePairWitnessTest {
     /** The golden reduced to ONE creation (winterberging) plus the count over the created role and the read
      *  back from the Schuit side, with the given voorwaarde (null = unguarded) and, when {@code always}, the
      *  §4.2 window dropped so the row is about the guard alone. */
-    private static Path creationVariant(ObjectNode voorwaarde, boolean always) throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+    private static Path creationVariant(ObjectNode condition, boolean always) throws Exception {
+        ObjectNode ir = read(DUBBELVERBINDING);
         keepCreations(ir, "winterberging door de haven");
         keepRules(ir, "wintertal van een haven", "ligprijs van een schuit");
         ObjectNode fc = IrPath.version(ir, "factCreations", 0, 0);
-        if (voorwaarde == null) fc.remove("condition"); else fc.set("condition", voorwaarde);
+        if (condition == null) fc.remove("condition"); else fc.set("condition", condition);
         if (always) fc.set("validity", JSON.createObjectNode()
                 .put("node", "Validity"));
         // the ligprijs rule carries its own doel-kenmerk gate in the golden; drop it so this row reads the
@@ -369,27 +369,27 @@ class RepeatedTypePairWitnessTest {
     /** The golden with the creation bound to ANOTHER feittype over the same pair — the mutation the both-sides
      *  row must catch. Since P2 the written field follows from that binding, and since L2 the wire carries no
      *  field name beside it (BeansFieldWitnessTest pins the loader's refusal of one). */
-    private static Path creationMoved(String feittype, String anchorRole, String targetRole) throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+    private static Path creationMoved(String factType, String anchorRole, String targetRole) throws Exception {
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.version(ir, "factCreations", "winterberging door de haven")
-                .put("factType", feittype).put("anchorRole", anchorRole).put("targetRole", targetRole);
+                .put("factType", factType).put("anchorRole", anchorRole).put("targetRole", targetRole);
         return temporary("dv-creatie-verlegd", ir);
     }
 
     /** The counts-only model with winterberging's Haven role RENAMED to `thuishaven`, so two feittypen reach
      *  Haven from Schuit under one name and neither derives a field. */
     private static Path roleNameCollision() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "winterberging").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "winterberging").get("roles"))
             if ("winterhaven".equals(r.get("name").asText())) ((ObjectNode) r).put("name", "thuishaven");
         return temporary("dv-rolnaambotsing", ir);
     }
 
     /** The counts-only model with a Numeriek attribute SHARING the role name `thuishaven` on Schuit. */
     private static Path nameSharingSchuit() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven", "wintertal van een haven");
         IrPath.addAttribute(IrPath.objectType(ir, "Schuit"), "thuishaven", number());
@@ -399,20 +399,20 @@ class RepeatedTypePairWitnessTest {
     /** The counts-only model with thuisligging's cardinalities SWAPPED — the element role `ligger` to-one and
      *  the subject's `thuishaven` to-many — so the join field is missing on the Schuit but present on the Haven. */
     private static Path elementRoleToOne() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "thuisligging").get("roles"))
             ((ObjectNode) r).put("many", "thuishaven".equals(r.get("name").asText()));
         return temporary("dv-elementrol-toone", ir);
     }
 
     /** The counts-only model with BOTH roles of thuisligging to-many — no field at either end. */
     private static Path bothSidesMany() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "thuisligging").get("roles"))
             ((ObjectNode) r).put("many", true);
         return temporary("dv-beide-meervoudig", ir);
     }
@@ -422,7 +422,7 @@ class RepeatedTypePairWitnessTest {
      *  the by-pair search. (With the binding in place the same fold is lowerable and plays; that is
      *  SourceRoleFoldWitnessTest's business.) */
     private static Path sumOverLiggers() throws Exception {
-        ObjectNode ir = lees(DUBBELVERBINDING);
+        ObjectNode ir = read(DUBBELVERBINDING);
         IrPath.rules(ir).putArray("factCreations");
         keepRules(ir, "liggertal van een haven");
         ObjectNode fold = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value");
@@ -444,30 +444,30 @@ class RepeatedTypePairWitnessTest {
 
     private static void keepCreations(ObjectNode ir, String naam) {
         ArrayNode out = JSON.createArrayNode();
-        out.add(IrPath.vorm(ir, "factCreations", naam));
+        out.add(IrPath.form(ir, "factCreations", naam));
         IrPath.rules(ir).set("factCreations", out);
     }
 
     /** A §8.1.7 characteristic check on the ANKER — no eigenaar, so it hosts on the anker pattern. */
-    private static ObjectNode anchorCharacteristicCheck(String kenmerk) {
-        return JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", kenmerk)
+    private static ObjectNode anchorCharacteristicCheck(String characteristic) {
+        return JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", characteristic)
                 .put("negated", false)
-                .set("source", IrPath.sourceReference("de Haven " + kenmerk + " is"));
+                .set("source", IrPath.sourceReference("de Haven " + characteristic + " is"));
     }
 
     /** A §8.1.7 characteristic check HOSTED on the doel (the eigenaar field, WF-100). */
-    private static ObjectNode targetCharacteristicCheck(String kenmerk) {
-        return JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", kenmerk)
+    private static ObjectNode targetCharacteristicCheck(String characteristic) {
+        return JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", characteristic)
                 .put("negated", false).put("host", "Schuit")
-                .set("source", IrPath.sourceReference("de ligger " + kenmerk + " is"));
+                .set("source", IrPath.sourceReference("de ligger " + characteristic + " is"));
     }
 
     /** A comparison on an attribute of the DOEL — the shape the frontend leaves unresolved and the transpilers
      *  host on the $doel pattern. */
-    private static ObjectNode targetComparison(String attribuut, String bound) {
+    private static ObjectNode targetComparison(String attribute, String bound) {
         ObjectNode left = JSON.createObjectNode();
-        left.put("node", "AttributeReference").put("attribute", attribuut).put("subjectType", "Schuit");
-        left.set("source", IrPath.sourceReference("de " + attribuut + " van de ligger"));
+        left.put("node", "AttributeReference").put("attribute", attribute).put("subjectType", "Schuit");
+        left.set("source", IrPath.sourceReference("de " + attribute + " van de ligger"));
         ObjectNode right = JSON.createObjectNode();
         right.put("node", "Literal").putObject("value").put("number", bound);
         right.set("type", number());
@@ -476,7 +476,7 @@ class RepeatedTypePairWitnessTest {
         v.put("node", "Comparison").put("op", "greater");
         v.set("left", left);
         v.set("right", right);
-        v.set("source", IrPath.sourceReference("de " + attribuut + " van de ligger groter is dan " + bound));
+        v.set("source", IrPath.sourceReference("de " + attribute + " van de ligger groter is dan " + bound));
         return v;
     }
 
@@ -540,7 +540,7 @@ class RepeatedTypePairWitnessTest {
 
     /** One haven with two liggers — S1 gekeurd and 12 long, S2 not and 7 — with the created role's count and,
      *  when {@code ligprijs} is given, the read back from S1's own side. {@code kenmerk} null makes H1 veilig. */
-    private static String creationCase(String wintertal, String ligprijs, String kenmerk) {
+    private static String creationCase(String wintertal, String ligprijs, String characteristic) {
         String lieRow = ligprijs == null
                 ? "{ \"kind\": \"attributeEmpty\", \"label\": \"S1\", \"attribute\": \"ligprijs\" }"
                 : "{ \"kind\": \"attributeValue\", \"label\": \"S1\", \"attribute\": \"ligprijs\","
@@ -558,7 +558,7 @@ class RepeatedTypePairWitnessTest {
                   "expected": [
                       { "kind": "attributeValue", "label": "H1", "attribute": "wintertal", "value": { "number": "%s" } },
                       %s ] }
-                """.formatted("onveilig".equals(kenmerk) ? "" : "\"veilig\"", wintertal, lieRow);
+                """.formatted("onveilig".equals(characteristic) ? "" : "\"veilig\"", wintertal, lieRow);
     }
 
     private static Path temporary(String naam, ObjectNode ir) throws Exception {

@@ -58,10 +58,10 @@ class SpellingTest {
      *  is a datatype variant, whose family the name table records as an identity, so its v0 spelling is its
      *  wire spelling. */
     @SuppressWarnings("unchecked")
-    private static Object v0(Family<?> f, Object waarde) {
-        if (waarde instanceof Enum<?> e) return e.name();
-        if (waarde instanceof String || waarde instanceof Boolean) return waarde;
-        return ((Family<Object>) f).spelling(waarde);
+    private static Object v0(Family<?> f, Object value) {
+        if (value instanceof Enum<?> e) return e.name();
+        if (value instanceof String || value instanceof Boolean) return value;
+        return ((Family<Object>) f).spelling(value);
     }
 
     /** {@code [[v0, L5], …]} of the name table as a map; the v0 side is a string, or a flag for the whole-period
@@ -83,7 +83,7 @@ class SpellingTest {
         return result;
     }
 
-    private static List<?> lijst(Object x) {
+    private static List<?> list(Object x) {
         return x == null ? List.of() : (List<?>) x;
     }
 
@@ -100,10 +100,10 @@ class SpellingTest {
             Family<?> f = family(naam);
             assertEquals(nt.get("plaatsen"), f.places(), () -> naam + ": de plaatsen");
             assertEquals(paren(nt.get("rijen")), javaParen(f, f.rows()), () -> naam + ": de rijen [v0, L5]");
-            assertEquals(paren(nt.get("geweigerd")), javaParen(f, f.geweigerd()),
+            assertEquals(paren(nt.get("geweigerd")), javaParen(f, f.refused()),
                     () -> naam + ": de bij naam geweigerde waarden [v0, L5]");
-            assertEquals(Set.copyOf(lijst(nt.get("geweigerd_op"))), f.refusedOn(), () -> naam + ": geweigerd_op");
-            assertEquals(Set.copyOf(lijst(nt.get("null_blijft"))), f.nullStays(), () -> naam + ": null_blijft");
+            assertEquals(Set.copyOf(list(nt.get("geweigerd_op"))), f.refusedOn(), () -> naam + ": geweigerd_op");
+            assertEquals(Set.copyOf(list(nt.get("null_blijft"))), f.nullStays(), () -> naam + ": null_blijft");
             assertEquals(Boolean.TRUE.equals(nt.get("vrij")), f.free(), () -> naam + ": vrij");
         }
     }
@@ -112,7 +112,7 @@ class SpellingTest {
         for (Family<?> f : Spelling.FAMILIES) {
             Set<Object> waarden = new HashSet<>();
             Set<String> spellings = new HashSet<>();
-            for (Map<?, String> part : List.of(f.rows(), f.geweigerd()))
+            for (Map<?, String> part : List.of(f.rows(), f.refused()))
                 for (var entry : part.entrySet()) {
                     assertTrue(waarden.add(entry.getKey()), () -> f.naam() + ": de waarde " + entry.getKey() + " twee keer");
                     assertTrue(spellings.add(entry.getValue()), () -> f.naam() + ": de spelling " + entry.getValue() + " twee keer");
@@ -147,30 +147,30 @@ class SpellingTest {
             Family<Object> f = (Family<Object>) fam;
             for (String place : f.places()) {
                 for (var entry : f.rows().entrySet()) {
-                    assertEquals(entry.getKey(), f.waarde(place, entry.getValue()), () -> place + " leest " + entry.getValue());
+                    assertEquals(entry.getKey(), f.value(place, entry.getValue()), () -> place + " leest " + entry.getValue());
                     assertFalse(f.refusesByName(place, entry.getValue()));
                     assertEquals(entry.getValue(), f.spelling(entry.getKey()));
                     // a v0 spelling is no second spelling of the value (the identity family aside)
                     Object v0 = v0(f, entry.getKey());
                     if (v0 instanceof String s && !s.equals(entry.getValue())) {
-                        assertNull(f.waarde(place, s), () -> place + " leest de v0-spelling " + s);
+                        assertNull(f.value(place, s), () -> place + " leest de v0-spelling " + s);
                         assertFalse(f.refusesByName(place, s), () -> place + " noemt de v0-spelling " + s);
                     }
                 }
-                for (var entry : f.geweigerd().entrySet()) {
+                for (var entry : f.refused().entrySet()) {
                     boolean refuses = f.refusedOn().contains(place);
-                    assertEquals(refuses ? null : entry.getKey(), f.waarde(place, entry.getValue()),
+                    assertEquals(refuses ? null : entry.getKey(), f.value(place, entry.getValue()),
                             () -> place + " en " + entry.getValue());
                     assertEquals(refuses, f.refusesByName(place, entry.getValue()), () -> place + " en " + entry.getValue());
                     assertEquals(entry.getValue(), f.spelling(entry.getKey()));
                 }
-                assertNull(f.waarde(place, "geenSpelling"), () -> place + " beeldt een onbekende waarde af");
-                assertNull(f.waarde(place, null), () -> place + " beeldt null af");
+                assertNull(f.value(place, "geenSpelling"), () -> place + " beeldt een onbekende waarde af");
+                assertNull(f.value(place, null), () -> place + " beeldt null af");
                 assertEquals(f.nullStays().contains(place), f.allowsNull(place));
             }
             for (Object o : f.unwritten().keySet())
                 assertThrows(IllegalArgumentException.class, () -> f.spelling(o), () -> f.naam() + " spelt " + o);
-            assertThrows(IllegalArgumentException.class, () -> f.waarde("Nergens.veld", "x"),
+            assertThrows(IllegalArgumentException.class, () -> f.value("Nergens.veld", "x"),
                     () -> f.naam() + " leest op een plaats die niet de hare is");
         }
     }

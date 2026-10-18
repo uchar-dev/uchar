@@ -69,7 +69,7 @@ class EmptyNegatedWitnessTest {
         ObjectNode ir = ir();
         for (JsonNode r : IrPath.rulesList(ir, "rules"))
             ((ObjectNode) r.get("versions").get(0).get("condition").get("operand")).remove("path");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                 "no branch walks a relation the wire does not name");
         assertEquals("/rules/rules/2/versions/0/condition/operand", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith("its subjectType is the subject type 'Schuit' — 'Werf' names another type,"
@@ -167,12 +167,12 @@ class EmptyNegatedWitnessTest {
      *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code hits}, leeg on the
      *  others. The ongemeten rule is dropped because it reads the now-temporal lengte without a qualifier and
      *  would be refused for THAT; the werfpremie rule because it reads the werf, not the lengte. */
-    private void playWholeYear(String soort, boolean negated, boolean wholePeriodNegated, String... hits) throws Exception {
+    private void playWholeYear(String category, boolean negated, boolean wholePeriodNegated, String... hits) throws Exception {
         ObjectNode ir = ir();
         IrPath.timeline(IrPath.attribute(IrPath.objectType(ir, "Schuit"), "lengte"), "month");
         IrPath.rules(ir).set("rules", JSON.createArrayNode().add(IrPath.rulesList(ir, "rules").get(0)));
         ObjectNode vw = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("condition");
-        vw.put("kind", soort).put("negated", negated);
+        vw.put("kind", category).put("negated", negated);
         vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", wholePeriodNegated);
         ObjectNode c = (ObjectNode) caseOf();
         for (JsonNode inst : c.get("input").get("instances")) {
@@ -193,21 +193,21 @@ class EmptyNegatedWitnessTest {
         }
         rows.addObject().put("kind", "consistent");
         c.set("expected", rows);
-        BothBranches.green(temporary(ir), c, "whole-period " + soort + (negated ? " negated" : "")
+        BothBranches.green(temporary(ir), c, "whole-period " + category + (negated ? " negated" : "")
                 + (wholePeriodNegated ? ", niet gedurende" : ""));
     }
 
     /** Shape-faithful segment stand-in for the runtime fold: the {@code van}/{@code tot}/{@code waarde} properties
      *  it reads reflectively, a null waarde being a leeg segment. */
     public static final class Seg {
-        private final LocalDate van, to; private final BigDecimal waarde;
-        Seg(String van, String to, String waarde) {
+        private final LocalDate van, to; private final BigDecimal value;
+        Seg(String van, String to, String value) {
             this.van = LocalDate.parse(van); this.to = LocalDate.parse(to);
-            this.waarde = waarde == null ? null : new BigDecimal(waarde);
+            this.value = value == null ? null : new BigDecimal(value);
         }
         public LocalDate getVan() { return van; }
         public LocalDate getTot() { return to; }
-        public BigDecimal getWaarde() { return waarde; }
+        public BigDecimal getWaarde() { return value; }
     }
 
     // ---------------- fixtures ----------------

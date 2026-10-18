@@ -2,9 +2,9 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Benoembaar;
-import dev.uchar.regelspraak.model.RegelSpraakModel.GegenereerdUit;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
+import dev.uchar.regelspraak.model.RegelSpraakModel.GeneratedFrom;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The coverage manifest names a construct by a name of the analysis where no declaration names it: an effective
  * defaults stack by {@code defaults A:<type>.<member>} or {@code defaults K:<type>.<member>}, a version of a form with
- * several by {@code <form> #<k>}. {@link TmsTranspiler#gegenereerd} gives each such name the declared element it comes
+ * several by {@code <form> #<k>}. {@link TmsTranspiler#generated} gives each such name the declared element it comes
  * from, so a consumer of the manifest does not read it off the name: a stack from the member it decides, as declared,
  * also where the stack stands on a subtype; a version from its form. Every other manifest name is a form of the model.
  */
@@ -31,15 +31,15 @@ class GeneratedNamesWitnessTest {
         return DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    private static String element(Benoembaar b) {
-        return b.soort() + " " + (b.eigenaar() == null ? "" : b.eigenaar() + ".") + b.naam();
+    private static String element(Designatable b) {
+        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.naam();
     }
 
     private static List<String> table(DroolsBackend.Build b) {
         TmsTranspiler t = b.execModelTranspiler();
         List<String> out = new ArrayList<>();
-        for (Map.Entry<String, GegenereerdUit> e : t.gegenereerd().entrySet())
-            out.add(e.getKey() + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel() + ")");
+        for (Map.Entry<String, GeneratedFrom> e : t.generated().entrySet())
+            out.add(e.getKey() + " <- " + element(e.getValue().source()) + " (" + e.getValue().form().key() + ")");
         return out;
     }
 
@@ -47,14 +47,14 @@ class GeneratedNamesWitnessTest {
      *  and every source is an element of the model. */
     private static void manifestIsCovered(DroolsBackend.Build b) {
         TmsTranspiler t = b.execModelTranspiler();
-        List<Benoembaar> all = b.model().benoembaar();
-        List<String> names = t.dekking().stream().map(Dekking::naam).toList();
+        List<Designatable> all = b.model().designatable();
+        List<String> names = t.coverage().stream().map(Coverage::naam).toList();
         for (String n : names)
-            assertTrue(all.contains(Benoembaar.vorm(n)) || t.gegenereerd().containsKey(n),
+            assertTrue(all.contains(Designatable.form(n)) || t.generated().containsKey(n),
                     () -> "de dekking noemt '" + n + "', geen vorm van het model en niet gegenereerd");
-        for (Map.Entry<String, GegenereerdUit> e : t.gegenereerd().entrySet()) {
+        for (Map.Entry<String, GeneratedFrom> e : t.generated().entrySet()) {
             assertTrue(names.contains(e.getKey()), () -> "'" + e.getKey() + "' staat niet in de dekking");
-            assertTrue(all.contains(e.getValue().bron()), () -> element(e.getValue().bron()) + " is geen element");
+            assertTrue(all.contains(e.getValue().source()), () -> element(e.getValue().source()) + " is geen element");
         }
     }
 
@@ -93,16 +93,16 @@ class GeneratedNamesWitnessTest {
         // it equals the frontend's on every rgs golden is the route suite's (OriginSourceRouteTest)
         RegelSpraakModel m = analyse("jutterswet-opgave-subtype").model();
         List<String> out = new ArrayList<>();
-        for (Map.Entry<Benoembaar, GegenereerdUit> e : m.gegenereerd.entrySet())
-            out.add(element(e.getKey()) + " <- " + element(e.getValue().bron()) + " (" + e.getValue().vorm().sleutel()
+        for (Map.Entry<Designatable, GeneratedFrom> e : m.generated.entrySet())
+            out.add(element(e.getKey()) + " <- " + element(e.getValue().source()) + " (" + e.getValue().form().key()
                     + ")");
-        String bron = " <- ATTRIBUUT Vondst.meldingsdatum (opgave-boven-berekening)";
+        String source = " <- ATTRIBUUT Vondst.meldingsdatum (opgave-boven-berekening)";
         assertEquals(List.of(
-                "ATTRIBUUT Vondst.opgegeven meldingsdatum" + bron,
-                "ATTRIBUUT Vondst.berekende meldingsdatum" + bron,
-                "KENMERK Vondst.afwijkende opgave meldingsdatum" + bron,
-                "VORM afwijking opgave meldingsdatum" + bron,
-                "VORM controle opgave meldingsdatum" + bron,
-                "VORM opgave boven berekening meldingsdatum" + bron), out);
+                "ATTRIBUUT Vondst.opgegeven meldingsdatum" + source,
+                "ATTRIBUUT Vondst.berekende meldingsdatum" + source,
+                "KENMERK Vondst.afwijkende opgave meldingsdatum" + source,
+                "VORM afwijking opgave meldingsdatum" + source,
+                "VORM controle opgave meldingsdatum" + source,
+                "VORM opgave boven berekening meldingsdatum" + source), out);
     }
 }

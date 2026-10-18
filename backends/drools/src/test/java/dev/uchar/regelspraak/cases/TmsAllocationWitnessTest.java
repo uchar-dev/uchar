@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.State;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
@@ -35,7 +35,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -137,7 +137,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Red before an empty pot became no distribution</b> (measured 2026-10-09 on {@code e9182168} with this class,
  * where an empty pot of the equal-shares and the proportional method was the reference interpreter's fault, a
- * {@link dev.uchar.regelspraak.transpiler.tms.Fout} on the source): D, "lege-pot-gelijk=Rekenfout: fout in de regel
+ * {@link dev.uchar.regelspraak.transpiler.tms.Fault} on the source): D, "lege-pot-gelijk=Rekenfout: fout in de regel
  * "verdeel de opbrengst gelijk": empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4),
  * lege-pot-naar-rato=Rekenfout: fout in de regel "verdeel de opbrengst naar rato": empty source amount in proportional
  * allocation (v0 mirror hole, ch. 4.4)", and G's sample, "ingevoegd op de lege pot in volgorde […] ==> expected:
@@ -156,13 +156,13 @@ class TmsAllocationWitnessTest {
     private static final String ONE_DECIMAL = numberType(false, 1, null);
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Berging", List.of(attribuut("opbrengst", WHOLE), attribuut("onverdeelde rest", WHOLE),
-                    attribuut("rangrest", WHOLE), attribuut("vrijgavescore", WHOLE), attribuut("bruto", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Berger", List.of(attribuut("basisgewicht", WHOLE), attribuut("extra", WHOLE),
-                    attribuut("toeslag", WHOLE), attribuut("gewicht", WHOLE), attribuut("jaar", WHOLE),
-                    attribuut("rang", WHOLE), attribuut("basismaximum", WHOLE), attribuut("maximum", WHOLE),
-                    attribuut("peiljaar", ONE_DECIMAL), attribuut("bergingsaandeel", WHOLE),
-                    attribuut("rangaandeel", WHOLE), attribuut("toezicht", WHOLE)), List.of())),
+            TmsDocuments.objectType("Berging", List.of(attribute("opbrengst", WHOLE), attribute("onverdeelde rest", WHOLE),
+                    attribute("rangrest", WHOLE), attribute("vrijgavescore", WHOLE), attribute("bruto", WHOLE)), List.of()),
+            TmsDocuments.objectType("Berger", List.of(attribute("basisgewicht", WHOLE), attribute("extra", WHOLE),
+                    attribute("toeslag", WHOLE), attribute("gewicht", WHOLE), attribute("jaar", WHOLE),
+                    attribute("rang", WHOLE), attribute("basismaximum", WHOLE), attribute("maximum", WHOLE),
+                    attribute("peiljaar", ONE_DECIMAL), attribute("bergingsaandeel", WHOLE),
+                    attribute("rangaandeel", WHOLE), attribute("toezicht", WHOLE)), List.of())),
             List.of(factTypeOneToMany("bergingsdeelname", "berging", "Berging", "berger", "Berger", "bergers")));
 
     // ---------------- the wire of an allocation ----------------
@@ -175,17 +175,17 @@ class TmsAllocationWitnessTest {
     /** One version of an allocation of the opbrengst of a Berging over its bergers (the role berger of the
      *  bergingsdeelname), in the field order of IR-SPEC ch. 3.2; every optional field null for none, the validity null
      *  for always valid. */
-    static String version(String methode, String doel, String weight, String maximum, Integer decimals, String rest,
-                         String sleutel, boolean descending, String voorwaarde, String validity) {
+    static String version(String method, String target, String weight, String maximum, Integer decimals, String rest,
+                         String key, boolean descending, String condition, String validity) {
         StringBuilder b = new StringBuilder("{\"sourceType\":\"Berging\",\"sourceAttribute\":\"opbrengst\","
-                + "\"targetType\":\"Berger\",\"targetAttribute\":\"" + doel + "\",\"method\":\"" + methode + "\"");
+                + "\"targetType\":\"Berger\",\"targetAttribute\":\"" + target + "\",\"method\":\"" + method + "\"");
         if (weight != null) b.append(",\"ratioAttribute\":\"").append(weight).append('"');
         if (maximum != null) b.append(",\"maximumAttribute\":\"").append(maximum).append('"');
         if (decimals != null) b.append(",\"roundingDecimals\":").append(decimals);
         if (rest != null) b.append(",\"remainderAttribute\":\"").append(rest).append('"');
-        if (sleutel != null) b.append(",\"orderingAttribute\":\"").append(sleutel).append('"');
+        if (key != null) b.append(",\"orderingAttribute\":\"").append(key).append('"');
         b.append(",\"descending\":").append(descending);
-        if (voorwaarde != null) b.append(",\"condition\":").append(voorwaarde);
+        if (condition != null) b.append(",\"condition\":").append(condition);
         b.append(",\"validity\":").append(validity == null ? "{\"node\":\"Validity\"}" : validity);
         b.append(",\"connectingRole\":").append(roleBinding("bergingsdeelname", "berger")).append('}');
         return b.toString();
@@ -218,9 +218,9 @@ class TmsAllocationWitnessTest {
                 + "},\"characteristics\":[]}";
     }
 
-    /** "zijn {@code attribuut}" on a Berger. */
-    static String berger(String attribuut) {
-        return ownRead(attribuut, "Berger");
+    /** "zijn {@code attribute}" on a Berger. */
+    static String berger(String attribute) {
+        return ownRead(attribute, "Berger");
     }
 
     /** Every order of the rules and, independently, of the allocations of a part, as documents, with the names of the
@@ -261,21 +261,21 @@ class TmsAllocationWitnessTest {
                 instance("B1", "Berging", Map.of("opbrengst", "900"), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of("basisgewicht", "1", "extra", "5", "jaar", "2020"), List.of()),
                 instance("J2", "Berger", Map.of("basisgewicht", "3", "extra", "0", "jaar", "2018"), List.of())),
-                List.of(waarde("J1", "toeslag", "5"), waarde("J2", "toeslag", "0"), waarde("J1", "gewicht", "6"),
-                        waarde("J2", "gewicht", "3"), waarde("J1", "rang", "2015"), waarde("J2", "rang", "2018"),
-                        waarde("J1", "bergingsaandeel", "600"), waarde("J2", "bergingsaandeel", "300"),
-                        waarde("B1", "onverdeelde rest", "0"), waarde("J1", "rangaandeel", "900"),
-                        waarde("J2", "rangaandeel", "0"), waarde("B1", "rangrest", "0"), waarde("J1", "toezicht", "601"),
-                        waarde("J2", "toezicht", "301"), consistent()));
+                List.of(value("J1", "toeslag", "5"), value("J2", "toeslag", "0"), value("J1", "gewicht", "6"),
+                        value("J2", "gewicht", "3"), value("J1", "rang", "2015"), value("J2", "rang", "2018"),
+                        value("J1", "bergingsaandeel", "600"), value("J2", "bergingsaandeel", "300"),
+                        value("B1", "onverdeelde rest", "0"), value("J1", "rangaandeel", "900"),
+                        value("J2", "rangaandeel", "0"), value("B1", "rangrest", "0"), value("J1", "toezicht", "601"),
+                        value("J2", "toezicht", "301"), consistent()));
     }
 
     @Test void a_every_order_of_the_rules_and_the_allocations() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Map.Entry<String, Path> d : orders(A_RULES, A_ALLOCATIONS, List.of()).entrySet()) {
             outcomes.add(d.getKey() + " " + play(d.getValue(), aCase()));
-            verwacht.add(d.getKey() + " gespeeld");
+            expected.add(d.getKey() + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(48, outcomes.size());
     }
 
@@ -295,7 +295,7 @@ class TmsAllocationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int proportionalIntermediate = 0, byRankIntermediate = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261009L, 100)) {
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261009L, 100)) {
                 String where = names + " op " + branch;
                 Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Berging", Map.of("opbrengst", "900"), List.of());
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Berger", Map.of("basisgewicht", "1", "extra", "5",
@@ -306,30 +306,30 @@ class TmsAllocationWitnessTest {
                 join(j2, b1);
                 List<Object> proportional = new ArrayList<>(), byRank = new ArrayList<>();
                 int[] waarden = new int[2];
-                TmsDocuments.vuur(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, j1, j2),
-                        sessie -> sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                TmsDocuments.fire(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, j1, j2),
+                        session -> session.addEventListener(new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
                                 if (!(e.getObject() instanceof Value w)) return;
-                                if (w.onderwerp() == j1 && w.attribuut().naam().equals("bergingsaandeel"))
-                                    proportional.add(w.waarde());
-                                if (w.onderwerp() == j2 && w.attribuut().naam().equals("rangaandeel"))
-                                    byRank.add(w.waarde());
+                                if (w.onderwerp() == j1 && w.attribute().naam().equals("bergingsaandeel"))
+                                    proportional.add(w.value());
+                                if (w.onderwerp() == j2 && w.attribute().naam().equals("rangaandeel"))
+                                    byRank.add(w.value());
                             }
-                        }), sessie -> {
-                            waarden[0] = sessie.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
-                                    && w.attribuut().naam().equals("bergingsaandeel")).size();
-                            waarden[1] = sessie.getObjects(o -> o instanceof Value w && w.onderwerp() == j2
-                                    && w.attribuut().naam().equals("rangaandeel")).size();
+                        }), session -> {
+                            waarden[0] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
+                                    && w.attribute().naam().equals("bergingsaandeel")).size();
+                            waarden[1] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j2
+                                    && w.attribute().naam().equals("rangaandeel")).size();
                         });
                 assertEquals(List.of(1, 1), List.of(waarden[0], waarden[1]), () -> "Waarde-feiten in volgorde " + where);
                 Map<String, Object> end = new LinkedHashMap<>();
-                end.put("J1 bergingsaandeel", TmsDocuments.lees(j1, "bergingsaandeel"));
-                end.put("J2 bergingsaandeel", TmsDocuments.lees(j2, "bergingsaandeel"));
-                end.put("B1 onverdeelde rest", TmsDocuments.lees(b1, "onverdeelde rest"));
-                end.put("J1 rangaandeel", TmsDocuments.lees(j1, "rangaandeel"));
-                end.put("J2 rangaandeel", TmsDocuments.lees(j2, "rangaandeel"));
-                end.put("B1 rangrest", TmsDocuments.lees(b1, "rangrest"));
-                end.put("J1 toezicht", TmsDocuments.lees(j1, "toezicht"));
+                end.put("J1 bergingsaandeel", TmsDocuments.read(j1, "bergingsaandeel"));
+                end.put("J2 bergingsaandeel", TmsDocuments.read(j2, "bergingsaandeel"));
+                end.put("B1 onverdeelde rest", TmsDocuments.read(b1, "onverdeelde rest"));
+                end.put("J1 rangaandeel", TmsDocuments.read(j1, "rangaandeel"));
+                end.put("J2 rangaandeel", TmsDocuments.read(j2, "rangaandeel"));
+                end.put("B1 rangrest", TmsDocuments.read(b1, "rangrest"));
+                end.put("J1 toezicht", TmsDocuments.read(j1, "toezicht"));
                 assertEquals("{J1 bergingsaandeel=600, J2 bergingsaandeel=300, B1 onverdeelde rest=0,"
                         + " J1 rangaandeel=900, J2 rangaandeel=0, B1 rangrest=0, J1 toezicht=601}", numbers(end),
                         () -> "volgorde " + where);
@@ -357,21 +357,21 @@ class TmsAllocationWitnessTest {
                 instance("D1", "Berger", Map.of("gewicht", "3", "jaar", "2019", "maximum", "600"), List.of()),
                 instance("D2", "Berger", Map.of("jaar", "2020", "maximum", "600"), List.of()),
                 instance("D3", "Berger", Map.of("gewicht", "1", "jaar", "2020", "maximum", "600"), List.of())),
-                List.of(waarde("D1", "bergingsaandeel", "600"), waarde("D2", "bergingsaandeel", null),
-                        waarde("D3", "bergingsaandeel", "250"), waarde("B1", "onverdeelde rest", "150"),
-                        waarde("D1", "rangaandeel", "600"), waarde("D2", "rangaandeel", "0"),
-                        waarde("D3", "rangaandeel", "400"), waarde("B1", "rangrest", "0"),
+                List.of(value("D1", "bergingsaandeel", "600"), value("D2", "bergingsaandeel", null),
+                        value("D3", "bergingsaandeel", "250"), value("B1", "onverdeelde rest", "150"),
+                        value("D1", "rangaandeel", "600"), value("D2", "rangaandeel", "0"),
+                        value("D3", "rangaandeel", "400"), value("B1", "rangrest", "0"),
                         inconsistent("verdeel de opbrengst naar rato", "D2"),
                         inconsistent("verdeel de opbrengst op jaar", "D2")));
     }
 
     @Test void b_two_allocations_over_the_same_recipients_in_every_order() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Map.Entry<String, Path> d : orders(List.of(), B_ALLOCATIONS, List.of()).entrySet()) {
             outcomes.add(d.getKey() + " " + play(d.getValue(), bCase()));
-            verwacht.add(d.getKey() + " gespeeld");
+            expected.add(d.getKey() + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /** The deposits of part B are those two and no more, in a seeded sample of orders of the generated rules. */
@@ -379,7 +379,7 @@ class TmsAllocationWitnessTest {
         Path ir = document(List.of(), B_ALLOCATIONS, List.of());
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261009L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261009L,
                     TmsDocuments.shuffles(branch, 20))) {
                 Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Berging", Map.of("opbrengst", "1000"), List.of());
                 Object d1 = TmsDocuments.beanObject(b.beanLoader(), "Berger", Map.of("gewicht", "3", "jaar", "2019",
@@ -391,8 +391,8 @@ class TmsAllocationWitnessTest {
                 for (Object d : List.of(d1, d2, d3)) join(d, b1);
                 Map<Object, String> labels = labels(List.of(b1, d1, d2, d3), List.of("B1", "D1", "D2", "D3"));
                 List<String> channel = new ArrayList<>();
-                TmsDocuments.vuur(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, d1, d2, d3), sessie -> {},
-                        sessie -> channel.addAll(TmsDocuments.inconsistenties(sessie, labels)));
+                TmsDocuments.fire(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, d1, d2, d3), session -> {},
+                        session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
                 assertEquals(List.of("verdeel de opbrengst naar rato @ D2", "verdeel de opbrengst op jaar @ D2"), channel,
                         () -> "op " + branch + " in volgorde " + names);
             }
@@ -416,20 +416,20 @@ class TmsAllocationWitnessTest {
                 instance("J2", "Berger", Map.of("basisgewicht", "2", "basismaximum", "-5"), List.of()),
                 instance("J3", "Berger", Map.of("basisgewicht", "1", "basismaximum", "300"), List.of()),
                 instance("J4", "Berger", Map.of("basismaximum", "300"), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "600"), waarde("J2", "bergingsaandeel", "400"),
-                        waarde("J3", "bergingsaandeel", "200"), waarde("J4", "bergingsaandeel", null),
-                        waarde("B1", "onverdeelde rest", "0"), inconsistent("verdeel de opbrengst naar rato", "J1"),
+                List.of(value("J1", "bergingsaandeel", "600"), value("J2", "bergingsaandeel", "400"),
+                        value("J3", "bergingsaandeel", "200"), value("J4", "bergingsaandeel", null),
+                        value("B1", "onverdeelde rest", "0"), inconsistent("verdeel de opbrengst naar rato", "J1"),
                         inconsistent("verdeel de opbrengst naar rato", "J2"),
                         inconsistent("verdeel de opbrengst naar rato", "J4")));
     }
 
     @Test void c_degradations_in_every_order() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Map.Entry<String, Path> d : orders(C_RULES, List.of(C_PROPORTIONAL), List.of()).entrySet()) {
             outcomes.add(d.getKey() + " " + play(d.getValue(), cCase()));
-            verwacht.add(d.getKey() + " gespeeld");
+            expected.add(d.getKey() + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /**
@@ -442,7 +442,7 @@ class TmsAllocationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int intermediate = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261009L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261009L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = "op " + branch + " in volgorde " + names;
                 Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Berging", Map.of("opbrengst", "1200"), List.of());
@@ -456,21 +456,21 @@ class TmsAllocationWitnessTest {
                 Map<Object, String> labels = labels(List.of(b1, j1, j2, j3, j4), List.of("B1", "J1", "J2", "J3", "J4"));
                 List<String> channel = new ArrayList<>();
                 int[] opJ3 = new int[1];
-                TmsDocuments.vuur(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, j1, j2, j3, j4),
-                        sessie -> sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                TmsDocuments.fire(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, j1, j2, j3, j4),
+                        session -> session.addEventListener(new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
                                 if (e.getObject().getClass().getSimpleName().equals("Inconsistentie")
                                         && onderwerp(e.getObject()) == j3) opJ3[0]++;
                             }
-                        }), sessie -> channel.addAll(TmsDocuments.inconsistenties(sessie, labels)));
+                        }), session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
                 assertEquals(List.of("verdeel de opbrengst naar rato @ J1", "verdeel de opbrengst naar rato @ J2",
                         "verdeel de opbrengst naar rato @ J4"), channel, () -> where);
                 Map<String, Object> end = new LinkedHashMap<>();
-                end.put("J1", zero(TmsDocuments.lees(j1, "bergingsaandeel")));
-                end.put("J2", zero(TmsDocuments.lees(j2, "bergingsaandeel")));
-                end.put("J3", zero(TmsDocuments.lees(j3, "bergingsaandeel")));
-                end.put("J4", zero(TmsDocuments.lees(j4, "bergingsaandeel")));
-                end.put("B1", zero(TmsDocuments.lees(b1, "onverdeelde rest")));
+                end.put("J1", zero(TmsDocuments.read(j1, "bergingsaandeel")));
+                end.put("J2", zero(TmsDocuments.read(j2, "bergingsaandeel")));
+                end.put("J3", zero(TmsDocuments.read(j3, "bergingsaandeel")));
+                end.put("J4", zero(TmsDocuments.read(j4, "bergingsaandeel")));
+                end.put("B1", zero(TmsDocuments.read(b1, "onverdeelde rest")));
                 assertEquals("{J1=600, J2=400, J3=200, J4=leeg, B1=0}", numbers(end), () -> where);
                 if (opJ3[0] > 0) intermediate++;
             }
@@ -498,34 +498,34 @@ class TmsAllocationWitnessTest {
                 instance("J1", "Berger", Map.of("gewicht", "0", "bergingsaandeel", "7"), List.of()),
                 instance("J2", "Berger", Map.of("gewicht", "0"), List.of()),
                 instance("J3", "Berger", Map.of(), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "7"), waarde("J2", "bergingsaandeel", null),
-                        waarde("J3", "bergingsaandeel", null), waarde("B1", "onverdeelde rest", null),
+                List.of(value("J1", "bergingsaandeel", "7"), value("J2", "bergingsaandeel", null),
+                        value("J3", "bergingsaandeel", null), value("B1", "onverdeelde rest", null),
                         inconsistent("verdeel de opbrengst naar rato", "J3")))});
         out.put("lege-pot-gelijk", new Object[]{D_EQUAL, TmsDocuments.caseDocument(List.of(
                 instance("B1", "Berging", Map.of(), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of("bergingsaandeel", "7"), List.of()),
                 instance("J2", "Berger", Map.of(), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "7"), waarde("J2", "bergingsaandeel", null),
-                        waarde("B1", "onverdeelde rest", null), consistent()))});
+                List.of(value("J1", "bergingsaandeel", "7"), value("J2", "bergingsaandeel", null),
+                        value("B1", "onverdeelde rest", null), consistent()))});
         out.put("lege-pot-naar-rato", new Object[]{D_PROPORTIONAL, TmsDocuments.caseDocument(List.of(
                 instance("B1", "Berging", Map.of(), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of("gewicht", "2", "bergingsaandeel", "7"), List.of()),
                 instance("J2", "Berger", Map.of(), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "7"), waarde("J2", "bergingsaandeel", null),
-                        waarde("B1", "onverdeelde rest", null), consistent()))});
+                List.of(value("J1", "bergingsaandeel", "7"), value("J2", "bergingsaandeel", null),
+                        value("B1", "onverdeelde rest", null), consistent()))});
         out.put("lege-pot-op-volgorde", new Object[]{D_BY_YEAR, TmsDocuments.caseDocument(List.of(
                 instance("B1", "Berging", Map.of(), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of("jaar", "2020"), List.of()),
                 instance("J2", "Berger", Map.of("jaar", "2020", "gewicht", "1"), List.of())),
-                List.of(waarde("J1", "rangaandeel", null), waarde("J2", "rangaandeel", null),
-                        waarde("B1", "rangrest", null), consistent()))});
+                List.of(value("J1", "rangaandeel", null), value("J2", "rangaandeel", null),
+                        value("B1", "rangrest", null), consistent()))});
         out.put("lege-tiegewichten", new Object[]{D_BY_YEAR, TmsDocuments.caseDocument(List.of(
                 instance("B1", "Berging", Map.of("opbrengst", "100"), List.of("J1", "J2", "J3")),
                 instance("J1", "Berger", Map.of("jaar", "2019"), List.of()),
                 instance("J2", "Berger", Map.of("jaar", "2019"), List.of()),
                 instance("J3", "Berger", Map.of("jaar", "2020", "gewicht", "1"), List.of())),
-                List.of(waarde("J1", "rangaandeel", "0"), waarde("J2", "rangaandeel", "0"),
-                        waarde("J3", "rangaandeel", "100"), waarde("B1", "rangrest", "0"),
+                List.of(value("J1", "rangaandeel", "0"), value("J2", "rangaandeel", "0"),
+                        value("J3", "rangaandeel", "100"), value("B1", "rangrest", "0"),
                         inconsistent("verdeel de opbrengst op jaar", "J1"),
                         inconsistent("verdeel de opbrengst op jaar", "J2")))});
         out.put("sleutel-in-twee-schalen", new Object[]{D_OP_PEILJAAR, TmsDocuments.caseDocument(List.of(
@@ -533,14 +533,14 @@ class TmsAllocationWitnessTest {
                 instance("J1", "Berger", Map.of("peiljaar", "2019"), List.of()),
                 instance("J2", "Berger", Map.of("peiljaar", "2019.0"), List.of()),
                 instance("J3", "Berger", Map.of("peiljaar", "2020"), List.of())),
-                List.of(waarde("J1", "rangaandeel", "50"), waarde("J2", "rangaandeel", "50"),
-                        waarde("J3", "rangaandeel", "0"), waarde("B1", "rangrest", "0"), consistent()))});
+                List.of(value("J1", "rangaandeel", "50"), value("J2", "rangaandeel", "50"),
+                        value("J3", "rangaandeel", "0"), value("B1", "rangrest", "0"), consistent()))});
         out.put("negatief-gewicht-naar-rato", new Object[]{D_PROPORTIONAL, TmsDocuments.caseDocument(List.of(
                 instance("B1", "Berging", Map.of("opbrengst", "100"), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of("gewicht", "3"), List.of()),
                 instance("J2", "Berger", Map.of("gewicht", "-1"), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "100"), waarde("J2", "bergingsaandeel", "0"),
-                        waarde("B1", "onverdeelde rest", "0"), inconsistent("verdeel de opbrengst naar rato", "J2")))});
+                List.of(value("J1", "bergingsaandeel", "100"), value("J2", "bergingsaandeel", "0"),
+                        value("B1", "onverdeelde rest", "0"), inconsistent("verdeel de opbrengst naar rato", "J2")))});
         return out;
     }
 
@@ -549,15 +549,15 @@ class TmsAllocationWitnessTest {
         for (Map.Entry<String, Object[]> r : edgeCases().entrySet())
             outcomes.put(r.getKey(), play(document(List.of(), List.of((String) r.getValue()[0]), List.of()),
                     (JsonNode) r.getValue()[1]));
-        Map<String, String> verwacht = new LinkedHashMap<>();
-        verwacht.put("gewichten-nul", "gespeeld");
-        verwacht.put("lege-pot-gelijk", "gespeeld");
-        verwacht.put("lege-pot-naar-rato", "gespeeld");
-        verwacht.put("lege-pot-op-volgorde", "gespeeld");
-        verwacht.put("lege-tiegewichten", "gespeeld");
-        verwacht.put("sleutel-in-twee-schalen", "gespeeld");
-        verwacht.put("negatief-gewicht-naar-rato", "gespeeld");
-        assertEquals(verwacht, outcomes);
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("gewichten-nul", "gespeeld");
+        expected.put("lege-pot-gelijk", "gespeeld");
+        expected.put("lege-pot-naar-rato", "gespeeld");
+        expected.put("lege-pot-op-volgorde", "gespeeld");
+        expected.put("lege-tiegewichten", "gespeeld");
+        expected.put("sleutel-in-twee-schalen", "gespeeld");
+        expected.put("negatief-gewicht-naar-rato", "gespeeld");
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- E: the validity of a version and the condition ----------------
@@ -569,21 +569,21 @@ class TmsAllocationWitnessTest {
                     comparison("greaterOrEqual", ownRead("vrijgavescore", "Berging"), number("10")),
                     validity("2026-01-01", null))));
 
-    static JsonNode eCase(String asOfDate, String score, List<String> verwachtingen) throws Exception {
+    static JsonNode eCase(String asOfDate, String score, List<String> expectations) throws Exception {
         return TmsDocuments.caseOn(asOfDate, List.of(
                 instance("B1", "Berging", Map.of("opbrengst", "100", "vrijgavescore", score), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of("basisgewicht", "1", "bergingsaandeel", "7"), List.of()),
-                instance("J2", "Berger", Map.of("basisgewicht", "3"), List.of())), verwachtingen);
+                instance("J2", "Berger", Map.of("basisgewicht", "3"), List.of())), expectations);
     }
 
     static Map<String, JsonNode> eCases() throws Exception {
         Map<String, JsonNode> out = new LinkedHashMap<>();
-        out.put("2025", eCase("2025-06-01", "12", List.of(waarde("J1", "bergingsaandeel", "50"),
-                waarde("J2", "bergingsaandeel", "50"), waarde("B1", "onverdeelde rest", "0"), consistent())));
-        out.put("2026", eCase("2026-06-01", "12", List.of(waarde("J1", "bergingsaandeel", "25"),
-                waarde("J2", "bergingsaandeel", "75"), waarde("B1", "onverdeelde rest", "0"), consistent())));
-        out.put("2026-niet-vrijgegeven", eCase("2026-06-01", "5", List.of(waarde("J1", "bergingsaandeel", "7"),
-                waarde("J2", "bergingsaandeel", null), waarde("B1", "onverdeelde rest", null), consistent())));
+        out.put("2025", eCase("2025-06-01", "12", List.of(value("J1", "bergingsaandeel", "50"),
+                value("J2", "bergingsaandeel", "50"), value("B1", "onverdeelde rest", "0"), consistent())));
+        out.put("2026", eCase("2026-06-01", "12", List.of(value("J1", "bergingsaandeel", "25"),
+                value("J2", "bergingsaandeel", "75"), value("B1", "onverdeelde rest", "0"), consistent())));
+        out.put("2026-niet-vrijgegeven", eCase("2026-06-01", "5", List.of(value("J1", "bergingsaandeel", "7"),
+                value("J2", "bergingsaandeel", null), value("B1", "onverdeelde rest", null), consistent())));
         out.put("tijdvrij", eCase(null, "12", List.of(consistent())));
         return out;
     }
@@ -593,15 +593,15 @@ class TmsAllocationWitnessTest {
         Map<String, String> outcomes = new LinkedHashMap<>();
         for (Map.Entry<String, JsonNode> z : eCases().entrySet()) outcomes.put(z.getKey(), play(ir, z.getValue()));
         String withoutDate = "a validity-bounded form needs an evaluation date; this session is time-free";
-        Map<String, String> verwacht = new LinkedHashMap<>();
-        verwacht.put("2025", "gespeeld");
-        verwacht.put("2026", "gespeeld");
-        verwacht.put("2026-niet-vrijgegeven", "gespeeld");
-        verwacht.put("tijdvrij", "Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels \"verdeel de"
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("2025", "gespeeld");
+        expected.put("2026", "gespeeld");
+        expected.put("2026-niet-vrijgegeven", "gespeeld");
+        expected.put("tijdvrij", "EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regels \"verdeel de"
                 + " opbrengst per jaar #1\", \"verdeel de opbrengst per jaar #2\": fout in de regel \"verdeel de opbrengst"
                 + " per jaar #1\": " + withoutDate + "; fout in de regel \"verdeel de opbrengst per jaar #2\": "
                 + withoutDate);
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- F: a recipient a creation adds ----------------
@@ -615,8 +615,8 @@ class TmsAllocationWitnessTest {
         return TmsDocuments.caseDocument(List.of(
                 instance("B1", "Berging", Map.of("opbrengst", "900"), List.of("J1", "J2")),
                 instance("J1", "Berger", Map.of(), List.of()), instance("J2", "Berger", Map.of(), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "300"), waarde("J2", "bergingsaandeel", "300"),
-                        waarde("B1", "onverdeelde rest", "0"), consistent()));
+                List.of(value("J1", "bergingsaandeel", "300"), value("J2", "bergingsaandeel", "300"),
+                        value("B1", "onverdeelde rest", "0"), consistent()));
     }
 
     @Test void f_a_recipient_out_of_a_creation() throws Exception {
@@ -633,9 +633,9 @@ class TmsAllocationWitnessTest {
                 instance("B1", "Berging", Map.of("bruto", "90"), List.of("J1", "J2", "J3")),
                 instance("J1", "Berger", Map.of(), List.of()), instance("J2", "Berger", Map.of(), List.of()),
                 instance("J3", "Berger", Map.of(), List.of())),
-                List.of(waarde("B1", "opbrengst", "90"), waarde("J1", "bergingsaandeel", "30"),
-                        waarde("J2", "bergingsaandeel", "30"), waarde("J3", "bergingsaandeel", "30"),
-                        waarde("B1", "onverdeelde rest", "0"), consistent()));
+                List.of(value("B1", "opbrengst", "90"), value("J1", "bergingsaandeel", "30"),
+                        value("J2", "bergingsaandeel", "30"), value("J3", "bergingsaandeel", "30"),
+                        value("B1", "onverdeelde rest", "0"), consistent()));
     }
 
     @Test void g_a_pot_that_is_later_derived() throws Exception {
@@ -651,7 +651,7 @@ class TmsAllocationWitnessTest {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
             int onEmptyPot = 0;
-            for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261009L,
+            for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261009L,
                     TmsDocuments.shuffles(branch, 100))) {
                 String where = " op " + branch + " in volgorde " + names;
                 Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Berging", Map.of("bruto", "90"), List.of());
@@ -664,34 +664,34 @@ class TmsAllocationWitnessTest {
                 List<Object> beans = new ArrayList<>(List.of(b1));
                 beans.addAll(bergers);
                 boolean[] emptyPot = new boolean[1];
-                int[] vuringen = new int[1];
+                int[] firings = new int[1];
                 List<String> inserted = new ArrayList<>();
-                TmsDocuments.vuur(b, TmsDocuments.kieBaseOf(b, names), names, beans, sessie -> {
-                    sessie.addEventListener(new DefaultAgendaEventListener() {
+                TmsDocuments.fire(b, TmsDocuments.kieBaseOf(b, names), names, beans, session -> {
+                    session.addEventListener(new DefaultAgendaEventListener() {
                         @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
                             emptyPot[0] = e.getMatch().getRule().getName().equals("verdeel de opbrengst gelijk")
                                     && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s
-                                            && s.onderwerp() == b1 && s.attribuut().naam().equals("opbrengst")
-                                            && s.waarde() == null);
-                            if (emptyPot[0]) vuringen[0]++;
+                                            && s.onderwerp() == b1 && s.attribute().naam().equals("opbrengst")
+                                            && s.value() == null);
+                            if (emptyPot[0]) firings[0]++;
                         }
                         @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                             emptyPot[0] = false;
                         }
                     });
-                    sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                    session.addEventListener(new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
                             if (emptyPot[0]) inserted.add(String.valueOf(e.getObject()));
                         }
                     });
-                }, sessie -> { });
+                }, session -> { });
                 Map<String, Object> end = new LinkedHashMap<>();
                 for (int i = 0; i < 3; i++)
-                    end.put("J" + (i + 1), TmsDocuments.lees(bergers.get(i), "bergingsaandeel"));
-                end.put("B1", TmsDocuments.lees(b1, "onverdeelde rest"));
+                    end.put("J" + (i + 1), TmsDocuments.read(bergers.get(i), "bergingsaandeel"));
+                end.put("B1", TmsDocuments.read(b1, "onverdeelde rest"));
                 assertEquals("{J1=30, J2=30, J3=30, B1=0}", numbers(end), () -> "volgorde" + where);
                 assertEquals(List.of(), inserted, () -> "ingevoegd op de lege pot" + where);
-                if (vuringen[0] > 0) onEmptyPot++;
+                if (firings[0] > 0) onEmptyPot++;
             }
             assertTrue(onEmptyPot > 0, branch + ": geen volgorde liet de verdeling op de lege pot vuren voordat de"
                     + " opbrengst afgeleid was");
@@ -724,7 +724,7 @@ class TmsAllocationWitnessTest {
     static JsonNode hCase() throws Exception {
         return TmsDocuments.caseDocument(List.of(instance("B1", "Berging", Map.of("opbrengst", "100"), List.of("J1")),
                 instance("J1", "Berger", Map.of("gewicht", "1"), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", "100"), consistent()));
+                List.of(value("J1", "bergingsaandeel", "100"), consistent()));
     }
 
     @Test void h_a_second_writer_of_a_target_is_refused_loudly() throws Exception {
@@ -737,13 +737,13 @@ class TmsAllocationWitnessTest {
                 + " regel \"bergingsaandeel van een berger\" op het attribuut 'bergingsaandeel' van Berger: een verdeling"
                 + " naast een rekenende regel of een initialisatie op één doel; deze tak draagt deze vorm"
                 + " nog niet";
-        Map<String, String> verwacht = new LinkedHashMap<>();
-        verwacht.put("regel", beside);
-        verwacht.put("initialisatie", beside);
-        verwacht.put("twee verdelingen", "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — twee"
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("regel", beside);
+        expected.put("initialisatie", beside);
+        expected.put("twee verdelingen", "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — twee"
                 + " verdelingen schrijven het attribuut 'bergingsaandeel' van Berger (ook \"verdeel de opbrengst gelijk\"):"
                 + " een doel heeft hoogstens één verdeling (WF-026)");
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- D, E and F in orders of the generated rules ----------------
@@ -751,7 +751,7 @@ class TmsAllocationWitnessTest {
     /** Parts D, E and F hold one allocation each, so the order of the document varies nothing; here every case of them
      *  runs through a seeded sample of orders of the generated rules, with the outcome the replay gives. */
     @Test void d_e_f_in_a_sample_of_the_generated_rules() throws Exception {
-        Map<String, String> verwacht = new LinkedHashMap<>(), outcomes = new LinkedHashMap<>();
+        Map<String, String> expected = new LinkedHashMap<>(), outcomes = new LinkedHashMap<>();
         Map<String, Object[]> parts = new LinkedHashMap<>();
         for (Map.Entry<String, Object[]> r : edgeCases().entrySet())
             parts.put("d " + r.getKey(), new Object[]{document(List.of(), List.of((String) r.getValue()[0]), List.of()),
@@ -766,15 +766,15 @@ class TmsAllocationWitnessTest {
             String replay = play(ir, caseDocument);
             for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
                 DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-                for (List<String> names : TmsDocuments.sample(TmsDocuments.gegenereerd(b), 20261009L,
+                for (List<String> names : TmsDocuments.sample(TmsDocuments.generated(b), 20261009L,
                         TmsDocuments.shuffles(branch, 20))) {
-                    String sleutel = d.getKey() + " op " + branch + " " + names;
-                    outcomes.put(sleutel, playInOrder(b, names, caseDocument));
-                    verwacht.put(sleutel, replay);
+                    String key = d.getKey() + " op " + branch + " " + names;
+                    outcomes.put(key, playInOrder(b, names, caseDocument));
+                    expected.put(key, replay);
                 }
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /**
@@ -800,35 +800,35 @@ class TmsAllocationWitnessTest {
         String date = caseDocument.get("asOfDate").isNull() ? null : caseDocument.get("asOfDate").asText();
         List<String> channel = new ArrayList<>();
         try {
-            TmsCreationWitnessTest.fireInOrder(b, names, new ArrayList<>(beans.values()), sessie -> {
-                if (date != null) sessie.setGlobal("rekendatum", java.time.LocalDate.parse(date));
-            }, sessie -> channel.addAll(TmsDocuments.inconsistenties(sessie, labels)));
+            TmsCreationWitnessTest.fireInOrder(b, names, new ArrayList<>(beans.values()), session -> {
+                if (date != null) session.setGlobal("rekendatum", java.time.LocalDate.parse(date));
+            }, session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
         } catch (RuntimeException e) {
             return e.getClass().getSimpleName() + ": " + e.getMessage();
         }
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         for (JsonNode v : caseDocument.get("expected")) {
-            String soort = v.get("kind").asText();
-            switch (soort) {
+            String category = v.get("kind").asText();
+            switch (category) {
                 case "attributeValue", "attributeEmpty" -> {
-                    Object w = TmsDocuments.lees(beans.get(v.get("label").asText()), v.get("attribute").asText());
-                    boolean goed = soort.equals("attributeEmpty") ? w == null
+                    Object w = TmsDocuments.read(beans.get(v.get("label").asText()), v.get("attribute").asText());
+                    boolean goed = category.equals("attributeEmpty") ? w == null
                             : isNumber(w, v.get("value").get("number").asText());
-                    if (!goed) fouten.add(v.get("label").asText() + "." + v.get("attribute").asText() + " " + w);
+                    if (!goed) faults.add(v.get("label").asText() + "." + v.get("attribute").asText() + " " + w);
                 }
                 case "inconsistent" -> {
                     String regel = v.get("rule").asText(), label = v.get("label").asText();
                     if (channel.stream().noneMatch(k -> k.endsWith(" @ " + label)
                             && CaseRunner.sameRule(regel, k.substring(0, k.length() - (" @ " + label).length()))))
-                        fouten.add("geen deponering " + regel + " @ " + label + " in " + channel);
+                        faults.add("geen deponering " + regel + " @ " + label + " in " + channel);
                 }
                 case "consistent" -> {
-                    if (!channel.isEmpty()) fouten.add("deponeringen " + channel);
+                    if (!channel.isEmpty()) faults.add("deponeringen " + channel);
                 }
-                default -> throw new AssertionError("verwachting " + soort);
+                default -> throw new AssertionError("verwachting " + category);
             }
         }
-        return fouten.isEmpty() ? "gespeeld" : String.join("; ", fouten);
+        return faults.isEmpty() ? "gespeeld" : String.join("; ", faults);
     }
 
     // ---------------- helpers ----------------

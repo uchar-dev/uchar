@@ -90,7 +90,7 @@ class ReadNameWitnessTest {
             DroolsBackend.Build b;
             try {
                 b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-            } catch (IrLoader.Refusal | IrLoader.Documentfout | CaseRunner.Excluded refused) {
+            } catch (IrLoader.Refusal | IrLoader.DocumentError | CaseRunner.Excluded refused) {
                 // a document the branch does not build has no plan; the floor counts the ones it builds
                 continue;
             }
@@ -98,7 +98,7 @@ class ReadNameWitnessTest {
             String golden = GOLDEN.relativize(ir.getParent()).toString();
             for (RulePlan p : b.execModelTranspiler().modelplan().rules()) {
                 plans++;
-                for (Read l : p.lezingen().slots()) {
+                for (Read l : p.readings().slots()) {
                     if (l.naam() == null) continue;
                     slots++;
                     if (NUMBERED.matcher(l.naam()).matches()) numbered.add(golden + " | " + p.naam() + " | " + l);
@@ -142,18 +142,18 @@ class ReadNameWitnessTest {
     }
 
     @Test void a_read_name_is_a_java_identifier_also_outside_the_corpus() {
-        Map<String, String> verwacht = new LinkedHashMap<>();
-        verwacht.put("artikel 3² inconsistent", "$artikel3Inconsistent");
-        verwacht.put("½ deel", "$Deel");
-        verwacht.put("3e lid", "$3eLid");
-        verwacht.put("één coördinaat", "$éénCoördinaat");
-        verwacht.put("art. 5, lid 2 (oud)", "$art5Lid2Oud");
-        verwacht.put("", "$x");
-        verwacht.put("²³", "$x");
-        verwacht.put("waarde", "$waarde2");
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("artikel 3² inconsistent", "$artikel3Inconsistent");
+        expected.put("½ deel", "$Deel");
+        expected.put("3e lid", "$3eLid");
+        expected.put("één coördinaat", "$éénCoördinaat");
+        expected.put("art. 5, lid 2 (oud)", "$art5Lid2Oud");
+        expected.put("", "$x");
+        expected.put("²³", "$x");
+        expected.put("waarde", "$waarde2");
         Map<String, String> received = new LinkedHashMap<>();
-        for (String read : verwacht.keySet()) received.put(read, TmsTranspiler.readName(read, Set.of()));
-        assertEquals(verwacht, received);
+        for (String read : expected.keySet()) received.put(read, TmsTranspiler.readName(read, Set.of()));
+        assertEquals(expected, received);
         for (String naam : received.values())
             assertTrue(identifier(naam) && !naam.contains("_"), () -> naam + " is geen variabele zonder underscore");
         // a name of which nothing stays takes a number where $x is taken, as every read name does
@@ -165,7 +165,7 @@ class ReadNameWitnessTest {
         ReadTable empty = new ReadTable(List.of());
         Consequence channel = new Consequence.InsertChannelState("proef", true, Consequence.Insertion.LOGICAL);
         Subject onderwerp = new Subject(Object.class, "$o", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "waarde")));
+                List.of(Binding.van("$v", Value.class, "value")));
         assertEquals("de regel twee patronen declareert de variabele $o twee keer", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee patronen", null, null, empty,
                         List.of(onderwerp, new FactPattern(Value.class, "$o", List.of(), List.of(), List.of())), channel))
@@ -190,10 +190,10 @@ class ReadNameWitnessTest {
                         List.of(onderwerp), channel)).getMessage());
         // what a quantification declares lives only inside it: a second quantification and an item after both may
         // declare that name again
-        Not eerste = new Not(new FactPattern(Value.class, "$w", List.of(), List.of(), List.of()));
-        Exists tweede = new Exists(List.of(new FactPattern(Value.class, "$w", List.of(), List.of(), List.of())),
+        Not first = new Not(new FactPattern(Value.class, "$w", List.of(), List.of(), List.of()));
+        Exists second = new Exists(List.of(new FactPattern(Value.class, "$w", List.of(), List.of(), List.of())),
                 List.of("$w"), List.of());
-        assertEquals(4, new RulePlan("lokaal", null, null, empty, List.of(onderwerp, eerste, tweede,
+        assertEquals(4, new RulePlan("lokaal", null, null, empty, List.of(onderwerp, first, second,
                 new FactPattern(Value.class, "$w", List.of(), List.of(), List.of())), channel).leftSide().size());
     }
 
@@ -204,7 +204,7 @@ class ReadNameWitnessTest {
         List<String> out = new ArrayList<>();
         for (RulePlan p : b.execModelTranspiler().modelplan().rules())
             if (p.naam().equals(regel))
-                for (Read l : p.lezingen().slots()) out.add(l.soort() + " " + l.naam());
+                for (Read l : p.readings().slots()) out.add(l.category() + " " + l.naam());
         return out;
     }
 
@@ -217,14 +217,14 @@ class ReadNameWitnessTest {
             switch (item) {
                 case Subject o -> {
                     out.add(o.naam());
-                    for (Binding b : o.bindings()) out.add(b.doel());
+                    for (Binding b : o.bindings()) out.add(b.target());
                 }
                 case FactPattern pt -> pattern(pt, out);
                 case Not n -> n.patterns().forEach(pt -> pattern(pt, out));
                 case Exists e -> e.patterns().forEach(pt -> pattern(pt, out));
                 case Accumulation a -> {
-                    pattern(a.bron(), out);
-                    for (Accumulation.Aggregation f : a.aggregations()) out.add(f.doel());
+                    pattern(a.source(), out);
+                    for (Accumulation.Aggregation f : a.aggregations()) out.add(f.target());
                 }
                 case TestItem t -> { }
             }
@@ -234,7 +234,7 @@ class ReadNameWitnessTest {
 
     private static void pattern(FactPattern pt, List<String> out) {
         out.add(pt.naam());
-        for (Binding b : pt.bindings()) out.add(b.doel());
+        for (Binding b : pt.bindings()) out.add(b.target());
     }
 
     /** Whether {@code naam} is {@code $} and a Java identifier, which DRL text can spell as a variable. */

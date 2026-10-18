@@ -46,8 +46,8 @@ import java.util.stream.Stream;
  * the largest N the cap has counted by then, the largest of those; it equals firings / (R × N0) without a creation.
  * One extra fire per case measures it, with listeners, through the seam with a cap no golden reaches, and holds its
  * phases to the cap the driver computed. Every case is set up as the replay sets it up ({@link CaseRunner#withSession},
- * through {@link DroolsBackend#voegIn}), and fired and written back through the backend's entry as a consumer does:
- * {@link DroolsBackend#vuur} under the cap a consumer gets, then {@link DroolsBackend#zetAfgeleideWaarden}, each timed
+ * through {@link DroolsBackend#insert}), and fired and written back through the backend's entry as a consumer does:
+ * {@link DroolsBackend#fire} under the cap a consumer gets, then {@link DroolsBackend#setDerivedValues}, each timed
  * on its own. The replay's listener for two writers of one attribute is not on the session, as with a consumer. Then
  * the sums and medians, the goldens with the largest ratio, and per defaults group its rules and control facts; last,
  * every golden of the corpus with case files through
@@ -104,7 +104,7 @@ public final class TmsMeasurement {
         table(gemeten, out);
         samenvatting(gemeten, out);
         defaultsGroups(gemeten, out);
-        dekking(directories.size(), goldens, out);
+        coverage(directories.size(), goldens, out);
         System.out.print(out);
     }
 
@@ -181,10 +181,10 @@ public final class TmsMeasurement {
             for (int c = 0; c < cases.size(); c++) {
                 List<FireMeasurement> ms = new ArrayList<>();
                 for (int i = -WARM_UP; i < REPETITIONS; i++) {
-                    FireMeasurement m = vuur(this, c, BRANCH, branch.runner, i == REPETITIONS - 1);
+                    FireMeasurement m = fire(this, c, BRANCH, branch.runner, i == REPETITIONS - 1);
                     if (i >= 0) ms.add(m);
                 }
-                Phases f = phases(this, c, BRANCH, branch.runner, ms.stream().mapToInt(FireMeasurement::vuringen).max().orElseThrow());
+                Phases f = phases(this, c, BRANCH, branch.runner, ms.stream().mapToInt(FireMeasurement::firings).max().orElseThrow());
                 branch.count(this, caseNames.get(c), ms, f);
             }
             // the KieBase goes once its golden is measured
@@ -194,24 +194,24 @@ public final class TmsMeasurement {
 
     /** One fire of one case: its firings and the cap it fired under, the fire and the write-back in nanoseconds, the
      *  facts just before the fire, and, where asked, every fact the session held after the fire. */
-    private record FireMeasurement(int vuringen, int cap, long fireNanos, long writeBackNanos, long n0,
+    private record FireMeasurement(int firings, int cap, long fireNanos, long writeBackNanos, long n0,
                               List<Object> sessionFacts) {}
 
     /** Fires case {@code c} of {@code g} on {@code branch} in a fresh session and measures it; any fault names the golden,
      *  the case and the branch. */
-    private static FireMeasurement vuur(Golden g, int c, DroolsBackend.Branch branch, CaseRunner runner, boolean sessionFacts) {
+    private static FireMeasurement fire(Golden g, int c, DroolsBackend.Branch branch, CaseRunner runner, boolean sessionFacts) {
         try {
-            return runner.withSession(g.cases.get(c), (bouw, sessie, labels) -> {
-                long n0 = sessie.getFactCount();
+            return runner.withSession(g.cases.get(c), (build, session, labels) -> {
+                long n0 = session.getFactCount();
                 long begin = System.nanoTime();
-                DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie);
+                DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
                 long fired = System.nanoTime();
-                if (firing.geenFixpunt() != null) throw new IllegalStateException(firing.geenFixpunt());
-                List<Object> state = sessionFacts ? new ArrayList<>(sessie.getObjects()) : null;
+                if (firing.noFixpoint() != null) throw new IllegalStateException(firing.noFixpoint());
+                List<Object> state = sessionFacts ? new ArrayList<>(session.getObjects()) : null;
                 long writeBackStart = System.nanoTime();
-                DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+                DroolsBackend.setDerivedValues(build, session);
                 long writtenBack = System.nanoTime();
-                return new FireMeasurement(firing.vuringen(), firing.cap(), fired - begin, writtenBack - writeBackStart, n0, state);
+                return new FireMeasurement(firing.firings(), firing.cap(), fired - begin, writtenBack - writeBackStart, n0, state);
             });
         } catch (RuntimeException e) {
             throw new IllegalStateException(g.naam + ", " + g.caseNames.get(c) + " op " + branch + ": " + e, e);
@@ -221,7 +221,7 @@ public final class TmsMeasurement {
     /** What the run of one case needs of the factor of the fire cap: {@code verhouding}, the largest over its stretches
      *  of the firings at the end of a stretch over R times the largest number of facts the cap has counted by then,
      *  with those firings and that number; -1 where every count is 0. */
-    private record Phases(double ratio, long vuringen, long n) {}
+    private record Phases(double ratio, long firings, long n) {}
 
     /** Fires case {@code c} of {@code g} on {@code branch} once more, through the seam with the factor 1000 and floor 1, a
      *  cap no golden reaches that the driver computes like the public one, with a listener on the firings and one on
@@ -229,14 +229,14 @@ public final class TmsMeasurement {
      *  session then holds: the driver computes the cap again right after that insertion, over the same count. The run
      *  must give the firings of the measured fires, its listener must count what the driver reports, and the cap it
      *  ends with must be 1000 × R times the largest of the counts; else the measurement fails. */
-    private static Phases phases(Golden g, int c, DroolsBackend.Branch branch, CaseRunner runner, int vuringen) {
+    private static Phases phases(Golden g, int c, DroolsBackend.Branch branch, CaseRunner runner, int firings) {
         final double factor = 1000;
         try {
-            return runner.withSession(g.cases.get(c), (bouw, sessie, labels) -> {
-                long rules = rules(bouw.kieBase());
+            return runner.withSession(g.cases.get(c), (build, session, labels) -> {
+                long rules = rules(build.kieBase());
                 long[] fired = {0};
                 List<long[]> starts = new ArrayList<>();
-                starts.add(new long[] {0, sessie.getFactCount()});
+                starts.add(new long[] {0, session.getFactCount()});
                 AgendaEventListener counter = new DefaultAgendaEventListener() {
                     @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                         fired[0]++;
@@ -244,27 +244,27 @@ public final class TmsMeasurement {
                 };
                 RuleRuntimeEventListener phase = new RuleRuntimeEventListener() {
                     @Override public void objectInserted(ObjectInsertedEvent e) {
-                        if (e.getObject() instanceof CreationPhase) starts.add(new long[] {fired[0], sessie.getFactCount()});
+                        if (e.getObject() instanceof CreationPhase) starts.add(new long[] {fired[0], session.getFactCount()});
                     }
 
                     @Override public void objectUpdated(ObjectUpdatedEvent e) {}
 
                     @Override public void objectDeleted(ObjectDeletedEvent e) {}
                 };
-                sessie.addEventListener(counter);
-                sessie.addEventListener(phase);
-                DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie, factor, 1);
-                sessie.removeEventListener(counter);
-                sessie.removeEventListener(phase);
-                if (firing.geenFixpunt() != null) throw new IllegalStateException(firing.geenFixpunt());
-                if (firing.vuringen() != vuringen || fired[0] != vuringen)
-                    throw new IllegalStateException("de run met luisteraars vuurde " + firing.vuringen() + " keer, de"
-                            + " luisteraar telde " + fired[0] + ", de gemeten runs " + vuringen);
+                session.addEventListener(counter);
+                session.addEventListener(phase);
+                DroolsBackend.Firing firing = DroolsBackend.fire(build, session, factor, 1);
+                session.removeEventListener(counter);
+                session.removeEventListener(phase);
+                if (firing.noFixpoint() != null) throw new IllegalStateException(firing.noFixpoint());
+                if (firing.firings() != firings || fired[0] != firings)
+                    throw new IllegalStateException("de run met luisteraars vuurde " + firing.firings() + " keer, de"
+                            + " luisteraar telde " + fired[0] + ", de gemeten runs " + firings);
                 double highest = -1;
                 long highestFirings = 0, highestN = 0, largest = 0;
                 for (int k = 0; k < starts.size(); k++) {
                     largest = Math.max(largest, starts.get(k)[1]);
-                    long end = k + 1 < starts.size() ? starts.get(k + 1)[0] : firing.vuringen();
+                    long end = k + 1 < starts.size() ? starts.get(k + 1)[0] : firing.firings();
                     if (largest == 0) continue;
                     double v = end / ((double) rules * largest);
                     if (v > highest) {
@@ -290,7 +290,7 @@ public final class TmsMeasurement {
         for (Golden g : gemeten) {
             CaseRunner runner = CaseRunner.forMeasurement(g.ir, BRANCH);
             for (int c = 0; c < g.cases.size(); c++)
-                for (int i = 0; i < RONDE; i++) vuur(g, c, BRANCH, runner, false);
+                for (int i = 0; i < RONDE; i++) fire(g, c, BRANCH, runner, false);
         }
     }
 
@@ -317,15 +317,15 @@ public final class TmsMeasurement {
         static Branch built(Path ir, DroolsBackend.Branch b) throws Exception {
             Branch t = new Branch();
             long[] times = new long[BUILD_ROUNDS];
-            DroolsBackend.Build bouw = null;
+            DroolsBackend.Build build = null;
             for (int i = 0; i < BUILD_ROUNDS; i++) {
                 long begin = System.nanoTime();
-                bouw = DroolsBackend.build(ir, b);
+                build = DroolsBackend.build(ir, b);
                 times[i] = System.nanoTime() - begin;
             }
             t.buildMs = median(times) / 1e6;
-            t.rules = rules(bouw.kieBase());
-            t.groups = bouw.execModelTranspiler().defaultsGroups();
+            t.rules = rules(build.kieBase());
+            t.groups = build.execModelTranspiler().defaultsGroups();
             for (TmsTranspiler.DefaultsGroup g : t.groups) t.controlFacts.put(g.naam(), new long[2]);
             t.runner = CaseRunner.forMeasurement(ir, b);
             return t;
@@ -339,14 +339,14 @@ public final class TmsMeasurement {
             if (f.ratio() > phases) {
                 phases = f.ratio();
                 phasesCase = caseFileName;
-                phasesFirings = f.vuringen();
+                phasesFirings = f.firings();
                 phasesN = f.n();
             }
             fireMs += median(ms.stream().mapToLong(FireMeasurement::fireNanos).toArray()) / 1e6;
             writeBackMs += median(ms.stream().mapToLong(FireMeasurement::writeBackNanos).toArray()) / 1e6;
             sumMs += median(ms.stream().mapToLong(m -> m.fireNanos() + m.writeBackNanos()).toArray()) / 1e6;
-            int min = ms.stream().mapToInt(FireMeasurement::vuringen).min().orElseThrow();
-            int max = ms.stream().mapToInt(FireMeasurement::vuringen).max().orElseThrow();
+            int min = ms.stream().mapToInt(FireMeasurement::firings).min().orElseThrow();
+            int max = ms.stream().mapToInt(FireMeasurement::firings).max().orElseThrow();
             firingsMin += min;
             firingsMax += max;
             long n = ms.get(0).n0();
@@ -392,7 +392,7 @@ public final class TmsMeasurement {
             });
         }
 
-        String vuringen() {
+        String firings() {
             return firingsMin == firingsMax ? String.valueOf(firingsMin) : firingsMin + "–" + firingsMax;
         }
     }
@@ -406,7 +406,7 @@ public final class TmsMeasurement {
         out.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
         for (Golden g : gemeten) {
             Branch t = g.branch;
-            out.append("| ").append(g.naam).append(" | ").append(g.cases.size()).append(" | ").append(t.vuringen())
+            out.append("| ").append(g.naam).append(" | ").append(g.cases.size()).append(" | ").append(t.firings())
                     .append(" | ").append(ms(t.fireMs)).append(" | ").append(ms(t.writeBackMs)).append(" | ")
                     .append(ms(t.buildMs)).append(" | ").append(t.rules).append(" | ").append(t.n0).append(" | ")
                     .append(t.ratio < 0 ? "–" : ratio(t.ratio)).append(" | ")
@@ -479,11 +479,11 @@ public final class TmsMeasurement {
                     .append(", ").append(tightest.branch.capCase).append(").\n\n");
     }
 
-    private static void row(StringBuilder out, String naam, List<Golden> goldens, ToDoubleFunction<Branch> waarde,
-                            String vorm) {
-        double[] n = goldens.stream().mapToDouble(g -> waarde.applyAsDouble(g.branch)).toArray();
-        out.append("| ").append(naam).append(" | ").append(String.format(Locale.ROOT, vorm, Arrays.stream(n).sum()))
-                .append(" | ").append(String.format(Locale.ROOT, vorm, median(n))).append(" |\n");
+    private static void row(StringBuilder out, String naam, List<Golden> goldens, ToDoubleFunction<Branch> value,
+                            String form) {
+        double[] n = goldens.stream().mapToDouble(g -> value.applyAsDouble(g.branch)).toArray();
+        out.append("| ").append(naam).append(" | ").append(String.format(Locale.ROOT, form, Arrays.stream(n).sum()))
+                .append(" | ").append(String.format(Locale.ROOT, form, median(n))).append(" |\n");
     }
 
     private static void defaultsGroups(List<Golden> gemeten, StringBuilder out) {
@@ -507,7 +507,7 @@ public final class TmsMeasurement {
 
     // ---------------- the corpus ----------------
 
-    private static void dekking(int directories, List<Golden> goldens, StringBuilder out) {
+    private static void coverage(int directories, List<Golden> goldens, StringBuilder out) {
         Map<String, Integer> played = new LinkedHashMap<>();
         List<String> failed = new ArrayList<>();
         Map<String, Map<String, List<String>>> refused = new TreeMap<>();
@@ -520,7 +520,7 @@ public final class TmsMeasurement {
                     playedCases += r.casesPlayed();
                 }
                 case "EXCLUDE" -> refused.computeIfAbsent(family(r.reason()), f -> new TreeMap<>())
-                        .computeIfAbsent(vorm(r.reason()), v -> new ArrayList<>()).add(g.naam);
+                        .computeIfAbsent(form(r.reason()), v -> new ArrayList<>()).add(g.naam);
                 default -> failed.add(g.naam + ": " + r.caseFailures());
             }
         }
@@ -557,42 +557,42 @@ public final class TmsMeasurement {
     /** The family of a refusal: after the manifest's prefix the kind of form it refuses first, the part before the
      *  first colon; a cycle refused before the build; else the part before the first colon (the loader, the bean
      *  model, the contract, the case reader). */
-    private static String family(String reden) {
+    private static String family(String reason) {
         for (String p : MANIFEST)
-            if (reden.startsWith(p)) {
-                String rest = reden.substring(p.length());
+            if (reason.startsWith(p)) {
+                String rest = reason.substring(p.length());
                 int i = rest.indexOf(':');
                 return i < 0 ? rest : rest.substring(0, i);
             }
-        if (cycle(reden)) return "kring";
-        int i = reden.indexOf(':');
-        return i < 0 ? reden : reden.substring(0, i);
+        if (cycle(reason)) return "kring";
+        int i = reason.indexOf(':');
+        return i < 0 ? reason : reason.substring(0, i);
     }
 
     /** The form a refusal names, without the names of the document: after the manifest's prefix the reason after the
      *  dash, up to the first parenthesis, colon or quote; a cycle as one form; the loader's form, which it names after
      *  its own sentence and spells with a colon ("Expr:TemporalRead"), up to the parenthesis; else the reason after its
      *  family. */
-    private static String vorm(String reden) {
+    private static String form(String reason) {
         for (String p : MANIFEST)
-            if (reden.startsWith(p)) {
-                int streep = reden.indexOf(" — ");
-                return truncated(streep < 0 ? reden.substring(p.length()) : reden.substring(streep + 3));
+            if (reason.startsWith(p)) {
+                int streep = reason.indexOf(" — ");
+                return truncated(streep < 0 ? reason.substring(p.length()) : reason.substring(streep + 3));
             }
-        if (cycle(reden)) return "kring in de afhankelijkheden";
-        if (reden.startsWith("loader: ")) {
-            String rest = reden.substring(reden.lastIndexOf(": ") + 2);
+        if (cycle(reason)) return "kring in de afhankelijkheden";
+        if (reason.startsWith("loader: ")) {
+            String rest = reason.substring(reason.lastIndexOf(": ") + 2);
             int bracket = rest.indexOf(" (");
             return (bracket < 0 ? rest : rest.substring(0, bracket)).trim().replace("|", "\\|");
         }
-        int i = reden.indexOf(':');
-        return truncated(i < 0 ? reden : reden.substring(i + 1).trim());
+        int i = reason.indexOf(':');
+        return truncated(i < 0 ? reason : reason.substring(i + 1).trim());
     }
 
-    /** Whether {@code reden} is the refusal of a cycle: the label of the branch, which two rules of one name carry as
+    /** Whether {@code reason} is the refusal of a cycle: the label of the branch, which two rules of one name carry as
      *  well. */
-    private static boolean cycle(String reden) {
-        return reden.startsWith("exec-model: ") && !reden.startsWith("exec-model: Duplicate rule name");
+    private static boolean cycle(String reason) {
+        return reason.startsWith("exec-model: ") && !reason.startsWith("exec-model: Duplicate rule name");
     }
 
     private static String truncated(String s) {

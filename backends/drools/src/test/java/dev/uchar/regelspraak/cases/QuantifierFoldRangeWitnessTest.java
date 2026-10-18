@@ -51,7 +51,7 @@ class QuantifierFoldRangeWitnessTest {
     @Test void the_quantifier_fold_over_a_unique_pair_stays_playing() throws Exception {
         // The regression mirror: the golden as it stands, one feittype over the pair. Green before this card as
         // well; since L2 of the v1 wire migration the binding decides here too, as it does everywhere.
-        Path p = temporary("kwantorvouw-uniek", lees());
+        Path p = temporary("kwantorvouw-uniek", read());
         for (Path casePath : cases()) playBoth(p, casePath);
     }
 
@@ -73,7 +73,7 @@ class QuantifierFoldRangeWitnessTest {
         Path p = temporary("kwantorvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(Files.readString(cases().get(1)));
         for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                     () -> CaseRunner.playCase(p, c, viaDrl),
                     (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless quantifier fold");
             assertTrue(e.getMessage().contains("a quantifier fold carries its range (sourceRole or sourcePath): the"
@@ -97,7 +97,7 @@ class QuantifierFoldRangeWitnessTest {
         }
     }
 
-    private static ObjectNode lees() throws Exception {
+    private static ObjectNode read() throws Exception {
         Path p = CORPUS.resolve(KEURPLOEG).resolve("ir.json");
         assertTrue(Files.exists(p), "golden ir.json present: " + p.toAbsolutePath());
         return (ObjectNode) JSON.readTree(Files.readString(p));
@@ -116,18 +116,18 @@ class QuantifierFoldRangeWitnessTest {
      *  takes to make the by-pair search ambiguous while the wire binding stays exact. The case inputs never
      *  fill it, so the world the cases describe is unchanged. */
     private static ObjectNode repeatedPair() throws Exception {
-        ObjectNode ir = lees();
+        ObjectNode ir = read();
         ObjectNode ft = IrPath.modelList(ir, "factTypes").addObject();
         ft.put("node", "FactType").put("name", "schaduwindeling").put("reciprocal", false);
         ft.putArray("roles")
-          .add(rol("schaduwploeg", "Keurploeg", null, false))
-          .add(rol("schaduwmeester", "Keurmeester", "schaduwmeesters", true));
+          .add(role("schaduwploeg", "Keurploeg", null, false))
+          .add(role("schaduwmeester", "Keurmeester", "schaduwmeesters", true));
         return ir;
     }
 
-    private static ObjectNode rol(String naam, String objecttype, String plural, boolean many) {
+    private static ObjectNode role(String naam, String objectType, String plural, boolean many) {
         ObjectNode r = JSON.createObjectNode().put("node", "Role").put("name", naam)
-                .put("objectType", objecttype);
+                .put("objectType", objectType);
         if (plural != null) r.put("plural", plural);
         return r.put("many", many);
     }

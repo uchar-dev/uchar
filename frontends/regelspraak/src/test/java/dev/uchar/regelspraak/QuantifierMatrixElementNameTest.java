@@ -1,9 +1,9 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -43,31 +43,31 @@ class QuantifierMatrixElementNameTest {
 
         """;
 
-    private static String laatklasse(String rechts) {
+    private static String laatklasse(String right) {
         return MODEL + "Regel laatklasse\n    geldig altijd\n        De laatklasse van een Jutter moet berekend worden als 1\n"
-                + "        indien de vinddag van ten minste één van de vondsten van de Jutter later is dan " + rechts + ".\n";
+                + "        indien de vinddag van ten minste één van de vondsten van de Jutter later is dan " + right + ".\n";
     }
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::toString).toList());
         return m;
     }
 
-    private static Conditie.QuantifierFold fold(RegelSpraakModel m) {
-        ResolvedRegel r = m.resolvedRegels.stream().filter(x -> x.naam().equals("laatklasse")).findFirst().orElseThrow();
-        return assertInstanceOf(Conditie.QuantifierFold.class, r.voorwaarde());
+    private static Condition.QuantifierFold fold(RegelSpraakModel m) {
+        ResolvedRule r = m.resolvedRegels.stream().filter(x -> x.naam().equals("laatklasse")).findFirst().orElseThrow();
+        return assertInstanceOf(Condition.QuantifierFold.class, r.condition());
     }
 
     @Test void the_element_name_in_the_matrix_binds() {
         // before: ERROR "genavigeerde lezing 'de sluitdag van de jutter van de Vondst' is niet als navigatie gelegd:
         // 'sluitdag' staat op 'Jutter', de vuller van de rol 'jutter', maar zij is gelezen als het attribuut 'sluitdag
         // van de jutter' van 'Vondst': …"
-        Conditie.QuantifierFold k = fold(clean(laatklasse("de sluitdag van de jutter van de Vondst")));
-        Conditie.Vergelijking v = assertInstanceOf(Conditie.Vergelijking.class, k.test());
-        Expr.AttribuutRef r = assertInstanceOf(Expr.AttribuutRef.class, v.rechts());
-        assertEquals("sluitdag", r.attribuut());
-        assertEquals("Jutter", r.objecttype().naam);
+        Condition.QuantifierFold k = fold(clean(laatklasse("de sluitdag van de jutter van de Vondst")));
+        Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, k.test());
+        Expr.AttributeReference r = assertInstanceOf(Expr.AttributeReference.class, v.right());
+        assertEquals("sluitdag", r.attribute());
+        assertEquals("Jutter", r.objectType().naam);
         assertEquals(List.of("jutter"), r.navigationPath());
     }
 
@@ -89,9 +89,9 @@ class QuantifierMatrixElementNameTest {
     // ---- what stays as it was
 
     @Test void the_possessive_form_and_an_own_member_of_the_subject_stay() {
-        Conditie.Vergelijking v = assertInstanceOf(Conditie.Vergelijking.class,
+        Condition.Comparison v = assertInstanceOf(Condition.Comparison.class,
                 fold(clean(laatklasse("de sluitdag van zijn jutter"))).test());
-        assertEquals("sluitdag", assertInstanceOf(Expr.AttribuutRef.class, v.rechts()).attribuut());
+        assertEquals("sluitdag", assertInstanceOf(Expr.AttributeReference.class, v.right()).attribute());
         fold(clean(laatklasse("zijn startdag")));
     }
 

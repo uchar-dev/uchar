@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Every golden the exec-model branch plays, and every case of it, is fired through both branches as a consumer fires
  * it, on one build per branch, and the dumps of the two sessions ({@link SessionDump}) must be equal: the input, what
- * {@code DroolsBackend.lees} gives, the facts at the fixpoint and the outcome of the fire. The firings and their order
+ * {@code DroolsBackend.read} gives, the facts at the fixpoint and the outcome of the fire. The firings and their order
  * are left out, as in {@link BranchDumps}: they follow the agenda, which differs between the two renderings, while the
  * fixpoint is the same. A case whose fire reaches no fixpoint, at a cap, at the creation budget or by an exception,
  * would compare only its input and its line {@code fixpunt}, strictly, since the facts where a fire stops depend on the

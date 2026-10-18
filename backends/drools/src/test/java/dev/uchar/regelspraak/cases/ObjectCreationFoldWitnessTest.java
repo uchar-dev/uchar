@@ -55,7 +55,7 @@ class ObjectCreationFoldWitnessTest {
         // The card's R1: "… met heffing gelijk aan 10% van de som van het gewicht van alle vondsten van de Jutter". An
         // empty sum is leeg, and 10% of leeg is 0 (ch. 1.2). ref and clingo: 1,10, 0,00, 0,00 and 0,90. The DRL-text
         // branch plays it too.
-        String ir = document(false, creatie(null, memberInit("heffing", percent(10, SUM))), readBack("heffing"));
+        String ir = document(false, creation(null, memberInit("heffing", percent(10, SUM))), readBack("heffing"));
         String caseDocument = caseDocument(situation(), perJutter("heffing", number("1.10"), number("0.00"), number("0.00"), number("0.90")));
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
@@ -65,7 +65,7 @@ class ObjectCreationFoldWitnessTest {
         // The card's R2: "… met weeggrens gelijk aan (de minimale waarde van het gewicht van alle vondsten van de
         // Jutter) plus 1". Over no vondsten, or only one without gewicht, the minimum is leeg and leeg plus 1 is 1.
         // ref and clingo: 5, 1, 1 and 10.
-        String ir = document(false, creatie(null, memberInit("weeggrens", plus(MINIMUM, numberLiteral(1), WHOLE))),
+        String ir = document(false, creation(null, memberInit("weeggrens", plus(MINIMUM, numberLiteral(1), WHOLE))),
                 readBack("weeggrens"));
         assertNull(play(ir, caseDocument(situation(), perJutter("weeggrens", number("5"), number("1"), number("1"), number("10")))),
                 "het minimum plus 1");
@@ -75,7 +75,7 @@ class ObjectCreationFoldWitnessTest {
         // The card's R3: "… met afrekendag gelijk aan de eerste van de vinddag van alle vondsten van de Jutter". ref and
         // clingo: 05-03-2026, leeg, leeg and 20-03-2026. Both branches play it since card
         // drl-teksttak-op-truth-maintenance; until then the DRL-text branch markered the fold ("TODO aggregatie EERSTE").
-        String ir = document(false, creatie(null, memberInit("afrekendag", FIRST)), readBack("afrekendag"));
+        String ir = document(false, creation(null, memberInit("afrekendag", FIRST)), readBack("afrekendag"));
         String caseDocument = caseDocument(situation(), perJutter("afrekendag", date("2026-03-05"), null, null, date("2026-03-20")));
         assertNull(play(ir, caseDocument), "de eerste vinddag");
         assertNull(playDrl(ir, caseDocument), "de eerste vinddag, drl-tekst");
@@ -102,7 +102,7 @@ class ObjectCreationFoldWitnessTest {
         };
         for (int i = 0; i < rows.length; i++) {
             String[] r = rows[i];
-            String ir = document(false, creatie(null, memberInit(r[0], waarden[i])), readBack(r[0]));
+            String ir = document(false, creation(null, memberInit(r[0], waarden[i])), readBack(r[0]));
             assertNull(play(ir, caseDocument(situation(), perJutter(r[0], number(r[2]), number(r[3]), number(r[4]), number(r[5])))),
                     r[1]);
         }
@@ -113,10 +113,10 @@ class ObjectCreationFoldWitnessTest {
         // ref and clingo: 04-04-2026 and 19-04-2026, and 05-03-2026 and 13-03-2026; J2 and J3 leeg.
         String plusDuration = binary("plus", FIRST, days(30), DATE, "(de eerste van …) plus 30 dagen");
         String minusDuration = binary("minus", LAST, days(7), DATE, "(de laatste van …) min 7 dagen");
-        assertNull(play(document(false, creatie(null, memberInit("afrekendag", plusDuration)), readBack("afrekendag")),
+        assertNull(play(document(false, creation(null, memberInit("afrekendag", plusDuration)), readBack("afrekendag")),
                 caseDocument(situation(), perJutter("afrekendag", date("2026-04-04"), null, null, date("2026-04-19")))),
                 "de eerste plus 30 dagen");
-        assertNull(play(document(false, creatie(null, memberInit("afrekendag", minusDuration)), readBack("afrekendag")),
+        assertNull(play(document(false, creation(null, memberInit("afrekendag", minusDuration)), readBack("afrekendag")),
                 caseDocument(situation(), perJutter("afrekendag", date("2026-03-05"), null, null, date("2026-03-13")))),
                 "de laatste min 7 dagen");
     }
@@ -125,7 +125,7 @@ class ObjectCreationFoldWitnessTest {
         // "… met weeggrens gelijk aan de minimale waarde van het gewicht van alle vondsten van de Jutter, telling gelijk
         // aan 5": an empty minimum is leeg, and the creation mints its object all the same (ch. 5.5 asks only the
         // condition). ref and clingo: weeggrens 4, leeg, leeg and 9; telling 5 for every Jutter.
-        String ir = document(false, creatie(null, memberInit("weeggrens", MINIMUM), memberInit("telling", numberLiteral(5))),
+        String ir = document(false, creation(null, memberInit("weeggrens", MINIMUM), memberInit("telling", numberLiteral(5))),
                 readBack("weeggrens"), readBack("telling"));
         assertNull(play(ir, caseDocument(situation(), perJutter("weeggrens", number("4"), null, null, number("9")),
                 perJutter("telling", number("5"), number("5"), number("5"), number("5")))), "een kaal minimum en een constante");
@@ -134,12 +134,12 @@ class ObjectCreationFoldWitnessTest {
     @Test void two_initialisations_with_a_fold_each() throws Exception {
         // R1 and R2 in one creation, and a count beside a date fold. ref and clingo: the values of R1 and R2; telling
         // 3, 0, 1 and 1, afrekendag that of R3.
-        String ir = document(false, creatie(null, memberInit("heffing", percent(10, SUM)),
+        String ir = document(false, creation(null, memberInit("heffing", percent(10, SUM)),
                         memberInit("weeggrens", plus(MINIMUM, numberLiteral(1), WHOLE))),
                 readBack("heffing"), readBack("weeggrens"));
         assertNull(play(ir, caseDocument(situation(), perJutter("heffing", number("1.10"), number("0.00"), number("0.00"), number("0.90")),
                 perJutter("weeggrens", number("5"), number("1"), number("1"), number("10")))), "R1 en R2 samen");
-        String numberAndDate = document(false, creatie(null, memberInit("telling", COUNTING), memberInit("afrekendag", FIRST)),
+        String numberAndDate = document(false, creation(null, memberInit("telling", COUNTING), memberInit("afrekendag", FIRST)),
                 readBack("telling"), readBack("afrekendag"));
         assertNull(play(numberAndDate, caseDocument(situation(), perJutter("telling", number("3"), number("0"), number("1"), number("1")),
                 perJutter("afrekendag", date("2026-03-05"), null, null, date("2026-03-20")))), "een telling en een datumvouw");
@@ -149,10 +149,10 @@ class ObjectCreationFoldWitnessTest {
         // "Eén afrekenaar heeft meerdere afrekeningen": the creation keys its guard on the creation marker, and the
         // Jutter reads back "de som van de heffing van alle afrekeningen van de Jutter". ref and clingo: the values of
         // R1 and of R2.
-        assertNull(play(document(true, creatie(null, memberInit("heffing", percent(10, SUM))), readBackSum("heffing", TWO_DECIMALS)),
+        assertNull(play(document(true, creation(null, memberInit("heffing", percent(10, SUM))), readBackSum("heffing", TWO_DECIMALS)),
                 caseDocument(situation(), perJutter("heffing", number("1.10"), number("0.00"), number("0.00"), number("0.90")))),
                 "10% van de som");
-        assertNull(play(document(true, creatie(null, memberInit("weeggrens", plus(MINIMUM, numberLiteral(1), WHOLE))),
+        assertNull(play(document(true, creation(null, memberInit("weeggrens", plus(MINIMUM, numberLiteral(1), WHOLE))),
                         readBackSum("weeggrens", WHOLE)),
                 caseDocument(situation(), perJutter("weeggrens", number("5"), number("1"), number("1"), number("10")))),
                 "het minimum plus 1");
@@ -165,12 +165,12 @@ class ObjectCreationFoldWitnessTest {
         String clamped = "{\"node\":\"Clamp\",\"base\":" + binary("minus", COUNTING, numberLiteral(2), WHOLE,
                 "(het aantal vondsten van de Jutter) min 2") + ",\"minimum\":" + numberLiteral(0) + ",\"type\":" + WHOLE
                 + ",\"source\":{\"snippet\":\"(het aantal vondsten van de Jutter) min 2, met een minimum van 0\"}}";
-        assertNull(play(document(false, creatie(null, memberInit("telling", clamped)), readBack("telling")),
+        assertNull(play(document(false, creation(null, memberInit("telling", clamped)), readBack("telling")),
                 caseDocument(situation(), perJutter("telling", number("1"), number("0"), number("0"), number("0")))), "de begrenzing");
         String duration = "{\"node\":\"BuiltinCall\",\"kind\":\"duration\",\"arguments\":[" + FIRST + "," + LAST
                 + "],\"type\":" + numberIn(DG) + ",\"source\":{\"snippet\":\"de tijdsduur van de eerste van … tot de laatste"
                 + " van … in hele dagen\"}}";
-        assertNull(play(document(false, creatie(null, memberInit("spanne", duration)), readBack("spanne")),
+        assertNull(play(document(false, creation(null, memberInit("spanne", duration)), readBack("spanne")),
                 caseDocument(situation(), perJutter("spanne", number("7"), null, null, number("0")))), "de tijdsduur");
         String bonus = "{\"node\":\"AttributeReference\",\"attribute\":\"bonus\",\"subjectType\":\"Strandvoogd\",\"source\":"
                 + "{\"snippet\":\"de bonus van de strandvoogd van de Jutter\"},\"path\":[" + roleBinding("StrandvoogdBeheertJutter",
@@ -178,7 +178,7 @@ class ObjectCreationFoldWitnessTest {
         List<String> withStrandvoogd = new ArrayList<>(List.of(instance("S1", "Strandvoogd", "\"bonus\":{\"number\":\"3\"}", "")));
         for (String j : situation()) withStrandvoogd.add(j.replace("\"objectType\":\"Jutter\",\"attributes\":{},\"roles\":{}",
                 "\"objectType\":\"Jutter\",\"attributes\":{},\"roles\":{\"strandvoogd\":[\"S1\"]}"));
-        assertNull(play(document(false, creatie(null, memberInit("telling", plus(bonus, SUM, WHOLE))), readBack("telling")),
+        assertNull(play(document(false, creation(null, memberInit("telling", plus(bonus, SUM, WHOLE))), readBack("telling")),
                 caseDocument(withStrandvoogd, perJutter("telling", number("14"), number("3"), number("3"), number("12")))),
                 "een genavigeerde lezing plus de som");
     }
@@ -199,7 +199,7 @@ class ObjectCreationFoldWitnessTest {
                 + "\"negated\":false,\"source\":{\"snippet\":\"zwaar zijn\"}},\"sourceRole\":" + roleBinding("JutterHeeftVondst",
                 "vondst") + ",\"type\":" + DATE + ",\"source\":{\"snippet\":\"de laatste van de vinddag van alle vondsten van de"
                 + " Jutter die zwaar zijn\"}}";
-        assertNull(play(document(false, creatie(null, memberInit("afrekendag", zwareLast)), readBack("afrekendag"), zwaar),
+        assertNull(play(document(false, creation(null, memberInit("afrekendag", zwareLast)), readBack("afrekendag"), zwaar),
                 caseDocument(situation(), perJutter("afrekendag", date("2026-03-05"), null, null, date("2026-03-20")))),
                 "de laatste zware vinddag");
     }
@@ -216,7 +216,7 @@ class ObjectCreationFoldWitnessTest {
         List<String> withMass = new ArrayList<>();
         for (String j : situation()) withMass.add(j.replace("\"objectType\":\"Jutter\",\"attributes\":{}",
                 "\"objectType\":\"Jutter\",\"attributes\":{\"eigen massa\":{\"number\":\"2\"}}"));
-        assertNull(play(document(false, creatie(null, memberInit("massa", own)), readBack("massa")),
+        assertNull(play(document(false, creation(null, memberInit("massa", own)), readBack("massa")),
                 caseDocument(withMass, perJutter("massa", number("2000"), number("2000"), number("2000"), number("2000")))),
                 "een eigen attribuut in kg");
         List<String> withVondstMass = new ArrayList<>();
@@ -225,7 +225,7 @@ class ObjectCreationFoldWitnessTest {
                 .replace("\"gewicht\":{\"number\":\"7\"}", "\"gewicht\":{\"number\":\"7\"},\"vondstmassa\":{\"number\":\"7\"}")
                 .replace("\"gewicht\":{\"number\":\"9\"}", "\"gewicht\":{\"number\":\"9\"},\"vondstmassa\":{\"number\":\"9\"}"));
         String massSum = fold("sum", "vondstmassa", numberIn(KG), "de som van de vondstmassa van alle vondsten van de Jutter");
-        assertNull(play(document(false, creatie(null, memberInit("massa", massSum)), readBack("massa")),
+        assertNull(play(document(false, creation(null, memberInit("massa", massSum)), readBack("massa")),
                 caseDocument(withVondstMass, perJutter("massa", number("11000"), null, null, number("9000")))),
                 "een som in kg");
     }
@@ -247,13 +247,13 @@ class ObjectCreationFoldWitnessTest {
         for (String j : situation()) withDivisor.add(j.replace("\"objectType\":\"Jutter\",\"attributes\":{}",
                 "\"objectType\":\"Jutter\",\"attributes\":{\"basis\":{\"number\":\"2\"}"
                         + (j.contains("\"J2\"") ? "" : ",\"deler\":{\"number\":\"2\"}") + "}"));
-        refused(document(false, creatie(null, memberInit("heffing", own)), readBack("heffing")), caseDocument(withDivisor,
+        refused(document(false, creation(null, memberInit("heffing", own)), readBack("heffing")), caseDocument(withDivisor,
                 perJutter("heffing", number("1.00"), null, number("1.00"), number("1.00")), INCONSISTENT),
                 DIVISION.formatted("zijn basis gedeeld door zijn deler"));
         // "(100 gedeeld door (de som …)) rekenkundig afgerond op 2 decimalen": ref and clingo 9,09, leeg, leeg and 11,11,
         // inconsistent; over J1 and J4 alone, whose sums are filled, consistent.
         String bySum = roundedTo2(binary("dividedBy", numberLiteral(100), SUM, UNBOUNDED, "100 gedeeld door (de som …)"));
-        String sumIr = document(false, creatie(null, memberInit("heffing", bySum)), readBack("heffing"));
+        String sumIr = document(false, creation(null, memberInit("heffing", bySum)), readBack("heffing"));
         refused(sumIr, caseDocument(situation(), perJutter("heffing", number("9.09"), null, null, number("11.11")), INCONSISTENT),
                 DIVISION.formatted("100 gedeeld door (de som …)"));
         List<String> filled = new ArrayList<>();
@@ -263,7 +263,7 @@ class ObjectCreationFoldWitnessTest {
                 + number("11.11") + "}", CONSISTENT), DIVISION.formatted("100 gedeeld door (de som …)"));
         // "(de som …) gedeeld door 4": a literal divisor never deposits. ref and clingo: 2,75, 0,00, 0,00 and 2,25,
         // consistent.
-        refused(document(false, creatie(null, memberInit("heffing", binary("dividedBy", SUM, numberLiteral(4),
+        refused(document(false, creation(null, memberInit("heffing", binary("dividedBy", SUM, numberLiteral(4),
                 UNBOUNDED, "(de som …) gedeeld door 4"))), readBack("heffing")), caseDocument(situation(),
                 perJutter("heffing", number("2.75"), number("0.00"), number("0.00"), number("2.25")), CONSISTENT),
                 DIVISION.formatted("(de som …) gedeeld door 4"));
@@ -272,7 +272,7 @@ class ObjectCreationFoldWitnessTest {
         String squareRoot = roundedTo2("{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":["
                 + binary("minus", SUM, numberLiteral(10), WHOLE, "(de som …) min 10") + "],\"type\":{\"node\":\"Number\","
                 + "\"whole\":false,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":{\"snippet\":\"de wortel van …\"}}");
-        refused(document(false, creatie(null, memberInit("heffing", squareRoot)), readBack("heffing")), caseDocument(situation(),
+        refused(document(false, creation(null, memberInit("heffing", squareRoot)), readBack("heffing")), caseDocument(situation(),
                 perJutter("heffing", number("1.00"), null, null, null), INCONSISTENT),
                 SQUARE_ROOT.formatted("de wortel van …"));
     }
@@ -286,14 +286,14 @@ class ObjectCreationFoldWitnessTest {
             + " §6.6-deponering niet maakt: deze tak draagt deze vorm nog niet";
 
     /** The exec-model branch refuses the creation "maak een afrekening" of {@code ir} by name, in the sentence that
-     *  ends in {@code reden}, before {@code caseDocument} is replayed. */
-    private static void refused(String ir, String caseDocument, String reden) throws Exception {
+     *  ends in {@code reason}, before {@code caseDocument} is replayed. */
+    private static void refused(String ir, String caseDocument, String reason) throws Exception {
         Path tmp = Files.createTempFile("objectcreatie-vouw", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(tmp, JSON.readTree(caseDocument), DroolsBackend.Branch.EXEC_MODEL));
-        org.junit.jupiter.api.Assertions.assertEquals("transpiler SKIP: objectcreatie: maak een afrekening — " + reden,
+        org.junit.jupiter.api.Assertions.assertEquals("transpiler SKIP: objectcreatie: maak een afrekening — " + reason,
                 e.getMessage());
     }
 
@@ -301,7 +301,7 @@ class ObjectCreationFoldWitnessTest {
         // Four ordering folds and a sum: the subject, and per fold a count and a result, are eleven variables, which
         // the consequence binds. ref and clingo: weeggrens 4, telling 7, afrekendag 05-03-2026, slotdag 12-03-2026 and
         // heffing 11,00 for J1, the values of V5 for J4, and leeg for J2 and J3.
-        String ir = document(false, creatie(null, memberInit("weeggrens", MINIMUM), memberInit("telling", MAXIMUM),
+        String ir = document(false, creation(null, memberInit("weeggrens", MINIMUM), memberInit("telling", MAXIMUM),
                         memberInit("afrekendag", FIRST), memberInit("slotdag", LAST), memberInit("heffing", SUM)),
                 readBack("weeggrens"), readBack("telling"), readBack("afrekendag"), readBack("slotdag"), readBack("heffing"));
         String caseDocument = caseDocument(situation(), perJutter("weeggrens", number("4"), null, null, number("9")),
@@ -316,10 +316,10 @@ class ObjectCreationFoldWitnessTest {
         // "Een Jutter heeft een afrekening met telling gelijk aan 5 indien de eerste van de vinddag van alle vondsten van
         // de Jutter later is dan 01-03-2026": the fold is an accumulate on the creation's rule and the condition reads
         // it, as in an ordinary rule's condition. ref and clingo: 5, leeg, leeg and 5.
-        String voorwaarde = "{\"node\":\"Comparison\",\"op\":\"later\",\"left\":" + FIRST + ",\"right\":{\"node\":\"Literal\","
+        String condition = "{\"node\":\"Comparison\",\"op\":\"later\",\"left\":" + FIRST + ",\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"date\":\"2026-03-01\"},\"type\":" + DATE + ",\"source\":{\"snippet\":\"01-03-2026\"}},\"source\":"
                 + "{\"snippet\":\"de eerste van … later is dan 01-03-2026\"}}";
-        assertNull(play(document(false, creatie(voorwaarde, memberInit("telling", numberLiteral(5))), readBack("telling")),
+        assertNull(play(document(false, creation(condition, memberInit("telling", numberLiteral(5))), readBack("telling")),
                 caseDocument(situation(), perJutter("telling", number("5"), null, null, number("5")))));
     }
 
@@ -333,9 +333,9 @@ class ObjectCreationFoldWitnessTest {
                 + ",\"source\":{\"snippet\":\"de som … groter is dan 3\"}}";
         String countGreater = "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + COUNTING + ",\"right\":" + numberLiteral(1)
                 + ",\"source\":{\"snippet\":\"het aantal vondsten van de Jutter groter is dan 1\"}}";
-        assertNull(play(document(false, creatie(sumGreater, memberInit("telling", numberLiteral(5))), readBack("telling")),
+        assertNull(play(document(false, creation(sumGreater, memberInit("telling", numberLiteral(5))), readBack("telling")),
                 caseDocument(situation(), perJutter("telling", number("5"), null, null, number("5")))), "de som in de voorwaarde");
-        assertNull(play(document(false, creatie(countGreater, memberInit("telling", numberLiteral(5))), readBack("telling")),
+        assertNull(play(document(false, creation(countGreater, memberInit("telling", numberLiteral(5))), readBack("telling")),
                 caseDocument(situation(), perJutter("telling", number("5"), null, null, null))), "het aantal in de voorwaarde");
     }
 
@@ -359,21 +359,21 @@ class ObjectCreationFoldWitnessTest {
         return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":" + unit + "}";
     }
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String objecttype(String naam, String plural, boolean animate, String kenmerken, String... attributes) {
+    private static String objectType(String naam, String plural, boolean animate, String kenmerken, String... attributes) {
         return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + kenmerken + "]}";
     }
 
-    private static String rol(String naam, String type, String plural) {
+    private static String role(String naam, String type, String plural) {
         return "{\"node\":\"Role\",\"name\":\"" + naam + "\",\"objectType\":\"" + type + "\""
                 + (plural == null ? ",\"many\":false}" : ",\"plural\":\"" + plural + "\",\"many\":true}");
     }
 
-    private static String feittype(String naam, String oneRole, String manyRole) {
+    private static String factType(String naam, String oneRole, String manyRole) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[" + oneRole + "," + manyRole + "]}";
     }
 
@@ -381,23 +381,23 @@ class ObjectCreationFoldWitnessTest {
      *  jutters, and one afrekenaar one afrekening, or many where {@code multiple}. */
     private static String model(boolean multiple) {
         return "{\"objectTypes\":["
-                + objecttype("Jutter", "Jutters", true, "", attribuut("heffing", TWO_DECIMALS), attribuut("weeggrens", WHOLE),
-                        attribuut("telling", WHOLE), attribuut("afrekendag", DATE), attribuut("slotdag", DATE),
-                        attribuut("spanne", numberIn(DG)), attribuut("massa", numberIn(G)), attribuut("eigen massa", numberIn(KG)),
-                        attribuut("basis", WHOLE),
-                        attribuut("deler", WHOLE)) + ","
-                + objecttype("Afrekening", "Afrekeningen", false, "", attribuut("heffing", TWO_DECIMALS),
-                        attribuut("weeggrens", WHOLE), attribuut("telling", WHOLE), attribuut("afrekendag", DATE),
-                        attribuut("slotdag", DATE), attribuut("spanne", numberIn(DG)), attribuut("massa", numberIn(G))) + ","
-                + objecttype("Vondst", "Vondsten", false, "{\"node\":\"Characteristic\",\"name\":\"zwaar\",\"kind\":\"nominal\"}",
-                        attribuut("vinddag", DATE), attribuut("gewicht", WHOLE), attribuut("vondstmassa", numberIn(KG))) + ","
-                + objecttype("Strandvoogd", "Strandvoogden", false, "", attribuut("bonus", WHOLE))
+                + objectType("Jutter", "Jutters", true, "", attribute("heffing", TWO_DECIMALS), attribute("weeggrens", WHOLE),
+                        attribute("telling", WHOLE), attribute("afrekendag", DATE), attribute("slotdag", DATE),
+                        attribute("spanne", numberIn(DG)), attribute("massa", numberIn(G)), attribute("eigen massa", numberIn(KG)),
+                        attribute("basis", WHOLE),
+                        attribute("deler", WHOLE)) + ","
+                + objectType("Afrekening", "Afrekeningen", false, "", attribute("heffing", TWO_DECIMALS),
+                        attribute("weeggrens", WHOLE), attribute("telling", WHOLE), attribute("afrekendag", DATE),
+                        attribute("slotdag", DATE), attribute("spanne", numberIn(DG)), attribute("massa", numberIn(G))) + ","
+                + objectType("Vondst", "Vondsten", false, "{\"node\":\"Characteristic\",\"name\":\"zwaar\",\"kind\":\"nominal\"}",
+                        attribute("vinddag", DATE), attribute("gewicht", WHOLE), attribute("vondstmassa", numberIn(KG))) + ","
+                + objectType("Strandvoogd", "Strandvoogden", false, "", attribute("bonus", WHOLE))
                 + "],\"factTypes\":["
-                + feittype("JutterHeeftVondst", rol("jutter", "Jutter", null), rol("vondst", "Vondst", "vondsten")) + ","
-                + feittype("JutterHeeftAfrekening", rol("afrekenaar", "Jutter", null),
-                        rol("afrekening", "Afrekening", multiple ? "afrekeningen" : null)) + ","
-                + feittype("StrandvoogdBeheertJutter", rol("strandvoogd", "Strandvoogd", null),
-                        rol("beheerde jutter", "Jutter", "beheerde jutters"))
+                + factType("JutterHeeftVondst", role("jutter", "Jutter", null), role("vondst", "Vondst", "vondsten")) + ","
+                + factType("JutterHeeftAfrekening", role("afrekenaar", "Jutter", null),
+                        role("afrekening", "Afrekening", multiple ? "afrekeningen" : null)) + ","
+                + factType("StrandvoogdBeheertJutter", role("strandvoogd", "Strandvoogd", null),
+                        role("beheerde jutter", "Jutter", "beheerde jutters"))
                 + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"Tijd\",\"units\":"
                 + "[{\"node\":\"Unit\",\"abbreviation\":\"dg\",\"system\":\"Tijd\",\"canonical\":\"dg\",\"factorToCanonical\":"
                 + "{\"num\":1,\"den\":1},\"spellings\":[\"dag\"]}]},{\"node\":\"UnitSystem\",\"name\":\"Massa\",\"units\":"
@@ -407,13 +407,13 @@ class ObjectCreationFoldWitnessTest {
                 + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
     }
 
-    private static String roleBinding(String feittype, String rol) {
-        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    private static String roleBinding(String factType, String role) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
     }
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Jutter\",\"source\":"
-                + "{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Jutter\",\"source\":"
+                + "{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     private static String vondstMember(String member) {
@@ -422,8 +422,8 @@ class ObjectCreationFoldWitnessTest {
     }
 
     /** A fold of kind {@code soort} over the {@code lid} of the vondsten of the Jutter. */
-    private static String fold(String soort, String member, String type, String snippet) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"" + soort + "\",\"arguments\":[" + vondstMember(member) + "],\"elementType\":"
+    private static String fold(String category, String member, String type, String snippet) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + category + "\",\"arguments\":[" + vondstMember(member) + "],\"elementType\":"
                 + "\"Vondst\",\"sourceRole\":" + roleBinding("JutterHeeftVondst", "vondst") + ",\"type\":" + type
                 + ",\"source\":{\"snippet\":\"" + snippet + "\"}}";
     }
@@ -471,22 +471,22 @@ class ObjectCreationFoldWitnessTest {
         return binary("percentageOf", numberLiteral(p), operand, UNBOUNDED, p + "% van …");
     }
 
-    private static String memberInit(String member, String waarde) {
-        return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + waarde + ",\"characteristic\":false}";
+    private static String memberInit(String member, String value) {
+        return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
     }
 
     /** "Regel maak een afrekening: Een Jutter heeft een afrekening met &lt;toekenningen&gt; [indien &lt;voorwaarde&gt;]." */
-    private static String creatie(String voorwaarde, String... initialisations) {
+    private static String creation(String condition, String... initialisations) {
         return "{\"node\":\"ObjectCreation\",\"name\":\"maak een afrekening\",\"versions\":[{\"createdType\":\"Afrekening\","
                 + "\"subject\":\"Jutter\",\"initialisations\":[" + String.join(",", initialisations) + "],"
-                + (voorwaarde == null ? "" : "\"condition\":" + voorwaarde + ",")
+                + (condition == null ? "" : "\"condition\":" + condition + ",")
                 + "\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("JutterHeeftAfrekening", "afrekening") + "}]}";
     }
 
-    private static String regel(String naam, String doel, String waarde) {
+    private static String regel(String naam, String target, String value) {
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
-                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
-                + "\"De " + doel + " van een Jutter\"}},\"value\":" + waarde + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
+                + "{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
+                + "\"De " + target + " van een Jutter\"}},\"value\":" + value + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     }
 
     /** "De &lt;lid&gt; van een Jutter moet berekend worden als de &lt;lid&gt; van de afrekening van de Jutter." */
@@ -506,9 +506,9 @@ class ObjectCreationFoldWitnessTest {
     }
 
     /** One creation and the rules beside it. */
-    private static String document(boolean multiple, String creatie, String... rules) {
+    private static String document(boolean multiple, String creation, String... rules) {
         return "{\"format\":\"uchar-ir-v1\",\"model\":" + model(multiple) + ",\"rules\":{\"rules\":[" + String.join(",", rules)
-                + "],\"dayKindDefinitions\":[],\"objectCreations\":[" + creatie + "],\"allocations\":[],\"consistencies\":[],"
+                + "],\"dayKindDefinitions\":[],\"objectCreations\":[" + creation + "],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[]},\"diagnostics\":[]}";
     }
 
@@ -552,9 +552,9 @@ class ObjectCreationFoldWitnessTest {
         return String.join(",", out);
     }
 
-    private static String caseDocument(List<String> instanties, String... verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instanties)
-                + "],\"parameters\":{}},\"expected\":[" + String.join(",", verwacht) + "]}";
+    private static String caseDocument(List<String> instances, String... expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", instances)
+                + "],\"parameters\":{}},\"expected\":[" + String.join(",", expected) + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

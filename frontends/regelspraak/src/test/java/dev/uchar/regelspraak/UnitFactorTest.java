@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak;
 
-import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.Unit;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The fail-fast guard on {@link Eenheid}'s conversion factor: asking for a factor between two units
+ * The fail-fast guard on {@link Unit}'s conversion factor: asking for a factor between two units
  * that do not inter-convert is a fault, never the silent 1 it used to answer. That fallback is what
  * turned a name mismatch into a WRONG MAGNITUDE — measured on a reference-type copy that lied only
  * in case ("KG" against the declared "kg"), where one and the same case read 3,75 in the reference
@@ -39,37 +39,37 @@ class UnitFactorTest {
 
     // The declarations the six mismatch shapes are built from. Each is well-formed on its own;
     // what fails is the PAIRING — two declared units need not inter-convert.
-    private static final Eenheid EUR = new Eenheid("EUR", "Valuta");
-    private static final Eenheid KG = new Eenheid("kg", "Gewicht");
-    private static final Eenheid TON = new Eenheid("t", "Gewicht", "kg", new BigDecimal("1000"));
+    private static final Unit EUR = new Unit("EUR", "Valuta");
+    private static final Unit KG = new Unit("kg", "Gewicht");
+    private static final Unit TON = new Unit("t", "Gewicht", "kg", new BigDecimal("1000"));
     /** The case-lie of the measured divergence: a copy repeating kg/Gewicht/kg in a different case. */
-    private static final Eenheid CASE = new Eenheid("KG", "GEWICHT", "KG", BigDecimal.ONE, null);
-    private static final Eenheid JR = new Eenheid("jr", "Tijd", "mnd", new BigDecimal("12"));
-    private static final Eenheid MND = new Eenheid("mnd", "Tijd", "mnd", BigDecimal.ONE);
+    private static final Unit CASE = new Unit("KG", "GEWICHT", "KG", BigDecimal.ONE, null);
+    private static final Unit JR = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
+    private static final Unit MND = new Unit("mnd", "Tijd", "mnd", BigDecimal.ONE);
     /** Same system as jr/mnd, a DIFFERENT canonical — the appel-vs-peer pair numeratorConvertible names. */
-    private static final Eenheid DG = new Eenheid("dg", "Tijd", "dg", BigDecimal.ONE);
-    private static final Eenheid M = new Eenheid("m", "Lengte", "m", BigDecimal.ONE);
+    private static final Unit DG = new Unit("dg", "Tijd", "dg", BigDecimal.ONE);
+    private static final Unit M = new Unit("m", "Lengte", "m", BigDecimal.ONE);
     /** §4.4's opaque product: no canonical, so convertible only to an identical product. */
-    private static final Eenheid M_TIMES_M = Eenheid.product(M, M);
+    private static final Unit M_TIMES_M = Unit.product(M, M);
     /** The bare corpus shape (WF-038 tijdsduurparameter): no system, no canonical, no factor. */
-    private static final Eenheid BARE_CORPUS_FORM = new Eenheid("jaar", null, null, null, null);
-    private static final Eenheid EUR_PER_JR = Eenheid.compound(EUR, JR);
-    private static final Eenheid EUR_PER_MND = Eenheid.compound(EUR, MND);
-    private static final Eenheid EUR_PER_KG = Eenheid.compound(EUR, KG);
+    private static final Unit BARE_CORPUS_FORM = new Unit("jaar", null, null, null, null);
+    private static final Unit EUR_PER_JR = Unit.compound(EUR, JR);
+    private static final Unit EUR_PER_MND = Unit.compound(EUR, MND);
+    private static final Unit EUR_PER_KG = Unit.compound(EUR, KG);
     /** The wire shape: a canonical WITHOUT the factor that reaches it. Both fields are nullable in
      *  the schema and no WF rule forbids the combination, so this survives verification. */
-    private static final Eenheid CANONICAL_WITHOUT_FACTOR = new Eenheid("x", "Lengte", "m", null, null);
+    private static final Unit CANONICAL_WITHOUT_FACTOR = new Unit("x", "Lengte", "m", null, null);
 
     /** Every refusal must name BOTH units: a fault that says only "not convertible" leaves the
      *  reader to guess which of the two declarations is the offending one. */
-    private static void refusesWithBothNames(Eenheid van, Eenheid to) {
+    private static void refusesWithBothNames(Unit van, Unit to) {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> van.conversionFactorTo(to),
-                () -> "de factorvraag " + van.weergave() + " -> " + to.weergave() + " moet weigeren, niet 1 geven");
+                () -> "de factorvraag " + van.rendering() + " -> " + to.rendering() + " moet weigeren, niet 1 geven");
         String message = ex.getMessage();
-        assertTrue(message.contains("'" + van.weergave() + "'"),
-                () -> "de melding noemt de broneenheid '" + van.weergave() + "' niet: " + message);
-        assertTrue(message.contains("'" + to.weergave() + "'"),
-                () -> "de melding noemt de doeleenheid '" + to.weergave() + "' niet: " + message);
+        assertTrue(message.contains("'" + van.rendering() + "'"),
+                () -> "de melding noemt de broneenheid '" + van.rendering() + "' niet: " + message);
+        assertTrue(message.contains("'" + to.rendering() + "'"),
+                () -> "de melding noemt de doeleenheid '" + to.rendering() + "' niet: " + message);
     }
 
     // ---- de zes weigervormen -------------------------------------------------------------------
@@ -169,15 +169,15 @@ class UnitFactorTest {
      *  rather than read off an invented factor of 1. Turning any of these into a throw would fault
      *  a §8.2 timeline bound, an additive pair or a begrenzing bound that today merely asks. */
     @Test void required_conversion_stays_false_on_every_mismatch_and_on_nothing() {
-        Eenheid[][] mismatches = {
+        Unit[][] mismatches = {
                 {CASE, TON}, {EUR, KG}, {JR, DG}, {EUR, EUR_PER_JR}, {M_TIMES_M, M}, {EUR_PER_JR, EUR_PER_KG},
         };
-        for (Eenheid[] pair : mismatches) {
+        for (Unit[] pair : mismatches) {
             assertFalse(pair[0].requiredConversion(pair[1]),
-                    () -> "vereistOmrekening moet false blijven op " + pair[0].weergave() + " -> " + pair[1].weergave());
+                    () -> "vereistOmrekening moet false blijven op " + pair[0].rendering() + " -> " + pair[1].rendering());
             assertFalse(pair[0].convertibleTo(pair[1]),
                     () -> "en convertibleNaar blijft de manier om 'geen gedeelde eenheid' van 'zelfde eenheid' te "
-                            + "onderscheiden: " + pair[0].weergave() + " -> " + pair[1].weergave());
+                            + "onderscheiden: " + pair[0].rendering() + " -> " + pair[1].rendering());
         }
         assertFalse(EUR.requiredConversion(null), "een afwezig doel vraagt geen omrekening, het weigert er een");
     }

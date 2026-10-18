@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 
 import java.util.Objects;
 
@@ -13,27 +13,27 @@ import java.util.Objects;
  * this fact the rule would have to join the reached object's standing directly, and a subject without the link would
  * have no match at all, where a leeg test or a negated comparison over it must still hold.
  *
- * <p>{@code pad} names the subject type and the reference fields the path walks; the subject is compared by identity.
+ * <p>{@code path} names the subject type and the reference fields the path walks; the subject is compared by identity.
  */
-public record PathState(Object onderwerp, String pad, ElementSleutel member, Object waarde) {
+public record PathState(Object onderwerp, String path, ElementKey member, Object value) {
 
     public PathState {
         Objects.requireNonNull(onderwerp, "onderwerp");
-        Objects.requireNonNull(pad, "pad");
+        Objects.requireNonNull(path, "pad");
         Objects.requireNonNull(member, "lid");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof PathState p && p.onderwerp == onderwerp && p.pad.equals(pad) && p.member.equals(member)
-                && Objects.equals(p.waarde, waarde);
+        return o instanceof PathState p && p.onderwerp == onderwerp && p.path.equals(path) && p.member.equals(member)
+                && Objects.equals(p.value, value);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(onderwerp), pad, member, waarde);
+        return Objects.hash(System.identityHashCode(onderwerp), path, member, value);
     }
 
     @Override public String toString() {
-        return "PadStand(" + FactNames.object(onderwerp) + ", " + pad + ", " + FactNames.member(member) + ", "
-                + (waarde == null ? "afwezig of leeg" : waarde) + ")";
+        return "PadStand(" + FactNames.object(onderwerp) + ", " + path + ", " + FactNames.member(member) + ", "
+                + (value == null ? "afwezig of leeg" : value) + ")";
     }
 }

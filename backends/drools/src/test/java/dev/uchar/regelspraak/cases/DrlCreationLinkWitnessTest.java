@@ -144,7 +144,7 @@ class DrlCreationLinkWitnessTest {
         return CORPUS.resolve(golden).resolve("ir.json");
     }
 
-    private static ObjectNode lees(String golden) throws Exception {
+    private static ObjectNode read(String golden) throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
     }
 
@@ -155,7 +155,7 @@ class DrlCreationLinkWitnessTest {
 
     /** The rekenkamer model plus a second fact type `reservetaxatie` between Jutter and Rekenkamer. */
     private static Path repeatedPair() throws Exception {
-        ObjectNode ir = lees(REKENKAMER);
+        ObjectNode ir = read(REKENKAMER);
         IrPath.modelList(ir, "factTypes").add(JSON.readTree("""
                 { "node": "FactType", "name": "reservetaxatie", "reciprocal": false, "roles": [
                     { "node": "Role", "name": "reserveopdrachtgever", "objectType": "Jutter",
@@ -165,20 +165,20 @@ class DrlCreationLinkWitnessTest {
         return write(ir, "herhaald-paar");
     }
 
-    private static Path withBinding(String golden, String feittype, String rol) throws Exception {
-        ObjectNode ir = lees(golden);
+    private static Path withBinding(String golden, String factType, String role) throws Exception {
+        ObjectNode ir = read(golden);
         IrPath.version(ir, "objectCreations", 0, 0).set("connectingRole", JSON.readTree(
-                "{ \"node\": \"RoleBinding\", \"factType\": \"" + feittype + "\", \"role\": \"" + rol + "\" }"));
-        return write(ir, "binding-" + rol);
+                "{ \"node\": \"RoleBinding\", \"factType\": \"" + factType + "\", \"role\": \"" + role + "\" }"));
+        return write(ir, "binding-" + role);
     }
 
-    /** A Numeriek attribute named after a link role on {@code objecttype}, and without the rule that reads
+    /** A Numeriek attribute named after a link role on {@code objectType}, and without the rule that reads
      *  through the created-side role (it would refuse on its own §13.3.9 reason first). */
-    private static Path sameNamedMember(String objecttype, String rol) throws Exception {
-        ObjectNode ir = withoutNavigatingRule(lees(REKENKAMER));
-        IrPath.addAttribute(IrPath.objectType(ir, objecttype), rol, JSON.readTree("""
+    private static Path sameNamedMember(String objectType, String role) throws Exception {
+        ObjectNode ir = withoutNavigatingRule(read(REKENKAMER));
+        IrPath.addAttribute(IrPath.objectType(ir, objectType), role, JSON.readTree("""
                 { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }"""));
-        return write(ir, "lid-" + rol);
+        return write(ir, "lid-" + role);
     }
 
     private static Path cardinality(boolean subjectMany, boolean mintedMany) throws Exception {
@@ -187,8 +187,8 @@ class DrlCreationLinkWitnessTest {
 
     /** Role 0 of taxatieopdracht is the subject side (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
     private static ObjectNode cardinalityIr(boolean subjectMany, boolean mintedMany) throws Exception {
-        ObjectNode ir = lees(REKENKAMER);
-        JsonNode roles = IrPath.declaratie(ir, "factTypes", "taxatieopdracht").get("roles");
+        ObjectNode ir = read(REKENKAMER);
+        JsonNode roles = IrPath.declaration(ir, "factTypes", "taxatieopdracht").get("roles");
         ((ObjectNode) roles.get(0)).put("many", subjectMany);
         ((ObjectNode) roles.get(1)).put("many", mintedMany);
         return ir;
@@ -206,7 +206,7 @@ class DrlCreationLinkWitnessTest {
 
     /** The overzee model with the kenmerk toekenning's value replaced by the Numeriek literal 5. */
     private static Path characteristicNumber() throws Exception {
-        ObjectNode ir = lees(OVERZEE);
+        ObjectNode ir = read(OVERZEE);
         for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("initialisations"))
             if (t.get("characteristic").asBoolean())
                 ((ObjectNode) t).set("value", JSON.readTree("""

@@ -192,11 +192,11 @@ class TemporalInputWitnessTest {
     }
 
     @Test void comparator_sees_a_wrong_value() throws Exception {
-        String fout = playBakenmeester("""
+        String fault = playBakenmeester("""
                 { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
                     { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "25" } } ] }""");
-        assertTrue(fout != null && fout.contains("verwacht") && fout.contains("werkelijk"),
-                "a wrong waarde is a named mismatch, never a pass: " + fout);
+        assertTrue(fault != null && fault.contains("verwacht") && fault.contains("werkelijk"),
+                "a wrong waarde is a named mismatch, never a pass: " + fault);
     }
 
     @Test void comparator_sees_a_shifted_bound() throws Exception {
@@ -228,10 +228,10 @@ class TemporalInputWitnessTest {
         // the explicitly empty expectation and nothing else.
         assertNull(playBare("""
                 { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [] }"""));
-        String fout = playBare("""
+        String fault = playBare("""
                 { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
                     { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "24" } } ] }""");
-        assertTrue(fout != null && fout.contains("draagt geen tijdreeks"), "absence is named: " + fout);
+        assertTrue(fault != null && fault.contains("draagt geen tijdreeks"), "absence is named: " + fault);
     }
 
     @Test void expectation_on_unknown_label_is_hard() throws Exception {
@@ -286,23 +286,23 @@ class TemporalInputWitnessTest {
                 """.formatted(asOf == null ? "null" : "\"" + asOf + "\"");
     }
 
-    /** The {@code List<Segment>} the input layer placed on {@code label}'s {@code veld} bean member. */
-    private static List<?> timelineSegments(String golden, String caseJson, String label, String veld) throws Exception {
+    /** The {@code List<Segment>} the input layer placed on {@code label}'s {@code field} bean member. */
+    private static List<?> timelineSegments(String golden, String caseJson, String label, String field) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         JsonNode c = JSON.readTree(caseJson);
         Map<String, Object> beans = CaseRunner.inputBeans(ir, c);
         Object bean = beans.get(label);
         assertTrue(bean != null, "the case's instance " + label + " produced a bean");
-        return (List<?>) RegelSpraakRuntime.get(bean, veld);
+        return (List<?>) RegelSpraakRuntime.get(bean, field);
     }
 
     /** One segment's exact shape: van/tot to the day, waarde scale-safe (a null waarde is a true period). */
-    private static void pinSegment(Object seg, String van, String to, String waarde) {
+    private static void pinSegment(Object seg, String van, String to, String value) {
         assertEquals(LocalDate.parse(van), RegelSpraakRuntime.get(seg, "van"));
         assertEquals(LocalDate.parse(to), RegelSpraakRuntime.get(seg, "tot"));
         BigDecimal w = (BigDecimal) RegelSpraakRuntime.get(seg, "waarde");
-        if (waarde == null) assertNull(w, "a true-period segment carries no value");
-        else assertEquals(0, new BigDecimal(waarde).compareTo(w), "waarde " + waarde + " vs " + w);
+        if (value == null) assertNull(w, "a true-period segment carries no value");
+        else assertEquals(0, new BigDecimal(value).compareTo(w), "waarde " + value + " vs " + w);
     }
 }

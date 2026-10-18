@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
@@ -19,7 +19,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -55,26 +55,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TmsRoleCheckWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Wachtpost", List.of(), List.of("bemand", "onbemand", "strandbemand", "strandvrij")),
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("dienstjaren", WHOLE)),
+            TmsDocuments.objectType("Wachtpost", List.of(), List.of("bemand", "onbemand", "strandbemand", "strandvrij")),
+            TmsDocuments.objectType("Jutter", List.of(attribute("dienstjaren", WHOLE)),
                     List.of("ervaren", "wachtdoend", "vrijgesteld", "inzetbaar")),
             TmsDocuments.subtype("Strandjutter", "Jutter", List.of(), List.of())),
             List.of(factTypeOneToMany("wachtindeling", "toegewezen wachtpost", "Wachtpost", "wachtjutter", "Jutter",
                     "wachtjutters")));
 
-    /** A RoleMembership: the subject plays {@code rol} of {@code feittype}; {@code counterpart} narrows the other end,
+    /** A RoleMembership: the subject plays {@code role} of {@code factType}; {@code counterpart} narrows the other end,
      *  null for none. */
-    static String roleCheck(String feittype, String rol, String counterpart, boolean negated, String bron) {
-        return "{\"node\":\"RoleMembership\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\",\"negated\":"
+    static String roleCheck(String factType, String role, String counterpart, boolean negated, String source) {
+        return "{\"node\":\"RoleMembership\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\",\"negated\":"
                 + negated + (counterpart == null ? "" : ",\"counterpartType\":\"" + counterpart + "\"")
-                + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     static final String ERVAREN = characteristicRule("ervarenheid", "Jutter", "ervaren",
             comparison("greater", ownRead("dienstjaren", "Jutter"), number("5")));
     static final String WACHTDOEND = characteristicRule("wachtdienst", "Jutter", "wachtdoend",
             roleCheck("wachtindeling", "wachtjutter", null, false, "hij een wachtjutter is"));
-    static final String VRIJGESTELD = characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
+    static final String EXEMPT = characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
             roleCheck("wachtindeling", "wachtjutter", null, true, "hij geen wachtjutter is"));
     static final String INZETBAAR = characteristicRule("inzetbaarheid", "Jutter", "inzetbaar", compound("all", 0, List.of(
             check("ervaren", false), roleCheck("wachtindeling", "wachtjutter", null, false, "hij een wachtjutter is"))));
@@ -128,8 +128,8 @@ class TmsRoleCheckWitnessTest {
     }
 
     private static List<String> jutterExpected(String label, boolean wachtdoend, boolean ervaren) {
-        return List.of(verwacht(label, "wachtdoend", wachtdoend), verwacht(label, "vrijgesteld", !wachtdoend),
-                verwacht(label, "ervaren", ervaren), verwacht(label, "inzetbaar", wachtdoend && ervaren));
+        return List.of(expected(label, "wachtdoend", wachtdoend), expected(label, "vrijgesteld", !wachtdoend),
+                expected(label, "ervaren", ervaren), expected(label, "inzetbaar", wachtdoend && ervaren));
     }
 
     /** The far side per world: per post, bemand and strandbemand, and their complements. */
@@ -143,47 +143,47 @@ class TmsRoleCheckWitnessTest {
         List<String> v = new ArrayList<>();
         for (int p = 0; p < 2; p++) {
             String label = "W" + (p + 1);
-            v.add(verwacht(label, "bemand", bemanning[p][0]));
-            v.add(verwacht(label, "onbemand", !bemanning[p][0]));
-            v.add(verwacht(label, "strandbemand", bemanning[p][1]));
-            v.add(verwacht(label, "strandvrij", !bemanning[p][1]));
+            v.add(expected(label, "bemand", bemanning[p][0]));
+            v.add(expected(label, "onbemand", !bemanning[p][0]));
+            v.add(expected(label, "strandbemand", bemanning[p][1]));
+            v.add(expected(label, "strandvrij", !bemanning[p][1]));
         }
         return v;
     }
 
     @Test void the_near_side_role_check_also_in_a_compound_with_a_later_derived_characteristic() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (List<String> order : TmsDocuments.permutations(List.of(ERVAREN, WACHTDOEND, VRIJGESTELD, INZETBAAR))) {
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(List.of(ERVAREN, WACHTDOEND, EXEMPT, INZETBAAR))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (int n = 1; n <= 3; n++) {
                 JsonNode caseDocument = TmsDocuments.caseDocument(world(n), near(n));
                 outcomes.add(names + " " + n + " " + TmsFaultWitnessTest.playBoth(ir, caseDocument));
-                verwacht.add(names + " " + n + " gespeeld");
+                expected.add(names + " " + n + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_far_side_role_check_with_and_without_counterpart() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(BEMAND, ONBEMAND, STRANDBEMAND, STRANDVRIJ))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (int n = 1; n <= 3; n++) {
                 JsonNode caseDocument = TmsDocuments.caseDocument(world(n), far(n));
                 outcomes.add(names + " " + n + " " + TmsFaultWitnessTest.playBoth(ir, caseDocument));
-                verwacht.add(names + " " + n + " gespeeld");
+                expected.add(names + " " + n + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- a link a creation lays ----------------
 
     static final String REPORT_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("vangst", WHOLE)), List.of("gemeld", "melder", "stil")),
-            TmsDocuments.objecttype("Melding", List.of(), List.of())),
+            TmsDocuments.objectType("Jutter", List.of(attribute("vangst", WHOLE)), List.of("gemeld", "melder", "stil")),
+            TmsDocuments.objectType("Melding", List.of(), List.of())),
             List.of(factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen")));
 
     static final String REPORTED = characteristicRule("melding", "Jutter", "gemeld",
@@ -196,18 +196,18 @@ class TmsRoleCheckWitnessTest {
             check("gemeld", false), "jutmelding", "melding");
 
     @Test void a_role_check_reads_the_link_that_a_creation_lays() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of("vangst", "5"), List.of(), Map.of()),
                 instanceWithRoles("J2", "Jutter", Map.of("vangst", "1"), List.of(), Map.of())),
-                List.of(verwacht("J1", "gemeld", true), verwacht("J1", "melder", true), verwacht("J1", "stil", false),
-                        verwacht("J2", "gemeld", false), verwacht("J2", "melder", false), verwacht("J2", "stil", true)));
+                List.of(expected("J1", "gemeld", true), expected("J1", "melder", true), expected("J1", "stil", false),
+                        expected("J2", "gemeld", false), expected("J2", "melder", false), expected("J2", "stil", true)));
         for (List<String> order : TmsDocuments.permutations(List.of(REPORTED, MELDER, SILENT))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsCreationWitnessTest.document(REPORT_MODEL, order, List.of(), List.of(MAKE), List.of(), List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.playBoth(ir, caseDocument));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 }

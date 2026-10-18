@@ -145,9 +145,9 @@ class TmsCycleWitnessTest {
                 + "{\"snippet\":\"Het bergloon van een Vondst\"}}";
     }
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     private static String number(String lexeme) {

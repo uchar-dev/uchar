@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.ir.Spelling;
 
 /**
@@ -17,14 +17,14 @@ import dev.uchar.regelspraak.ir.Spelling;
 public final class IrPath {
     private IrPath() {}
 
-    public static ObjectNode model(JsonNode ir) { return veld(ir, "model"); }
+    public static ObjectNode model(JsonNode ir) { return field(ir, "model"); }
 
-    public static ObjectNode rules(JsonNode ir) { return veld(ir, "rules"); }
+    public static ObjectNode rules(JsonNode ir) { return field(ir, "rules"); }
 
     /** A list under {@code model} ({@code objectTypes}, {@code parameters}, …) or under {@code rules}. */
-    public static ArrayNode modelList(JsonNode ir, String lijst) { return lijst(model(ir), lijst); }
+    public static ArrayNode modelList(JsonNode ir, String list) { return list(model(ir), list); }
 
-    public static ArrayNode rulesList(JsonNode ir, String lijst) { return lijst(rules(ir), lijst); }
+    public static ArrayNode rulesList(JsonNode ir, String list) { return list(rules(ir), list); }
 
     public static ObjectNode objectType(JsonNode ir, String naam) { return memberWith(modelList(ir, "objectTypes"), "name", naam); }
 
@@ -32,19 +32,19 @@ public final class IrPath {
 
     /** A declaration of {@code parameters}, {@code factTypes}, {@code unitSystems} or {@code dimensions}, each named
      *  by {@code name} (a parameter and a unit system since L3, a fact type and a dimension since L5). */
-    public static ObjectNode declaratie(JsonNode ir, String lijst, String naam) {
-        return memberWith(modelList(ir, lijst), "name", naam);
+    public static ObjectNode declaration(JsonNode ir, String list, String naam) {
+        return memberWith(modelList(ir, list), "name", naam);
     }
 
-    public static ObjectNode attribute(JsonNode objectType, String naam) { return memberWith(lijst(objectType, "attributes"), "name", naam); }
+    public static ObjectNode attribute(JsonNode objectType, String naam) { return memberWith(list(objectType, "attributes"), "name", naam); }
 
     public static ObjectNode characteristic(JsonNode objectType, String naam) {
-        return memberWith(lijst(objectType, "characteristics"), "name", naam);
+        return memberWith(list(objectType, "characteristics"), "name", naam);
     }
 
     /** Appends an attribute node, the M1 form of a new entry in the v0 {@code attributen} map. */
     public static ObjectNode addAttribute(JsonNode objectType, String naam, JsonNode datatype) {
-        ObjectNode a = lijst(objectType, "attributes").addObject();
+        ObjectNode a = list(objectType, "attributes").addObject();
         a.put("node", "Attribute").put("name", naam).set("datatype", datatype);
         return a;
     }
@@ -61,48 +61,48 @@ public final class IrPath {
         return t;
     }
 
-    /** The version record at {@code version} of the named form at {@code vorm} in the rules list {@code lijst} (IR-SPEC
+    /** The version record at {@code version} of the named form at {@code form} in the rules list {@code lijst} (IR-SPEC
      *  ch. 3, Versioning: a form is its name and its versions, and a version carries no node of its own). */
-    public static ObjectNode version(JsonNode ir, String lijst, int vorm, int version) {
-        JsonNode v = rulesList(ir, lijst).path(vorm).path("versions").path(version);
-        if (!v.isObject()) throw new AssertionError("no version " + version + " of form " + vorm + " in '" + lijst + "'");
+    public static ObjectNode version(JsonNode ir, String list, int form, int version) {
+        JsonNode v = rulesList(ir, list).path(form).path("versions").path(version);
+        if (!v.isObject()) throw new AssertionError("no version " + version + " of form " + form + " in '" + list + "'");
         return (ObjectNode) v;
     }
 
     /** The named form called {@code naam} in the rules list {@code lijst}, failing LOUDLY when there is none: a twist
      *  that silently hit nothing would leave its witness testing the untwisted document. */
-    public static ObjectNode vorm(JsonNode ir, String lijst, String naam) { return memberWith(rulesList(ir, lijst), "name", naam); }
+    public static ObjectNode form(JsonNode ir, String list, String naam) { return memberWith(rulesList(ir, list), "name", naam); }
 
     /** The first version of the named form called {@code naam} in the rules list {@code lijst}. */
-    public static ObjectNode version(JsonNode ir, String lijst, String naam) {
-        JsonNode v = vorm(ir, lijst, naam).path("versions").path(0);
-        if (!v.isObject()) throw new AssertionError("form '" + naam + "' in '" + lijst + "' has no version");
+    public static ObjectNode version(JsonNode ir, String list, String naam) {
+        JsonNode v = form(ir, list, naam).path("versions").path(0);
+        if (!v.isObject()) throw new AssertionError("form '" + naam + "' in '" + list + "' has no version");
         return (ObjectNode) v;
     }
 
-    /** Source {@code bron} of the one version of the {@code vorm}-th uniqueness (IR-SPEC ch. 3.6: the single-type
+    /** Source {@code bron} of the one version of the {@code form}-th uniqueness (IR-SPEC ch. 3.6: the single-type
      *  form has one source, the union two or more, and both stand in the one list). */
-    public static ObjectNode bron(JsonNode ir, int vorm, int bron) {
-        JsonNode b = version(ir, "uniquenesses", vorm, 0).path("sources").path(bron);
-        if (!b.isObject()) throw new AssertionError("no source " + bron + " on uniqueness " + vorm);
+    public static ObjectNode source(JsonNode ir, int form, int source) {
+        JsonNode b = version(ir, "uniquenesses", form, 0).path("sources").path(source);
+        if (!b.isObject()) throw new AssertionError("no source " + source + " on uniqueness " + form);
         return (ObjectNode) b;
     }
 
     /** A Literal in the wire's shape (IR-SPEC ch. 4.1): its value is the variant its {@code type} names — a boolean
      *  written from the lexeme waar or onwaar, every other variant its string — chosen as the frontend's emitter
      *  chooses it, so a builder that writes a lexeme and a type keeps doing only that. */
-    public static String literal(String lexeme, String type, String bron) {
+    public static String literal(String lexeme, String type, String source) {
         String variant = type.contains("\"Boolean\"") ? "boolean" : type.contains("\"Text\"") ? "text"
                 : type.contains("\"millisecond\"") ? "dateTime" : type.contains("\"day\"") ? "date"
                 : type.contains("\"Enumeration\"") ? "enumeration" : "number";
-        String waarde = !variant.equals("boolean") ? "\"" + lexeme + "\""
+        String value = !variant.equals("boolean") ? "\"" + lexeme + "\""
                 : switch (lexeme) {
                     case "waar" -> "true";
                     case "onwaar" -> "false";
                     default -> throw new AssertionError("no boolean lexeme: " + lexeme);
                 };
-        return "{\"node\":\"Literal\",\"value\":{\"" + variant + "\":" + waarde + "},\"type\":" + type
-                + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+        return "{\"node\":\"Literal\",\"value\":{\"" + variant + "\":" + value + "},\"type\":" + type
+                + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** A source record in the wire's shape (IR-SPEC ch. 4, B26): its snippet, without a line — a line stands in the
@@ -113,40 +113,40 @@ public final class IrPath {
 
     /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code soort} names the kind the way
      *  the frontend's records name it and becomes the version's initialisation and presentation, the latter in its wire
-     *  spelling through the translation table, and a {@code voorwaarde} of "null" writes no condition. */
-    public static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return regel(naam, soort, doel, waarde, voorwaarde,
+     *  spelling through the translation table, and a {@code condition} of "null" writes no condition. */
+    public static String regel(String naam, String category, String target, String value, String condition) {
+        return regel(naam, category, target, value, condition,
                 "{\"node\":\"Validity\"}");
     }
 
     /** As {@link #regel(String, String, String, String, String)}, with the version's {@code validity}. */
-    public static String regel(String naam, String soort, String doel, String waarde, String voorwaarde,
+    public static String regel(String naam, String category, String target, String value, String condition,
                                String validity) {
-        String kindFields = switch (soort) {
+        String kindFields = switch (category) {
             case "GELIJKSTELLING", "BEREKENING" -> "\"initialisation\":false,\"presentation\":\""
-                    + Spelling.PRESENTATION.spelling(ResolvedRegel.Soort.valueOf(soort)) + "\"";
+                    + Spelling.PRESENTATION.spelling(ResolvedRule.Kind.valueOf(category)) + "\"";
             case "INITIALISATIE" -> "\"initialisation\":true";
             case "KENMERKTOEKENNING" -> "\"initialisation\":false";
-            default -> throw new AssertionError("no rule kind: " + soort);
+            default -> throw new AssertionError("no rule kind: " + category);
         };
         return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":" + validity
-                + ",\"target\":" + doel + ",\"value\":" + waarde
-                + (voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde) + "," + kindFields + "}]}";
+                + ",\"target\":" + target + ",\"value\":" + value
+                + (condition.equals("null") ? "" : ",\"condition\":" + condition) + "," + kindFields + "}]}";
     }
 
-    public static ObjectNode memberWith(ArrayNode lijst, String nameField, String naam) {
-        for (JsonNode n : lijst)
+    public static ObjectNode memberWith(ArrayNode list, String nameField, String naam) {
+        for (JsonNode n : list)
             if (naam.equals(n.path(nameField).asText(null))) return (ObjectNode) n;
-        throw new AssertionError("no entry with " + nameField + " '" + naam + "' in " + lijst);
+        throw new AssertionError("no entry with " + nameField + " '" + naam + "' in " + list);
     }
 
-    private static ObjectNode veld(JsonNode n, String naam) {
+    private static ObjectNode field(JsonNode n, String naam) {
         JsonNode v = n.get(naam);
         if (v == null || !v.isObject()) throw new AssertionError("no object '" + naam + "' in the document");
         return (ObjectNode) v;
     }
 
-    private static ArrayNode lijst(JsonNode n, String naam) {
+    private static ArrayNode list(JsonNode n, String naam) {
         JsonNode v = n.get(naam);
         if (v == null || !v.isArray()) throw new AssertionError("no list '" + naam + "' here");
         return (ArrayNode) v;

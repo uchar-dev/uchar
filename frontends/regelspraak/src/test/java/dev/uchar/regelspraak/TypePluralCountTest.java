@@ -110,7 +110,7 @@ class TypePluralCountTest {
     @Test void the_role_count_stays_clean() {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal vondsten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals("Vondst", f.elementObjectType().naam);
     }

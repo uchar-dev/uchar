@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
@@ -25,11 +25,11 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.ownTotal;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.period;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.segment;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.timeAttribute;
@@ -130,14 +130,14 @@ class TmsTimelineRefusalWitnessTest {
 
     static final String BORGPLICHTIG = check("borgplichtig", false);
 
-    static final String MODEL_JAARDEEL = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-                    TmsDocuments.attribuut("score", WHOLE), timeAttribute("jaartarief", WHOLE, "year"),
+    static final String MODEL_JAARDEEL = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+                    TmsDocuments.attribute("score", WHOLE), timeAttribute("jaartarief", WHOLE, "year"),
                     timeAttribute("jaardeel", WHOLE, "year")),
             List.of(timeCharacteristic("borgplichtig", "month"), timeCharacteristic("wachtplichtig", "month")))), List.of());
 
-    static final String MODEL_CLIP = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
+    static final String MODEL_CLIP = TmsDocuments.model(List.of(objectType("Jutter", List.of(
             timeAttribute("vergoeding", WHOLE, "month"), timeAttribute("controle", WHOLE, "month"),
-            TmsDocuments.attribuut("grens", WHOLE), TmsDocuments.attribuut("wachtsom", WHOLE)), List.of())),
+            TmsDocuments.attribute("grens", WHOLE), TmsDocuments.attribute("wachtsom", WHOLE)), List.of())),
             List.of());
 
     static final String RATE_2024 = timeline(List.of(segment("2024-01-01", "2025-01-01", "366")));
@@ -154,9 +154,9 @@ class TmsTimelineRefusalWitnessTest {
 
     /** "Het jaardeel van een Jutter moet berekend worden als het tijdsevenredig deel per jaar van zijn jaartarief
      *  gedurende de tijd dat hij {@code kenmerk} is", as rule {@code naam} of kind {@code soort}. */
-    static String jaardeel(String naam, String soort, String kenmerk, String voorwaarde) {
-        return computingRule(naam, soort, "Jutter", "jaardeel", timeProportional("jaartarief", "Jutter",
-                check(kenmerk, false), "year"), voorwaarde);
+    static String jaardeel(String naam, String category, String characteristic, String condition) {
+        return computingRule(naam, category, "Jutter", "jaardeel", timeProportional("jaartarief", "Jutter",
+                check(characteristic, false), "year"), condition);
     }
 
     static List<Row> rows() throws Exception {
@@ -215,8 +215,8 @@ class TmsTimelineRefusalWitnessTest {
                         + " schrijft er een (RUNTIME-SEMANTICS ch. 3.11)")));
         // a sum of timelines over a set as the value of a timeline target, the staggered contributors of ch. 3.5
         out.add(new Row("som-over-tijdlijnen", TmsTimelineDocuments.ir(TmsDocuments.model(List.of(
-                                objecttype("Jutter", List.of(timeAttribute("tariefsom", WHOLE, "month")), List.of()),
-                                objecttype("Vondst", List.of(timeAttribute("tarief", WHOLE, "month")), List.of())),
+                                objectType("Jutter", List.of(timeAttribute("tariefsom", WHOLE, "month")), List.of()),
+                                objectType("Vondst", List.of(timeAttribute("tarief", WHOLE, "month")), List.of())),
                         List.of(factTypeOneToMany("bewaring", "jutter", "Jutter", "vondst", "Vondst", "vondsten"))),
                         List.of(computingRule("tariefsom", "BEREKENING", "Jutter", "tariefsom", aggregation("sum",
                                 ownRead("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null",
@@ -248,7 +248,7 @@ class TmsTimelineRefusalWitnessTest {
                                         List.of(), Map.of(), Map.of()),
                                 instance("J2", "Jutter", Map.of("vergoeding", tenToJuly, "controle", fiveInJanuary,
                                         "grens", numberValue("5")), List.of(), Map.of(), Map.of())),
-                        List.of(waarde("J1", "wachtsom", "50"), waarde("J2", "wachtsom", "10"))),
+                        List.of(value("J1", "wachtsom", "50"), value("J2", "wachtsom", "10"))),
                 List.of(clipSentence("gelijke wachtsom", "gelijk aan", "equal"))));
         out.add(new Row("knip-ongelijk", TmsTimelineDocuments.ir(MODEL_CLIP, List.of(computingRule("ongelijke wachtsom",
                         "BEREKENING", "Jutter", "wachtsom", ownTotal("vergoeding", "Jutter", comparison("notEqual",
@@ -257,7 +257,7 @@ class TmsTimelineRefusalWitnessTest {
                                 "vergoeding", timeline(List.of(segment("2024-01-01", "2024-07-01", "100"))),
                                 "controle", timeline(List.of(segment("2024-01-01", "2024-02-01", "1000")))),
                                 List.of(), Map.of(), Map.of())),
-                        List.of(waarde("J1", "wachtsom", "500"))),
+                        List.of(value("J1", "wachtsom", "500"))),
                 List.of(clipSentence("ongelijke wachtsom", "ongelijk aan", "notEqual"))));
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
         out.add(new Row("vreemde-noemer", TmsTimelineDocuments.ir(MODEL_RATE, List.of(WACHTSOM_RATE), List.of()),
@@ -281,9 +281,9 @@ class TmsTimelineRefusalWitnessTest {
                 rateCase("120"), List.of(gridUnitSentence("the document declares 2 different mnd units, so this"
                         + " timeline's grid has no single unit to integrate against (ch. 3.6)"))));
         // the total without a clip over a timeline a rule derives
-        out.add(new Row("totaal-zonder-knip", TmsTimelineDocuments.ir(TmsDocuments.model(List.of(objecttype("Jutter",
+        out.add(new Row("totaal-zonder-knip", TmsTimelineDocuments.ir(TmsDocuments.model(List.of(objectType("Jutter",
                                 List.of(timeAttribute("jaartarief", WHOLE, "year"), timeAttribute("maanddeel", WHOLE,
-                                        "month"), TmsDocuments.attribuut("wachtsom", WHOLE)),
+                                        "month"), TmsDocuments.attribute("wachtsom", WHOLE)),
                                 List.of(timeCharacteristic("borgplichtig", "month")))), List.of()),
                         List.of(computingRule("maanddeel", "BEREKENING", "Jutter", "maanddeel", timeProportional("jaartarief",
                                         "Jutter", BORGPLICHTIG, "month"), "null"),
@@ -292,7 +292,7 @@ class TmsTimelineRefusalWitnessTest {
                 TmsTimelineDocuments.caseDocument("2024-02-15", List.of(instance("J1", "Jutter", Map.of("jaartarief",
                                 timeline(List.of(segment("2024-01-01", "2025-01-01", "12")))), List.of(),
                                 Map.of("borgplichtig", List.of(period("2024-01-01", "2024-04-01"))), Map.of())),
-                        List.of(waarde("J1", "wachtsom", "36"))),
+                        List.of(value("J1", "wachtsom", "36"))),
                 List.of("transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " maanddeel') zonder knip over de tijdlijn van 'maanddeel', die een vorm schrijft: de"
                         + " referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode"
@@ -308,19 +308,19 @@ class TmsTimelineRefusalWitnessTest {
                                 + "\"member\":\"meetdatum\"}]"),
                 TmsTimelineDocuments.caseDocument(null, List.of(instance("S1", "Schouwveld", Map.of("meetdatum",
                                 "{\"date\":\"2024-04-01\"}"), List.of(), Map.of(), Map.of())),
-                        List.of(waarde("S1", "peilsom", "0"))),
+                        List.of(value("S1", "peilsom", "0"))),
                 List.of("transpiler SKIP: regel: peilsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                                 + " waterstand') over het attribuut 'waterstand' van Schouwveld op een tijdlijn met een"
                                 + " variabel startpunt: deze tak draagt deze vorm nog niet; geen golden met"
                                 + " cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster")));
         // a parameter on a timeline, read as one value
         JsonNode parameterCase = TmsTimelineDocuments.caseDocument("2024-06-01", List.of(instance("J1", "Jutter", Map.of(),
-                List.of(), Map.of(), Map.of())), List.of(waarde("J1", "opbrengst", "7")));
+                List.of(), Map.of(), Map.of())), List.of(value("J1", "opbrengst", "7")));
         ((com.fasterxml.jackson.databind.node.ObjectNode) parameterCase.get("input")).set("parameters",
                 TmsDocuments.JSON.readTree("{\"penningbedrag\":" + timeline(List.of(segment("2024-01-01",
                         "2025-01-01", "7"))) + "}"));
         out.add(new Row("tijdsafhankelijke-parameter", TmsTimelineDocuments.ir(TmsDocuments.modelWith(List.of(
-                                objecttype("Jutter", List.of(TmsDocuments.attribuut("opbrengst", WHOLE)), List.of())),
+                                objectType("Jutter", List.of(TmsDocuments.attribute("opbrengst", WHOLE)), List.of())),
                         List.of(), List.of("{\"node\":\"Parameter\",\"name\":\"penningbedrag\",\"datatype\":" + WHOLE
                                 + ",\"timeline\":" + TmsTimelineDocuments.facet("year", null) + "}"), List.of()),
                         List.of(computingRule("opbrengst", "BEREKENING", "Jutter", "opbrengst",
@@ -336,7 +336,7 @@ class TmsTimelineRefusalWitnessTest {
                                 + "\"attribute\":" + ownRead("omzet", "Jutter") + ",\"labels\":[\"k2\"],\"source\":"
                                 + "{\"snippet\":\"zijn omzet in k2\"}}", "null")), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(), List.of(), Map.of(),
-                        Map.of())), List.of(waarde("J1", "tweede kwartaal", null))),
+                        Map.of())), List.of(value("J1", "tweede kwartaal", null))),
                 List.of("transpiler SKIP: regel: tweede kwartaal — het gedimensioneerde attribuut 'omzet' van"
                         + " Jutter op een tijdlijn: deze tak draagt deze vorm nog niet; geen golden met"
                         + " cases heeft er een")));
@@ -344,7 +344,7 @@ class TmsTimelineRefusalWitnessTest {
                         "omzetsom", "BEREKENING", "Jutter", "omzetsom", ownTotal("omzet", "Jutter", "null"), "null")),
                         List.of()),
                 TmsTimelineDocuments.caseDocument("2024-06-01", List.of(instance("J1", "Jutter", Map.of(), List.of(),
-                        Map.of(), Map.of())), List.of(waarde("J1", "omzetsom", null))),
+                        Map.of(), Map.of())), List.of(value("J1", "omzetsom", null))),
                 List.of("transpiler SKIP: regel: omzetsom — het gedimensioneerde attribuut 'omzet' van Jutter,"
                         + " gelezen of geschreven buiten een DimensionCellRead of een vouw over een dimensieselectie:"
                         + " deze tak draagt deze vorm nog niet; geen golden met cases heeft het")));
@@ -382,10 +382,10 @@ class TmsTimelineRefusalWitnessTest {
     /** A Jutter with a vergoeding on a month grid in the rate unit {@code tarief}, a wachtsom in EUR and the
      *  characteristic wachtplichtig on a timeline, under the unit systems {@code systems}. */
     static String rateModel(String rate, List<String> systems) {
-        return TmsDocuments.modelWith(List.of(objecttype("Jutter", List.of(
+        return TmsDocuments.modelWith(List.of(objectType("Jutter", List.of(
                         "{\"node\":\"Attribute\",\"name\":\"vergoeding\",\"datatype\":" + TmsDocuments.numberType(true, 0,
                                 rate) + ",\"timeline\":" + TmsTimelineDocuments.facet("month", null) + "}",
-                        TmsDocuments.attribuut("wachtsom", TmsDocuments.numberType(true, 0, EUR))),
+                        TmsDocuments.attribute("wachtsom", TmsDocuments.numberType(true, 0, EUR))),
                 List.of(timeCharacteristic("wachtplichtig", "month")))), List.of(), List.of(), systems);
     }
 
@@ -397,28 +397,28 @@ class TmsTimelineRefusalWitnessTest {
                     + TmsDocuments.numberType(true, 0, EUR) + ",\"source\":{\"snippet\":\"het totaal van zijn"
                     + " vergoeding\"}}", "null");
 
-    /** J1 with a vergoeding of 10 through 2024 and wachtplichtig through 2024, its wachtsom expected {@code verwacht}. */
-    static JsonNode rateCase(String verwacht) throws Exception {
+    /** J1 with a vergoeding of 10 through 2024 and wachtplichtig through 2024, its wachtsom expected {@code expected}. */
+    static JsonNode rateCase(String expected) throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("vergoeding",
                         timeline(List.of(segment("2024-01-01", "2025-01-01", "10")))), List.of(),
                         Map.of("wachtplichtig", List.of(period("2024-01-01", "2025-01-01"))), Map.of())),
-                List.of(waarde("J1", "wachtsom", verwacht)));
+                List.of(value("J1", "wachtsom", expected)));
     }
 
     /** The refusal of the wachtsom over the rate EUR/mnd where the document does not declare the month grid's unit as
-     *  exactly one unit: the form, the member and the reference interpreter's sentence, which ends in {@code reden}. */
-    static String gridUnitSentence(String reden) {
+     *  exactly one unit: the form, the member and the reference interpreter's sentence, which ends in {@code reason}. */
+    static String gridUnitSentence(String reason) {
         return "transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
-                + " vergoeding') over 'vergoeding': the temporal total of a EUR/mnd value: " + reden;
+                + " vergoeding') over 'vergoeding': the temporal total of a EUR/mnd value: " + reason;
     }
 
     // ---------------- the model of the row of a variable start point ----------------
 
-    static final String MODEL_START_POINT = TmsDocuments.model(List.of(objecttype("Schouwveld", List.of(
-                    TmsDocuments.attribuut("meetdatum", TmsDocuments.DATE),
+    static final String MODEL_START_POINT = TmsDocuments.model(List.of(objectType("Schouwveld", List.of(
+                    TmsDocuments.attribute("meetdatum", TmsDocuments.DATE),
                     "{\"node\":\"Attribute\",\"name\":\"waterstand\",\"datatype\":" + WHOLE + ",\"timeline\":{\"node\":"
                             + "\"TimelineFacet\",\"granularity\":\"year\",\"count\":1,\"timelineName\":\"boekjaar\"}}",
-                    TmsDocuments.attribuut("peilsom", WHOLE)),
+                    TmsDocuments.attribute("peilsom", WHOLE)),
             List.of(timeCharacteristic("drooggevallen", "month")))), List.of())
             // the model builder declares no named timeline; this row needs the one its member lies on
             .replace("\"timelines\":[]", "\"timelines\":[{\"node\":\"Timeline\",\"name\":\"boekjaar\","
@@ -427,10 +427,10 @@ class TmsTimelineRefusalWitnessTest {
     // ---------------- the model of the rows of a dimensioned attribute on a timeline ----------------
 
     /** A Jutter with an omzet per kwartaal on a month grid, and the two targets that read it. */
-    static final String MODEL_DIMENSION = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
+    static final String MODEL_DIMENSION = TmsDocuments.model(List.of(objectType("Jutter", List.of(
                     "{\"node\":\"Attribute\",\"name\":\"omzet\",\"datatype\":" + WHOLE + ",\"dimensions\":"
                             + "[\"kwartaal\"],\"timeline\":" + TmsTimelineDocuments.facet("month", null) + "}",
-                    TmsDocuments.attribuut("tweede kwartaal", WHOLE), TmsDocuments.attribuut("omzetsom", WHOLE)),
+                    TmsDocuments.attribute("tweede kwartaal", WHOLE), TmsDocuments.attribute("omzetsom", WHOLE)),
             List.of())), List.of())
             // the model builder declares no dimension; these rows need the one the omzet lies on
             .replace("\"dimensions\":[]", "\"dimensions\":[{\"node\":\"Dimension\",\"name\":\"kwartaal\",\"plural\":"
@@ -448,7 +448,7 @@ class TmsTimelineRefusalWitnessTest {
     }
 
     @Test void every_timeline_form_that_the_branch_does_not_carry_is_refused_with_its_sentence() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Row r : rows()) {
             Path ir = Files.writeString(Files.createTempFile("tms-tijdlijnweigering", ".json"), r.ir());
             ir.toFile().deleteOnExit();
@@ -462,24 +462,24 @@ class TmsTimelineRefusalWitnessTest {
             List<String> all = refusals(ir);
             outcomes.add(r.naam() + ": " + built + (all.size() > 1 ? " | "
                     + String.join(" | ", all.subList(1, all.size())) : ""));
-            verwacht.add(r.naam() + ": " + String.join(" | ", r.sentences()));
+            expected.add(r.naam() + ": " + String.join(" | ", r.sentences()));
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /** Every refusal of the manifest of the document {@code ir}, in its order, in the words of the build's exclusion. */
     static List<String> refusals(Path ir) throws Exception {
         IrLoader.Loaded l = IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir)));
-        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.genereer(l.model()));
+        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(l.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler t = TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
                     l.sourcePaths(), l.navigationBindings());
             List<String> out = new ArrayList<>();
-            for (Dekking d : t.dekking())
-                if (!d.lowered()) out.add("transpiler " + d.verdict() + ": " + d.sleutel()
-                        + (d.reden().isEmpty() ? "" : " — " + d.reden()));
+            for (Coverage d : t.coverage())
+                if (!d.lowered()) out.add("transpiler " + d.verdict() + ": " + d.key()
+                        + (d.reason().isEmpty() ? "" : " — " + d.reason()));
             return out;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);

@@ -58,10 +58,10 @@ class CompanionPathWitnessTest {
         // "uit := Let d = deler in inkomen gedeeld door tweede" — `d` is never read, so ch. 10.6 clause 3 never
         // evaluates `deler` and the body ALWAYS runs: the division by the absent `tweede` is real, whatever
         // `deler` holds. ref, both cases: uit leeg, INCONSISTENT. The bare twin (no Let) says the same.
-        String verwacht = empty("uit") + ", " + inconsistent();
-        assertNull(play(divisionModel(), jutter(INKOMEN, verwacht)), "de kale deling door leeg");
-        assertNull(play(spiegelModel(), jutter(INKOMEN, verwacht)), "dezelfde deling in een Let-body, deler leeg");
-        assertNull(play(spiegelModel(), jutter(INKOMEN + ", " + n("deler", "2.00"), verwacht)),
+        String expected = empty("uit") + ", " + inconsistent();
+        assertNull(play(divisionModel(), jutter(INKOMEN, expected)), "de kale deling door leeg");
+        assertNull(play(spiegelModel(), jutter(INKOMEN, expected)), "dezelfde deling in een Let-body, deler leeg");
+        assertNull(play(spiegelModel(), jutter(INKOMEN + ", " + n("deler", "2.00"), expected)),
                 "dezelfde deling in een Let-body, deler gevuld");
     }
 
@@ -75,7 +75,7 @@ class CompanionPathWitnessTest {
         assertNull(play(barrierModel(true), jutter(INKOMEN, empty("uit") + ", " + consistent())),
                 "lezing eerst, barriere: geen deling, geen fout");
         assertNull(play(barrierModel(true), jutter(INKOMEN + ", " + n("deler", "2.00"),
-                        waarde("uit", "2.0000") + ", " + inconsistent())),
+                        valueJson("uit", "2.0000") + ", " + inconsistent())),
                 "lezing eerst, gevuld: de deling draait en faalt");
     }
 
@@ -86,7 +86,7 @@ class CompanionPathWitnessTest {
         assertNull(play(barrierModel(false), jutter(INKOMEN, empty("uit") + ", " + inconsistent())),
                 "deling eerst, dan de barriere: de fout staat");
         assertNull(play(barrierModel(false), jutter(INKOMEN + ", " + n("deler", "2.00"),
-                        waarde("uit", "2.0000") + ", " + inconsistent())),
+                        valueJson("uit", "2.0000") + ", " + inconsistent())),
                 "deling eerst, gevuld");
     }
 
@@ -98,13 +98,13 @@ class CompanionPathWitnessTest {
         // CONSISTENT. Both orientations, bare (the IfThenElse as the rule value) and in a Let body whose binder
         // feeds the condition (the WF-077 shape).
         String taken = empty("uit") + ", " + inconsistent();
-        String notTaken = waarde("uit", "7.0000") + ", " + consistent();
+        String notTaken = valueJson("uit", "7.0000") + ", " + consistent();
         for (boolean inLet : new boolean[]{false, true}) {
-            String vorm = inLet ? " (in een Let-body)" : " (kaal)";
+            String form = inLet ? " (in een Let-body)" : " (kaal)";
             assertNull(play(choiceModel(inLet, false), jutter(INKOMEN + ", " + n("a", "200.00"), taken)),
-                    "de genomen tak" + vorm);
+                    "de genomen tak" + form);
             assertNull(play(choiceModel(inLet, false), jutter(INKOMEN + ", " + n("a", "1.00"), notTaken)),
-                    "de niet-genomen tak" + vorm);
+                    "de niet-genomen tak" + form);
         }
     }
 
@@ -115,7 +115,7 @@ class CompanionPathWitnessTest {
         // faults (leeg) and the barrier then empties the Let. ref: leeg, INCONSISTENT.
         // "Let q = inkomen gedeeld door tweede in 42,0000" — nothing reads q, nothing runs. ref: 42.0000, CONSISTENT.
         assertNull(play(valueModel(true), jutter(INKOMEN, empty("uit") + ", " + inconsistent())), "gelezen");
-        assertNull(play(valueModel(false), jutter(INKOMEN, waarde("uit", "42.0000") + ", " + consistent())), "ongelezen");
+        assertNull(play(valueModel(false), jutter(INKOMEN, valueJson("uit", "42.0000") + ", " + consistent())), "ongelezen");
     }
 
     @Test void a_letvalue_read_in_only_one_arm_fails_per_arm() throws Exception {
@@ -125,7 +125,7 @@ class CompanionPathWitnessTest {
         // certify neither — "read on some but not every path" got no companion at all.)
         assertNull(play(oneArmModel(), jutter(INKOMEN + ", " + n("a", "200.00"), empty("uit") + ", " + inconsistent())),
                 "gelezen op de genomen tak");
-        assertNull(play(oneArmModel(), jutter(INKOMEN + ", " + n("a", "1.00"), waarde("uit", "7.0000") + ", " + consistent())),
+        assertNull(play(oneArmModel(), jutter(INKOMEN + ", " + n("a", "1.00"), valueJson("uit", "7.0000") + ", " + consistent())),
                 "ongelezen op de niet-genomen tak");
     }
 
@@ -147,10 +147,10 @@ class CompanionPathWitnessTest {
     @Test void a_square_root_in_a_running_letbody_is_equally_inconsistent_as_the_bare() throws Exception {
         // "Let d = deler in de wortel van het saldo", saldo = -4,00, binder unread: the body runs, the negative
         // radicand degrades to leeg AND deposits the §6.6 Fout. ref on both models: uit leeg, INCONSISTENT.
-        String verwacht = empty("uit") + ", " + inconsistent();
-        String invoer = n("saldo", "-4.00");
-        assertNull(play(squareRootModel(false), jutter(invoer, verwacht)), "de kale wortel van negatief");
-        assertNull(play(squareRootModel(true), jutter(invoer, verwacht)), "dezelfde wortel in een Let-body");
+        String expected = empty("uit") + ", " + inconsistent();
+        String input = n("saldo", "-4.00");
+        assertNull(play(squareRootModel(false), jutter(input, expected)), "de kale wortel van negatief");
+        assertNull(play(squareRootModel(true), jutter(input, expected)), "dezelfde wortel in een Let-body");
     }
 
     @Test void a_square_root_in_the_taken_arm_is_inconsistent_and_in_the_not_taken_is_not() throws Exception {
@@ -159,7 +159,7 @@ class CompanionPathWitnessTest {
         assertNull(play(choiceModel(true, true), jutter(n("saldo", "-4.00") + ", " + n("a", "200.00"),
                 empty("uit") + ", " + inconsistent())), "de genomen tak");
         assertNull(play(choiceModel(true, true), jutter(n("saldo", "-4.00") + ", " + n("a", "1.00"),
-                waarde("uit", "7.0000") + ", " + consistent())), "de niet-genomen tak");
+                valueJson("uit", "7.0000") + ", " + consistent())), "de niet-genomen tak");
     }
 
     // ---------------- (a'') a second, NON-qualifying site under the same carrier ----------------
@@ -173,10 +173,10 @@ class CompanionPathWitnessTest {
         // faulted", not on "THIS site did": a per-site identity gate throws the observation away and answers a
         // silent consistent. Twin: with `leegding` = 5,00 nothing faults -> ref 6.0000, CONSISTENT.
         assertNull(play(coSiteModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"),
-                        waarde("uit", "5.0000") + ", " + inconsistent())),
+                        valueJson("uit", "5.0000") + ", " + inconsistent())),
                 "de literal-deling onder dezelfde drager faalt: de sonde ziet haar");
         assertNull(play(coSiteModel(), jutter(INKOMEN + ", " + n("tweede", "2.00") + ", " + n("leegding", "5.00"),
-                        waarde("uit", "6.0000") + ", " + consistent())),
+                        valueJson("uit", "6.0000") + ", " + consistent())),
                 "niets faalt: de verbrede poort mag niet vuren");
     }
 
@@ -190,7 +190,7 @@ class CompanionPathWitnessTest {
                         empty("uit") + ", " + consistent())),
                 "de barriere kapt beide plekken af");
         assertNull(play(coSiteBehindBarrierModel(), jutter(INKOMEN + ", " + n("tweede", "2.00") + ", " + n("deler", "2.00"),
-                        waarde("uit", "7.0000") + ", " + inconsistent())),
+                        valueJson("uit", "7.0000") + ", " + inconsistent())),
                 "het pad loopt door: de niet-kwalificerende plek faalt");
     }
 
@@ -220,12 +220,12 @@ class CompanionPathWitnessTest {
         //   everything absent      -> 0.0000, INCONSISTENT (site 1 faults; site 2 is cut off by the barrier)
         //   deler 2, leegding 1    -> 6.0000, INCONSISTENT (site 1 = 5; d read fine, site 2 faults -> 1 + 0)
         //   deler 2, leegding leeg -> 5.0000, CONSISTENT   (site 1 = 5; the barrier empties the Let; no fault)
-        assertNull(play(twoDivisionsModel(), jutter(INKOMEN, waarde("uit", "0.0000") + ", " + inconsistent())),
+        assertNull(play(twoDivisionsModel(), jutter(INKOMEN, valueJson("uit", "0.0000") + ", " + inconsistent())),
                 "beide operanden leeg: de kale deling faalt, de omhulde is afgekapt");
         assertNull(play(twoDivisionsModel(), jutter(INKOMEN + ", " + n("deler", "2.00") + ", " + n("leegding", "1.00"),
-                waarde("uit", "6.0000") + ", " + inconsistent())), "alleen de omhulde deling faalt");
+                valueJson("uit", "6.0000") + ", " + inconsistent())), "alleen de omhulde deling faalt");
         assertNull(play(twoDivisionsModel(), jutter(INKOMEN + ", " + n("deler", "2.00"),
-                waarde("uit", "5.0000") + ", " + consistent())), "de omhulde deling is afgekapt, de kale rekent");
+                valueJson("uit", "5.0000") + ", " + consistent())), "de omhulde deling is afgekapt, de kale rekent");
     }
 
     // ---------------- (p) a Parameter inside the carrier: the companion binds what the path reads ----------------
@@ -234,9 +234,9 @@ class CompanionPathWitnessTest {
         // "Let d = deler in (inkomen gedeeld door tweede) plus GRONDSLAG", grondslag = 3 (a Parameter global).
         // The path condition evaluates the carrier, so it must bind the same globals the host binds. ref:
         // tweede absent -> 3.0000, INCONSISTENT; tweede 2,00 -> 8.0000, CONSISTENT.
-        assertNull(play(parameterModel(), jutter(INKOMEN, waarde("uit", "3.0000") + ", " + inconsistent(), "\"grondslag\": { \"number\": \"3\" }")),
+        assertNull(play(parameterModel(), jutter(INKOMEN, valueJson("uit", "3.0000") + ", " + inconsistent(), "\"grondslag\": { \"number\": \"3\" }")),
                 "de deling faalt, de parameter telt op");
-        assertNull(play(parameterModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"), waarde("uit", "8.0000") + ", " + consistent(), "\"grondslag\": { \"number\": \"3\" }")),
+        assertNull(play(parameterModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"), valueJson("uit", "8.0000") + ", " + consistent(), "\"grondslag\": { \"number\": \"3\" }")),
                 "de deling rekent");
     }
 
@@ -251,7 +251,7 @@ class CompanionPathWitnessTest {
         // still the refusal, naming the fence.
         CaseRunner.Excluded refusal = assertThrows(CaseRunner.Excluded.class,
                 () -> play(defaultsModel(let("d", attr("deler"), DIVISION, num(4))), jutter(INKOMEN + ", " + n("kindertal", "3"),
-                        waarde("toeslag", "0.0000") + ", " + consistent())));
+                        valueJson("toeslag", "0.0000") + ", " + consistent())));
         assertTrue(refusal.getMessage().contains("deling"),
                 "de weigering noemt het delingshek: " + refusal.getMessage());
     }
@@ -262,9 +262,9 @@ class CompanionPathWitnessTest {
         // "gedeeld door (ABS)" is the second §6.5 variant and lowers through its own arm; under a carrier its
         // fault must reach the probe exactly like the plain division's. ref, both models (tweede absent):
         // uit leeg, INCONSISTENT.
-        String verwacht = empty("uit") + ", " + inconsistent();
-        assertNull(play(ofModel(DIVISION_ABS), jutter(INKOMEN, verwacht)), "de kale ABS-deling door leeg");
-        assertNull(play(ofModel(let("d", attr("deler"), DIVISION_ABS, num(4))), jutter(INKOMEN, verwacht)),
+        String expected = empty("uit") + ", " + inconsistent();
+        assertNull(play(ofModel(DIVISION_ABS), jutter(INKOMEN, expected)), "de kale ABS-deling door leeg");
+        assertNull(play(ofModel(let("d", attr("deler"), DIVISION_ABS, num(4))), jutter(INKOMEN, expected)),
                 "dezelfde ABS-deling in een Let-body");
     }
 
@@ -273,10 +273,10 @@ class CompanionPathWitnessTest {
         // when the divisor is leeg too. The probe must keep that guard: a report on "divisor leeg" alone would
         // fabricate. ref: "Let d = deler in leegding gedeeld door tweede", both absent -> 0.0000, CONSISTENT;
         // tweede 2,00 -> 0.0000, CONSISTENT; the bare twin -> 0.0000, CONSISTENT.
-        String verwacht = waarde("uit", "0.0000") + ", " + consistent();
-        assertNull(play(ofModel(DIVISION_LEEGDING), jutter(INKOMEN, verwacht)), "de kale deling met leeg dividend");
-        assertNull(play(emptyDividendModel(), jutter(INKOMEN, verwacht)), "leeg dividend, lege deler, in een Let-body");
-        assertNull(play(emptyDividendModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"), verwacht)),
+        String expected = valueJson("uit", "0.0000") + ", " + consistent();
+        assertNull(play(ofModel(DIVISION_LEEGDING), jutter(INKOMEN, expected)), "de kale deling met leeg dividend");
+        assertNull(play(emptyDividendModel(), jutter(INKOMEN, expected)), "leeg dividend, lege deler, in een Let-body");
+        assertNull(play(emptyDividendModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"), expected)),
                 "leeg dividend, gevulde deler, in een Let-body");
     }
 
@@ -285,10 +285,10 @@ class CompanionPathWitnessTest {
     @Test void a_square_root_of_zero_under_a_carrier_is_zero_without_fault() throws Exception {
         // §6.6 faults on a NEGATIVE radicand only; zero is a real root. The probe must not widen the predicate.
         // ref, saldo = 0,00: bare -> 0.0000, CONSISTENT; in a Let body -> 0.0000, CONSISTENT.
-        String verwacht = waarde("uit", "0.0000") + ", " + consistent();
-        String invoer = n("saldo", "0.00");
-        assertNull(play(squareRootModel(false), jutter(invoer, verwacht)), "de kale wortel van nul");
-        assertNull(play(squareRootModel(true), jutter(invoer, verwacht)), "dezelfde wortel in een Let-body");
+        String expected = valueJson("uit", "0.0000") + ", " + consistent();
+        String input = n("saldo", "0.00");
+        assertNull(play(squareRootModel(false), jutter(input, expected)), "de kale wortel van nul");
+        assertNull(play(squareRootModel(true), jutter(input, expected)), "dezelfde wortel in een Let-body");
     }
 
     // ---------------- (i) evaluation ORDER inside a non-carrier form: Begrensd, minimum before maximum ----------------
@@ -315,13 +315,13 @@ class CompanionPathWitnessTest {
         // nul, maximum d": ref evaluates the minimum first and dies, EVALUATION FAULT "division by numeric zero",
         // which the branch gives as the runtime's own ArithmeticException at the fixpoint. On the truth-maintenance
         // branch, measured as the row above.
-        String invoer = INKOMEN + ", " + n("nul", "0.00");
-        assertNull(playTms(clampZeroModel(true), jutter(invoer, empty("uit") + ", " + consistent())),
+        String input = INKOMEN + ", " + n("nul", "0.00");
+        assertNull(playTms(clampZeroModel(true), jutter(input, empty("uit") + ", " + consistent())),
                 "de lezing in het minimum kapt af voordat het maximum door nul deelt");
-        RuntimeException fout = assertThrows(RuntimeException.class,
-                () -> playTms(clampZeroModel(false), jutter(invoer, empty("uit") + ", " + consistent())));
-        assertTrue(causeText(fout).contains("10 gedeeld door 0"),
-                "het minimum deelt door nul voordat het maximum de barriere opwerpt: " + causeText(fout));
+        RuntimeException fault = assertThrows(RuntimeException.class,
+                () -> playTms(clampZeroModel(false), jutter(input, empty("uit") + ", " + consistent())));
+        assertTrue(causeText(fault).contains("10 gedeeld door 0"),
+                "het minimum deelt door nul voordat het maximum de barriere opwerpt: " + causeText(fault));
     }
 
     @Test void the_base_of_a_clamp_evaluates_before_the_maximum() throws Exception {
@@ -361,7 +361,7 @@ class CompanionPathWitnessTest {
         // expr the companion activates once and the fault is lost (verified by mutation).
         // ref: "Let d = deler in d plus (inkomen ÷ tweede)" -> uit 2.0000, INCONSISTENT;
         //      "Let d = deler in (als d groter dan 1 dan inkomen ÷ tweede anders 7)" -> uit leeg, INCONSISTENT.
-        assertNull(play(lateProducerModel(false), jutter(INKOMEN, waarde("uit", "2.0000") + ", " + inconsistent())),
+        assertNull(play(lateProducerModel(false), jutter(INKOMEN, valueJson("uit", "2.0000") + ", " + inconsistent())),
                 "de barriere-vorm: de late producent opent het pad naar de deling");
         assertNull(play(lateProducerModel(true), jutter(INKOMEN, empty("uit") + ", " + inconsistent())),
                 "de tak-vorm: de late producent kiest de delende tak");
@@ -378,7 +378,7 @@ class CompanionPathWitnessTest {
         CaseRunner.Excluded refusal = assertThrows(CaseRunner.Excluded.class,
                 () -> play(defaultsModel(binary("plus", SQUARE_ROOT, lit("0.0000", num(4)), num(4))),
                         jutter(n("saldo", "-4.00") + ", " + n("kindertal", "3"),
-                                waarde("toeslag", "0.0000") + ", " + inconsistent())));
+                                valueJson("toeslag", "0.0000") + ", " + inconsistent())));
         assertTrue(refusal.getMessage().contains("wortel"),
                 "de weigering noemt de wortel: " + refusal.getMessage());
     }
@@ -398,7 +398,7 @@ class CompanionPathWitnessTest {
         assertNull(play(binderDividendModel(), jutter("", empty("uit") + ", " + consistent())),
                 "de binder zelf leeg: de barriere komt voor de deling");
         assertNull(play(binderDividendModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"),
-                        waarde("uit", "5.0000") + ", " + consistent())), "beide gevuld: geen fout");
+                        valueJson("uit", "5.0000") + ", " + consistent())), "beide gevuld: geen fout");
     }
 
     @Test void a_binder_as_divisor_under_its_let_never_fails_on_empty() throws Exception {
@@ -409,7 +409,7 @@ class CompanionPathWitnessTest {
         assertNull(play(binderDivisorModel(), jutter(INKOMEN, empty("uit") + ", " + consistent())),
                 "de deler-binder leeg: de barriere, geen fout");
         assertNull(play(binderDivisorModel(), jutter(INKOMEN + ", " + n("deler", "2.00"),
-                        waarde("uit", "5.0000") + ", " + consistent())), "gevuld: de deling rekent");
+                        valueJson("uit", "5.0000") + ", " + consistent())), "gevuld: de deling rekent");
     }
 
     @Test void a_binder_as_radicand_under_its_let_gets_the_path_condition() throws Exception {
@@ -462,13 +462,13 @@ class CompanionPathWitnessTest {
 
     private static final String INKOMEN = "\"inkomen\": { \"number\": \"10.00\" }";
 
-    private static String n(String attribuut, String number) {
-        return "\"%s\": { \"number\": \"%s\" }".formatted(attribuut, number);
+    private static String n(String attribute, String number) {
+        return "\"%s\": { \"number\": \"%s\" }".formatted(attribute, number);
     }
 
-    private static String jutter(String attributes, String verwacht) { return jutter(attributes, verwacht, ""); }
+    private static String jutter(String attributes, String expected) { return jutter(attributes, expected, ""); }
 
-    private static String jutter(String attributes, String verwacht, String parameters) {
+    private static String jutter(String attributes, String expected, String parameters) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -477,16 +477,16 @@ class CompanionPathWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": { %s } },
                   "expected": [ %s ] }
-                """.formatted(attributes, parameters, verwacht);
+                """.formatted(attributes, parameters, expected);
     }
 
-    private static String waarde(String attribuut, String number) {
+    private static String valueJson(String attribute, String number) {
         return "{ \"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"%s\", \"value\": { \"number\": \"%s\" } }"
-                .formatted(attribuut, number);
+                .formatted(attribute, number);
     }
 
-    private static String empty(String attribuut) {
-        return "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"%s\" }".formatted(attribuut);
+    private static String empty(String attribute) {
+        return "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"%s\" }".formatted(attribute);
     }
 
     private static String consistent() { return "{ \"kind\": \"consistent\" }"; }
@@ -509,8 +509,8 @@ class CompanionPathWitnessTest {
     }
     private static String attr(String naam) { return attr(naam, pos(2)); }
 
-    private static String lit(String waarde, String type) {
-        return IrPath.literal(waarde, type, waarde);
+    private static String lit(String valueJson, String type) {
+        return IrPath.literal(valueJson, type, valueJson);
     }
 
     private static String param(String naam, String type) {
@@ -551,7 +551,7 @@ class CompanionPathWitnessTest {
                 .formatted(base, minimum, maximum, type);
     }
 
-    private static String verg(String op, String left, String right) {
+    private static String compare(String op, String left, String right) {
         return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, left, right, op.toLowerCase(java.util.Locale.ROOT));
     }
@@ -559,21 +559,21 @@ class CompanionPathWitnessTest {
     private static final String ALTIJD =
             "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}}";
 
-    private static String regel(String naam, String doel, String waarde) {
-        return regel(naam, "BEREKENING", doel, waarde, "null");
+    private static String regel(String naam, String target, String valueJson) {
+        return regel(naam, "BEREKENING", target, valueJson, "null");
     }
 
-    private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return IrPath.regel(naam, soort, doel, waarde, voorwaarde);
+    private static String regel(String naam, String category, String target, String valueJson, String conditionJson) {
+        return IrPath.regel(naam, category, target, valueJson, conditionJson);
     }
 
     /** The one Jutter every model here uses, carrying every attribute any flank reads. */
-    private static final String ATTRIBUTES = String.join(",", attribuut("a", pos(2)), attribuut("inkomen", pos(2)),
-            attribuut("deler", pos(2)), attribuut("tweede", pos(2)), attribuut("leegding", pos(2)),
-            attribuut("saldo", num(2)), attribuut("nul", pos(2)), attribuut("kindertal", WHOLE_POS),
-            attribuut("uit", num(4)), attribuut("toeslag", num(4)));
+    private static final String ATTRIBUTES = String.join(",", attribute("a", pos(2)), attribute("inkomen", pos(2)),
+            attribute("deler", pos(2)), attribute("tweede", pos(2)), attribute("leegding", pos(2)),
+            attribute("saldo", num(2)), attribute("nul", pos(2)), attribute("kindertal", WHOLE_POS),
+            attribute("uit", num(4)), attribute("toeslag", num(4)));
 
-    private static String attribuut(String naam, String datatype) {
+    private static String attribute(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
@@ -600,9 +600,9 @@ class CompanionPathWitnessTest {
     }
 
     /** "uit van een jutter" over the given value. */
-    private static String ofModel(String waarde) { return ofModel(waarde, ""); }
-    private static String ofModel(String waarde, String parameters) {
-        return model(new String[]{regel("uit van een jutter", attr("uit", num(4)), waarde)}, parameters, "");
+    private static String ofModel(String valueJson) { return ofModel(valueJson, ""); }
+    private static String ofModel(String valueJson, String parameters) {
+        return model(new String[]{regel("uit van een jutter", attr("uit", num(4)), valueJson)}, parameters, "");
     }
 
     // ---------------- the models (each ref-replayed before its values were pinned) ----------------
@@ -639,8 +639,8 @@ class CompanionPathWitnessTest {
     private static String choiceModel(boolean inLetBody, boolean withSquareRoot) {
         String then = withSquareRoot ? SQUARE_ROOT : DIVISION_DIVISOR;
         String left = inLetBody ? bref("a", pos(2)) : attr("a");
-        String keuze = ite(verg("greater", left, lit("100", WHOLE_POS)), then, SEVEN, num(4));
-        return ofModel(inLetBody ? let("a", attr("a"), keuze, num(4)) : keuze);
+        String choice = ite(compare("greater", left, lit("100", WHOLE_POS)), then, SEVEN, num(4));
+        return ofModel(inLetBody ? let("a", attr("a"), choice, num(4)) : choice);
     }
 
     /** (d) the division as a Let VALUE, read ({@code q plus 1}) or not ({@code 42}). */
@@ -651,8 +651,8 @@ class CompanionPathWitnessTest {
 
     /** (d) the division as a Let VALUE read only in the DAN branch of a choice on another binder. */
     private static String oneArmModel() {
-        String keuze = ite(verg("greater", bref("k", pos(2)), lit("100", WHOLE_POS)), bref("q", num(4)), SEVEN, num(4));
-        return ofModel(let("k", attr("a"), let("q", DIVISION, keuze, num(4)), num(4)));
+        String choice = ite(compare("greater", bref("k", pos(2)), lit("100", WHOLE_POS)), bref("q", num(4)), SEVEN, num(4));
+        return ofModel(let("k", attr("a"), let("q", DIVISION, choice, num(4)), num(4)));
     }
 
     /** (e) "Let x = leegding in Let q = inkomen gedeeld door tweede in x plus q" ({@code foreignFirst}) or "q plus x". */
@@ -721,9 +721,9 @@ class CompanionPathWitnessTest {
     /** (i) a ch. 10.2 guard "d groter dan (inkomen ÷ tweede)" ({@code readLeft}) or its mirror, in a Let on d. */
     private static String conditionOrderModel(boolean readLeft) {
         String binderRead = bref("d", pos(2));
-        String condition = readLeft ? verg("greater", binderRead, DIVISION) : verg("greater", DIVISION, binderRead);
-        String keuze = ite(condition, lit("1.0000", num(4)), lit("2.0000", num(4)), num(4));
-        return ofModel(let("d", attr("deler"), keuze, num(4)));
+        String condition = readLeft ? compare("greater", binderRead, DIVISION) : compare("greater", DIVISION, binderRead);
+        String choice = ite(condition, lit("1.0000", num(4)), lit("2.0000", num(4)), num(4));
+        return ofModel(let("d", attr("deler"), choice, num(4)));
     }
 
     /** (r) `deler` produced by a rule that §9.2 forces to fire AFTER the consumer's companion: its voorwaarde reads
@@ -736,11 +736,11 @@ class CompanionPathWitnessTest {
         String notVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String body = branch
-                ? ite(verg("greater", bref("d", pos(2)), lit("1", WHOLE_POS)), DIVISION, SEVEN, num(4))
+                ? ite(compare("greater", bref("d", pos(2)), lit("1", WHOLE_POS)), DIVISION, SEVEN, num(4))
                 : binary("plus", bref("d", pos(2)), DIVISION, num(4));
         return modelK(new String[]{
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
-                                verg("greater", attr("inkomen"), lit("999999.00", pos(2)))),
+                                compare("greater", attr("inkomen"), lit("999999.00", pos(2)))),
                         regel("deler van een jutter", "BEREKENING", attr("deler"), lit("2.00", pos(2)), notVermist),
                         regel("uit van een jutter", attr("uit", num(4)), let("d", attr("deler"), body, num(4)))});
     }
@@ -776,14 +776,14 @@ class CompanionPathWitnessTest {
 
     /** (g) a ch. 7 group over {@code Jutter.toeslag}: a justified first default with the given consequence, then
      *  an unconditional 0. */
-    private static String defaultsModel(String consequentie) {
+    private static String defaultsModel(String consequence) {
         String group = ("{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\",\"subject\":\"Jutter\","
                 + "\"attribute\":\"toeslag\",\"defaults\":["
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
                 + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}")
-                .formatted(verg("greaterOrEqual", attr("kindertal", WHOLE_POS), lit("2", WHOLE_POS)),
-                        consequentie, ALTIJD, lit("0.0000", num(4)));
+                .formatted(compare("greaterOrEqual", attr("kindertal", WHOLE_POS), lit("2", WHOLE_POS)),
+                        consequence, ALTIJD, lit("0.0000", num(4)));
         return model(new String[]{}, "", ",\"prioritizedDefaults\":[" + group + "]");
     }
 }

@@ -31,14 +31,14 @@ class OriginSourceRouteTest {
         List<Path> directories;
         try (var s = Files.list(GOLDEN)) { directories = s.sorted().toList(); }
         for (Path map : directories) {
-            Path bron = map.resolve("bron.rgs");
-            if (!Files.exists(bron)) continue;
-            RegelSpraakModel viaSource = Resolver.resolve(Files.readString(bron));
+            Path source = map.resolve("bron.rgs");
+            if (!Files.exists(source)) continue;
+            RegelSpraakModel viaSource = Resolver.resolve(Files.readString(source));
             assertTrue(viaSource.isOk(), () -> map + " resolvet niet: " + viaSource.diagnostics);
             RegelSpraakModel viaWire = IrLoader.load(JSON.readTree(Files.readString(map.resolve("ir.json"))));
-            assertEquals(viaSource.gegenereerd, viaWire.gegenereerd, map::toString);
+            assertEquals(viaSource.generated, viaWire.generated, map::toString);
             goldens++;
-            if (!viaSource.gegenereerd.isEmpty()) withOrigin++;
+            if (!viaSource.generated.isEmpty()) withOrigin++;
         }
         // measured 2026-10-15: 125 rgs goldens, 9 of them with a declaration the frontend made
         assertTrue(goldens >= 125, "rgs-goldens vergeleken: " + goldens);

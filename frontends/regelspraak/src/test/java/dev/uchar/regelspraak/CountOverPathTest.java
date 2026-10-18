@@ -71,8 +71,8 @@ class CountOverPathTest {
 
     private static final String VONDST_THREE = "het aantal havenjutters van de haven van de jutter van de Vondst";
 
-    private static String waarde(String type, String doel, String count) {
-        return "Regel " + doel + "\n    geldig altijd\n        Het " + doel + " van een " + type
+    private static String valueJson(String type, String target, String count) {
+        return "Regel " + target + "\n    geldig altijd\n        Het " + target + " van een " + type
                 + " moet berekend worden als " + count + ".\n";
     }
 
@@ -81,8 +81,8 @@ class CountOverPathTest {
     }
 
     /** One ERROR naming the path, with the number of steps and the steps subject-outward. */
-    private static void geweigerd(String bron, int steps, String names) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + bron);
+    private static void refused(String source, int steps, String names) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + source);
         List<Diagnostic> ds = pathErrors(m);
         assertEquals(1, ds.size(), () -> "verwacht één padweigering, kreeg: " + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
@@ -99,29 +99,29 @@ class CountOverPathTest {
             "met het meervoud van het type|het aantal Jutters van de haven van de jutter van de Vondst|Jutters",
             "onder een optelling|het aantal havenjutters van de haven van de jutter van de Vondst plus 1|havenjutters",
     })
-    void a_silent_truncation_over_three_steps_is_refused(String vorm, String count, String last) {
-        geweigerd(waarde("Vondst", "aantal havengenoten", count), 3, "jutter, haven, " + last);
+    void a_silent_truncation_over_three_steps_is_refused(String form, String count, String last) {
+        refused(valueJson("Vondst", "aantal havengenoten", count), 3, "jutter, haven, " + last);
     }
 
     @Test void in_a_condition() {
-        geweigerd("Regel uitkomst\n    geldig altijd\n        De uitkomst van een Vondst moet gesteld worden op zijn "
+        refused("Regel uitkomst\n    geldig altijd\n        De uitkomst van een Vondst moet gesteld worden op zijn "
                 + "vinddag\n        indien " + VONDST_THREE + " groter is dan 1.\n", 3, "jutter, haven, havenjutters");
     }
 
     @Test void in_a_characteristic_attribution() {
-        geweigerd("Regel gemarkeerd\n    geldig altijd\n        Een Vondst is gemarkeerd\n        indien " + VONDST_THREE
+        refused("Regel gemarkeerd\n    geldig altijd\n        Een Vondst is gemarkeerd\n        indien " + VONDST_THREE
                 + " groter is dan 1.\n", 3, "jutter, haven, havenjutters");
     }
 
     @Test void in_the_test_of_a_default() {
-        geweigerd("Regel uitkomst\n    geldig altijd\n        De uitkomst van een Vondst moet gesteld worden op zijn "
+        refused("Regel uitkomst\n    geldig altijd\n        De uitkomst van een Vondst moet gesteld worden op zijn "
                 + "vinddag.\n\nAfwijking van uitkomst: druk\n    geldig altijd\n        De uitkomst van een Vondst moet "
                 + "gesteld worden op 01-01-2026\n        indien " + VONDST_THREE + " groter is dan 1.\n", 3,
                 "jutter, haven, havenjutters");
     }
 
     @Test void in_the_consequence_of_a_default() {
-        geweigerd("Regel havengenoten\n    geldig altijd\n        Het aantal havengenoten van een Vondst moet gesteld "
+        refused("Regel havengenoten\n    geldig altijd\n        Het aantal havengenoten van een Vondst moet gesteld "
                 + "worden op 0.\n\nAfwijking van havengenoten: bekend\n    geldig altijd\n        Het aantal havengenoten "
                 + "van een Vondst moet berekend worden als " + VONDST_THREE + "\n        indien zijn vinddag gevuld is.\n",
                 3, "jutter, haven, havenjutters");
@@ -132,8 +132,8 @@ class CountOverPathTest {
             "een anker van een ander type|het aantal havenjutters van de Haven|Haven, havenjutters",
             "het type van de rol als anker|het aantal havenjutters van de Jutter|Jutter, havenjutters",
     })
-    void an_anchor_that_is_not_the_subject_is_refused(String vorm, String count, String names) {
-        geweigerd(waarde("Vondst", "aantal havengenoten", count), 2, names);
+    void an_anchor_that_is_not_the_subject_is_refused(String form, String count, String names) {
+        refused(valueJson("Vondst", "aantal havengenoten", count), 2, names);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -142,13 +142,13 @@ class CountOverPathTest {
             "een anker van een ander type|het aantal vondsten van de Jutter en vondsten van de Haven|2|vondsten van de Haven|2|Haven, vondsten",
             "een bezittelijk anker|het aantal vondsten van zijn haven en vondsten van de Jutter|1|vondsten van zijn haven|2|haven, vondsten",
     })
-    void a_selection_of_a_union(String vorm, String count, int selection, String bron, int steps, String names) {
+    void a_selection_of_a_union(String form, String count, int selection, String source, int steps, String names) {
         // the union took the selection's range from its head, the relation of the other selection again
-        RegelSpraakModel m = Resolver.resolve(MODEL + waarde("Jutter", "aantal eigen vondsten", count));
+        RegelSpraakModel m = Resolver.resolve(MODEL + valueJson("Jutter", "aantal eigen vondsten", count));
         List<Diagnostic> ds = pathErrors(m);
         assertEquals(1, ds.size(), () -> "verwacht één padweigering, kreeg: " + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        assertTrue(ds.get(0).message().contains("geen unie van selecties: selectie " + selection + " ('" + bron + "') is een "
+        assertTrue(ds.get(0).message().contains("geen unie van selecties: selectie " + selection + " ('" + source + "') is een "
                 + "telling over een pad van " + steps + " stappen (" + names + "): een selectie telt over één relatie "
                 + "vanaf het onderwerp (IR-SPEC ch. 4.3, WF-110 (e)); schrijf de telling op het bereikte object of noem "
                 + "één relatie"), ds.get(0)::message);
@@ -165,10 +165,10 @@ class CountOverPathTest {
             "twee verzamelingen|Kustwacht|aantal bewaakte jutters|het aantal havenjutters van alle bewaakte havens van de Kustwacht|is geen (meervoud van een) gedeclareerd attribuut",
             "drie verzamelingen|Kustwacht|aantal bewaakte vondsten|het aantal vondsten van alle havenjutters van alle bewaakte havens van de Kustwacht|is geen (meervoud van een) gedeclareerd attribuut",
     })
-    void a_form_without_range_keeps_its_own_refusal(String vorm, String type, String doel, String count,
+    void a_form_without_range_keeps_its_own_refusal(String form, String type, String target, String count,
                                                           String message) {
         // no range to write, so the fold fences speak, as they did before: loud, and not this refusal
-        RegelSpraakModel m = Resolver.resolve(MODEL + waarde(type, doel, count));
+        RegelSpraakModel m = Resolver.resolve(MODEL + valueJson(type, target, count));
         assertTrue(pathErrors(m).isEmpty(), () -> "onverwachte padweigering: " + m.diagnostics);
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains(message)), () -> m.diagnostics.toString());
     }
@@ -182,8 +182,8 @@ class CountOverPathTest {
             "het meervoud van het type|Jutter|aantal eigen vondsten|het aantal Vondsten van de Jutter",
             "een unie van twee selecties over één relatie|Haven|aantal eigen jutters|het aantal havenjutters van de Haven die gemarkeerd zijn en havenjutters van de Haven",
     })
-    void a_count_over_a_relation_stays_clean(String vorm, String type, String doel, String count) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + waarde(type, doel, count));
+    void a_count_over_a_relation_stays_clean(String form, String type, String target, String count) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + valueJson(type, target, count));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op '" + count + "': " + m.diagnostics);
     }
 

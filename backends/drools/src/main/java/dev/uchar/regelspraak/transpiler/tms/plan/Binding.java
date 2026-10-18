@@ -1,26 +1,26 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import java.util.List;
 
 /**
- * A value a pattern binds to the variable {@code doel}: from its object along the reference fields of {@code pad}, null
- * where a link on it is absent, the field {@code veld}, read as {@code vorm}. On a fact of the branch the path is empty
+ * A value a pattern binds to the variable {@code doel}: from its object along the reference fields of {@code path}, null
+ * where a link on it is absent, the field {@code field}, read as {@code form}. On a fact of the branch the path is empty
  * and the field is a component of the fact; on a bean every step is a reference field and the field a member, or the
  * last reference field of a path where the binding binds the object the path reaches.
  */
-public record Binding(String doel, List<Field> pad, Field veld, ReadForm vorm, Class<?> soort) {
+public record Binding(String target, List<Field> path, Field field, ReadForm form, Class<?> category) {
 
     public Binding {
-        pad = List.copyOf(pad);
-        if (soort != null && vorm != ReadForm.IS_SET)
+        path = List.copyOf(path);
+        if (category != null && form != ReadForm.IS_SET)
             throw new IllegalArgumentException("alleen een gezet veld toetst een klasse");
     }
 
-    /** The field {@code veld} of an object of {@code klasse}, as it is. */
-    public static Binding van(String doel, Class<?> javaClass, String veld) {
-        return new Binding(doel, List.of(), new Field(javaClass, veld), ReadForm.VALUE, null);
+    /** The field {@code field} of an object of {@code klasse}, as it is. */
+    public static Binding van(String target, Class<?> javaClass, String field) {
+        return new Binding(target, List.of(), new Field(javaClass, field), ReadForm.VALUE, null);
     }
 
     /** A property {@code naam} of the objects of {@code klasse}, as the document declares the member or as a fact of

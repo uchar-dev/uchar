@@ -4,7 +4,7 @@ import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -75,28 +75,28 @@ class DrlPropertyWitnessTest {
             "entry-point", "convertable_to", "no-loop", "lock-on-active", "auto-focus", "agenda-group", "activation-group",
             "ruleflow-group", "date-effective", "date-expires", "not in");
 
-    private static final String PAKKET = "dev.uchar.regelspraak.meting";
+    private static final String PACKAGE = "dev.uchar.regelspraak.meting";
 
     @Test void the_drl_name_reads_the_member_by_the_getter_of_the_generator() throws Exception {
         Trial p = trial(MEMBERS);
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         int read = 0, refused = 0;
         for (String naam : MEMBERS) {
             Namen.Lidnamen n = Namen.lidnamen(Namen.property(naam));
             if (n.drlProperty() != null) {
                 read++;
                 for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null).entrySet())
-                    if (!u.getValue().equals("leest")) fouten.add(naam + " | " + n.drlProperty() + " | " + u.getKey()
+                    if (!u.getValue().equals("leest")) faults.add(naam + " | " + n.drlProperty() + " | " + u.getKey()
                             + " | " + u.getValue());
             } else {
                 refused++;
                 // the property the stem gives, which the helper withholds: some place does not read it as the member
                 String stam = n.getter().substring(3), own = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
                 if (places(p, own, n, null).values().stream().allMatch("leest"::equals))
-                    fouten.add(naam + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
+                    faults.add(naam + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
             }
         }
-        assertEquals(List.of(), fouten, "leden die een DRL-tekst niet leest zoals de hulp zegt");
+        assertEquals(List.of(), faults, "leden die een DRL-tekst niet leest zoals de hulp zegt");
         assertEquals(List.of(MEMBERS.size() - 18, 18), List.of(read, refused), "gelezen en geweigerd");
     }
 
@@ -104,28 +104,28 @@ class DrlPropertyWitnessTest {
     @Test void a_global_with_the_name_of_the_member_does_not_displace_the_member() throws Exception {
         List<String> names = List.of("drempel", "aantal", "日 X");
         Trial p = trial(names);
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         for (String naam : names) {
             Namen.Lidnamen n = Namen.lidnamen(Namen.property(naam));
             for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, n.drlProperty()).entrySet())
-                if (!u.getValue().equals("leest")) fouten.add(naam + " | " + u.getKey() + " | " + u.getValue());
+                if (!u.getValue().equals("leest")) faults.add(naam + " | " + u.getKey() + " | " + u.getValue());
         }
-        assertEquals(List.of(), fouten, "leden die een global van dezelfde naam verdringt");
+        assertEquals(List.of(), faults, "leden die een global van dezelfde naam verdringt");
     }
 
     /** Documents after {@code eigenschap/turks-lid} whose member "İş" has another name, which the rule reads: the
      *  rendering spells a member by its name in DRL, and refuses by name a member that has none. */
     @Test void the_rendering_spells_the_member_or_refuses_it() throws Exception {
-        String bron = Files.readString(Path.of("src", "test", "resources", "property", "turkish-member", "ir.json"));
+        String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-member", "ir.json"));
         List<String> outcome = new ArrayList<>();
         for (String naam : List.of("ışık", "日 X", "in", "drools", "nil")) {
             Path ir = Files.createTempFile("drl-eigenschap", ".json");
             try {
-                Files.writeString(ir, bron.replace("İş", naam));
+                Files.writeString(ir, source.replace("İş", naam));
                 DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
-                List<String> fouten = DrlRenderingWitnessTest.compile(text, b.beanLoader());
-                outcome.add(naam + " | " + (fouten.isEmpty() ? "compileert" : "compileert niet: " + fouten.get(0)));
+                List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
+                outcome.add(naam + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0)));
             } catch (DrlRendering.Refusal w) {
                 outcome.add(naam + " | " + w.getMessage());
             } finally {
@@ -144,40 +144,40 @@ class DrlPropertyWitnessTest {
      *  bean through only where it holds true; where it gives none, some place does not read the member. */
     @Test void the_drl_name_reads_a_characteristic_by_the_is_getter_of_the_generator() throws Exception {
         Trial p = kenmerkproef(PropertyWitnessTest.CHARACTERISTICS);
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         int read = 0, refused = 0;
         for (String naam : PropertyWitnessTest.CHARACTERISTICS) {
             Namen.Lidnamen n = Namen.lidnamen(Namen.property(naam));
             if (n.drlProperty() != null) {
                 read++;
                 for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null, KENMERK).entrySet())
-                    if (!u.getValue().equals("leest")) fouten.add(naam + " | " + n.drlProperty() + " | " + u.getKey()
+                    if (!u.getValue().equals("leest")) faults.add(naam + " | " + n.drlProperty() + " | " + u.getKey()
                             + " | " + u.getValue());
             } else {
                 refused++;
                 String stam = n.getter().substring(3), own = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
                 if (places(p, own, n, null, KENMERK).values().stream().allMatch("leest"::equals))
-                    fouten.add(naam + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
+                    faults.add(naam + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
             }
         }
-        assertEquals(List.of(), fouten, "kenmerken die een DRL-tekst niet leest zoals de hulp zegt");
+        assertEquals(List.of(), faults, "kenmerken die een DRL-tekst niet leest zoals de hulp zegt");
         assertEquals(List.of(6, 2), List.of(read, refused), "gelezen en geweigerd");
     }
 
     /** Documents after {@code eigenschap/turks-kenmerk} whose input characteristic "ışık" has another name: the rendering
      *  spells the characteristic by its name in DRL, and refuses by name one that has none. */
     @Test void the_rendering_spells_a_characteristic_or_refuses_it() throws Exception {
-        String bron = Files.readString(Path.of("src", "test", "resources", "property", "turkish-characteristic", "ir.json"));
+        String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-characteristic", "ir.json"));
         List<String> outcome = new ArrayList<>();
         for (String naam : List.of("ışık", "日 X", "not", "in", "drools")) {
             Path ir = Files.createTempFile("drl-kenmerk", ".json");
             try {
-                Files.writeString(ir, bron.replace("ışık", naam));
+                Files.writeString(ir, source.replace("ışık", naam));
                 DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
                 String drl = Namen.lidnamen(Namen.property(naam)).drlProperty();
-                List<String> fouten = DrlRenderingWitnessTest.compile(text, b.beanLoader());
-                outcome.add(naam + " | " + (fouten.isEmpty() ? "compileert" : "compileert niet: " + fouten.get(0))
+                List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
+                outcome.add(naam + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0))
                         + (text.contains("(" + drl + ")") ? ", gespeld als " + drl : ", niet gespeld als " + drl));
             } catch (DrlRendering.Refusal w) {
                 outcome.add(naam + " | " + w.getMessage());
@@ -195,18 +195,18 @@ class DrlPropertyWitnessTest {
     private record Trial(Class<?> javaClass, ClassLoader beans) {}
 
     private static Trial trial(List<String> names) throws Exception {
-        Map<String, String> sources = FactModelGenerator.genereer(IrLoader.load(new ObjectMapper().readTree(
+        Map<String, String> sources = FactModelGenerator.generate(IrLoader.load(new ObjectMapper().readTree(
                 PropertyWitnessTest.trialDocument(names))));
         ClassLoader beans = BeanCompiler.compile(sources);
-        return new Trial(beans.loadClass(FactModelGenerator.PAKKET + ".Proef"), beans);
+        return new Trial(beans.loadClass(FactModelGenerator.PACKAGE + ".Proef"), beans);
     }
 
     /** The bean {@code Kenmerkproef} of the generator, with a characteristic per name, compiled. */
     private static Trial kenmerkproef(List<String> kenmerken) throws Exception {
-        Map<String, String> sources = FactModelGenerator.genereer(IrLoader.load(new ObjectMapper().readTree(
+        Map<String, String> sources = FactModelGenerator.generate(IrLoader.load(new ObjectMapper().readTree(
                 PropertyWitnessTest.trialDocument(List.of(), kenmerken))));
         ClassLoader beans = BeanCompiler.compile(sources);
-        return new Trial(beans.loadClass(FactModelGenerator.PAKKET + ".Kenmerkproef"), beans);
+        return new Trial(beans.loadClass(FactModelGenerator.PACKAGE + ".Kenmerkproef"), beans);
     }
 
     /** What a member of a measurement holds: its Java type, the test that holds where it is set, the value it is set to,
@@ -224,20 +224,20 @@ class DrlPropertyWitnessTest {
     }
 
     /** As above, for a member of {@code soort}. */
-    private static Map<String, String> places(Trial p, String s, Namen.Lidnamen n, String global, MemberKind soort)
+    private static Map<String, String> places(Trial p, String s, Namen.Lidnamen n, String global, MemberKind category)
             throws Exception {
         String javaClass = p.javaClass().getName();
         Map<String, String> patterns = new LinkedHashMap<>();
         patterns.put("binding", "$p : " + javaClass + "( $v : " + s + " )");
-        patterns.put("veldtoets", "$p : " + javaClass + "( " + s + soort.test() + " )\n    $v : Object() from $p");
-        patterns.put("pad", "$p : " + javaClass + "()\n    $q : " + javaClass + "( this == $p, $p." + s + soort.test()
+        patterns.put("veldtoets", "$p : " + javaClass + "( " + s + category.test() + " )\n    $v : Object() from $p");
+        patterns.put("pad", "$p : " + javaClass + "()\n    $q : " + javaClass + "( this == $p, $p." + s + category.test()
                 + " )\n    $v : Object() from $p");
         Map<String, String> out = new LinkedHashMap<>();
         for (Map.Entry<String, String> pl : patterns.entrySet()) {
-            String text = "package " + PAKKET + ";\nglobal java.util.List uit;\n"
+            String text = "package " + PACKAGE + ";\nglobal java.util.List uit;\n"
                     + (global == null ? "" : "global java.math.BigDecimal " + global + ";\n")
                     + "rule \"r\"\n    dialect \"mvel\"\nwhen\n    " + pl.getValue() + "\nthen\n    uit.add($v);\nend\n";
-            out.put(pl.getKey(), vuur(text, p, n.setter(), pl.getKey().equals("binding"), global, soort));
+            out.put(pl.getKey(), fire(text, p, n.setter(), pl.getKey().equals("binding"), global, category));
         }
         return out;
     }
@@ -245,28 +245,28 @@ class DrlPropertyWitnessTest {
     /** "leest" where the rule of {@code text} reads the member: set through the generator's {@code setter}, a binding
      *  gives the value and a test lets the bean through; not set, a binding gives what the member then holds and a
      *  test stops the bean. Else what it gave, or the first compile error. */
-    private static String vuur(String text, Trial p, String setter, boolean waarde, String global, MemberKind soort)
+    private static String fire(String text, Trial p, String setter, boolean value, String global, MemberKind category)
             throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(p.beans());
         try {
             KieHelper helper = new KieHelper();
             helper.setClassLoader(p.beans());
-            helper.addContent(text, PAKKET.replace('.', '/') + "/r.drl");
+            helper.addContent(text, PACKAGE.replace('.', '/') + "/r.drl");
             Results result = helper.verify();
             for (Message m : result.getMessages(Message.Level.ERROR))
                 return "compileert niet: " + m.getText().replace('\n', ' ');
             KieBase kb = helper.build(EqualityBehaviorOption.EQUALITY);
             List<Object> whenSet, empty;
             try {
-                whenSet = sessie(kb, p.javaClass(), setter, soort, soort.setValue(), global);
-                empty = sessie(kb, p.javaClass(), setter, soort, soort.empty(), global);
+                whenSet = session(kb, p.javaClass(), setter, category, category.setValue(), global);
+                empty = session(kb, p.javaClass(), setter, category, category.empty(), global);
             } catch (RuntimeException f) {
                 // MVEL compiles a constraint on first use, so "drools == true" fails only when the session fires
                 return "vuurt niet: " + String.valueOf(f.getMessage()).replace('\n', ' ');
             }
-            boolean goed = waarde ? whenSet.equals(List.of(soort.setValue()))
-                    && empty.equals(java.util.Collections.singletonList(soort.empty()))
+            boolean goed = value ? whenSet.equals(List.of(category.setValue()))
+                    && empty.equals(java.util.Collections.singletonList(category.empty()))
                     : whenSet.size() == 1 && empty.isEmpty();
             return goed ? "leest" : "gezet " + whenSet + ", leeg " + empty;
         } finally {
@@ -276,20 +276,20 @@ class DrlPropertyWitnessTest {
 
     /** What the rule adds to {@code uit} over one bean whose member, of {@code soort}, holds {@code w}, with the global
      *  {@code global}, where that is not null, at another value. */
-    private static List<Object> sessie(KieBase kb, Class<?> javaClass, String setter, MemberKind soort, Object w,
+    private static List<Object> session(KieBase kb, Class<?> javaClass, String setter, MemberKind category, Object w,
                                        String global) throws Exception {
-        KieSession sessie = kb.newKieSession();
+        KieSession session = kb.newKieSession();
         try {
             List<Object> out = new ArrayList<>();
-            sessie.setGlobal("uit", out);
-            if (global != null) sessie.setGlobal(global, new BigDecimal("99.99"));
+            session.setGlobal("uit", out);
+            if (global != null) session.setGlobal(global, new BigDecimal("99.99"));
             Object bean = javaClass.getConstructor().newInstance();
-            javaClass.getMethod(setter, soort.type()).invoke(bean, w);
-            sessie.insert(bean);
-            sessie.fireAllRules();
+            javaClass.getMethod(setter, category.type()).invoke(bean, w);
+            session.insert(bean);
+            session.fireAllRules();
             return out;
         } finally {
-            sessie.dispose();
+            session.dispose();
         }
     }
 }

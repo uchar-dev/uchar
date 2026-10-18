@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.builtin;
@@ -35,11 +35,11 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.window;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -85,7 +85,7 @@ class TmsEvaluationDateWitnessTest {
 
     // ---------------- a characteristic attribution with a bounded validity ----------------
 
-    private static final String CHARACTERISTIC_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(),
+    private static final String CHARACTERISTIC_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(),
             List.of("aangemeld", "erkend", "premiewaardig"))), List.of());
 
     /** "Een Jutter is premiewaardig indien hij erkend is", geldig van 2026-01-01 tot en met 2026-12-31. */
@@ -97,12 +97,12 @@ class TmsEvaluationDateWitnessTest {
     static JsonNode characteristicCase(String asOfDate, boolean premiewaardig) throws Exception {
         return TmsDocuments.caseOn(asOfDate, List.of(instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld")),
                 instanceWith("J2", "Jutter", Map.of(), List.of())),
-                List.of(verwacht("J1", "erkend", true), verwacht("J1", "premiewaardig", premiewaardig),
-                        verwacht("J2", "premiewaardig", false), consistent()));
+                List.of(expected("J1", "erkend", true), expected("J1", "premiewaardig", premiewaardig),
+                        expected("J2", "premiewaardig", false), consistent()));
     }
 
     @Test void a_characteristic_attribution_on_both_sides_of_the_evaluation_date() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         Map<String, Boolean> data = new java.util.LinkedHashMap<>();
         data.put("2025-12-31", false);
         data.put("2026-01-01", true);
@@ -115,25 +115,25 @@ class TmsEvaluationDateWitnessTest {
             for (Map.Entry<String, Boolean> d : data.entrySet()) {
                 outcomes.add(names + " " + d.getKey() + " " + TmsFaultWitnessTest.play(ir,
                         characteristicCase(d.getKey(), d.getValue()), DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " " + d.getKey() + " gespeeld");
+                expected.add(names + " " + d.getKey() + " gespeeld");
             }
             outcomes.add(names + " tijdvrij " + TmsFaultWitnessTest.play(ir, characteristicCase(null, false),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " tijdvrij Rekenfout: fout in de regel \"premiewaardig in 2026\": " + WITHOUT_DATE);
+            expected.add(names + " tijdvrij ComputeFault: fout in de regel \"premiewaardig in 2026\": " + WITHOUT_DATE);
             // the reference interpreter asks the window of a rule before it takes a subject, so a time-free session
             // faults also where the rule has none
             outcomes.add(names + " tijdvrij zonder Jutter " + TmsFaultWitnessTest.play(ir,
                     TmsDocuments.caseOn(null, List.of(), List.of(consistent())), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " tijdvrij zonder Jutter Rekenfout: fout in de regel \"premiewaardig in 2026\": "
+            expected.add(names + " tijdvrij zonder Jutter ComputeFault: fout in de regel \"premiewaardig in 2026\": "
                     + WITHOUT_DATE);
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- an initialisation and a consistency with a bounded validity ----------------
 
-    private static final String PREMIEMODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter",
-            List.of(attribuut("premie", WHOLE)), List.of("aangemeld", "erkend"))), List.of());
+    private static final String PREMIEMODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter",
+            List.of(attribute("premie", WHOLE)), List.of("aangemeld", "erkend"))), List.of());
 
     /** "De premie van een Jutter moet geïnitialiseerd worden op 50 indien hij erkend is", geldig vanaf 2026. */
     static final String STARTPREMIE = IrPath.regel("startpremie vanaf 2026", "INITIALISATIE",
@@ -146,55 +146,55 @@ class TmsEvaluationDateWitnessTest {
             + "[{\"subject\":\"Jutter\",\"assertion\":" + comparison("less", ownRead("premie", "Jutter"),
             literal("40", WHOLE)) + ",\"validity\":" + FROM_2026 + ",\"source\":{\"snippet\":\"premiecontrole\"}}]}";
 
-    static JsonNode premieCase(String asOfDate, List<String> verwachtingen) throws Exception {
+    static JsonNode premieCase(String asOfDate, List<String> expectations) throws Exception {
         return TmsDocuments.caseOn(asOfDate, List.of(instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld")),
                 instanceWith("J2", "Jutter", Map.of("premie", numberValue("10")), List.of()),
-                instanceWith("J3", "Jutter", Map.of("premie", numberValue("20")), List.of("aangemeld"))), verwachtingen);
+                instanceWith("J3", "Jutter", Map.of("premie", numberValue("20")), List.of("aangemeld"))), expectations);
     }
 
     @Test void an_initialisation_and_a_consistency_on_both_sides_of_the_evaluation_date() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(ERKENNING, STARTPREMIE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(PREMIEMODEL, order, List.of(PREMIECONTROLE));
             outcomes.add(names + " binnen " + TmsFaultWitnessTest.play(ir, premieCase("2026-06-01", List.of(
-                    waarde("J1", "premie", "50"), waarde("J2", "premie", "10"), waarde("J3", "premie", "20"),
+                    value("J1", "premie", "50"), value("J2", "premie", "10"), value("J3", "premie", "20"),
                     inconsistent("premiecontrole vanaf 2026", "J1"))), DroolsBackend.Branch.EXEC_MODEL));
             outcomes.add(names + " ervoor " + TmsFaultWitnessTest.play(ir, premieCase("2025-12-31", List.of(
-                    waarde("J1", "premie", null), waarde("J2", "premie", "10"), consistent())),
+                    value("J1", "premie", null), value("J2", "premie", "10"), consistent())),
                     DroolsBackend.Branch.EXEC_MODEL));
             outcomes.add(names + " tijdvrij " + TmsFaultWitnessTest.play(ir, premieCase(null, List.of(consistent())),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " binnen gespeeld");
-            verwacht.add(names + " ervoor gespeeld");
-            verwacht.add(names + " tijdvrij Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels"
+            expected.add(names + " binnen gespeeld");
+            expected.add(names + " ervoor gespeeld");
+            expected.add(names + " tijdvrij EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regels"
                     + " \"premiecontrole vanaf 2026\", \"startpremie vanaf 2026\": fout in de regel \"premiecontrole vanaf"
                     + " 2026\": " + WITHOUT_DATE + "; fout in de regel \"startpremie vanaf 2026\": " + WITHOUT_DATE);
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- a prioritized-defaults group with a dated validity ----------------
 
     /** "De premie van een Jutter is 70 indien hij erkend is", in a defaults group geldig vanaf 2026. */
     static final String PREMIE_GROUP = "{\"node\":\"PrioritizedDefaults\",\"name\":\"premie van een jutter\",\"subject\":"
-            + "\"Jutter\",\"attribute\":\"premie\",\"defaults\":[" + standaard(check("erkend", false), literal("70", WHOLE))
+            + "\"Jutter\",\"attribute\":\"premie\",\"defaults\":[" + defaultEntry(check("erkend", false), literal("70", WHOLE))
             + "],\"validity\":" + FROM_2026 + "}";
 
     @Test void a_defaults_group_on_both_sides_of_the_evaluation_date() throws Exception {
         Path ir = TmsDocuments.document(PREMIEMODEL, List.of(ERKENNING), List.of(), List.of(PREMIE_GROUP));
         JsonNode inside = TmsDocuments.caseOn("2026-01-01", List.of(
                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld")), instanceWith("J2", "Jutter", Map.of(), List.of())),
-                List.of(waarde("J1", "premie", "70"), waarde("J2", "premie", null), consistent()));
+                List.of(value("J1", "premie", "70"), value("J2", "premie", null), consistent()));
         JsonNode preceding = TmsDocuments.caseOn("2025-12-31", List.of(
                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld"))),
-                List.of(waarde("J1", "premie", null), consistent()));
+                List.of(value("J1", "premie", null), consistent()));
         JsonNode timeFree = TmsDocuments.caseOn(null, List.of(
                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent()));
         // the reference interpreter asks the window of a group where it evaluates the stack on an object, so a
         // time-free session without a Jutter faults nothing
         JsonNode timeFreeWithoutJutter = TmsDocuments.caseOn(null, List.of(), List.of(consistent()));
-        assertEquals(List.of("gespeeld", "gespeeld", "Rekenfout: fout in de regel \"defaults A:Jutter.premie\": "
+        assertEquals(List.of("gespeeld", "gespeeld", "ComputeFault: fout in de regel \"defaults A:Jutter.premie\": "
                         + WITHOUT_DATE, "gespeeld"),
                 List.of(TmsFaultWitnessTest.play(ir, inside, DroolsBackend.Branch.EXEC_MODEL),
                         TmsFaultWitnessTest.play(ir, preceding, DroolsBackend.Branch.EXEC_MODEL),
@@ -208,12 +208,12 @@ class TmsEvaluationDateWitnessTest {
             List<String> names = order.stream().map(Rule::getName).toList();
             for (String date : List.of("2026-01-01", "2025-12-31")) {
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
-                assertNull(TmsDocuments.fixpunt(b, order, List.of(j1),
-                        sessie -> sessie.setGlobal("rekendatum", LocalDate.parse(date))), () -> "volgorde " + names);
+                assertNull(TmsDocuments.fixpoint(b, order, List.of(j1),
+                        session -> session.setGlobal("rekendatum", LocalDate.parse(date))), () -> "volgorde " + names);
                 if (date.startsWith("2026"))
-                    TmsFaultWitnessTest.assertNumber("70", TmsDocuments.lees(j1, "premie"), "premie op " + date + " in"
+                    TmsFaultWitnessTest.assertNumber("70", TmsDocuments.read(j1, "premie"), "premie op " + date + " in"
                             + " volgorde " + names);
-                else assertNull(TmsDocuments.lees(j1, "premie"), () -> "premie op " + date + " in volgorde " + names);
+                else assertNull(TmsDocuments.read(j1, "premie"), () -> "premie op " + date + " in volgorde " + names);
             }
             orders++;
         }
@@ -226,8 +226,8 @@ class TmsEvaluationDateWitnessTest {
             + "\"Jutter\",\"source\":{\"snippet\":\"meldingen van de Jutter\"}}";
 
     private static final String REPORT_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("meldingaantal", WHOLE)), List.of("aangemeld", "erkend")),
-            TmsDocuments.objecttype("Melding", List.of(attribuut("waarde", WHOLE)), List.of())),
+            TmsDocuments.objectType("Jutter", List.of(attribute("meldingaantal", WHOLE)), List.of("aangemeld", "erkend")),
+            TmsDocuments.objectType("Melding", List.of(attribute("waarde", WHOLE)), List.of())),
             List.of(factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen")));
 
     private static final String MESSAGE_COUNT = computingRule("meldingaantal", "BEREKENING", "Jutter", "meldingaantal",
@@ -247,13 +247,13 @@ class TmsEvaluationDateWitnessTest {
         Path ir = reportDocument();
         JsonNode inside = TmsDocuments.caseOn("2026-01-01", List.of(
                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld")), instanceWith("J2", "Jutter", Map.of(), List.of())),
-                List.of(waarde("J1", "meldingaantal", "1"), waarde("J2", "meldingaantal", "0"), consistent()));
+                List.of(value("J1", "meldingaantal", "1"), value("J2", "meldingaantal", "0"), consistent()));
         JsonNode preceding = TmsDocuments.caseOn("2025-12-31", List.of(
                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld"))),
-                List.of(waarde("J1", "meldingaantal", "0"), consistent()));
+                List.of(value("J1", "meldingaantal", "0"), consistent()));
         JsonNode timeFree = TmsDocuments.caseOn(null, List.of(
                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent()));
-        assertEquals(List.of("gespeeld", "gespeeld", "Rekenfout: fout in de regel \"meld vanaf 2026\": " + WITHOUT_DATE),
+        assertEquals(List.of("gespeeld", "gespeeld", "ComputeFault: fout in de regel \"meld vanaf 2026\": " + WITHOUT_DATE),
                 List.of(TmsFaultWitnessTest.play(ir, inside, DroolsBackend.Branch.EXEC_MODEL),
                         TmsFaultWitnessTest.play(ir, preceding, DroolsBackend.Branch.EXEC_MODEL),
                         TmsFaultWitnessTest.play(ir, timeFree, DroolsBackend.Branch.EXEC_MODEL)));
@@ -262,10 +262,10 @@ class TmsEvaluationDateWitnessTest {
             List<String> names = order.stream().map(Rule::getName).toList();
             for (String date : List.of("2026-01-01", "2025-12-31")) {
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
-                assertNull(TmsCreationWitnessTest.vuur(b, order, List.of(j1),
-                        sessie -> sessie.setGlobal("rekendatum", LocalDate.parse(date)), sessie -> { }),
+                assertNull(TmsCreationWitnessTest.fire(b, order, List.of(j1),
+                        session -> session.setGlobal("rekendatum", LocalDate.parse(date)), session -> { }),
                         () -> "volgorde " + names);
-                TmsFaultWitnessTest.assertNumber(date.startsWith("2026") ? "1" : "0", TmsDocuments.lees(j1,
+                TmsFaultWitnessTest.assertNumber(date.startsWith("2026") ? "1" : "0", TmsDocuments.read(j1,
                         "meldingaantal"), "meldingaantal op " + date + " in volgorde " + names);
             }
         }
@@ -281,17 +281,17 @@ class TmsEvaluationDateWitnessTest {
      *  van een melding": …&gt;". */
     @Test void a_creation_whose_initialisation_fails_makes_nothing() throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objecttype("Jutter", List.of(), List.of("aangemeld")),
-                TmsDocuments.objecttype("Melding", List.of(attribuut("jaar", WHOLE), attribuut("tweede jaar", WHOLE)),
+                TmsDocuments.objectType("Jutter", List.of(), List.of("aangemeld")),
+                TmsDocuments.objectType("Melding", List.of(attribute("jaar", WHOLE), attribute("tweede jaar", WHOLE)),
                         List.of())),
                 List.of(factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen")));
         String report = TmsCreationWitnessTest.objectCreation("melding van een jutter", "Jutter", "Melding",
                 List.of(TmsCreationWitnessTest.init("jaar", contextValue("evaluationYear", WHOLE))),
                 check("aangemeld", false), "jutmelding", "melding");
-        String tweede = computingRule("tweede jaar van een melding", "BEREKENING", "Melding", "tweede jaar",
+        String second = computingRule("tweede jaar van een melding", "BEREKENING", "Melding", "tweede jaar",
                 contextValue("evaluationYear", WHOLE), "null");
-        Path ir = TmsCreationWitnessTest.document(model, List.of(tweede), List.of(), List.of(report), List.of(), List.of());
-        assertEquals(List.of("Rekenfout: fout in de regel \"melding van een jutter\": the evaluationYear context value"
+        Path ir = TmsCreationWitnessTest.document(model, List.of(second), List.of(), List.of(report), List.of(), List.of());
+        assertEquals(List.of("ComputeFault: fout in de regel \"melding van een jutter\": the evaluationYear context value"
                         + " needs an evaluation date; the case carries asOfDate null", "gespeeld"),
                 List.of(TmsFaultWitnessTest.play(ir, TmsDocuments.caseOn(null, List.of(
                                 instanceWith("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent())),
@@ -304,14 +304,14 @@ class TmsEvaluationDateWitnessTest {
         int orders = 0;
         for (List<Rule> order : TmsDocuments.sample(b.execModelTranspiler().model().getRules(), 20261009L, 60)) {
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
-            String fout;
+            String fault;
             try {
-                fout = TmsCreationWitnessTest.vuur(b, order, List.of(j1), sessie -> { }, sessie -> { });
+                fault = TmsCreationWitnessTest.fire(b, order, List.of(j1), session -> { }, session -> { });
             } catch (RuntimeException e) {
-                fout = e.getClass().getSimpleName() + ": " + e.getMessage();
+                fault = e.getClass().getSimpleName() + ": " + e.getMessage();
             }
-            assertEquals("Rekenfout: fout in de regel \"melding van een jutter\": the evaluationYear context value needs"
-                    + " an evaluation date; the case carries asOfDate null", fout,
+            assertEquals("ComputeFault: fout in de regel \"melding van een jutter\": the evaluationYear context value needs"
+                    + " an evaluation date; the case carries asOfDate null", fault,
                     "volgorde " + order.stream().map(Rule::getName).toList());
             orders++;
         }
@@ -319,9 +319,9 @@ class TmsEvaluationDateWitnessTest {
     }
 
     private static final String HAVENMODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Kustwacht", List.of(), List.of()),
-            TmsDocuments.objecttype("Haven", List.of(attribuut("jutteraantal", WHOLE)), List.of("vergund", "open")),
-            TmsDocuments.objecttype("Jutter", List.of(), List.of())), List.of(
+            TmsDocuments.objectType("Kustwacht", List.of(), List.of()),
+            TmsDocuments.objectType("Haven", List.of(attribute("jutteraantal", WHOLE)), List.of("vergund", "open")),
+            TmsDocuments.objectType("Jutter", List.of(), List.of())), List.of(
             factTypeOneToMany("bewaking", "kustwacht", "Kustwacht", "bewaakte haven", "Haven", "bewaakte havens"),
             factTypeOneToMany("werving", "werver", "Kustwacht", "geworven jutter", "Jutter", "geworven jutters"),
             factTypeOneToMany("havenlid", "haven", "Haven", "havenjutter", "Jutter", "havenjutters")));
@@ -346,13 +346,13 @@ class TmsEvaluationDateWitnessTest {
         return TmsCreationWitnessTest.document(HAVENMODEL, rules, List.of(), List.of(), List.of(werving), List.of());
     }
 
-    static JsonNode havenCase(String asOfDate, String aantal) throws Exception {
+    static JsonNode havenCase(String asOfDate, String count) throws Exception {
         String k1 = instanceWithRoles("K1", "Kustwacht", Map.of(), List.of(),
                 Map.of("bewaakte havens", List.of("H1"), "geworven jutters", List.of("J1", "J2")));
         String h1 = instanceWithRoles("H1", "Haven", Map.of(), List.of("vergund"), Map.of("havenjutters", List.of("J1")));
         return TmsDocuments.caseOn(asOfDate, List.of(k1, h1, instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of()),
                 instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of())),
-                aantal == null ? List.of(consistent()) : List.of(waarde("H1", "jutteraantal", aantal), consistent()));
+                count == null ? List.of(consistent()) : List.of(value("H1", "jutteraantal", count), consistent()));
     }
 
     @Test void a_fact_creation_on_both_sides_of_the_evaluation_date() throws Exception {
@@ -360,7 +360,7 @@ class TmsEvaluationDateWitnessTest {
             Path ir = havendocument(order);
             List<String> names = TmsDocuments.ruleNames(order);
             assertEquals(List.of("gespeeld", "gespeeld", "gespeeld",
-                            "Rekenfout: fout in de regel \"werving tot en met 2025\": " + WITHOUT_DATE),
+                            "ComputeFault: fout in de regel \"werving tot en met 2025\": " + WITHOUT_DATE),
                     List.of(TmsFaultWitnessTest.play(ir, havenCase("2025-06-01", "2"), DroolsBackend.Branch.EXEC_MODEL),
                             TmsFaultWitnessTest.play(ir, havenCase("2025-12-31", "2"), DroolsBackend.Branch.EXEC_MODEL),
                             TmsFaultWitnessTest.play(ir, havenCase("2026-01-01", "1"), DroolsBackend.Branch.EXEC_MODEL),
@@ -382,10 +382,10 @@ class TmsEvaluationDateWitnessTest {
                 setRole(j1, "werver", k1);
                 setRole(j2, "werver", k1);
                 setRole(j1, "haven", h1);
-                assertNull(TmsCreationWitnessTest.vuur(b, order, List.of(k1, h1, j1, j2),
-                        sessie -> sessie.setGlobal("rekendatum", LocalDate.parse(date)), sessie -> { }),
+                assertNull(TmsCreationWitnessTest.fire(b, order, List.of(k1, h1, j1, j2),
+                        session -> session.setGlobal("rekendatum", LocalDate.parse(date)), session -> { }),
                         () -> "volgorde " + names);
-                TmsFaultWitnessTest.assertNumber(date.startsWith("2025") ? "2" : "1", TmsDocuments.lees(h1,
+                TmsFaultWitnessTest.assertNumber(date.startsWith("2025") ? "2" : "1", TmsDocuments.read(h1,
                         "jutteraantal"), "jutteraantal op " + date + " in volgorde " + names);
             }
             orders++;
@@ -393,21 +393,21 @@ class TmsEvaluationDateWitnessTest {
         assertTrue(orders > 2);
     }
 
-    private static void setRole(Object beanObject, String rol, Object doel) throws Exception {
+    private static void setRole(Object beanObject, String role, Object target) throws Exception {
         for (java.lang.reflect.Method m : beanObject.getClass().getMethods())
-            if (m.getName().equals(dev.uchar.regelspraak.transpiler.kern.Namen.setter(rol)) && m.getParameterCount() == 1) {
-                m.invoke(beanObject, doel);
+            if (m.getName().equals(dev.uchar.regelspraak.transpiler.core.Namen.setter(role)) && m.getParameterCount() == 1) {
+                m.invoke(beanObject, target);
                 return;
             }
-        throw new AssertionError("geen setter voor " + rol + " op " + beanObject.getClass());
+        throw new AssertionError("geen setter voor " + role + " op " + beanObject.getClass());
     }
 
     // ---------------- the context values ----------------
 
-    private static final String GUARD_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
-            attribuut("aanmelddatum", DATE), attribuut("startdatum", DATE), attribuut("wachtjaren", WHOLE),
-            attribuut("verstreken", numberType(true, 0, unit("dagen"))), attribuut("bonus", WHOLE),
-            attribuut("bonus vanaf start", WHOLE)), List.of())), List.of());
+    private static final String GUARD_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+            attribute("aanmelddatum", DATE), attribute("startdatum", DATE), attribute("wachtjaren", WHOLE),
+            attribute("verstreken", numberType(true, 0, unit("dagen"))), attribute("bonus", WHOLE),
+            attribute("bonus vanaf start", WHOLE)), List.of())), List.of());
 
     /** "De startdatum van een Jutter moet berekend worden als zijn aanmelddatum plus 1 maand". */
     static final String START = computingRule("startdatum van een jutter", "BEREKENING", "Jutter", "startdatum",
@@ -423,25 +423,25 @@ class TmsEvaluationDateWitnessTest {
                     numberType(true, 0, unit("dagen")), "de tijdsduur van zijn startdatum tot de Rekendatum in hele"
                             + " dagen"), "null");
 
-    static JsonNode guardCase(String asOfDate, List<String> verwachtingen) throws Exception {
+    static JsonNode guardCase(String asOfDate, List<String> expectations) throws Exception {
         return TmsDocuments.caseOn(asOfDate, List.of(
                 instanceWith("J1", "Jutter", Map.of("aanmelddatum", dateValue("2024-11-15"),
                         "startdatum", dateValue("2000-01-01")), List.of()),
-                instanceWith("J2", "Jutter", Map.of(), List.of())), verwachtingen);
+                instanceWith("J2", "Jutter", Map.of(), List.of())), expectations);
     }
 
     @Test void the_evaluation_year_and_the_evaluation_date_beside_a_later_derived_start_date() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(START, WAITING_YEARS))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(GUARD_MODEL, order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, guardCase("2026-06-01", List.of(
-                    waarde("J1", "wachtjaren", "2"), waarde("J2", "wachtjaren", "2026"), consistent())),
+                    value("J1", "wachtjaren", "2"), value("J2", "wachtjaren", "2026"), consistent())),
                     DroolsBackend.Branch.EXEC_MODEL));
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, guardCase(null, List.of(consistent())),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
-            verwacht.add(names + " Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regel \"wachtjaren van"
+            expected.add(names + " gespeeld");
+            expected.add(names + " EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regel \"wachtjaren van"
                     + " een jutter\" (2×): fout in de regel \"wachtjaren van een jutter\": the evaluationYear context value"
                     + " needs an evaluation date; the case carries asOfDate null; fout in de regel \"wachtjaren van een"
                     + " jutter\": the evaluationYear context value needs an evaluation date; the case carries asOfDate null");
@@ -450,18 +450,18 @@ class TmsEvaluationDateWitnessTest {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(GUARD_MODEL, order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, guardCase("2026-06-01", List.of(
-                    waarde("J1", "verstreken", "533"), waarde("J2", "verstreken", null), consistent())),
+                    value("J1", "verstreken", "533"), value("J2", "verstreken", null), consistent())),
                     DroolsBackend.Branch.EXEC_MODEL));
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, guardCase(null, List.of(consistent())),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
-            verwacht.add(names + " Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regel \"verstreken dagen"
+            expected.add(names + " gespeeld");
+            expected.add(names + " EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regel \"verstreken dagen"
                     + " van een jutter\" (2×): fout in de regel \"verstreken dagen van een jutter\": the evaluationDate"
                     + " context value needs an evaluation date; the case carries asOfDate null; fout in de regel"
                     + " \"verstreken dagen van een jutter\": the evaluationDate context value needs an evaluation date; the"
                     + " case carries asOfDate null");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- the time window ----------------
@@ -481,12 +481,12 @@ class TmsEvaluationDateWitnessTest {
                         "startdatum", dateValue("2030-01-01")), List.of()),
                 instanceWith("J2", "Jutter", Map.of("aanmelddatum", dateValue("2026-06-15")), List.of()),
                 instanceWith("J3", "Jutter", Map.of(), List.of())),
-                List.of(waarde("J1", "bonus", bonus), waarde("J1", "bonus vanaf start", j1),
-                        waarde("J2", "bonus vanaf start", j2), waarde("J3", "bonus vanaf start", null), consistent()));
+                List.of(value("J1", "bonus", bonus), value("J1", "bonus vanaf start", j1),
+                        value("J2", "bonus vanaf start", j2), value("J3", "bonus vanaf start", null), consistent()));
     }
 
     @Test void a_time_window_over_the_evaluation_date_and_a_later_derived_bound() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(START, BONUS, BONUS_FROM_START))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(GUARD_MODEL, order);
@@ -498,9 +498,9 @@ class TmsEvaluationDateWitnessTest {
                         DroolsBackend.Branch.EXEC_MODEL));
             for (String d : List.of("\"2026-06-01\"", "\"2026-01-01\"", "\"2026-12-31\"", "\"2027-01-01\"",
                     "\"2025-12-31\"", "null"))
-                verwacht.add(names + " " + d + " gespeeld");
+                expected.add(names + " " + d + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /** "… indien hij aan geen van de volgende voorwaarden voldoet: het is de periode van 2026-01-01 tot 2027-01-01". */

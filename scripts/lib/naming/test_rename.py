@@ -718,6 +718,34 @@ class Declarators(Fixture):
         self.assertFalse(any('declared outside the zone' in e for e in errors), errors)
 
 
+    def test_the_second_variable_of_a_declaration_has_the_type_of_the_first(self):
+        # Link x = ..., y = ...: y.eerste() is a read of the record Link, as x.eerste() (card rename-public-api)
+        self.write({'src/Link.java': 'record Link(Object eerste) {}\n',
+                    'src/Proef.java': 'class Proef {\n    boolean f(Object a, Object b) {\n'
+                                      '        Link x = (Link) a, y = (Link) b;\n'
+                                      '        return x.eerste() != y.eerste();\n    }\n}\n'})
+        self.apply(self.table('src', [row('eerste', 'first', 'eerste')]))
+        self.assertIn('x.first() != y.first()', self.read('src/Proef.java'))
+
+
+    def test_the_element_of_a_list_or_a_map_has_the_type_argument(self):
+        # l.get(0).eerste() reads the record Link, so it takes the row of its component, not the row of the file
+        self.write({'src/Link.java': 'record Link(Object eerste) {}\n',
+                    'src/Proef.java': 'import java.util.*;\nclass Proef {\n    Object f(List<Link> l, Map<String, Link> m) {\n'
+                                      '        return l.get(0).eerste() != m.get("a").eerste();\n    }\n}\n'})
+        self.apply(self.table('src', [row('eerste', 'first', 'eerste'),
+                                      row('eerste', 'earliest', 'eerste', 'improved', 'src/Proef.java', 'fixture')]))
+        self.assertIn('l.get(0).first() != m.get("a").first()', self.read('src/Proef.java'))
+
+
+    def test_a_row_of_a_file_may_stand_for_the_strings_of_that_file_alone(self):
+        # card rename-public-api: the test pins the spelling of a constant in a string, the declaration is elsewhere
+        self.write({'src/Gen.java': 'class Gen { enum Kind { ZUIVER } }\n',
+                    'src/PinTest.java': 'class PinTest {\n    String s = "kind ZUIVER";\n}\n'})
+        t = self.table('src', [row('ZUIVER', 'PURE', 'zuiver'), row('ZUIVER', 'PURE', 'zuiver', 'improved', 'src/PinTest.java', 'fixture')])
+        self.assertEqual(self.check(t), [])
+
+
 class Injective(Fixture):
     def test_two_old_names_on_one_new_name_are_refused(self):
         self.write({'src/Saldo.java': 'class Saldo {\n    int invoer;\n    int opgave;\n'
@@ -1515,6 +1543,29 @@ class Merge(Fixture):
         code, text = self.main('merge', out, table)
         self.assertEqual(code, 0, text)
         self.assertEqual(len(rn.Table(table).rows), 3)
+
+    def test_an_answer_for_one_scope_with_a_reason_keeps_a_name_that_is_no_dutch_name(self):
+        # card rename-public-api: xyzzy is no glossary word, so the name is no Dutch name and its answer is left out,
+        # unless the session answers it for a scope with a reason
+        self.write({'src/Saldo.java': 'class Saldo { enum Kind { XYZZY, ANDERS } }\n'})
+        out = os.path.join(self.root, 'batches')
+        os.makedirs(out)
+        item = {'id': 'v-001', 'name': 'XYZZY', 'kind': 'constant', 'file': 'src/Saldo.java', 'line': 1,
+                'declaration': 'enum Kind { XYZZY', 'doc': '', 'words': 'xyzzy', 'dutch': [], 'domain': [],
+                'occurrences': 1, 'files': 1}
+        with open(os.path.join(out, 'zone.json'), 'w', encoding='utf-8') as f:
+            f.write(rn.json.dumps({'zone': ['src'], 'batches': [{'file': 'v.jsonl', 'answer': 'v.answer.jsonl'}]}))
+        with open(os.path.join(out, 'v.jsonl'), 'w', encoding='utf-8') as f:
+            f.write(rn.json.dumps(item) + '\n')
+        table = os.path.join(self.root, 'tables', 'zone.tsv')
+        for answer, rows in (({'id': 'v-001', 'old': 'XYZZY', 'new': 'FIRED', 'words': 'xyzzy'}, 0),
+                             ({'id': 'v-001', 'old': 'XYZZY', 'new': 'FIRED', 'words': 'xyzzy', 'scope': 'Saldo.Kind',
+                               'reason': 'fixture'}, 1)):
+            with open(os.path.join(out, 'v.answer.jsonl'), 'w', encoding='utf-8') as f:
+                f.write(rn.json.dumps(answer) + '\n')
+            code, text = self.main('merge', out, table, '--force')
+            self.assertEqual(code, 0, text)
+            self.assertEqual(len(rn.Table(table).rows), rows)
 
     def test_a_later_directory_answers_again(self):
         # card hernoem-drools-backend: a second round, or a session's improved name, replaces the earlier answer of

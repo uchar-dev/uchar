@@ -33,7 +33,7 @@ class ComparisonOwnLeftWitnessTest {
         // Vondst". ref and clingo: V1 (12 against 10) zwaar; V2 (9), V3 (haven without diepte), V4 (jutter without
         // haven) not.
         assertNull(play(document(zwaarIf(comparison("greater", own("gewicht"), depthOfTheHaven()))),
-                caseDocument(kenmerk("V1", true) + "," + kenmerk("V2", false) + "," + kenmerk("V3", false) + "," + kenmerk("V4", false))),
+                caseDocument(characteristic("V1", true) + "," + characteristic("V2", false) + "," + characteristic("V3", false) + "," + characteristic("V4", false))),
                 "groter, twee rollen ver");
     }
 
@@ -41,10 +41,10 @@ class ComparisonOwnLeftWitnessTest {
         // "… groter of gelijk is aan …" and "… ongelijk is aan …": a leeg far value is ongelijk to a gewicht (RUNTIME-
         // SEMANTICS ch. 1.2). ref and clingo: V1 alone, and all four.
         assertNull(play(document(zwaarIf(comparison("greaterOrEqual", own("gewicht"), depthOfTheHaven()))),
-                caseDocument(kenmerk("V1", true) + "," + kenmerk("V2", false) + "," + kenmerk("V3", false) + "," + kenmerk("V4", false))),
+                caseDocument(characteristic("V1", true) + "," + characteristic("V2", false) + "," + characteristic("V3", false) + "," + characteristic("V4", false))),
                 "groter of gelijk");
         assertNull(play(document(zwaarIf(comparison("notEqual", own("gewicht"), depthOfTheHaven()))),
-                caseDocument(kenmerk("V1", true) + "," + kenmerk("V2", true) + "," + kenmerk("V3", true) + "," + kenmerk("V4", true))),
+                caseDocument(characteristic("V1", true) + "," + characteristic("V2", true) + "," + characteristic("V3", true) + "," + characteristic("V4", true))),
                 "ongelijk");
     }
 
@@ -52,7 +52,7 @@ class ComparisonOwnLeftWitnessTest {
         // "… indien zijn gewicht groter is dan de afgeleide drempel van de jutter van de Vondst". ref and clingo: V1 (12
         // against 8) and V2 (9) zwaar, V3 and V4 (jutters without a drempel) not.
         assertNull(play(document(zwaarIf(comparison("greater", own("gewicht"), jutterThreshold()))),
-                caseDocument(kenmerk("V1", true) + "," + kenmerk("V2", true) + "," + kenmerk("V3", false) + "," + kenmerk("V4", false))),
+                caseDocument(characteristic("V1", true) + "," + characteristic("V2", true) + "," + characteristic("V3", false) + "," + characteristic("V4", false))),
                 "groter, één rol ver");
     }
 
@@ -87,37 +87,37 @@ class ComparisonOwnLeftWitnessTest {
     @Test void the_mirrored_form_and_the_product_already_played() throws Exception {
         // "… de afgeleide diepte van de haven van de jutter van de Vondst kleiner is dan zijn gewicht" and "… zijn gewicht
         // maal 1 groter is dan …". ref and clingo: V1 alone.
-        String verwacht = kenmerk("V1", true) + "," + kenmerk("V2", false) + "," + kenmerk("V3", false) + "," + kenmerk("V4", false);
-        assertNull(play(document(zwaarIf(comparison("less", depthOfTheHaven(), own("gewicht")))), caseDocument(verwacht)),
+        String expected = characteristic("V1", true) + "," + characteristic("V2", false) + "," + characteristic("V3", false) + "," + characteristic("V4", false);
+        assertNull(play(document(zwaarIf(comparison("less", depthOfTheHaven(), own("gewicht")))), caseDocument(expected)),
                 "gespiegeld");
         String product = "{\"node\":\"Binary\",\"op\":\"times\",\"left\":" + own("gewicht") + ",\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"number\":\"1\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"1\"}},\"type\":{\"node\":"
                 + "\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"zijn gewicht maal 1\"}}";
-        assertNull(play(document(zwaarIf(comparison("greater", product, depthOfTheHaven()))), caseDocument(verwacht)), "maal 1");
+        assertNull(play(document(zwaarIf(comparison("greater", product, depthOfTheHaven()))), caseDocument(expected)), "maal 1");
     }
 
     // ---------------- documents ----------------
 
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    private static String attribuut(String naam) {
+    private static String attribute(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String roleBinding(String feittype, String rol) {
-        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    private static String roleBinding(String factType, String role) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + factType + "\",\"role\":\"" + role + "\"}";
     }
 
     /** Haven (diepte, afgeleide diepte), Jutter (drempel, afgeleide drempel, aantal zware vondsten) and Vondst (gewicht,
      *  uitkomst, kenmerk zwaar). A Vondst has one jutter, a Jutter one haven. */
     private static final String MODEL = "{\"objectTypes\":["
             + "{\"node\":\"ObjectType\",\"name\":\"Haven\",\"animate\":false,\"plural\":\"Havens\",\"attributes\":["
-            + attribuut("diepte") + "," + attribuut("afgeleide diepte") + "],\"characteristics\":[]},"
+            + attribute("diepte") + "," + attribute("afgeleide diepte") + "],\"characteristics\":[]},"
             + "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\",\"attributes\":["
-            + attribuut("drempel") + "," + attribuut("afgeleide drempel") + "," + attribuut("aantal zware vondsten")
+            + attribute("drempel") + "," + attribute("afgeleide drempel") + "," + attribute("aantal zware vondsten")
             + "],\"characteristics\":[]},"
             + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\",\"attributes\":["
-            + attribuut("gewicht") + "," + attribuut("uitkomst") + "],\"characteristics\":[{\"node\":\"Characteristic\","
+            + attribute("gewicht") + "," + attribute("uitkomst") + "],\"characteristics\":[{\"node\":\"Characteristic\","
             + "\"name\":\"zwaar\",\"kind\":\"adjectival\"}]}],\"factTypes\":["
             + "{\"node\":\"FactType\",\"name\":\"JutterHeeftVondst\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\","
             + "\"name\":\"jutter\",\"objectType\":\"Jutter\",\"many\":false},{\"node\":\"Role\",\"name\":\"vondst\",\"objectType\":"
@@ -127,9 +127,9 @@ class ComparisonOwnLeftWitnessTest {
             + "\"Jutter\",\"plural\":\"havenjutters\",\"many\":true}]}],"
             + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     /** "de afgeleide diepte van de haven van de jutter van de Vondst": two roles. */
@@ -152,18 +152,18 @@ class ComparisonOwnLeftWitnessTest {
     }
 
     /** "Een Vondst is zwaar indien &lt;voorwaarde&gt;." */
-    private static String zwaarIf(String voorwaarde) {
+    private static String zwaarIf(String condition) {
         return "{\"node\":\"Rule\",\"name\":\"zwaar\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"zwaar\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":"
                 + "\"Een Vondst is zwaar\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":"
-                + "\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + voorwaarde + ",\"initialisation\":false}]}";
+                + "\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + condition + ",\"initialisation\":false}]}";
     }
 
     /** "De uitkomst van een Vondst moet gesteld worden op zijn gewicht indien &lt;voorwaarde&gt;." */
-    private static String outcomeIf(String voorwaarde) {
+    private static String outcomeIf(String condition) {
         return "{\"node\":\"Rule\",\"name\":\"uitkomst\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"uitkomst\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":"
-                + "\"De uitkomst van een Vondst\"}},\"value\":" + own("gewicht") + ",\"condition\":" + voorwaarde
+                + "\"De uitkomst van een Vondst\"}},\"value\":" + own("gewicht") + ",\"condition\":" + condition
                 + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
     }
 
@@ -202,8 +202,8 @@ class ComparisonOwnLeftWitnessTest {
             instance("V3", "Vondst", "\"gewicht\":{\"number\":\"12\"}", "\"jutter\":[\"J2\"]"),
             instance("V4", "Vondst", "\"gewicht\":{\"number\":\"12\"}", "\"jutter\":[\"J3\"]"));
 
-    private static String kenmerk(String label, boolean aanwezig) {
-        return "{\"kind\":\"" + (aanwezig ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
+    private static String characteristic(String label, boolean present) {
+        return "{\"kind\":\"" + (present ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
                 + "\",\"characteristic\":\"zwaar\"}";
     }
 
@@ -220,9 +220,9 @@ class ComparisonOwnLeftWitnessTest {
                 + "{\"number\":\"" + n + "\"}}";
     }
 
-    private static String caseDocument(String verwacht) {
+    private static String caseDocument(String expected) {
         return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", SITUATIE)
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

@@ -58,7 +58,7 @@ class FilledCountDialectTest {
     private static RegelSpraakModel resolve(String regels) { return Resolver.resolve(MODEL + regels); }
 
     private static Expr.FunctionCall fold(RegelSpraakModel m) {
-        return (Expr.FunctionCall) m.resolvedRegels.get(0).waarde();
+        return (Expr.FunctionCall) m.resolvedRegels.get(0).value();
     }
 
     // ---------------- the producer route ----------------
@@ -74,9 +74,9 @@ class FilledCountDialectTest {
         Expr.FunctionCall f = fold(m);
         assertEquals(Expr.FunctionKind.AANTAL_GEVULDE, f.kind());
         assertEquals(1, f.arguments().size(), "de vouw draagt precies één argument (WF-037)");
-        Expr.AttribuutRef bron = (Expr.AttribuutRef) f.arguments().get(0);
-        assertTrue(bron.set(), "de bron is geen setlezing");
-        assertEquals("gewicht", bron.attribuut());
+        Expr.AttributeReference source = (Expr.AttributeReference) f.arguments().get(0);
+        assertTrue(source.set(), "de bron is geen setlezing");
+        assertEquals("gewicht", source.attribute());
         assertEquals("Vondst", f.elementObjectType().naam);
         // no facet is even writable: the grammar gives the phrase one operand and no slot
         assertNull(f.emptyFallback(), "een telling draagt nooit een leegwaarde (WF-037, 'sum only')");
@@ -98,7 +98,7 @@ class FilledCountDialectTest {
         assertEquals(0, t.decimalen());
         assertEquals(Datatype.Teken.NIET_NEGATIEF, t.teken());
         assertNull(t.eenheid(), "de telling gaf de kg van haar bron door");
-        assertEquals("kg", ((Datatype.Numeriek) ((Expr.AttribuutRef) fold(m).arguments().get(0)).type())
+        assertEquals("kg", ((Datatype.Numeriek) ((Expr.AttributeReference) fold(m).arguments().get(0)).type())
                 .eenheid().afkorting(), "de BRON hoort de eenheid wel te dragen");
     }
 
@@ -129,7 +129,7 @@ class FilledCountDialectTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "een tekstbron wordt geweigerd: " + m.diagnostics);
         assertEquals(Expr.FunctionKind.AANTAL_GEVULDE, fold(m).kind());
-        assertEquals("vinder", ((Expr.AttribuutRef) fold(m).arguments().get(0)).attribuut());
+        assertEquals("vinder", ((Expr.AttributeReference) fold(m).arguments().get(0)).attribute());
     }
 
     @Test void an_arithmetic_tail_binds_outside_the_count() {
@@ -142,9 +142,9 @@ class FilledCountDialectTest {
                     Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter plus 1.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.Binair b = (Expr.Binair) m.resolvedRegels.get(0).waarde();
+        Expr.Binary b = (Expr.Binary) m.resolvedRegels.get(0).value();
         assertEquals(Expr.BinOp.PLUS, b.op());
-        assertEquals(Expr.FunctionKind.AANTAL_GEVULDE, ((Expr.FunctionCall) b.links()).kind());
+        assertEquals(Expr.FunctionKind.AANTAL_GEVULDE, ((Expr.FunctionCall) b.left()).kind());
     }
 
     @Test void the_subselection_narrows_the_contributors() {
@@ -185,7 +185,7 @@ class FilledCountDialectTest {
         assertEquals(1, ds.size(), () -> "verwacht één WF-037-melding, kreeg: " + m.diagnostics);
         assertEquals(NOT_SET, ds.get(0).message());
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        // fail-fast: an ERROR stops irModus writing, so the document the verifier rejects under
+        // fail-fast: an ERROR stops irMode writing, so the document the verifier rejects under
         // WF-037 is never produced at all
         assertFalse(m.errors().isEmpty(), "de weigering is geen fout en het document bereikt de schijf");
     }
@@ -203,7 +203,7 @@ class FilledCountDialectTest {
         assertEquals(List.of(Severity.WARNING), m.diagnostics.stream().map(Diagnostic::severity).toList());
         assertTrue(m.diagnostics.get(0).message().contains("gedeclareerd attribuut van Vondst"),
                 () -> m.diagnostics.toString());
-        assertInstanceOf(Expr.Unresolved.class, m.resolvedRegels.get(0).waarde());
+        assertInstanceOf(Expr.Unresolved.class, m.resolvedRegels.get(0).value());
     }
 
     @Test void the_multi_step_range_becomes_a_source_path_and_does_not_silently_fall_away() {

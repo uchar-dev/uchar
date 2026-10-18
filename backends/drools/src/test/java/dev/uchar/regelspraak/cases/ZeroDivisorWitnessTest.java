@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.engine.ScenarioResultaat;
+import dev.uchar.regelspraak.engine.ScenarioResult;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +59,7 @@ class ZeroDivisorWitnessTest {
         // the division by zero that name. The exec-model branch with truth maintenance refuses a division in a default
         // by name: it computes a default as soon as what it reads stands, so a division by zero there is a fault on an
         // intermediate state, and whether it counts waits on the norm decision of card 20261008-fout-op-tussenstand.
-        Path ir = document("", group(standaard(filled("gewogen gewicht"), division("dividedBy")), standaard(ALTIJD, EEN)));
+        Path ir = document("", group(defaultEntry(filled("gewogen gewicht"), division("dividedBy")), defaultEntry(ALTIJD, EEN)));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.playCase(ir,
                 JSON.readTree(ZERO_AND_ORDINARY), DroolsBackend.Branch.EXEC_MODEL));
         org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — een"
@@ -79,9 +79,9 @@ class ZeroDivisorWitnessTest {
     @Test void the_scenario_report_carries_the_sentence() throws Exception {
         Path ir = document(regel(division("dividedBy")), "");
         Path c = Files.writeString(Files.createTempDirectory("nuldeler").resolve("case1-nul.json"), ZERO_AND_ORDINARY);
-        List<ScenarioResultaat> rapport = CaseRunner.rapport(ir, List.of(c));
-        assertEquals(ScenarioResultaat.Status.FAIL, rapport.get(0).status(), rapport::toString);
-        assertEquals("case1-nul.json: ERROR DelingDoorNul: " + sentence("verhouding"), rapport.get(0).diagnose());
+        List<ScenarioResult> report = CaseRunner.report(ir, List.of(c));
+        assertEquals(ScenarioResult.Status.FAIL, report.get(0).status(), report::toString);
+        assertEquals("case1-nul.json: ERROR DelingDoorNul: " + sentence("verhouding"), report.get(0).diagnostic());
     }
 
     @Test void the_red_route_keeps_the_pinned_fragments() throws Exception {
@@ -107,17 +107,17 @@ class ZeroDivisorWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
 
     private static final String MODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
-            + "\"plural\":\"Vondsten\",\"attributes\":[" + attribuut("geschatte gewicht") + "," + attribuut("gewogen gewicht") + ","
-            + attribuut("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
+            + "\"plural\":\"Vondsten\",\"attributes\":[" + attribute("geschatte gewicht") + "," + attribute("gewogen gewicht") + ","
+            + attribute("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
             + "\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String attribuut(String naam) {
+    private static String attribute(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + TWO_DECIMALS + "}";
     }
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     /** "zijn gewogen gewicht gedeeld door [(ABS)] zijn geschatte gewicht". */
@@ -127,9 +127,9 @@ class ZeroDivisorWitnessTest {
                 + " gedeeld door zijn geschatte gewicht\"}}";
     }
 
-    private static String filled(String attribuut) {
-        return "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own(attribuut)
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn " + attribuut + " gevuld is\"}}";
+    private static String filled(String attribute) {
+        return "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own(attribute)
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn " + attribute + " gevuld is\"}}";
     }
 
     private static final String ALTIJD = "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],"
@@ -139,7 +139,7 @@ class ZeroDivisorWitnessTest {
     private static final String EEN = "{\"node\":\"Literal\",\"value\":{\"number\":\"1.00\"},\"type\":" + TWO_DECIMALS
             + ",\"source\":{\"snippet\":\"1,00\"}}";
 
-    private static String standaard(String test, String consequence) {
+    private static String defaultEntry(String test, String consequence) {
         return "{\"node\":\"Default\",\"justification\":" + test + ",\"consequence\":" + consequence + "}";
     }
 
@@ -150,10 +150,10 @@ class ZeroDivisorWitnessTest {
     }
 
     /** The rule "verhouding" with {@code waarde} as its value, without a condition. */
-    private static String regel(String waarde) {
+    private static String regel(String value) {
         return "{\"node\":\"Rule\",\"name\":\"verhouding\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"verhouding\",\"subjectType\":\"Vondst\",\"source\":"
-                + "{\"snippet\":\"De verhouding van een Vondst\"}},\"value\":" + waarde + ",\"initialisation\":false,"
+                + "{\"snippet\":\"De verhouding van een Vondst\"}},\"value\":" + value + ",\"initialisation\":false,"
                 + "\"presentation\":\"calculation\"}]}";
     }
 
@@ -177,14 +177,14 @@ class ZeroDivisorWitnessTest {
         return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{" + a + "},\"roles\":{},\"characteristics\":[]}";
     }
 
-    private static String ratio(String label, String waarde) {
+    private static String ratio(String label, String value) {
         return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"verhouding\",\"value\":{\"number\":\""
-                + waarde + "\"}}";
+                + value + "\"}}";
     }
 
-    private static String caseDocument(String instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instanties
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(String instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instances
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** V1 (240 by 320, 0,75) beside V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00. */

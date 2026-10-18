@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the field derivation and the case-input write agree with ref's keying. Until 2026-09-10 they did NOT agree,
  * and this file pinned ref's DIRECTED reading as the arbiter; RUNTIME-SEMANTICS ch. 5.7a then decided the
  * other way — a supplied role link ESTABLISHES the relation and BOTH roles read it — so ref's loader mirrors
- * on the sister role and {@code CaseInvoer.setRoles} writes the second field on a 1:1 shape. The three tests
+ * on the sister role and {@code CaseInput.setRoles} writes the second field on a 1:1 shape. The three tests
  * that carried the old reading were converted at that decision and say so at their own site.
  *
  * <p>Gate 12 cannot see any of this: every corpus golden supplies its relations from the end where all
@@ -77,8 +77,8 @@ class StorageDirectionWitnessTest {
         // a supplied link ESTABLISHES the relation and BOTH roles read it. This test used to be
         // `de_gewone_zelfpaarkoppeling_spiegelt_niet` and asserted the opposite — that W2's `voorganger` stays
         // null after W1 -> W2 over `opvolging` — on the then-true ground that ref's mirror was gated on
-        // ft.wederkerig. That gate is gone: ref's Case.materialise_relations mirrors EVERY two-role relation on
-        // the SISTER role, and the 1:1 arm of CaseInvoer.setRoles writes the second bean field to match.
+        // ft.reciprocal. That gate is gone: ref's Case.materialise_relations mirrors EVERY two-role relation on
+        // the SISTER role, and the 1:1 arm of CaseInput.setRoles writes the second bean field to match.
         // RED FIRST — this assertion measured on this model and case with that write removed again:
         //     expected: <dev.uchar.regelspraak.facts.Wachter@…> but was: <null>
         //
@@ -264,12 +264,12 @@ class StorageDirectionWitnessTest {
         // so this row holds the construct's refusal, not one of the two sites alone (measured: dropping the
         // chain reader's per-hop question leaves the row green).
         for (int step : new int[] { 1, 2 }) {
-            String rol = step == 1 ? "de rol 'werf' op Schuit" : "de rol 'thuishaven' op Werf";
-            String veld = step == 1 ? "Schuit heeft geen referentieveld 'werf' naar Werf"
+            String role = step == 1 ? "de rol 'werf' op Schuit" : "de rol 'thuishaven' op Werf";
+            String field = step == 1 ? "Schuit heeft geen referentieveld 'werf' naar Werf"
                     : "Werf heeft geen referentieveld 'thuishaven' naar Haven";
             BothBranches.refused(nameSharingChain(step), JSON.readTree(schuitWithoutRole("premie", "0")),
                     "regel: premie van een schuit — de lezing 'het havengeld van de thuishaven van de werf van de Schuit': "
-                            + veld + " (§13.3.9 opslagrichting)",
+                            + field + " (§13.3.9 opslagrichting)",
                     "the displaced field at hop " + step + " of a two-binding chain");
         }
     }
@@ -329,7 +329,7 @@ class StorageDirectionWitnessTest {
     }
 
     /** Two Wachters with the given role objects, and the given erfvolgeraantal expectations (empty for none). */
-    private static String chain(String rolesW1, String verwacht) {
+    private static String chain(String rolesW1, String expected) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -339,7 +339,7 @@ class StorageDirectionWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(rolesW1, verwacht);
+                """.formatted(rolesW1, expected);
     }
 
     private static String chainWithExpectation(String w1, String w2) {
@@ -351,7 +351,7 @@ class StorageDirectionWitnessTest {
 
     /** One Jutter and two Vondsten (2.50 kg, 1.25 kg) with the relation written on the given sides, plus the
      *  pinned fold over the jutter. */
-    private static String count(String rolesJ1, String rolesV1, String rolesV2, String aantal, String weight) {
+    private static String count(String rolesJ1, String rolesV1, String rolesV2, String count, String weight) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -365,14 +365,14 @@ class StorageDirectionWitnessTest {
                   "expected": [
                       { "kind": "attributeValue", "label": "J1", "attribute": "aantal aangemelde vondsten", "value": { "number": "%s" } },
                       { "kind": "attributeValue", "label": "J1", "attribute": "aangemeld gewicht", "value": { "number": "%s" } } ] }
-                """.formatted(rolesJ1, rolesV1, rolesV2, aantal, weight);
+                """.formatted(rolesJ1, rolesV1, rolesV2, count, weight);
     }
 
     /** The vondsttelling model with the `vondst` role clipped to TO-ONE — the 1:1 shape in which each direction
      *  owns its own bean field. An in-memory variant written to a temp file; the corpus ir.json is untouched. */
     private static Path vondstRoleToOne() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(VONDSTTELLING)));
-        for (JsonNode r : IrPath.declaratie(ir, "factTypes", "vondstaanmelding").get("roles"))
+        for (JsonNode r : IrPath.declaration(ir, "factTypes", "vondstaanmelding").get("roles"))
             if ("vondst".equals(r.get("name").asText())) ((ObjectNode) r).put("many", false);
         return temporary("vondst-een-op-een", ir);
     }
@@ -385,9 +385,9 @@ class StorageDirectionWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(INHERITANCE_LINE)));
         IrPath.rules(ir).putArray("factCreations");
         IrPath.rules(ir).putArray("ruleGroups");
-        ObjectNode waarde = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value");
-        ((ObjectNode) waarde.get("arguments").get(0)).put("attribute", "opvolgers");
-        ((ObjectNode) waarde.get("sourceRole")).put("factType", "opvolging").put("role", "opvolger");
+        ObjectNode value = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("value");
+        ((ObjectNode) value.get("arguments").get(0)).put("attribute", "opvolgers");
+        ((ObjectNode) value.get("sourceRole")).put("factType", "opvolging").put("role", "opvolger");
         return temporary("erflijn-telling-op-opvolgers", ir);
     }
 
@@ -501,14 +501,14 @@ class StorageDirectionWitnessTest {
      *  and not on a sibling rule that refuses first. */
     private static void keepRule(ObjectNode ir, String naam) {
         com.fasterxml.jackson.databind.node.ArrayNode keep = JSON.createArrayNode();
-        keep.add(IrPath.vorm(ir, "rules", naam));
+        keep.add(IrPath.form(ir, "rules", naam));
         IrPath.rules(ir).set("rules", keep);
     }
 
     /** One Werf (tarief 312) and one Schuit that fills the DISPLACING attribute (werf 5) and lengte 8, with NO
-     *  role written — the shape that never reaches the case-input gate. {@code attribuut} null pins the toeslag
+     *  role written — the shape that never reaches the case-input gate. {@code attribute} null pins the toeslag
      *  as leeg instead of a value. */
-    private static String schuitWithoutRole(String attribuut, String waarde) {
+    private static String schuitWithoutRole(String attribute, String value) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -519,10 +519,10 @@ class StorageDirectionWitnessTest {
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
                   "expected": [ %s ] }
-                """.formatted(attribuut == null
+                """.formatted(attribute == null
                 ? "{ \"kind\": \"attributeEmpty\", \"label\": \"S1\", \"attribute\": \"toeslag\" }"
-                : "{ \"kind\": \"attributeValue\", \"label\": \"S1\", \"attribute\": \"" + attribuut
-                  + "\", \"value\": { \"number\": \"" + waarde + "\" } }");
+                : "{ \"kind\": \"attributeValue\", \"label\": \"S1\", \"attribute\": \"" + attribute
+                  + "\", \"value\": { \"number\": \"" + value + "\" } }");
     }
 
     private static ObjectNode number() {

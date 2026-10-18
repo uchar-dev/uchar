@@ -20,7 +20,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +57,7 @@ class TmsCharacteristicDecisionWitnessTest {
 
     /** Per object its input characteristics and whether it ends {@code vrijgesteld}. */
     private static final Map<String, List<String>> INVOER = new LinkedHashMap<>();
-    private static final Map<String, Boolean> VRIJGESTELD = new LinkedHashMap<>();
+    private static final Map<String, Boolean> EXEMPT = new LinkedHashMap<>();
     static {
         addCase("J1", List.of("nx"), true);
         addCase("J2", List.of("nx", "y0"), false);
@@ -67,19 +67,19 @@ class TmsCharacteristicDecisionWitnessTest {
         addCase("J6", List.of("nx", "vrijgesteld"), true);
     }
 
-    private static void addCase(String label, List<String> kenmerken, boolean vrijgesteld) {
+    private static void addCase(String label, List<String> kenmerken, boolean exempt) {
         INVOER.put(label, kenmerken);
-        VRIJGESTELD.put(label, vrijgesteld);
+        EXEMPT.put(label, exempt);
     }
 
     private static JsonNode caseDocument() throws Exception {
-        List<String> instanties = new ArrayList<>(), verwachtingen = new ArrayList<>();
+        List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
         INVOER.forEach((label, k) -> {
-            instanties.add(TmsDocuments.jutter(label, k));
-            verwachtingen.add(verwacht(label, "vrijgesteld", VRIJGESTELD.get(label)));
+            instances.add(TmsDocuments.jutter(label, k));
+            expectations.add(expected(label, "vrijgesteld", EXEMPT.get(label)));
         });
-        verwachtingen.add(consistent());
-        return TmsDocuments.caseDocument(instanties, verwachtingen);
+        expectations.add(consistent());
+        return TmsDocuments.caseDocument(instances, expectations);
     }
 
     private static Path document() throws Exception {
@@ -93,15 +93,15 @@ class TmsCharacteristicDecisionWitnessTest {
 
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int[] displaced = {0};
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
             fireSample(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList(), displaced);
         assertTrue(displaced[0] > 0,
                 "geen volgorde liet de toekenning eerst vuren en het besluit onwaar haar verdringen");
         DroolsBackend.Build t = DroolsBackend.build(document(), DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         int[] inTheText = {0};
         for (List<String> order : TmsDocuments.sample(rules, 20261008L, 100))
             fireSample(t, TextOrder.kieBase(t, order), order, inTheText);
@@ -121,15 +121,15 @@ class TmsCharacteristicDecisionWitnessTest {
                 beans.add(beanObject);
             }
             Object j2 = beans.get(1);
-            TmsDocuments.vuur(b, kieBase, names, beans, sessie -> sessie.addEventListener(new DefaultAgendaEventListener() {
+            TmsDocuments.fire(b, kieBase, names, beans, session -> session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().endsWith("default 1")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o == j2))
                         displaced[0]++;
                 }
-            }), sessie -> { });
+            }), session -> { });
             for (Object beanObject : beans)
-                assertEquals(VRIJGESTELD.get(labels.get(beanObject)), TmsDocuments.has(beanObject, "vrijgesteld"),
+                assertEquals(EXEMPT.get(labels.get(beanObject)), TmsDocuments.has(beanObject, "vrijgesteld"),
                         () -> labels.get(beanObject) + " vrijgesteld op " + b.branch() + " in volgorde " + names);
         }
     }

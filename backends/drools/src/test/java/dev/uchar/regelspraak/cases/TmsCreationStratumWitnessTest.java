@@ -16,25 +16,25 @@ import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.document;
 import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.factCreation;
 import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.made;
 import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.init;
-import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.koppelingen;
+import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.links;
 import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.objectCreation;
 import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.ruleGroup;
-import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.vuur;
+import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.fire;
 import static dev.uchar.regelspraak.cases.TmsCreationWitnessTest.fireInOrder;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.BRANCHES;
 import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
-import static dev.uchar.regelspraak.cases.TmsDocuments.feittype;
+import static dev.uchar.regelspraak.cases.TmsDocuments.factType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
-import static dev.uchar.regelspraak.cases.TmsDocuments.gegenereerd;
+import static dev.uchar.regelspraak.cases.TmsDocuments.generated;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
-import static dev.uchar.regelspraak.cases.TmsDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.permutations;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ruleNames;
@@ -42,7 +42,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sample;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * writes irrevocably, so it reads strictly and sits in a stratum above the producers of what it reads, and the forms of
  * a stratum reach their fixpoint before a form of the next one fires ({@code ref/lib/eval.ml}). The driver opens the
  * creation phases stratum by stratum, each in generations, the rule layer under truth maintenance throughout
- * ({@code DroolsBackend.vuur}). Each document plays through the replay in every order of its creations and rules in the
+ * ({@code DroolsBackend.fire}). Each document plays through the replay in every order of its creations and rules in the
  * document, and fires through the driver in the order of the rules the branch generates, its reverse and a hundred
  * shuffles, on the exec-model branch and on {@code DRL_TEXT} (the last paragraph).
  *
@@ -172,7 +172,7 @@ class TmsCreationStratumWitnessTest {
             "Penning", "penningen");
 
     /** "Eén afrekenaar heeft één afrekening." */
-    private static final String SETTLEMENT_FACT = feittype("jutterheeftafrekening", "afrekenaar", "Jutter", "afrekening",
+    private static final String SETTLEMENT_FACT = factType("jutterheeftafrekening", "afrekenaar", "Jutter", "afrekening",
             "Afrekening");
 
     /** "Een Jutter heeft een penning met bedrag gelijk aan 5." */
@@ -190,9 +190,9 @@ class TmsCreationStratumWitnessTest {
     // ---------------- document P: an initialisation reads a creation of a lower stratum ----------------
 
     private static final String MODEL_P = TmsDocuments.model(List.of(
-            objecttype("Jutter", List.of(attribuut("penningaantal", WHOLE)), List.of()),
-            objecttype("Penning", List.of(attribuut("bedrag", WHOLE)), List.of()),
-            objecttype("Afrekening", List.of(attribuut("penningtelling", WHOLE)), List.of())),
+            objectType("Jutter", List.of(attribute("penningaantal", WHOLE)), List.of()),
+            objectType("Penning", List.of(attribute("bedrag", WHOLE)), List.of()),
+            objectType("Afrekening", List.of(attribute("penningtelling", WHOLE)), List.of())),
             List.of(PENNING_FACT, SETTLEMENT_FACT));
 
     /** The scenario of the final lens: "maak een afrekening" reads the penningen that "geef een penning" makes, a strict
@@ -203,7 +203,7 @@ class TmsCreationStratumWitnessTest {
 
     static JsonNode caseP() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of())),
-                List.of(waarde("J1", "penningaantal", "1")));
+                List.of(value("J1", "penningaantal", "1")));
     }
 
     @Test void an_initialisation_reads_what_a_creation_from_a_lower_stratum_made() throws Exception {
@@ -211,18 +211,18 @@ class TmsCreationStratumWitnessTest {
         Path ir = documentP(List.of(GEEF, MAKE), List.of(PENNING_COUNT));
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261008L, 100)) {
+            for (List<String> names : sample(generated(b), 20261008L, 100)) {
                 String where = names + " op " + branch;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
-                List<Object[]> objecten = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(j1), sessie -> { },
-                        sessie -> objecten.addAll(made(sessie))),
+                List<Object[]> objects = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(j1), session -> { },
+                        session -> objects.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertNumber("1", TmsDocuments.lees(j1, "penningaantal"), "penningaantal in volgorde " + where);
+                assertNumber("1", TmsDocuments.read(j1, "penningaantal"), "penningaantal in volgorde " + where);
                 // one phase per generation: the Penning in stratum 0's first generation; stratum 0 closes with a
                 // generation that makes nothing (phase 2), and the Afrekening follows in the first generation of
                 // stratum 1
-                assertEquals(List.of("Penning in fase 1", "Afrekening in fase 3"), kinds(objecten),
+                assertEquals(List.of("Penning in fase 1", "Afrekening in fase 3"), kinds(objects),
                         () -> "volgorde " + where);
             }
         }
@@ -238,10 +238,10 @@ class TmsCreationStratumWitnessTest {
             "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn");
 
     private static final String MODEL_S = TmsDocuments.model(List.of(
-            objecttype("Jutter", List.of(attribuut("afrekeningaantal", WHOLE), attribuut("penningsom", WHOLE)),
+            objectType("Jutter", List.of(attribute("afrekeningaantal", WHOLE), attribute("penningsom", WHOLE)),
                     List.of()),
-            objecttype("Penning", List.of(attribuut("bedrag", WHOLE)), List.of()),
-            objecttype("Afrekening", List.of(), List.of())),
+            objectType("Penning", List.of(attribute("bedrag", WHOLE)), List.of()),
+            objectType("Afrekening", List.of(), List.of())),
             List.of(PENNING_FACT, factTypeOneToMany("jutterheeftafrekening", "afrekenaar", "Jutter", "afrekening",
                     "Afrekening", "afrekeningen")));
 
@@ -265,7 +265,7 @@ class TmsCreationStratumWitnessTest {
         return TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("penningen", List.of("P1"))),
                 instanceWithRoles("P1", "Penning", Map.of("bedrag", "5"), List.of(), Map.of())),
-                List.of(waarde("J1", "afrekeningaantal", "0"), waarde("J1", "penningsom", "10")));
+                List.of(value("J1", "afrekeningaantal", "0"), value("J1", "penningsom", "10")));
     }
 
     @Test void a_condition_with_a_growing_operand_decides_after_the_lower_stratum() throws Exception {
@@ -273,18 +273,18 @@ class TmsCreationStratumWitnessTest {
         Path ir = documentS(List.of(GEEF, MAKE_UNDER_EIGHT), RULES_S);
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261008L, 100)) {
+            for (List<String> names : sample(generated(b), 20261008L, 100)) {
                 String where = names + " op " + branch;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
                 Object p1 = TmsDocuments.beanObject(b.beanLoader(), "Penning", Map.of("bedrag", "5"), List.of());
                 setRole(p1, "houder", j1);
-                List<Object[]> objecten = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(j1, p1), sessie -> { },
-                        sessie -> objecten.addAll(made(sessie))),
+                List<Object[]> objects = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(j1, p1), session -> { },
+                        session -> objects.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertNumber("0", TmsDocuments.lees(j1, "afrekeningaantal"), "afrekeningaantal in volgorde " + where);
-                assertNumber("10", TmsDocuments.lees(j1, "penningsom"), "penningsom in volgorde " + where);
-                assertEquals(List.of("Penning in fase 1"), kinds(objecten), () -> "volgorde " + where);
+                assertNumber("0", TmsDocuments.read(j1, "afrekeningaantal"), "afrekeningaantal in volgorde " + where);
+                assertNumber("10", TmsDocuments.read(j1, "penningsom"), "penningsom in volgorde " + where);
+                assertEquals(List.of("Penning in fase 1"), kinds(objects), () -> "volgorde " + where);
             }
         }
     }
@@ -295,9 +295,9 @@ class TmsCreationStratumWitnessTest {
             + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"bewaarde penningen van de Jutter\"}}";
 
     private static final String MODEL_K = TmsDocuments.model(List.of(
-            objecttype("Jutter", List.of(attribuut("penningaantal", WHOLE)), List.of()),
-            objecttype("Penning", List.of(attribuut("bedrag", WHOLE)), List.of()),
-            objecttype("Afrekening", List.of(attribuut("penningtelling", WHOLE)), List.of())),
+            objectType("Jutter", List.of(attribute("penningaantal", WHOLE)), List.of()),
+            objectType("Penning", List.of(attribute("bedrag", WHOLE)), List.of()),
+            objectType("Afrekening", List.of(attribute("penningtelling", WHOLE)), List.of())),
             List.of(PENNING_FACT, factTypeOneToMany("bewaring", "bewaarder", "Jutter", "bewaarde penning", "Penning",
                     "bewaarde penningen"), SETTLEMENT_FACT));
 
@@ -321,22 +321,22 @@ class TmsCreationStratumWitnessTest {
         Path ir = documentK(List.of(GEEF, MAKE_KEPT), List.of(PENNING_COUNT));
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261008L, 100)) {
+            for (List<String> names : sample(generated(b), 20261008L, 100)) {
                 String where = names + " op " + branch;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
-                List<Object[]> objecten = new ArrayList<>(), left = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(j1), sessie -> { }, sessie -> {
-                    objecten.addAll(made(sessie));
-                    left.addAll(koppelingen(sessie, "bewaring"));
+                List<Object[]> objects = new ArrayList<>(), left = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(j1), session -> { }, session -> {
+                    objects.addAll(made(session));
+                    left.addAll(links(session, "bewaring"));
                 }), () -> "volgorde " + where);
-                assertNumber("1", TmsDocuments.lees(j1, "penningaantal"), "penningaantal in volgorde " + where);
+                assertNumber("1", TmsDocuments.read(j1, "penningaantal"), "penningaantal in volgorde " + where);
                 // one phase per generation: stratum 0 makes the Penning (phase 1) and closes in phase 2; stratum 1
                 // links it in its first generation (3) and closes in 4; stratum 2 makes the Afrekening in its first
                 // generation (5)
-                assertEquals(List.of("Penning in fase 1", "Afrekening in fase 5"), kinds(objecten),
+                assertEquals(List.of("Penning in fase 1", "Afrekening in fase 5"), kinds(objects),
                         () -> "volgorde " + where);
                 assertEquals(1, left.size(), () -> "links in volgorde " + where);
-                assertTrue(left.get(0)[0] == j1 && left.get(0)[1] == objecten.get(0)[1],
+                assertTrue(left.get(0)[0] == j1 && left.get(0)[1] == objects.get(0)[1],
                         () -> "link in volgorde " + where);
                 assertEquals(3, left.get(0)[2], () -> "fase van de link in volgorde " + where);
             }
@@ -346,12 +346,12 @@ class TmsCreationStratumWitnessTest {
     // ---------------- document T: two creations of one stratum ----------------
 
     private static final String MODEL_T = TmsDocuments.model(List.of(
-            objecttype("Jutter", List.of(attribuut("penningaantal", WHOLE), attribuut("kwitantieaantal", WHOLE)),
+            objectType("Jutter", List.of(attribute("penningaantal", WHOLE), attribute("kwitantieaantal", WHOLE)),
                     List.of()),
-            objecttype("Penning", List.of(attribuut("bedrag", WHOLE)), List.of()),
-            objecttype("Afrekening", List.of(attribuut("penningtelling", WHOLE)), List.of()),
-            objecttype("Kwitantie", List.of(attribuut("penningtelling", WHOLE)), List.of())),
-            List.of(PENNING_FACT, SETTLEMENT_FACT, feittype("jutterheeftkwitantie", "ontvanger", "Jutter", "kwitantie",
+            objectType("Penning", List.of(attribute("bedrag", WHOLE)), List.of()),
+            objectType("Afrekening", List.of(attribute("penningtelling", WHOLE)), List.of()),
+            objectType("Kwitantie", List.of(attribute("penningtelling", WHOLE)), List.of())),
+            List.of(PENNING_FACT, SETTLEMENT_FACT, factType("jutterheeftkwitantie", "ontvanger", "Jutter", "kwitantie",
                     "Kwitantie")));
 
     /** "Een Jutter heeft een kwitantie met penningtelling gelijk aan het aantal penningen van de Jutter." */
@@ -369,7 +369,7 @@ class TmsCreationStratumWitnessTest {
 
     static JsonNode caseT() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of())),
-                List.of(waarde("J1", "penningaantal", "1"), waarde("J1", "kwitantieaantal", "1")));
+                List.of(value("J1", "penningaantal", "1"), value("J1", "kwitantieaantal", "1")));
     }
 
     @Test void two_creations_of_one_stratum_fire_in_one_generation() throws Exception {
@@ -377,16 +377,16 @@ class TmsCreationStratumWitnessTest {
         Path ir = documentT(List.of(GEEF, MAKE, KWITEER), RULES_T);
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261008L, 100)) {
+            for (List<String> names : sample(generated(b), 20261008L, 100)) {
                 String where = names + " op " + branch;
                 Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
-                List<Object[]> objecten = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(j1), sessie -> { },
-                        sessie -> objecten.addAll(made(sessie))),
+                List<Object[]> objects = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(j1), session -> { },
+                        session -> objects.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertNumber("1", TmsDocuments.lees(j1, "penningaantal"), "penningaantal in volgorde " + where);
-                assertNumber("1", TmsDocuments.lees(j1, "kwitantieaantal"), "kwitantieaantal in volgorde " + where);
-                List<String> kinds = new ArrayList<>(kinds(objecten));
+                assertNumber("1", TmsDocuments.read(j1, "penningaantal"), "penningaantal in volgorde " + where);
+                assertNumber("1", TmsDocuments.read(j1, "kwitantieaantal"), "kwitantieaantal in volgorde " + where);
+                List<String> kinds = new ArrayList<>(kinds(objects));
                 kinds.sort(null);
                 // both of stratum 1 in its first generation, phase 3
                 assertEquals(List.of("Afrekening in fase 3", "Kwitantie in fase 3", "Penning in fase 1"), kinds,
@@ -398,11 +398,11 @@ class TmsCreationStratumWitnessTest {
     // ---------------- document B: the budget per stratum ----------------
 
     private static final String MODEL_B = TmsDocuments.model(List.of(
-            objecttype("Wachter", List.of(attribuut("rang", WHOLE)), List.of()),
-            objecttype("Boei", List.of(attribuut("nummer", WHOLE), attribuut("wachterrang", WHOLE)), List.of())),
-            List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
-                    feittype("boeiketen", "vorige boei", "Boei", "volgende boei", "Boei"),
-                    feittype("bewaking", "wachter", "Wachter", "boei", "Boei")));
+            objectType("Wachter", List.of(attribute("rang", WHOLE)), List.of()),
+            objectType("Boei", List.of(attribute("nummer", WHOLE), attribute("wachterrang", WHOLE)), List.of())),
+            List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
+                    factType("boeiketen", "vorige boei", "Boei", "volgende boei", "Boei"),
+                    factType("bewaking", "wachter", "Wachter", "boei", "Boei")));
 
     /** A chain of Wachters while the rang is below 52: W1 of rang 1 makes W2, and so on to W52, 51 generations. */
     static final String WERF = objectCreation("werf de opvolger", "Wachter", "Wachter",
@@ -431,7 +431,7 @@ class TmsCreationStratumWitnessTest {
         return TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(), Map.of("boei", List.of("B1"))),
                 instanceWithRoles("B1", "Boei", Map.of("nummer", "1"), List.of(), Map.of())),
-                List.of(waarde("W1", "rang", "1")));
+                List.of(value("W1", "rang", "1")));
     }
 
     /** Two chains of 51 mints each, 102 in all, in two strata. The reference interpreter counts the depth of a mint in the
@@ -444,25 +444,25 @@ class TmsCreationStratumWitnessTest {
         Path ir = documentB(List.of(WERF, LEG));
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261008L, 10)) {
+            for (List<String> names : sample(generated(b), 20261008L, 10)) {
                 String where = names + " op " + branch;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
                 Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Boei", Map.of("nummer", "1"), List.of());
                 setRole(w1, "boei", b1);
                 setRole(b1, "wachter", w1);
-                List<Object[]> objecten = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(w1, b1), sessie -> { },
-                        sessie -> objecten.addAll(made(sessie))),
+                List<Object[]> objects = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(w1, b1), session -> { },
+                        session -> objects.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertEquals(102, objecten.size(), () -> "objecten in volgorde " + where);
+                assertEquals(102, objects.size(), () -> "objecten in volgorde " + where);
                 for (int i = 0; i < 51; i++) {
-                    assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + where);
-                    assertEquals("Boei in fase " + (52 + i + 1), soort(objecten.get(51 + i)), "volgorde " + where);
+                    assertEquals("Wachter in fase " + (i + 1), category(objects.get(i)), "volgorde " + where);
+                    assertEquals("Boei in fase " + (52 + i + 1), category(objects.get(51 + i)), "volgorde " + where);
                 }
-                assertNumber("52", TmsDocuments.lees(objecten.get(50)[1], "rang"), "rang van W52 in volgorde " + where);
-                assertNumber("52", TmsDocuments.lees(objecten.get(101)[1], "nummer"),
+                assertNumber("52", TmsDocuments.read(objects.get(50)[1], "rang"), "rang van W52 in volgorde " + where);
+                assertNumber("52", TmsDocuments.read(objects.get(101)[1], "nummer"),
                         "nummer van B52 in volgorde " + where);
-                assertNumber("1", TmsDocuments.lees(objecten.get(51)[1], "wachterrang"),
+                assertNumber("1", TmsDocuments.read(objects.get(51)[1], "wachterrang"),
                         "wachterrang van B2 in volgorde " + where);
             }
         }
@@ -471,12 +471,12 @@ class TmsCreationStratumWitnessTest {
     // ---------------- document L: a generation after which only the rule layer changes ----------------
 
     private static final String MODEL_L = TmsDocuments.model(List.of(
-            objecttype("Wachter", List.of(attribuut("rang", WHOLE)), List.of()),
-            objecttype("Boei", List.of(attribuut("nummer", WHOLE), attribuut("wachterrang", WHOLE),
-                    attribuut("kopie", WHOLE)), List.of("genummerd"))),
-            List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
-                    feittype("boeiketen", "vorige boei", "Boei", "volgende boei", "Boei"),
-                    feittype("bewaking", "wachter", "Wachter", "boei", "Boei")));
+            objectType("Wachter", List.of(attribute("rang", WHOLE)), List.of()),
+            objectType("Boei", List.of(attribute("nummer", WHOLE), attribute("wachterrang", WHOLE),
+                    attribute("kopie", WHOLE)), List.of("genummerd"))),
+            List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
+                    factType("boeiketen", "vorige boei", "Boei", "volgende boei", "Boei"),
+                    factType("bewaking", "wachter", "Wachter", "boei", "Boei")));
 
     /** "De kopie van een Boei moet gesteld worden op zijn nummer": it reads what the chain of Boeien writes, positively,
      *  so it sits in the stratum of that chain. */
@@ -491,15 +491,15 @@ class TmsCreationStratumWitnessTest {
     /** Document B with the chain of Boeien running while the nummer is below {@code grens}, beside {@code rules}. */
     static Path documentL(int bound, List<String> creations, List<String> rules) throws Exception {
         List<String> c = new ArrayList<>();
-        for (String creatie : creations) c.add(creatie.equals(LEG) ? leg(bound) : creatie);
+        for (String creation : creations) c.add(creation.equals(LEG) ? leg(bound) : creation);
         return document(MODEL_L, rules, List.of(), c, List.of(),
                 List.of(ruleGroup("estafette", List.of("werf de opvolger")),
                         ruleGroup("boeienlijn", List.of("leg de volgende boei"))));
     }
 
-    static JsonNode caseL(List<String> verwachtingen) throws Exception {
-        List<String> v = new ArrayList<>(List.of(waarde("W1", "rang", "1")));
-        v.addAll(verwachtingen);
+    static JsonNode caseL(List<String> expectations) throws Exception {
+        List<String> v = new ArrayList<>(List.of(value("W1", "rang", "1")));
+        v.addAll(expectations);
         return TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(), Map.of("boei", List.of("B1"))),
                 instanceWithRoles("B1", "Boei", Map.of("nummer", "1"), List.of(), Map.of())),
@@ -515,14 +515,14 @@ class TmsCreationStratumWitnessTest {
      *  verandert nog 1 waarde, kenmerk of link na wat generatie 100 maakte". */
     @Test void a_generation_where_only_the_rule_layer_changes_does_not_count_for_the_budget() throws Exception {
         playsInEveryOrder(List.of(WERF, LEG), List.of(COPY), (c, r) -> documentL(101, c, r),
-                caseL(List.of(waarde("B1", "kopie", "1"))));
+                caseL(List.of(value("B1", "kopie", "1"))));
         playsThroughTheDriver(documentL(101, List.of(WERF, LEG), List.of(COPY)), 51 + 100);
     }
 
     /** The same chain one shorter, to B100, 99 mints of stratum 1. */
     @Test void a_chain_that_is_one_step_shorter_plays() throws Exception {
         playsInEveryOrder(List.of(WERF, LEG), List.of(COPY), (c, r) -> documentL(100, c, r),
-                caseL(List.of(waarde("B1", "kopie", "1"))));
+                caseL(List.of(value("B1", "kopie", "1"))));
         playsThroughTheDriver(documentL(100, List.of(WERF, LEG), List.of(COPY)), 51 + 99);
     }
 
@@ -540,15 +540,15 @@ class TmsCreationStratumWitnessTest {
      *  the reference interpreter evaluated the rule only after the chain's fixpoint. */
     @Test void a_reaction_from_a_higher_stratum_does_not_count() throws Exception {
         playsInEveryOrder(List.of(WERF, LEG), List.of(NUMBERED), (c, r) -> documentL(101, c, r),
-                caseL(List.of(TmsDocuments.verwacht("B1", "genummerd", true))));
+                caseL(List.of(TmsDocuments.expected("B1", "genummerd", true))));
         playsThroughTheDriver(documentL(101, List.of(WERF, LEG), List.of(NUMBERED)), 51 + 100);
     }
 
     // ---------------- document G: the budget of one chain, at its bound ----------------
 
     private static final String MODEL_G = TmsDocuments.model(List.of(
-            objecttype("Wachter", List.of(attribuut("rang", WHOLE)), List.of())),
-            List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter")));
+            objectType("Wachter", List.of(attribute("rang", WHOLE)), List.of())),
+            List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter")));
 
     /** The chain of {@code corpus/rood} {@code finite-chain-over-budget} without its consistency, while the rang is below
      *  {@code grens}: from W1 of rang 1, {@code grens - 1} generations in one stratum. */
@@ -563,8 +563,8 @@ class TmsCreationStratumWitnessTest {
 
     /** The sentence of a mint at depth 101 by the object creation {@code creatie} of stratum {@code stratum}, on a subject
      *  of type {@code type} (RUNTIME-SEMANTICS ch. 5.5). */
-    static String budget(String creatie, int stratum, String type) {
-        return "creation budget exhausted: objectcreatie \"" + creatie + "\" van stratum " + stratum + " zou een object"
+    static String budget(String creation, int stratum, String type) {
+        return "creation budget exhausted: objectcreatie \"" + creation + "\" van stratum " + stratum + " zou een object"
                 + " maken op aanmaakdiepte 101, voor een " + type + " op diepte 100 — een keten van aanmaken die niet"
                 + " stopt is een fout, nooit een stille afkapping (RUNTIME-SEMANTICS ch. 5.5)";
     }
@@ -579,7 +579,7 @@ class TmsCreationStratumWitnessTest {
      *  101 maakt nog 1 object of link", with 101 objects made. */
     @Test void a_creation_at_depth_100_plays_and_one_at_depth_101_is_a_fault() throws Exception {
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(),
-                Map.of())), List.of(waarde("W1", "rang", "1")));
+                Map.of())), List.of(value("W1", "rang", "1")));
         for (int bound : List.of(100, 101, 102)) {
             int generations = bound - 1;
             assertEquals(generations <= 100 ? "gespeeld" : "case: " + BUDGET, TmsFaultWitnessTest.playBoth(documentG(bound),
@@ -587,19 +587,19 @@ class TmsCreationStratumWitnessTest {
             Path ir = documentG(bound);
             for (DroolsBackend.Branch branch : BRANCHES) {
                 DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-                for (List<String> names : sample(gegenereerd(b), 20261009L, 10)) {
+                for (List<String> names : sample(generated(b), 20261009L, 10)) {
                     String where = names + " op " + branch;
                     Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-                    List<Object[]> objecten = new ArrayList<>();
-                    assertEquals(generations <= 100 ? null : BUDGET, fireInOrder(b, names, List.of(w1), sessie -> { },
-                            sessie -> objecten.addAll(made(sessie))),
+                    List<Object[]> objects = new ArrayList<>();
+                    assertEquals(generations <= 100 ? null : BUDGET, fireInOrder(b, names, List.of(w1), session -> { },
+                            session -> objects.addAll(made(session))),
                             () -> generations + " generaties in volgorde " + where);
-                    assertEquals(Math.min(generations, 100), objecten.size(),
+                    assertEquals(Math.min(generations, 100), objects.size(),
                             () -> "objecten na " + generations + " generaties in volgorde " + where);
-                    for (int i = 0; i < objecten.size(); i++)
-                        assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + where);
+                    for (int i = 0; i < objects.size(); i++)
+                        assertEquals("Wachter in fase " + (i + 1), category(objects.get(i)), "volgorde " + where);
                     if (generations <= 100)
-                        assertNumber(String.valueOf(bound), TmsDocuments.lees(objecten.get(generations - 1)[1], "rang"),
+                        assertNumber(String.valueOf(bound), TmsDocuments.read(objects.get(generations - 1)[1], "rang"),
                                 "rang van de laatste Wachter na " + generations + " generaties in volgorde " + where);
                 }
             }
@@ -617,14 +617,14 @@ class TmsCreationStratumWitnessTest {
      *  without a wachterrang: 50 generations in stratum 0, one in stratum 1 and 50 in stratum 2. */
     static Path documentD(List<String> creations) throws Exception {
         List<String> c = new ArrayList<>();
-        for (String creatie : creations)
-            c.add(creatie.equals(WERF) ? objectCreation("werf de opvolger", "Wachter", "Wachter",
+        for (String creation : creations)
+            c.add(creation.equals(WERF) ? objectCreation("werf de opvolger", "Wachter", "Wachter",
                     List.of(init("rang", binary("plus", ownRead("rang", "Wachter"), number("1")))),
                     comparison("less", ownRead("rang", "Wachter"), number("51")), "opvolging", "opvolger")
-                    : creatie.equals(LEG) ? objectCreation("leg de volgende boei", "Boei", "Boei",
+                    : creation.equals(LEG) ? objectCreation("leg de volgende boei", "Boei", "Boei",
                     List.of(init("nummer", binary("plus", ownRead("nummer", "Boei"), number("1")))),
                     comparison("less", ownRead("nummer", "Boei"), number("51")), "boeiketen", "volgende boei")
-                    : creatie);
+                    : creation);
         return document(MODEL_B, List.of(), List.of(), c, List.of(),
                 List.of(ruleGroup("estafette", List.of("werf de opvolger")),
                         ruleGroup("boeienlijn", List.of("leg de volgende boei"))));
@@ -636,26 +636,26 @@ class TmsCreationStratumWitnessTest {
      *  stratum 2 makes B2 to B51 in 54 to 103. */
     @Test void a_chain_over_three_strata_counts_per_stratum() throws Exception {
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(),
-                Map.of())), List.of(waarde("W1", "rang", "1")));
+                Map.of())), List.of(value("W1", "rang", "1")));
         playsInEveryOrder(List.of(WERF, BOEI_AT_51, LEG), List.of(), (creations, rules) -> documentD(creations), caseDocument);
         Path ir = documentD(List.of(WERF, BOEI_AT_51, LEG));
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261009L, 10)) {
+            for (List<String> names : sample(generated(b), 20261009L, 10)) {
                 String where = names + " op " + branch;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-                List<Object[]> objecten = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(w1), sessie -> { },
-                        sessie -> objecten.addAll(made(sessie))),
+                List<Object[]> objects = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(w1), session -> { },
+                        session -> objects.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertEquals(50 + 1 + 50, objecten.size(), () -> "objecten in volgorde " + where);
+                assertEquals(50 + 1 + 50, objects.size(), () -> "objecten in volgorde " + where);
                 for (int i = 0; i < 50; i++) {
-                    assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + where);
-                    assertEquals("Boei in fase " + (54 + i), soort(objecten.get(51 + i)), "volgorde " + where);
+                    assertEquals("Wachter in fase " + (i + 1), category(objects.get(i)), "volgorde " + where);
+                    assertEquals("Boei in fase " + (54 + i), category(objects.get(51 + i)), "volgorde " + where);
                 }
-                assertEquals("Boei in fase 52", soort(objecten.get(50)), "volgorde " + where);
-                assertNumber("51", TmsDocuments.lees(objecten.get(49)[1], "rang"), "rang van W51 in volgorde " + where);
-                assertNumber("51", TmsDocuments.lees(objecten.get(100)[1], "nummer"),
+                assertEquals("Boei in fase 52", category(objects.get(50)), "volgorde " + where);
+                assertNumber("51", TmsDocuments.read(objects.get(49)[1], "rang"), "rang van W51 in volgorde " + where);
+                assertNumber("51", TmsDocuments.read(objects.get(100)[1], "nummer"),
                         "nummer van B51 in volgorde " + where);
             }
         }
@@ -669,7 +669,7 @@ class TmsCreationStratumWitnessTest {
         for (int i = 1; i <= n; i++)
             wachters.add(instanceWithRoles("W" + i, "Wachter", Map.of(), List.of(),
                     i < n ? Map.of("opvolger", List.of("W" + (i + 1))) : Map.of()));
-        return TmsDocuments.caseDocument(wachters, List.of(waarde("W1", "erfvolgeraantal", String.valueOf(n - 1))));
+        return TmsDocuments.caseDocument(wachters, List.of(value("W1", "erfvolgeraantal", String.valueOf(n - 1))));
     }
 
     /** A fact creation mints nothing and carries no creation budget (RUNTIME-SEMANTICS ch. 5.5): over the finite universe
@@ -687,8 +687,8 @@ class TmsCreationStratumWitnessTest {
      *  "estafette", so they share one stratum. "Eén maat heeft meerdere maatgevers": a Wachter has one maat, so the case
      *  can give W0 its maat W1 in a reference field of the bean model, which a relation of two to-many roles lacks. */
     static Path documentE(int bound) throws Exception {
-        String model = TmsDocuments.model(List.of(objecttype("Wachter", List.of(attribuut("rang", WHOLE)), List.of())),
-                List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
+        String model = TmsDocuments.model(List.of(objectType("Wachter", List.of(attribute("rang", WHOLE)), List.of())),
+                List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
                         factTypeOneToMany("maatschap", "maat", "Wachter", "maatgever", "Wachter", "maatgevers")));
         String werf = objectCreation("werf de opvolger", "Wachter", "Wachter",
                 List.of(init("rang", binary("plus", ownRead("rang", "Wachter"), number("1")))),
@@ -717,28 +717,28 @@ class TmsCreationStratumWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("W0", "Wachter", Map.of("rang", "0"), List.of(), Map.of("maat", List.of("W1"))),
                 instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(), Map.of())),
-                List.of(waarde("W1", "rang", "1")));
-        String fout = budget("werf de opvolger", 0, "Wachter");
+                List.of(value("W1", "rang", "1")));
+        String fault = budget("werf de opvolger", 0, "Wachter");
         for (int bound : List.of(101, 102)) {
-            assertEquals(bound <= 101 ? "gespeeld" : "case: " + fout, TmsFaultWitnessTest.playBoth(documentE(bound), caseDocument), "tot rang " + bound);
+            assertEquals(bound <= 101 ? "gespeeld" : "case: " + fault, TmsFaultWitnessTest.playBoth(documentE(bound), caseDocument), "tot rang " + bound);
             Path ir = documentE(bound);
             for (DroolsBackend.Branch branch : BRANCHES) {
                 DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-                for (List<String> names : sample(gegenereerd(b), 20261009L, 10)) {
+                for (List<String> names : sample(generated(b), 20261009L, 10)) {
                     String where = names + " op " + branch;
                     Object w0 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
                     Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
                     setRole(w0, "maat", w1);
-                    List<Object[]> objecten = new ArrayList<>();
-                    assertEquals(bound <= 101 ? null : fout, fireInOrder(b, names, List.of(w0, w1), sessie -> { },
-                            sessie -> objecten.addAll(made(sessie))),
+                    List<Object[]> objects = new ArrayList<>();
+                    assertEquals(bound <= 101 ? null : fault, fireInOrder(b, names, List.of(w0, w1), session -> { },
+                            session -> objects.addAll(made(session))),
                             () -> "tot rang " + bound + " in volgorde " + where);
-                    assertEquals(100, objecten.size(), () -> "objecten tot rang " + bound + " in volgorde " + where);
-                    for (int i = 0; i < objecten.size(); i++)
-                        assertEquals("Wachter in fase " + (2 * i + 1), soort(objecten.get(i)), "volgorde " + where);
+                    assertEquals(100, objects.size(), () -> "objecten tot rang " + bound + " in volgorde " + where);
+                    for (int i = 0; i < objects.size(); i++)
+                        assertEquals("Wachter in fase " + (2 * i + 1), category(objects.get(i)), "volgorde " + where);
                     // a run that ends at the budget writes nothing back onto the beans
                     if (bound <= 101)
-                        assertNumber("101", TmsDocuments.lees(objecten.get(99)[1], "rang"),
+                        assertNumber("101", TmsDocuments.read(objects.get(99)[1], "rang"),
                                 "rang van de laatste Wachter in volgorde " + where);
                 }
             }
@@ -757,7 +757,7 @@ class TmsCreationStratumWitnessTest {
         Object falsified = Class.forName("dev.uchar.regelspraak.transpiler.tms.CreationStamp").getConstructors()[0]
                 .newInstance("vervalst", maker, w1, 1000, 1, 1);
         RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> vuur(b, b.execModelTranspiler().model().getRules(), List.of(w1, falsified), sessie -> { }, sessie -> { }));
+                () -> fire(b, b.execModelTranspiler().model().getRules(), List.of(w1, falsified), session -> { }, session -> { }));
         // Drools hands what a consequence throws on inside its own ConsequenceException
         StringBuilder chain = new StringBuilder();
         for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
@@ -773,9 +773,9 @@ class TmsCreationStratumWitnessTest {
 
     /** "Eén voorganger heeft één opvolger" and "Een maatgever heeft meerdere maten, een maat meerdere maatgevers". */
     private static final String MODEL_V = TmsDocuments.model(List.of(
-            objecttype("Wachter", List.of(attribuut("rang", WHOLE), attribuut("beginstand", WHOLE),
-                    attribuut("opvolgerbegin", WHOLE), attribuut("verder", WHOLE)), List.of())),
-            List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
+            objectType("Wachter", List.of(attribute("rang", WHOLE), attribute("beginstand", WHOLE),
+                    attribute("opvolgerbegin", WHOLE), attribute("verder", WHOLE)), List.of())),
+            List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
                     "{\"node\":\"FactType\",\"name\":\"maatschap\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\","
                             + "\"name\":\"maatgever\",\"objectType\":\"Wachter\",\"plural\":\"maatgevers\",\"many\":true},"
                             + "{\"node\":\"Role\",\"name\":\"maat\",\"objectType\":\"Wachter\",\"plural\":\"maten\","
@@ -813,25 +813,25 @@ class TmsCreationStratumWitnessTest {
      */
     @Test void the_creations_of_a_generation_read_a_world() throws Exception {
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(),
-                Map.of())), List.of(waarde("W1", "opvolgerbegin", "0"), waarde("W1", "verder", "0")));
+                Map.of())), List.of(value("W1", "opvolgerbegin", "0"), value("W1", "verder", "0")));
         playsInEveryOrder(List.of(), RULES_V, (creations, rules) -> documentV(rules), caseDocument);
         Path ir = documentV(RULES_V);
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261009L, 100)) {
+            for (List<String> names : sample(generated(b), 20261009L, 100)) {
                 String where = names + " op " + branch;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-                List<Object[]> objecten = new ArrayList<>(), left = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(w1), sessie -> { }, sessie -> {
-                    objecten.addAll(made(sessie));
-                    left.addAll(koppelingen(sessie, "maatschap"));
+                List<Object[]> objects = new ArrayList<>(), left = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(w1), session -> { }, session -> {
+                    objects.addAll(made(session));
+                    left.addAll(links(session, "maatschap"));
                 }), () -> "volgorde " + where);
-                assertNumber("0", TmsDocuments.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + where);
-                assertNumber("0", TmsDocuments.lees(w1, "verder"), "verder van W1 in volgorde " + where);
-                assertEquals(List.of("Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), kinds(objecten),
+                assertNumber("0", TmsDocuments.read(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + where);
+                assertNumber("0", TmsDocuments.read(w1, "verder"), "verder van W1 in volgorde " + where);
+                assertEquals(List.of("Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), kinds(objects),
                         () -> "volgorde " + where);
-                for (Object[] g : objecten)
-                    assertNumber("0", TmsDocuments.lees(g[1], "beginstand"), "beginstand in volgorde " + where);
+                for (Object[] g : objects)
+                    assertNumber("0", TmsDocuments.read(g[1], "beginstand"), "beginstand in volgorde " + where);
                 List<Integer> phases = new ArrayList<>();
                 for (Object[] l : left) phases.add((Integer) l[2]);
                 phases.sort(null);
@@ -851,11 +851,11 @@ class TmsCreationStratumWitnessTest {
     /** "Eén voorganger heeft één opvolger", the opvolger role with the plural a count over it spells, and "Een
      *  ontvanger heeft meerdere beloningen". */
     private static final String MODEL_R = TmsDocuments.model(List.of(
-            objecttype("Wachter", List.of(attribuut("rang", WHOLE), attribuut("stand", WHOLE),
-                    attribuut("beloningaantal", WHOLE), attribuut("erfbeloning", WHOLE),
-                    attribuut("beginbeloning", WHOLE), attribuut("opvolgerbegin", WHOLE),
-                    attribuut("verder", WHOLE)), List.of()),
-            objecttype("Beloning", List.of(), List.of())),
+            objectType("Wachter", List.of(attribute("rang", WHOLE), attribute("stand", WHOLE),
+                    attribute("beloningaantal", WHOLE), attribute("erfbeloning", WHOLE),
+                    attribute("beginbeloning", WHOLE), attribute("opvolgerbegin", WHOLE),
+                    attribute("verder", WHOLE)), List.of()),
+            objectType("Beloning", List.of(), List.of())),
             List.of("{\"node\":\"FactType\",\"name\":\"opvolging\",\"reciprocal\":false,\"roles\":["
                             + "{\"node\":\"Role\",\"name\":\"voorganger\",\"objectType\":\"Wachter\",\"many\":false},"
                             + "{\"node\":\"Role\",\"name\":\"opvolger\",\"objectType\":\"Wachter\","
@@ -916,7 +916,7 @@ class TmsCreationStratumWitnessTest {
      * verder(W1) = 0 in each of the twelve orders of the two creations and the three rules on the cycle in the
      * document.
      *
-     * <p>This is the witness for an object creation that fires outside the driver ({@code DroolsBackend.vuur}). The
+     * <p>This is the witness for an object creation that fires outside the driver ({@code DroolsBackend.fire}). The
      * driver gives the group of the object creations the focus once per generation, at a fixpoint of the rule layer.
      * With auto-focus on the object creations "beloon" gets its match, and the focus, as soon as the rule layer sets
      * the stand of W1 to 1 in generation 1, and fires in that generation, on a world that is not settled. The rule
@@ -932,33 +932,33 @@ class TmsCreationStratumWitnessTest {
      */
     @Test void an_object_creation_that_the_rule_layer_makes_possible_fires_in_the_next_generation() throws Exception {
         JsonNode caseDocument = TmsDocuments.caseDocument(List.of(instanceWithRoles("W1", "Wachter", Map.of("rang", "1"), List.of(),
-                Map.of())), List.of(waarde("W1", "stand", "1"), waarde("W1", "beloningaantal", "1"),
-                waarde("W1", "opvolgerbegin", null), waarde("W1", "verder", "0")));
+                Map.of())), List.of(value("W1", "stand", "1"), value("W1", "beloningaantal", "1"),
+                value("W1", "opvolgerbegin", null), value("W1", "verder", "0")));
         playsInEveryOrder(List.of(WERF_R, BELOON_R), CYCLE_R, TmsCreationStratumWitnessTest::documentR, caseDocument);
         Path ir = documentR(List.of(WERF_R, BELOON_R), CYCLE_R);
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261009L, 100)) {
+            for (List<String> names : sample(generated(b), 20261009L, 100)) {
                 String where = names + " op " + branch;
                 Object w1 = TmsDocuments.beanObject(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
-                List<Object[]> objecten = new ArrayList<>();
-                assertNull(fireInOrder(b, names, List.of(w1), sessie -> { },
-                        sessie -> objecten.addAll(made(sessie))),
+                List<Object[]> objects = new ArrayList<>();
+                assertNull(fireInOrder(b, names, List.of(w1), session -> { },
+                        session -> objects.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertNumber("0", TmsDocuments.lees(w1, "verder"), "verder van W1 in volgorde " + where);
-                assertNumber("1", TmsDocuments.lees(w1, "beloningaantal"), "beloningaantal van W1 in volgorde " + where);
-                List<String> kinds = new ArrayList<>(kinds(objecten));
+                assertNumber("0", TmsDocuments.read(w1, "verder"), "verder van W1 in volgorde " + where);
+                assertNumber("1", TmsDocuments.read(w1, "beloningaantal"), "beloningaantal van W1 in volgorde " + where);
+                List<String> kinds = new ArrayList<>(kinds(objects));
                 kinds.sort(null);
                 assertEquals(List.of("Beloning in fase 2", "Beloning in fase 3", "Beloning in fase 4",
                         "Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), kinds,
                         () -> "volgorde " + where);
-                for (Object[] g : objecten) {
+                for (Object[] g : objects) {
                     if (!g[1].getClass().getSimpleName().equals("Wachter")) continue;
                     if ((Integer) g[2] == 1)
-                        assertNull(TmsDocuments.lees(g[1], "beginbeloning"),
+                        assertNull(TmsDocuments.read(g[1], "beginbeloning"),
                                 () -> "beginbeloning van W2 in volgorde " + where);
                     else
-                        assertNumber("0", TmsDocuments.lees(g[1], "beginbeloning"),
+                        assertNumber("0", TmsDocuments.read(g[1], "beginbeloning"),
                                 "beginbeloning in volgorde " + where);
                 }
             }
@@ -975,17 +975,17 @@ class TmsCreationStratumWitnessTest {
     }
 
     /** Fires document {@code ir} on {@link #boeienlijn} through the driver in a sample of orders of its rules: each
-     *  reaches its fixpoint with {@code objecten} objects made. */
-    private static void playsThroughTheDriver(Path ir, int objecten) throws Exception {
+     *  reaches its fixpoint with {@code objects} objects made. */
+    private static void playsThroughTheDriver(Path ir, int objects) throws Exception {
         for (DroolsBackend.Branch branch : BRANCHES) {
             DroolsBackend.Build b = DroolsBackend.build(ir, branch);
-            for (List<String> names : sample(gegenereerd(b), 20261008L, 10)) {
+            for (List<String> names : sample(generated(b), 20261008L, 10)) {
                 String where = names + " op " + branch;
                 List<Object[]> made = new ArrayList<>();
-                assertNull(fireInOrder(b, names, boeienlijn(b), sessie -> { },
-                        sessie -> made.addAll(made(sessie))),
+                assertNull(fireInOrder(b, names, boeienlijn(b), session -> { },
+                        session -> made.addAll(made(session))),
                         () -> "volgorde " + where);
-                assertEquals(objecten, made.size(), () -> "objecten in volgorde " + where);
+                assertEquals(objects, made.size(), () -> "objecten in volgorde " + where);
             }
         }
     }
@@ -999,38 +999,38 @@ class TmsCreationStratumWitnessTest {
 
     /** Plays case {@code caseDocument} through the replay on every order of {@code creations} and of {@code rules} in the
      *  document; each must play. */
-    private static void playsInEveryOrder(List<String> creations, List<String> rules, Build bouw, JsonNode caseDocument)
+    private static void playsInEveryOrder(List<String> creations, List<String> rules, Build build, JsonNode caseDocument)
             throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> c : permutations(creations))
             for (List<String> r : permutations(rules)) {
                 String names = ruleNames(c) + " " + ruleNames(r);
-                outcomes.add(names + " " + TmsFaultWitnessTest.playBoth(bouw.van(c, r), caseDocument));
-                verwacht.add(names + " gespeeld");
+                outcomes.add(names + " " + TmsFaultWitnessTest.playBoth(build.van(c, r), caseDocument));
+                expected.add(names + " gespeeld");
             }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     /** The made objects as "&lt;type&gt; in fase &lt;phase&gt;", in the order of {@link TmsCreationWitnessTest#made}. */
     private static List<String> kinds(List<Object[]> made) {
-        return made.stream().map(TmsCreationStratumWitnessTest::soort).toList();
+        return made.stream().map(TmsCreationStratumWitnessTest::category).toList();
     }
 
-    private static String soort(Object[] g) {
+    private static String category(Object[] g) {
         return g[1].getClass().getSimpleName() + " in fase " + g[2];
     }
 
-    private static void setRole(Object beanObject, String rol, Object doel) throws Exception {
+    private static void setRole(Object beanObject, String role, Object target) throws Exception {
         for (Method m : beanObject.getClass().getMethods())
-            if (m.getName().equals(dev.uchar.regelspraak.transpiler.kern.Namen.setter(rol)) && m.getParameterCount() == 1) {
-                m.invoke(beanObject, doel);
+            if (m.getName().equals(dev.uchar.regelspraak.transpiler.core.Namen.setter(role)) && m.getParameterCount() == 1) {
+                m.invoke(beanObject, target);
                 return;
             }
-        throw new AssertionError("geen setter voor " + rol + " op " + beanObject.getClass());
+        throw new AssertionError("geen setter voor " + role + " op " + beanObject.getClass());
     }
 
-    private static void assertNumber(String verwacht, Object werkelijk, String description) {
-        assertTrue(werkelijk instanceof BigDecimal w && new BigDecimal(verwacht).compareTo(w) == 0,
-                () -> description + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    private static void assertNumber(String expected, Object actual, String description) {
+        assertTrue(actual instanceof BigDecimal w && new BigDecimal(expected).compareTo(w) == 0,
+                () -> description + ": verwacht " + expected + ", werkelijk " + actual);
     }
 }

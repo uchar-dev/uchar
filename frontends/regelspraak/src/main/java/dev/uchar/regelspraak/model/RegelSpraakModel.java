@@ -15,7 +15,7 @@ public final class RegelSpraakModel {
     public final Map<String, Datatype> domeinen = new LinkedHashMap<>();
     public final Map<String, Parameter> parameters = new LinkedHashMap<>();
     public final Map<String, UnitSystem> unitSystems = new LinkedHashMap<>();
-    public final Map<String, Feittype> feittypen = new LinkedHashMap<>();
+    public final Map<String, FactType> feittypen = new LinkedHashMap<>();
     public final List<String> dayKinds = new ArrayList<>();
     /** §3.12 a dagsoort may be the EENHEID of a Numeriek attribute ("5 werkdagen"); maps every unit spelling
      *  (the singular name AND its declared meervoud, lowercased) to the dagsoort's singular name, so the §6
@@ -30,29 +30,29 @@ public final class RegelSpraakModel {
     public final Map<String, Dimension> dimensies = new LinkedHashMap<>();
     public final List<Rule> regels = new ArrayList<>();
     /** Resolved rule IR (typed expressions + bound references) — the transpiler's input. */
-    public final List<dev.uchar.regelspraak.ir.ResolvedRegel> resolvedRegels = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedRule> resolvedRegels = new ArrayList<>();
     /** Resolved §9.8 dagsoortdefinities (dagsoort name + condition over "de dag") — each becomes a
      *  per-date boolean predicate the transpilers compile for §8.1.5 controls and the §6 durations. */
     public final List<dev.uchar.regelspraak.ir.ResolvedDayKindDefinition> resolvedDayKindDefinitions = new ArrayList<>();
     /** Resolved object-creation rules (§13.4.6) — a separate IR shape (new object + attributes). */
-    public final List<dev.uchar.regelspraak.ir.ResolvedObjectCreation> objectCreaties = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedObjectCreation> objectCreations = new ArrayList<>();
     /** Resolved distribution rules (§13.4.10) — source amount spread over recipients. */
-    public final List<dev.uchar.regelspraak.ir.ResolvedVerdeling> verdelingen = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedAllocation> allocations = new ArrayList<>();
     /** Resolved consistency rules (§13.4.8) — an assertion that must hold, else inconsistent. */
     public final List<dev.uchar.regelspraak.ir.ResolvedConsistency> consistenties = new ArrayList<>();
     /** Resolved §8.1.6 uniqueness checks — a key that must be unique across instances, else inconsistent. */
-    public final List<dev.uchar.regelspraak.ir.ResolvedUniqueness> uniciteiten = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedUniqueness> uniquenesses = new ArrayList<>();
     /** Resolved §8.1.6 cross-type "verenigd met" uniqueness — a key unique across the union of types. */
-    public final List<dev.uchar.regelspraak.ir.ResolvedUniquenessUnion> uniciteitUnies = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedUniquenessUnion> uniquenessUnions = new ArrayList<>();
     /** Resolved §13.4.7 feitcreatie rules — a new feittype instance (a reference field) linking two existing objects. */
-    public final List<dev.uchar.regelspraak.ir.ResolvedFactCreation> feitCreaties = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedFactCreation> factCreations = new ArrayList<>();
     /** Resolved §9.9/§13.4.12 startpuntbepalingen — the anchor member per (objecttype, variable tijdlijn);
      *  the anchor WRITE itself is an ordinary entry in {@link #resolvedRegels}. */
     public final List<dev.uchar.regelspraak.ir.ResolvedStartPointDetermination> resolvedStartPointDeterminations = new ArrayList<>();
     /** §9.10 Regelgroepen — a DOCUMENTED EXTENSION (see grammar/DIVERGENCES.md). Each carries its member
      *  RULE NAMES (the bare written names); members otherwise resolve exactly as ungrouped rules. Both back-ends
      *  prefix ONLY the engine-visible rule-name header with "<groep>: " — every data key stays the bare name. */
-    public final List<dev.uchar.regelspraak.ir.ResolvedRegelGroep> regelGroepen = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedRuleGroup> ruleGroups = new ArrayList<>();
     /** §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) the PrioritizedDefaults nodes lowered from the uchar-dialect
      *  'Uitzondering op' / 'Uitzonderingen ongeordend' extension — the ONLY path by which the RegelSpraak
      *  frontend produces defaults groups (the flat v0-mirror rules never do). Empty for every document without
@@ -66,19 +66,19 @@ public final class RegelSpraakModel {
      *  blocks and of the member and rule of a fold with steps after the set part by part from the declarations their
      *  name is made of ("Gegenereerde elementen"); the Drools IR loader fills both from the wire; a
      *  document without vocabularies leaves both empty, and the emitter then writes neither. Read them through
-     *  {@link #benaming}, {@link #effectiveName} and {@link #benoemd}. */
-    public final List<Vocabulaire> vocabulaires = new ArrayList<>();
+     *  {@link #benaming}, {@link #effectiveName} and {@link #namedElement}. */
+    public final List<Vocabulary> vocabularies = new ArrayList<>();
     /** IR-SPEC ch. 2.12 the designations of every declaration that carries one, each list in written order. */
-    public final Map<Benoembaar, List<Designation>> designations = new LinkedHashMap<>();
-    /** Every element of {@link #benoembaar()} the frontend made itself, under a name no declaration in the source
+    public final Map<Designatable, List<Designation>> designations = new LinkedHashMap<>();
+    /** Every element of {@link #designatable()} the frontend made itself, under a name no declaration in the source
      *  carries, with the declared element it comes from and the form that made it (grammar/DIVERGENCES.md,
      *  "Gegenereerde elementen"). A side table without semantics, like {@link #designations}: no transpiler reads it.
      *  The emitter writes each entry as the field {@code origin} of the element's node (IR-SPEC ch. 2.13), and the
      *  Drools IR loader reads it back, so a model read from the wire has the table the frontend's had. An element
      *  whose name the author wrote has no entry, also where the frontend made the element (a defaults group named
-     *  after its base rule). Keyed as {@link #benoembaar()} spells the element; read it through
-     *  {@link #gegenereerdUit}. */
-    public final Map<Benoembaar, GegenereerdUit> gegenereerd = new LinkedHashMap<>();
+     *  after its base rule). Keyed as {@link #designatable()} spells the element; read it through
+     *  {@link #generatedFrom}. */
+    public final Map<Designatable, GeneratedFrom> generated = new LinkedHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
 
     /** A copy of this model that holds every element of every collection (the elements are shared). The scoped IR
@@ -109,17 +109,17 @@ public final class RegelSpraakModel {
      *  Matches the LONGEST group member name that is a prefix of {@code emittedName} at a token boundary (end,
      *  " #", or " ("), so a member "R" never spuriously captures an ungrouped "R2". Null when the rule is ungrouped
      *  — the back-ends then emit the bare header. */
-    public dev.uchar.regelspraak.ir.ResolvedRegelGroep ruleGroupOf(String emittedName) {
+    public dev.uchar.regelspraak.ir.ResolvedRuleGroup ruleGroupOf(String emittedName) {
         if (emittedName == null) return null;
-        dev.uchar.regelspraak.ir.ResolvedRegelGroep beste = null;
-        int besteLen = -1;
-        for (var g : regelGroepen)
-            for (String member : g.leden())
-                if (member.length() > besteLen && emittedName.equals(member)
-                        || member.length() > besteLen && (emittedName.startsWith(member + " #") || emittedName.startsWith(member + " ("))) {
-                    beste = g; besteLen = member.length();
+        dev.uchar.regelspraak.ir.ResolvedRuleGroup best = null;
+        int bestLen = -1;
+        for (var g : ruleGroups)
+            for (String member : g.members())
+                if (member.length() > bestLen && emittedName.equals(member)
+                        || member.length() > bestLen && (emittedName.startsWith(member + " #") || emittedName.startsWith(member + " ("))) {
+                    best = g; bestLen = member.length();
                 }
-        return beste;
+        return best;
     }
 
     /** §9.10 fase-2: whether the EMITTED rule {@code emittedName} belongs to a {@code is recursief} Regelgroep.
@@ -167,46 +167,46 @@ public final class RegelSpraakModel {
      *  on the declared name would leave the anchor half-reachable. Closing the family is a change with
      *  its own measurement (its consumers are all in the back-ends, where no corpus witness exercises a
      *  subtype yet) — see the card note. */
-    public boolean hasVariableStart(Objecttype ot, String attribuut) {
-        String tlName = ot.attributeTimelineName.get(attribuut);
+    public boolean hasVariableStart(Objecttype ot, String attribute) {
+        String tlName = ot.attributeTimelineName.get(attribute);
         Timeline tl = tlName == null ? null : timelineByName(tlName);
         return tl != null && tl.variabelStartpunt();
     }
 
     /** §9.9 the startpunt-anchor attribute a variable-startpunt temporal doel buckets at, or null (a
      *  fixed/inline tijdlijn, or no startpuntbepaling resolved for the pair — the back-ends then marker). */
-    public String startPointAnchorMember(Objecttype ot, String attribuut) {
-        if (!hasVariableStart(ot, attribuut)) return null;
-        return startPointMember(ot, ot.attributeTimelineName.get(attribuut));   // own, with the family above
+    public String startPointAnchorMember(Objecttype ot, String attribute) {
+        if (!hasVariableStart(ot, attribute)) return null;
+        return startPointMember(ot, ot.attributeTimelineName.get(attribute));   // own, with the family above
     }
 
     /** RUNTIME-SEMANTICS ch. 3.2 the constant anchor a temporal doel on a FIXED start point buckets at: the date
      *  its walls are computed from, or null on the calendar grid. The bucketing producers run on a month or year
      *  doel of one unit only, and there the start point is a day-month (WF-115). */
-    public java.time.LocalDate fixedStartPointAnchor(Objecttype ot, String attribuut) {
-        String fixed = ot.fixedStartPointOf(attribuut);
+    public java.time.LocalDate fixedStartPointAnchor(Objecttype ot, String attribute) {
+        String fixed = ot.fixedStartPointOf(attribute);
         if (fixed == null) return null;
-        dev.uchar.regelspraak.kern.FixedStartPoint.Lexeme l = dev.uchar.regelspraak.kern.FixedStartPoint.parse(fixed);
+        dev.uchar.regelspraak.core.FixedStartPoint.Lexeme l = dev.uchar.regelspraak.core.FixedStartPoint.parse(fixed);
         if (l == null)
-            throw new IllegalStateException("fixed start point '" + fixed + "' of '" + attribuut + "' is no lexeme of "
+            throw new IllegalStateException("fixed start point '" + fixed + "' of '" + attribute + "' is no lexeme of "
                     + "WF-115, which the loader refuses");
-        return dev.uchar.regelspraak.kern.FixedStartPoint.anchor(l);
+        return dev.uchar.regelspraak.core.FixedStartPoint.anchor(l);
     }
 
-    /** §9.9 whether {@code lid} is the synthetic startpunt-anchor attribute of {@code objecttype} — the
+    /** §9.9 whether {@code lid} is the synthetic startpunt-anchor attribute of {@code objectType} — the
      *  back-ends key the §6.8 leeg-fout companion on it. */
-    public boolean isStartPointMember(Objecttype objecttype, String member) {
-        return objecttype != null && resolvedStartPointDeterminations.stream()
-                .anyMatch(sp -> sp.objecttype().equals(objecttype.naam) && sp.member().equals(member));
+    public boolean isStartPointMember(Objecttype objectType, String member) {
+        return objectType != null && resolvedStartPointDeterminations.stream()
+                .anyMatch(sp -> sp.objectType().equals(objectType.naam) && sp.member().equals(member));
     }
 
-    /** §9.9 the synthetic anchor-attribute name for {@code objecttype} × variable tijdlijn {@code tijdlijnNaam},
+    /** §9.9 the synthetic anchor-attribute name for {@code objectType} × variable tijdlijn {@code tijdlijnNaam},
      *  or null when no startpuntbepaling was resolved for that pair. */
-    public String startPointMember(Objecttype objecttype, String tijdlijnNaam) {
-        if (objecttype == null || tijdlijnNaam == null) return null;
+    public String startPointMember(Objecttype objectType, String tijdlijnNaam) {
+        if (objectType == null || tijdlijnNaam == null) return null;
         String ref = normaliseTimelineName(tijdlijnNaam);
         return resolvedStartPointDeterminations.stream()
-                .filter(sp -> sp.objecttype().equals(objecttype.naam) && normaliseTimelineName(sp.tijdlijn()).equals(ref))
+                .filter(sp -> sp.objectType().equals(objectType.naam) && normaliseTimelineName(sp.tijdlijn()).equals(ref))
                 .map(dev.uchar.regelspraak.ir.ResolvedStartPointDetermination::member).findFirst().orElse(null);
     }
 
@@ -221,9 +221,9 @@ public final class RegelSpraakModel {
     public boolean inconsistencyProducer(String naam) {
         if (naam == null) return false;
         return consistenties.stream().anyMatch(c -> naam.equals(c.naam()))
-                || uniciteiten.stream().anyMatch(u -> naam.equals(u.naam()))
-                || uniciteitUnies.stream().anyMatch(u -> naam.equals(u.naam()))
-                || verdelingen.stream().anyMatch(v -> naam.equals(v.naam()));
+                || uniquenesses.stream().anyMatch(u -> naam.equals(u.naam()))
+                || uniquenessUnions.stream().anyMatch(u -> naam.equals(u.naam()))
+                || allocations.stream().anyMatch(v -> naam.equals(v.naam()));
     }
 
     /** §8.1.9 the rule names referenced by a live "regelversie &lt;X&gt; is gevuurd" predicate anywhere in the
@@ -233,11 +233,11 @@ public final class RegelSpraakModel {
      *  {@code exists RuleFired} only for a name that is both referenced AND an instrumented producer. */
     public java.util.Set<String> firedReferences() {
         java.util.Set<String> result = new java.util.LinkedHashSet<>();
-        for (var r : resolvedRegels) dev.uchar.regelspraak.ir.Conditie.collectFiredReferences(r.voorwaarde(), result);
-        for (var v : verdelingen)    dev.uchar.regelspraak.ir.Conditie.collectFiredReferences(v.voorwaarde(), result);
-        for (var oc : objectCreaties) dev.uchar.regelspraak.ir.Conditie.collectFiredReferences(oc.voorwaarde(), result);
-        for (var fc : feitCreaties)  dev.uchar.regelspraak.ir.Conditie.collectFiredReferences(fc.voorwaarde(), result);
-        for (var c : consistenties)  dev.uchar.regelspraak.ir.Conditie.collectFiredReferences(c.assertie(), result);
+        for (var r : resolvedRegels) dev.uchar.regelspraak.ir.Condition.collectFiredReferences(r.condition(), result);
+        for (var v : allocations)    dev.uchar.regelspraak.ir.Condition.collectFiredReferences(v.condition(), result);
+        for (var oc : objectCreations) dev.uchar.regelspraak.ir.Condition.collectFiredReferences(oc.condition(), result);
+        for (var fc : factCreations)  dev.uchar.regelspraak.ir.Condition.collectFiredReferences(fc.condition(), result);
+        for (var c : consistenties)  dev.uchar.regelspraak.ir.Condition.collectFiredReferences(c.assertie(), result);
         return result;
     }
 
@@ -250,17 +250,17 @@ public final class RegelSpraakModel {
      *  ONLY the lowering; emission is additionally gated on the name being in {@link #firedReferences()}. */
     public boolean firedProducer(String naam) {
         if (naam == null) return false;
-        return resolvedRegels.stream().anyMatch(r -> naam.equals(r.naam()) && firedInstrumentable(r.soort()));
+        return resolvedRegels.stream().anyMatch(r -> naam.equals(r.naam()) && firedInstrumentable(r.category()));
     }
 
     /** The §8.1.9 main-regel() rule kinds whose consequence carries a {@code RuleFired} insert (the scalar/kenmerk
      *  value writers routed through {@code regel()}); an objectcreatie/feitcreatie/verdeling/consistentie is out
      *  of this instrumented set (its status stays a marker). */
-    private static boolean firedInstrumentable(dev.uchar.regelspraak.ir.ResolvedRegel.Soort s) {
-        return s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.GELIJKSTELLING
-                || s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.BEREKENING
-                || s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.INITIALISATIE
-                || s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.KENMERKTOEKENNING;
+    private static boolean firedInstrumentable(dev.uchar.regelspraak.ir.ResolvedRule.Kind s) {
+        return s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.GELIJKSTELLING
+                || s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.BEREKENING
+                || s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.INITIALISATIE
+                || s == dev.uchar.regelspraak.ir.ResolvedRule.Kind.KENMERKTOEKENNING;
     }
 
     /**
@@ -275,7 +275,7 @@ public final class RegelSpraakModel {
      */
     public Objecttype resolveObjectType(String naam) {
         for (String kandidaat : nameCandidates(naam)) {
-            Objecttype direct = objecttypeOpNaam(kandidaat);
+            Objecttype direct = objectTypeByName(kandidaat);
             if (direct != null) return direct;
             Objecttype viaRole = objectTypeViaRole(kandidaat);
             if (viaRole != null) return viaRole;
@@ -295,7 +295,7 @@ public final class RegelSpraakModel {
     public RoleBindingRef namedRoleBinding(Objecttype subject, Objecttype createdType, String naam) {
         if (subject == null || createdType == null) return null;
         for (String kandidaat : nameCandidates(naam))
-            if (objecttypeOpNaam(kandidaat) != null || objectTypeViaRole(kandidaat) != null)
+            if (objectTypeByName(kandidaat) != null || objectTypeViaRole(kandidaat) != null)
                 return connectingRoleViaNameBinding(subject, createdType, kandidaat);
         return null;
     }
@@ -320,7 +320,7 @@ public final class RegelSpraakModel {
      *  only, never a feittype role. Distinct from {@link #resolveObjectType}, which also reaches a
      *  type through a role; a feitcreatie back-reference needs the strict form to tell "de groep"
      *  (the iterated anker itself) from "de buurgroep" (a different group of the same type). */
-    public Objecttype objecttypeOpNaam(String naam) {
+    public Objecttype objectTypeByName(String naam) {
         Objecttype exact = objecttypen.get(naam);
         if (exact != null) return exact;
         for (var e : objecttypen.entrySet())
@@ -346,10 +346,10 @@ public final class RegelSpraakModel {
      *  role is named so. A role whose filler is no declared object type is skipped. */
     private Objecttype[] rolesFiller(String naam, boolean declared) {
         Objecttype[] found = null;
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen) {
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen) {
                 if (!(declared ? roleMatchesExact(r, naam) : roleMatchesBestEffort(r, naam))) continue;
-                Objecttype fillerType = objecttypeOpNaam(r.objecttypeNaam());
+                Objecttype fillerType = objectTypeByName(r.objecttypeNaam());
                 if (fillerType == null) continue;
                 if (found == null) found = new Objecttype[] {fillerType};
                 else if (found[0] != fillerType) found[0] = null;
@@ -371,10 +371,10 @@ public final class RegelSpraakModel {
         if (houder == null || target == null) return null;
         String found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol doel : ft.rollen)
-                if (roleHasObjectType(doel, target) && factTypeRelates(ft, doel, houder)) {
-                    found = doel.naam();
+        for (FactType ft : feittypen.values())
+            for (Role targetName : ft.rollen)
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                    found = targetName.naam();
                     n++;
                 }
         return n == 1 ? found : null;
@@ -385,9 +385,9 @@ public final class RegelSpraakModel {
     public int connectingRoleCount(Objecttype houder, Objecttype target) {
         if (houder == null || target == null) return 0;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol doel : ft.rollen)
-                if (roleHasObjectType(doel, target) && factTypeRelates(ft, doel, houder)) n++;
+        for (FactType ft : feittypen.values())
+            for (Role targetName : ft.rollen)
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) n++;
         return n;
     }
 
@@ -404,17 +404,17 @@ public final class RegelSpraakModel {
      * {@code [connectingRole(houder, doelwit)]}.
      *
      * <p>Cardinality is deliberately NOT filtered here: this answers "which roles are addressable", and
-     * whether a role's storage lives on this side is the caller's own {@link #naarVeelRol} question (the
+     * whether a role's storage lives on this side is the caller's own {@link #toManyRole} question (the
      * same split {@link #connectingRole}'s callers already make).
      */
     public List<String> connectingRoles(Objecttype houder, Objecttype target) {
         List<String> result = new ArrayList<>();
         if (houder == null || target == null) return result;
-        for (Feittype ft : feittypen.values())
-            for (Rol doel : ft.rollen)
-                if (roleHasObjectType(doel, target) && factTypeRelates(ft, doel, houder)) {
-                    String r = connectingRoleViaName(houder, target, doel.naam());
-                    if (r != null && r.equalsIgnoreCase(doel.naam())
+        for (FactType ft : feittypen.values())
+            for (Role targetName : ft.rollen)
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                    String r = connectingRoleViaName(houder, target, targetName.naam());
+                    if (r != null && r.equalsIgnoreCase(targetName.naam())
                             && result.stream().noneMatch(x -> x.equalsIgnoreCase(r))) result.add(r);
                 }
         return result;
@@ -448,11 +448,11 @@ public final class RegelSpraakModel {
     private String findConnectingRole(Objecttype houder, Objecttype target, String writtenRole, boolean exactOnly) {
         String found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol doel : ft.rollen) {
-                boolean nameMatches = exactOnly ? roleMatchesExact(doel, writtenRole) : roleMatches(doel, writtenRole);
-                if (nameMatches && roleHasObjectType(doel, target) && factTypeRelates(ft, doel, houder)) {
-                    found = doel.naam();
+        for (FactType ft : feittypen.values())
+            for (Role targetName : ft.rollen) {
+                boolean nameMatches = exactOnly ? roleMatchesExact(targetName, writtenRole) : roleMatches(targetName, writtenRole);
+                if (nameMatches && roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                    found = targetName.naam();
                     n++;
                 }
             }
@@ -464,9 +464,9 @@ public final class RegelSpraakModel {
      *  wederkerig feittype (§13.3.9.2) the single role relates the object type to
      *  itself, so it is enough that that role's own type is {@code houder}. A null
      *  {@code houder} imposes no constraint. */
-    private boolean factTypeRelates(Feittype ft, Rol targetRole, Objecttype houder) {
+    private boolean factTypeRelates(FactType ft, Role targetRole, Objecttype houder) {
         if (houder == null) return true;
-        if (ft.wederkerig) return roleHasObjectType(targetRole, houder);
+        if (ft.reciprocal) return roleHasObjectType(targetRole, houder);
         return ft.rollen.stream().anyMatch(h -> h != targetRole && roleHasObjectType(h, houder));
     }
 
@@ -475,14 +475,14 @@ public final class RegelSpraakModel {
      *  {@code subject}. This is the §13.4.1.2/.3 rolnaam reading of a navigation filler —
      *  used to override a same-named objecttype that does not itself join the subject.
      *  Returns null when no role, or more than one (ambiguous), matches. */
-    public Objecttype rolDoeltypeNaarSubject(Objecttype subject, String writtenRole) {
+    public Objecttype roleTargetTypeToSubject(Objecttype subject, String writtenRole) {
         if (writtenRole == null) return null;
         Objecttype found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen)
                 if (roleMatches(r, writtenRole) && factTypeRelates(ft, r, subject)) {
-                    Objecttype t = objecttypeOpNaam(r.objecttypeNaam());
+                    Objecttype t = objectTypeByName(r.objecttypeNaam());
                     if (t != null) { found = t; n++; }
                 }
         return n == 1 ? found : null;
@@ -492,20 +492,20 @@ public final class RegelSpraakModel {
      * The scopes a parent-scoped uniqueness "de X van alle &lt;element&gt; van de &lt;ouder&gt;" can take (§8.1.6;
      * IR-SPEC ch. 3.6 {@code scope}), each the binding of its parent role, found as a navigated read binds its written
      * role (grammar/DIVERGENCES.md, §13.4.1): every relation in which a role {@code ouder} names relates
-     * {@code element}, counted as {@link #rolDoeltypeNaarSubject} counts them, whatever else joins the two types;
+     * {@code element}, counted as {@link #roleTargetTypeToSubject} counts them, whatever else joins the two types;
      * where those are several and {@code elementName} names the element's role, by its declared name or plural, in
      * exactly one of them, that one. A reciprocal relation counts, so that the caller refuses it for what it is.
      */
     public List<RoleBindingRef> scopeBindings(Objecttype element, String elementName, String parent) {
         List<RoleBindingRef> all = new ArrayList<>(), named = new ArrayList<>();
         if (element == null || parent == null) return all;
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen)
                 if (roleMatches(r, parent) && factTypeRelates(ft, r, element)
-                        && objecttypeOpNaam(r.objecttypeNaam()) != null) {
+                        && objectTypeByName(r.objecttypeNaam()) != null) {
                     RoleBindingRef rb = new RoleBindingRef(ft.naam, r.naam());
                     all.add(rb);
-                    if (elementName != null && ft.rollen.stream().anyMatch(e -> (e != r || ft.wederkerig)
+                    if (elementName != null && ft.rollen.stream().anyMatch(e -> (e != r || ft.reciprocal)
                             && roleHasObjectType(e, element) && roleMatchesExact(e, elementName))) named.add(rb);
                 }
         return all.size() > 1 && named.size() == 1 ? named : all;
@@ -514,7 +514,7 @@ public final class RegelSpraakModel {
     /** §8.1.7 rolcheck "{@code subject} is een &lt;writtenRole&gt;": the object type at the OTHER end
      *  of the feittype whose role {@code writtenRole} the {@code subject} FILLS — so the subject
      *  participates in that role iff its reference to that other end is set. The mirror of
-     *  {@link #rolDoeltypeNaarSubject} (which navigates FROM the subject TO a role's filler; here the
+     *  {@link #roleTargetTypeToSubject} (which navigates FROM the subject TO a role's filler; here the
      *  subject IS the filler). Returns null when no role named {@code writtenRole} is filled by the
      *  subject, when it is ambiguous (more than one feittype/sibling matches), or when the feittype is
      *  wederkerig (no distinct sibling to join — carded). */
@@ -522,13 +522,13 @@ public final class RegelSpraakModel {
         if (subject == null || writtenRole == null) return null;
         Objecttype found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            if (!ft.wederkerig)
-                for (Rol r : ft.rollen)
+        for (FactType ft : feittypen.values())
+            if (!ft.reciprocal)
+                for (Role r : ft.rollen)
                     if (roleMatches(r, writtenRole) && roleHasObjectType(r, subject))   // subject fills role r
-                        for (Rol other : ft.rollen)
+                        for (Role other : ft.rollen)
                             if (other != r) {
-                                Objecttype t = objecttypeOpNaam(other.objecttypeNaam());
+                                Objecttype t = objectTypeByName(other.objecttypeNaam());
                                 if (t != null) { found = t; n++; }
                             }
         return n == 1 ? found : null;
@@ -548,10 +548,10 @@ public final class RegelSpraakModel {
         if (subject == null || writtenRole == null) return null;
         String found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol elemRole : ft.rollen)
+        for (FactType ft : feittypen.values())
+            for (Role elemRole : ft.rollen)
                 if (roleMatches(elemRole, writtenRole) && factTypeRelates(ft, elemRole, subject))
-                    for (Rol subjRole : ft.rollen)
+                    for (Role subjRole : ft.rollen)
                         if (subjRole != elemRole && roleHasObjectType(subjRole, subject)) { found = subjRole.naam(); n++; }
         return n == 1 ? found : null;
     }
@@ -559,7 +559,7 @@ public final class RegelSpraakModel {
     /** A symbolic role binding: the fact type plus the DECLARED (singular) role name —
      *  the pair the IR emitter's {@code RoleBinding} extension fields carry (a plural
      *  never binds; the wire names the declared role). */
-    public record RoleBindingRef(String feittype, String rol) {}
+    public record RoleBindingRef(String factType, String role) {}
 
     /**
      * Like {@link #connectingRole}, but returning the fact type together with the bound
@@ -572,16 +572,16 @@ public final class RegelSpraakModel {
     public RoleBindingRef connectingRoleBinding(Objecttype houder, Objecttype target) {
         if (houder == null || target == null) return null;
         RoleBindingRef found = null;
-        boolean wederkerig = false;
+        boolean reciprocal = false;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol doel : ft.rollen)
-                if (roleHasObjectType(doel, target) && factTypeRelates(ft, doel, houder)) {
-                    found = new RoleBindingRef(ft.naam, doel.naam());
-                    wederkerig = ft.wederkerig;
+        for (FactType ft : feittypen.values())
+            for (Role targetName : ft.rollen)
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                    found = new RoleBindingRef(ft.naam, targetName.naam());
+                    reciprocal = ft.reciprocal;
                     n++;
                 }
-        return n == 1 && !wederkerig ? found : null;
+        return n == 1 && !reciprocal ? found : null;
     }
 
     /**
@@ -594,10 +594,10 @@ public final class RegelSpraakModel {
      */
     public boolean roleNamedAs(RoleBindingRef rb, String written) {
         if (rb == null || written == null) return false;
-        Feittype ft = feittypen.get(rb.feittype());
+        FactType ft = feittypen.get(rb.factType());
         if (ft == null) return false;
-        for (Rol r : ft.rollen)
-            if (r.naam().equals(rb.rol())) return roleMatches(r, written);
+        for (Role r : ft.rollen)
+            if (r.naam().equals(rb.role())) return roleMatches(r, written);
         return false;
     }
 
@@ -614,11 +614,11 @@ public final class RegelSpraakModel {
         if (target == null || writtenRole == null) return null;
         RoleBindingRef found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol doel : ft.rollen)
-                if (roleMatchesExact(doel, writtenRole) && roleHasObjectType(doel, target)
-                        && factTypeRelates(ft, doel, houder)) {
-                    found = new RoleBindingRef(ft.naam, doel.naam());
+        for (FactType ft : feittypen.values())
+            for (Role targetName : ft.rollen)
+                if (roleMatchesExact(targetName, writtenRole) && roleHasObjectType(targetName, target)
+                        && factTypeRelates(ft, targetName, houder)) {
+                    found = new RoleBindingRef(ft.naam, targetName.naam());
                     n++;
                 }
         return n == 1 ? found : null;
@@ -635,7 +635,7 @@ public final class RegelSpraakModel {
      */
     public RoleBindingRef elementRoleBinding(Objecttype subject, String writtenRole) {
         ElementBindingRef eb = elementBinding(subject, writtenRole);
-        return eb == null ? null : new RoleBindingRef(eb.feittype(), eb.elementRole());
+        return eb == null ? null : new RoleBindingRef(eb.factType(), eb.elementRole());
     }
 
     /**
@@ -675,10 +675,10 @@ public final class RegelSpraakModel {
 
     /** Whether the role {@code rb} binds declares {@code elementType} ITSELF as its filler. */
     private boolean fillsExactly(RoleBindingRef rb, Objecttype elementType) {
-        Feittype ft = feittypen.get(rb.feittype());
+        FactType ft = feittypen.get(rb.factType());
         if (ft == null) return false;
-        for (Rol r : ft.rollen)
-            if (r.naam().equals(rb.rol())) return objecttypeOpNaam(r.objecttypeNaam()) == elementType;
+        for (Role r : ft.rollen)
+            if (r.naam().equals(rb.role())) return objectTypeByName(r.objecttypeNaam()) == elementType;
         return false;
     }
 
@@ -688,16 +688,16 @@ public final class RegelSpraakModel {
      *  returning the whole pair, so a §13.4.7 feitcreatie can materialise its symbolic hops
      *  (created relation, join, tussenstap) at resolution time. Only a DECLARED role name binds
      *  (never the best-effort plural). Null when no role, or more than one, matches. */
-    public record ElementBindingRef(String feittype, String subjectRole, String elementRole) {}
+    public record ElementBindingRef(String factType, String subjectRole, String elementRole) {}
 
     public ElementBindingRef elementBinding(Objecttype subject, String writtenRole) {
         if (subject == null || writtenRole == null) return null;
         ElementBindingRef found = null;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol elemRole : ft.rollen)
+        for (FactType ft : feittypen.values())
+            for (Role elemRole : ft.rollen)
                 if (roleMatchesExact(elemRole, writtenRole) && factTypeRelates(ft, elemRole, subject))
-                    for (Rol subjRole : ft.rollen)
+                    for (Role subjRole : ft.rollen)
                         if (subjRole != elemRole && roleHasObjectType(subjRole, subject)) {
                             found = new ElementBindingRef(ft.naam, subjRole.naam(), elemRole.naam());
                             n++;
@@ -710,7 +710,7 @@ public final class RegelSpraakModel {
      *  object type that role reaches. The to-MANY-range sibling of {@link ChainHop}, which is a to-one
      *  getter hop; a step here is neutral about multiplicity, because the flat-union reading is
      *  (RUNTIME-SEMANTICS ch. 3.4b: a to-one step contributes its zero-or-one instance like any other). */
-    public record RangeHop(RoleBindingRef binding, Objecttype doel) {}
+    public record RangeHop(RoleBindingRef binding, Objecttype targetName) {}
 
     /** Resolve ONE written step of a fold-source range from {@code houder}: the unique fact-type role
      *  that {@code writtenElement} names, in a fact type that also relates {@code houder}. The written
@@ -722,56 +722,56 @@ public final class RegelSpraakModel {
     public RangeHop rangeHop(Objecttype houder, String writtenElement) {
         ElementBindingRef eb = elementBinding(houder, writtenElement);
         if (eb == null) return null;
-        Feittype ft = feittypen.get(eb.feittype());
+        FactType ft = feittypen.get(eb.factType());
         if (ft == null) return null;
-        for (Rol r : ft.rollen)
+        for (Role r : ft.rollen)
             if (r.naam().equals(eb.elementRole())) {
-                Objecttype doel = objecttypeOpNaam(r.objecttypeNaam());
-                return doel == null ? null : new RangeHop(new RoleBindingRef(eb.feittype(), r.naam()), doel);
+                Objecttype targetName = objectTypeByName(r.objecttypeNaam());
+                return targetName == null ? null : new RangeHop(new RoleBindingRef(eb.factType(), r.naam()), targetName);
             }
         return null;
     }
 
     /** A role a written step of a fold-source range names from a holder, with the fact type it belongs to. */
-    public record StepCandidate(Feittype feittype, Rol rol) {}
+    public record StepCandidate(FactType factType, Role role) {}
 
     /** The roles a written step of a fold-source range names from {@code houder}, split by why {@link #rangeHop}
      *  takes them or not. {@code declared}: by a DECLARED name (singular or declared plural) in a two-role fact
      *  type, one entry for each binding {@link #elementBinding} counts, so the step binds exactly when there is one
      *  and its filler is a declared object type. {@code afgeleid}: by the best-effort plural alone, which binds no
-     *  step. {@code wederkerig}: in a reciprocal fact type, whose single role gives no two-role step. It exists for
+     *  step. {@code reciprocal}: in a reciprocal fact type, whose single role gives no two-role step. It exists for
      *  the refusal that names the step and its cause, so the words follow the search that declined the step. */
     public record StepCandidates(List<StepCandidate> declared, List<StepCandidate> derived,
-                                 List<StepCandidate> wederkerig) {}
+                                 List<StepCandidate> reciprocal) {}
 
     public StepCandidates stepCandidates(Objecttype houder, String writtenElement) {
         List<StepCandidate> declared = new ArrayList<>(), derived = new ArrayList<>(),
-                wederkerig = new ArrayList<>();
+                reciprocal = new ArrayList<>();
         if (houder != null && writtenElement != null)
-            for (Feittype ft : feittypen.values())
-                for (Rol r : ft.rollen) {
+            for (FactType ft : feittypen.values())
+                for (Role r : ft.rollen) {
                     if (!roleMatches(r, writtenElement) || !factTypeRelates(ft, r, houder)) continue;
                     StepCandidate k = new StepCandidate(ft, r);
-                    if (ft.wederkerig) wederkerig.add(k);
+                    if (ft.reciprocal) reciprocal.add(k);
                     else if (!roleMatchesExact(r, writtenElement)) derived.add(k);
-                    else for (Rol h : ft.rollen)
+                    else for (Role h : ft.rollen)
                         if (h != r && roleHasObjectType(h, houder)) declared.add(k);
                 }
-        return new StepCandidates(declared, derived, wederkerig);
+        return new StepCandidates(declared, derived, reciprocal);
     }
 
     /** How many roles named {@code writtenRole} are reachable FROM {@code subject} as a far role — the
-     *  count behind {@link #rolDoeltypeNaarSubject}, which collapses zero and several into null. The
+     *  count behind {@link #roleTargetTypeToSubject}, which collapses zero and several into null. The
      *  ch. 4.1a resolution ORDER needs the count and not the winner: far-role resolution comes FIRST, and
      *  a self-denoting reading applies only at ZERO far hits, so an AMBIGUOUS far match must not fall
      *  through to it. */
     public int roleHitsToSubject(Objecttype subject, String writtenRole) {
         if (subject == null || writtenRole == null) return 0;
         int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen)
                 if (roleMatches(r, writtenRole) && factTypeRelates(ft, r, subject)
-                        && objecttypeOpNaam(r.objecttypeNaam()) != null) n++;
+                        && objectTypeByName(r.objecttypeNaam()) != null) n++;
         return n;
     }
 
@@ -782,8 +782,8 @@ public final class RegelSpraakModel {
      *  is a real hop, whatever its filler type happens to be). */
     public boolean fillsSelfRole(Objecttype subject, String writtenRole) {
         if (subject == null || writtenRole == null) return false;
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen)
                 if (roleMatches(r, writtenRole) && roleHasObjectType(r, subject)) return true;
         return false;
     }
@@ -796,9 +796,9 @@ public final class RegelSpraakModel {
      */
     public String navigationRoleName(String noun) {
         if (noun == null || noun.isBlank()) return null;
-        if (objecttypeOpNaam(noun) != null) return null; // names an object type directly — not navigation
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
+        if (objectTypeByName(noun) != null) return null; // names an object type directly — not navigation
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen)
                 if (roleMatches(r, noun)) return noun;
         return null;
     }
@@ -808,19 +808,19 @@ public final class RegelSpraakModel {
      *  on a supertype carry subtype instances. Identity on a flat model, where every type is its
      *  own only ancestor. The name comparison stays as the fall-back for a role naming a type the
      *  model does not declare. */
-    private boolean roleHasObjectType(Rol r, Objecttype ot) {
-        Objecttype filler = objecttypeOpNaam(r.objecttypeNaam());
-        if (filler != null && ot != null) return ot.isEen(filler);
+    private boolean roleHasObjectType(Role r, Objecttype ot) {
+        Objecttype filler = objectTypeByName(r.objecttypeNaam());
+        if (filler != null && ot != null) return ot.isA(filler);
         return ot != null && r.objecttypeNaam().equalsIgnoreCase(ot.naam);
     }
 
-    private static boolean roleMatches(Rol r, String naam) {
+    private static boolean roleMatches(Role r, String naam) {
         return roleMatchesExact(r, naam) || roleMatchesBestEffort(r, naam);
     }
 
     /** A role name the model DECLARES: the singular role name or its declared (mv:)
      *  plural. These are the forms the language actually defines. */
-    private static boolean roleMatchesExact(Rol r, String naam) {
+    private static boolean roleMatchesExact(Role r, String naam) {
         return r.naam().equalsIgnoreCase(naam)
                 || (r.plural() != null && r.plural().equalsIgnoreCase(naam));
     }
@@ -830,7 +830,7 @@ public final class RegelSpraakModel {
      *  OUTSIDE the language — so this must never defeat a declared form, and callers that
      *  disambiguate by name (see {@link #connectingRoleViaName}) try the exact forms
      *  first. (See grammar/DIVERGENCES.md.) */
-    private static boolean roleMatchesBestEffort(Rol r, String naam) {
+    private static boolean roleMatchesBestEffort(Role r, String naam) {
         if (r.plural() != null) return false;
         if (naam.equalsIgnoreCase(r.naam() + "s") || naam.equalsIgnoreCase(r.naam() + "en")) return true;
         String singularHead = naam.replaceFirst("^(\\S+?)(?:s|en)(\\s)", "$1$2");
@@ -845,14 +845,14 @@ public final class RegelSpraakModel {
      * "jr" to the same system makes them inter-convertible (same-system rule), which
      * is what lets a duration "in hele jaren" assign to an attribute "met eenheid jr".
      */
-    public Eenheid resolveEenheid(String spelling) {
+    public Unit resolveEenheid(String spelling) {
         String norm = normaliseTimeUnit(spelling);
         for (UnitSystem s : unitSystems.values()) {
-            Eenheid e = s.units.get(spelling);
+            Unit e = s.units.get(spelling);
             if (e == null) e = s.spellings.get(norm);
             if (e != null) return e;
         }
-        return new Eenheid(norm, null); // unknown system; normalised so plural/singular still unify
+        return new Unit(norm, null); // unknown system; normalised so plural/singular still unify
     }
 
     /** Singular form of a built-in time unit (the lexer's nine units), else the spelling trimmed and
@@ -929,7 +929,7 @@ public final class RegelSpraakModel {
         /** §3.5 the soort of each kenmerk, keyed by its naam — drives the §8.1.8 predicate form: a
          *  BIJVOEGLIJK kenmerk is written "is &lt;k&gt;", a BEZITTELIJK one "heeft het &lt;k&gt;", a
          *  ZELFSTANDIG one "is een &lt;k&gt;" (so only a ZELFSTANDIG kenmerk binds the EEN-form). */
-        public final Map<String, KenmerkSoort> characteristicKinds = new LinkedHashMap<>();
+        public final Map<String, CharacteristicKind> characteristicKinds = new LinkedHashMap<>();
         /** IR-SPEC ch. 2.2: the single direct supertype, or null for a root type. Resolved after
          *  every declaration is read, because the wire reference is order-free. The member maps
          *  above stay OWN — the chain is walked by the accessors below, and a bean generator that
@@ -939,7 +939,7 @@ public final class RegelSpraakModel {
 
         /** This type and every ancestor, nearest first. Cycle-safe by construction: WF-104 refuses
          *  a cycle at the document, and every reader here must still terminate on one. */
-        public List<Objecttype> keten() {
+        public List<Objecttype> chain() {
             List<Objecttype> result = new ArrayList<>();
             for (Objecttype t = this; t != null && !result.contains(t); t = t.supertype) result.add(t);
             return result;
@@ -947,7 +947,7 @@ public final class RegelSpraakModel {
 
         /** §3.5 kenmerk soort: bijvoeglijk ("is &lt;k&gt;"), bezittelijk ("heeft het &lt;k&gt;") or
          *  zelfstandig/noch-noch ("is een &lt;k&gt;"). An untagged declaration is zelfstandig. */
-        public enum KenmerkSoort { BIJVOEGLIJK, BEZITTELIJK, ZELFSTANDIG }
+        public enum CharacteristicKind { BIJVOEGLIJK, BEZITTELIJK, ZELFSTANDIG }
 
         /** What {@code kaart} holds for member {@code naam} on the NEAREST type of this chain that has
          *  an entry for it, matched case-INsensitively; null when nothing on the chain does. Every
@@ -956,7 +956,7 @@ public final class RegelSpraakModel {
          *  answer is not a missing binding but a WRONG judgement (a timeline read as a scalar). */
         private <V> V onChain(java.util.function.Function<Objecttype, Map<String, V>> map, String naam) {
             if (naam == null) return null;
-            for (Objecttype t : keten()) {      // upward only (ch. 2.2): the nearest declaration answers
+            for (Objecttype t : chain()) {      // upward only (ch. 2.2): the nearest declaration answers
                 Map<String, V> m = map.apply(t);
                 V exact = m.get(naam);
                 if (exact != null) return exact;
@@ -967,11 +967,11 @@ public final class RegelSpraakModel {
         }
 
         /** The declared datatype of attribute {@code naam}, matched case-INsensitively —
-         *  object-type names already resolve this way (see {@link #objecttypeOpNaam}), so a
+         *  object-type names already resolve this way (see {@link #objectTypeByName}), so a
          *  reference that differs only in case (casus source writes both "datum-tijd" and
          *  "Datum-tijd") binds the same attribute. Null when this type declares no such
          *  attribute. */
-        public Datatype attribuut(String naam) {
+        public Datatype attribute(String naam) {
             return onChain(t -> t.attributen, naam);
         }
 
@@ -979,7 +979,7 @@ public final class RegelSpraakModel {
          *  in case), or null when the chain declares no such attribute. The IR carries declared names
          *  only, so a writer that reconstructs a reference reads its spelling here. */
         public String attributeName(String naam) {
-            for (Objecttype t : keten())
+            for (Objecttype t : chain())
                 for (String a : t.attributen.keySet())
                     if (a.equalsIgnoreCase(naam)) return a;
             return null;
@@ -987,8 +987,8 @@ public final class RegelSpraakModel {
 
         /** The DECLARED spelling of kenmerk {@code naam}, or null when the chain declares no such
          *  kenmerk — the kenmerk twin of {@link #attributeName}. */
-        public String kenmerkNaam(String naam) {
-            for (Objecttype t : keten())
+        public String characteristicName(String naam) {
+            for (Objecttype t : chain())
                 for (String k : t.kenmerken)
                     if (k.equalsIgnoreCase(naam)) return k;
             return null;
@@ -996,7 +996,7 @@ public final class RegelSpraakModel {
 
         /** The §13.3.7 dimensions of attribute {@code naam} (case-insensitively), in declared order,
          *  or an empty list when the attribute is scalar or undeclared. */
-        public List<String> dimensiesVan(String naam) {
+        public List<String> dimensionsOf(String naam) {
             List<String> dims = onChain(t -> t.attributeDimensions, naam);
             return dims == null ? List.of() : dims;
         }
@@ -1012,13 +1012,13 @@ public final class RegelSpraakModel {
          *  the same edit. Closing the chain is this method's whole job. */
         public <V> Map<String, V> onChainMap(java.util.function.Function<Objecttype, Map<String, V>> map) {
             Map<String, V> result = new LinkedHashMap<>();
-            for (Objecttype t : keten()) map.apply(t).forEach(result::putIfAbsent);
+            for (Objecttype t : chain()) map.apply(t).forEach(result::putIfAbsent);
             return result;
         }
 
         /** Every declared attribute reachable from this type — its own and its ancestors' — keyed by
          *  declared naam, nearest declaration first. The chain-closed member set of ch. 2.2. */
-        public Map<String, Datatype> attribuutLeden() {
+        public Map<String, Datatype> attributeMembers() {
             return onChainMap(t -> t.attributen);
         }
 
@@ -1032,12 +1032,12 @@ public final class RegelSpraakModel {
 
         /** §13.3.6 the tijdlijn granularity of attribute {@code naam}, or null when it is an ordinary
          *  single-value attribute. */
-        public Granulariteit granulariteitVan(String naam) {
+        public Granulariteit granularityOf(String naam) {
             return onChain(t -> t.attribuutGranulariteit, naam);
         }
 
         /** §13.3.6 every TEMPORAL attribute reachable from this type, keyed by declared naam —
-         *  {@link #granulariteitVan}'s map-shaped twin, for a reader that asks the whole facet map at
+         *  {@link #granularityOf}'s map-shaped twin, for a reader that asks the whole facet map at
          *  once. Reading the own map instead answers "not temporal" for an INHERITED timeline, which is
          *  not a missing binding but a wrong judgement (a timeline lowered as a scalar). */
         public Map<String, Granulariteit> granularityMembers() {
@@ -1047,11 +1047,11 @@ public final class RegelSpraakModel {
         /** §13.3.6.7 the period COUNT of attribute {@code naam}'s multi-period tijdlijn, or null where the model
          *  records none — the resolver records none for a single-period (count 1) one; see
          *  {@link #attribuutTijdlijnAantal}. */
-        public Integer tijdlijnAantalVan(String naam) {
+        public Integer timelineCountOf(String naam) {
             return onChain(t -> t.attribuutTijdlijnAantal, naam);
         }
 
-        /** §13.3.6.7 the chain-closed period-count map — {@link #tijdlijnAantalVan}'s map-shaped twin,
+        /** §13.3.6.7 the chain-closed period-count map — {@link #timelineCountOf}'s map-shaped twin,
          *  for the multiplicity predicate both Drools branches share, which takes the whole map. */
         public Map<String, Integer> timelineCountMembers() {
             return onChainMap(t -> t.attribuutTijdlijnAantal);
@@ -1066,8 +1066,8 @@ public final class RegelSpraakModel {
         // NOTE: attributeTimelineName has NO chain accessor on purpose — see hasVariableStart.
 
         /** §13.3.6 the tijdlijn granularity of kenmerk {@code naam} — the kenmerk twin of
-         *  {@link #granulariteitVan}; null for an ordinary boolean kenmerk. */
-        public Granulariteit kenmerkGranulariteitVan(String naam) {
+         *  {@link #granularityOf}; null for an ordinary boolean kenmerk. */
+        public Granulariteit characteristicGranularityOf(String naam) {
             return onChain(t -> t.kenmerkGranulariteit, naam);
         }
 
@@ -1076,8 +1076,8 @@ public final class RegelSpraakModel {
             return onChainMap(t -> t.kenmerkGranulariteit);
         }
 
-        /** §13.3.6.7 the kenmerk twin of {@link #tijdlijnAantalVan}. */
-        public Integer kenmerkTijdlijnAantalVan(String naam) {
+        /** §13.3.6.7 the kenmerk twin of {@link #timelineCountOf}. */
+        public Integer characteristicTimelineCountOf(String naam) {
             return onChain(t -> t.characteristicTimelineCount, naam);
         }
 
@@ -1090,19 +1090,19 @@ public final class RegelSpraakModel {
          *  case-insensitively? Used to decide whether a navigation can emit a getter for it
          *  or must stay an honest marker. */
         public boolean hasMember(String naam) {
-            return attribuut(naam) != null || kenmerkNaam(naam) != null;
+            return attribute(naam) != null || characteristicName(naam) != null;
         }
 
         /** Is {@code ander} this type or one of its ancestors? The ⊑ of IR-SPEC ch. 2.2, which is
          *  what every type-ranging position ranges over and what a role's declared filler type
          *  bounds from above. */
-        public boolean isEen(Objecttype other) {
-            return other != null && keten().contains(other);
+        public boolean isA(Objecttype other) {
+            return other != null && chain().contains(other);
         }
 
         /** The §3.5 soort of kenmerk {@code naam} (case-insensitively), or null when no such kenmerk is
-         *  declared. An untagged kenmerk is {@link KenmerkSoort#ZELFSTANDIG}. */
-        public KenmerkSoort kenmerkSoort(String naam) {
+         *  declared. An untagged kenmerk is {@link CharacteristicKind#ZELFSTANDIG}. */
+        public CharacteristicKind characteristicKind(String naam) {
             return onChain(t -> t.characteristicKinds, naam);
         }
 
@@ -1110,7 +1110,7 @@ public final class RegelSpraakModel {
          *  itself when it declares it, null when nothing on the chain does. The ch. 7.2 conflict key
          *  names it, so one target reports under one name however many subtypes inherit it. */
         public Objecttype declarantOf(String naam) {
-            for (Objecttype t : keten())
+            for (Objecttype t : chain())
                 if (t.attributen.keySet().stream().anyMatch(k -> k.equalsIgnoreCase(naam))
                         || t.kenmerken.stream().anyMatch(k -> k.equalsIgnoreCase(naam)))
                     return t;
@@ -1125,20 +1125,20 @@ public final class RegelSpraakModel {
         public Parameter(String naam, Datatype datatype) { this(naam, datatype, null, null); }
     }
 
-    public static final class Feittype {
+    public static final class FactType {
         public final String naam;
-        public final List<Rol> rollen = new ArrayList<>();
-        public boolean wederkerig;
-        public Feittype(String naam) { this.naam = naam; }
+        public final List<Role> rollen = new ArrayList<>();
+        public boolean reciprocal;
+        public FactType(String naam) { this.naam = naam; }
     }
     /** A feittype role. `meervoud` is the plural the model DECLARES via "(mv: …)"
      *  (§13.3.9.1), or null when none is declared — the resolver matches plural
      *  references against the declared form, never a synthesised one. `meervoudig` is the
      *  role's cardinality from the feittype's cardinaliteit line (§13.3.9.1): true when this
      *  role is the "meerdere" side (a navigation TO it yields many), false when "één". */
-    public record Rol(String naam, String objecttypeNaam, String plural, boolean meervoudig) {
-        public Rol(String naam, String objecttypeNaam) { this(naam, objecttypeNaam, null, false); }
-        public Rol(String naam, String objecttypeNaam, String plural) { this(naam, objecttypeNaam, plural, false); }
+    public record Role(String naam, String objecttypeNaam, String plural, boolean meervoudig) {
+        public Role(String naam, String objecttypeNaam) { this(naam, objecttypeNaam, null, false); }
+        public Role(String naam, String objecttypeNaam, String plural) { this(naam, objecttypeNaam, plural, false); }
     }
 
     /** Whether navigating from {@code houder} to {@code target} through the role named
@@ -1148,11 +1148,11 @@ public final class RegelSpraakModel {
      *  {@code rolNaam} names in a feittype relating {@code houder} and returns its
      *  cardinality; false when single, unknown, or not uniquely found (fail-open: never
      *  refuse a navigation we cannot prove is to-many). */
-    public boolean naarVeelRol(Objecttype houder, Objecttype target, String rolNaam) {
+    public boolean toManyRole(Objecttype houder, Objecttype target, String rolNaam) {
         if (target == null || rolNaam == null) return false;
-        Rol found = null; int n = 0;
-        for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
+        Role found = null; int n = 0;
+        for (FactType ft : feittypen.values())
+            for (Role r : ft.rollen)
                 if (r.naam().equalsIgnoreCase(rolNaam) && roleHasObjectType(r, target) && factTypeRelates(ft, r, houder)) {
                     found = r; n++;
                 }
@@ -1165,24 +1165,24 @@ public final class RegelSpraakModel {
      *  the created type itself); a to-many target ({@code true}) needs a per-rule per-subject control fact
      *  (a linked instance already existing is legitimate). Reads the cardinality of {@code nieuw}'s own role
      *  in the unique feittype relating the pair — {@link #connectingRole}(subject, nieuw) names that role,
-     *  {@link #naarVeelRol} reads its meervoudig. Fail-open to to-many ({@code true}) when the role cannot be
+     *  {@link #toManyRole} reads its meervoudig. Fail-open to to-many ({@code true}) when the role cannot be
      *  uniquely resolved: the control-fact guard is always correct (at-most-once), only less tight than the
      *  1:1 instance check, so an unprovable pair is never wrongly treated as 1:1. */
     public boolean subjectToManyCreation(Objecttype subject, Objecttype fresh) {
         if (subject == null || fresh == null) return true;   // no cardinality knowledge -> the safe (control-fact) path
         String newRole = connectingRole(subject, fresh);    // the role nieuw plays, from the subject's side
         if (newRole == null) return true;                   // ambiguous / self-pair -> control-fact path
-        return naarVeelRol(subject, fresh, newRole);
+        return toManyRole(subject, fresh, newRole);
     }
 
     /** Package-visible role-name match (singular, declared plural, or best-effort plural),
      *  used by {@link dev.uchar.regelspraak.resolver.DefinitionResolver} to map a cardinaliteit
      *  noun onto a role. */
-    public static boolean rolNaamMatcht(Rol r, String word) { return roleMatches(r, word); }
+    public static boolean roleNameMatches(Role r, String word) { return roleMatches(r, word); }
 
     /** One resolved hop of a §13.4.1 multi-hop navigation chain ("de X van de Y van de Z"):
      *  the DECLARED role name to navigate through from the holder, and the object type it reaches. */
-    public record ChainHop(String rol, Objecttype doel) {}
+    public record ChainHop(String role, Objecttype targetName) {}
 
     /** Resolve one written chain filler (a role name or an objecttype name, article already stripped)
      *  into a to-ONE hop from {@code houder} — or null when it does not resolve uniquely or crosses a
@@ -1191,7 +1191,7 @@ public final class RegelSpraakModel {
      *  objecttype reading), any other filler the by-name role reading. */
     public ChainHop chainHop(Objecttype houder, String written) {
         ChainHop hop = writtenHop(houder, written);
-        return hop == null || naarVeelRol(houder, hop.doel(), hop.rol()) ? null : hop;
+        return hop == null || toManyRole(houder, hop.targetName(), hop.role()) ? null : hop;
     }
 
     /** The hop {@link #chainHop} resolves, a to-MANY one included, or null when the filler names no role or
@@ -1199,14 +1199,14 @@ public final class RegelSpraakModel {
      *  a name that is no role ({@code RuleChecker}). */
     public ChainHop writtenHop(Objecttype houder, String written) {
         if (houder == null || written == null) return null;
-        Objecttype asType = objecttypeOpNaam(written);   // STRICT name match — a role-named filler must take the role reading
-        String rol; Objecttype doel;
-        if (asType != null) { doel = asType; rol = connectingRole(houder, asType); }
+        Objecttype asType = objectTypeByName(written);   // STRICT name match — a role-named filler must take the role reading
+        String role; Objecttype targetName;
+        if (asType != null) { targetName = asType; role = connectingRole(houder, asType); }
         else {
-            doel = rolDoeltypeNaarSubject(houder, written);
-            rol = doel == null ? null : connectingRoleViaName(houder, doel, written);
+            targetName = roleTargetTypeToSubject(houder, written);
+            role = targetName == null ? null : connectingRoleViaName(houder, targetName, written);
         }
-        return rol == null || doel == null ? null : new ChainHop(rol, doel);
+        return role == null || targetName == null ? null : new ChainHop(role, targetName);
     }
 
     /** Re-walk a RESOLVED navigation chain (declared role names, subject-outward) from {@code van},
@@ -1214,26 +1214,26 @@ public final class RegelSpraakModel {
      *  resolve to-one from there. The transpilers re-validate a chain against their actual pattern
      *  subject with this before emitting getters, so a chain resolved against one subject can never
      *  silently lower against another. */
-    public List<Objecttype> followChain(Objecttype van, List<String> pad) {
+    public List<Objecttype> followChain(Objecttype van, List<String> path) {
         List<Objecttype> reached = new ArrayList<>();
         Objecttype cur = van;
-        for (String rol : pad) {
+        for (String role : path) {
             if (cur == null) return null;
-            Objecttype doel = rolDoeltypeNaarSubject(cur, rol);
-            if (doel == null || naarVeelRol(cur, doel, rol)) return null;
-            reached.add(doel);
-            cur = doel;
+            Objecttype targetName = roleTargetTypeToSubject(cur, role);
+            if (targetName == null || toManyRole(cur, targetName, role)) return null;
+            reached.add(targetName);
+            cur = targetName;
         }
         return reached;
     }
 
     public static final class UnitSystem {
         public final String naam;
-        public final Map<String, Eenheid> units = new LinkedHashMap<>(); // abbreviation -> unit
-        public final Map<String, Eenheid> spellings = new LinkedHashMap<>(); // unit word / plural (normalised) -> unit
+        public final Map<String, Unit> units = new LinkedHashMap<>(); // abbreviation -> unit
+        public final Map<String, Unit> spellings = new LinkedHashMap<>(); // unit word / plural (normalised) -> unit
         /** The EXACT conversion factor of each declared unit, by abbreviation: the product of the fractions its
          *  declaration chain writes ("= 1/60 u" over "= 1/24 dg" is 1/1440), a base unit 1/1. The unit's own
-         *  {@link Eenheid#factorNaarCanoniek} is the product of those fractions each rounded to 16 digits, which no
+         *  {@link Unit#factorNaarCanoniek} is the product of those fractions each rounded to 16 digits, which no
          *  reader can turn back into the fraction for certain; the wire writes this one ({@code factorToCanonical}
          *  of uchar-ir-v1 is an exact fraction). */
         public final Map<String, Factor> exactFactors = new LinkedHashMap<>();
@@ -1299,32 +1299,32 @@ public final class RegelSpraakModel {
 
     /** A named vocabulary: its name, whether it is the default one, and its language code (null: none declared). A
      *  vocabulary has no kind: every designation is text (maintainer decision 2026-09-27). */
-    public record Vocabulaire(String naam, boolean standaard, String language) {}
+    public record Vocabulary(String naam, boolean isDefault, String language) {}
 
     /** One designation: the vocabulary it is written in, and its text. */
-    public record Designation(String vocabulaire, String tekst) {}
+    public record Designation(String vocabulary, String tekst) {}
 
     /** A declaration a vocabulary can name (IR-SPEC ch. 2.12): its kind, the declaration that scopes it where the kind
      *  is scoped — the object type of an attribute or a characteristic (the one that DECLARES it), the fact type of a
      *  role, the domain of an enumeration value; null otherwise — and its canonical name, each as declared. A named
-     *  form ({@link Soort#VORM}) is named by its form name, without a version suffix, whatever list it stands in. */
-    public record Benoembaar(Soort soort, String eigenaar, String naam) {
-        public enum Soort { OBJECTTYPE, ATTRIBUUT, KENMERK, FEITTYPE, ROL, ENUMERATIEWAARDE, PARAMETER, VORM, REGELGROEP }
+     *  form ({@link Kind#VORM}) is named by its form name, without a version suffix, whatever list it stands in. */
+    public record Designatable(Kind category, String owner, String naam) {
+        public enum Kind { OBJECTTYPE, ATTRIBUUT, KENMERK, FEITTYPE, ROL, ENUMERATIEWAARDE, PARAMETER, VORM, REGELGROEP }
 
-        public static Benoembaar objecttype(String naam) { return new Benoembaar(Soort.OBJECTTYPE, null, naam); }
-        public static Benoembaar attribuut(String objecttype, String naam) { return new Benoembaar(Soort.ATTRIBUUT, objecttype, naam); }
-        public static Benoembaar kenmerk(String objecttype, String naam) { return new Benoembaar(Soort.KENMERK, objecttype, naam); }
-        public static Benoembaar feittype(String naam) { return new Benoembaar(Soort.FEITTYPE, null, naam); }
-        public static Benoembaar rol(String feittype, String naam) { return new Benoembaar(Soort.ROL, feittype, naam); }
-        public static Benoembaar enumeratiewaarde(String domein, String waarde) { return new Benoembaar(Soort.ENUMERATIEWAARDE, domein, waarde); }
-        public static Benoembaar parameter(String naam) { return new Benoembaar(Soort.PARAMETER, null, naam); }
-        public static Benoembaar vorm(String naam) { return new Benoembaar(Soort.VORM, null, naam); }
-        public static Benoembaar regelgroep(String naam) { return new Benoembaar(Soort.REGELGROEP, null, naam); }
+        public static Designatable objectType(String naam) { return new Designatable(Kind.OBJECTTYPE, null, naam); }
+        public static Designatable attribute(String objectType, String naam) { return new Designatable(Kind.ATTRIBUUT, objectType, naam); }
+        public static Designatable characteristic(String objectType, String naam) { return new Designatable(Kind.KENMERK, objectType, naam); }
+        public static Designatable factType(String naam) { return new Designatable(Kind.FEITTYPE, null, naam); }
+        public static Designatable role(String factType, String naam) { return new Designatable(Kind.ROL, factType, naam); }
+        public static Designatable enumerationValue(String domain, String value) { return new Designatable(Kind.ENUMERATIEWAARDE, domain, value); }
+        public static Designatable parameter(String naam) { return new Designatable(Kind.PARAMETER, null, naam); }
+        public static Designatable form(String naam) { return new Designatable(Kind.VORM, null, naam); }
+        public static Designatable ruleGroup(String naam) { return new Designatable(Kind.REGELGROEP, null, naam); }
     }
 
     /** The form that makes an element under a name of its own, with a fixed key for consumers. The frontend makes the
-     *  first five ({@link #gegenereerd}); the last two name entries of the Drools backend's coverage manifest. */
-    public enum Herkomstvorm {
+     *  first five ({@link #generated}); the last two name entries of the Drools backend's coverage manifest. */
+    public enum OriginForm {
         /** The opgave marker on attribute X (dialect §7): {@code opgegeven X}, {@code berekende X},
          *  {@code afwijkende opgave X}, {@code afwijking opgave X}, {@code controle opgave X} and
          *  {@code opgave boven berekening X}, from X. */
@@ -1345,28 +1345,28 @@ public final class RegelSpraakModel {
         /** A version {@code R #k} of a form R with several versions, from R. */
         VERSION("versie");
 
-        private final String sleutel;
+        private final String key;
 
-        Herkomstvorm(String sleutel) { this.sleutel = sleutel; }
+        OriginForm(String key) { this.key = key; }
 
         /** The fixed key of this form. */
-        public String sleutel() { return sleutel; }
+        public String key() { return key; }
     }
 
     /** Where a generated element comes from: the declared element ({@code bron}) and the form that made it. */
-    public record GegenereerdUit(Benoembaar bron, Herkomstvorm vorm) {
-        public GegenereerdUit {
-            java.util.Objects.requireNonNull(bron, "bron");
-            java.util.Objects.requireNonNull(vorm, "vorm");
+    public record GeneratedFrom(Designatable source, OriginForm form) {
+        public GeneratedFrom {
+            java.util.Objects.requireNonNull(source, "bron");
+            java.util.Objects.requireNonNull(form, "vorm");
         }
     }
 
-    /** The origin of {@code element} when the frontend made it ({@link #gegenereerd}), matched on its kind and
+    /** The origin of {@code element} when the frontend made it ({@link #generated}), matched on its kind and
      *  case-insensitively on its owner and name, the name identity of IR-SPEC ch. 2.1; empty for an element whose
      *  name the author wrote, and for one the model does not have. */
-    public java.util.Optional<GegenereerdUit> gegenereerdUit(Benoembaar element) {
+    public java.util.Optional<GeneratedFrom> generatedFrom(Designatable element) {
         if (element == null) return java.util.Optional.empty();
-        for (var e : gegenereerd.entrySet())
+        for (var e : generated.entrySet())
             if (same(e.getKey(), element)) return java.util.Optional.of(e.getValue());
         return java.util.Optional.empty();
     }
@@ -1375,61 +1375,61 @@ public final class RegelSpraakModel {
     private static final java.util.regex.Pattern VERSION = java.util.regex.Pattern.compile("([\\s\\S]*) #[0-9]+");
 
     /** The form name of a model entry: its name without a version suffix. */
-    public static String vormnaam(String naam) {
+    public static String formName(String naam) {
         if (naam == null) return null;
         java.util.regex.Matcher m = VERSION.matcher(naam);
         return m.matches() ? m.group(1) : naam;
     }
 
     /** The vocabulary named {@code naam}, compared case-insensitively (IR-SPEC ch. 2.1), or null. */
-    public Vocabulaire vocabulaire(String naam) {
+    public Vocabulary vocabulary(String naam) {
         if (naam == null) return null;
-        for (Vocabulaire v : vocabulaires) if (v.naam().equalsIgnoreCase(naam)) return v;
+        for (Vocabulary v : vocabularies) if (v.naam().equalsIgnoreCase(naam)) return v;
         return null;
     }
 
-    /** The designation of {@code element} in the vocabulary {@code vocabulaire} (its name compared case-insensitively),
+    /** The designation of {@code element} in the vocabulary {@code vocabulary} (its name compared case-insensitively),
      *  or empty when the declaration carries none there. The element is matched on its kind and case-insensitively on
      *  its owner and name, the name identity of IR-SPEC ch. 2.1. */
-    public java.util.Optional<String> benaming(String vocabulaire, Benoembaar element) {
-        if (vocabulaire == null || element == null) return java.util.Optional.empty();
+    public java.util.Optional<String> benaming(String vocabulary, Designatable element) {
+        if (vocabulary == null || element == null) return java.util.Optional.empty();
         for (var e : designations.entrySet()) {
             if (!same(e.getKey(), element)) continue;
             for (Designation b : e.getValue())
-                if (b.vocabulaire().equalsIgnoreCase(vocabulaire)) return java.util.Optional.of(b.tekst());
+                if (b.vocabulary().equalsIgnoreCase(vocabulary)) return java.util.Optional.of(b.tekst());
         }
         return java.util.Optional.empty();
     }
 
-    /** The effective name of {@code element} in {@code vocabulaire}: its designation there, and its canonical name where
+    /** The effective name of {@code element} in {@code vocabulary}: its designation there, and its canonical name where
      *  it carries none (IR-SPEC ch. 2.12). */
-    public String effectiveName(String vocabulaire, Benoembaar element) {
-        return benaming(vocabulaire, element).orElse(element.naam());
+    public String effectiveName(String vocabulary, Designatable element) {
+        return benaming(vocabulary, element).orElse(element.naam());
     }
 
     /** The reverse of {@link #effectiveName}: the declaration of kind {@code soort} whose effective name in
-     *  {@code vocabulaire} is {@code naam}, compared case-insensitively, within {@code eigenaar} where the kind is scoped
+     *  {@code vocabulary} is {@code naam}, compared case-insensitively, within {@code eigenaar} where the kind is scoped
      *  — for an attribute or a characteristic along the supertype chain of that object type, so an inherited member is
      *  found from its subtype; null {@code eigenaar} for the other kinds. Empty when no declaration has that effective
      *  name, or when two have (WF-118 refuses the second on the wire, so a verifier-clean document answers uniquely);
      *  the vocabulary need not name every declaration. */
-    public java.util.Optional<Benoembaar> benoemd(String vocabulaire, Benoembaar.Soort soort, String eigenaar,
+    public java.util.Optional<Designatable> namedElement(String vocabulary, Designatable.Kind category, String owner,
                                                   String naam) {
-        if (vocabulaire == null || soort == null || naam == null) return java.util.Optional.empty();
+        if (vocabulary == null || category == null || naam == null) return java.util.Optional.empty();
         List<String> owners = new ArrayList<>();
-        if (soort == Benoembaar.Soort.ATTRIBUUT || soort == Benoembaar.Soort.KENMERK) {
-            Objecttype ot = eigenaar == null ? null : objecttypeOpNaam(eigenaar);
+        if (category == Designatable.Kind.ATTRIBUUT || category == Designatable.Kind.KENMERK) {
+            Objecttype ot = owner == null ? null : objectTypeByName(owner);
             if (ot == null) return java.util.Optional.empty();
-            for (Objecttype t : ot.keten()) owners.add(t.naam);
-        } else if (eigenaar != null) {
-            owners.add(eigenaar);
+            for (Objecttype t : ot.chain()) owners.add(t.naam);
+        } else if (owner != null) {
+            owners.add(owner);
         }
-        Benoembaar found = null;
-        for (Benoembaar b : benoembaar()) {
-            if (b.soort() != soort) continue;
-            if (b.eigenaar() == null ? !owners.isEmpty()
-                    : owners.stream().noneMatch(e -> e.equalsIgnoreCase(b.eigenaar()))) continue;
-            if (!effectiveName(vocabulaire, b).equalsIgnoreCase(naam)) continue;
+        Designatable found = null;
+        for (Designatable b : designatable()) {
+            if (b.category() != category) continue;
+            if (b.owner() == null ? !owners.isEmpty()
+                    : owners.stream().noneMatch(e -> e.equalsIgnoreCase(b.owner()))) continue;
+            if (!effectiveName(vocabulary, b).equalsIgnoreCase(naam)) continue;
             if (found != null) return java.util.Optional.empty();
             found = b;
         }
@@ -1440,56 +1440,56 @@ public final class RegelSpraakModel {
      *  with its own attributes and characteristics; the fact types, each with its roles; the parameters; the values of
      *  every enumeration domain; the named forms — rules, object creations, allocations (the ones the wire writes),
      *  consistencies, uniquenesses, fact creations, defaults groups — each once, by its form name; the rule groups. */
-    public List<Benoembaar> benoembaar() {
-        List<Benoembaar> result = new ArrayList<>();
+    public List<Designatable> designatable() {
+        List<Designatable> result = new ArrayList<>();
         for (Objecttype ot : objecttypen.values()) {
-            result.add(Benoembaar.objecttype(ot.naam));
-            for (String a : ot.attributen.keySet()) result.add(Benoembaar.attribuut(ot.naam, a));
-            for (String k : ot.kenmerken) result.add(Benoembaar.kenmerk(ot.naam, k));
+            result.add(Designatable.objectType(ot.naam));
+            for (String a : ot.attributen.keySet()) result.add(Designatable.attribute(ot.naam, a));
+            for (String k : ot.kenmerken) result.add(Designatable.characteristic(ot.naam, k));
         }
-        for (Feittype ft : feittypen.values()) {
-            result.add(Benoembaar.feittype(ft.naam));
-            for (Rol r : ft.rollen) result.add(Benoembaar.rol(ft.naam, r.naam()));
+        for (FactType ft : feittypen.values()) {
+            result.add(Designatable.factType(ft.naam));
+            for (Role r : ft.rollen) result.add(Designatable.role(ft.naam, r.naam()));
         }
-        for (Parameter p : parameters.values()) result.add(Benoembaar.parameter(p.naam()));
+        for (Parameter p : parameters.values()) result.add(Designatable.parameter(p.naam()));
         for (var d : domeinen.entrySet())
             if (d.getValue() instanceof Datatype.Enumeratie e)
-                for (String w : e.waarden()) result.add(Benoembaar.enumeratiewaarde(d.getKey(), w));
-        java.util.Set<String> vormen = new java.util.LinkedHashSet<>();
-        for (var r : resolvedRegels) vormen.add(vormnaam(r.naam()));
-        java.util.Set<String> lijst = new java.util.LinkedHashSet<>();
+                for (String w : e.waarden()) result.add(Designatable.enumerationValue(d.getKey(), w));
+        java.util.Set<String> forms = new java.util.LinkedHashSet<>();
+        for (var r : resolvedRegels) forms.add(formName(r.naam()));
+        java.util.Set<String> list = new java.util.LinkedHashSet<>();
         List<java.util.Set<String>> lists = new ArrayList<>();
-        lists.add(vormen);
+        lists.add(forms);
         java.util.function.Consumer<List<String>> neem = names -> {
             java.util.Set<String> l = new java.util.LinkedHashSet<>();
-            for (String n : names) l.add(vormnaam(n));
+            for (String n : names) l.add(formName(n));
             lists.add(l);
         };
-        neem.accept(objectCreaties.stream().map(dev.uchar.regelspraak.ir.ResolvedObjectCreation::naam).toList());
-        neem.accept(verdelingen.stream()
-                .filter(v -> v.methode() != dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX)
-                .map(dev.uchar.regelspraak.ir.ResolvedVerdeling::naam).toList());
+        neem.accept(objectCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedObjectCreation::naam).toList());
+        neem.accept(allocations.stream()
+                .filter(v -> v.method() != dev.uchar.regelspraak.ir.ResolvedAllocation.Method.COMPLEX)
+                .map(dev.uchar.regelspraak.ir.ResolvedAllocation::naam).toList());
         neem.accept(consistenties.stream().map(dev.uchar.regelspraak.ir.ResolvedConsistency::naam).toList());
-        List<String> unique = new ArrayList<>(uniciteiten.stream().map(dev.uchar.regelspraak.ir.ResolvedUniqueness::naam).toList());
-        unique.addAll(uniciteitUnies.stream().map(dev.uchar.regelspraak.ir.ResolvedUniquenessUnion::naam).toList());
+        List<String> unique = new ArrayList<>(uniquenesses.stream().map(dev.uchar.regelspraak.ir.ResolvedUniqueness::naam).toList());
+        unique.addAll(uniquenessUnions.stream().map(dev.uchar.regelspraak.ir.ResolvedUniquenessUnion::naam).toList());
         neem.accept(unique);
-        neem.accept(feitCreaties.stream().map(dev.uchar.regelspraak.ir.ResolvedFactCreation::naam).toList());
+        neem.accept(factCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedFactCreation::naam).toList());
         neem.accept(prioritizedDefaults.stream().map(dev.uchar.regelspraak.ir.PrioritizedDefaults::naam).toList());
         for (java.util.Set<String> l : lists)
-            for (String n : l) if (n != null) result.add(Benoembaar.vorm(n));
-        for (var g : regelGroepen) if (g.naam() != null) result.add(Benoembaar.regelgroep(g.naam()));
+            for (String n : l) if (n != null) result.add(Designatable.form(n));
+        for (var g : ruleGroups) if (g.naam() != null) result.add(Designatable.ruleGroup(g.naam()));
         return result;
     }
 
     /** Whether two elements name one declaration: the same kind, and owner and name equal under the name identity. */
-    private static boolean same(Benoembaar a, Benoembaar b) {
-        return a.soort() == b.soort() && a.naam().equalsIgnoreCase(b.naam())
-                && (a.eigenaar() == null ? b.eigenaar() == null
-                    : b.eigenaar() != null && a.eigenaar().equalsIgnoreCase(b.eigenaar()));
+    private static boolean same(Designatable a, Designatable b) {
+        return a.category() == b.category() && a.naam().equalsIgnoreCase(b.naam())
+                && (a.owner() == null ? b.owner() == null
+                    : b.owner() != null && a.owner().equalsIgnoreCase(b.owner()));
     }
 
     /** A rule shell (name + the parse subtree); type-checking annotates diagnostics. */
-    public record Rule(String naam, String soort) {}
+    public record Rule(String naam, String category) {}
 
     public enum Severity { ERROR, WARNING, INFO }
     public record Diagnostic(Severity severity, String message, int line) {

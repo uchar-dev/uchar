@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Gate 15 — the rule graph of the Drools backend holds to IR-SPEC ch. 5.
 #
-# backends/drools/src/main/java/dev/uchar/regelspraak/graaf/ is a reading of the IR: which form of the rule
+# backends/drools/src/main/java/dev/uchar/regelspraak/graph/ is a reading of the IR: which form of the rule
 # layer writes and which reads which attribute or characteristic, a member keyed on the type that declares it.
 # IR-SPEC ch. 5.1/5.2 defines the dependency graph that reading must agree with, and the verifier computes it
 # for WF-045/046. The graph is analysis and presentation, never execution, so no other gate reads it; this one
@@ -96,9 +96,9 @@ find corpus/golden -name ir.json | LC_ALL=C sort > "$TMP/goldens"
 n_goldens=$(grep -c . "$TMP/goldens")
 [ "$n_goldens" -gt 0 ] || fail "no corpus/golden/**/ir.json found (an empty corpus is a failure, never silently green)"
 
-# the graph side: one JVM over every golden; a malformed document (a Documentfout) or any other error is a
+# the graph side: one JVM over every golden; a malformed document (a DocumentError) or any other error is a
 # failure here, since every golden is well-formed by gate 3
-if ! java -cp "$JAR" dev.uchar.regelspraak.graaf.GraphProjection $(cat "$TMP/goldens") >"$TMP/graaf" 2>"$TMP/graaf.err"; then
+if ! java -cp "$JAR" dev.uchar.regelspraak.graph.GraphProjection $(cat "$TMP/goldens") >"$TMP/graaf" 2>"$TMP/graaf.err"; then
     tail -20 "$TMP/graaf.err" >&2
     fail "GraafProjectie did not read every golden"
 fi
@@ -268,7 +268,7 @@ n_rgs=$(find corpus/golden -name bron.rgs | grep -c .)
 [ "$n_rgs" -gt 0 ] || fail "no corpus/golden/**/bron.rgs found (an empty route comparison is a failure)"
 [ "$n_rgs" -ge "$EXPECTED_MIN_SOURCE_ROUTE" ] \
     || fail "$n_rgs goldens carry a bron.rgs, but EXPECTED_MIN_SOURCE_ROUTE pins at least $EXPECTED_MIN_SOURCE_ROUTE — the route comparison shrank (a deliberate removal lowers the floor in the same commit)"
-routes=$(junit --select-class dev.uchar.regelspraak.graaf.GraphSourceRouteTest) \
+routes=$(junit --select-class dev.uchar.regelspraak.graph.GraphSourceRouteTest) \
     || fail "the route comparison is red: the graph of a golden's ir.json differs from the graph of its bron.rgs (above)"
 [ "$routes" -eq "$n_rgs" ] \
     || fail "the route comparison ran $routes goldens, but $n_rgs carry a bron.rgs — every one of them must be compared"

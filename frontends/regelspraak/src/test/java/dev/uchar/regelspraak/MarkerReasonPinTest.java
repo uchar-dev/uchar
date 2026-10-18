@@ -44,15 +44,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MarkerReasonPinTest {
 
-    /** One sanctioned family of {@code reden == null} constructions: all of them in {@code methode} of
+    /** One sanctioned family of {@code reden == null} constructions: all of them in {@code method} of
      *  {@code file}, with the reason that route needs no survivor report. */
-    record Site(String file, String methode, int count, String why) {}
+    record Site(String file, String method, int count, String why) {}
 
     /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20. Growth
      *  is NOT free here (unlike
      *  a gate floor): a null is a promise that something else speaks, so every new one is listed with
      *  the diagnostic that keeps that promise. */
-    static final List<Site> GESANCTIONEERD = List.of(
+    static final List<Site> SANCTIONED = List.of(
             new Site("RuleChecker.java", "checkWholePeriod", 1,
                     "de §8.2-ERROR die de regel erboven opwerpt IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "dayKindOperandError", 1,
@@ -72,7 +72,7 @@ class MarkerReasonPinTest {
 
     /** A marker construction: the two record constructors and the two {@code onopgelost(…)} helpers. */
     private static final Pattern BUILD =
-            Pattern.compile("\\b(?:new\\s+(?:Conditie|Expr)\\.Unresolved|unresolvedMarker)\\s*\\(");
+            Pattern.compile("\\b(?:new\\s+(?:Condition|Expr)\\.Unresolved|unresolvedMarker)\\s*\\(");
 
     /** A class-member declaration: a non-blank line at member indentation whose first identifier before
      *  a '(' names it. Deeper constructs (if/for/switch) sit at 8 spaces or more and never match. */
@@ -119,24 +119,24 @@ class MarkerReasonPinTest {
                         + MINIMAL_COUNT_BUILD_SITES + ") — de patronen sluiten niet meer aan op de bron, "
                         + "en dan keurt deze klem alles goed zonder iets te lezen");
 
-        Map<String, Integer> verwacht = new LinkedHashMap<>();
+        Map<String, Integer> expected = new LinkedHashMap<>();
         Map<String, String> why = new LinkedHashMap<>();
-        for (Site p : GESANCTIONEERD) {
-            verwacht.put(p.file() + "#" + p.methode(), p.count());
-            why.put(p.file() + "#" + p.methode(), p.why());
+        for (Site p : SANCTIONED) {
+            expected.put(p.file() + "#" + p.method(), p.count());
+            why.put(p.file() + "#" + p.method(), p.why());
         }
 
-        List<String> fresh = found.keySet().stream().filter(k -> !verwacht.containsKey(k)).toList();
+        List<String> fresh = found.keySet().stream().filter(k -> !expected.containsKey(k)).toList();
         assertTrue(fresh.isEmpty(),
                 () -> "nieuwe reden==null-plek(ken) zonder vermelding: " + fresh + ". Een null belooft dat "
                         + "een andere melding deze marker dekt; zet die belofte in GESANCTIONEERD of geef "
                         + "de marker een reden.");
 
-        List<String> missing = verwacht.keySet().stream().filter(k -> !found.containsKey(k)).toList();
+        List<String> missing = expected.keySet().stream().filter(k -> !found.containsKey(k)).toList();
         assertTrue(missing.isEmpty(),
                 () -> "de lijst is verouderd — deze plek(ken) bouwen geen null-marker meer: " + missing);
 
-        for (var e : verwacht.entrySet())
+        for (var e : expected.entrySet())
             assertEquals(e.getValue(), found.get(e.getKey()),
                     () -> e.getKey() + " telt " + found.get(e.getKey()) + " null-markers in plaats van "
                             + e.getValue() + " — gesanctioneerd omdat: " + why.get(e.getKey()));
@@ -147,8 +147,8 @@ class MarkerReasonPinTest {
     /** {@code bron} with every string literal and line comment blanked to spaces (offsets preserved):
      *  several diagnostic texts contain the word "onopgelost" followed by a '(' section reference, and a
      *  scanner that read those would attribute a construction to a sentence. */
-    private static String withoutTextAndComment(String bron) {
-        char[] result = bron.toCharArray();
+    private static String withoutTextAndComment(String source) {
+        char[] result = source.toCharArray();
         for (int i = 0; i < result.length; ) {
             if (result[i] == '"') {
                 int j = i + 1;

@@ -17,11 +17,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * groter is dan &lt;grens&gt;.</pre>
  *
  * <p>It parses and resolves, but until this card it built a {@code Vergelijking} whose left operand was
- * an {@code AttribuutRef} with {@code set: true} — a collection in a slot that takes one value — so
+ * an {@code AttributeReference} with {@code set: true} — a collection in a slot that takes one value — so
  * WF-096 raised an ERROR and the document never reached disk, let alone a backend. A sanctioned
  * sentence this frontend could read and never emit.
  *
- * <p>The IR has since grown {@link dev.uchar.regelspraak.ir.Conditie.QuantifierFold}, which is
+ * <p>The IR has since grown {@link dev.uchar.regelspraak.ir.Condition.QuantifierFold}, which is
  * that sentence's home: first-order quantification over the members of a linked instance set, with the
  * range spelled exactly as the instance fold spells it. The resolver now LOWERS to it, and the set
  * reading is not excused but REMOVED — the quantified operand comes out as an element-own
@@ -88,7 +88,7 @@ class QuantifierFoldTest {
     }
 
     /** The emitted condition of the single rule's version, compacted — the slice every assertion below reads. */
-    private static String voorwaarde(RegelSpraakModel m) {
+    private static String condition(RegelSpraakModel m) {
         String c = emitCompact(m);
         int van = c.indexOf("\"condition\":");
         assertTrue(van >= 0, () -> "geen voorwaarde in de emissie:\n" + c);
@@ -105,7 +105,7 @@ class QuantifierFoldTest {
 
     @Test void the_all_sentence_becomes_a_quantifier_fold_over_the_element_type() {
         RegelSpraakModel m = resolve(SENTENCE.formatted("alle"));
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"node\":\"QuantifierFold\""),
                 () -> "de §8.2-zin hoort een QuantifierFold te worden:\n" + v);
         assertTrue(v.contains("\"quantifier\":\"all\""), () -> "verkeerde kwantor:\n" + v);
@@ -122,7 +122,7 @@ class QuantifierFoldTest {
         // The required range, on this node (WF-048's concern until L2): a quantifier bound to no relation
         // quantifies over a set the sentence never named. The range is the connecting role, the binding the
         // instance fold's sourceRole carries — one search in the model serves both, so the two can never disagree.
-        String v = voorwaarde(resolve(SENTENCE.formatted("alle")));
+        String v = condition(resolve(SENTENCE.formatted("alle")));
         assertTrue(v.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\"}"),
                 () -> "de vouw hoort het verbindende feittype+rol als bereik te dragen:\n" + v);
         // one-step range: sourceRole XOR sourcePath (WF-108 (c)), so no path beside the binding
@@ -134,7 +134,7 @@ class QuantifierFoldTest {
         // The matrix is evaluated PER CONTRIBUTOR with the element as subject, so the quantified operand
         // comes back as an OWN read of the element type — no binding, so no navigation and no range. The
         // §8.2 qualifier stays on it: per member, "gedurende het gehele jaar" is what that member must satisfy.
-        String v = voorwaarde(resolve(SENTENCE.formatted("alle")));
+        String v = condition(resolve(SENTENCE.formatted("alle")));
         assertTrue(v.contains("\"test\":{\"node\":\"Comparison\",\"op\":\"greater\","
                         + "\"left\":{\"node\":\"AttributeReference\",\"attribute\":\"gewicht\",\"subjectType\":\"Vondst\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
@@ -153,7 +153,7 @@ class QuantifierFoldTest {
         // subject, an element-own read is an off-subject type and would pick up a by-pair
         // path — a navigation from the Jutter, inside a matrix whose subject is the
         // Vondst. Exactly the trap an aggregation's filter already avoids the same way.
-        String v = voorwaarde(resolve(SENTENCE.formatted("alle")));
+        String v = condition(resolve(SENTENCE.formatted("alle")));
         assertFalse(v.contains("\"path\""),
                 () -> "de toets wordt met het ELEMENT als subject geëmitteerd en hoort dus geen "
                         + "navigatiebindingen te dragen:\n" + v);
@@ -166,7 +166,7 @@ class QuantifierFoldTest {
         // "geen van de" alike, so a consumer reading the flag as a forall would answer ALLE here.
         RegelSpraakModel m = resolve(SENTENCE.formatted("geen van de"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.contains("\"quantifier\":\"none\""),
                 () -> "'geen van de' hoort de kwantor none te schrijven, niet all:\n" + v);
     }
@@ -180,16 +180,16 @@ class QuantifierFoldTest {
      * maar dat er een vouw komt die de GESCHREVEN kwantor en het GESCHREVEN telwoord draagt.
      */
     @Test void the_counting_quantifiers_become_the_count_fold_with_their_own_numeral() {
-        record Row(String written, String kwantor, int threshold) {}
+        record Row(String written, String quantifier, int threshold) {}
         for (Row r : new Row[]{new Row("ten minste 2 van de", "atLeast", 2),
                                new Row("ten hoogste 1 van de", "atMost", 1),
                                new Row("precies 3 van de", "exactly", 3)}) {
             RegelSpraakModel m = resolve(SENTENCE.formatted(r.written()));
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.written() + " — onverwachte diagnostiek: " + m.diagnostics);
-            String v = voorwaarde(m);
+            String v = condition(m);
             assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\""
-                            + r.kwantor() + "\",\"threshold\":" + r.threshold() + ","),
+                            + r.quantifier() + "\",\"threshold\":" + r.threshold() + ","),
                     () -> r.written() + " hoort de kwantor EN het telwoord te dragen:\n" + v);
         }
     }
@@ -200,7 +200,7 @@ class QuantifierFoldTest {
      */
     @Test void all_and_none_carry_no_threshold_on_the_wire() {
         for (String kw : new String[]{"alle", "geen van de"})
-            assertFalse(voorwaarde(resolve(SENTENCE.formatted(kw))).contains("\"threshold\""),
+            assertFalse(condition(resolve(SENTENCE.formatted(kw))).contains("\"threshold\""),
                     kw + " leest geen drempel, dus de wire hoort er geen te dragen");
     }
 
@@ -233,7 +233,7 @@ class QuantifierFoldTest {
                     indien het gewicht van alle vondsten van de Jutter gelijk is aan 5 kg.
             """);
         assertTrue(setReadErrors(m).isEmpty(), () -> "de vouw hoort de setlezing weg te nemen: " + m.diagnostics);
-        String v = voorwaarde(m);
+        String v = condition(m);
         assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\"all\","),
                 () -> "de ongekwalificeerde zin hoort dezelfde vouw te worden:\n" + v);
         assertFalse(v.contains("\"wholePeriod\""),
@@ -266,7 +266,7 @@ class QuantifierFoldTest {
     }
 
     @Test void the_written_quantifier_stays_frontend_internal() {
-        // Step 1 of the lowering hangs the written quantifier on the AttribuutRef so ALLE and GEEN are
+        // Step 1 of the lowering hangs the written quantifier on the AttributeReference so ALLE and GEEN are
         // distinguishable downstream. It is resolver input only: the reference node has no such wire
         // field, and a legitimate fold (a set read, which the wire spells as a fold with a range) must
         // not start writing one.

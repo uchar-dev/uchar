@@ -45,8 +45,8 @@ class DefaultsDivisionWitnessTest {
     @Test void a_division_in_a_deviation() throws Exception {
         // The division under "zijn gewogen gewicht is gevuld" and "zijn geschatte gewicht is groter dan 0" over the base
         // 1,00 ("Uitzondering op" lowers to the same group). ref and clingo: V1 (240 by 320) 0,75, V2 1,00.
-        String group = group(standaard(all(filled("gewogen gewicht"), greaterThanZero("geschatte gewicht")), division()),
-                standaard(ALTIJD, EEN));
+        String group = group(defaultEntry(all(filled("gewogen gewicht"), greaterThanZero("geschatte gewicht")), division()),
+                defaultEntry(ALTIJD, EEN));
         refused(group, caseDocument(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null),
                 ratio("V1", "0.75") + "," + ratio("V2", "1.00")), DIVISION);
     }
@@ -54,8 +54,8 @@ class DefaultsDivisionWitnessTest {
     @Test void a_division_in_the_base_rule() throws Exception {
         // The division as the base, under "Afwijking van verhouding: niet gewogen" (1,00 where the gewogen gewicht is
         // leeg). ref and clingo: V1 0,75, V2 1,00.
-        String group = group(standaard(emptyTest("gewogen gewicht"), EEN),
-                standaard(all(filled("gewogen gewicht"), greaterThanZero("geschatte gewicht")), division()));
+        String group = group(defaultEntry(emptyTest("gewogen gewicht"), EEN),
+                defaultEntry(all(filled("gewogen gewicht"), greaterThanZero("geschatte gewicht")), division()));
         refused(group, caseDocument(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null),
                 ratio("V1", "0.75") + "," + ratio("V2", "1.00")), DIVISION);
     }
@@ -64,7 +64,7 @@ class DefaultsDivisionWitnessTest {
         // The division under "zijn gewogen gewicht gevuld is" alone: V3 has no geschat gewicht, so its consequence is leeg,
         // the default falls through to 1,00, and nothing persists on the channel (ch. 7.1). ref: V1 0,75, V2 and V3 1,00,
         // consistent.
-        String group = group(standaard(filled("gewogen gewicht"), division()), standaard(ALTIJD, EEN));
+        String group = group(defaultEntry(filled("gewogen gewicht"), division()), defaultEntry(ALTIJD, EEN));
         refused(group, caseDocument(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null) + ","
                         + vondst("V3", null, "60.00"),
                 ratio("V1", "0.75") + "," + ratio("V2", "1.00") + "," + ratio("V3", "1.00") + "," + CONSISTENT),
@@ -74,7 +74,7 @@ class DefaultsDivisionWitnessTest {
     @Test void a_rounded_division() throws Exception {
         // "… gedeeld door zijn geschatte gewicht naar beneden afgerond op 2 decimalen". ref and clingo: V1 (200 by 300)
         // 0,66, V2 and V3 1,00.
-        String group = group(standaard(filled("gewogen gewicht"), rounded(division())), standaard(ALTIJD, EEN));
+        String group = group(defaultEntry(filled("gewogen gewicht"), rounded(division())), defaultEntry(ALTIJD, EEN));
         refused(group, caseDocument(vondst("V1", "300.00", "200.00") + "," + vondst("V2", "50.00", null) + ","
                         + vondst("V3", null, "60.00"),
                 ratio("V1", "0.66") + "," + ratio("V2", "1.00") + "," + ratio("V3", "1.00")), DIVISION);
@@ -87,7 +87,7 @@ class DefaultsDivisionWitnessTest {
         String squareRoot = "{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":[" + own("gewogen gewicht")
                 + "],\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":"
                 + "{\"snippet\":\"de wortel van zijn gewogen gewicht\"}}";
-        String group = group(standaard(filled("gewogen gewicht"), rounded(squareRoot)), standaard(ALTIJD, EEN));
+        String group = group(defaultEntry(filled("gewogen gewicht"), rounded(squareRoot)), defaultEntry(ALTIJD, EEN));
         refused(group, caseDocument(vondst("V1", null, "240.00") + "," + vondst("V2", "50.00", null) + ","
                         + vondst("V3", null, "-16.00"),
                 ratio("V1", "15.49") + "," + ratio("V2", "1.00") + "," + ratio("V3", "1.00") + "," + CONSISTENT),
@@ -102,7 +102,7 @@ class DefaultsDivisionWitnessTest {
         String plus = "{\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + division() + ",\"right\":{\"node\":\"Literal\",\"value\":"
                 + "{\"number\":\"5.00\"},\"type\":" + TWO_DECIMALS + ",\"source\":{\"snippet\":\"5,00\"}},\"type\":"
                 + TWO_DECIMALS + ",\"source\":{\"snippet\":\"(…) plus 5,00\"}}";
-        String group = group(standaard(filled("gewogen gewicht"), plus), standaard(ALTIJD, EEN));
+        String group = group(defaultEntry(filled("gewogen gewicht"), plus), defaultEntry(ALTIJD, EEN));
         refused(group, caseDocument(vondst("V1", "320.00", "240.00"), ratio("V1", "5.75")), DIVISION);
     }
 
@@ -111,17 +111,17 @@ class DefaultsDivisionWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
 
     private static final String MODEL = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
-            + "\"plural\":\"Vondsten\",\"attributes\":[" + attribuut("geschatte gewicht") + "," + attribuut("gewogen gewicht") + ","
-            + attribuut("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
+            + "\"plural\":\"Vondsten\",\"attributes\":[" + attribute("geschatte gewicht") + "," + attribute("gewogen gewicht") + ","
+            + attribute("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
             + "\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String attribuut(String naam) {
+    private static String attribute(String naam) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + TWO_DECIMALS + "}";
     }
 
-    private static String own(String attribuut) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
-                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
+    private static String own(String attribute) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
     /** "zijn gewogen gewicht gedeeld door zijn geschatte gewicht". */
@@ -137,20 +137,20 @@ class DefaultsDivisionWitnessTest {
                 + ",\"source\":{\"snippet\":\"naar beneden afgerond op 2 decimalen\"}}";
     }
 
-    private static String filled(String attribuut) {
-        return "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own(attribuut)
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn " + attribuut + " gevuld is\"}}";
+    private static String filled(String attribute) {
+        return "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own(attribute)
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn " + attribute + " gevuld is\"}}";
     }
 
-    private static String emptyTest(String attribuut) {
-        return "{\"node\":\"Predicate\",\"kind\":\"empty\",\"operand\":" + own(attribuut)
-                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn " + attribuut + " leeg is\"}}";
+    private static String emptyTest(String attribute) {
+        return "{\"node\":\"Predicate\",\"kind\":\"empty\",\"operand\":" + own(attribute)
+                + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn " + attribute + " leeg is\"}}";
     }
 
-    private static String greaterThanZero(String attribuut) {
-        return "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + own(attribuut) + ",\"right\":{\"node\":\"Literal\","
+    private static String greaterThanZero(String attribute) {
+        return "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + own(attribute) + ",\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"number\":\"0\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"},"
-                + "\"source\":{\"snippet\":\"0\"}},\"source\":{\"snippet\":\"zijn " + attribuut + " is groter dan 0\"}}";
+                + "\"source\":{\"snippet\":\"0\"}},\"source\":{\"snippet\":\"zijn " + attribute + " is groter dan 0\"}}";
     }
 
     private static String all(String... parts) {
@@ -165,8 +165,8 @@ class DefaultsDivisionWitnessTest {
     private static final String EEN = "{\"node\":\"Literal\",\"value\":{\"number\":\"1.00\"},\"type\":" + TWO_DECIMALS
             + ",\"source\":{\"snippet\":\"1,00\"}}";
 
-    private static String standaard(String rechtvaardiging, String consequence) {
-        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequence + "}";
+    private static String defaultEntry(String justification, String consequence) {
+        return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence + "}";
     }
 
     /** The group on the verhouding of a Vondst, highest default first. */
@@ -188,16 +188,16 @@ class DefaultsDivisionWitnessTest {
         return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{" + a + "},\"roles\":{},\"characteristics\":[]}";
     }
 
-    private static String ratio(String label, String waarde) {
+    private static String ratio(String label, String value) {
         return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"verhouding\",\"value\":{\"number\":\""
-                + waarde + "\"}}";
+                + value + "\"}}";
     }
 
     private static final String CONSISTENT = "{\"kind\":\"consistent\"}";
 
-    private static String caseDocument(String instanties, String verwacht) {
-        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instanties
-                + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
+    private static String caseDocument(String instances, String expected) {
+        return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instances
+                + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
     /** The refusal of a division in a default on the exec-model branch, after the prefix of its manifest. */
@@ -207,7 +207,7 @@ class DefaultsDivisionWitnessTest {
             + " default beslist: of zo'n fout telt, wacht op een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)";
 
     /** Both branches refuse the group {@code ir} by name, before {@code caseDocument} is replayed. */
-    private static void refused(String ir, String caseDocument, String vorm) throws Exception {
+    private static void refused(String ir, String caseDocument, String form) throws Exception {
         Path tmp = Files.createTempFile("defaults-deling", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
@@ -215,7 +215,7 @@ class DefaultsDivisionWitnessTest {
         for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
             CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.playCase(tmp, c, branch),
                     branch.toString());
-            assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + vorm), branch + ": "
+            assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + form), branch + ": "
                     + e.getMessage());
         }
     }

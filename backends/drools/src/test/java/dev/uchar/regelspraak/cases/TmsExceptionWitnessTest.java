@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
@@ -30,8 +30,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.withExceptions;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,8 +66,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsExceptionWitnessTest {
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter",
-            List.of(attribuut("heffing", WHOLE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter",
+            List.of(attribute("heffing", WHOLE)),
             List.of("grondX", "grondY", "grondW", "grondP", "grondQ", "grondR", "grondB1", "grondB2", "y0", "q0"))),
             List.of());
 
@@ -77,14 +77,14 @@ class TmsExceptionWitnessTest {
 
     private static final String GROUP = attributeGroup("heffing van een jutter", "Jutter", "heffing", List.of(
             withExceptions(check("grondX", false), number("40"), List.of(
-                    List.of(standaard(check("grondY", false), number("10"))),
-                    List.of(standaard(check("grondW", false), number("10"))),
+                    List.of(defaultEntry(check("grondY", false), number("10"))),
+                    List.of(defaultEntry(check("grondW", false), number("10"))),
                     List.of(withExceptions(check("grondP", false), number("30"), List.of(
-                            List.of(standaard(check("grondQ", false), number("5"))),
-                            List.of(standaard(check("grondR", false), number("25")))))))),
+                            List.of(defaultEntry(check("grondQ", false), number("5"))),
+                            List.of(defaultEntry(check("grondR", false), number("25")))))))),
             groupDefault(List.of(
-                    List.of(standaard(check("grondB1", false), number("15"))),
-                    List.of(standaard(check("grondB2", false), number("25")))))));
+                    List.of(defaultEntry(check("grondB1", false), number("15"))),
+                    List.of(defaultEntry(check("grondB2", false), number("25")))))));
 
     /** Per object its input characteristics, its heffing (null for leeg) and its conflict key (null for none). */
     private record Case(List<String> kenmerken, String heffing, String conflict) {}
@@ -106,13 +106,13 @@ class TmsExceptionWitnessTest {
     }
 
     private static JsonNode caseDocument() throws Exception {
-        List<String> instanties = new ArrayList<>(), verwachtingen = new ArrayList<>();
+        List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
         CASES.forEach((label, g) -> {
-            instanties.add(instance(label, "Jutter", Map.of(), g.kenmerken(), Map.of()));
-            verwachtingen.add(waarde(label, "heffing", g.heffing()));
-            if (g.conflict() != null) verwachtingen.add(inconsistent(g.conflict(), label));
+            instances.add(instance(label, "Jutter", Map.of(), g.kenmerken(), Map.of()));
+            expectations.add(value(label, "heffing", g.heffing()));
+            if (g.conflict() != null) expectations.add(inconsistent(g.conflict(), label));
         });
-        return TmsDocuments.caseDocument(instanties, verwachtingen);
+        return TmsDocuments.caseDocument(instances, expectations);
     }
 
     private static Path document(List<String> rules) throws Exception {
@@ -133,15 +133,15 @@ class TmsExceptionWitnessTest {
 
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(RULES), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int[] withdrawn = {0};
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
             fireSample(b, TmsDocuments.kieBase(b, order), order.stream().map(Rule::getName).toList(),
                     withdrawn);
         assertTrue(withdrawn[0] > 0, "geen volgorde trok een stuurfeit in: de steekproef liep geen tussenstand langs");
         DroolsBackend.Build t = DroolsBackend.build(document(RULES), DroolsBackend.Branch.DRL_TEXT);
         List<String> rules = TextOrder.rules(t);
-        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
+        assertEquals(generated.stream().map(Rule::getName).toList(), rules, "de regels van de tekst");
         int[] inTheText = {0};
         for (List<String> order : TmsDocuments.sample(rules, 20261008L, 100))
             fireSample(t, TextOrder.kieBase(t, order), order, inTheText);
@@ -161,24 +161,24 @@ class TmsExceptionWitnessTest {
             beans.add(beanObject);
         }
         List<String> conflicts = new ArrayList<>();
-        TmsDocuments.vuur(b, kieBase, names, beans, sessie -> sessie.addEventListener(new RuleRuntimeEventListener() {
+        TmsDocuments.fire(b, kieBase, names, beans, session -> session.addEventListener(new RuleRuntimeEventListener() {
             @Override public void objectInserted(ObjectInsertedEvent e) { }
             @Override public void objectUpdated(ObjectUpdatedEvent e) { }
             @Override public void objectDeleted(ObjectDeletedEvent e) {
                 if (e.getOldObject() instanceof Outcome) withdrawn[0]++;
             }
-        }), sessie -> {
-            conflicts.addAll(TmsDocuments.inconsistenties(sessie, labels));
-            for (Object f : sessie.getObjects(o -> o instanceof ControlFact))
+        }), session -> {
+            conflicts.addAll(TmsDocuments.inconsistencies(session, labels));
+            for (Object f : session.getObjects(o -> o instanceof ControlFact))
                 assertTrue(f instanceof Outcome, () -> "een algemene groep zet alleen Uitkomst in: " + f);
         });
-        List<String> verwacht = new ArrayList<>();
-        CASES.forEach((label, g) -> { if (g.conflict() != null) verwacht.add(g.conflict() + " @ " + label); });
-        verwacht.sort(null);
-        assertEquals(verwacht, conflicts, () -> "conflicten op " + b.branch() + " in volgorde " + names);
+        List<String> expected = new ArrayList<>();
+        CASES.forEach((label, g) -> { if (g.conflict() != null) expected.add(g.conflict() + " @ " + label); });
+        expected.sort(null);
+        assertEquals(expected, conflicts, () -> "conflicten op " + b.branch() + " in volgorde " + names);
         for (Object beanObject : beans) {
             Case g = CASES.get(labels.get(beanObject));
-            assertEquals(g.heffing() == null ? null : new BigDecimal(g.heffing()), TmsDocuments.lees(beanObject, "heffing"),
+            assertEquals(g.heffing() == null ? null : new BigDecimal(g.heffing()), TmsDocuments.read(beanObject, "heffing"),
                     () -> labels.get(beanObject) + " heffing op " + b.branch() + " in volgorde " + names);
         }
     }

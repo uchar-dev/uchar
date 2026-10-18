@@ -64,158 +64,158 @@ class StatePlanWitnessTest {
     @Test void characteristic_attribute_and_timeline_with_bucket_scalar() throws Exception {
         assertEquals(List.of(
                 "regel stand Jutter.aantal aangemelde vondsten: uit de invoer | vorm null | groep null",
-                "  lezingen [0 INVOER $invoer (invoer ElementSleutel[objecttype=jutter, naam=aantal aangemelde"
-                        + " vondsten, kenmerk=false])]",
+                "  lezingen [0 INVOER $invoer (invoer ElementKey[objectType=jutter, naam=aantal aangemelde"
+                        + " vondsten, characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$invoer = [] Jutter.aantal aangemelde vondsten"
                         + " PERIODS]",
-                "  niet BucketInput $emmerinvoer alfa [emmerinvoer_9: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=jutter, naam=aantal aangemelde vondsten, kenmerk=false]]] join"
+                "  niet BucketInput $emmerinvoer alfa [emmerinvoer_9: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=jutter, naam=aantal aangemelde vondsten, characteristic=false]]] join"
                         + " [emmerinvoer-onderwerp_10: onderwerp = $onderwerp] bind []",
-                "  niet Value $waarde alfa [waarde_11: [[] attribuut VALUE GELIJK ElementSleutel[objecttype=jutter,"
-                        + " naam=aantal aangemelde vondsten, kenmerk=false]]] join [waarde-onderwerp_12: onderwerp ="
+                "  niet Value $waarde alfa [waarde_11: [[] attribute VALUE GELIJK ElementKey[objectType=jutter,"
+                        + " naam=aantal aangemelde vondsten, characteristic=false]]] join [waarde-onderwerp_12: onderwerp ="
                         + " $onderwerp] bind []",
-                "  gevolg State [onderwerp=$onderwerp, attribuut=ElementSleutel[objecttype=jutter, naam=aantal"
-                        + " aangemelde vondsten, kenmerk=false], bron=INVOER, waarde=0, emmerscalair=false,"
+                "  gevolg State [onderwerp=$onderwerp, attribute=ElementKey[objectType=jutter, naam=aantal"
+                        + " aangemelde vondsten, characteristic=false], source=INVOER, value=0, bucketScalar=false,"
                         + " insertion=LOGICAL]",
                 "regel stand Jutter.aantal aangemelde vondsten: uit de invoer, een emmerscalair | vorm null | groep"
                         + " null",
-                "  lezingen [0 INVOER $invoer (invoer ElementSleutel[objecttype=jutter, naam=aantal aangemelde"
-                        + " vondsten, kenmerk=false])]",
+                "  lezingen [0 INVOER $invoer (invoer ElementKey[objectType=jutter, naam=aantal aangemelde"
+                        + " vondsten, characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$invoer = [] Jutter.aantal aangemelde vondsten"
                         + " PERIODS]",
-                "  bestaat [BucketInput $emmerinvoer alfa [emmerinvoer_13: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=jutter, naam=aantal aangemelde vondsten, kenmerk=false]]] join"
+                "  bestaat [BucketInput $emmerinvoer alfa [emmerinvoer_13: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=jutter, naam=aantal aangemelde vondsten, characteristic=false]]] join"
                         + " [emmerinvoer-onderwerp_14: onderwerp = $onderwerp] bind []]",
-                "  niet Value $waarde alfa [waarde_15: [[] attribuut VALUE GELIJK ElementSleutel[objecttype=jutter,"
-                        + " naam=aantal aangemelde vondsten, kenmerk=false]]] join [waarde-onderwerp_16: onderwerp ="
+                "  niet Value $waarde alfa [waarde_15: [[] attribute VALUE GELIJK ElementKey[objectType=jutter,"
+                        + " naam=aantal aangemelde vondsten, characteristic=false]]] join [waarde-onderwerp_16: onderwerp ="
                         + " $onderwerp] bind []",
-                "  gevolg State [onderwerp=$onderwerp, attribuut=ElementSleutel[objecttype=jutter, naam=aantal"
-                        + " aangemelde vondsten, kenmerk=false], bron=INVOER, waarde=0, emmerscalair=true,"
+                "  gevolg State [onderwerp=$onderwerp, attribute=ElementKey[objectType=jutter, naam=aantal"
+                        + " aangemelde vondsten, characteristic=false], source=INVOER, value=0, bucketScalar=true,"
                         + " insertion=LOGICAL]",
                 "regel stand Jutter.totaal aangemelde vondsten: uit een afleiding | vorm null | groep null",
-                "  lezingen [0 DERIVATION $v (afleiding ElementSleutel[objecttype=jutter, naam=totaal aangemelde"
-                        + " vondsten, kenmerk=false])]",
+                "  lezingen [0 DERIVATION $v (afleiding ElementKey[objectType=jutter, naam=totaal aangemelde"
+                        + " vondsten, characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [] bind []",
-                "  patroon Value $waarde alfa [waarde_17: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=jutter, naam=totaal aangemelde vondsten, kenmerk=false]]] join"
-                        + " [waarde-onderwerp_18: onderwerp = $onderwerp] bind [$v = [] Value.waarde VALUE]",
-                "  gevolg State [onderwerp=$onderwerp, attribuut=ElementSleutel[objecttype=jutter, naam=totaal"
-                        + " aangemelde vondsten, kenmerk=false], bron=DERIVATION, waarde=0, emmerscalair=false,"
+                "  patroon Value $waarde alfa [waarde_17: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=jutter, naam=totaal aangemelde vondsten, characteristic=false]]] join"
+                        + " [waarde-onderwerp_18: onderwerp = $onderwerp] bind [$v = [] Value.value VALUE]",
+                "  gevolg State [onderwerp=$onderwerp, attribute=ElementKey[objectType=jutter, naam=totaal"
+                        + " aangemelde vondsten, characteristic=false], source=DERIVATION, value=0, bucketScalar=false,"
                         + " insertion=LOGICAL]",
                 "regel stand Jutter.totaal aangemelde vondsten: uit de invoer | vorm null | groep null",
-                "  lezingen [0 INVOER $invoer (invoer ElementSleutel[objecttype=jutter, naam=totaal aangemelde"
-                        + " vondsten, kenmerk=false])]",
+                "  lezingen [0 INVOER $invoer (invoer ElementKey[objectType=jutter, naam=totaal aangemelde"
+                        + " vondsten, characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$invoer = [] Jutter.totaal aangemelde vondsten VALUE]",
-                "  niet Value $waarde alfa [waarde_19: [[] attribuut VALUE GELIJK ElementSleutel[objecttype=jutter,"
-                        + " naam=totaal aangemelde vondsten, kenmerk=false]]] join [waarde-onderwerp_20: onderwerp ="
+                "  niet Value $waarde alfa [waarde_19: [[] attribute VALUE GELIJK ElementKey[objectType=jutter,"
+                        + " naam=totaal aangemelde vondsten, characteristic=false]]] join [waarde-onderwerp_20: onderwerp ="
                         + " $onderwerp] bind []",
-                "  gevolg State [onderwerp=$onderwerp, attribuut=ElementSleutel[objecttype=jutter, naam=totaal"
-                        + " aangemelde vondsten, kenmerk=false], bron=INVOER, waarde=0, emmerscalair=false,"
+                "  gevolg State [onderwerp=$onderwerp, attribute=ElementKey[objectType=jutter, naam=totaal"
+                        + " aangemelde vondsten, characteristic=false], source=INVOER, value=0, bucketScalar=false,"
                         + " insertion=LOGICAL]",
                 "regel kenmerkstand Jutter.penninggerechtigd: waar uit de invoer | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Jutter $onderwerp alfa [invoer_21: [[] penninggerechtigd WAAR GELIJK true]] bind []",
-                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=penninggerechtigd, kenmerk=true], bron=INVOER, holds=true, insertion=LOGICAL]",
+                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, characteristic=ElementKey[objectType=jutter,"
+                        + " naam=penninggerechtigd, characteristic=true], source=INVOER, holds=true, insertion=LOGICAL]",
                 "regel kenmerkstand Jutter.penninggerechtigd: waar uit een afleiding | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Jutter $onderwerp alfa [] bind []",
-                "  patroon HasCharacteristic $afgeleid alfa [afgeleid_22: [[] kenmerk VALUE GELIJK"
-                        + " ElementSleutel[objecttype=jutter, naam=penninggerechtigd, kenmerk=true]]] join"
+                "  patroon HasCharacteristic $afgeleid alfa [afgeleid_22: [[] characteristic VALUE GELIJK"
+                        + " ElementKey[objectType=jutter, naam=penninggerechtigd, characteristic=true]]] join"
                         + " [afgeleid-onderwerp_23: onderwerp = $onderwerp] bind []",
-                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=penninggerechtigd, kenmerk=true], bron=DERIVATION, holds=true, insertion=LOGICAL]",
+                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, characteristic=ElementKey[objectType=jutter,"
+                        + " naam=penninggerechtigd, characteristic=true], source=DERIVATION, holds=true, insertion=LOGICAL]",
                 "regel kenmerkstand Jutter.penninggerechtigd: onwaar | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Jutter $onderwerp alfa [geen-invoer_24: [[] penninggerechtigd WAAR GELIJK false]] bind"
                         + " []",
-                "  niet HasCharacteristic $afgeleid alfa [afgeleid_25: [[] kenmerk VALUE GELIJK"
-                        + " ElementSleutel[objecttype=jutter, naam=penninggerechtigd, kenmerk=true]]] join"
+                "  niet HasCharacteristic $afgeleid alfa [afgeleid_25: [[] characteristic VALUE GELIJK"
+                        + " ElementKey[objectType=jutter, naam=penninggerechtigd, characteristic=true]]] join"
                         + " [afgeleid-onderwerp_26: onderwerp = $onderwerp] bind []",
-                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=jutter,"
-                        + " naam=penninggerechtigd, kenmerk=true], bron=GEEN, holds=false, insertion=LOGICAL]"),
+                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, characteristic=ElementKey[objectType=jutter,"
+                        + " naam=penninggerechtigd, characteristic=true], source=GEEN, holds=false, insertion=LOGICAL]"),
                 statePlans("jutterswet-penningjaar"));
     }
 
     @Test void path_states_over_two_and_three_steps() throws Exception {
         assertEquals(List.of(
                 "regel padstand Melding.vondst.jutter naar Jutter.premie: link aanwezig | vorm null | groep null",
-                "  lezingen [0 REACHED_STATE $v (stand Melding:vondst.jutter ElementSleutel[objecttype=jutter,"
-                        + " naam=premie, kenmerk=false])]",
+                "  lezingen [0 REACHED_STATE $v (stand Melding:vondst.jutter ElementKey[objectType=jutter,"
+                        + " naam=premie, characteristic=false])]",
                 "  onderwerp Melding $onderwerp alfa [link_71: [[Melding.vondst, Vondst.jutter] null VALUE GEVULD]]"
                         + " bind [$bereikt = [Melding.vondst] Vondst.jutter VALUE]",
-                "  patroon State $stand alfa [stand_72: [[] attribuut VALUE GELIJK ElementSleutel[objecttype=jutter,"
-                        + " naam=premie, kenmerk=false]]] join [stand-bereikt_73: onderwerp = $bereikt] bind [$v = []"
-                        + " State.waarde VALUE]",
-                "  gevolg InsertPathState [onderwerp=$onderwerp, pad=Melding:vondst.jutter,"
-                        + " member=ElementSleutel[objecttype=jutter, naam=premie, kenmerk=false], bron=REACHED,"
-                        + " waarde=0, insertion=LOGICAL]",
+                "  patroon State $stand alfa [stand_72: [[] attribute VALUE GELIJK ElementKey[objectType=jutter,"
+                        + " naam=premie, characteristic=false]]] join [stand-bereikt_73: onderwerp = $bereikt] bind [$v = []"
+                        + " State.value VALUE]",
+                "  gevolg InsertPathState [onderwerp=$onderwerp, path=Melding:vondst.jutter,"
+                        + " member=ElementKey[objectType=jutter, naam=premie, characteristic=false], source=REACHED,"
+                        + " value=0, insertion=LOGICAL]",
                 "regel padstand Melding.vondst.jutter naar Jutter.premie: link afwezig | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Melding $onderwerp alfa [geen-link_74: [[Melding.vondst, Vondst.jutter] null VALUE"
                         + " LEEG]] bind []",
-                "  gevolg InsertPathState [onderwerp=$onderwerp, pad=Melding:vondst.jutter,"
-                        + " member=ElementSleutel[objecttype=jutter, naam=premie, kenmerk=false], bron=MISSING_LINK,"
-                        + " waarde=-1, insertion=LOGICAL]",
+                "  gevolg InsertPathState [onderwerp=$onderwerp, path=Melding:vondst.jutter,"
+                        + " member=ElementKey[objectType=jutter, naam=premie, characteristic=false], source=MISSING_LINK,"
+                        + " value=-1, insertion=LOGICAL]",
                 "regel padstand Controle.melding.vondst.jutter naar Jutter.premie: link aanwezig | vorm null | groep"
                         + " null",
                 "  lezingen [0 REACHED_STATE $v (stand Controle:melding.vondst.jutter"
-                        + " ElementSleutel[objecttype=jutter, naam=premie, kenmerk=false])]",
+                        + " ElementKey[objectType=jutter, naam=premie, characteristic=false])]",
                 "  onderwerp Controle $onderwerp alfa [link_75: [[Controle.melding, Melding.vondst, Vondst.jutter]"
                         + " null VALUE GEVULD]] bind [$bereikt = [Controle.melding, Melding.vondst] Vondst.jutter"
                         + " VALUE]",
-                "  patroon State $stand alfa [stand_76: [[] attribuut VALUE GELIJK ElementSleutel[objecttype=jutter,"
-                        + " naam=premie, kenmerk=false]]] join [stand-bereikt_77: onderwerp = $bereikt] bind [$v = []"
-                        + " State.waarde VALUE]",
-                "  gevolg InsertPathState [onderwerp=$onderwerp, pad=Controle:melding.vondst.jutter,"
-                        + " member=ElementSleutel[objecttype=jutter, naam=premie, kenmerk=false], bron=REACHED,"
-                        + " waarde=0, insertion=LOGICAL]",
+                "  patroon State $stand alfa [stand_76: [[] attribute VALUE GELIJK ElementKey[objectType=jutter,"
+                        + " naam=premie, characteristic=false]]] join [stand-bereikt_77: onderwerp = $bereikt] bind [$v = []"
+                        + " State.value VALUE]",
+                "  gevolg InsertPathState [onderwerp=$onderwerp, path=Controle:melding.vondst.jutter,"
+                        + " member=ElementKey[objectType=jutter, naam=premie, characteristic=false], source=REACHED,"
+                        + " value=0, insertion=LOGICAL]",
                 "regel padstand Controle.melding.vondst.jutter naar Jutter.premie: link afwezig | vorm null | groep"
                         + " null",
                 "  lezingen []",
                 "  onderwerp Controle $onderwerp alfa [geen-link_78: [[Controle.melding, Melding.vondst,"
                         + " Vondst.jutter] null VALUE LEEG]] bind []",
-                "  gevolg InsertPathState [onderwerp=$onderwerp, pad=Controle:melding.vondst.jutter,"
-                        + " member=ElementSleutel[objecttype=jutter, naam=premie, kenmerk=false], bron=MISSING_LINK,"
-                        + " waarde=-1, insertion=LOGICAL]",
+                "  gevolg InsertPathState [onderwerp=$onderwerp, path=Controle:melding.vondst.jutter,"
+                        + " member=ElementKey[objectType=jutter, naam=premie, characteristic=false], source=MISSING_LINK,"
+                        + " value=-1, insertion=LOGICAL]",
                 "regel stand Jutter.premie: uit een afleiding | vorm null | groep null",
-                "  lezingen [0 DERIVATION $v (afleiding ElementSleutel[objecttype=jutter, naam=premie,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 DERIVATION $v (afleiding ElementKey[objectType=jutter, naam=premie,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [] bind []",
-                "  patroon Value $waarde alfa [waarde_79: [[] attribuut VALUE GELIJK"
-                        + " ElementSleutel[objecttype=jutter, naam=premie, kenmerk=false]]] join"
-                        + " [waarde-onderwerp_80: onderwerp = $onderwerp] bind [$v = [] Value.waarde VALUE]",
-                "  gevolg State [onderwerp=$onderwerp, attribuut=ElementSleutel[objecttype=jutter, naam=premie,"
-                        + " kenmerk=false], bron=DERIVATION, waarde=0, emmerscalair=false, insertion=LOGICAL]",
+                "  patroon Value $waarde alfa [waarde_79: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=jutter, naam=premie, characteristic=false]]] join"
+                        + " [waarde-onderwerp_80: onderwerp = $onderwerp] bind [$v = [] Value.value VALUE]",
+                "  gevolg State [onderwerp=$onderwerp, attribute=ElementKey[objectType=jutter, naam=premie,"
+                        + " characteristic=false], source=DERIVATION, value=0, bucketScalar=false, insertion=LOGICAL]",
                 "regel stand Jutter.premie: uit de invoer | vorm null | groep null",
-                "  lezingen [0 INVOER $invoer (invoer ElementSleutel[objecttype=jutter, naam=premie,"
-                        + " kenmerk=false])]",
+                "  lezingen [0 INVOER $invoer (invoer ElementKey[objectType=jutter, naam=premie,"
+                        + " characteristic=false])]",
                 "  onderwerp Jutter $onderwerp alfa [] bind [$invoer = [] Jutter.premie VALUE]",
-                "  niet Value $waarde alfa [waarde_81: [[] attribuut VALUE GELIJK ElementSleutel[objecttype=jutter,"
-                        + " naam=premie, kenmerk=false]]] join [waarde-onderwerp_82: onderwerp = $onderwerp] bind []",
-                "  gevolg State [onderwerp=$onderwerp, attribuut=ElementSleutel[objecttype=jutter, naam=premie,"
-                        + " kenmerk=false], bron=INVOER, waarde=0, emmerscalair=false, insertion=LOGICAL]",
+                "  niet Value $waarde alfa [waarde_81: [[] attribute VALUE GELIJK ElementKey[objectType=jutter,"
+                        + " naam=premie, characteristic=false]]] join [waarde-onderwerp_82: onderwerp = $onderwerp] bind []",
+                "  gevolg State [onderwerp=$onderwerp, attribute=ElementKey[objectType=jutter, naam=premie,"
+                        + " characteristic=false], source=INVOER, value=0, bucketScalar=false, insertion=LOGICAL]",
                 "regel kenmerkstand Vondst.zwaar: waar uit de invoer | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Vondst $onderwerp alfa [invoer_83: [[] zwaar WAAR GELIJK true]] bind []",
-                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=vondst, naam=zwaar,"
-                        + " kenmerk=true], bron=INVOER, holds=true, insertion=LOGICAL]",
+                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, characteristic=ElementKey[objectType=vondst, naam=zwaar,"
+                        + " characteristic=true], source=INVOER, holds=true, insertion=LOGICAL]",
                 "regel kenmerkstand Vondst.zwaar: waar uit een afleiding | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Vondst $onderwerp alfa [] bind []",
-                "  patroon HasCharacteristic $afgeleid alfa [afgeleid_84: [[] kenmerk VALUE GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=zwaar, kenmerk=true]]] join"
+                "  patroon HasCharacteristic $afgeleid alfa [afgeleid_84: [[] characteristic VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, naam=zwaar, characteristic=true]]] join"
                         + " [afgeleid-onderwerp_85: onderwerp = $onderwerp] bind []",
-                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=vondst, naam=zwaar,"
-                        + " kenmerk=true], bron=DERIVATION, holds=true, insertion=LOGICAL]",
+                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, characteristic=ElementKey[objectType=vondst, naam=zwaar,"
+                        + " characteristic=true], source=DERIVATION, holds=true, insertion=LOGICAL]",
                 "regel kenmerkstand Vondst.zwaar: onwaar | vorm null | groep null",
                 "  lezingen []",
                 "  onderwerp Vondst $onderwerp alfa [geen-invoer_86: [[] zwaar WAAR GELIJK false]] bind []",
-                "  niet HasCharacteristic $afgeleid alfa [afgeleid_87: [[] kenmerk VALUE GELIJK"
-                        + " ElementSleutel[objecttype=vondst, naam=zwaar, kenmerk=true]]] join"
+                "  niet HasCharacteristic $afgeleid alfa [afgeleid_87: [[] characteristic VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, naam=zwaar, characteristic=true]]] join"
                         + " [afgeleid-onderwerp_88: onderwerp = $onderwerp] bind []",
-                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, kenmerk=ElementSleutel[objecttype=vondst, naam=zwaar,"
-                        + " kenmerk=true], bron=GEEN, holds=false, insertion=LOGICAL]"),
+                "  gevolg InsertCharacteristicState [onderwerp=$onderwerp, characteristic=ElementKey[objectType=vondst, naam=zwaar,"
+                        + " characteristic=true], source=GEEN, holds=false, insertion=LOGICAL]"),
                 statePlans("jutterswet-premiestaffel"));
     }
 
@@ -228,10 +228,10 @@ class StatePlanWitnessTest {
             if (!p.naam().startsWith("kenmerkstand ") && !p.naam().startsWith("stand ")
                     && !p.naam().startsWith("padstand "))
                 continue;
-            out.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendaGroup());
+            out.add("regel " + p.naam() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
-            for (Read l : p.lezingen().slots())
-                slots.add(l.slot() + " " + l.soort() + " " + l.naam() + " (" + l.sleutel() + ")");
+            for (Read l : p.readings().slots())
+                slots.add(l.slot() + " " + l.category() + " " + l.naam() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) out.add("  " + item(item));
             out.add("  gevolg " + consequence(p.consequence()));
@@ -248,14 +248,14 @@ class StatePlanWitnessTest {
                     + n.inside() + " buiten " + n.outside() + " "
                     + n.patterns().stream().map(StatePlanWitnessTest::pattern).toList());
             case Exists b -> "bestaat " + b.patterns().stream().map(StatePlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.bron());
+            case Accumulation a -> "accumulatie " + pattern(a.source());
             case TestItem t -> "toets " + t.id();
         };
     }
 
     private static String pattern(FactPattern p) {
         return p.factClass().getSimpleName() + " " + p.naam() + " alfa " + alpha(p.alpha()) + " join "
-                + p.joins().stream().map((Join j) -> j.id() + ": " + j.veld() + " = " + j.doel()).toList() + " bind "
+                + p.joins().stream().map((Join j) -> j.id() + ": " + j.field() + " = " + j.target()).toList() + " bind "
                 + bindings(p.bindings());
     }
 
@@ -264,22 +264,22 @@ class StatePlanWitnessTest {
     private static List<String> alpha(List<Alpha> alpha) {
         List<String> out = new ArrayList<>();
         for (Alpha a : alpha)
-            out.add(a.id() + ": " + a.tests().stream().map(t -> fields(t.pad()) + " " + t.veld() + " " + t.vorm()
-                    + " " + t.op() + (t.waarde() == null ? "" : " " + t.waarde())).toList());
+            out.add(a.id() + ": " + a.tests().stream().map(t -> fields(t.path()) + " " + t.field() + " " + t.form()
+                    + " " + t.op() + (t.value() == null ? "" : " " + t.value())).toList());
         return out;
     }
 
     /** Each binding with its variable, its path, its field on its class and its form of reading. */
     private static List<String> bindings(List<Binding> bindings) {
-        return bindings.stream().map(b -> b.doel() + " = " + fields(b.pad()) + " " + veld(b.veld()) + " " + b.vorm()
-                + (b.soort() == null ? "" : " " + b.soort().getSimpleName())).toList();
+        return bindings.stream().map(b -> b.target() + " = " + fields(b.path()) + " " + field(b.field()) + " " + b.form()
+                + (b.category() == null ? "" : " " + b.category().getSimpleName())).toList();
     }
 
-    private static String fields(List<Binding.Field> pad) {
-        return pad.stream().map(StatePlanWitnessTest::veld).toList().toString();
+    private static String fields(List<Binding.Field> path) {
+        return path.stream().map(StatePlanWitnessTest::field).toList().toString();
     }
 
-    private static String veld(Binding.Field v) {
+    private static String field(Binding.Field v) {
         return v.javaClass().getSimpleName() + "." + v.naam();
     }
 

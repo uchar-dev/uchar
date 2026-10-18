@@ -24,7 +24,7 @@ public enum Route {
     /** Whether a computed value is leeg, null or a timeline without a segment: a {@link Consequence.Value} inserts it only
      *  where it is not, or where the plan writes leeg. */
     IS_EMPTY(ComputeHelpers.class, "isEmpty"),
-    /** The evaluation fault of a fixed sentence, named in a rule, which {@link Consequence.Fout} inserts. */
+    /** The evaluation fault of a fixed sentence, named in a rule, which {@link Consequence.Fault} inserts. */
     COMPUTE_FAULT(ComputeHelpers.class, "computeFault"),
     /** The §9.5 inconsistency of a form on an object, which {@link Consequence.Inconsistency} and the deposit of a
      *  {@link Consequence.Value} insert, and of the conflict of a defaults stack at its root under the conflict's key
@@ -34,7 +34,7 @@ public enum Route {
      *  so. */
     BUCKET_SCALAR(ComputeHelpers.class, "bucketScalarOf"),
     /** The fault of the form of an input, its sentence around the object, named in a rule, which
-     *  {@link Consequence.Invoervormfout} inserts. */
+     *  {@link Consequence.InputFormFault} inserts. */
     INPUT_FORM_FAULT(ComputeHelpers.class, "inputFormFault"),
     /** The keys of an instance in a source of a uniqueness, one per value a component on a timeline ever carries, which
      *  {@link Consequence.UniquenessKey} inserts. */
@@ -71,7 +71,7 @@ public enum Route {
     /** Texts joined in order ({@link Term.TextComposition}). */
     TEXT_COMPOSITION(ComputeHelpers.class, "textComposition"),
     /** A member of a bean by its property ({@link Binding.Field#property}), null on an absent object. */
-    READ(ComputeHelpers.class, "lees"),
+    READ(ComputeHelpers.class, "readProperty"),
     /** The object a walk over reference fields reaches, null where a link is absent: a read along a path. */
     ALONG(ComputeHelpers.class, "along"),
     /** A characteristic read off a bean as whether it holds {@code true} ({@link Binding.ReadForm#WAAR}). */
@@ -107,7 +107,7 @@ public enum Route {
     VERDICT(ComputeHelpers.class, "verdict"),
     /** A broken contract, thrown: no evaluation fault. */
     CONTRACT_BREACH(ComputeHelpers.class, "contractBreach"),
-    /** The fault of writers that disagree, as the {@link Consequence.Schrijversconflict} plans it. */
+    /** The fault of writers that disagree, as the {@link Consequence.WritersConflict} plans it. */
     WRITERS_CONFLICT(ComputeHelpers.class, "writersConflict"),
     /** The empty list, for a route that takes a list. */
     LIST0(ComputeHelpers.class, "list0"),
@@ -125,16 +125,16 @@ public enum Route {
     LIST6(ComputeHelpers.class, "list6");
 
     private final Class<?> javaClass;
-    private final String methode;
+    private final String method;
 
-    Route(Class<?> javaClass, String methode) {
+    Route(Class<?> javaClass, String method) {
         this.javaClass = javaClass;
-        this.methode = methode;
+        this.method = method;
     }
 
     /** The class whose public static method this is. */
     public Class<?> javaClass() { return javaClass; }
 
     /** The name of the method. */
-    public String methode() { return methode; }
+    public String method() { return method; }
 }

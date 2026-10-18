@@ -190,7 +190,7 @@ class WindowFoldWitnessTest {
             Integer threshold = "none".equals(kw) ? null : 1;
             // the wire spells the quantifier as the table does; the transpiler's sentence names the record's constant
             String fold = "een kwantorvouw onder "
-                    + Spelling.QUANTIFIER.waarde("QuantifierFold.quantifier", kw).name() + " over Strandwacht (WF-112)";
+                    + Spelling.QUANTIFIER.value("QuantifierFold.quantifier", kw).name() + " over Strandwacht (WF-112)";
             BothBranches.refused(document(kw, threshold, null, LIT), caseDocument(null, ALL_PLOEGEN),
                     "periodevenster in de toets van " + fold + ": de kwantor telt of ontkent het vensterverdict",
                     "het venster in de toets onder " + kw);
@@ -249,10 +249,10 @@ class WindowFoldWitnessTest {
     }
 
     /** A time window; a bound given as "null" is open on that side, which the wire writes as an absent field. */
-    private static String window(String from, String to, boolean inclusive, String bron) {
+    private static String window(String from, String to, boolean inclusive, String source) {
         return "{ \"node\": \"TimeWindow\", " + (from.equals("null") ? "" : "\"from\": " + from + ", ")
                 + (to.equals("null") ? "" : "\"to\": " + to + ", ") + "\"toInclusive\": "
-                + inclusive + ", \"source\": {\"snippet\": \"" + bron + "\"} }";
+                + inclusive + ", \"source\": {\"snippet\": \"" + source + "\"} }";
     }
 
     /** van 1 januari 2024 tot 1 januari 2025 */
@@ -351,11 +351,11 @@ class WindowFoldWitnessTest {
         ObjectNode input = c.putObject("input");
         input.set("instances", JSON.readTree(INSTANCES));
         input.putObject("parameters");
-        ArrayNode verwacht = c.putArray("expected");
+        ArrayNode expected = c.putArray("expected");
         for (int i = 0; i < ALL_PLOEGEN.length; i++)
-            verwacht.addObject().put("kind", "attributeValue").put("label", ALL_PLOEGEN[i]).put("attribute", "wachttal")
+            expected.addObject().put("kind", "attributeValue").put("label", ALL_PLOEGEN[i]).put("attribute", "wachttal")
                     .set("value", JSON.createObjectNode().put("number", String.valueOf(tal[i])));
-        verwacht.addObject().put("kind", "consistent");
+        expected.addObject().put("kind", "consistent");
         return c;
     }
 
@@ -441,20 +441,20 @@ class WindowFoldWitnessTest {
         return caseDocument(BERGERS, List.of("P1", "P2"), "premiegerechtigd", asOf, premiegerechtigd);
     }
 
-    private static JsonNode caseDocument(String instanties, List<String> labels, String kenmerk, String asOf,
-            String... aanwezig) throws Exception {
+    private static JsonNode caseDocument(String instances, List<String> labels, String characteristic, String asOf,
+            String... present) throws Exception {
         ObjectNode c = JSON.createObjectNode();
         c.put("format", "uchar-case-v0");
         if (asOf == null) c.putNull("asOfDate"); else c.put("asOfDate", asOf);
         ObjectNode input = c.putObject("input");
-        input.set("instances", JSON.readTree(instanties));
+        input.set("instances", JSON.readTree(instances));
         input.putObject("parameters");
-        ArrayNode verwacht = c.putArray("expected");
-        Set<String> trueLabels = Set.of(aanwezig);
+        ArrayNode expected = c.putArray("expected");
+        Set<String> trueLabels = Set.of(present);
         for (String p : labels)
-            verwacht.addObject().put("kind", trueLabels.contains(p) ? "characteristicPresent" : "characteristicAbsent")
-                    .put("label", p).put("characteristic", kenmerk);
-        verwacht.addObject().put("kind", "consistent");
+            expected.addObject().put("kind", trueLabels.contains(p) ? "characteristicPresent" : "characteristicAbsent")
+                    .put("label", p).put("characteristic", characteristic);
+        expected.addObject().put("kind", "consistent");
         return c;
     }
 }

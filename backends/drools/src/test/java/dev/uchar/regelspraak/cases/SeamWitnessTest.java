@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p>A child JVM, with the property set to a fresh directory, replays two documents on both branches: the red case
  * {@code runaway-recursion}, whose creation reaches the creation budget and so no fixpoint, and the golden
  * {@code jutterswet-penningdrempel}, which reaches one. Each of the four sessions leaves exactly one dump, named by the
- * hash of its document and its branch, whose line {@code fixpunt} says {@code nee} with the sentence of the budget, or
+ * hash of its document and its branch, whose line {@code fixpoint} says {@code nee} with the sentence of the budget, or
  * {@code ja}. A child JVM, because the seam reads the property once, when its class loads, and the JVM of the suite has
  * loaded it long before, with or without the property.
  *
@@ -68,12 +68,12 @@ class SeamWitnessTest {
         }
         assertEquals(dumps.stream().sorted().toList(), written, "de dumps van de naad, één per sessie");
         for (String d : dumps) {
-            List<String> fixpunt = Files.readAllLines(map.resolve(d)).stream().filter(r -> r.startsWith("fixpunt "))
+            List<String> fixpoint = Files.readAllLines(map.resolve(d)).stream().filter(r -> r.startsWith("fixpunt "))
                     .toList();
             // the dump quotes a sentence with its quotes escaped, and the sentence of the budget quotes the creation
-            String verwacht = d.startsWith(SessionDump.hash(withoutIr)) ? "fixpunt nee \"" + TmsCreationStratumWitnessTest
+            String expected = d.startsWith(SessionDump.hash(withoutIr)) ? "fixpunt nee \"" + TmsCreationStratumWitnessTest
                     .budget("werf eeuwig", 0, "Wachter").replace("\"", "\\\"") + "\"" : "fixpunt ja";
-            assertEquals(List.of(verwacht), fixpunt, () -> "de regel fixpunt van " + d);
+            assertEquals(List.of(expected), fixpoint, () -> "de regel fixpunt van " + d);
         }
     }
 

@@ -16,7 +16,7 @@ import java.util.Objects;
  * selected by two selections of an instance-set union (ch. 3.4d), therefore merges into one fact with a justification
  * per route, and contributes once.
  */
-public record Contribution(String fold, Object onderwerp, Object element, Object waarde) {
+public record Contribution(String fold, Object onderwerp, Object element, Object value) {
 
     public Contribution {
         Objects.requireNonNull(fold, "vouw");
@@ -26,11 +26,11 @@ public record Contribution(String fold, Object onderwerp, Object element, Object
 
     @Override public boolean equals(Object o) {
         return o instanceof Contribution b && b.onderwerp == onderwerp && b.element == element && b.fold.equals(fold)
-                && equal(b.waarde, waarde);
+                && equal(b.value, value);
     }
 
     @Override public int hashCode() {
-        Object w = waarde instanceof BigDecimal d ? d.stripTrailingZeros() : waarde;
+        Object w = value instanceof BigDecimal d ? d.stripTrailingZeros() : value;
         return Objects.hash(fold, System.identityHashCode(onderwerp), System.identityHashCode(element), w);
     }
 
@@ -41,6 +41,6 @@ public record Contribution(String fold, Object onderwerp, Object element, Object
 
     @Override public String toString() {
         return "Bijdrage(" + fold + ", " + FactNames.object(onderwerp) + ", " + FactNames.object(element)
-                + (waarde == null ? "" : ", " + waarde) + ")";
+                + (value == null ? "" : ", " + value) + ")";
     }
 }

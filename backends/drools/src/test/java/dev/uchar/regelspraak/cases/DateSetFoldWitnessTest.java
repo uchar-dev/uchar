@@ -97,7 +97,7 @@ class DateSetFoldWitnessTest {
     @Test void the_summing_fold_over_a_date_source_refuses_for_another_reason() throws Exception {
         // Same document, only the kind twisted: now nothing carries the form, and the sentence says so.
         for (String kind : new String[] { "sum", "total" }) {
-            String fold = "vouw " + Spelling.AGGREGATION_KIND.waarde("Aggregation.kind", kind).name()
+            String fold = "vouw " + Spelling.AGGREGATION_KIND.value("Aggregation.kind", kind).name()
                     + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type Datum in dagen en niet "
                     + "getalachtig";
             BothBranches.refused(temporary("datumsetbron-" + kind, withKind(RANGE, kind)),

@@ -72,17 +72,17 @@ class FoldMatrixFormWitnessTest {
     }
 
     /** A copy of {@code caseFile} with the named characteristic's PRESENT expectation flipped to absent. */
-    private Path flipped(Path caseFile, String label, String kenmerk) throws Exception {
+    private Path flipped(Path caseFile, String label, String characteristic) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(caseFile));
         boolean touched = false;
         for (JsonNode e : doc.withArray("expected"))
             if ("characteristicPresent".equals(e.path("kind").asText())
-                    && kenmerk.equals(e.path("characteristic").asText())
+                    && characteristic.equals(e.path("characteristic").asText())
                     && label.equals(e.path("label").asText())) {
                 ((ObjectNode) e).put("kind", "characteristicAbsent");
                 touched = true;
             }
-        assertTrue(touched, "de cel hoort '" + kenmerk + "' AANWEZIG te verwachten op " + label
+        assertTrue(touched, "de cel hoort '" + characteristic + "' AANWEZIG te verwachten op " + label
                 + " — anders muteert deze rij niets");
         Path mutant = tmp.resolve("mutant-" + (n++) + ".json");
         Files.writeString(mutant, doc.toPrettyString());

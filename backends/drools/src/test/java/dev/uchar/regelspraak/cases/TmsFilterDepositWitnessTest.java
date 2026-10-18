@@ -12,7 +12,7 @@ import java.util.Map;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
 import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -27,8 +27,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -93,10 +93,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TmsFilterDepositWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Jutter", List.of(attribuut("zware vondsten", WHOLE),
-                    attribuut("zorgvuldige vondsten", WHOLE), attribuut("unietelling", WHOLE)), List.of("actief", "druk")),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("gewicht", WHOLE), attribuut("opgave", WHOLE),
-                    attribuut("deelnemers", WHOLE)), List.of())),
+            TmsDocuments.objectType("Jutter", List.of(attribute("zware vondsten", WHOLE),
+                    attribute("zorgvuldige vondsten", WHOLE), attribute("unietelling", WHOLE)), List.of("actief", "druk")),
+            TmsDocuments.objectType("Vondst", List.of(attribute("gewicht", WHOLE), attribute("opgave", WHOLE),
+                    attribute("deelnemers", WHOLE)), List.of())),
             List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")));
 
     private static final String VONDSTEN = "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
@@ -123,9 +123,9 @@ class TmsFilterDepositWitnessTest {
     }
 
     /** One selection of the union, over the Jutter's vondsten. */
-    private static String selection(String filter, String bron) {
+    private static String selection(String filter, String source) {
         return "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":" + roleBinding("aanmelding",
-                "vondst") + ",\"filter\":" + filter + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                "vondst") + ",\"filter\":" + filter + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
     /** "het aantal vondsten die zwaar zijn per deelnemer en vondsten die zwaarder zijn dan 8". */
@@ -163,62 +163,62 @@ class TmsFilterDepositWitnessTest {
     static JsonNode case1() throws Exception {
         return TmsDocuments.caseDocument(List.of(jutter("J1", false, List.of("V1", "V2")), vondst("V1", "10", "2"),
                 vondst("V2", "9", null), vondst("V9", "5", null)),
-                List.of(waarde("J1", "zware vondsten", null), verwacht("J1", "druk", false),
-                        waarde("J1", "zorgvuldige vondsten", "1"), consistent()));
+                List.of(value("J1", "zware vondsten", null), expected("J1", "druk", false),
+                        value("J1", "zorgvuldige vondsten", "1"), consistent()));
     }
 
     static JsonNode case2() throws Exception {
         return TmsDocuments.caseDocument(List.of(jutter("J1", false, List.of("V1", "V2")), jutter("J2", true, List.of("V3", "V4")),
                 vondst("V1", "10", "2"), vondst("V2", "9", null), vondst("V3", "10", null), vondst("V4", "3", "3")),
-                List.of(waarde("J1", "zware vondsten", null), verwacht("J1", "druk", false),
-                        waarde("J1", "zorgvuldige vondsten", "1"), waarde("J2", "zware vondsten", "0"),
-                        verwacht("J2", "druk", false), waarde("J2", "zorgvuldige vondsten", "0"),
+                List.of(value("J1", "zware vondsten", null), expected("J1", "druk", false),
+                        value("J1", "zorgvuldige vondsten", "1"), value("J2", "zware vondsten", "0"),
+                        expected("J2", "druk", false), value("J2", "zorgvuldige vondsten", "0"),
                         inconsistent("zware vondsten", "J2"), inconsistent("drukte", "J2")));
     }
 
     static JsonNode case3() throws Exception {
         return TmsDocuments.caseDocument(List.of(jutter("J2", true, List.of("V3", "V4")), vondst("V3", "10", "2"),
                 vondst("V4", "3", "3")),
-                List.of(waarde("J2", "zware vondsten", "1"), verwacht("J2", "druk", true),
-                        waarde("J2", "zorgvuldige vondsten", "1"), consistent()));
+                List.of(value("J2", "zware vondsten", "1"), expected("J2", "druk", true),
+                        value("J2", "zorgvuldige vondsten", "1"), consistent()));
     }
 
 
     @Test void a_filter_deposits_under_the_form_that_the_fold_reaches() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, ZWARE, DRUKTE, ZORGVULDIG))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (JsonNode caseDocument : List.of(case1(), case2(), case3())) {
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " gespeeld");
+                expected.add(names + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_filter_of_a_selection_of_a_union_also_deposits() throws Exception {
         JsonNode withDeposit = TmsDocuments.caseDocument(List.of(jutter("J2", true, List.of("V3", "V4")),
                 vondst("V3", "10", null), vondst("V4", "3", "3")),
-                List.of(waarde("J2", "unietelling", "1"), inconsistent("unietelling", "J2")));
+                List.of(value("J2", "unietelling", "1"), inconsistent("unietelling", "J2")));
         JsonNode without = TmsDocuments.caseDocument(List.of(jutter("J2", true, List.of("V3", "V4")),
-                vondst("V3", "10", "2"), vondst("V4", "3", "3")), List.of(waarde("J2", "unietelling", "1"), consistent()));
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+                vondst("V3", "10", "2"), vondst("V4", "3", "3")), List.of(value("J2", "unietelling", "1"), consistent()));
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, UNION))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (JsonNode caseDocument : List.of(withDeposit, without)) {
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " gespeeld");
+                expected.add(names + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void a_filter_that_fails_for_a_member_and_for_another_deposits_fails() throws Exception {
-        String fout = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 10 gedeeld door 0 — een numerieke"
+        String fault = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 10 gedeeld door 0 — een numerieke"
                 + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, ZWARE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
@@ -227,9 +227,9 @@ class TmsFilterDepositWitnessTest {
                         vondst("V4", "3", null)), List.of(consistent()));
                 outcomes.add(names + " " + members + " " + TmsFaultWitnessTest.play(ir, caseDocument,
                         DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " " + members + " " + fout);
+                expected.add(names + " " + members + " " + fault);
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 }

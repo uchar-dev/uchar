@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.DecisionTableDesugar;
 import dev.uchar.regelspraak.resolver.Resolver;
@@ -243,11 +243,11 @@ class DecisionTableDesugarTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "resolver-fout: " + m.errors());
         assertEquals(2, m.resolvedRegels.size());
-        for (ResolvedRegel r : m.resolvedRegels) {
-            assertEquals(ResolvedRegel.Soort.GELIJKSTELLING, r.soort());
-            assertTrue(r.doel() instanceof Expr.AttribuutRef a && a.attribuut().equals("korting"),
-                    () -> "doel niet de korting: " + r.doel());
-            assertNotNull(r.voorwaarde(), "voorwaarde ontbreekt");
+        for (ResolvedRule r : m.resolvedRegels) {
+            assertEquals(ResolvedRule.Kind.GELIJKSTELLING, r.category());
+            assertTrue(r.target() instanceof Expr.AttributeReference a && a.attribute().equals("korting"),
+                    () -> "doel niet de korting: " + r.target());
+            assertNotNull(r.condition(), "voorwaarde ontbreekt");
         }
     }
 }

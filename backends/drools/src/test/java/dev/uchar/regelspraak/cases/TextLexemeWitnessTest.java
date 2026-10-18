@@ -210,10 +210,10 @@ class TextLexemeWitnessTest {
         //     clingo  : TRANSLATION FAULT — the ASP string encoding cannot quote a line terminator, so clingo
         //               REFUSES this flank loudly and ref is the arbiter here (measured the same day).
         for (String lineEnd : List.of("\n", "\r")) {
-            String waarde = "uit" + lineEnd + "voer";
+            String value = "uit" + lineEnd + "voer";
             String consequence = "afslag" + lineEnd + "noord";
-            Path ir = model("tekstlexeem-regeleinde", "equal", waarde, consequence);
-            playBothBranches(ir, caseOf("regeleinde-raakt", waarde, true, consequence));
+            Path ir = model("tekstlexeem-regeleinde", "equal", value, consequence);
+            playBothBranches(ir, caseOf("regeleinde-raakt", value, true, consequence));
         }
     }
 
@@ -276,12 +276,12 @@ class TextLexemeWitnessTest {
         return ((ObjectNode) regel(ir, 0).get("condition").get("left")).deepCopy();
     }
 
-    private static ObjectNode textLiteral(String waarde) {
+    private static ObjectNode textLiteral(String value) {
         ObjectNode lit = JSON.createObjectNode();
         lit.put("node", "Literal");
-        lit.putObject("value").put("text", waarde);
+        lit.putObject("value").put("text", value);
         lit.set("type", JSON.createObjectNode().put("node", "Text"));
-        lit.set("source", IrPath.sourceReference(waarde));
+        lit.set("source", IrPath.sourceReference(value));
         return lit;
     }
 
@@ -323,9 +323,9 @@ class TextLexemeWitnessTest {
         return temporary(naam, ir.toString());
     }
 
-    /** One Vondst whose keurmerk is {@code invoer}, with the two expectations the rule chain produces: the kenmerk
+    /** One Vondst whose keurmerk is {@code input}, with the two expectations the rule chain produces: the kenmerk
      *  the comparison assigns, and the afslag the second rule then writes (leeg when the chain does not fire). */
-    private static Path caseOf(String naam, String invoer, boolean gekeurd, String afslag) throws Exception {
+    private static Path caseOf(String naam, String input, boolean gekeurd, String afslag) throws Exception {
         ObjectNode c = JSON.createObjectNode();
         c.put("format", "uchar-case-v0");
         c.putNull("asOfDate");
@@ -333,21 +333,21 @@ class TextLexemeWitnessTest {
         ObjectNode v1 = inputNode.putArray("instances").addObject();
         v1.put("label", "V1");
         v1.put("objectType", "Vondst");
-        v1.putObject("attributes").putObject("keurmerk").put("text", invoer);
+        v1.putObject("attributes").putObject("keurmerk").put("text", input);
         v1.putObject("roles");
         v1.putArray("characteristics");
         inputNode.putObject("parameters");
-        ArrayNode verwacht = c.putArray("expected");
-        verwacht.addObject().put("kind", gekeurd ? "characteristicPresent" : "characteristicAbsent")
+        ArrayNode expected = c.putArray("expected");
+        expected.addObject().put("kind", gekeurd ? "characteristicPresent" : "characteristicAbsent")
                 .put("label", "V1").put("characteristic", "gekeurd");
         if (afslag == null) {
-            verwacht.addObject().put("kind", "attributeEmpty").put("label", "V1").put("attribute", "afslag");
+            expected.addObject().put("kind", "attributeEmpty").put("label", "V1").put("attribute", "afslag");
         } else {
-            ObjectNode e = verwacht.addObject();
+            ObjectNode e = expected.addObject();
             e.put("kind", "attributeValue").put("label", "V1").put("attribute", "afslag");
             e.putObject("value").put("text", afslag);
         }
-        verwacht.addObject().put("kind", "consistent");
+        expected.addObject().put("kind", "consistent");
         return temporary(naam, c.toString());
     }
 }

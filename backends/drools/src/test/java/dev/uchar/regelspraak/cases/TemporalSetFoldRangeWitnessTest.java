@@ -108,7 +108,7 @@ class TemporalSetFoldRangeWitnessTest {
         Path p = temporary("setvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(CASE);
         for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
                     () -> CaseRunner.playCase(p, c, viaDrl),
                     (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless temporal set fold");
             assertTrue(e.site().equals("/rules/rules/0/versions/0/value")
@@ -144,14 +144,14 @@ class TemporalSetFoldRangeWitnessTest {
         ObjectNode ft = IrPath.modelList(ir, "factTypes").addObject();
         ft.put("node", "FactType").put("name", "keurbewaring").put("reciprocal", false);
         ft.putArray("roles")
-          .add(rol("keurende jutter", "Jutter", null, false))
-          .add(rol("keurvondst", "Vondst", "keurvondsten", true));
+          .add(role("keurende jutter", "Jutter", null, false))
+          .add(role("keurvondst", "Vondst", "keurvondsten", true));
         return ir;
     }
 
-    private static ObjectNode rol(String naam, String objecttype, String plural, boolean many) {
+    private static ObjectNode role(String naam, String objectType, String plural, boolean many) {
         ObjectNode r = JSON.createObjectNode().put("node", "Role").put("name", naam)
-                .put("objectType", objecttype);
+                .put("objectType", objectType);
         if (plural != null) r.put("plural", plural);
         return r.put("many", many);
     }

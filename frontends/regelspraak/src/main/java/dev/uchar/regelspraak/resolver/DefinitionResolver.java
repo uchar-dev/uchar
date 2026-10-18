@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.resolver;
 
-import dev.uchar.regelspraak.kern.TimeCalculation;
+import dev.uchar.regelspraak.core.TimeCalculation;
 import dev.uchar.regelspraak.model.*;
 import dev.uchar.regelspraak.model.RegelSpraakModel.*;
 import dev.uchar.regelspraak.parser.RegelSpraak;
@@ -37,7 +37,7 @@ public final class DefinitionResolver {
     public RegelSpraakModel build(RegelSpraakDocumentContext doc) {
         refuseDuplicateNames(doc);
         for (DefinitieContext d : definitions(doc)) {        // pass 1: domains + units + timelines
-            if (d.domeinDefinition() != null) domein(d.domeinDefinition());
+            if (d.domeinDefinition() != null) domain(d.domeinDefinition());
             if (d.eenheidsysteemDefinition() != null) unitSystem(d.eenheidsysteemDefinition());
             // a named timeline must be registered before pass 2, so an attribute's "voor elke <tijdlijn>"
             // reference can adopt its granularity regardless of declaration order (§13.3.6.9). It reads only
@@ -45,10 +45,10 @@ public final class DefinitionResolver {
             if (d.tijdlijnDefinitie() != null) tijdlijn(d.tijdlijnDefinitie());
         }
         for (DefinitieContext d : definitions(doc)) {        // pass 2: everything that references them
-            if (d.objectTypeDefinition() != null) objecttype(d.objectTypeDefinition());
+            if (d.objectTypeDefinition() != null) objectType(d.objectTypeDefinition());
             if (d.objectTypeExtensie() != null) extension(d.objectTypeExtensie());
             if (d.parameterDefinition() != null) parameter(d.parameterDefinition());
-            if (d.feitTypeDefinition() != null) feittype(d.feitTypeDefinition());
+            if (d.feitTypeDefinition() != null) factType(d.feitTypeDefinition());
             if (d.dagsoortDefinition() != null) dayKind(d.dagsoortDefinition());
             if (d.dimensieDefinition() != null) dimension(d.dimensieDefinition());
         }
@@ -133,7 +133,7 @@ public final class DefinitionResolver {
     }
 
     // ---------------- §13.3.1 object types ----------------
-    private void objecttype(ObjectTypeDefinitionContext ctx) {
+    private void objectType(ObjectTypeDefinitionContext ctx) {
         Objecttype ot = model.objecttypen.computeIfAbsent(src(ctx.objectTypeNaam()), Objecttype::new);
         if (ctx.BEZIELD() != null) ot.bezield = true;
         if (ctx.meervoudsvorm() != null) ot.plural = src(ctx.meervoudsvorm()); // §13.2.29, for §8.1.6 plural refs
@@ -157,7 +157,7 @@ public final class DefinitionResolver {
     private void recordMemberLine(Objecttype ot, ObjectTypeMemberContext m) {
         if (m.koptekst() != null) return;
         String naam = m.attribuutSpecificatie() != null ? naam(m.attribuutSpecificatie().lowerNaam())
-                                                        : kenmerkNaam(m.kenmerkSpecificatie());
+                                                        : characteristicName(m.kenmerkSpecificatie());
         memberLine.computeIfAbsent(ot, k -> new java.util.LinkedHashMap<>())
                 .putIfAbsent(naam.toLowerCase(), m.getStart().getLine());
     }
@@ -190,7 +190,7 @@ public final class DefinitionResolver {
             for (String n : e.getValue())
                 if (parents.stream().noneMatch(o -> o.equalsIgnoreCase(n))) parents.add(n);
             if (parents.size() > 1) {
-                fout("objecttype '" + ot.naam + "' declareert meer dan één supertype ("
+                error("objecttype '" + ot.naam + "' declareert meer dan één supertype ("
                         + String.join(", ", parents) + ") — WF-106: een objecttype declareert hoogstens één "
                         + "direct supertype. De twee bekende gevallen met twee directe ouders "
                         + "(RechtOpUitkeringWazo, RechtUitkeringZw) worden hier geweigerd en niet "
@@ -200,16 +200,16 @@ public final class DefinitionResolver {
             }
             String naam = parents.get(0);
             if (naam.equalsIgnoreCase(ot.naam)) {
-                fout("objecttype '" + ot.naam + "' is zijn eigen supertype — WF-104: de supertypegraaf is "
+                error("objecttype '" + ot.naam + "' is zijn eigen supertype — WF-104: de supertypegraaf is "
                         + "acyclisch, zelfverwijzing inbegrepen (een keten zonder wortel laat ledenresolutie "
                         + "nergens stoppen)", regel);
                 continue;
             }
-            Objecttype parent = model.objecttypeOpNaam(naam);
+            Objecttype parent = model.objectTypeByName(naam);
             if (parent == null) {
-                String soort = nameKind(naam);
-                fout("objecttype '" + ot.naam + "': supertype '" + naam + "' is "
-                        + (soort == null ? "nergens als objecttype gedeclareerd" : "een " + soort + ", geen objecttype")
+                String category = nameKind(naam);
+                error("objecttype '" + ot.naam + "': supertype '" + naam + "' is "
+                        + (category == null ? "nergens als objecttype gedeclareerd" : "een " + category + ", geen objecttype")
                         + " — WF-103: een supertype noemt een gedeclareerd objecttype, want een keten die daar "
                         + "niet op eindigt lost geen enkel lid op", regel);
                 continue;
@@ -247,15 +247,15 @@ public final class DefinitionResolver {
         for (Objecttype ot : model.objecttypen.values()) findCycle(ot, kleur, new ArrayList<>());
     }
 
-    private void findCycle(Objecttype t, java.util.Map<Objecttype, Integer> kleur, List<Objecttype> pad) {
+    private void findCycle(Objecttype t, java.util.Map<Objecttype, Integer> kleur, List<Objecttype> path) {
         Integer k = kleur.get(t);
         if (k != null && k == 2) return;
         if (k != null && k == 1) {                       // grey: a back edge onto the current path
             List<String> names = new ArrayList<>();
-            for (Objecttype x : pad.subList(pad.indexOf(t), pad.size())) names.add(x.naam);
+            for (Objecttype x : path.subList(path.indexOf(t), path.size())) names.add(x.naam);
             names.add(t.naam);
-            Objecttype back = pad.get(pad.size() - 1);
-            fout("objecttype '" + back.naam + "': supertypecyclus " + String.join(" -> ", names)
+            Objecttype back = path.get(path.size() - 1);
+            error("objecttype '" + back.naam + "': supertypecyclus " + String.join(" -> ", names)
                     + " — WF-104: de supertypegraaf is acyclisch (een type zou zijn eigen voorouder zijn, "
                     + "dus ledenresolutie heeft geen wortel om bij te stoppen)",
                     supertypeLine.getOrDefault(back.naam, 0));   // the clause that closes the cycle
@@ -263,9 +263,9 @@ public final class DefinitionResolver {
             return;
         }
         kleur.put(t, 1);
-        pad.add(t);
-        if (t.supertype != null) findCycle(t.supertype, kleur, pad);
-        pad.remove(pad.size() - 1);
+        path.add(t);
+        if (t.supertype != null) findCycle(t.supertype, kleur, path);
+        path.remove(path.size() - 1);
         kleur.put(t, 2);
     }
 
@@ -278,18 +278,18 @@ public final class DefinitionResolver {
     private void refuseShadowedMembers() {
         for (Objecttype ot : model.objecttypen.values()) {
             if (ot.supertype == null) continue;
-            List<Objecttype> ancestors = ot.keten().subList(1, ot.keten().size());
+            List<Objecttype> ancestors = ot.chain().subList(1, ot.chain().size());
             for (String a : ot.attributen.keySet()) reportShadow(ot, ancestors, "attribuut", a, true);
             for (String k : ot.kenmerken) reportShadow(ot, ancestors, "kenmerk", k, false);
         }
     }
 
-    private void reportShadow(Objecttype ot, List<Objecttype> ancestors, String soort, String naam, boolean attribuut) {
+    private void reportShadow(Objecttype ot, List<Objecttype> ancestors, String category, String naam, boolean attribute) {
         for (Objecttype v : ancestors) {
-            boolean collides = attribuut ? containsName(v.attributen.keySet(), naam) : containsName(v.kenmerken, naam);
+            boolean collides = attribute ? containsName(v.attributen.keySet(), naam) : containsName(v.kenmerken, naam);
             if (!collides) continue;
             int regel = memberLine.getOrDefault(ot, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0);
-            fout("objecttype '" + ot.naam + "': " + soort + " '" + naam + "' (bronregel " + regel + ") is al "
+            error("objecttype '" + ot.naam + "': " + category + " '" + naam + "' (bronregel " + regel + ") is al "
                     + "gedeclareerd op '" + v.naam + "' (bronregel "
                     + memberLine.getOrDefault(v, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0)
                     + ") hogerop in de keten — WF-105: een subtype herdeclareert geen geërfde naam (één "
@@ -312,57 +312,57 @@ public final class DefinitionResolver {
     private void refuseDuplicateNames(RegelSpraakDocumentContext doc) {
         java.util.Map<String, String[]> earlier = new java.util.HashMap<>();   // namespace + name identity -> {name, line}
         for (DefinitieContext d : definitions(doc)) {
-            String[] soort = null;   // {how the refusal names the kind, the verifier's namespace, the name}
+            String[] category = null;   // {how the refusal names the kind, the verifier's namespace, the name}
             ParserRuleContext ctx = null;
             if (d.objectTypeDefinition() != null) {
                 ctx = d.objectTypeDefinition();
-                soort = new String[] {"objecttype", "objectTypes", src(d.objectTypeDefinition().objectTypeNaam())};
+                category = new String[] {"objecttype", "objectTypes", src(d.objectTypeDefinition().objectTypeNaam())};
             } else if (d.domeinDefinition() != null) {
                 ctx = d.domeinDefinition();
-                soort = new String[] {"domein", "domains", src(d.domeinDefinition().domeinNaam())};
+                category = new String[] {"domein", "domains", src(d.domeinDefinition().domeinNaam())};
             } else if (d.parameterDefinition() != null) {
                 ctx = d.parameterDefinition();
-                soort = new String[] {"parameter", "parameters", src(d.parameterDefinition().parameterNaam())};
+                category = new String[] {"parameter", "parameters", src(d.parameterDefinition().parameterNaam())};
             } else if (d.eenheidsysteemDefinition() != null) {
                 ctx = d.eenheidsysteemDefinition();
-                soort = new String[] {"eenheidsysteem", "unitSystems",
+                category = new String[] {"eenheidsysteem", "unitSystems",
                         src(d.eenheidsysteemDefinition().eenheidsysteemNaam())};
             } else if (d.feitTypeDefinition() != null) {
                 ctx = d.feitTypeDefinition();
-                soort = new String[] {"feittype", "factTypes", src(d.feitTypeDefinition().feitTypeNaam())};
+                category = new String[] {"feittype", "factTypes", src(d.feitTypeDefinition().feitTypeNaam())};
             } else if (d.dimensieDefinition() != null) {
                 ctx = d.dimensieDefinition();
-                soort = new String[] {"dimensie", "dimensions", src(d.dimensieDefinition().dimensieNaam())};
+                category = new String[] {"dimensie", "dimensions", src(d.dimensieDefinition().dimensieNaam())};
             } else if (d.dagsoortDefinition() != null) {
                 ctx = d.dagsoortDefinition();
-                soort = new String[] {"dagsoort", "dayKinds", naam(d.dagsoortDefinition().lowerNaam())};
+                category = new String[] {"dagsoort", "dayKinds", naam(d.dagsoortDefinition().lowerNaam())};
             }
-            if (soort == null || hersteld(ctx)) continue;
+            if (category == null || hersteld(ctx)) continue;
             int regel = ctx.getStart().getLine();
-            String[] first = earlier.putIfAbsent(soort[1] + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(soort[2]),
-                    new String[] {soort[2], String.valueOf(regel)});
+            String[] first = earlier.putIfAbsent(category[1] + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(category[2]),
+                    new String[] {category[2], String.valueOf(regel)});
             if (first == null) continue;
-            fout(soort[0] + " '" + soort[2] + "' is al gedeclareerd (bronregel " + first[1] + "); een naam komt in "
-                    + "zijn soort declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace '" + soort[1]
-                    + "': names '" + first[0] + "' and '" + soort[2] + "' collide case-insensitively", regel);
+            error(category[0] + " '" + category[2] + "' is al gedeclareerd (bronregel " + first[1] + "); een naam komt in "
+                    + "zijn soort declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace '" + category[1]
+                    + "': names '" + first[0] + "' and '" + category[2] + "' collide case-insensitively", regel);
         }
     }
 
-    private void fout(String message, int regel) {
+    private void error(String message, int regel) {
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, message, regel));
     }
 
     // ---------------- a member an extension declares again ----------------
     /** One member declaration, in a head or in an extension, in document order. */
-    private record Member(Objecttype type, boolean attribuut, String naam, boolean extension,
+    private record Member(Objecttype type, boolean attribute, String naam, boolean extension,
                        ObjectTypeMemberContext ctx, ParserRuleContext definitie) {
         int regel() { return ctx.getStart().getLine(); }
         /** A declaration of the same member: one type, one kind, one name (ci, WF-002). */
         boolean same(Member other) {
-            return type == other.type && attribuut == other.attribuut && naam.equalsIgnoreCase(other.naam);
+            return type == other.type && attribute == other.attribute && naam.equalsIgnoreCase(other.naam);
         }
     }
-    private final List<Member> leden = new ArrayList<>();
+    private final List<Member> members = new ArrayList<>();
 
     /** Every member an extension declares that its type already carries, and whether that repeat is admitted. The
      *  model holds the declaration the type carries, so the designations on a repeat are not read a second time
@@ -372,7 +372,7 @@ public final class DefinitionResolver {
     java.util.Map<ObjectTypeMemberContext, Boolean> repetitions() { return repetitions; }
 
     /** The source line of each role, per fact type, for the refusal of a role an extension declares again. */
-    private final java.util.Map<Feittype, java.util.Map<String, Integer>> roleLines = new java.util.IdentityHashMap<>();
+    private final java.util.Map<FactType, java.util.Map<String, Integer>> roleLines = new java.util.IdentityHashMap<>();
 
     /** An extension adds members to a type and replaces none (grammar/DIVERGENCES.md, §5 and §7). A member it declares
      *  that the type already carries, in its head or, where no head declares it, in an earlier extension, is admitted
@@ -384,19 +384,19 @@ public final class DefinitionResolver {
      *  inheritance line WF-105 refuses every repeat, literal or not ({@link #refuseShadowedMembers}). A definition the
      *  parser recovered inside is left alone: its syntax error is the one to act on. */
     private void refuseRedeclarations() {
-        for (Member d : leden) {
+        for (Member d : members) {
             if (!d.extension() || hersteld(d.definitie())) continue;
             Member b = existing(d);
             if (b == null || hersteld(b.definitie())) continue;
             if (b != d) judgeRepetition(d, b);
-            else if (d.attribuut()) refuseRoleRedeclaration(d);
+            else if (d.attribute()) refuseRoleRedeclaration(d);
         }
     }
 
     /** The declaration of d's member the type carries: its head's, else the first in document order. */
     private Member existing(Member d) {
         Member first = null;
-        for (Member l : leden) {
+        for (Member l : members) {
             if (!l.same(d)) continue;
             if (!l.extension()) return l;
             if (first == null) first = l;
@@ -415,7 +415,7 @@ public final class DefinitionResolver {
         }
         repetitions.put(d.ctx(), reason == null);
         if (reason == null) return;
-        fout("objecttype '" + d.type().naam + "': de extensie declareert " + (d.attribuut() ? "het attribuut '"
+        error("objecttype '" + d.type().naam + "': de extensie declareert " + (d.attribute() ? "het attribuut '"
                 : "het kenmerk '") + d.naam() + "' (bronregel " + d.regel() + "), dat " + d.type().naam + " al draagt "
                 + "(bronregel " + b.regel() + "), en " + reason + " — een extensie voegt leden toe en vervangt er geen: "
                 + "een lid dat het objecttype al draagt, herhaalt zij alleen letterlijk, en '(mag opgegeven worden)' "
@@ -426,7 +426,7 @@ public final class DefinitionResolver {
      *  repeat before d that added it; null when none does. */
     private Member earlierMarking(Member d, Member b) {
         if (RuleChecker.markedMember(b.ctx())) return b;
-        for (Member l : leden) {
+        for (Member l : members) {
             if (l == d) return null;
             if (l.same(d) && Boolean.TRUE.equals(repetitions.get(l.ctx())) && RuleChecker.markedMember(l.ctx()))
                 return l;
@@ -438,8 +438,8 @@ public final class DefinitionResolver {
     private static List<String> words(ParseTree t) {
         List<String> result = new ArrayList<>();
         if (t instanceof TerminalNode n) {
-            int soort = n.getSymbol().getType();
-            if (soort != RegelSpraak.MAG_OPGEGEVEN_WORDEN && soort != RegelSpraak.SEMICOLON) result.add(n.getText());
+            int category = n.getSymbol().getType();
+            if (category != RegelSpraak.MAG_OPGEGEVEN_WORDEN && category != RegelSpraak.SEMICOLON) result.add(n.getText());
         } else {
             for (int i = 0; i < t.getChildCount(); i++) result.addAll(words(t.getChild(i)));
         }
@@ -460,14 +460,14 @@ public final class DefinitionResolver {
         AttribuutSpecificatieContext a = d.ctx().attribuutSpecificatie();
         if (a.datatype() != null || a.domeinNaam() == null) return;
         String fillerType = src(a.domeinNaam());
-        if (containsName(model.domeinen.keySet(), fillerType) || model.objecttypeOpNaam(fillerType) == null) return;
-        for (Feittype ft : model.feittypen.values()) {
-            if (ft.rollen.stream().noneMatch(r -> d.type().isEen(model.objecttypeOpNaam(r.objecttypeNaam())))) continue;
-            for (Rol r : ft.rollen) {
+        if (containsName(model.domeinen.keySet(), fillerType) || model.objectTypeByName(fillerType) == null) return;
+        for (FactType ft : model.feittypen.values()) {
+            if (ft.rollen.stream().noneMatch(r -> d.type().isA(model.objectTypeByName(r.objecttypeNaam())))) continue;
+            for (Role r : ft.rollen) {
                 if (!r.naam().equalsIgnoreCase(d.naam())) continue;
                 repetitions.put(d.ctx(), false);
                 forgetAttribute(d.type(), d.naam());
-                fout("objecttype '" + d.type().naam + "': de extensie declareert '" + d.naam() + "' met het "
+                error("objecttype '" + d.type().naam + "': de extensie declareert '" + d.naam() + "' met het "
                         + "objecttype '" + fillerType + "' (bronregel " + d.regel() + "), en dat is de rol '" + r.naam()
                         + "' van feittype '" + ft.naam + "' (bronregel "
                         + roleLines.getOrDefault(ft, java.util.Map.of()).getOrDefault(r.naam(), 0) + ") — een "
@@ -500,11 +500,11 @@ public final class DefinitionResolver {
         recordMemberLine(ot, m);
         boolean repetition = false;
         if (m.attribuutSpecificatie() != null || m.kenmerkSpecificatie() != null) {
-            boolean attribuut = m.attribuutSpecificatie() != null;
-            Member member = new Member(ot, attribuut, attribuut ? naam(m.attribuutSpecificatie().lowerNaam())
-                    : kenmerkNaam(m.kenmerkSpecificatie()), extension, m, definitie);
-            repetition = leden.stream().anyMatch(l -> l.same(member) && (extension || l.extension()));
-            leden.add(member);
+            boolean attribute = m.attribuutSpecificatie() != null;
+            Member member = new Member(ot, attribute, attribute ? naam(m.attribuutSpecificatie().lowerNaam())
+                    : characteristicName(m.kenmerkSpecificatie()), extension, m, definitie);
+            repetition = members.stream().anyMatch(l -> l.same(member) && (extension || l.extension()));
+            members.add(member);
             // an extension's repeat is judged once every declaration is read; the model keeps the declaration the
             // type already carries, so the rest of the document reads that one
             if (repetition && extension) return;
@@ -521,7 +521,7 @@ public final class DefinitionResolver {
                 ot.attributeDimensions.put(naam, a.dimensieNaam().stream().map(dn -> src(dn)).toList());
             // §13.3.6 a temporal attribute carries a tijdlijn ("voor elk jaar") — record its granularity so
             // the Phase-7 value model can later lower the periods; absent for an ordinary single-value attribute.
-            Granulariteit g = granulariteitVan(a.tijdlijn());
+            Granulariteit g = granularityOf(a.tijdlijn());
             if (g != null) {
                 ot.attribuutGranulariteit.put(naam, g);
                 int count = countOf(a.tijdlijn());   // §13.3.6.7 the "5" in "voor elke 5 maanden"; 1 otherwise
@@ -534,13 +534,13 @@ public final class DefinitionResolver {
                     ot.attributeTimelineName.put(naam, normaliseTimelineName(src(a.tijdlijn().tijdlijnNaam())));
             }
         } else if (m.kenmerkSpecificatie() != null) {
-            String naam = kenmerkNaam(m.kenmerkSpecificatie());
+            String naam = characteristicName(m.kenmerkSpecificatie());
             reportCapitalCollision(ot, naam, ot.kenmerken, m.getStart().getLine());
             // a head after an extension that declared the characteristic: the name stands once
             if (!repetition || !ot.kenmerken.contains(naam)) ot.kenmerken.add(naam);
             ot.characteristicKinds.put(naam, characteristicKindOf(m.kenmerkSpecificatie()));   // §3.5 drives the §8.1.8 predicate form
             TijdlijnContext kt = timelineOf(m.kenmerkSpecificatie());
-            Granulariteit gk = granulariteitVan(kt);
+            Granulariteit gk = granularityOf(kt);
             if (gk != null) {
                 ot.kenmerkGranulariteit.put(naam, gk);
                 int count = countOf(kt);
@@ -554,10 +554,10 @@ public final class DefinitionResolver {
 
     /** §13.2.30: a naam is NOT hoofdletter-onderscheidend, so two members of one object type OF
      *  THE SAME KIND that differ ONLY in case are the same name declared twice — ambiguous (a
-     *  third casing would bind whichever was declared first, see {@link Objecttype#attribuut}).
+     *  third casing would bind whichever was declared first, see {@link Objecttype#attribute}).
      *  Warn at registration. Scoped to one kind: an attribute and a kenmerk MAY legitimately
      *  share a name — a
-     *  kenmerk carries no datatype and never enters {@link Objecttype#attribuut}, so there is no
+     *  kenmerk carries no datatype and never enters {@link Objecttype#attribute}, so there is no
      *  cross-kind ambiguity. An exact-case redeclaration is left to the collection. */
     private void reportCapitalCollision(Objecttype ot, String naam, java.util.Collection<String> existing, int regel) {
         if (existing.contains(naam)) return; // exact duplicate of the same kind: not a case botsing
@@ -567,7 +567,7 @@ public final class DefinitionResolver {
                             + "namen zijn niet hoofdletter-onderscheidend (§13.2.30), dus de verwijzing is dubbelzinnig", regel));
     }
 
-    private String kenmerkNaam(KenmerkSpecificatieContext k) {
+    private String characteristicName(KenmerkSpecificatieContext k) {
         if (k instanceof BijvoeglijkKenmerkContext b) return naam(b.lowerNaam());
         if (k instanceof NaamwoordKenmerkContext n) return naam(n.lowerNaam());
         return src(k);
@@ -576,28 +576,28 @@ public final class DefinitionResolver {
     /** §3.5 kenmerk soort from the declaration: the optional {@code (bijvoeglijk)}/{@code (bezittelijk)} marker
      *  classifies it; an UNTAGGED kenmerk is ZELFSTANDIG (the "is een &lt;k&gt;" noch-noch form — including the
      *  casus shapes the grammar admits via the IS-form without the tag). */
-    private static Objecttype.KenmerkSoort characteristicKindOf(KenmerkSpecificatieContext k) {
+    private static Objecttype.CharacteristicKind characteristicKindOf(KenmerkSpecificatieContext k) {
         if (k instanceof BijvoeglijkKenmerkContext b)
-            return b.BIJVOEGLIJK() != null ? Objecttype.KenmerkSoort.BIJVOEGLIJK : Objecttype.KenmerkSoort.ZELFSTANDIG;
+            return b.BIJVOEGLIJK() != null ? Objecttype.CharacteristicKind.BIJVOEGLIJK : Objecttype.CharacteristicKind.ZELFSTANDIG;
         if (k instanceof NaamwoordKenmerkContext n)
-            return n.BEZITTELIJK() != null ? Objecttype.KenmerkSoort.BEZITTELIJK
-                 : n.BIJVOEGLIJK() != null ? Objecttype.KenmerkSoort.BIJVOEGLIJK
-                 : Objecttype.KenmerkSoort.ZELFSTANDIG;
-        return Objecttype.KenmerkSoort.ZELFSTANDIG;
+            return n.BEZITTELIJK() != null ? Objecttype.CharacteristicKind.BEZITTELIJK
+                 : n.BIJVOEGLIJK() != null ? Objecttype.CharacteristicKind.BIJVOEGLIJK
+                 : Objecttype.CharacteristicKind.ZELFSTANDIG;
+        return Objecttype.CharacteristicKind.ZELFSTANDIG;
     }
 
     // ---------------- §13.3.3/§13.3.4 datatypes & domains ----------------
-    private void domein(DomeinDefinitionContext ctx) {
+    private void domain(DomeinDefinitionContext ctx) {
         Datatype dt = ctx.enumeratieSpecificatie() != null
                 ? enumeration(src(ctx.domeinNaam()), ctx.enumeratieSpecificatie())
                 : datatypeOf(ctx.datatype(), null);
         model.domeinen.put(src(ctx.domeinNaam()), dt);
     }
 
-    private Datatype enumeration(String domein, EnumeratieSpecificatieContext ctx) {
+    private Datatype enumeration(String domain, EnumeratieSpecificatieContext ctx) {
         List<String> waarden = ctx.enumeratieWaarde().stream()
                 .map(w -> unquote(w.ENUM_LITERAL().getText())).toList();
-        return new Datatype.Enumeratie(domein, waarden);
+        return new Datatype.Enumeratie(domain, waarden);
     }
 
     /** Resolve an attribute/parameter type: a concrete datatype, or a (possibly forward) domain reference. */
@@ -607,13 +607,13 @@ public final class DefinitionResolver {
      *  carries a unit already, a percentage (whose unit is %) or a value of another kind it has no reading, and is
      *  refused. */
     private Datatype withUnit(Datatype dt, AttribuutSpecificatieContext a, String naam) {
-        if (a.eenheidExpressie() == null || dt instanceof Datatype.Onbekend) return dt;
-        Eenheid e = unitOf(a.eenheidExpressie());
+        if (a.eenheidExpressie() == null || dt instanceof Datatype.Unknown) return dt;
+        Unit e = unitOf(a.eenheidExpressie());
         String reason = null;
         if (dt instanceof Datatype.Numeriek n) {
             if (!n.hasUnit() || n.eenheid().equals(e))
                 return new Datatype.Numeriek(n.geheel(), n.decimalen(), n.teken(), e);
-            reason = "het getal draagt al de eenheid '" + n.eenheid().weergave() + "'";
+            reason = "het getal draagt al de eenheid '" + n.eenheid().rendering() + "'";
         } else if (dt instanceof Datatype.Percentage) {
             reason = "een percentage draagt de eenheid % ('Percentage (…) met eenheid %/<eenheid>' voor een verhouding)";
         } else {
@@ -628,9 +628,9 @@ public final class DefinitionResolver {
         if (dt != null) return datatype(dt);
         if (dom != null) {
             Datatype resolved = model.domeinen.get(src(dom));
-            return resolved != null ? resolved : new Datatype.Onbekend("domein " + src(dom));
+            return resolved != null ? resolved : new Datatype.Unknown("domein " + src(dom));
         }
-        return new Datatype.Onbekend("geen datatype");
+        return new Datatype.Unknown("geen datatype");
     }
 
     private Datatype datatype(DatatypeContext dt) {
@@ -645,7 +645,7 @@ public final class DefinitionResolver {
                         "Numeriek datatype zonder verplichte getalspecificatie (§13.3.3); onbeperkte decimalen aangenomen",
                         n.getStart().getLine()));
             NumberInfo g = numberInfo(n.getalSpecificatie());
-            Eenheid e = n.eenheidExpressie() != null ? unitOf(n.eenheidExpressie()) : null;
+            Unit e = n.eenheidExpressie() != null ? unitOf(n.eenheidExpressie()) : null;
             return new Datatype.Numeriek(g.geheel, g.decimalen, g.teken, e);
         }
         if (dt.percentageDatatype() != null) {
@@ -653,18 +653,18 @@ public final class DefinitionResolver {
             NumberInfo g = numberInfo(pd.getalSpecificatie());
             // §3.3.5: a Percentage is always "%", optionally specialized to a rate "%/<eenheid>"
             // (grammar: "met eenheid % ( / <eenheidAfkorting> )?"); a bare or absent clause is "%".
-            Eenheid e = pd.SLASH() != null
-                    ? Eenheid.compound(Datatype.Percentage.PERCENT, model.resolveEenheid(src(pd.eenheidAfkorting())))
+            Unit e = pd.SLASH() != null
+                    ? Unit.compound(Datatype.Percentage.PERCENT, model.resolveEenheid(src(pd.eenheidAfkorting())))
                     : Datatype.Percentage.PERCENT;
             return new Datatype.Percentage(g.geheel, g.decimalen, e);
         }
         if (dt.tekstDatatype() != null) return new Datatype.Tekst();
-        if (dt.booleanDatatype() != null) return new Datatype.Booleaan();
+        if (dt.booleanDatatype() != null) return new Datatype.BooleanType();
         if (dt.datumTijdDatatype() != null) {
             return dt.datumTijdDatatype().DATUM_IN_DAGEN() != null
-                    ? new Datatype.DatumInDagen() : new Datatype.DatumTijd();
+                    ? new Datatype.DatumInDagen() : new Datatype.DateTime();
         }
-        return new Datatype.Onbekend("datatype");
+        return new Datatype.Unknown("datatype");
     }
 
     private record NumberInfo(boolean geheel, int decimalen, Datatype.Teken teken) {}
@@ -695,20 +695,20 @@ public final class DefinitionResolver {
         return new NumberInfo(geheel, decimalen, teken);
     }
 
-    private Eenheid unitOf(EenheidExpressieContext e) { return unitOf(model, e); }
+    private Unit unitOf(EenheidExpressieContext e) { return unitOf(model, e); }
 
     /** §13.3.3.2: {@code <eenheidexpressie> ::= <eenheidmacht> ("/" <eenheidmacht>)*} — the numerator
      *  is the first power; a single trailing {@code "/<unit>"} is the denominator of a rate unit
      *  (€/jr). A second denominator (€/u/s) is not yet modelled — keep the numerator only.
      *  Package-static so the attribute-datatype path (here) and the §13.2.17 numeric LITERAL path
      *  ({@link ExpressionBuilder}) resolve a composite (rate) unit IDENTICALLY — a literal "120 EUR/jr"
-     *  must carry the same {@code Eenheid.compound(EUR, jr)} an attribute "met eenheid EUR/jr"
+     *  must carry the same {@code Unit.compound(EUR, jr)} an attribute "met eenheid EUR/jr"
      *  does, so §4 unit checking and the exacte cross-unit restatement apply to both alike. */
-    static Eenheid unitOf(RegelSpraakModel model, EenheidExpressieContext e) {
+    static Unit unitOf(RegelSpraakModel model, EenheidExpressieContext e) {
         if (e == null || e.eenheidMacht().isEmpty()) return null;
-        Eenheid numerator = model.resolveEenheid(src(e.eenheidMacht(0).eenheidAfkorting()));
+        Unit numerator = model.resolveEenheid(src(e.eenheidMacht(0).eenheidAfkorting()));
         if (e.eenheidMacht().size() == 2)
-            return Eenheid.compound(numerator, model.resolveEenheid(src(e.eenheidMacht(1).eenheidAfkorting())));
+            return Unit.compound(numerator, model.resolveEenheid(src(e.eenheidMacht(1).eenheidAfkorting())));
         return numerator;
     }
 
@@ -726,28 +726,28 @@ public final class DefinitionResolver {
         // every abbreviation a declaration writes, under the name identity: {as written, the unit's primary}
         java.util.Map<String, String[]> written = new java.util.HashMap<>();
         for (EenheidDefinitieContext u : ctx.eenheidDefinitie()) {
-            java.util.List<String> afk = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
-            String primary = !afk.isEmpty() ? afk.get(0) : (u.eenheidWoord() != null ? src(u.eenheidWoord()) : null);
+            java.util.List<String> abbr = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
+            String primary = !abbr.isEmpty() ? abbr.get(0) : (u.eenheidWoord() != null ? src(u.eenheidWoord()) : null);
             if (primary == null) continue;
             // WF-009, one unit per abbreviation under the name identity the emitter checks too: a second declaration
             // of an abbreviation would replace the first in the maps below without a word, so it is refused by name
             // and the first declaration stands
-            if (refuseRepeatedAbbreviation(stelsel.naam, afk.isEmpty() ? List.of(primary) : afk, written, u)) continue;
+            if (refuseRepeatedAbbreviation(stelsel.naam, abbr.isEmpty() ? List.of(primary) : abbr, written, u)) continue;
             java.math.BigDecimal n = null; UnitSystem.Factor exact = null; String to = null;
             if (u.omrekenSpecificatie() != null) {                       // "= 12 mnd" or "= 1/1000 m"
-                String getal = u.omrekenSpecificatie().NUMBER().getText();
-                n = rationeel(getal, primary);
-                if (n != null) exact = exactFactor(getal);
+                String number = u.omrekenSpecificatie().NUMBER().getText();
+                n = rational(number, primary);
+                if (n != null) exact = exactFactor(number);
                 to = src(u.omrekenSpecificatie().eenheidAfkorting());
             }
-            raw.put(primary, new RawUnit(afk, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
+            raw.put(primary, new RawUnit(abbr, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
                     u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, exact, to));
             regels.put(primary, u.getStart().getLine());
         }
         // pass 2: resolve each unit's canonical + factor, then register every spelling
-        java.util.Map<String, Eenheid> resolvedUnits = new java.util.HashMap<>();
+        java.util.Map<String, Unit> resolvedUnits = new java.util.HashMap<>();
         for (String primary : raw.keySet()) {
-            Eenheid e = resolveFactor(primary, raw, stelsel.naam, resolvedUnits, new java.util.HashSet<>(),
+            Unit e = resolveFactor(primary, raw, stelsel.naam, resolvedUnits, new java.util.HashSet<>(),
                     stelsel.exactFactors);
             RawUnit r = raw.get(primary);
             for (String a : r.abbreviations()) stelsel.units.put(a, e);
@@ -796,7 +796,7 @@ public final class DefinitionResolver {
     /** Parse an omrekenfactor, which the lexer hands over as a single rational NUMBER
      *  token: a whole number ("12"), a decimal ("1,5"), or the §13.3.5.2 "1/N" form
      *  ("1/1000"). A malformed factor is reported, not silently swallowed. */
-    private java.math.BigDecimal rationeel(String tekst, String eenheid) {
+    private java.math.BigDecimal rational(String tekst, String eenheid) {
         try {
             int slash = tekst.indexOf('/');
             if (slash >= 0)
@@ -815,26 +815,26 @@ public final class DefinitionResolver {
      *  factor N·factor(v). Memoised; a cycle or external target stops at a base.
      *  {@code exact} receives the same factor as an exact fraction, step for step, so the two agree on every
      *  unit, the cycle's included. */
-    private Eenheid resolveFactor(String abbrev, java.util.Map<String, RawUnit> raw, String stelsel,
-                                  java.util.Map<String, Eenheid> memo, java.util.Set<String> busy,
+    private Unit resolveFactor(String abbrev, java.util.Map<String, RawUnit> raw, String stelsel,
+                                  java.util.Map<String, Unit> memo, java.util.Set<String> busy,
                                   java.util.Map<String, UnitSystem.Factor> exact) {
         if (memo.containsKey(abbrev)) return memo.get(abbrev);
         RawUnit r = raw.get(abbrev);
-        Eenheid e;
+        Unit e;
         if (r == null || r.conversionTarget() == null || r.conversionFactor() == null || !busy.add(abbrev)) {
-            e = new Eenheid(abbrev, stelsel, abbrev, java.math.BigDecimal.ONE);
+            e = new Unit(abbrev, stelsel, abbrev, java.math.BigDecimal.ONE);
             exact.put(abbrev, UnitSystem.Factor.EEN);
         } else {
-            Eenheid basis = resolveFactor(r.conversionTarget(), raw, stelsel, memo, busy, exact);
+            Unit base = resolveFactor(r.conversionTarget(), raw, stelsel, memo, busy, exact);
             busy.remove(abbrev);
-            e = new Eenheid(abbrev, stelsel, basis.canoniek(), r.conversionFactor().multiply(basis.factorNaarCanoniek()));
-            exact.put(abbrev, r.conversionFactorExact().times(exact.get(basis.afkorting())));
+            e = new Unit(abbrev, stelsel, base.canoniek(), r.conversionFactor().multiply(base.factorNaarCanoniek()));
+            exact.put(abbrev, r.conversionFactorExact().times(exact.get(base.afkorting())));
         }
         memo.put(abbrev, e);
         return e;
     }
 
-    /** The omrekenfactor as an exact fraction, from the same NUMBER text {@link #rationeel} reads and failing on the
+    /** The omrekenfactor as an exact fraction, from the same NUMBER text {@link #rational} reads and failing on the
      *  same texts (the caller asks only after that reading succeeded): "12" is 12/1, "1,5" is 3/2, "1/24" is 1/24. */
     private static UnitSystem.Factor exactFactor(String tekst) {
         int slash = tekst.indexOf('/');
@@ -851,7 +851,7 @@ public final class DefinitionResolver {
     private void parameter(ParameterDefinitionContext ctx) {
         String naam = src(ctx.parameterNaam());
         // §13.3.6/§13.3.8 a parameter may carry a tijdlijn ("voor elk jaar") -> its runtime value is a timeline.
-        Granulariteit g = ctx.tijdlijn() != null ? granulariteitVan(ctx.tijdlijn()) : null;
+        Granulariteit g = ctx.tijdlijn() != null ? granularityOf(ctx.tijdlijn()) : null;
         String fixed = null;
         if (g != null) {
             int count = countOf(ctx.tijdlijn());
@@ -915,20 +915,20 @@ public final class DefinitionResolver {
      *  months 1, 4, 7 and 10 and day 1 of month 1 are the timeline without one, and so is any date on a day grid of
      *  one unit, whose walls are all day boundaries. A source that names no day is refused by name here and yields
      *  null, so no document is written with it. */
-    private String fixedStartPoint(Granulariteit g, int count, VastStartpuntDatumContext datum,
+    private String fixedStartPoint(Granulariteit g, int count, VastStartpuntDatumContext date,
                                  VastStartpuntMaandContext month, VastStartpuntKwartaalContext quarter,
                                  VastStartpuntJaarContext year) {
-        if (datum != null) {
-            java.time.LocalDate d = startDate(datum);
+        if (date != null) {
+            java.time.LocalDate d = startDate(date);
             if (d == null) return null;
             if (count >= 2 || g == Granulariteit.WEEK) return d.toString();
             if (g == Granulariteit.DAG) return null;
-            return calendarEmpty(dev.uchar.regelspraak.kern.FixedStartPoint.canoniek(g, d.getMonthValue(), d.getDayOfMonth()));
+            return calendarEmpty(dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, d.getMonthValue(), d.getDayOfMonth()));
         }
         if (month != null) {
             Integer day = geheel(month.NUMBER());
             if (day == null || day < 1 || day > 31) return refuse("§13.3.6.4", month, "noemt geen dag van de maand");
-            return calendarEmpty(dev.uchar.regelspraak.kern.FixedStartPoint.canoniek(g, 1, day));
+            return calendarEmpty(dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, 1, day));
         }
         if (quarter != null) {
             List<Integer> months = quarter.kwartaalGroep().NUMBER().stream().map(n -> geheel(n)).toList();
@@ -939,12 +939,12 @@ public final class DefinitionResolver {
                         + "2, 5, 8 en 11 of 3, 6, 9 en 12");
             Integer day = geheel(quarter.NUMBER());
             if (day == null || day < 1 || day > 31) return refuse("§13.3.6.5", quarter, "noemt geen dag van de maand");
-            return calendarEmpty(dev.uchar.regelspraak.kern.FixedStartPoint.canoniek(g, first, day));
+            return calendarEmpty(dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, first, day));
         }
         if (year != null) {
             Integer day = geheel(year.NUMBER(0)), m = geheel(year.NUMBER(1));
             if (m == null || m < 1 || m > 12) return refuse("§13.3.6.6", year, "noemt geen maand");
-            String c = day == null ? null : dev.uchar.regelspraak.kern.FixedStartPoint.canoniek(g, m, day);
+            String c = day == null ? null : dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, m, day);
             if (c == null) return refuse("§13.3.6.6", year, "noemt een dag die maand " + m + " niet heeft");
             return calendarEmpty(c);
         }
@@ -961,22 +961,22 @@ public final class DefinitionResolver {
 
     /** The day of a §13.3.6.3 "startend op &lt;datum&gt;", or null after refusing a source that names none: a periode
      *  starts on a day, so a time of day has no place in it, and a bare number or an impossible date names no day. */
-    private java.time.LocalDate startDate(VastStartpuntDatumContext datum) {
-        TerminalNode d = datum.datumWaarde().DATE();
+    private java.time.LocalDate startDate(VastStartpuntDatumContext date) {
+        TerminalNode d = date.datumWaarde().DATE();
         java.util.regex.Matcher m = d == null ? null : START_DATE.matcher(d.getText());
         if (m != null && !m.matches() && d.getText().contains(":"))
-            return refuseDate(datum, "draagt een tijdstip, en een tijdvak begint op een dag");
-        if (m == null || !m.matches()) return refuseDate(datum, "noemt geen dag van de kalender");
+            return refuseDate(date, "draagt een tijdstip, en een tijdvak begint op een dag");
+        if (m == null || !m.matches()) return refuseDate(date, "noemt geen dag van de kalender");
         try {
             return java.time.LocalDate.of(Integer.parseInt(m.group(3)), Integer.parseInt(m.group(2)),
                     Integer.parseInt(m.group(1)));
         } catch (java.time.DateTimeException noDay) {
-            return refuseDate(datum, "noemt geen dag van de kalender");
+            return refuseDate(date, "noemt geen dag van de kalender");
         }
     }
 
-    private java.time.LocalDate refuseDate(VastStartpuntDatumContext datum, String reason) {
-        refuse("§13.3.6.3", datum, reason);
+    private java.time.LocalDate refuseDate(VastStartpuntDatumContext date, String reason) {
+        refuse("§13.3.6.3", date, reason);
         return null;
     }
 
@@ -998,7 +998,7 @@ public final class DefinitionResolver {
      *  form carries it in the token ("voor elke dag" → DAG), the multi-period form in the plural unit ("voor
      *  elke 5 maanden" → MAAND). The named form ("voor elke &lt;tijdlijn&gt;") adopts its definition's
      *  granularity, resolved against {@link RegelSpraakModel#tijdlijnen} elsewhere — null here. */
-    private Granulariteit granulariteitVan(TijdlijnContext t) {
+    private Granulariteit granularityOf(TijdlijnContext t) {
         if (t == null) return null;
         EnkelvoudigePeriodeContext e = t.enkelvoudigePeriode();
         if (e != null) {
@@ -1060,7 +1060,7 @@ public final class DefinitionResolver {
 
     /** §13.3.6.7 the period count of a tijdlijn attachment: the "5" in "voor elke 5 maanden". A single-period
      *  form ("voor elke maand") carries none (1); the named form "voor elke &lt;tijdlijn&gt;" adopts its
-     *  definition's count (so "heeft tijdvakken van 5 maanden" → 5), mirroring {@link #granulariteitVan}. */
+     *  definition's count (so "heeft tijdvakken van 5 maanden" → 5), mirroring {@link #granularityOf}. */
     private int countOf(TijdlijnContext t) {
         if (t == null) return 1;
         if (t.meervoudigePeriode() != null) return pluralCount(t.meervoudigePeriode().tijdseenhedenMeervoud());
@@ -1110,17 +1110,17 @@ public final class DefinitionResolver {
                 .map(l -> src(l.dimensieWaarde())).toList();
         // §3.6/§13.3.7.2: "na het attribuut met voorzetsel <vz>" gives the suffix-read preposition; the
         // "voor het attribuut zonder voorzetsel" form has no voorzetsel (null) — a prefix (bijvoeglijk) read.
-        VoorzetselSpecificatieContext vzs = ctx.voorzetselSpecificatie();
-        String voorzetsel = vzs != null && vzs.voorzetsel() != null ? src(vzs.voorzetsel()) : null;
+        VoorzetselSpecificatieContext prepositionSpec = ctx.voorzetselSpecificatie();
+        String voorzetsel = prepositionSpec != null && prepositionSpec.voorzetsel() != null ? src(prepositionSpec.voorzetsel()) : null;
         model.dimensies.put(src(ctx.dimensieNaam()),
                 new Dimension(src(ctx.dimensieNaam()), src(ctx.dimensieNaamMeervoud()), voorzetsel, waarden));
     }
 
     // ---------------- §13.3.9 fact types ----------------
-    private void feittype(FeitTypeDefinitionContext ctx) {
-        Feittype ft = new Feittype(src(ctx.feitTypeNaam()));
-        ft.wederkerig = ctx.WEDERKERIG_FEITTYPE() != null;
-        List<Rol> rollen = new ArrayList<>();
+    private void factType(FeitTypeDefinitionContext ctx) {
+        FactType ft = new FactType(src(ctx.feitTypeNaam()));
+        ft.reciprocal = ctx.WEDERKERIG_FEITTYPE() != null;
+        List<Role> rollen = new ArrayList<>();
         boolean hersteld = hersteld(ctx);
         java.util.Set<ParserRuleContext> onPreviousLine = hersteld ? java.util.Set.of()
                 : reportMembersOnPreviousLine(ctx, ctx.rolSpecificatie(), RolSpecificatieContext.class, "feittype '" + ft.naam + "'");
@@ -1149,13 +1149,13 @@ public final class DefinitionResolver {
                         + " zelfstandig woord — waarschijnlijk bevat de feittypenaam een 'de'/'het' die de naam"
                         + " afkapt en in de rol wordt geabsorbeerd (§13.3.9.3); hernoem het feittype zonder lidwoord",
                         ctx.feitTypeNaam().getStart().getLine()));
-            rollen.add(new Rol(rolNaam, src(rs.objectTypeNaam()), plural));
+            rollen.add(new Role(rolNaam, src(rs.objectTypeNaam()), plural));
             roleLines.computeIfAbsent(ft, k -> new java.util.HashMap<>()).putIfAbsent(rolNaam, rs.getStart().getLine());
         }
         // §13.3.9.1 cardinaliteit: the line "<q1> <rol1> … <q2> <rol2>" marks each role one or
         // meerdere. A wederkerig role is enkelvoudig (§3.11), so only a normal feittype's roles
         // take a 'meerdere' mark; an unmatched/absent line leaves a role single (fail-open).
-        if (!ft.wederkerig && ctx.feitTypeCardinaliteit() != null)
+        if (!ft.reciprocal && ctx.feitTypeCardinaliteit() != null)
             rollen = markCardinality(rollen, ctx.feitTypeCardinaliteit());
         ft.rollen.addAll(rollen);
         model.feittypen.put(ft.naam, ft);
@@ -1186,8 +1186,8 @@ public final class DefinitionResolver {
      *  name whole ("deelnemer met recht op korting") and never marks a role that a trailing
      *  relatiebeschrijving merely names ("… behoren de groep toe aan …" leaves the groep role untouched)
      *  — the two failure modes word-by-word matching had. */
-    private List<Rol> markCardinality(List<Rol> rollen, FeitTypeCardinaliteitContext card) {
-        List<Rol> result = new ArrayList<>(rollen);
+    private List<Role> markCardinality(List<Role> rollen, FeitTypeCardinaliteitContext card) {
+        List<Role> result = new ArrayList<>(rollen);
         // Collect the (meervoudig, head-words) segments in order — there are exactly two for a
         // non-wederkerig feittype (the grammar fixes it), one per role.
         List<Boolean> plural = new ArrayList<>();
@@ -1224,7 +1224,7 @@ public final class DefinitionResolver {
         for (int s = 0; s < segments.size(); s++) {
             int j = segRole[s];
             if (j >= 0 && result.get(j).meervoudig() != plural.get(s))
-                result.set(j, new Rol(result.get(j).naam(), result.get(j).objecttypeNaam(), result.get(j).plural(), plural.get(s)));
+                result.set(j, new Role(result.get(j).naam(), result.get(j).objecttypeNaam(), result.get(j).plural(), plural.get(s)));
         }
         return result;
     }
@@ -1234,27 +1234,27 @@ public final class DefinitionResolver {
      *  and a more specific role wins over a shorter prefix; stop at the first match so trailing
      *  relatiebeschrijving words never name another role. An already-bound role is skipped so the two
      *  segments cannot both claim the same role. */
-    private int findHead(List<Rol> result, String[] words, boolean[] roleOccupied) {
+    private int findHead(List<Role> result, String[] words, boolean[] roleOccupied) {
         for (int len = words.length; len >= 1; len--) {
             String kandidaat = String.join(" ", java.util.Arrays.copyOfRange(words, 0, len));
             for (int j = 0; j < result.size(); j++)
-                if (!roleOccupied[j] && RegelSpraakModel.rolNaamMatcht(result.get(j), kandidaat)) return j;
+                if (!roleOccupied[j] && RegelSpraakModel.roleNameMatches(result.get(j), kandidaat)) return j;
         }
         return -1;
     }
 
     /** The two checks on the members of one head: the line check, and the readability of every name it did not
      *  refuse — a refused member is a misreading, so its name is not the one the author declared. */
-    private void membersAfterHead(Objecttype ot, ParserRuleContext definitie, List<ObjectTypeMemberContext> leden) {
+    private void membersAfterHead(Objecttype ot, ParserRuleContext definitie, List<ObjectTypeMemberContext> members) {
         if (hersteld(definitie)) return;
         String carrier = "objecttype '" + ot.naam + "'";
-        java.util.Set<ParserRuleContext> geweigerd = reportMembersOnPreviousLine(definitie, leden, ObjectTypeMemberContext.class, carrier);
-        for (ObjectTypeMemberContext m : leden) {
-            if (geweigerd.contains(m)) continue;
+        java.util.Set<ParserRuleContext> refused = reportMembersOnPreviousLine(definitie, members, ObjectTypeMemberContext.class, carrier);
+        for (ObjectTypeMemberContext m : members) {
+            if (refused.contains(m)) continue;
             if (m.attribuutSpecificatie() != null)
                 reportUnreadableName(carrier, "het attribuut", naam(m.attribuutSpecificatie().lowerNaam()), m.getStart().getLine());
             else if (m.kenmerkSpecificatie() != null)
-                reportUnreadableName(carrier, "het kenmerk", kenmerkNaam(m.kenmerkSpecificatie()), m.getStart().getLine());
+                reportUnreadableName(carrier, "het kenmerk", characteristicName(m.kenmerkSpecificatie()), m.getStart().getLine());
         }
     }
 
@@ -1304,17 +1304,17 @@ public final class DefinitionResolver {
      *  token the previous one ended on, and, where a keyword is the likely cut, the spelling that does read: the
      *  keyword joined by a hyphen to its neighbour. Returns the refused members or roles. */
     private java.util.Set<ParserRuleContext> reportMembersOnPreviousLine(ParserRuleContext definitie,
-                                                                   List<? extends ParserRuleContext> leden,
+                                                                   List<? extends ParserRuleContext> members,
                                                                    Class<? extends ParserRuleContext> memberKind,
                                                                    String carrier) {
-        java.util.Set<ParserRuleContext> geweigerd = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        java.util.Set<ParserRuleContext> refused = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         HeadEnd head = headEnd(definitie, memberKind);
-        if (head == null) return geweigerd;
+        if (head == null) return refused;
         Token preceding = head.token();
         String previousSentence = "de kop";
         boolean onName = head.onName(), onCharacteristic = false;
-        boolean rol = memberKind == RolSpecificatieContext.class;
-        for (ParserRuleContext member : leden) {
+        boolean role = memberKind == RolSpecificatieContext.class;
+        for (ParserRuleContext member : members) {
             Token begin = member.getStart(), end = member.getStop();
             if (begin == null || end == null || end.getTokenIndex() < begin.getTokenIndex()) continue;
             String memberSentence = memberSentence(member);
@@ -1327,18 +1327,18 @@ public final class DefinitionResolver {
                 else if (onCharacteristic)
                     hint = " — hoort 'kenmerk' bij de naam, verbind het dan met een koppelteken aan het woord erna "
                             + "('kenmerk-" + word + "')";
-                fout(carrier + ": " + memberSentence + " begint met '" + word + "' op de regel waar " + previousSentence
-                        + " eindigt, direct na '" + preceding.getText() + "'; " + (rol ? "een rol" : "een lid")
+                error(carrier + ": " + memberSentence + " begint met '" + word + "' op de regel waar " + previousSentence
+                        + " eindigt, direct na '" + preceding.getText() + "'; " + (role ? "een rol" : "een lid")
                         + " begint op een eigen regel" + hint, begin.getLine());
-                geweigerd.add(member);
+                refused.add(member);
             }
             preceding = end;
             previousSentence = memberSentence == null ? "de koptekst"
-                    : (rol ? "de vorige rol " : "het vorige lid ") + memberSentence.substring(memberSentence.indexOf('\''));
-            onName = rol;                                  // a role ends on its filler, an object-type name
-            onCharacteristic = !rol && end.getType() == RegelSpraak.KENMERK;
+                    : (role ? "de vorige rol " : "het vorige lid ") + memberSentence.substring(memberSentence.indexOf('\''));
+            onName = role;                                  // a role ends on its filler, an object-type name
+            onCharacteristic = !role && end.getType() == RegelSpraak.KENMERK;
         }
-        return geweigerd;
+        return refused;
     }
 
     /** "het attribuut 'naam'", "het kenmerk 'naam'" or "de rol 'naam'"; null for a heading. */
@@ -1346,7 +1346,7 @@ public final class DefinitionResolver {
         if (member instanceof RolSpecificatieContext r) return "de rol '" + src(r.rolNaam()) + "'";
         ObjectTypeMemberContext m = (ObjectTypeMemberContext) member;
         if (m.attribuutSpecificatie() != null) return "het attribuut '" + naam(m.attribuutSpecificatie().lowerNaam()) + "'";
-        if (m.kenmerkSpecificatie() != null) return "het kenmerk '" + kenmerkNaam(m.kenmerkSpecificatie()) + "'";
+        if (m.kenmerkSpecificatie() != null) return "het kenmerk '" + characteristicName(m.kenmerkSpecificatie()) + "'";
         return null;
     }
 
@@ -1356,7 +1356,7 @@ public final class DefinitionResolver {
     }
 
     // ---------------- a role's filler is a declared object type ----------------
-    private record RoleFiller(String feittype, String rol, String fillerType, int regel) {}
+    private record RoleFiller(String factType, String role, String fillerType, int regel) {}
     private final List<RoleFiller> roleFillers = new ArrayList<>();
 
     /** WF-003 for a role's filler, BEFORE the emission: until this check the frontend wrote the document without a
@@ -1370,23 +1370,23 @@ public final class DefinitionResolver {
      *  own. */
     private void refuseUndeclaredFillers() {
         for (RoleFiller v : roleFillers) {
-            if (model.objecttypeOpNaam(v.fillerType()) != null) continue;
-            String soort = nameKind(v.fillerType());
-            String sentence = "feittype '" + v.feittype() + "': de rol '" + v.rol() + "' heeft als objecttype '" + v.fillerType()
-                    + "', en dat is " + (soort == null ? "nergens als objecttype gedeclareerd" : "een " + soort + ", geen objecttype")
+            if (model.objectTypeByName(v.fillerType()) != null) continue;
+            String category = nameKind(v.fillerType());
+            String sentence = "feittype '" + v.factType() + "': de rol '" + v.role() + "' heeft als objecttype '" + v.fillerType()
+                    + "', en dat is " + (category == null ? "nergens als objecttype gedeclareerd" : "een " + category + ", geen objecttype")
                     + " — WF-003: de vuller van een rol is een gedeclareerd objecttype";
-            boolean misread = soort != null;
+            boolean misread = category != null;
             String[] words = v.fillerType().split(" ");
             for (int i = 1; i < words.length; i++) {
                 String suffix = String.join(" ", java.util.Arrays.copyOfRange(words, i, words.length));
-                Objecttype ot = model.objecttypeOpNaam(suffix);
+                Objecttype ot = model.objectTypeByName(suffix);
                 if (ot == null) continue;
                 sentence += "; '" + ot.naam + "' is dat wel: een rolnaam eindigt bij het eerste woord met een hoofdletter, dus '"
                         + String.join(" ", java.util.Arrays.copyOfRange(words, 0, i)) + "' is als deel van het objecttype gelezen";
                 misread = true;
                 break;
             }
-            if (misread) fout(sentence, v.regel());
+            if (misread) error(sentence, v.regel());
             else model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     sentence + "; staat het in een ander bestand van het model, lees de bestanden dan samen", v.regel()));
         }
@@ -1399,18 +1399,18 @@ public final class DefinitionResolver {
      *  it. A WARNING and no ERROR: the declaration itself is well-formed, a document that never reads the name in a
      *  rule is sound, and one source outside this repository carries such a name (grammar/DIVERGENCES.md, "Namen in
      *  declaratiekoppen"). */
-    private void reportUnreadableName(String carrier, String soort, String naam, int regel) {
+    private void reportUnreadableName(String carrier, String category, String naam, int regel) {
         List<String> words = new ArrayList<>();
-        int fout = unreadableWord(naam, words);
-        if (fout < 0) return;
+        int error = unreadableWord(naam, words);
+        if (error < 0) return;
         List<String> example = new ArrayList<>(words);
-        int links = fout > 0 ? fout - 1 : fout;
-        if (links + 1 < example.size()) {
-            example.set(links, example.get(links) + "-" + example.get(links + 1));
-            example.remove(links + 1);
+        int left = error > 0 ? error - 1 : error;
+        if (left + 1 < example.size()) {
+            example.set(left, example.get(left) + "-" + example.get(left + 1));
+            example.remove(left + 1);
         }
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                carrier + ": regeltekst leest " + soort + " '" + naam + "' niet als één naam, want '" + words.get(fout)
+                carrier + ": regeltekst leest " + category + " '" + naam + "' niet als één naam, want '" + words.get(error)
                         + "' is daar geen woord van een naam; verbind het met een koppelteken aan een buurwoord ('"
                         + String.join(" ", example) + "')", regel));
     }
@@ -1423,9 +1423,9 @@ public final class DefinitionResolver {
         lexer.removeErrorListeners();
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
-        List<Token> lijst = tokens.getTokens().stream()
+        List<Token> list = tokens.getTokens().stream()
                 .filter(t -> t.getChannel() == Token.DEFAULT_CHANNEL && t.getType() != Token.EOF).toList();
-        for (Token t : lijst) words.add(t.getText());
+        for (Token t : list) words.add(t.getText());
         RegelSpraak parser = new RegelSpraak(tokens);
         parser.removeErrorListeners();
         parser.setErrorHandler(new BailErrorStrategy());
@@ -1437,7 +1437,7 @@ public final class DefinitionResolver {
             dader = e.getCause() instanceof RecognitionException r ? r.getOffendingToken() : tokens.LT(1);
         }
         if (dader == null || dader.getType() == Token.EOF) return -1;
-        for (int i = 0; i < lijst.size(); i++) if (lijst.get(i).getTokenIndex() == dader.getTokenIndex()) return i;
+        for (int i = 0; i < list.size(); i++) if (list.get(i).getTokenIndex() == dader.getTokenIndex()) return i;
         throw new IllegalStateException("DefinitionResolver.onleesbaarWoord: het token '" + dader.getText()
                 + "' staat niet in de naam '" + naam + "'");
     }
@@ -1529,9 +1529,9 @@ public final class DefinitionResolver {
     /** The structured source anchor of {@code ctx}: {@link #src} as the snippet, plus file/line/column
      *  from the start token (the file being the char stream's source name, set at the front end). A null
      *  ctx yields a synthetic empty anchor, mirroring {@link #src}'s null handling. */
-    static dev.uchar.regelspraak.ir.Bron bron(ParserRuleContext ctx) {
-        return ctx == null ? dev.uchar.regelspraak.ir.Bron.synthetic("")
-                           : dev.uchar.regelspraak.ir.Bron.van(ctx, src(ctx));
+    static dev.uchar.regelspraak.ir.Source source(ParserRuleContext ctx) {
+        return ctx == null ? dev.uchar.regelspraak.ir.Source.synthetic("")
+                           : dev.uchar.regelspraak.ir.Source.van(ctx, src(ctx));
     }
 
     private static String unquote(String s) {

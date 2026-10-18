@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.transpiler.tms.BucketInput;
 
 import org.drools.model.Rule;
@@ -26,14 +26,14 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.dayCount;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.ownTotal;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.kenmerk;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.characteristic;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.months;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.period;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.segment;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.timeAttribute;
@@ -131,7 +131,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * time-dependent on "Jutter", so it is delivered as a "characteristicTimelines" entry — …".
  * </ul>
  * Where several objects fault, the reference interpreter stops at the first it meets, and this branch reports every
- * fault that stands at the fixpoint ({@code Evaluatiefouten}), each in the reference interpreter's words with the object
+ * fault that stands at the fixpoint ({@code EvaluationFaults}), each in the reference interpreter's words with the object
  * named.
  *
  * <p><b>Red</b> on c08ac038, the code before the change, with only the class {@link BucketInput} added so that this
@@ -148,15 +148,15 @@ class TmsInputFormWitnessTest {
     static final String DATE = "2024-06-01";
 
     /** The outcomes of {@code caseDocument} on the document of {@code model} with {@code rules}, in every order of the rules,
-     *  each as "[names] outcome" ({@link TmsFaultWitnessTest#play}), beside the expected list with {@code verwacht}. */
+     *  each as "[names] outcome" ({@link TmsFaultWitnessTest#play}), beside the expected list with {@code expected}. */
     static void inEveryOrder(String model, List<String> rules, List<String> uniquenesses, JsonNode caseDocument,
-                               String verwacht) throws Exception {
+                               String expected) throws Exception {
         List<String> outcomes = new ArrayList<>(), expectation = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(rules)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(model, order, uniquenesses);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            expectation.add(names + " " + verwacht);
+            expectation.add(names + " " + expected);
         }
         assertEquals(expectation, outcomes);
     }
@@ -177,17 +177,17 @@ class TmsInputFormWitnessTest {
                                 TmsTimelineWitnessTest.RATE, "maanddeel", TmsTimelineWitnessTest.JUNE), List.of(), BORG,
                                 Map.of())),
                 List.of(expectedTimeline("J1", "jaardeel", List.of()), expectedTimeline("J1", "maanddeel", List.of()),
-                        waarde("J1", "wachtsom", "0"), waarde("J1", "topsom", "0"),
+                        value("J1", "wachtsom", "0"), value("J1", "topsom", "0"),
                         expectedTimeline("J2", "jaardeel", List.of()),
                         expectedTimeline("J2", "maanddeel", List.of(segment("2024-06-01", "2024-07-01", "9"))),
-                        waarde("J2", "wachtsom", "9"), waarde("J2", "topsom", "0"),
+                        value("J2", "wachtsom", "9"), value("J2", "topsom", "0"),
                         expectedTimeline("J3", "jaardeel", TmsTimelineWitnessTest.YEAR_PARTS),
                         expectedTimeline("J3", "maanddeel", TmsTimelineWitnessTest.monthParts()),
-                        waarde("J3", "wachtsom", "3178"), waarde("J3", "topsom", "0"), consistent()));
+                        value("J3", "wachtsom", "3178"), value("J3", "topsom", "0"), consistent()));
     }
 
     @Test void the_base_of_a_pro_rata_as_bucket_scalar_fails_where_the_rule_reaches_it() throws Exception {
-        inEveryOrder(TmsTimelineWitnessTest.MODEL_A, RULES_A, List.of(), caseA(), "Invoervormfout: fout in de regel"
+        inEveryOrder(TmsTimelineWitnessTest.MODEL_A, RULES_A, List.of(), caseA(), "InputFormFault: fout in de regel"
                 + " \"jaardeel\": the pro-rata base \"jaartarief\" needs the full timeline; \"J1\" supplies only the"
                 + " asOfDate-bucket scalar (ch. 3.7, ch. 8.4)");
     }
@@ -226,22 +226,22 @@ class TmsInputFormWitnessTest {
                     TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-01-01", "2025-01-01", "366")));
             TmsTimelineDocuments.set(j1, "borgplichtig", List.of(
                     TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-03-01", "2025-03-01", null)));
-            BucketInput bucket = new BucketInput(j1, ElementSleutel.van("Jutter", "jaartarief", false));
+            BucketInput bucket = new BucketInput(j1, ElementKey.van("Jutter", "jaartarief", false));
             TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, bucket), sessie -> sessie.addEventListener(facts)),
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(j1, bucket), session -> session.addEventListener(facts)),
                     () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertNull(TmsDocuments.lees(j1, "jaardeel"), () -> "jaardeel in volgorde " + names);
-            if (facts.fouten > 0) intermediateState++;
+            assertNull(TmsDocuments.read(j1, "jaardeel"), () -> "jaardeel in volgorde " + names);
+            if (facts.faults > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet de jaardeelregel de basis lezen voor J1 vrijgesteld was");
     }
 
     // ---------------- C: the subject's own total without a clip ----------------
 
-    static final String MODEL_C = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-            TmsDocuments.attribuut("score", WHOLE), timeAttribute("bedrag", WHOLE, "month"),
-            TmsDocuments.attribuut("topsom", WHOLE)), List.of(kenmerk("actief")))), List.of());
+    static final String MODEL_C = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            TmsDocuments.attribute("score", WHOLE), timeAttribute("bedrag", WHOLE, "month"),
+            TmsDocuments.attribute("topsom", WHOLE)), List.of(characteristic("actief")))), List.of());
 
     static final String TOPSOM_WITHOUT_CLIP = computingRule("topsom", "BEREKENING", "Jutter", "topsom",
             ownTotal("bedrag", "Jutter", "null"), check("actief", false));
@@ -251,20 +251,20 @@ class TmsInputFormWitnessTest {
     /** J3 (actief, the bedrag 7 as a bucket scalar), J4 (actief, no bedrag), J2 (not actief, a full timeline), and with
      *  {@code withJ1} J1 (actief, a full timeline). */
     static JsonNode caseC(boolean withJ1) throws Exception {
-        List<String> instanties = new ArrayList<>();
-        if (withJ1) instanties.add(instance("J1", "Jutter", Map.of("score", numberValue("10"), "bedrag",
+        List<String> instances = new ArrayList<>();
+        if (withJ1) instances.add(instance("J1", "Jutter", Map.of("score", numberValue("10"), "bedrag",
                 TmsTimelineWitnessTest.AMOUNT), List.of(), Map.of(), Map.of()));
-        instanties.add(instance("J2", "Jutter", Map.of("score", numberValue("3"), "bedrag",
+        instances.add(instance("J2", "Jutter", Map.of("score", numberValue("3"), "bedrag",
                 TmsTimelineWitnessTest.AMOUNT), List.of(), Map.of(), Map.of()));
-        instanties.add(instance("J3", "Jutter", Map.of("score", numberValue("10"), "bedrag", numberValue("7")),
+        instances.add(instance("J3", "Jutter", Map.of("score", numberValue("10"), "bedrag", numberValue("7")),
                 List.of(), Map.of(), Map.of()));
-        instanties.add(instance("J4", "Jutter", Map.of("score", numberValue("10")), List.of(), Map.of(), Map.of()));
-        return TmsTimelineDocuments.caseDocument(DATE, instanties, List.of(waarde("J2", "topsom", null),
-                waarde("J3", "topsom", "7"), waarde("J4", "topsom", null)));
+        instances.add(instance("J4", "Jutter", Map.of("score", numberValue("10")), List.of(), Map.of(), Map.of()));
+        return TmsTimelineDocuments.caseDocument(DATE, instances, List.of(value("J2", "topsom", null),
+                value("J3", "topsom", "7"), value("J4", "topsom", null)));
     }
 
     @Test void the_own_total_without_clip_fails_on_a_full_timeline_where_the_rule_reaches_it() throws Exception {
-        inEveryOrder(MODEL_C, RULES_C, List.of(), caseC(true), "Invoervormfout: fout in de regel \"topsom\": the"
+        inEveryOrder(MODEL_C, RULES_C, List.of(), caseC(true), "InputFormFault: fout in de regel \"topsom\": the"
                 + " temporal total of \"bedrag\" over a case-supplied full timeline is not exercised by any corpus case;"
                 + " the asOfDate-bucket convention carries the total, and \"J1\" supplies a full timeline");
     }
@@ -275,10 +275,10 @@ class TmsInputFormWitnessTest {
 
     // ---------------- D: the clip of a total, its value and the timeline it compares ----------------
 
-    static final String MODEL_D = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
+    static final String MODEL_D = TmsDocuments.model(List.of(objectType("Jutter", List.of(
             timeAttribute("vergoeding", WHOLE, "month"), timeAttribute("controle", WHOLE, "month"),
-            timeAttribute("jaarcontrole", WHOLE, "year"), TmsDocuments.attribuut("wachtsom", WHOLE),
-            TmsDocuments.attribuut("topsom", WHOLE)),
+            timeAttribute("jaarcontrole", WHOLE, "year"), TmsDocuments.attribute("wachtsom", WHOLE),
+            TmsDocuments.attribute("topsom", WHOLE)),
             List.of(timeCharacteristic("wachtplichtig", "month"), timeCharacteristic("borgplichtig", "month")))), List.of());
 
     /** "De controle van een Jutter moet berekend worden als het tijdsevenredig deel per maand van zijn jaarcontrole
@@ -316,7 +316,7 @@ class TmsInputFormWitnessTest {
     @Test void the_value_of_a_clip_and_the_compared_timeline_as_bucket_scalar_fail() throws Exception {
         inEveryOrder(MODEL_D, RULES_D, List.of(), TmsTimelineDocuments.caseDocument(DATE, List.of(j1D(), j2D(), j3D()),
                         List.of(consistent())),
-                "Evaluatiefouten: aan het fixpunt staan 3 evaluatiefouten, in de regels \"topsom\" (2×), \"wachtsom\": fout"
+                "EvaluationFaults: aan het fixpunt staan 3 evaluatiefouten, in de regels \"topsom\" (2×), \"wachtsom\": fout"
                         + " in de regel \"topsom\": the gedurende clip of \"vergoeding\" compares \"controle\" per segment"
                         + " and needs its full timeline; \"J2\" supplies only the asOfDate-bucket scalar (ch. 3.6, ch."
                         + " 8.4); fout in de regel \"topsom\": the gedurende clip of \"vergoeding\" needs the full timeline;"
@@ -327,17 +327,17 @@ class TmsInputFormWitnessTest {
 
     @Test void a_compared_timeline_that_a_rule_derives_replaces_the_bucket_scalar() throws Exception {
         inEveryOrder(MODEL_D, RULES_D, List.of(), TmsTimelineDocuments.caseDocument(DATE, List.of(j3D()), List.of(
-                expectedTimeline("J3", "controle", months(2024, 3, 3, "12")), waarde("J3", "topsom", "30"),
-                waarde("J3", "wachtsom", "0"))), "gespeeld");
+                expectedTimeline("J3", "controle", months(2024, 3, 3, "12")), value("J3", "topsom", "30"),
+                value("J3", "wachtsom", "0"))), "gespeeld");
     }
 
     // ---------------- E: a member of a per-element fold ----------------
 
     static final String MODEL_E = TmsDocuments.model(List.of(
-            objecttype("Jutter", List.of(TmsDocuments.attribuut("last", WHOLE)), List.of()),
-            objecttype("Vondst", List.of(timeAttribute("jaartarief", WHOLE, "year"),
-                    timeAttribute("tarief", WHOLE, "month"), TmsDocuments.attribuut("keurscore", WHOLE)),
-                    List.of(timeCharacteristic("bewaard", "month"), kenmerk("gekeurd")))),
+            objectType("Jutter", List.of(TmsDocuments.attribute("last", WHOLE)), List.of()),
+            objectType("Vondst", List.of(timeAttribute("jaartarief", WHOLE, "year"),
+                    timeAttribute("tarief", WHOLE, "month"), TmsDocuments.attribute("keurscore", WHOLE)),
+                    List.of(timeCharacteristic("bewaard", "month"), characteristic("gekeurd")))),
             List.of(factTypeOneToMany("bewaring", "jutter", "Jutter", "vondst", "Vondst", "vondsten")));
 
     /** "Het tarief van een Vondst moet berekend worden als het tijdsevenredig deel per maand van zijn jaartarief
@@ -375,16 +375,16 @@ class TmsInputFormWitnessTest {
     }
 
     @Test void a_member_as_bucket_scalar_fails_and_the_fold_names_the_first_in_fold_order() throws Exception {
-        List<String> instanties = new ArrayList<>(List.of(jutter("J1", List.of("V1", "V2")),
+        List<String> instances = new ArrayList<>(List.of(jutter("J1", List.of("V1", "V2")),
                 jutter("J4", List.of("V6", "V5")),
                 vondst("V1", "8", Map.of("jaartarief", JAARTARIEF_12), KEPT_Q1),
                 vondst("V2", "8", Map.of("tarief", numberValue("5")), Map.of()),
                 vondst("V5", "9", Map.of("tarief", numberValue("4")), Map.of()),
                 vondst("V6", "9", Map.of("tarief", numberValue("6")), Map.of())));
-        instanties.addAll(playingE());
-        inEveryOrder(MODEL_E, RULES_E, List.of(), TmsTimelineDocuments.caseDocument(DATE, instanties,
+        instances.addAll(playingE());
+        inEveryOrder(MODEL_E, RULES_E, List.of(), TmsTimelineDocuments.caseDocument(DATE, instances,
                         List.of(consistent())),
-                "Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regel \"last\" (2×): fout in de regel"
+                "EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regel \"last\" (2×): fout in de regel"
                         + " \"last\": the per-element temporal total of \"tarief\" over \"V2\": the case supplies an"
                         + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
                         + " timeline (ch. 3.6/§7.1, ch. 8.4); fout in de regel \"last\": the per-element temporal total of"
@@ -394,7 +394,7 @@ class TmsInputFormWitnessTest {
 
     @Test void a_member_that_does_not_pass_the_filter_or_has_a_derived_timeline_does_not_fail() throws Exception {
         inEveryOrder(MODEL_E, RULES_E, List.of(), TmsTimelineDocuments.caseDocument(DATE, playingE(), List.of(
-                waarde("J2", "last", "0"), waarde("J3", "last", "36"),
+                value("J2", "last", "0"), value("J3", "last", "36"),
                 expectedTimeline("V4", "tarief", months(2024, 1, 3, "12")))), "gespeeld");
     }
 
@@ -422,14 +422,14 @@ class TmsInputFormWitnessTest {
     }
 
     @Test void an_ever_key_as_bucket_scalar_fails() throws Exception {
-        List<String> instanties = new ArrayList<>(playingF());
+        List<String> instances = new ArrayList<>(playingF());
         // V2 is not geregistreerd, so its nummer 7 is not computed and stands; V3 is geregistreerd without a true
         // period, so the day count is empty and its nummer 5 stands
-        instanties.add(vondstF("V2", "0", null, null, "7"));
-        instanties.add(vondstF("V3", "1", null, null, "5"));
-        inEveryOrder(MODEL_F, RULES_F, List.of(EENMALIG), TmsTimelineDocuments.caseDocument(DATE, instanties,
+        instances.add(vondstF("V2", "0", null, null, "7"));
+        instances.add(vondstF("V3", "1", null, null, "5"));
+        inEveryOrder(MODEL_F, RULES_F, List.of(EENMALIG), TmsTimelineDocuments.caseDocument(DATE, instances,
                         List.of(consistent())),
-                "Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regel \"eenmalig nummer\" (2×): fout in"
+                "EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regel \"eenmalig nummer\" (2×): fout in"
                         + " de regel \"eenmalig nummer\": the ever-unique key \"nummer\" needs the full timeline; \"V2\""
                         + " supplies only a scalar (ch. 5.9); fout in de regel \"eenmalig nummer\": the ever-unique key"
                         + " \"nummer\" needs the full timeline; \"V3\" supplies only a scalar (ch. 5.9)");
@@ -446,18 +446,18 @@ class TmsInputFormWitnessTest {
     // ---------------- G: the key's form before the scope and after an empty component ----------------
 
     static final String MODEL_G = TmsDocuments.model(List.of(
-            objecttype("Strandvondst", List.of(TmsDocuments.attribuut("code", WHOLE),
+            objectType("Strandvondst", List.of(TmsDocuments.attribute("code", WHOLE),
                     timeAttribute("vondstnummer", WHOLE, "year"), timeAttribute("kavelnummer", WHOLE, "year")),
                     List.of()),
-            objecttype("Kust", List.of(), List.of())),
+            objectType("Kust", List.of(), List.of())),
             List.of(factTypeOneToMany("ligging", "kust", "Kust", "strandvondst", "Strandvondst", "strandvondsten")));
 
     static final String PER_KUST = TmsUniquenessWitnessTest.uniqueness("kavel per kust",
-            List.of(TmsUniquenessWitnessTest.bron("Strandvondst", List.of("kavelnummer"))),
+            List.of(TmsUniquenessWitnessTest.source("Strandvondst", List.of("kavelnummer"))),
             TmsDocuments.roleBinding("ligging", "kust"),
             "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn.");
     static final String CODE_AND_NUMBER = TmsUniquenessWitnessTest.uniqueness("code en nummer",
-            List.of(TmsUniquenessWitnessTest.bron("Strandvondst", List.of("code", "vondstnummer"))), null,
+            List.of(TmsUniquenessWitnessTest.source("Strandvondst", List.of("code", "vondstnummer"))), null,
             "De codes en vondstnummers van alle Strandvondsten moeten uniek zijn.");
 
     @Test void the_form_of_the_key_precedes_the_scope_and_follows_an_empty_part() throws Exception {
@@ -475,19 +475,19 @@ class TmsInputFormWitnessTest {
         for (List<String> order : TmsDocuments.permutations(List.of(PER_KUST, CODE_AND_NUMBER)))
             outcomes.add(TmsFaultWitnessTest.play(TmsTimelineDocuments.document(MODEL_G, List.of(), order), caseDocument,
                     DroolsBackend.Branch.EXEC_MODEL));
-        String verwacht = "Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels \"code en nummer\","
+        String expected = "EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regels \"code en nummer\","
                 + " \"kavel per kust\": fout in de regel \"code en nummer\": the ever-unique key \"vondstnummer\" needs"
                 + " the full timeline; \"S3\" supplies only a scalar (ch. 5.9); fout in de regel \"kavel per kust\": the"
                 + " ever-unique key \"kavelnummer\" needs the full timeline; \"S1\" supplies only a scalar (ch. 5.9)";
-        assertEquals(List.of(verwacht, verwacht), outcomes);
+        assertEquals(List.of(expected, expected), outcomes);
     }
 
     // ---------------- H: a characteristic on a timeline in the flat list ----------------
 
-    static final String MODEL_H = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
+    static final String MODEL_H = TmsDocuments.model(List.of(objectType("Jutter", List.of(
             timeAttribute("vergoeding", WHOLE, "month"), timeAttribute("jaartarief", WHOLE, "year"),
             timeAttribute("jaardeel", WHOLE, "year"), timeAttribute("stormdagen", WHOLE, "year"),
-            TmsDocuments.attribuut("wachtsom", WHOLE)),
+            TmsDocuments.attribute("wachtsom", WHOLE)),
             List.of(timeCharacteristic("wachtplichtig", "month")))), List.of());
 
     /** The clip of a total, the condition of a pro-rata part and the condition of a day count, each over wachtplichtig. */
@@ -504,15 +504,15 @@ class TmsInputFormWitnessTest {
     }
 
     @Test void a_time_dependent_characteristic_in_the_flat_list_refuses_the_case_reader() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Map.Entry<String, String> r : new java.util.TreeMap<>(RULES_H).entrySet()) {
             outcomes.add(r.getKey() + " " + TmsFaultWitnessTest.play(TmsTimelineDocuments.document(MODEL_H,
                     List.of(r.getValue()), List.of()), caseH(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(r.getKey() + " IllegalArgumentException: scalar characteristic input 'wachtplichtig' on the"
+            expected.add(r.getKey() + " IllegalArgumentException: scalar characteristic input 'wachtplichtig' on the"
                     + " time-dependent kenmerk of Jutter: deliver it as a characteristicTimelines entry — the static"
                     + " characteristics list asserts a scalar truth no temporal reader consults");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- the documents, for the other executors ----------------
@@ -538,15 +538,15 @@ class TmsInputFormWitnessTest {
         parts.put("d-knip", new Object[]{MODEL_D, RULES_D, List.of(), List.of(
                 TmsTimelineDocuments.caseDocument(DATE, List.of(j1D(), j2D(), j3D()), List.of(consistent())),
                 TmsTimelineDocuments.caseDocument(DATE, List.of(j3D()), List.of(
-                        expectedTimeline("J3", "controle", months(2024, 3, 3, "12")), waarde("J3", "topsom", "30"),
-                        waarde("J3", "wachtsom", "0"))),
+                        expectedTimeline("J3", "controle", months(2024, 3, 3, "12")), value("J3", "topsom", "30"),
+                        value("J3", "wachtsom", "0"))),
                 TmsTimelineDocuments.caseDocument(DATE, List.of(j1D()), List.of(consistent())),
-                TmsTimelineDocuments.caseDocument(DATE, List.of(j2D()), List.of(waarde("J2", "topsom", "0"),
-                        waarde("J2", "wachtsom", "0"))))});
+                TmsTimelineDocuments.caseDocument(DATE, List.of(j2D()), List.of(value("J2", "topsom", "0"),
+                        value("J2", "wachtsom", "0"))))});
         parts.put("e-lid", new Object[]{MODEL_E, RULES_E, List.of(), List.of(
                 TmsTimelineDocuments.caseDocument(DATE, instancesE, List.of(consistent())),
-                TmsTimelineDocuments.caseDocument(DATE, playingE(), List.of(waarde("J2", "last", "0"),
-                        waarde("J3", "last", "36"), expectedTimeline("V4", "tarief", months(2024, 1, 3, "12")))),
+                TmsTimelineDocuments.caseDocument(DATE, playingE(), List.of(value("J2", "last", "0"),
+                        value("J3", "last", "36"), expectedTimeline("V4", "tarief", months(2024, 1, 3, "12")))),
                 TmsTimelineDocuments.caseDocument(DATE, List.of(jutter("J4", List.of("V6", "V5")),
                         vondst("V5", "9", Map.of("tarief", numberValue("4")), Map.of()),
                         vondst("V6", "9", Map.of("tarief", numberValue("6")), Map.of())), List.of(consistent())))});

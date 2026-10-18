@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
@@ -23,10 +23,10 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,9 +65,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsConditionFaultWitnessTest {
 
-    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("taxatie", WHOLE), attribuut("opbrengst", WHOLE), attribuut("deelnemers", WHOLE),
-                    attribuut("bergloon", WHOLE), attribuut("toeslag", WHOLE)),
+    static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("taxatie", WHOLE), attribute("opbrengst", WHOLE), attribute("deelnemers", WHOLE),
+                    attribute("bergloon", WHOLE), attribute("toeslag", WHOLE)),
             List.of("gemeld", "erkend", "zwaar"))), List.of());
 
     private static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
@@ -79,13 +79,13 @@ class TmsConditionFaultWitnessTest {
                     binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("bergloon", "Vondst")), number("2"))));
 
     static final String GROUP = attributeGroup("bergloon van een vondst", "Vondst", "bergloon", List.of(
-            standaard(check("erkend", false), ownRead("taxatie", "Vondst")),
-            standaard(check("gemeld", false), number("0"))));
+            defaultEntry(check("erkend", false), ownRead("taxatie", "Vondst")),
+            defaultEntry(check("gemeld", false), number("0"))));
 
     static JsonNode temporaryCase() throws Exception {
         return TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "90"), List.of("gemeld"), Map.of())),
-                List.of(waarde("V1", "bergloon", "30"), verwacht("V1", "zwaar", true), consistent()));
+                List.of(value("V1", "bergloon", "30"), expected("V1", "zwaar", true), consistent()));
     }
 
     static Path temporary(List<String> rules) throws Exception {
@@ -94,14 +94,14 @@ class TmsConditionFaultWitnessTest {
 
     @Test void a_temporary_fault_in_a_condition_disappears_at_the_fixpoint_in_every_order_of_the_document()
             throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TEMPORARY)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + TmsFaultWitnessTest.play(temporary(order), temporaryCase(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(2, outcomes.size());
     }
 
@@ -109,17 +109,17 @@ class TmsConditionFaultWitnessTest {
      *  transient 0 of the lower default: there a fault fact is inserted, and it is gone again at the fixpoint. */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(temporary(TEMPORARY), DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
         int onTheIntermediateState = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100)) {
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30", "opbrengst", "90"),
                     List.of("gemeld"));
             TmsFaultWitnessTest.FaultFacts facts = new TmsFaultWitnessTest.FaultFacts();
-            String fout = TmsFaultWitnessTest.vuur(b, order, List.of(v1), new DefaultAgendaEventListener() {}, facts);
-            assertNull(fout, () -> "volgorde " + names);
+            String fault = TmsFaultWitnessTest.fire(b, order, List.of(v1), new DefaultAgendaEventListener() {}, facts);
+            assertNull(fault, () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            TmsFaultWitnessTest.assertNumber("30", TmsDocuments.lees(v1, "bergloon"), "bergloon in volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("30", TmsDocuments.read(v1, "bergloon"), "bergloon in volgorde " + names);
             assertTrue(TmsDocuments.has(v1, "zwaar"), () -> "zwaar in volgorde " + names);
             if (facts.inserted > 0) onTheIntermediateState++;
         }
@@ -132,16 +132,16 @@ class TmsConditionFaultWitnessTest {
             ownRead("deelnemers", "Vondst"));
 
     /** One document per kind of form with a condition: its name, its rules and its consistencies. */
-    record Vorm(String naam, List<String> rules, List<String> consistencies) {}
+    record Form(String naam, List<String> rules, List<String> consistencies) {}
 
-    static final List<Vorm> FORMS = List.of(
-            new Vorm("zwaarte", List.of(ERKENNING, characteristicRule("zwaarte", "Vondst", "zwaar",
+    static final List<Form> FORMS = List.of(
+            new Form("zwaarte", List.of(ERKENNING, characteristicRule("zwaarte", "Vondst", "zwaar",
                     comparison("greater", DEELNEMERS, number("10")))), List.of()),
-            new Vorm("toeslag", List.of(ERKENNING, computingRule("toeslag", "GELIJKSTELLING", "Vondst", "toeslag",
+            new Form("toeslag", List.of(ERKENNING, computingRule("toeslag", "GELIJKSTELLING", "Vondst", "toeslag",
                     number("5"), comparison("greater", DEELNEMERS, number("10")))), List.of()),
-            new Vorm("standaardtoeslag", List.of(ERKENNING, computingRule("standaardtoeslag", "INITIALISATIE", "Vondst",
+            new Form("standaardtoeslag", List.of(ERKENNING, computingRule("standaardtoeslag", "INITIALISATIE", "Vondst",
                     "toeslag", number("5"), comparison("greater", DEELNEMERS, number("10")))), List.of()),
-            new Vorm("controle", List.of(ERKENNING),
+            new Form("controle", List.of(ERKENNING),
                     List.of(consistency("controle", "Vondst", comparison("greater", DEELNEMERS, number("0"))))));
 
     static JsonNode persistentCase() throws Exception {
@@ -151,24 +151,24 @@ class TmsConditionFaultWitnessTest {
                 List.of(consistent()));
     }
 
-    private static String melding(String regel) {
+    private static String message(String regel) {
         return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": 100 gedeeld door 0 — een numerieke nul als"
                 + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
     }
 
     @Test void a_persistent_fault_in_a_condition_gives_in_every_order_the_message_of_the_exec_model_branch()
             throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (Vorm v : FORMS) {
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        for (Form v : FORMS) {
             for (List<String> order : TmsDocuments.permutations(v.rules())) {
                 List<String> names = TmsDocuments.ruleNames(order);
                 outcomes.add(v.naam() + " " + names + " " + TmsFaultWitnessTest.play(
                         TmsDocuments.document(MODEL, order, v.consistencies()), persistentCase(),
                         DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(v.naam() + " " + names + " " + melding(v.naam()));
+                expected.add(v.naam() + " " + names + " " + message(v.naam()));
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(7, outcomes.size());
     }
 
@@ -176,20 +176,20 @@ class TmsConditionFaultWitnessTest {
      *  its fault rule, its deposit rule and the erkenning: 24 orders each; six until the deposit rule of a condition,
      *  fixround 1 of card tms-expressievormen-en-rekendatum), and the write-back reports the fault. */
     @Test void the_fault_in_a_condition_counts_at_the_fixpoint_and_not_in_the_fire() throws Exception {
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (Vorm v : FORMS) {
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        for (Form v : FORMS) {
             DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, v.rules(), v.consistencies()),
                     DroolsBackend.Branch.EXEC_MODEL);
             for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
                 List<String> names = order.stream().map(Rule::getName).toList();
                 Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"),
                         List.of("gemeld"));
-                outcomes.add(names + " " + TmsFaultWitnessTest.vuur(b, order, List.of(v1),
+                outcomes.add(names + " " + TmsFaultWitnessTest.fire(b, order, List.of(v1),
                         new DefaultAgendaEventListener() {}, new TmsFaultWitnessTest.FaultFacts()));
-                verwacht.add(names + " " + melding(v.naam()));
+                expected.add(names + " " + message(v.naam()));
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
         assertEquals(96, outcomes.size());
     }
 }

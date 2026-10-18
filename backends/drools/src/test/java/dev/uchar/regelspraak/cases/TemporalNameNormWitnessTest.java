@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.transpiler.kern.Timelines;
+import dev.uchar.regelspraak.transpiler.core.Timelines;
 
 import org.junit.jupiter.api.Test;
 
@@ -160,7 +160,7 @@ class TemporalNameNormWitnessTest {
     // ---------------- fixtures ----------------
 
     /** The seinjaar world with V1's own timeline block and the expected {@code vakseinaantal}. */
-    private static JsonNode caseOf(String vakTimeline, String verwacht) throws Exception {
+    private static JsonNode caseOf(String vakTimeline, String expected) throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": "2024-06-15",
                   "input": { "instances": [
@@ -177,7 +177,7 @@ class TemporalNameNormWitnessTest {
                       { "kind": "attributeValue", "label": "V1", "attribute": "vakseinaantal",
                         "value": { "number": "%s" } },
                       { "kind": "consistent" } ] }
-                """.formatted(vakTimeline, JAAR, HALF, verwacht));
+                """.formatted(vakTimeline, JAAR, HALF, expected));
     }
 
     private static JsonNode inconsistent(String rule) throws Exception {

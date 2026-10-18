@@ -57,7 +57,7 @@ class DrlTextWitnessTest {
 
     /** One case: a golden, its case file, the form of the text the case reaches, and the instance whose link the case
      *  leaves out with the role it lacks. */
-    private record Case(String golden, String caseFileName, Pattern vorm, String label, String rol) {}
+    private record Case(String golden, String caseFileName, Pattern form, String label, String role) {}
 
     @Test void a_missing_link_in_a_binding_and_in_a_field_test() throws Exception {
         List<Case> cases = List.of(
@@ -68,32 +68,32 @@ class DrlTextWitnessTest {
                 new Case("synth-gehelejaarkenmerk", "case1-geen-koppeling.json", PATH_IN_BINDING, "S1", "werf"),
                 new Case("anchor/jutterswet-kustwacht", "case2.json", PATH_IN_FIELD_TEST, "W3", "post"),
                 new Case("jutterswet-gehele-periode-leeg", "case1-geheel-leeg.json", PATH_IN_FIELD_TEST, "S2", "werf"));
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         for (Case g : cases) {
             Path ir = GOLDEN.resolve(g.golden()).resolve("ir.json");
             JsonNode caseDocument = JSON.readTree(GOLDEN.resolve(g.golden()).resolve(g.caseFileName()).toFile());
             String text = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
-            if (!g.vorm().matcher(text).find()) fouten.add(g + ": de tekst heeft de vorm niet");
-            if (!withoutLink(caseDocument, g)) fouten.add(g + ": de case geeft de link");
+            if (!g.form().matcher(text).find()) faults.add(g + ": de tekst heeft de vorm niet");
+            if (!withoutLink(caseDocument, g)) faults.add(g + ": de case geeft de link");
             String outcome = CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.DRL_TEXT);
-            if (outcome != null) fouten.add(g.golden() + " " + g.caseFileName() + ": " + outcome);
+            if (outcome != null) faults.add(g.golden() + " " + g.caseFileName() + ": " + outcome);
         }
-        assertEquals(List.of(), fouten);
+        assertEquals(List.of(), faults);
     }
 
-    /** Whether the case leaves out the link of {@code g}: the instance carries no role {@code g.rol()}, or, where that is
+    /** Whether the case leaves out the link of {@code g}: the instance carries no role {@code g.role()}, or, where that is
      *  null, no instance names the label in a role, the link held from the other end. */
     private static boolean withoutLink(JsonNode caseDocument, Case g) {
         for (JsonNode i : caseDocument.get("input").get("instances")) {
             JsonNode roles = i.get("roles");
-            if (g.rol() == null) {
+            if (g.role() == null) {
                 if (roles != null) for (JsonNode labels : roles) for (JsonNode l : labels)
                     if (l.asText().equals(g.label())) return false;
             } else if (i.get("label").asText().equals(g.label())) {
-                return roles == null || !roles.has(g.rol()) || roles.get(g.rol()).isEmpty();
+                return roles == null || !roles.has(g.role()) || roles.get(g.role()).isEmpty();
             }
         }
-        return g.rol() == null;
+        return g.role() == null;
     }
 
     /** The documents of {@code PropertyWitnessTest} and the cases of {@code eigenschap/spelling}, each case through
@@ -110,18 +110,18 @@ class DrlTextWitnessTest {
                 cases.add(new String[]{GOLDEN.resolve("jutterswet-sluimerwacht").resolve("ir.json").toString(),
                         casePath.toString()});
         }
-        List<String> fouten = new ArrayList<>();
+        List<String> faults = new ArrayList<>();
         for (String[] g : cases) {
             String outcome = CaseRunner.playCase(Path.of(g[0]), JSON.readTree(Path.of(g[1]).toFile()),
                     DroolsBackend.Branch.DRL_TEXT);
-            if (outcome != null) fouten.add(g[1] + ": " + outcome);
+            if (outcome != null) faults.add(g[1] + ": " + outcome);
         }
         assertEquals(9, cases.size(), "de cases van de documenten");
-        assertEquals(List.of(), fouten);
+        assertEquals(List.of(), faults);
     }
 
     /** The CLI's {@code --drl} replays through the branch: a golden plays, also one with day kinds, whose
-     *  predicates the build gives as the globals the text declares ({@code Build.dagsoortGlobalen}). <b>Red</b> on
+     *  predicates the build gives as the globals the text declares ({@code Build.dayKindGlobals}). <b>Red</b> on
      *  {@code 2704d81d}, before the day kinds of step 5: the branch, then behind {@code --drl-tms}, refused the golden
      *  with day kinds, "EXCLUDE drl-tms: een document met dagsoorten", and this test pinned that refusal. */
     @Test void the_flag_drl_plays_through_the_branch() throws Exception {
@@ -148,13 +148,13 @@ class DrlTextWitnessTest {
                 .matcher(b.drl());
         while (m.find()) declared.add(m.group(1));
         assertTrue(!declared.isEmpty(), "de tekst declareert de global van een dagsoort");
-        assertEquals(declared, new java.util.TreeSet<>(b.dagsoortGlobalen().keySet()));
+        assertEquals(declared, new java.util.TreeSet<>(b.dayKindGlobals().keySet()));
     }
 
     /**
      * Two day kinds whose predicates differ on the dates the case reaches (round 5b, on the lens of round 5), so that a
      * text that swaps two predicates cannot pass. On the DRL-text branch the predicate of a day kind is a global of the
-     * text, which the session sets by its name from {@code Build.dagsoortGlobalen}; the test of the names alone
+     * text, which the session sets by its name from {@code Build.dayKindGlobals}; the test of the names alone
      * ({@link #the_flag_drl_plays_through_the_branch}) passes with a swapped pair. The document
      * {@code src/test/resources/dagsoorten/twee-dagsoorten} is {@code jutterswet-getijklok} with a second day kind
      * beside the springtijdag (day 1 or 15 of the month): the doodtijdag (day 8 or 22), with a doodtermijn in
@@ -176,7 +176,7 @@ class DrlTextWitnessTest {
         Path ir = map.resolve("ir.json");
         JsonNode caseDocument = JSON.readTree(map.resolve("case.json").toFile());
         Map<String, Predicate<LocalDate>> predicates =
-                DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).dagsoortGlobalen();
+                DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).dayKindGlobals();
         assertEquals(Set.of("rsDagsoort_Springtijdag", "rsDagsoort_Doodtijdag"), predicates.keySet(),
                 "de predicaatglobals van de tekst");
         LocalDate fifteen = LocalDate.of(2026, 3, 15), twentyTwo = LocalDate.of(2026, 3, 22);

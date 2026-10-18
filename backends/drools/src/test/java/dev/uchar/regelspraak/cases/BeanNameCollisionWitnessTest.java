@@ -61,11 +61,11 @@ class BeanNameCollisionWitnessTest {
         // the shape first reported: a type written as one word, declared first, and its subtype as three
         // words; the subtype's class then extends itself ("cyclic inheritance")
         ObjectNode ir = ir(PREMIERECHT);
-        ObjectNode parent = objecttype(ir, "RechtOpPremie", null);
-        parent.set("attributes", lijst("{\"node\":\"Attribute\",\"name\":\"grondslag\",\"datatype\":" + WHOLE + "}"));
-        ArrayNode typen = IrPath.modelList(ir, "objectTypes");
-        typen.remove(typen.size() - 1);
-        typen.insert(0, parent);
+        ObjectNode parent = objectType(ir, "RechtOpPremie", null);
+        parent.set("attributes", list("{\"node\":\"Attribute\",\"name\":\"grondslag\",\"datatype\":" + WHOLE + "}"));
+        ArrayNode types = IrPath.modelList(ir, "objectTypes");
+        types.remove(types.size() - 1);
+        types.insert(0, parent);
         IrPath.objectType(ir, "Recht op premie").put("supertype", "RechtOpPremie");
         refused(write(ir), goldenCase(PREMIERECHT),
                 "beannaambotsing", "'Recht op premie'", "'RechtOpPremie'", "dev.uchar.regelspraak.facts.RechtOpPremie");
@@ -73,8 +73,8 @@ class BeanNameCollisionWitnessTest {
 
     @Test void two_separate_object_types_on_a_class_are_refused_by_name() throws Exception {
         ObjectNode ir = ir(PREMIERECHT);
-        objecttype(ir, "RechtOpPremie", null).set("attributes",
-                lijst("{\"node\":\"Attribute\",\"name\":\"grondslag\",\"datatype\":" + WHOLE + "}"));
+        objectType(ir, "RechtOpPremie", null).set("attributes",
+                list("{\"node\":\"Attribute\",\"name\":\"grondslag\",\"datatype\":" + WHOLE + "}"));
         refused(write(ir), goldenCase(PREMIERECHT),
                 "beannaambotsing", "'Recht op premie'", "'RechtOpPremie'", "dev.uchar.regelspraak.facts.RechtOpPremie");
     }
@@ -106,15 +106,15 @@ class BeanNameCollisionWitnessTest {
 
     @Test void an_object_type_with_the_name_of_a_helper_class_is_refused_by_name() throws Exception {
         ObjectNode ir = ir(PREMIERECHT);
-        objecttype(ir, "Segment", null).set("attributes",
-                lijst("{\"node\":\"Attribute\",\"name\":\"lengte\",\"datatype\":" + WHOLE + "}"));
+        objectType(ir, "Segment", null).set("attributes",
+                list("{\"node\":\"Attribute\",\"name\":\"lengte\",\"datatype\":" + WHOLE + "}"));
         refused(write(ir), goldenCase(PREMIERECHT),
                 "beannaambotsing", "'Segment'", "dev.uchar.regelspraak.facts.Segment", "hulpklasse");
     }
 
     @Test void an_object_type_with_the_name_of_a_java_lang_type_is_refused_by_name() throws Exception {
         ObjectNode ir = ir(PREMIERECHT);
-        objecttype(ir, "String", null);
+        objectType(ir, "String", null);
         refused(write(ir), goldenCase(PREMIERECHT),
                 "beannaambotsing", "'String'", "dev.uchar.regelspraak.facts.String", "java.lang.String");
     }
@@ -189,7 +189,7 @@ class BeanNameCollisionWitnessTest {
         // property of the Strandjutter bean; the ancestor's declaration keeps it, and the subtype's
         // initialisation wrote into the inherited value
         ObjectNode ir = ir(PREMIERECHT);
-        objecttype(ir, "Strandjutter", "Jutter").set("attributes", lijst("{\"node\":\"Attribute\","
+        objectType(ir, "Strandjutter", "Jutter").set("attributes", list("{\"node\":\"Attribute\","
                 + "\"name\":\"aantal-toegekende rechten\",\"datatype\":" + WHOLE + "}"));
         IrPath.rulesList(ir, "rules").add(JSON.readTree(IrPath.regel("beginstand van een strandjutter", "INITIALISATIE",
                 "{\"node\":\"AttributeReference\",\"attribute\":\"aantal-toegekende rechten\",\"subjectType\":\"Strandjutter\","
@@ -281,15 +281,15 @@ class BeanNameCollisionWitnessTest {
         // leden() subtracted the DIRECT supertype's own members only, so a grandchild re-derived the role field its
         // grandparent already declares and hid it with a field of its own; the subtraction is over the chain now
         ObjectNode ir = ir(PREMIERECHT);
-        objecttype(ir, "Wrakrecht op premie", "Recht op premie");
-        objecttype(ir, "Diep wrakrecht op premie", "Wrakrecht op premie");
+        objectType(ir, "Wrakrecht op premie", "Recht op premie");
+        objectType(ir, "Diep wrakrecht op premie", "Wrakrecht op premie");
         RegelSpraakModel m = IrLoader.loadAll(ir).model();
-        var grandchild = m.objecttypeOpNaam("Diep wrakrecht op premie");
-        assertTrue(FactModelGenerator.members(m, m.objecttypeOpNaam("Recht op premie")).stream()
+        var grandchild = m.objectTypeByName("Diep wrakrecht op premie");
+        assertTrue(FactModelGenerator.members(m, m.objectTypeByName("Recht op premie")).stream()
                 .anyMatch(l -> l.property().equals("rechthebbende")), "the grandparent declares the field");
         assertFalse(FactModelGenerator.members(m, grandchild).stream().anyMatch(l -> l.property().equals("rechthebbende")),
                 "the grandchild inherits it and declares no second one: " + FactModelGenerator.members(m, grandchild));
-        assertTrue(FactModelGenerator.hasReferenceField(m, grandchild, "rechthebbende", m.objecttypeOpNaam("Jutter")),
+        assertTrue(FactModelGenerator.hasReferenceField(m, grandchild, "rechthebbende", m.objectTypeByName("Jutter")),
                 "and still carries it");
     }
 
@@ -339,7 +339,7 @@ class BeanNameCollisionWitnessTest {
     }
 
     /** A new object type appended to the document, with no members; {@code supertype} may be null. */
-    private static ObjectNode objecttype(ObjectNode ir, String naam, String supertype) {
+    private static ObjectNode objectType(ObjectNode ir, String naam, String supertype) {
         ObjectNode ot = IrPath.modelList(ir, "objectTypes").addObject();
         ot.put("node", "ObjectType").put("name", naam).put("animate", false);
         if (supertype != null) ot.put("supertype", supertype);
@@ -348,7 +348,7 @@ class BeanNameCollisionWitnessTest {
         return ot;
     }
 
-    private static ArrayNode lijst(String... elements) throws Exception {
+    private static ArrayNode list(String... elements) throws Exception {
         ArrayNode a = JSON.createArrayNode();
         for (String e : elements) a.add(JSON.readTree(e));
         return a;

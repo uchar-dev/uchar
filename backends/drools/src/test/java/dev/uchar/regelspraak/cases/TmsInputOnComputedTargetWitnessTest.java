@@ -16,14 +16,14 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,8 +61,8 @@ class TmsInputOnComputedTargetWitnessTest {
             computingRule("uitkering", "BEREKENING", "Vondst", "uitkering",
                     binary("plus", ownRead("bergloon", "Vondst"), number("5")), "null"));
 
-    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("taxatie", WHOLE), attribuut("bergloon", WHOLE), attribuut("uitkering", WHOLE)),
+    private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("taxatie", WHOLE), attribute("bergloon", WHOLE), attribute("uitkering", WHOLE)),
             List.of())), List.of());
 
     @Test void both_orders_of_the_rules_in_the_document() throws Exception {
@@ -90,8 +90,8 @@ class TmsInputOnComputedTargetWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of(), Map.of()),
                         instance("V2", "Vondst", Map.of("bergloon", "7"), List.of(), Map.of())),
-                List.of(waarde("V1", "bergloon", "30"), waarde("V1", "uitkering", "35"), waarde("V2", "bergloon", null),
-                        waarde("V2", "uitkering", "5")));
+                List.of(value("V1", "bergloon", "30"), value("V1", "uitkering", "35"), value("V2", "bergloon", null),
+                        value("V2", "uitkering", "5")));
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(List.of(RULES.get(0), RULES.get(1), initialisatie))) {
             List<String> names = names(order);
@@ -106,56 +106,56 @@ class TmsInputOnComputedTargetWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(4, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(4, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int outOfTheInput = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 40))
-            if (vuur(b, order)) outOfTheInput++;
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 40))
+            if (fire(b, order)) outOfTheInput++;
         assertTrue(outOfTheInput > 0, "geen volgorde berekende de uitkering van V1 uit de invoer");
     }
 
     /** Fires V1, V2 and V3 with the rules in {@code order}, writes back, checks the beans, and says whether the
      *  uitkering rule fired on V1 over the input standing of its bergloon, which the derived value replaces. */
-    private static boolean vuur(DroolsBackend.Build b, List<Rule> order) throws Exception {
+    private static boolean fire(DroolsBackend.Build b, List<Rule> order) throws Exception {
         List<String> names = order.stream().map(Rule::getName).toList();
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocuments.kieBase(b, order).newKieSession();
+        KieSession session = TmsDocuments.kieBase(b, order).newKieSession();
         try {
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of());
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("bergloon", "7"), List.of());
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
             boolean[] outOfTheInput = {false};
-            sessie.addEventListener(new DefaultAgendaEventListener() {
+            session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("uitkering")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s && s.onderwerp() == v1
-                                    && new BigDecimal("7").equals(s.waarde())))
+                                    && new BigDecimal("7").equals(s.value())))
                         outOfTheInput[0] = true;
                 }
             });
-            sessie.insert(v1);
-            sessie.insert(v2);
-            sessie.insert(v3);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + names);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            session.insert(v1);
+            session.insert(v2);
+            session.insert(v3);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), () -> "geen fixpunt in volgorde " + names);
+            DroolsBackend.setDerivedValues(b, session);
             String where = " in volgorde " + names;
-            assertNumber("30", TmsDocuments.lees(v1, "bergloon"), "V1 bergloon" + where);
-            assertNumber("35", TmsDocuments.lees(v1, "uitkering"), "V1 uitkering" + where);
-            assertNumber("7", TmsDocuments.lees(v2, "bergloon"), "V2 bergloon" + where);
-            assertNumber("12", TmsDocuments.lees(v2, "uitkering"), "V2 uitkering" + where);
-            assertNull(TmsDocuments.lees(v3, "bergloon"), "V3 bergloon" + where);
-            assertNumber("5", TmsDocuments.lees(v3, "uitkering"), "V3 uitkering" + where);
+            assertNumber("30", TmsDocuments.read(v1, "bergloon"), "V1 bergloon" + where);
+            assertNumber("35", TmsDocuments.read(v1, "uitkering"), "V1 uitkering" + where);
+            assertNumber("7", TmsDocuments.read(v2, "bergloon"), "V2 bergloon" + where);
+            assertNumber("12", TmsDocuments.read(v2, "uitkering"), "V2 uitkering" + where);
+            assertNull(TmsDocuments.read(v3, "bergloon"), "V3 bergloon" + where);
+            assertNumber("5", TmsDocuments.read(v3, "uitkering"), "V3 uitkering" + where);
             return outOfTheInput[0];
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
-    private static void assertNumber(String verwacht, Object werkelijk, String description) {
-        assertTrue(werkelijk instanceof BigDecimal w && new BigDecimal(verwacht).compareTo(w) == 0,
-                () -> description + ": verwacht " + verwacht + ", werkelijk " + werkelijk);
+    private static void assertNumber(String expected, Object actual, String description) {
+        assertTrue(actual instanceof BigDecimal w && new BigDecimal(expected).compareTo(w) == 0,
+                () -> description + ": verwacht " + expected + ", werkelijk " + actual);
     }
 
     private static JsonNode caseDocument() throws Exception {
@@ -163,9 +163,9 @@ class TmsInputOnComputedTargetWitnessTest {
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of(), Map.of()),
                         instance("V2", "Vondst", Map.of("bergloon", "7"), List.of(), Map.of()),
                         instance("V3", "Vondst", Map.of(), List.of(), Map.of())),
-                List.of(waarde("V1", "bergloon", "30"), waarde("V1", "uitkering", "35"),
-                        waarde("V2", "bergloon", "7"), waarde("V2", "uitkering", "12"),
-                        waarde("V3", "bergloon", null), waarde("V3", "uitkering", "5")));
+                List.of(value("V1", "bergloon", "30"), value("V1", "uitkering", "35"),
+                        value("V2", "bergloon", "7"), value("V2", "uitkering", "12"),
+                        value("V3", "bergloon", null), value("V3", "uitkering", "5")));
     }
 
     private static List<String> names(List<String> rules) throws Exception {

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * ch. 4, the datatype union of ch. 2.4, the two parts of a text composition — and it can fail to load here in two
  * ways. A member of the union that has no record in this backend is a form it does not carry: a per-form
  * {@link IrLoader.Refusal}, which the differential gate files as a reason-carrying exclusion. Any other name is no node
- * of this format: an {@link IrLoader.Documentfout} at the discriminator's pointer, in the shared OCaml loader's
+ * of this format: an {@link IrLoader.DocumentError} at the discriminator's pointer, in the shared OCaml loader's
  * sentence ({@code unknown expr node "<v>"} and its three siblings), where the verifier, ref and the ASP backend stop
  * at load with the same sentence at the same pointer. Until the L5 landing's fix round every such name was a Refusal:
  * {@code RuleStatusCheck} at a condition position read {@code Conditie:RuleStatusCheck (unknown condition node)},
@@ -83,7 +83,7 @@ class UnknownNodeWitnessTest {
         // a type annotation reads the same union: the literal's type at the value position
         ObjectNode doc = golden();
         node(doc, W + "/type").put("node", "Decimal");
-        IrLoader.Documentfout e = refuses(doc, "Decimal as a type annotation");
+        IrLoader.DocumentError e = refuses(doc, "Decimal as a type annotation");
         assertEquals(W + "/type/node", e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": unknown datatype node \"Decimal\""), e.getMessage());
     }
@@ -114,9 +114,9 @@ class UnknownNodeWitnessTest {
                     if (!(t instanceof IrLoader.Refusal r)) throw new AssertionError("expected the form refusal, " + what);
                     assertEquals(u.formPrefix() + name, r.form(), what);
                 } else {
-                    assertTrue(t == null || t instanceof IrLoader.Documentfout || t instanceof IrLoader.Refusal, what);
+                    assertTrue(t == null || t instanceof IrLoader.DocumentError || t instanceof IrLoader.Refusal, what);
                     assertTrue(!(t instanceof IrLoader.Refusal r) || !r.form().equals(u.formPrefix() + name), what);
-                    assertTrue(!(t instanceof IrLoader.Documentfout) || !t.getMessage().endsWith(sentence(u, name)), what);
+                    assertTrue(!(t instanceof IrLoader.DocumentError) || !t.getMessage().endsWith(sentence(u, name)), what);
                 }
                 members++;
             }
@@ -143,7 +143,7 @@ class UnknownNodeWitnessTest {
     }
 
     private static void unknown(Union u, String name, ObjectNode doc) {
-        IrLoader.Documentfout e = refuses(doc, u.def() + " " + name);
+        IrLoader.DocumentError e = refuses(doc, u.def() + " " + name);
         assertEquals(u.path() + "/node", e.site(), name + ": " + e.getMessage());
         assertTrue(e.getMessage().endsWith(sentence(u, name)), name + ": " + e.getMessage());
     }
@@ -172,10 +172,10 @@ class UnknownNodeWitnessTest {
         }
     }
 
-    private static IrLoader.Documentfout refuses(JsonNode doc, String what) {
+    private static IrLoader.DocumentError refuses(JsonNode doc, String what) {
         try {
             IrLoader.loadAll(doc);
-        } catch (IrLoader.Documentfout f) {
+        } catch (IrLoader.DocumentError f) {
             return f;
         } catch (IrLoader.Refusal r) {
             fail(what + ": verwacht een documentfout, kreeg een weigering van de vorm: " + r.getMessage());

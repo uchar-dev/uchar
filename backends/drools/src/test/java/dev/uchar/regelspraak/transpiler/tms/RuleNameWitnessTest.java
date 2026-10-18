@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.plan.Modelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.RulePlan;
 
@@ -50,7 +50,7 @@ class RuleNameWitnessTest {
         for (String naam : NAMES) {
             String text = DrlRendering.text(new Modelplan(plan.globals(), List.of(renamed(regel, naam))));
             List<String> read = new ArrayList<>();
-            for (Rule r : bouw(text, b.beanLoader()).getKiePackage(TmsTranspiler.PKG).getRules())
+            for (Rule r : build(text, b.beanLoader()).getKiePackage(TmsTranspiler.PKG).getRules())
                 read.add(Namen.drlString(r.getName()));
             if (!read.equals(List.of(Namen.drlString(naam)))) differences.add(Namen.drlString(naam) + " -> " + read);
         }
@@ -87,11 +87,11 @@ class RuleNameWitnessTest {
     }
 
     private static RulePlan renamed(RulePlan p, String naam) {
-        return new RulePlan(naam, p.vorm(), p.agendaGroup(), p.lezingen(), p.leftSide(), p.consequence());
+        return new RulePlan(naam, p.form(), p.agendaGroup(), p.readings(), p.leftSide(), p.consequence());
     }
 
     /** The KieBase of {@code text}, built as {@code DrlRenderingWitnessTest.compile} compiles it. */
-    static KieBase bouw(String text, ClassLoader beans) {
+    static KieBase build(String text, ClassLoader beans) {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(beans);
         try {
@@ -99,9 +99,9 @@ class RuleNameWitnessTest {
             helper.setClassLoader(beans);
             helper.addContent(text, DrlRendering.PATH);
             Results result = helper.verify();
-            List<String> fouten = new ArrayList<>();
-            for (Message m : result.getMessages(Message.Level.ERROR)) fouten.add(m.getText());
-            assertEquals(List.of(), fouten, () -> "de tekst compileert niet:\n" + text);
+            List<String> faults = new ArrayList<>();
+            for (Message m : result.getMessages(Message.Level.ERROR)) faults.add(m.getText());
+            assertEquals(List.of(), faults, () -> "de tekst compileert niet:\n" + text);
             return helper.build(EqualityBehaviorOption.EQUALITY);
         } finally {
             Thread.currentThread().setContextClassLoader(previous);

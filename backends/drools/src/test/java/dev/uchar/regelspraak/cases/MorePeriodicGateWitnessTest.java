@@ -8,8 +8,8 @@ import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.kern.Timelines;
+import dev.uchar.regelspraak.transpiler.core.Coverage;
+import dev.uchar.regelspraak.transpiler.core.Timelines;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
@@ -182,7 +182,7 @@ class MorePeriodicGateWitnessTest {
                 "het probe-document moet de §8.2-vergelijking nog emitteren, anders is de gelijkheid hieronder leeg");
         assertEquals(drl, drlText(keurploeg, with),
                 "de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek met en zonder de sleutel");
-        assertEquals(dekking(keurploeg, without), dekking(keurploeg, with),
+        assertEquals(coverage(keurploeg, without), coverage(keurploeg, with),
                 "en de dekking van de exec-model-tak eveneens");
     }
 
@@ -194,17 +194,17 @@ class MorePeriodicGateWitnessTest {
         // the one sentence of the analysis they render (until card drl-teksttak-op-truth-maintenance the DRL-text
         // branch refused it in sentences of its own lowering: "§8.2 gehele-periode" and "meer-periodieke temporele
         // toekenning (§13.3.6.7)").
-        Path kenmerk = withCount(WHOLE_YEAR_CHARACTERISTIC, "Werf", "characteristics", "bedrijvig", 2);
-        assertTrue(tmsReason(kenmerk, WHOLE_YEAR_CHARACTERISTIC).contains("regel: toeslag van een schuit — een CharacteristicCheck"
+        Path characteristic = withCount(WHOLE_YEAR_CHARACTERISTIC, "Werf", "characteristics", "bedrijvig", 2);
+        assertTrue(tmsReason(characteristic, WHOLE_YEAR_CHARACTERISTIC).contains("regel: toeslag van een schuit — een CharacteristicCheck"
                         + " met wholePeriod ('de werf van de Schuit gedurende het gehele jaar bedrijvig is') over het kenmerk"
                         + " 'bedrijvig' van Werf op een raster van meer perioden, dat geen bewerking draagt"),
-                tmsReason(kenmerk, WHOLE_YEAR_CHARACTERISTIC));
-        assertEquals(tmsReason(kenmerk, WHOLE_YEAR_CHARACTERISTIC), drlReason(kenmerk, WHOLE_YEAR_CHARACTERISTIC));
+                tmsReason(characteristic, WHOLE_YEAR_CHARACTERISTIC));
+        assertEquals(tmsReason(characteristic, WHOLE_YEAR_CHARACTERISTIC), drlReason(characteristic, WHOLE_YEAR_CHARACTERISTIC));
 
-        Path attribuut = withCount(CLIPPRORATA, "Jutter", "attributes", "borgdeel", 2);
-        assertTrue(tmsReason(attribuut, CLIPPRORATA).contains("op een raster van meer perioden, dat geen bewerking draagt"),
-                tmsReason(attribuut, CLIPPRORATA));
-        assertEquals(tmsReason(attribuut, CLIPPRORATA), drlReason(attribuut, CLIPPRORATA));
+        Path attribute = withCount(CLIPPRORATA, "Jutter", "attributes", "borgdeel", 2);
+        assertTrue(tmsReason(attribute, CLIPPRORATA).contains("op een raster van meer perioden, dat geen bewerking draagt"),
+                tmsReason(attribute, CLIPPRORATA));
+        assertEquals(tmsReason(attribute, CLIPPRORATA), drlReason(attribute, CLIPPRORATA));
     }
 
     // ---------------- fixtures ----------------
@@ -266,17 +266,17 @@ class MorePeriodicGateWitnessTest {
     /** The golden's ir.json with ONE member's period count written explicitly on its timeline facet; {@code leden}
      *  names the member list, {@code attributes} or {@code characteristics}. Since M1 a facet always carries its
      *  count, so for 1 this restates what the golden writes; the guard that the facet is there stays. */
-    private static Path withCount(String golden, String objecttype, String members, String memberName, int aantal) throws Exception {
+    private static Path withCount(String golden, String objectType, String members, String memberName, int count) throws Exception {
         ObjectNode d = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
-        ObjectNode ot = IrPath.objectType(d, objecttype);
+        ObjectNode ot = IrPath.objectType(d, objectType);
         ObjectNode member = switch (members) {
             case "attributes" -> IrPath.attribute(ot, memberName);
             case "characteristics" -> IrPath.characteristic(ot, memberName);
             default -> throw new IllegalArgumentException("no member list '" + members + "'");
         };
-        assertTrue(member.path("timeline").isObject(), golden + ": " + objecttype + "." + memberName + " carries a timeline facet");
-        ((ObjectNode) member.get("timeline")).put("count", aantal);
-        return temporary(golden + "-" + memberName + "-" + aantal, d);
+        assertTrue(member.path("timeline").isObject(), golden + ": " + objectType + "." + memberName + " carries a timeline facet");
+        ((ObjectNode) member.get("timeline")).put("count", count);
+        return temporary(golden + "-" + memberName + "-" + count, d);
     }
 
     private static Path temporary(String naam, JsonNode d) throws Exception {
@@ -292,7 +292,7 @@ class MorePeriodicGateWitnessTest {
         IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
         RegelSpraakModel model = loaded.model();
         intervention.accept(model);
-        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.genereer(model));
+        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(model));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
@@ -305,18 +305,18 @@ class MorePeriodicGateWitnessTest {
 
     /** The exec-model branch's coverage manifest for a document, as comparable text; {@code intervention} edits
      *  the loaded model first. */
-    private static List<String> dekking(Path irPath, java.util.function.Consumer<RegelSpraakModel> intervention) throws Exception {
+    private static List<String> coverage(Path irPath, java.util.function.Consumer<RegelSpraakModel> intervention) throws Exception {
         IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
         RegelSpraakModel model = loaded.model();
         intervention.accept(model);
-        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.genereer(model));
+        ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(model));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
                     loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
             List<String> out = new ArrayList<>();
-            for (Dekking d : et.dekking()) out.add(d.verdict() + " " + d.sleutel() + " — " + d.reden());
+            for (Coverage d : et.coverage()) out.add(d.verdict() + " " + d.key() + " — " + d.reason());
             return out;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);

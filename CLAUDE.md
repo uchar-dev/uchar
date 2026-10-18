@@ -412,7 +412,7 @@ reviewer's duty on a machine that has catala. Current gates:
     it.
 
 15. `scripts/check-graaf.sh` — the rule graph of the Drools backend
-    (`backends/drools/.../graaf/`, a reading of the IR the distribution's
+    (`backends/drools/.../graph/`, a reading of the IR the distribution's
     scope analysis consumes; card `graaf-samenvoeging-en-gate`, 2026-09-26)
     holds to IR-SPEC ch. 5. SPEC LEG: the graph is built for every golden
     from its `ir.json` through the loader — never from the source — and

@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulation;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alpha;
@@ -110,9 +110,9 @@ final class PatternDslRendering {
      */
     @SuppressWarnings("rawtypes")
     static Rule regel(RulePlan plan, Function<String, Global<?>> globals) {
-        PatternDslRendering w = new PatternDslRendering(plan.lezingen());
+        PatternDslRendering w = new PatternDslRendering(plan.readings());
         List<RuleItemBuilder<?>> items = new ArrayList<>();
-        for (LhsItem item : plan.leftSide()) items.add(w.weergave(item));
+        for (LhsItem item : plan.leftSide()) items.add(w.rendering(item));
         items.add(w.consequence(plan.consequence(), globals));
         org.drools.model.impl.RuleBuilder b = PatternDSL.rule(TmsTranspiler.PKG, plan.naam());
         if (plan.agendaGroup() != null) b = b.attribute(Rule.Attribute.AGENDA_GROUP, plan.agendaGroup());
@@ -120,7 +120,7 @@ final class PatternDslRendering {
     }
 
     /** The rendering of {@code item} of a whole plan. */
-    private RuleItemBuilder<?> weergave(LhsItem item) {
+    private RuleItemBuilder<?> rendering(LhsItem item) {
         return switch (item) {
             case Subject o -> onderwerp(o);
             case FactPattern p -> {
@@ -148,7 +148,7 @@ final class PatternDslRendering {
         for (Alpha a : o.alpha()) def = def.expr(a.id(), predicate(o.beanClass(), a));
         for (Join j : o.joins()) def = join(def, o.beanClass(), j);
         for (BetaTest t : o.betaTests()) def = betaTest(def, t);
-        for (Binding b : o.bindings()) def = def.bind(bind(b.doel()), reader(b));
+        for (Binding b : o.bindings()) def = def.bind(bind(b.target()), reader(b));
         return def;
     }
 
@@ -164,73 +164,73 @@ final class PatternDslRendering {
     @SuppressWarnings("rawtypes")
     private RuleItemBuilder<?> consequence(Consequence g, Function<String, Global<?>> globals) {
         return switch (g) {
-            case Consequence.Value x -> waarde(x);
+            case Consequence.Value x -> value(x);
             case Consequence.Characteristic x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new HasCharacteristic(a[0], x.kenmerk())));
+                    insert(drools, x.insertion(), new HasCharacteristic(a[0], x.characteristic())));
             case Consequence.TestFault x -> testFault(x);
-            case Consequence.Fout x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new Fout(a[0], x.fout().vorm(),
-                            ComputeHelpers.computeFault(x.sentence(), x.fout().regel()))));
+            case Consequence.Fault x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+                    insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
+                            ComputeHelpers.computeFault(x.sentence(), x.fault().regel()))));
             case Consequence.Inconsistency x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), ComputeHelpers.inconsistency(x.vorm(), a[0])));
-            case Consequence.Schrijversconflict x ->
+                    insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), a[0])));
+            case Consequence.WritersConflict x ->
                     new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.waarden())}, (drools, a) ->
-                            voegIn(drools, x.insertion(), ComputeHelpers.writersConflict(a[0], a[1], x.attribuut(),
-                                    x.documentOrder(), x.typeClasses(), x.typen())));
+                            insert(drools, x.insertion(), ComputeHelpers.writersConflict(a[0], a[1], x.attribute(),
+                                    x.documentOrder(), x.typeClasses(), x.types())));
             case Consequence.InsertParameterState x -> new VariadicConsequence(new Variable[]{globals.apply(x.global())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new ParameterState(x.parameter(), a[0])));
+                    insert(drools, x.insertion(), new ParameterState(x.parameter(), a[0])));
             case Consequence.EvaluationDateState x -> new VariadicConsequence(new Variable[]{globals.apply(x.global())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new EvaluationDate((LocalDate) a[0])));
+                    insert(drools, x.insertion(), new EvaluationDate((LocalDate) a[0])));
             case Consequence.InsertCharacteristicState x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new CharacteristicState(a[0], x.kenmerk(), x.holds())));
-            case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.waarde())},
-                    (drools, a) -> voegIn(drools, x.insertion(), new State(a[0], x.attribuut(),
-                            x.emmerscalair() ? ComputeHelpers.bucketScalarOf(a[1]) : a[1])));
-            case Consequence.InsertPathState x -> x.bron() == Consequence.StateSource.MISSING_LINK
+                    insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(), x.holds())));
+            case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.value())},
+                    (drools, a) -> insert(drools, x.insertion(), new State(a[0], x.attribute(),
+                            x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1]) : a[1])));
+            case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
                     ? new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                            voegIn(drools, x.insertion(), new PathState(a[0], x.pad(), x.member(), null)))
-                    : new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.waarde())}, (drools, a) ->
-                            voegIn(drools, x.insertion(), new PathState(a[0], x.pad(), x.member(), a[1])));
+                            insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null)))
+                    : new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.value())}, (drools, a) ->
+                            insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), a[1])));
             case Consequence.UniquenessKey x -> uniquenessKey(x);
             case Consequence.UniquenessViolation x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new UniquenessViolation(x.uniqueness(), a[0])));
-            case Consequence.Invoervormfout x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new Fout(a[0], x.fout().vorm(),
-                            ComputeHelpers.inputFormFault(x.before(), a[0], x.after(), x.fout().regel()))));
+                    insert(drools, x.insertion(), new UniquenessViolation(x.uniqueness(), a[0])));
+            case Consequence.InputFormFault x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+                    insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
+                            ComputeHelpers.inputFormFault(x.before(), a[0], x.after(), x.fault().regel()))));
             case Consequence.InsertChannelState x -> new VariadicConsequence(new Variable[0], (drools, a) ->
-                    voegIn(drools, x.insertion(), new ChannelState(x.producer(), x.inconsistent())));
-            case Consequence.Recipient x -> consequentie(x.onderwerp(), slotsOf(x.recipient(), x.weight(), x.sleutel(),
-                    x.maximum()), (drools, bron, w) -> voegIn(drools, x.insertion(), new Recipient(x.allocation(), bron,
-                    w[x.recipient()], lees(w, x.weight()), lees(w, x.sleutel()), lees(w, x.maximum()))));
+                    insert(drools, x.insertion(), new ChannelState(x.producer(), x.inconsistent())));
+            case Consequence.Recipient x -> consequenceItem(x.onderwerp(), slotsOf(x.recipient(), x.weight(), x.key(),
+                    x.maximum()), (drools, source, w) -> insert(drools, x.insertion(), new Recipient(x.allocation(), source,
+                    w[x.recipient()], read(w, x.weight()), read(w, x.key()), read(w, x.maximum()))));
             case Consequence.Contribution x -> contribution(x);
-            case Consequence.FilterDeposit x -> consequentie(x.onderwerp(), slotsOf(x.member()), (drools, carrier, w) ->
-                    voegIn(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()])));
+            case Consequence.FilterDeposit x -> consequenceItem(x.onderwerp(), slotsOf(x.member()), (drools, carrier, w) ->
+                    insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()])));
             case Consequence.FilterFault x -> filterFault(x);
-            case Consequence.MemberFault x -> consequentie(x.onderwerp(), slotsOf(placeSlots(x.member(), x.place())),
+            case Consequence.MemberFault x -> consequenceItem(x.onderwerp(), slotsOf(placeSlots(x.member(), x.place())),
                     (drools, carrier, w) -> {
                         List<Integer> place = foldPlace(x.place(), x.fold(), w[x.member()], w);
-                        voegIn(drools, x.insertion(), new MemberFault(x.fold(), carrier, w[x.member()],
+                        insert(drools, x.insertion(), new MemberFault(x.fold(), carrier, w[x.member()],
                                 ComputeHelpers.inputFormFault(x.before(), w[x.member()], x.after(), null), place));
                     });
-            case Consequence.Creation x -> creatie(x);
+            case Consequence.Creation x -> creation(x);
             case Consequence.RelationLink x -> x.phase() < 0
-                    ? new VariadicConsequence(new Variable[]{known(x.eerste()), known(x.tweede())}, (drools, a) ->
-                            voegIn(drools, x.insertion(), new RelationLink(x.relation(), a[0], a[1], 0)))
-                    : new VariadicConsequence(new Variable[]{known(x.eerste()), known(x.tweede()), variable(x.phase())},
-                            (drools, a) -> voegIn(drools, x.insertion(),
+                    ? new VariadicConsequence(new Variable[]{known(x.first()), known(x.second())}, (drools, a) ->
+                            insert(drools, x.insertion(), new RelationLink(x.relation(), a[0], a[1], 0)))
+                    : new VariadicConsequence(new Variable[]{known(x.first()), known(x.second()), variable(x.phase())},
+                            (drools, a) -> insert(drools, x.insertion(),
                                     new RelationLink(x.relation(), a[0], a[1], (Integer) a[2])));
             case Consequence.SecondFilling x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    voegIn(drools, x.insertion(), new Fout(a[0], x.relation(), new IllegalStateException(x.sentence()))));
+                    insert(drools, x.insertion(), new Fault(a[0], x.relation(), new IllegalStateException(x.sentence()))));
             case Consequence.Decision x -> decisionOf(x);
             case Consequence.Conflict x -> {
-                ValueFunction sleutel = ClosureRendering.valueFunction(x.sleutel());
-                yield consequentie(x.onderwerp(), x.slots(), x.size(), (drools, onderwerp, w) ->
-                        voegIn(drools, x.insertion(), stackFact(x.fact(), onderwerp, sleutel.van(w))));
+                ValueFunction key = ClosureRendering.valueFunction(x.key());
+                yield consequenceItem(x.onderwerp(), x.slots(), x.size(), (drools, onderwerp, w) ->
+                        insert(drools, x.insertion(), stackFact(x.fact(), onderwerp, key.van(w))));
             }
-            case Consequence.Payout x -> consequentie(x.onderwerp(), slotsOf(x.pot(), x.lijst()), (drools, bron, w) -> {
-                for (Object fact : ComputeHelpers.payout(x.vorm(), bron, x.methode(), w[x.pot()], w[x.lijst()],
+            case Consequence.Payout x -> consequenceItem(x.onderwerp(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
+                for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
                         x.gewogen(), x.capped(), x.descending(), x.decimals(), x.aandeel(), x.rest(), x.writer()))
-                    voegIn(drools, x.insertion(), fact);
+                    insert(drools, x.insertion(), fact);
             });
         };
     }
@@ -241,13 +241,13 @@ final class PatternDslRendering {
         List<ValueFunction> components = new ArrayList<>();
         for (Term t : g.components())
             components.add(ClosureRendering.valueFunction(t));
-        return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, element, w) -> {
+        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, element, w) -> {
             List<Object> waarden = new ArrayList<>(components.size());
             for (ValueFunction c : components) waarden.add(c.van(w));
             Object parent = g.scope() < 0 ? null : w[g.scope()];
-            for (UniquenessKey k : ComputeHelpers.uniquenessKeys(g.uniqueness(), g.bron(), element, parent, waarden,
+            for (UniquenessKey k : ComputeHelpers.uniquenessKeys(g.uniqueness(), g.source(), element, parent, waarden,
                     g.timeline()))
-                voegIn(drools, g.insertion(), k);
+                insert(drools, g.insertion(), k);
         });
     }
 
@@ -255,34 +255,34 @@ final class PatternDslRendering {
      *  of a quantifier fold says of it, its place first and the probe in its slot where the plan says so. */
     private RuleItemBuilder<?> contribution(Consequence.Contribution g) {
         return switch (g.input()) {
-            case Consequence.Input.Count t -> consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
-                    voegIn(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], null)));
-            case Consequence.Input.MemberValue l -> consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
-                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], w[l.waarde()], l.totaal(), l.filled());
-                if (b != null) voegIn(drools, g.insertion(), b);
+            case Consequence.Input.Count t -> consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
+                    insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], null)));
+            case Consequence.Input.MemberValue l -> consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
+                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], w[l.value()], l.total(), l.filled());
+                if (b != null) insert(drools, g.insertion(), b);
             });
             case Consequence.Input.Verdict o -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(o.matrix());
-                yield consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
-                        voegIn(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
+                yield consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
+                        insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
                                 ComputeHelpers.verdict(matrix.test(w)))));
             }
             case Consequence.Input.MemberTest t -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
-                yield consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
+                yield consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
                     List<Integer> place = foldPlace(t.place(), g.fold(), w[g.member()], w);
                     Object s = t.depositFlag() < 0 ? null : ComputeHelpers.depositFlag();
                     if (s != null) w[t.depositFlag()] = s;
                     Boolean holds = null;
-                    RuntimeException fout = null;
+                    RuntimeException fault = null;
                     try {
                         holds = matrix.test(w);
                     } catch (RuntimeException e) {
                         if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-                        fout = e;
+                        fault = e;
                     }
-                    voegIn(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
-                            new MemberTest(place, holds, fout, ComputeHelpers.reported(s))));
+                    insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
+                            new MemberTest(place, holds, fault, ComputeHelpers.reported(s))));
                 });
             }
         };
@@ -292,13 +292,13 @@ final class PatternDslRendering {
      *  place. */
     private RuleItemBuilder<?> filterFault(Consequence.FilterFault g) {
         Predicate<Object[]> filter = ClosureRendering.test(g.filter());
-        return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
-            RuntimeException fout = ClosureRendering.fout(filter, w);
-            if (fout == null)
+        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
+            RuntimeException fault = ClosureRendering.fault(filter, w);
+            if (fault == null)
                 throw new IllegalStateException("het filter van " + g.fold() + " faalde in de toets en niet in het gevolg,"
                         + " over dezelfde gebonden waarden");
             List<Integer> place = foldPlace(g.place(), g.fold(), w[g.member()], w);
-            voegIn(drools, g.insertion(), new FilterFault(g.fold(), carrier, w[g.member()], fout, place));
+            insert(drools, g.insertion(), new FilterFault(g.fold(), carrier, w[g.member()], fault, place));
         });
     }
 
@@ -308,11 +308,11 @@ final class PatternDslRendering {
         List<String> fields = new ArrayList<>();
         List<Object> counts = new ArrayList<>(), places = new ArrayList<>();
         for (Consequence.FoldPlace.Step s : p.steps()) {
-            fields.add(s.veld());
-            counts.add(w[s.aantal()]);
+            fields.add(s.field());
+            counts.add(w[s.count()]);
             places.add(w[s.place()]);
         }
-        return ComputeHelpers.foldPlace(p.reden(), fold, member, p.selection(), fields, counts, places);
+        return ComputeHelpers.foldPlace(p.reason(), fold, member, p.selection(), fields, counts, places);
     }
 
     /** The slot {@code lid} and the slots of the place {@code p}. */
@@ -320,7 +320,7 @@ final class PatternDslRendering {
         int[] out = new int[1 + 2 * p.steps().size()];
         out[0] = member;
         for (int i = 0; i < p.steps().size(); i++) {
-            out[1 + 2 * i] = p.steps().get(i).aantal();
+            out[1 + 2 * i] = p.steps().get(i).count();
             out[2 + 2 * i] = p.steps().get(i).place();
         }
         return out;
@@ -332,39 +332,39 @@ final class PatternDslRendering {
     }
 
     /** The value in slot {@code slot} of {@code w}, null for the slot -1. */
-    private static Object lees(Object[] w, int slot) {
+    private static Object read(Object[] w, int slot) {
         return slot < 0 ? null : w[slot];
     }
 
     /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array that
      *  reaches the last of them. */
-    private RuleItemBuilder<?> consequentie(String onderwerp, List<Integer> slots, ConsequenceFunction f) {
-        return consequentie(onderwerp, slots, slots.isEmpty() ? 0 : slots.get(slots.size() - 1) + 1, f);
+    private RuleItemBuilder<?> consequenceItem(String onderwerp, List<Integer> slots, ConsequenceFunction f) {
+        return consequenceItem(onderwerp, slots, slots.isEmpty() ? 0 : slots.get(slots.size() - 1) + 1, f);
     }
 
     /** The value of {@link Consequence.Value}: computed from the bound values, with its fault, its deposit and its leeg
      *  policy as the plan says. */
-    private RuleItemBuilder<?> waarde(Consequence.Value g) {
-        ValueFunction waarde = ClosureRendering.valueFunction(g.waarde());
+    private RuleItemBuilder<?> value(Consequence.Value g) {
+        ValueFunction value = ClosureRendering.valueFunction(g.value());
         Consequence.Deposit deposit = g.deposit();
-        return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
             // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
             Object v;
             try {
-                v = waarde.van(w);
+                v = value.van(w);
                 if (g.collapse()) v = ComputeHelpers.collapse(v);
             } catch (RuntimeException e) {
                 if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-                voegIn(drools, g.insertion(),
-                        new Fout(onderwerp, g.fout().vorm(), ComputeHelpers.designate(e, g.fout().regel())));
+                insert(drools, g.insertion(),
+                        new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(e, g.fault().regel())));
                 return;
             }
             if (ComputeHelpers.reported(s))
-                voegIn(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.vorm(), onderwerp));
+                insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), onderwerp));
             if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
-                voegIn(drools, g.insertion(), new Value(onderwerp, g.doel(), v, g.writer()));
+                insert(drools, g.insertion(), new Value(onderwerp, g.target(), v, g.writer()));
         });
     }
 
@@ -374,16 +374,16 @@ final class PatternDslRendering {
      * construction of the new bean, with the attribute initialisations whose value is gevuld set on it before it enters
      * working memory; then the insertions, in order.
      */
-    private RuleItemBuilder<?> creatie(Consequence.Creation g) {
+    private RuleItemBuilder<?> creation(Consequence.Creation g) {
         List<ValueFunction> waarden = new ArrayList<>();
-        for (Consequence.Initialisation i : g.initialisations()) waarden.add(ClosureRendering.valueFunction(i.waarde()));
+        for (Consequence.Initialisation i : g.initialisations()) waarden.add(ClosureRendering.valueFunction(i.value()));
         Consequence.Construction construction = g.construction();
         List<BiConsumer<Object, Object>> setters = new ArrayList<>();
         for (Consequence.Construction.Setting z : construction.settings())
-            setters.add(Accessors.eigenschapSetter(z.veld().javaClass(), z.veld().property()));
+            setters.add(Accessors.eigenschapSetter(z.field().javaClass(), z.field().property()));
         Consequence.CreationDepth d = g.depth();
-        return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
-            int depth = ComputeHelpers.creationDepth(g.creatie(), d.stratum(), d.type(), (List<?>) w[d.origin()],
+        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+            int depth = ComputeHelpers.creationDepth(g.creation(), d.stratum(), d.type(), (List<?>) w[d.origin()],
                     d.budget());
             Object[] v = new Object[waarden.size()];
             for (int i = 0; i < v.length; i++) {
@@ -391,28 +391,28 @@ final class PatternDslRendering {
                     v[i] = ComputeHelpers.collapse(waarden.get(i).van(w));
                 } catch (RuntimeException e) {
                     if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-                    voegIn(drools, g.faultInsertion(),
-                            new Fout(onderwerp, g.fout().vorm(), ComputeHelpers.designate(e, g.fout().regel())));
+                    insert(drools, g.faultInsertion(),
+                            new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(e, g.fault().regel())));
                     return;
                 }
             }
             Object fresh = newObject(construction.javaClass());
             for (int j = 0; j < setters.size(); j++) {
-                Object waarde = v[construction.settings().get(j).initialisatie()];
-                if (waarde != null) setters.get(j).accept(fresh, waarde);
+                Object value = v[construction.settings().get(j).initialisatie()];
+                if (value != null) setters.get(j).accept(fresh, value);
             }
             int phase = (Integer) w[g.phase()];
             for (Consequence.Insert i : g.insertions())
                 switch (i) {
-                    case Consequence.Insert.New n -> voegIn(drools, n.insertion(), fresh);
-                    case Consequence.Insert.Mark m -> voegIn(drools, m.insertion(),
-                            new CreationStamp(g.creatie(), onderwerp, fresh, phase, d.stratum(), depth));
-                    case Consequence.Insert.Link l -> voegIn(drools, l.insertion(), l.newIsFirst()
+                    case Consequence.Insert.New n -> insert(drools, n.insertion(), fresh);
+                    case Consequence.Insert.Mark m -> insert(drools, m.insertion(),
+                            new CreationStamp(g.creation(), onderwerp, fresh, phase, d.stratum(), depth));
+                    case Consequence.Insert.Link l -> insert(drools, l.insertion(), l.newIsFirst()
                             ? new RelationLink(l.relation(), fresh, onderwerp, phase)
                             : new RelationLink(l.relation(), onderwerp, fresh, phase));
                     case Consequence.Insert.Characteristic k -> {
                         if (Boolean.TRUE.equals(v[k.initialisatie()]))
-                            voegIn(drools, k.insertion(),
+                            insert(drools, k.insertion(),
                                     new HasCharacteristic(fresh, g.initialisations().get(k.initialisatie()).member()));
                     }
                 }
@@ -422,20 +422,20 @@ final class PatternDslRendering {
     /** The decision of {@link Consequence.Decision}: its value from the bound values, with its fault where the plan names
      *  one; nothing where the value is null; else the facts of the decision, in order. */
     private RuleItemBuilder<?> decisionOf(Consequence.Decision g) {
-        ValueFunction waarde = ClosureRendering.valueFunction(g.waarde());
-        return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+        ValueFunction value = ClosureRendering.valueFunction(g.value());
+        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
             Object v;
             try {
-                v = waarde.van(w);
+                v = value.van(w);
                 if (g.collapse()) v = ComputeHelpers.collapse(v);
             } catch (RuntimeException e) {
-                if (g.fout() == null || !ComputeHelpers.isEvaluationFault(e)) throw e;
-                voegIn(drools, g.insertion(),
-                        new Fout(onderwerp, g.fout().vorm(), ComputeHelpers.designate(e, g.fout().regel())));
+                if (g.fault() == null || !ComputeHelpers.isEvaluationFault(e)) throw e;
+                insert(drools, g.insertion(),
+                        new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(e, g.fault().regel())));
                 return;
             }
             if (v == null) return;
-            for (Consequence.StackFact f : g.facts()) voegIn(drools, g.insertion(), stackFact(f, onderwerp, v));
+            for (Consequence.StackFact f : g.facts()) insert(drools, g.insertion(), stackFact(f, onderwerp, v));
         });
     }
 
@@ -443,12 +443,12 @@ final class PatternDslRendering {
      *  conflict. */
     private static Object stackFact(Consequence.StackFact f, Object onderwerp, Object v) {
         return switch (f) {
-            case Consequence.StackFact.Value x -> new Value(onderwerp, x.doel(), v, x.writer());
-            case Consequence.StackFact.Characteristic x -> new HasCharacteristic(onderwerp, x.kenmerk());
+            case Consequence.StackFact.Value x -> new Value(onderwerp, x.target(), v, x.writer());
+            case Consequence.StackFact.Characteristic x -> new HasCharacteristic(onderwerp, x.characteristic());
             case Consequence.StackFact.Decides x -> new Decides(onderwerp, x.stack(), x.index());
-            case Consequence.StackFact.Outcome x -> x.soort() == Outcome.Kind.DECIDED
-                    ? new Outcome(onderwerp, x.stack(), x.chain(), x.positie(), Outcome.Kind.DECIDED, v, null)
-                    : new Outcome(onderwerp, x.stack(), x.chain(), x.positie(), Outcome.Kind.CONFLICT, null,
+            case Consequence.StackFact.Outcome x -> x.category() == Outcome.Kind.DECIDED
+                    ? new Outcome(onderwerp, x.stack(), x.chain(), x.position(), Outcome.Kind.DECIDED, v, null)
+                    : new Outcome(onderwerp, x.stack(), x.chain(), x.position(), Outcome.Kind.CONFLICT, null,
                             (String) v);
             case Consequence.StackFact.Inconsistency x -> ComputeHelpers.inconsistency((String) v, onderwerp);
         };
@@ -466,12 +466,12 @@ final class PatternDslRendering {
     /** The fault of {@link Consequence.TestFault}: the condition evaluated again over the same bound values. */
     private RuleItemBuilder<?> testFault(Consequence.TestFault g) {
         Predicate<Object[]> test = ClosureRendering.test(g.test());
-        return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
-            RuntimeException f = ClosureRendering.fout(test, w);
+        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+            RuntimeException f = ClosureRendering.fault(test, w);
             if (f == null)
-                throw new IllegalStateException("de voorwaarde van \"" + g.fout().vorm() + "\" faalde in de toets en niet"
+                throw new IllegalStateException("de voorwaarde van \"" + g.fault().form() + "\" faalde in de toets en niet"
                         + " in het gevolg, over dezelfde gebonden waarden");
-            voegIn(drools, g.insertion(), new Fout(onderwerp, g.fout().vorm(), ComputeHelpers.designate(f, g.fout().regel())));
+            insert(drools, g.insertion(), new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(f, g.fault().regel())));
         });
     }
 
@@ -484,7 +484,7 @@ final class PatternDslRendering {
     /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array of
      *  {@code grootte} slots. */
     @SuppressWarnings("rawtypes")
-    private RuleItemBuilder<?> consequentie(String onderwerp, List<Integer> slots, int size, ConsequenceFunction f) {
+    private RuleItemBuilder<?> consequenceItem(String onderwerp, List<Integer> slots, int size, ConsequenceFunction f) {
         int[] pos = slots.stream().mapToInt(Integer::intValue).toArray();
         Variable[] v = new Variable[pos.length + 1];
         v[0] = known(onderwerp);
@@ -496,7 +496,7 @@ final class PatternDslRendering {
         });
     }
 
-    private static void voegIn(org.drools.model.Drools drools, Consequence.Insertion insertion, Object fact) {
+    private static void insert(org.drools.model.Drools drools, Consequence.Insertion insertion, Object fact) {
         if (insertion == Consequence.Insertion.LOGICAL) drools.logicalInsert(fact);
         else drools.insert(fact);
     }
@@ -526,22 +526,22 @@ final class PatternDslRendering {
         for (Join j : p.joins()) def = join(def, p.factClass(), j);
         for (BetaTest t : p.betaTests()) def = betaTest(def, t);
         for (Alpha a : p.afterAlpha()) def = def.expr(a.id(), predicate(p.factClass(), a));
-        for (Binding b : p.bindings()) def = def.bind(bind(b.doel()), reader(b));
+        for (Binding b : p.bindings()) def = def.bind(bind(b.target()), reader(b));
         return new Rendered(v, def);
     }
 
     /** The identity join {@code j} on a pattern over {@code klasse}: the field it names of the pattern's object, or the
      *  object itself, against the object its variable binds, or the reference field it names of that object. */
     private PatternDSL.PatternDef<Object> join(PatternDSL.PatternDef<Object> def, Class<?> javaClass, Join j) {
-        Function1<Object, Object> left = j.veld() == null ? x -> x : veld(javaClass, j.property());
+        Function1<Object, Object> left = j.field() == null ? x -> x : field(javaClass, j.property());
         Function1<Object, Object> right = j.targetField() == null ? o -> o
-                : veld(j.targetField().javaClass(), j.targetField().property());
-        return same(def, j.id(), known(j.doel()), left, right);
+                : field(j.targetField().javaClass(), j.targetField().property());
+        return same(def, j.id(), known(j.target()), left, right);
     }
 
     /** The constraint {@code t} between the object of {@code def} and the object another pattern binds, unindexed. */
     private PatternDSL.PatternDef<Object> betaTest(PatternDSL.PatternDef<Object> def, BetaTest t) {
-        return def.expr(t.id(), known(t.doel()), ClosureRendering.betaTest(t.function(), t.constants()));
+        return def.expr(t.id(), known(t.target()), ClosureRendering.betaTest(t.function(), t.constants()));
     }
 
     /** The existence of {@code b}, in the scope its plan states ({@link #quantified}). */
@@ -579,20 +579,20 @@ final class PatternDslRendering {
     }
 
     private RuleItemBuilder<?> accumulation(Accumulation a) {
-        Rendered bron = pattern(a.bron());
+        Rendered source = pattern(a.source());
         AccumulateFunction[] f = new AccumulateFunction[a.aggregations().size()];
         for (int i = 0; i < f.length; i++) {
             Accumulation.Aggregation fn = a.aggregations().get(i);
-            Variable<Object> over = fn.bron() == null ? bron.variable() : known(fn.bron());
-            f[i] = DSL.accFunction(function(fn.soort()), over).as(bind(fn.doel()));
+            Variable<Object> over = fn.source() == null ? source.variable() : known(fn.source());
+            f[i] = DSL.accFunction(function(fn.category()), over).as(bind(fn.target()));
         }
-        return DSL.accumulate(bron.def(), f[0], Arrays.copyOfRange(f, 1, f.length));
+        return DSL.accumulate(source.def(), f[0], Arrays.copyOfRange(f, 1, f.length));
     }
 
     /** Drools' own accumulate function of each fold of the plan: the sum over a statically typed {@code BigDecimal},
      *  since the plain sum over an {@code Object}-bound value gives a {@code Double}. */
-    private static Class<?> function(Accumulation.Kind soort) {
-        String naam = switch (soort) {
+    private static Class<?> function(Accumulation.Kind category) {
+        String naam = switch (category) {
             case COUNT -> "CountAccumulateFunction";
             case SUM -> "BigDecimalSumAccumulateFunction";
             case MINIMUM -> "MinAccumulateFunction";
@@ -680,76 +680,76 @@ final class PatternDslRendering {
     private static final Map<Class<?>, Map<String, Function1<Object, Object>>> FIELDS = new HashMap<>();
 
     static {
-        veld(Value.class, "onderwerp", Value::onderwerp);
-        veld(Value.class, "attribuut", Value::attribuut);
-        veld(Value.class, "writer", Value::writer);
-        veld(Value.class, "waarde", Value::waarde);
-        veld(State.class, "onderwerp", State::onderwerp);
-        veld(State.class, "attribuut", State::attribuut);
-        veld(State.class, "waarde", State::waarde);
-        veld(CharacteristicState.class, "onderwerp", CharacteristicState::onderwerp);
-        veld(CharacteristicState.class, "kenmerk", CharacteristicState::kenmerk);
-        veld(CharacteristicState.class, "holds", CharacteristicState::holds);
-        veld(HasCharacteristic.class, "onderwerp", HasCharacteristic::onderwerp);
-        veld(HasCharacteristic.class, "kenmerk", HasCharacteristic::kenmerk);
-        veld(BucketInput.class, "onderwerp", BucketInput::onderwerp);
-        veld(BucketInput.class, "attribuut", BucketInput::attribuut);
-        veld(PathState.class, "onderwerp", PathState::onderwerp);
-        veld(PathState.class, "pad", PathState::pad);
-        veld(PathState.class, "member", PathState::member);
-        veld(PathState.class, "waarde", PathState::waarde);
-        veld(ParameterState.class, "parameter", ParameterState::parameter);
-        veld(ParameterState.class, "waarde", ParameterState::waarde);
-        veld(EvaluationDate.class, "date", EvaluationDate::date);
-        veld(ChannelState.class, "regel", ChannelState::regel);
-        veld(ChannelState.class, "inconsistent", ChannelState::inconsistent);
-        veld(CreationPhase.class, "number", CreationPhase::number);
-        veld(CreationPhase.class, "stratum", CreationPhase::stratum);
-        veld(Contribution.class, "fold", Contribution::fold);
-        veld(Contribution.class, "onderwerp", Contribution::onderwerp);
-        veld(Contribution.class, "waarde", Contribution::waarde);
-        veld(FilterFault.class, "fold", FilterFault::fold);
-        veld(FilterFault.class, "onderwerp", FilterFault::onderwerp);
-        veld(FilterDeposit.class, "fold", FilterDeposit::fold);
-        veld(FilterDeposit.class, "onderwerp", FilterDeposit::onderwerp);
-        veld(MemberFault.class, "fold", MemberFault::fold);
-        veld(MemberFault.class, "onderwerp", MemberFault::onderwerp);
-        veld(UniquenessKey.class, "uniqueness", UniquenessKey::uniqueness);
-        veld(UniquenessKey.class, "element", UniquenessKey::element);
-        veld(UniquenessViolation.class, "uniqueness", UniquenessViolation::uniqueness);
-        veld(UniquenessViolation.class, "element", UniquenessViolation::element);
-        veld(Recipient.class, "allocation", Recipient::allocation);
-        veld(Recipient.class, "bron", Recipient::bron);
-        veld(CreationStamp.class, "regel", CreationStamp::regel);
-        veld(CreationStamp.class, "onderwerp", CreationStamp::onderwerp);
-        veld(CreationStamp.class, "object", CreationStamp::object);
-        veld(Fout.class, "regel", Fout::regel);
-        veld(Fout.class, "onderwerp", Fout::onderwerp);
-        veld(RelationLink.class, "relation", RelationLink::relation);
-        veld(RelationLink.class, "eerste", RelationLink::eerste);
-        veld(RelationLink.class, "tweede", RelationLink::tweede);
-        veld(ListPlace.class, "veld", ListPlace::veld);
-        veld(ListPlace.class, "place", ListPlace::place);
-        veld(Decides.class, "onderwerp", Decides::onderwerp);
-        veld(Decides.class, "stack", Decides::stack);
-        veld(Decides.class, "index", Decides::index);
-        veld(Outcome.class, "onderwerp", Outcome::onderwerp);
-        veld(Outcome.class, "stack", Outcome::stack);
-        veld(Outcome.class, "chain", Outcome::chain);
-        veld(Outcome.class, "positie", Outcome::positie);
-        veld(Outcome.class, "soort", Outcome::soort);
-        veld(Outcome.class, "waarde", Outcome::waarde);
-        veld(Outcome.class, "sleutel", Outcome::sleutel);
+        field(Value.class, "onderwerp", Value::onderwerp);
+        field(Value.class, "attribute", Value::attribute);
+        field(Value.class, "writer", Value::writer);
+        field(Value.class, "value", Value::value);
+        field(State.class, "onderwerp", State::onderwerp);
+        field(State.class, "attribute", State::attribute);
+        field(State.class, "value", State::value);
+        field(CharacteristicState.class, "onderwerp", CharacteristicState::onderwerp);
+        field(CharacteristicState.class, "characteristic", CharacteristicState::characteristic);
+        field(CharacteristicState.class, "holds", CharacteristicState::holds);
+        field(HasCharacteristic.class, "onderwerp", HasCharacteristic::onderwerp);
+        field(HasCharacteristic.class, "characteristic", HasCharacteristic::characteristic);
+        field(BucketInput.class, "onderwerp", BucketInput::onderwerp);
+        field(BucketInput.class, "attribute", BucketInput::attribute);
+        field(PathState.class, "onderwerp", PathState::onderwerp);
+        field(PathState.class, "path", PathState::path);
+        field(PathState.class, "member", PathState::member);
+        field(PathState.class, "value", PathState::value);
+        field(ParameterState.class, "parameter", ParameterState::parameter);
+        field(ParameterState.class, "value", ParameterState::value);
+        field(EvaluationDate.class, "date", EvaluationDate::date);
+        field(ChannelState.class, "regel", ChannelState::regel);
+        field(ChannelState.class, "inconsistent", ChannelState::inconsistent);
+        field(CreationPhase.class, "number", CreationPhase::number);
+        field(CreationPhase.class, "stratum", CreationPhase::stratum);
+        field(Contribution.class, "fold", Contribution::fold);
+        field(Contribution.class, "onderwerp", Contribution::onderwerp);
+        field(Contribution.class, "value", Contribution::value);
+        field(FilterFault.class, "fold", FilterFault::fold);
+        field(FilterFault.class, "onderwerp", FilterFault::onderwerp);
+        field(FilterDeposit.class, "fold", FilterDeposit::fold);
+        field(FilterDeposit.class, "onderwerp", FilterDeposit::onderwerp);
+        field(MemberFault.class, "fold", MemberFault::fold);
+        field(MemberFault.class, "onderwerp", MemberFault::onderwerp);
+        field(UniquenessKey.class, "uniqueness", UniquenessKey::uniqueness);
+        field(UniquenessKey.class, "element", UniquenessKey::element);
+        field(UniquenessViolation.class, "uniqueness", UniquenessViolation::uniqueness);
+        field(UniquenessViolation.class, "element", UniquenessViolation::element);
+        field(Recipient.class, "allocation", Recipient::allocation);
+        field(Recipient.class, "source", Recipient::source);
+        field(CreationStamp.class, "regel", CreationStamp::regel);
+        field(CreationStamp.class, "onderwerp", CreationStamp::onderwerp);
+        field(CreationStamp.class, "object", CreationStamp::object);
+        field(Fault.class, "regel", Fault::regel);
+        field(Fault.class, "onderwerp", Fault::onderwerp);
+        field(RelationLink.class, "relation", RelationLink::relation);
+        field(RelationLink.class, "first", RelationLink::first);
+        field(RelationLink.class, "second", RelationLink::second);
+        field(ListPlace.class, "field", ListPlace::field);
+        field(ListPlace.class, "place", ListPlace::place);
+        field(Decides.class, "onderwerp", Decides::onderwerp);
+        field(Decides.class, "stack", Decides::stack);
+        field(Decides.class, "index", Decides::index);
+        field(Outcome.class, "onderwerp", Outcome::onderwerp);
+        field(Outcome.class, "stack", Outcome::stack);
+        field(Outcome.class, "chain", Outcome::chain);
+        field(Outcome.class, "position", Outcome::position);
+        field(Outcome.class, "category", Outcome::category);
+        field(Outcome.class, "value", Outcome::value);
+        field(Outcome.class, "key", Outcome::key);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void veld(Class<T> javaClass, String naam, Function1<T, Object> reader) {
+    private static <T> void field(Class<T> javaClass, String naam, Function1<T, Object> reader) {
         FIELDS.computeIfAbsent(javaClass, k -> new HashMap<>()).put(naam, (Function1<Object, Object>) (Function1<?, ?>) reader);
     }
 
     /** The read of field {@code naam} of an object of {@code klasse}: a component of a fact of the branch, or a bean
      *  property, read through the getter the bean generator wrote for it. */
-    private static Function1<Object, Object> veld(Class<?> javaClass, String naam) {
+    private static Function1<Object, Object> field(Class<?> javaClass, String naam) {
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
             Function1<Object, Object> f = FIELDS.getOrDefault(javaClass, Map.of()).get(naam);
             if (f == null) throw new IllegalStateException("geen lezer voor het veld " + naam + " van " + javaClass.getSimpleName());
@@ -764,13 +764,13 @@ final class PatternDslRendering {
         List<Predicate1<Object>> parts = new ArrayList<>();
         for (Alpha.FieldTest t : a.tests()) {
             Function1<Object, Object> f = reader(javaClass, t);
-            Object w = t.waarde();
+            Object w = t.value();
             parts.add(switch (t.op()) {
                 case GELIJK -> x -> f.apply(x).equals(w);
                 case NOT_EQUAL -> x -> !f.apply(x).equals(w);
                 case AT_LEAST -> x -> ((Number) f.apply(x)).intValue() >= ((Number) w).intValue();
                 case UNDER -> x -> ((Number) f.apply(x)).intValue() < ((Number) w).intValue();
-                case WITHIN -> x -> ((Geldigheid) w).contains((LocalDate) f.apply(x));
+                case WITHIN -> x -> ((Validity) w).contains((LocalDate) f.apply(x));
                 case IS_A -> x -> ((Class<?>) w).isInstance(f.apply(x));
                 case LEEG -> x -> f.apply(x) == null;
                 case GEVULD -> x -> f.apply(x) != null;
@@ -785,34 +785,34 @@ final class PatternDslRendering {
         };
     }
 
-    /** The read a field test makes of the pattern's object ({@link Alpha.FieldTest}): a field as {@link #veld} reads
+    /** The read a field test makes of the pattern's object ({@link Alpha.FieldTest}): a field as {@link #field} reads
      *  it, of the declaring class the test names or else of the pattern's, or the object itself, as it is; else along
      *  the path, null where a link is absent, as the test's form reads it. */
     private static Function1<Object, Object> reader(Class<?> javaClass, Alpha.FieldTest t) {
-        Function1<Object, Object> f = t.veld() == null ? x -> x
-                : veld(t.declarant() != null ? t.declarant() : javaClass, t.property());
-        if (t.pad().isEmpty() && t.vorm() == Binding.ReadForm.VALUE) return f;
-        return along(t.pad(), vorm(f::apply, t.vorm(), null));
+        Function1<Object, Object> f = t.field() == null ? x -> x
+                : field(t.declarant() != null ? t.declarant() : javaClass, t.property());
+        if (t.path().isEmpty() && t.form() == Binding.ReadForm.VALUE) return f;
+        return along(t.path(), form(f::apply, t.form(), null));
     }
 
     /** The read a binding makes: a field of a fact as its record accessor; on a bean the walk over the reference
      *  fields of the path, null where a link is absent, and then the member as the binding reads it. */
     private static Function1<Object, Object> reader(Binding b) {
-        Class<?> javaClass = b.veld().javaClass();
+        Class<?> javaClass = b.field().javaClass();
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
-            if (!b.pad().isEmpty() || b.vorm() != Binding.ReadForm.VALUE)
+            if (!b.path().isEmpty() || b.form() != Binding.ReadForm.VALUE)
                 throw new IllegalStateException("een feit van de tak wordt gelezen zoals het is: " + b);
-            return veld(javaClass, b.veld().property());
+            return field(javaClass, b.field().property());
         }
-        return along(b.pad(), inputReader(b.veld(), b.vorm(), b.soort()));
+        return along(b.path(), inputReader(b.field(), b.form(), b.category()));
     }
 
-    /** {@code end} of the object the walk over the reference fields {@code pad} reaches, null where a link on it is
+    /** {@code end} of the object the walk over the reference fields {@code path} reaches, null where a link on it is
      *  absent. */
-    private static Function1<Object, Object> along(List<Binding.Field> pad, Function<Object, Object> end) {
-        if (pad.isEmpty()) return o -> end.apply(o);
+    private static Function1<Object, Object> along(List<Binding.Field> path, Function<Object, Object> end) {
+        if (path.isEmpty()) return o -> end.apply(o);
         List<Function<Object, Object>> steps = new ArrayList<>();
-        for (Binding.Field step : pad) steps.add(Accessors.eigenschapGetter(step.javaClass(), step.property()));
+        for (Binding.Field step : path) steps.add(Accessors.eigenschapGetter(step.javaClass(), step.property()));
         return o -> {
             Object d = o;
             for (Function<Object, Object> step : steps) {
@@ -823,22 +823,22 @@ final class PatternDslRendering {
         };
     }
 
-    /** The read of member {@code veld} off a bean, as {@code vorm} reads it ({@link Binding.ReadForm}). */
-    static Function<Object, Object> inputReader(Binding.Field veld, Binding.ReadForm vorm, Class<?> soort) {
-        return vorm(Accessors.eigenschapGetter(veld.javaClass(), veld.property()), vorm, soort);
+    /** The read of member {@code field} off a bean, as {@code form} reads it ({@link Binding.ReadForm}). */
+    static Function<Object, Object> inputReader(Binding.Field field, Binding.ReadForm form, Class<?> category) {
+        return form(Accessors.eigenschapGetter(field.javaClass(), field.property()), form, category);
     }
 
-    /** {@code getter} as {@code vorm} reads what it gives: as it is, as whether it holds {@code true}, as the segments
+    /** {@code getter} as {@code form} reads what it gives: as it is, as whether it holds {@code true}, as the segments
      *  of a timeline, or as whether a reference is set, to an instance of {@code soort} where that is not null. */
-    private static Function<Object, Object> vorm(Function<Object, Object> getter, Binding.ReadForm vorm,
-                                                 Class<?> soort) {
-        return switch (vorm) {
+    private static Function<Object, Object> form(Function<Object, Object> getter, Binding.ReadForm form,
+                                                 Class<?> category) {
+        return switch (form) {
             case VALUE -> getter;
             case WAAR -> o -> Boolean.TRUE.equals(getter.apply(o));
-            case PERIODS -> o -> Period.lijst((List<?>) getter.apply(o));
+            case PERIODS -> o -> Period.list((List<?>) getter.apply(o));
             case IS_SET -> o -> {
                 Object other = getter.apply(o);
-                return other != null && (soort == null || soort.isInstance(other));
+                return other != null && (category == null || category.isInstance(other));
             };
         };
     }
@@ -882,10 +882,10 @@ final class PatternDslRendering {
             Object a = left.apply(x);
             return a != null && a == right.apply(o);
         }, PatternDSL.betaIndexedBy(Object.class, Index.ConstraintType.EQUAL, BETA_INDEX,
-                x -> sleutel(left.apply(x), NOTHING_LEFT), o -> sleutel(right.apply(o), NOTHING_RIGHT)));
+                x -> key(left.apply(x), NOTHING_LEFT), o -> key(right.apply(o), NOTHING_RIGHT)));
     }
 
-    private static Object sleutel(Object waarde, Object nothing) {
-        return waarde == null ? nothing : waarde;
+    private static Object key(Object value, Object nothing) {
+        return value == null ? nothing : value;
     }
 }

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
@@ -26,8 +26,8 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.channelTest;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,9 +73,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsUniquenessWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Kust", List.of(), List.of("verdacht")),
-            TmsDocuments.objecttype("Vondst", List.of(attribuut("basis", WHOLE), attribuut("opgave", WHOLE),
-                    attribuut("factor", WHOLE), attribuut("toeslag", WHOLE), attribuut("nummer", WHOLE)), List.of())),
+            TmsDocuments.objectType("Kust", List.of(), List.of("verdacht")),
+            TmsDocuments.objectType("Vondst", List.of(attribute("basis", WHOLE), attribute("opgave", WHOLE),
+                    attribute("factor", WHOLE), attribute("toeslag", WHOLE), attribute("nummer", WHOLE)), List.of())),
             List.of(factTypeOneToMany("ligging", "kust", "Kust", "vondst", "Vondst", "vondsten")));
 
     static final String FACTOR = computingRule("factor", "BEREKENING", "Vondst", "factor", ownRead("opgave", "Vondst"), "null");
@@ -85,7 +85,7 @@ class TmsUniquenessWitnessTest {
             binary("plus", ownRead("basis", "Vondst"), ownRead("toeslag", "Vondst")), "null");
     static final String SUSPECTED = characteristicRule("verdenking", "Kust", "verdacht", channelTest("eenmalig nummer"));
 
-    /** A Uniqueness of one always-valid version over {@code bronnen} ({@link #bron}), scoped where {@code scope} is not
+    /** A Uniqueness of one always-valid version over {@code bronnen} ({@link #source}), scoped where {@code scope} is not
      *  null. */
     static String uniqueness(String naam, List<String> sources, String scope, String text) {
         return "{\"node\":\"Uniqueness\",\"name\":\"" + naam + "\",\"versions\":[{\"sources\":[" + String.join(",", sources)
@@ -93,15 +93,15 @@ class TmsUniquenessWitnessTest {
                 + "\"source\":{\"snippet\":\"" + text + "\"}}]}";
     }
 
-    static String bron(String type, List<String> keyNames) {
+    static String source(String type, List<String> keyNames) {
         List<String> s = new ArrayList<>();
         for (String k : keyNames) s.add("\"" + k + "\"");
         return "{\"node\":\"Source\",\"objectType\":\"" + type + "\",\"keys\":[" + String.join(",", s) + "]}";
     }
 
-    static final String EENMALIG = uniqueness("eenmalig nummer", List.of(bron("Vondst", List.of("nummer"))), null,
+    static final String EENMALIG = uniqueness("eenmalig nummer", List.of(source("Vondst", List.of("nummer"))), null,
             "De nummers van alle Vondsten moeten uniek zijn.");
-    static final String PER_KUST = uniqueness("nummer per kust", List.of(bron("Vondst", List.of("nummer"))),
+    static final String PER_KUST = uniqueness("nummer per kust", List.of(source("Vondst", List.of("nummer"))),
             TmsDocuments.roleBinding("ligging", "kust"), "De nummers van alle Vondsten van de kust moeten uniek zijn.");
 
     /** A document with the uniquenesses beside the rules, each in its order. */
@@ -138,21 +138,21 @@ class TmsUniquenessWitnessTest {
     /** The nummers of world {@code n} at the fixpoint. */
     static List<String> numbersOfWorld(int n) {
         return switch (n) {
-            case 1 -> List.of(waarde("V1", "nummer", "6"), waarde("V2", "nummer", "7"));
-            case 2 -> List.of(waarde("V1", "nummer", "6"), waarde("V2", "nummer", "7"), waarde("V3", "nummer", "6"));
-            case 3 -> List.of(waarde("V1", "nummer", "6"), waarde("V3", "nummer", "6"), waarde("V4", "nummer", "6"));
+            case 1 -> List.of(value("V1", "nummer", "6"), value("V2", "nummer", "7"));
+            case 2 -> List.of(value("V1", "nummer", "6"), value("V2", "nummer", "7"), value("V3", "nummer", "6"));
+            case 3 -> List.of(value("V1", "nummer", "6"), value("V3", "nummer", "6"), value("V4", "nummer", "6"));
             default -> throw new IllegalArgumentException("wereld " + n);
         };
     }
 
     @Test void the_violation_stands_only_where_it_stands_at_the_fixpoint() throws Exception {
-        List<List<String>> channel = List.of(List.of(consistent(), verwacht("K1", "verdacht", false)),
+        List<List<String>> channel = List.of(List.of(consistent(), expected("K1", "verdacht", false)),
                 List.of(inconsistent("eenmalig nummer", "V1"), inconsistent("eenmalig nummer", "V3"),
-                        verwacht("K1", "verdacht", true)),
+                        expected("K1", "verdacht", true)),
                 List.of(inconsistent("eenmalig nummer", "V1"), inconsistent("eenmalig nummer", "V3"),
-                        inconsistent("eenmalig nummer", "V4"), verwacht("K1", "verdacht", true),
-                        verwacht("K2", "verdacht", true)));
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+                        inconsistent("eenmalig nummer", "V4"), expected("K1", "verdacht", true),
+                        expected("K2", "verdacht", true)));
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(FACTOR, TOESLAG, NUMBER, SUSPECTED))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = document(MODEL, order, List.of(EENMALIG));
@@ -162,17 +162,17 @@ class TmsUniquenessWitnessTest {
                 JsonNode caseDocument = TmsDocuments.caseDocument(world(n), v);
                 outcomes.add(names + " " + n + " " + TmsFaultWitnessTest.play(ir, caseDocument,
                         DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " " + n + " gespeeld");
+                expected.add(names + " " + n + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void the_scope_divides_and_who_has_no_scope_takes_no_part() throws Exception {
         List<List<String>> channel = List.of(List.of(consistent()),
                 List.of(inconsistent("nummer per kust", "V1"), inconsistent("nummer per kust", "V3")),
                 List.of(consistent()));
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(FACTOR, TOESLAG, NUMBER))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = document(MODEL, order, List.of(PER_KUST));
@@ -182,10 +182,10 @@ class TmsUniquenessWitnessTest {
                 JsonNode caseDocument = TmsDocuments.caseDocument(world(n), v);
                 outcomes.add(names + " " + n + " " + TmsFaultWitnessTest.play(ir, caseDocument,
                         DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(names + " " + n + " gespeeld");
+                expected.add(names + " " + n + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void a_violation_on_an_intermediate_state_disappears_again_in_every_order_of_the_rules() throws Exception {
@@ -200,7 +200,7 @@ class TmsUniquenessWitnessTest {
             Map<Object, String> labels = new IdentityHashMap<>(Map.of(v1, "V1", v2, "V2", v3, "V3"));
             int[] intermediate = {0};
             List<String> channel = new ArrayList<>();
-            TmsDocuments.vuur(b, order, List.of(v1, v2, v3), sessie -> sessie.addEventListener(
+            TmsDocuments.fire(b, order, List.of(v1, v2, v3), session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
                             Object f = e.getObject();
@@ -212,11 +212,11 @@ class TmsUniquenessWitnessTest {
                                 }
                             }
                         }
-                    }), sessie -> channel.addAll(TmsDocuments.inconsistenties(sessie, labels)));
+                    }), session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
             assertEquals(List.of("eenmalig nummer @ V1", "eenmalig nummer @ V3"), channel, () -> "volgorde " + names);
-            assertEquals(0, new BigDecimal("6").compareTo((BigDecimal) TmsDocuments.lees(v1, "nummer")),
+            assertEquals(0, new BigDecimal("6").compareTo((BigDecimal) TmsDocuments.read(v1, "nummer")),
                     () -> "nummer van V1 in volgorde " + names);
-            assertEquals(0, new BigDecimal("7").compareTo((BigDecimal) TmsDocuments.lees(v2, "nummer")),
+            assertEquals(0, new BigDecimal("7").compareTo((BigDecimal) TmsDocuments.read(v2, "nummer")),
                     () -> "nummer van V2 in volgorde " + names);
             if (intermediate[0] > 0) intermediateState++;
         }
@@ -226,19 +226,19 @@ class TmsUniquenessWitnessTest {
     // ---------------- the union ----------------
 
     static final String UNION_MODEL = TmsDocuments.model(List.of(
-            TmsDocuments.objecttype("Strandvondst", List.of(attribuut("opgave", WHOLE), attribuut("vondstnummer", WHOLE)),
+            TmsDocuments.objectType("Strandvondst", List.of(attribute("opgave", WHOLE), attribute("vondstnummer", WHOLE)),
                     List.of()),
-            TmsDocuments.objecttype("Wrakvondst", List.of(attribuut("vondstnummer", WHOLE)), List.of()),
-            TmsDocuments.objecttype("Baken", List.of(attribuut("landcode", WHOLE), attribuut("zeecode", WHOLE)),
+            TmsDocuments.objectType("Wrakvondst", List.of(attribute("vondstnummer", WHOLE)), List.of()),
+            TmsDocuments.objectType("Baken", List.of(attribute("landcode", WHOLE), attribute("zeecode", WHOLE)),
                     List.of())), List.of());
 
     static final String STRAND_NUMBER = computingRule("strandnummer", "BEREKENING", "Strandvondst", "vondstnummer",
             ownRead("opgave", "Strandvondst"), "null");
-    static final String VONDSTUNIE = uniqueness("eenmalig vondstnummer", List.of(bron("Strandvondst",
-            List.of("vondstnummer")), bron("Wrakvondst", List.of("vondstnummer"))), null,
+    static final String VONDSTUNIE = uniqueness("eenmalig vondstnummer", List.of(source("Strandvondst",
+            List.of("vondstnummer")), source("Wrakvondst", List.of("vondstnummer"))), null,
             "Strandvondst verenigd met Wrakvondst moeten uniek zijn.");
-    static final String BAKEN_UNION = uniqueness("eenmalige bakencode", List.of(bron("Baken", List.of("landcode")),
-            bron("Baken", List.of("zeecode"))), null, "Baken verenigd met Baken moeten uniek zijn.");
+    static final String BAKEN_UNION = uniqueness("eenmalige bakencode", List.of(source("Baken", List.of("landcode")),
+            source("Baken", List.of("zeecode"))), null, "Baken verenigd met Baken moeten uniek zijn.");
 
     static String inst(String label, String type, Map<String, String> numbers) {
         return instanceWithRoles(label, type, numbers, List.of(), Map.of());
@@ -250,7 +250,7 @@ class TmsUniquenessWitnessTest {
                         inst("W1", "Wrakvondst", Map.of("vondstnummer", "8")),
                         inst("B1", "Baken", Map.of("landcode", "3", "zeecode", "4")),
                         inst("B2", "Baken", Map.of("landcode", "5", "zeecode", "6"))),
-                        List.of(waarde("S1", "vondstnummer", "7"), consistent())),
+                        List.of(value("S1", "vondstnummer", "7"), consistent())),
                 TmsDocuments.caseDocument(List.of(inst("S1", "Strandvondst", Map.of("opgave", "7")),
                         inst("W1", "Wrakvondst", Map.of("vondstnummer", "7")),
                         inst("B1", "Baken", Map.of("landcode", "3", "zeecode", "3"))),
@@ -262,15 +262,15 @@ class TmsUniquenessWitnessTest {
                         inst("B2", "Baken", Map.of("landcode", "4", "zeecode", "5"))),
                         List.of(inconsistent("eenmalig vondstnummer", "S1"), inconsistent("eenmalig vondstnummer", "S2"),
                                 inconsistent("eenmalige bakencode", "B1"), inconsistent("eenmalige bakencode", "B2"))));
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> uniquenesses : TmsDocuments.permutations(List.of(VONDSTUNIE, BAKEN_UNION))) {
             Path ir = document(UNION_MODEL, List.of(STRAND_NUMBER), uniquenesses);
             for (int n = 0; n < cases.size(); n++) {
                 outcomes.add(uniquenesses.indexOf(VONDSTUNIE) + " " + n + " " + TmsFaultWitnessTest.play(ir, cases.get(n),
                         DroolsBackend.Branch.EXEC_MODEL));
-                verwacht.add(uniquenesses.indexOf(VONDSTUNIE) + " " + n + " gespeeld");
+                expected.add(uniquenesses.indexOf(VONDSTUNIE) + " " + n + " gespeeld");
             }
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 }

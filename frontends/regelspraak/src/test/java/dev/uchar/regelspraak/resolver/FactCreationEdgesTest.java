@@ -65,8 +65,8 @@ class FactCreationEdgesTest {
                 Het jutteraantal van een Premiepot moet berekend worden als het aantal premiejutters van de Premiepot.
         """;
 
-    private static String ir(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static String ir(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         return IrEmitter.emit(m);
     }

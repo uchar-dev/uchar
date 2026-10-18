@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * without a diagnostic, while the verifier gave {@code WF-045 FAIL /rules/rules/0/versions/0: dependency cycle through
  * no recursive creation: restgewicht -> bergingsgewicht -> restgewicht} and, through the defaults group,
  * {@code WF-051 FAIL /rules/prioritizedDefaults/0: a dependency cycle passes through defaults group 'meldtermijn' — …}.
- * A cycle on a rule's own subject is refused the same way, beside the WARNING it had ({@code RecursieTest},
+ * A cycle on a rule's own subject is refused the same way, beside the WARNING it had ({@code RecursionTest},
  * {@code SelfReadCycleTest}); until 2026-10-06 it kept that WARNING alone. A cycle through an object creation outside
  * a recursive group is refused too since that day ({@code CreationRoleTest}); until then it passed, because a fact
  * creation wrote the population of its target type in the graph and so made a cycle that does not exist with an object
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DependencyCycleTest {
 
-    private static List<Diagnostic> fouten(RegelSpraakModel m) {
+    private static List<Diagnostic> faults(RegelSpraakModel m) {
         return m.diagnostics.stream().filter(d -> d.severity() == Severity.ERROR).toList();
     }
 
@@ -59,7 +59,7 @@ class DependencyCycleTest {
                     indien het restgewicht van de vorige vondst van de Vondst groter is dan 0.
             """);
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte één diagnose, kreeg: " + m.diagnostics);
-        Diagnostic d = fouten(m).get(0);
+        Diagnostic d = faults(m).get(0);
         assertEquals("regel 'restgewicht' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten "
                 + "een recursieve creatie (WF-045): dependency cycle through no recursive creation: restgewicht -> "
                 + "bergingsgewicht -> restgewicht", d.message());
@@ -104,8 +104,8 @@ class DependencyCycleTest {
                 "defaults-groep 'meldtermijn' ligt op een afhankelijkheidskring, en een kring door een defaults-groep "
                         + "heeft geen strata (WF-051): a dependency cycle passes through defaults group 'meldtermijn' — its "
                         + "displacement reads are negative edges; no strata exist"),
-                fouten(m).stream().map(Diagnostic::message).toList());
-        assertEquals(List.of(20, 11), fouten(m).stream().map(Diagnostic::line).toList());
+                faults(m).stream().map(Diagnostic::message).toList());
+        assertEquals(List.of(20, 11), faults(m).stream().map(Diagnostic::line).toList());
     }
 
     @Test void a_cycle_through_a_count_is_refused() {
@@ -133,7 +133,7 @@ class DependencyCycleTest {
             """);
         assertEquals(List.of("regel 'zwaartetal' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij "
                 + "buiten een recursieve creatie (WF-045): dependency cycle through no recursive creation: zwaartetal -> "
-                + "zwaar -> zwaartetal"), fouten(m).stream().map(Diagnostic::message).toList());
+                + "zwaar -> zwaartetal"), faults(m).stream().map(Diagnostic::message).toList());
     }
 
     @Test void a_cycle_on_its_own_subject_is_refused_beside_its_warning() {
@@ -158,8 +158,8 @@ class DependencyCycleTest {
                 m.diagnostics.get(0).message());
         assertEquals(List.of("regel 'a' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten "
                 + "een recursieve creatie (WF-045): dependency cycle through no recursive creation: a -> b -> a"),
-                fouten(m).stream().map(Diagnostic::message).toList());
-        assertEquals(5, fouten(m).get(0).line(), "de kop van de regel waar de kring begint");
+                faults(m).stream().map(Diagnostic::message).toList());
+        assertEquals(5, faults(m).get(0).line(), "de kop van de regel waar de kring begint");
     }
 
     @Test void a_reading_over_a_role_without_cycle_reports_nothing() {
@@ -245,6 +245,6 @@ class DependencyCycleTest {
                     Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1
                     indien de rang van de Wachter kleiner is dan 5.
             """);
-        assertTrue(fouten(m).isEmpty(), () -> "onverwachte fouten: " + m.diagnostics);
+        assertTrue(faults(m).isEmpty(), () -> "onverwachte fouten: " + m.diagnostics);
     }
 }

@@ -23,11 +23,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ScenarioParseTest {
 
-    private record ParseOutcome(int fouten, int errorNodes, boolean everything, List<String> meldingen) {
-        boolean clean() { return fouten == 0 && errorNodes == 0 && everything; }
+    private record ParseOutcome(int faults, int errorNodes, boolean everything, List<String> meldingen) {
+        boolean clean() { return faults == 0 && errorNodes == 0 && everything; }
     }
 
-    private static ParseOutcome parse(String bron, Function<RegelSpraak, ParseTree> start) {
+    private static ParseOutcome parse(String source, Function<RegelSpraak, ParseTree> start) {
         List<String> meldingen = new ArrayList<>();
         BaseErrorListener l = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col, String msg,
@@ -35,7 +35,7 @@ class ScenarioParseTest {
                 meldingen.add(line + ":" + col + " " + msg);
             }
         };
-        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(bron));
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         lexer.removeErrorListeners(); lexer.addErrorListener(l);
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(lexer));
         parser.removeErrorListeners(); parser.addErrorListener(l);
@@ -50,14 +50,14 @@ class ScenarioParseTest {
         return n;
     }
 
-    private static void clean(String bron) {
-        ParseOutcome u = parse(bron, RegelSpraak::testDocument);
-        assertTrue(u.clean(), () -> "hoort schoon te parseren onder testDocument: " + u + "\n" + bron);
+    private static void clean(String source) {
+        ParseOutcome u = parse(source, RegelSpraak::testDocument);
+        assertTrue(u.clean(), () -> "hoort schoon te parseren onder testDocument: " + u + "\n" + source);
     }
 
-    private static void fout(String bron) {
-        ParseOutcome u = parse(bron, RegelSpraak::testDocument);
-        assertFalse(u.clean(), () -> "hoort NIET te parseren onder testDocument:\n" + bron);
+    private static void error(String source) {
+        ParseOutcome u = parse(source, RegelSpraak::testDocument);
+        assertFalse(u.clean(), () -> "hoort NIET te parseren onder testDocument:\n" + source);
     }
 
     @Test void situation_on_situations_and_a_role_list_with_a_comma() {
@@ -138,7 +138,7 @@ class ScenarioParseTest {
     }
 
     @Test void per_is_the_only_word_for_the_key() {
-        fout("""
+        error("""
             Scenario sleutel
             gebaseerd op de situatie kaal
             Met als verwacht resultaat:
@@ -147,7 +147,7 @@ class ScenarioParseTest {
     }
 
     @Test void up_to_and_including_is_no_period() {
-        fout("""
+        error("""
             Situatie tijd:
             een Jutter J
             - is borgplichtig van 01-01-2024 tot en met 14-01-2024

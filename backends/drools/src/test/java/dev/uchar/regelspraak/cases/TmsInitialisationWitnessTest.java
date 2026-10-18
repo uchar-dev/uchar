@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
@@ -27,7 +27,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -97,9 +97,9 @@ class TmsInitialisationWitnessTest {
             computingRule("berekend gewicht van een vondst", "BEREKENING", "Vondst", "berekend gewicht",
                     binary("plus", ownRead("gewicht", "Vondst"), number("1")), "null"));
 
-    private static final String ORDER_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("gewicht", WHOLE), attribuut("berekend gewicht", WHOLE), attribuut("bergloon", WHOLE),
-                    attribuut("vindloon", WHOLE)), List.of())), List.of());
+    private static final String ORDER_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("gewicht", WHOLE), attribute("berekend gewicht", WHOLE), attribute("bergloon", WHOLE),
+                    attribute("vindloon", WHOLE)), List.of())), List.of());
 
     private static final List<String> DISPLACEMENT = List.of(
             characteristicRule("registratie", "Vondst", "geregistreerd", check("gemeld", false)),
@@ -108,8 +108,8 @@ class TmsInitialisationWitnessTest {
                     check("onbeheerd", false)),
             computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("7"), "null"));
 
-    private static final String DISPLACEMENT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("taxatie", WHOLE), attribuut("bergloon", WHOLE)),
+    private static final String DISPLACEMENT_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("taxatie", WHOLE), attribute("bergloon", WHOLE)),
             List.of("gemeld", "geregistreerd", "onbeheerd"))), List.of());
 
     // ---------------- the shape of jutterswet-initialisatievolgorde ----------------
@@ -130,10 +130,10 @@ class TmsInitialisationWitnessTest {
     @Test void every_order_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(ORDER_MODEL, ORDER),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(5, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(5, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int orders = 0, onTheInputState = 0;
-        for (List<Rule> order : TmsDocuments.permutations(gegenereerd)) {
+        for (List<Rule> order : TmsDocuments.permutations(generated)) {
             if (fireOrder(b, order)) onTheInputState++;
             orders++;
         }
@@ -147,7 +147,7 @@ class TmsInitialisationWitnessTest {
         List<String> names = order.stream().map(Rule::getName).toList();
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocuments.kieBase(b, order).newKieSession();
+        KieSession session = TmsDocuments.kieBase(b, order).newKieSession();
         try {
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "12"), List.of());
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "8"), List.of());
@@ -155,17 +155,17 @@ class TmsInitialisationWitnessTest {
                     Map.of("gewicht", "12", "bergloon", "40", "vindloon", "3"), List.of());
             Object v4 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "30", "vindloon", "7"), List.of());
             boolean[] intermediateState = {false};
-            sessie.addEventListener(new DefaultAgendaEventListener() {
+            session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     List<?> facts = e.getMatch().getObjects();
                     if (e.getMatch().getRule().getName().startsWith("standaard") && facts.stream().anyMatch(o -> o == v1)
-                            && facts.stream().anyMatch(o -> o instanceof State s && s.waarde() == null))
+                            && facts.stream().anyMatch(o -> o instanceof State s && s.value() == null))
                         intermediateState[0] = true;
                 }
             });
-            for (Object v : List.of(v1, v2, v3, v4)) sessie.insert(v);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + names);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            for (Object v : List.of(v1, v2, v3, v4)) session.insert(v);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), () -> "geen fixpunt in volgorde " + names);
+            DroolsBackend.setDerivedValues(b, session);
             String where = " in volgorde " + names;
             endsOn(v1, "berekend gewicht", "13", "V1" + where);
             endsOn(v1, "bergloon", "26", "V1" + where);
@@ -178,7 +178,7 @@ class TmsInitialisationWitnessTest {
             endsOn(v4, "vindloon", "7", "V4" + where);
             return intermediateState[0];
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -190,10 +190,10 @@ class TmsInitialisationWitnessTest {
                         instance("V3", "Vondst", Map.of("gewicht", "12", "bergloon", "40", "vindloon", "3"), List.of(),
                                 Map.of()),
                         instance("V4", "Vondst", Map.of("gewicht", "30", "vindloon", "7"), List.of(), Map.of())),
-                List.of(waarde("V1", "berekend gewicht", "13"), waarde("V1", "bergloon", "26"),
-                        waarde("V1", "vindloon", "18"), waarde("V2", "berekend gewicht", "9"),
-                        waarde("V2", "bergloon", null), waarde("V2", "vindloon", "14"), waarde("V3", "bergloon", "40"),
-                        waarde("V3", "vindloon", "3"), waarde("V4", "bergloon", "62"), waarde("V4", "vindloon", "7"),
+                List.of(value("V1", "berekend gewicht", "13"), value("V1", "bergloon", "26"),
+                        value("V1", "vindloon", "18"), value("V2", "berekend gewicht", "9"),
+                        value("V2", "bergloon", null), value("V2", "vindloon", "14"), value("V3", "bergloon", "40"),
+                        value("V3", "vindloon", "3"), value("V4", "bergloon", "62"), value("V4", "vindloon", "7"),
                         consistent()));
     }
 
@@ -215,10 +215,10 @@ class TmsInitialisationWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules_at_displacement() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(DISPLACEMENT_MODEL, DISPLACEMENT),
                 DroolsBackend.Branch.EXEC_MODEL);
-        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        assertEquals(10, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
+        List<Rule> generated = b.execModelTranspiler().model().getRules();
+        assertEquals(10, generated.size(), () -> "gegenereerde regels: " + generated.stream().map(Rule::getName).toList());
         int displaced = 0;
-        for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100))
+        for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100))
             if (fireDisplacement(b, order)) displaced++;
         assertTrue(displaced > 0, "geen volgorde vuurde de initialisatie op V2 voordat de berekening haar verdrong");
     }
@@ -229,7 +229,7 @@ class TmsInitialisationWitnessTest {
         List<String> names = order.stream().map(Rule::getName).toList();
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocuments.kieBase(b, order).newKieSession();
+        KieSession session = TmsDocuments.kieBase(b, order).newKieSession();
         try {
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30"), List.of("gemeld"));
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30"), List.of());
@@ -237,16 +237,16 @@ class TmsInitialisationWitnessTest {
             Object v4 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("bergloon", "5"), List.of("gemeld"));
             Object v5 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30", "bergloon", "5"), List.of());
             boolean[] displaced = {false};
-            sessie.addEventListener(new DefaultAgendaEventListener() {
+            session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("standaardbergloon")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o == v2))
                         displaced[0] = true;
                 }
             });
-            for (Object v : List.of(v1, v2, v3, v4, v5)) sessie.insert(v);
-            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + names);
-            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            for (Object v : List.of(v1, v2, v3, v4, v5)) session.insert(v);
+            assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), () -> "geen fixpunt in volgorde " + names);
+            DroolsBackend.setDerivedValues(b, session);
             String where = " in volgorde " + names;
             endsOn(v1, "bergloon", "7", "V1" + where);
             endsOn(v2, "bergloon", "30", "V2" + where);
@@ -255,7 +255,7 @@ class TmsInitialisationWitnessTest {
             endsOn(v5, "bergloon", "30", "V5" + where);
             return displaced[0];
         } finally {
-            sessie.dispose();
+            session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
         }
     }
@@ -267,8 +267,8 @@ class TmsInitialisationWitnessTest {
                         instance("V3", "Vondst", Map.of(), List.of(), Map.of()),
                         instance("V4", "Vondst", Map.of("bergloon", "5"), List.of("gemeld"), Map.of()),
                         instance("V5", "Vondst", Map.of("taxatie", "30", "bergloon", "5"), List.of(), Map.of())),
-                List.of(waarde("V1", "bergloon", "7"), waarde("V2", "bergloon", "30"), waarde("V3", "bergloon", "7"),
-                        waarde("V4", "bergloon", "5"), waarde("V5", "bergloon", "30"), consistent()));
+                List.of(value("V1", "bergloon", "7"), value("V2", "bergloon", "30"), value("V3", "bergloon", "7"),
+                        value("V4", "bergloon", "5"), value("V5", "bergloon", "30"), consistent()));
     }
 
     // ---------------- the §6.5 deposit under the guard ----------------
@@ -279,19 +279,19 @@ class TmsInitialisationWitnessTest {
      *  reference interpreter tests the guard before it evaluates the value, and its runner passed both cases on this
      *  document (measured 2026-10-08). */
     @Test void a_division_by_empty_deposits_only_where_the_initialisation_applies() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-                List.of(attribuut("opbrengst", WHOLE), attribuut("deelnemers", WHOLE), attribuut("aandeel", WHOLE)),
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+                List.of(attribute("opbrengst", WHOLE), attribute("deelnemers", WHOLE), attribute("aandeel", WHOLE)),
                 List.of())), List.of());
         Path ir = TmsDocuments.document(model, List.of(computingRule("standaardaandeel", "INITIALISATIE", "Vondst",
                 "aandeel", binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")), "null")));
         JsonNode applies = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("opbrengst", "100"), List.of(), Map.of())),
-                List.of(waarde("V1", "aandeel", null), TmsDocuments.inconsistent("standaardaandeel", "V1")));
-        JsonNode invoer = TmsDocuments.caseDocument(
+                List.of(value("V1", "aandeel", null), TmsDocuments.inconsistent("standaardaandeel", "V1")));
+        JsonNode input = TmsDocuments.caseDocument(
                 List.of(instance("V2", "Vondst", Map.of("opbrengst", "100", "aandeel", "5"), List.of(), Map.of())),
-                List.of(waarde("V2", "aandeel", "5"), consistent()));
+                List.of(value("V2", "aandeel", "5"), consistent()));
         assertNull(CaseRunner.playCase(ir, applies, DroolsBackend.Branch.EXEC_MODEL), "V1");
-        assertNull(CaseRunner.playCase(ir, invoer, DroolsBackend.Branch.EXEC_MODEL), "V2");
+        assertNull(CaseRunner.playCase(ir, input, DroolsBackend.Branch.EXEC_MODEL), "V2");
     }
 
     // ---------------- two initialisations on one target ----------------
@@ -299,8 +299,8 @@ class TmsInitialisationWitnessTest {
     /** Where both apply nothing ranks them, conditional or not (RUNTIME-SEMANTICS ch. 5.4). The backend runs no
      *  verifier, so the branch refuses the pair itself, at the first of them in the document. */
     @Test void two_initialisations_on_a_target_are_refused() throws Exception {
-        String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-                List.of(attribuut("gewicht", WHOLE), attribuut("bergloon", WHOLE)), List.of())), List.of());
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+                List.of(attribute("gewicht", WHOLE), attribute("bergloon", WHOLE)), List.of())), List.of());
         Path ir = TmsDocuments.document(model, List.of(
                 computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("7"), "null"),
                 computingRule("zwaar bergloon", "INITIALISATIE", "Vondst", "bergloon", number("9"),
@@ -315,9 +315,9 @@ class TmsInitialisationWitnessTest {
 
     // ---------------- a division in an initialisation beside another writer ----------------
 
-    private static final String DIVISION_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
-            List.of(attribuut("taxatie", WHOLE), attribuut("bergloon", WHOLE), attribuut("opbrengst", WHOLE),
-                    attribuut("deelnemers", WHOLE)),
+    private static final String DIVISION_MODEL = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst",
+            List.of(attribute("taxatie", WHOLE), attribute("bergloon", WHOLE), attribute("opbrengst", WHOLE),
+                    attribute("deelnemers", WHOLE)),
             List.of("gemeld", "erkend"))), List.of());
 
     private static final List<String> DIVISION = List.of(
@@ -360,8 +360,8 @@ class TmsInitialisationWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "100", "deelnemers", "0"),
                         List.of("gemeld"), Map.of())),
-                List.of(waarde("V1", "bergloon", "30"), consistent()));
-        List<String> verwacht = new ArrayList<>(), outcomes = new ArrayList<>();
+                List.of(value("V1", "bergloon", "30"), consistent()));
+        List<String> expected = new ArrayList<>(), outcomes = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(DIVISION)) {
             List<String> names = TmsDocuments.ruleNames(order);
             String outcome;
@@ -371,21 +371,21 @@ class TmsInitialisationWitnessTest {
             } catch (RuntimeException e) {
                 outcome = e.getClass().getSimpleName() + ": " + e.getMessage();
             }
-            verwacht.add(names + " Excluded: " + DIVISION_REFUSAL);
+            expected.add(names + " Excluded: " + DIVISION_REFUSAL);
             outcomes.add(names + " " + outcome);
         }
         assertEquals(6, outcomes.size());
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- helpers ----------------
 
-    /** Attribute {@code attribuut} of the bean ends at the number {@code lexeme}, or leeg where it is null. */
-    private static void endsOn(Object beanObject, String attribuut, String lexeme, String where) throws Exception {
-        Object v = TmsDocuments.lees(beanObject, attribuut);
-        if (lexeme == null) assertNull(v, attribuut + " van " + where);
+    /** Attribute {@code attribute} of the bean ends at the number {@code lexeme}, or leeg where it is null. */
+    private static void endsOn(Object beanObject, String attribute, String lexeme, String where) throws Exception {
+        Object v = TmsDocuments.read(beanObject, attribute);
+        if (lexeme == null) assertNull(v, attribute + " van " + where);
         else assertTrue(v instanceof BigDecimal d && new BigDecimal(lexeme).compareTo(d) == 0,
-                () -> attribuut + " van " + where + ": verwacht " + lexeme + ", werkelijk " + v);
+                () -> attribute + " van " + where + ": verwacht " + lexeme + ", werkelijk " + v);
     }
 
     private static List<String> names(List<String> rules) throws Exception {

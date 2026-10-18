@@ -57,9 +57,9 @@ class WholePeriodTargetAttemptWitnessTest {
         // Rewiring the lowering to the doel would not have repaired this: the guard is about V1's vlagsein, and the
         // doel reading of its own seinhoogte is a different question.
         ObjectNode ir = base();
-        ObjectNode sein = objecttype(ir, "Sein");
+        ObjectNode sein = objectType(ir, "Sein");
         IrPath.timeline(IrPath.addAttribute(sein, "seinhoogte", number()), "month");
-        IrPath.addAttribute(objecttype(ir, "Kustvak"), "vlagsein", number());
+        IrPath.addAttribute(objectType(ir, "Kustvak"), "vlagsein", number());
         IrPath.modelList(ir, "factTypes").add(JSON.readTree("""
                 { "node": "FactType", "name": "vlagvoering", "reciprocal": false, "roles": [
                   { "node": "Role", "name": "vlagvak", "objectType": "Kustvak", "many": false },
@@ -109,8 +109,8 @@ class WholePeriodTargetAttemptWitnessTest {
         // attempt finds `gehesen` and lowers, and the doel attempt is never reached: both branches answer 0, ref's
         // answer. The refusal itself stays pinned by tests 1 and 3.
         ObjectNode ir = base();
-        IrPath.timeline(IrPath.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "year");
-        ObjectNode sein = objecttype(ir, "Sein");
+        IrPath.timeline(IrPath.characteristic(objectType(ir, "Kustvak"), "gehesen"), "year");
+        ObjectNode sein = objectType(ir, "Sein");
         IrPath.timeline(sein.putArray("characteristics").addObject()
                 .put("node", "Characteristic").put("name", "Gehesen").put("kind", "adjectival"), "year");
         ObjectNode k = (ObjectNode) IrPath.version(ir, "factCreations", 0, 0).get("condition");
@@ -146,7 +146,7 @@ class WholePeriodTargetAttemptWitnessTest {
         // clingo PASS, both branches PLAYED — 2 with V1 hoisted all year, 0 with V1 hoisted half a year (the doel
         // reading would be 1 in both).
         ObjectNode ir = base();
-        IrPath.timeline(IrPath.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "year");
+        IrPath.timeline(IrPath.characteristic(objectType(ir, "Kustvak"), "gehesen"), "year");
         ((ObjectNode) IrPath.version(ir, "factCreations", 0, 0).get("condition")).remove("host");
         Path p = write(ir);
         String s1 = "\"characteristicTimelines\": { \"gehesen\": " + JAAR + " }";
@@ -163,7 +163,7 @@ class WholePeriodTargetAttemptWitnessTest {
         return (ObjectNode) JSON.readTree(Files.readString(BASE));
     }
 
-    private static ObjectNode objecttype(ObjectNode ir, String naam) {
+    private static ObjectNode objectType(ObjectNode ir, String naam) {
         return IrPath.objectType(ir, naam);
     }
 
@@ -191,7 +191,7 @@ class WholePeriodTargetAttemptWitnessTest {
 
     /** V1 -> P1 -> {S1, S2}. {@code vak} is V1's characteristics/attributes block, {@code vakRoles} extra V1 roles,
      *  {@code s1}/{@code s2} the seinen's extra fields; the expectation is V1's {@code vakseinaantal}. */
-    private static JsonNode caseOf(String vak, String vakRoles, String s1, String s2, String verwacht) throws Exception {
+    private static JsonNode caseOf(String vak, String vakRoles, String s1, String s2, String expected) throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": "2024-06-15",
                   "input": { "instances": [
@@ -207,6 +207,6 @@ class WholePeriodTargetAttemptWitnessTest {
                         "value": { "number": "%s" } },
                       { "kind": "consistent" } ] }
                 """.formatted(vak, vakRoles, s1.contains("\"attributes\"") ? s1 : "\"attributes\": {}, " + s1,
-                s2.contains("\"attributes\"") ? s2 : "\"attributes\": {}, " + s2, verwacht));
+                s2.contains("\"attributes\"") ? s2 : "\"attributes\": {}, " + s2, expected));
     }
 }

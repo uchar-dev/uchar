@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -42,37 +42,37 @@ class PercentageReadTest {
 
         """;
 
-    private static String havengeld(String waarde) {
+    private static String havengeld(String value) {
         return MODEL + "Regel havengeld\n    geldig altijd\n        Het havengeld van een Vondst moet berekend worden als ("
-                + waarde + ") naar beneden afgerond op 2 decimalen.\n";
+                + value + ") naar beneden afgerond op 2 decimalen.\n";
     }
 
-    private static RegelSpraakModel clean(String bron) {
-        RegelSpraakModel m = Resolver.resolve(bron);
+    private static RegelSpraakModel clean(String source) {
+        RegelSpraakModel m = Resolver.resolve(source);
         assertEquals(List.of(), m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
         return m;
     }
 
-    private static Expr waarde(RegelSpraakModel m) {
-        ResolvedRegel r = m.resolvedRegels.stream().filter(x -> x.naam().equals("havengeld")).findFirst().orElseThrow();
-        return r.waarde();
+    private static Expr value(RegelSpraakModel m) {
+        ResolvedRule r = m.resolvedRegels.stream().filter(x -> x.naam().equals("havengeld")).findFirst().orElseThrow();
+        return r.value();
     }
 
     /** The percentage function of the rule's value, under the rounding (and the Let chain, where there is one). */
-    private static Expr.Binair percentageOf(Expr w) {
+    private static Expr.Binary percentageOf(Expr w) {
         while (w instanceof Expr.Let l) w = l.body();
-        Expr basis = assertInstanceOf(Expr.Afgerond.class, w).basis();
-        Expr.Binair b = assertInstanceOf(Expr.Binair.class, basis);
+        Expr base = assertInstanceOf(Expr.Rounding.class, w).base();
+        Expr.Binary b = assertInstanceOf(Expr.Binary.class, base);
         assertEquals(Expr.BinOp.PERCENTAGE_VAN, b.op());
-        assertEquals("percentage havengeld", assertInstanceOf(Expr.ParameterRef.class, b.links()).parameter().naam());
+        assertEquals("percentage havengeld", assertInstanceOf(Expr.ParameterRef.class, b.left()).parameter().naam());
         return b;
     }
 
     /** The read of the taxatiebedrag, one step from the Vondst over the role taxatie. */
     private static void taxatiebedragViaTaxatie(Expr y) {
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, y);
-        assertEquals("taxatiebedrag", a.attribuut());
-        assertEquals("Taxatie", a.objecttype().naam);
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, y);
+        assertEquals("taxatiebedrag", a.attribute());
+        assertEquals("Taxatie", a.objectType().naam);
         assertEquals(List.of("taxatie"), a.navigationPath());
     }
 
@@ -81,14 +81,14 @@ class PercentageReadTest {
     @Test void a_a_navigated_base() {
         // before: ERROR "genavigeerde lezing '…': het lid 'percentage havengeld van het taxatiebedrag' bestaat niet op
         // 'Taxatie', de vuller van de rol 'taxatie', en op geen ander objecttype: …"
-        taxatiebedragViaTaxatie(percentageOf(waarde(clean(havengeld(
-                "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst")))).rechts());
+        taxatiebedragViaTaxatie(percentageOf(value(clean(havengeld(
+                "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst")))).right());
     }
 
     @Test void b_a_base_between_parentheses() {
         // before: ERROR "syntaxfout: no viable alternative at input 'hetpercentagehavengeldvan('"
-        taxatiebedragViaTaxatie(percentageOf(waarde(clean(havengeld(
-                "het percentage havengeld van (het taxatiebedrag van de taxatie van de Vondst)")))).rechts());
+        taxatiebedragViaTaxatie(percentageOf(value(clean(havengeld(
+                "het percentage havengeld van (het taxatiebedrag van de taxatie van de Vondst)")))).right());
     }
 
     @Test void d_a_base_from_a_local_variable() {
@@ -101,49 +101,49 @@ class PercentageReadTest {
                     Daarbij geldt:
                         het getaxeerde bedrag is het taxatiebedrag van de taxatie van de Vondst.
             """);
-        Expr w = waarde(m);
+        Expr w = value(m);
         Expr.Let let = assertInstanceOf(Expr.Let.class, w);
         assertEquals("getaxeerde bedrag", let.binder());
         taxatiebedragViaTaxatie(let.value());
-        assertEquals("getaxeerde bedrag", assertInstanceOf(Expr.BinderRef.class, percentageOf(w).rechts()).naam());
+        assertEquals("getaxeerde bedrag", assertInstanceOf(Expr.BinderRef.class, percentageOf(w).right()).naam());
     }
 
     @Test void h_the_percent_sign_after_the_parameter() {
         // before: ERROR "genavigeerde lezing '…': het lid 'percentage havengeld % van het taxatiebedrag' bestaat niet …"
-        taxatiebedragViaTaxatie(percentageOf(waarde(clean(havengeld(
-                "het percentage havengeld % van het taxatiebedrag van de taxatie van de Vondst")))).rechts());
+        taxatiebedragViaTaxatie(percentageOf(value(clean(havengeld(
+                "het percentage havengeld % van het taxatiebedrag van de taxatie van de Vondst")))).right());
     }
 
     @Test void h_the_percent_sign_after_the_parameter_for_an_own_member() {
         // before: ERROR "lezing 'het percentage havengeld % van zijn getaxeerde waarde': 'zijn getaxeerde waarde'
         // noemt vanaf 'Vondst' geen rol en geen objecttype: …"
-        Expr y = percentageOf(waarde(clean(havengeld("het percentage havengeld % van zijn getaxeerde waarde")))).rechts();
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, y);
-        assertEquals("getaxeerde waarde", a.attribuut());
-        assertEquals("Vondst", a.objecttype().naam);
+        Expr y = percentageOf(value(clean(havengeld("het percentage havengeld % van zijn getaxeerde waarde")))).right();
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, y);
+        assertEquals("getaxeerde waarde", a.attribute());
+        assertEquals("Vondst", a.objectType().naam);
     }
 
     // ---- the forms that already resolved, unchanged
 
     @Test void e_an_own_member_stays_the_base() {
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class,
-                percentageOf(waarde(clean(havengeld("het percentage havengeld van zijn getaxeerde waarde")))).rechts());
-        assertEquals("getaxeerde waarde", a.attribuut());
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class,
+                percentageOf(value(clean(havengeld("het percentage havengeld van zijn getaxeerde waarde")))).right());
+        assertEquals("getaxeerde waarde", a.attribute());
         assertEquals(List.of(), a.navigationPath());
     }
 
     @Test void j_an_own_member_with_the_subject_name_stays_the_base() {
-        Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class, percentageOf(waarde(clean(
-                havengeld("het percentage havengeld van de getaxeerde waarde van de Vondst")))).rechts());
-        assertEquals("getaxeerde waarde", a.attribuut());
-        assertEquals("Vondst", a.objecttype().naam);
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, percentageOf(value(clean(
+                havengeld("het percentage havengeld van de getaxeerde waarde van de Vondst")))).right());
+        assertEquals("getaxeerde waarde", a.attribute());
+        assertEquals("Vondst", a.objectType().naam);
     }
 
     @Test void i_a_literal_percentage_of_a_navigated_base_stays() {
-        Expr w = waarde(clean(havengeld("12,5 % van het taxatiebedrag van de taxatie van de Vondst")));
-        Expr.Binair b = assertInstanceOf(Expr.Binair.class, assertInstanceOf(Expr.Afgerond.class, w).basis());
+        Expr w = value(clean(havengeld("12,5 % van het taxatiebedrag van de taxatie van de Vondst")));
+        Expr.Binary b = assertInstanceOf(Expr.Binary.class, assertInstanceOf(Expr.Rounding.class, w).base());
         assertEquals(Expr.BinOp.PERCENTAGE_VAN, b.op());
-        taxatiebedragViaTaxatie(b.rechts());
+        taxatiebedragViaTaxatie(b.right());
     }
 
     @Test void a_period_between_parentheses_stays_a_period() {
@@ -158,12 +158,12 @@ class PercentageReadTest {
 
     @Test void the_percent_sign_before_parentheses_stays_the_form_with_percent_sign() {
         // "P % van (Y)" and "12,5 % van (Y)" read as the '%' form, as before: the name does not take the sign
-        assertInstanceOf(Expr.AttribuutRef.class, percentageOf(waarde(clean(havengeld(
-                "het percentage havengeld % van (zijn getaxeerde waarde)")))).rechts());
-        Expr w = waarde(clean(havengeld("12,5 % van (zijn getaxeerde waarde)")));
-        Expr.Binair b = assertInstanceOf(Expr.Binair.class, assertInstanceOf(Expr.Afgerond.class, w).basis());
+        assertInstanceOf(Expr.AttributeReference.class, percentageOf(value(clean(havengeld(
+                "het percentage havengeld % van (zijn getaxeerde waarde)")))).right());
+        Expr w = value(clean(havengeld("12,5 % van (zijn getaxeerde waarde)")));
+        Expr.Binary b = assertInstanceOf(Expr.Binary.class, assertInstanceOf(Expr.Rounding.class, w).base());
         assertEquals(Expr.BinOp.PERCENTAGE_VAN, b.op());
-        assertInstanceOf(Expr.Literal.class, b.links());
+        assertInstanceOf(Expr.Literal.class, b.left());
     }
 
     @Test void parentheses_after_something_else_than_a_percentage_are_refused() {

@@ -67,7 +67,7 @@ class SourcePathRefusalWitnessTest {
         ObjectNode root = (ObjectNode) anchor();
         ((ObjectNode) fold(root)).putObject("sourceRole")
                 .put("node", "RoleBinding").put("factType", "berging").put("role", "geborgen vondst");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(root));
         assertTrue(e.site().endsWith("/sourcePath") && e.getMessage().contains(IrLoader.RANGE_TWICE),
                 "het eenstapsbereik HEET sourceRole, dus de twee velden sluiten elkaar uit: " + e.getMessage());
     }
@@ -95,7 +95,7 @@ class SourcePathRefusalWitnessTest {
         ObjectNode root = (ObjectNode) anchor();
         ((ObjectNode) fold(root).get("arguments").get(0)).putArray("path").addObject()
                 .put("node", "RoleBinding").put("factType", "bemanning").put("role", "gevoerde boot");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(root),
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
         assertEquals("/rules/rules/0/versions/0/value/sourcePath", e.site(), e.getMessage());
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
@@ -108,7 +108,7 @@ class SourcePathRefusalWitnessTest {
         ObjectNode root = (ObjectNode) anchor();
         for (JsonNode rule : IrPath.rulesList(root, "rules"))
             ((ObjectNode) rule.get("versions").get(0).get("value")).remove("sourcePath");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(root));
+        IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(root));
         assertTrue(e.getMessage().contains(IrLoader.RANGE_MISSING), e.getMessage());
     }
 

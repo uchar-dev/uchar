@@ -6,23 +6,23 @@ import java.util.List;
  * The test of the rule over the values at {@code slots}, as one constraint with its own {@code id} (see {@link Alpha}),
  * after the patterns that bind them. {@code toets} is the condition as a tree of calls over a value array of
  * {@code grootte} slots with the read values at {@code slots}, a truth value, from which a rendering into the executable
- * model makes a predicate and one into DRL text makes the calls. {@code rol} says what the test asks of the condition,
+ * model makes a predicate and one into DRL text makes the calls. {@code role} says what the test asks of the condition,
  * which a rendering cannot tell from the condition itself: that it holds, that it holds without a fault, that it
  * faults, or that it deposits, with the probe in slot {@code depositFlag} (-1 for every other role).
  */
-public record TestItem(String id, Role rol, Term test, int depositFlag, List<Integer> slots, int size)
+public record TestItem(String id, Role role, Term test, int depositFlag, List<Integer> slots, int size)
         implements LhsItem {
 
     public TestItem {
         slots = List.copyOf(slots);
-        if ((rol == Role.DEPOSIT) != (depositFlag >= 0))
-            throw new IllegalArgumentException("alleen een deponeringstoets heeft een sonde, en zij altijd: " + rol
+        if ((role == Role.DEPOSIT) != (depositFlag >= 0))
+            throw new IllegalArgumentException("alleen een deponeringstoets heeft een sonde, en zij altijd: " + role
                     + " met sonde " + depositFlag);
     }
 
     /**
      * What the test asks of the condition (RUNTIME-SEMANTICS ch. 5.2, 1.2). An evaluation fault is a division by a
-     * numeric zero or a fault of the branch's own ({@code Rekenfout}, {@code Invoervormfout}); any other exception is a
+     * numeric zero or a fault of the branch's own ({@code ComputeFault}, {@code InputFormFault}); any other exception is a
      * broken contract and leaves the test as it is.
      */
     public enum Role {

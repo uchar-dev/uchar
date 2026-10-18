@@ -28,14 +28,14 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
-import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
+import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.dayCount;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.ownTotal;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.kenmerk;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.characteristic;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.months;
-import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objecttype;
+import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.period;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.segment;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.timeAttribute;
@@ -119,12 +119,12 @@ class TmsTimelineWitnessTest {
 
     static final String BORGPLICHTIG = check("borgplichtig", false);
 
-    static final String MODEL_A = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-            TmsDocuments.attribuut("score", WHOLE), timeAttribute("jaartarief", WHOLE, "year"),
+    static final String MODEL_A = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            TmsDocuments.attribute("score", WHOLE), timeAttribute("jaartarief", WHOLE, "year"),
             timeAttribute("jaardeel", WHOLE, "year"), timeAttribute("maanddeel", WHOLE, "month"),
-            timeAttribute("bedrag", WHOLE, "month"), TmsDocuments.attribuut("wachtsom", WHOLE),
-            TmsDocuments.attribuut("topsom", WHOLE)),
-            List.of(timeCharacteristic("borgplichtig", "month"), kenmerk("actief")))), List.of());
+            timeAttribute("bedrag", WHOLE, "month"), TmsDocuments.attribute("wachtsom", WHOLE),
+            TmsDocuments.attribute("topsom", WHOLE)),
+            List.of(timeCharacteristic("borgplichtig", "month"), characteristic("actief")))), List.of());
 
     static final String ACTIEF = TmsDocuments.characteristicRule("actief", "Jutter", "actief",
             comparison("greater", ownRead("score", "Jutter"), number("5")));
@@ -162,24 +162,24 @@ class TmsTimelineWitnessTest {
                         instance("J3", "Jutter", Map.of("score", numberValue("10"), "jaartarief", RATE, "maanddeel", JUNE),
                                 List.of(), BORG, Map.of())),
                 List.of(expectedTimeline("J1", "jaardeel", YEAR_PARTS), expectedTimeline("J1", "maanddeel", monthParts()),
-                        waarde("J1", "wachtsom", "3178"), waarde("J1", "topsom", "70"),
+                        value("J1", "wachtsom", "3178"), value("J1", "topsom", "70"),
                         expectedTimeline("J2", "jaardeel", List.of()),
                         expectedTimeline("J2", "maanddeel", List.of(segment("2024-06-01", "2024-07-01", "9"))),
-                        waarde("J2", "wachtsom", "9"), waarde("J2", "topsom", "0"),
+                        value("J2", "wachtsom", "9"), value("J2", "topsom", "0"),
                         expectedTimeline("J3", "jaardeel", YEAR_PARTS), expectedTimeline("J3", "maanddeel", monthParts()),
-                        waarde("J3", "wachtsom", "3178"), waarde("J3", "topsom", "0"), consistent()));
+                        value("J3", "wachtsom", "3178"), value("J3", "topsom", "0"), consistent()));
     }
 
     @Test void a_chain_of_timeline_writers_and_the_totals_over_it_in_every_order_of_the_rules() throws Exception {
         JsonNode caseDocument = caseA();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES_A)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL_A, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     @Test void at_the_fixpoint_a_state_and_at_most_one_value_per_object_and_member() throws Exception {
@@ -192,19 +192,19 @@ class TmsTimelineWitnessTest {
             Map<Object, String> labels = new IdentityHashMap<>(Map.of(j1, "J1", j2, "J2"));
             int[] intermediate = {0};
             Map<String, Integer> states = new TreeMap<>(), waarden = new TreeMap<>();
-            TmsDocuments.vuur(b, order, List.of(j1, j2), sessie -> sessie.addEventListener(
+            TmsDocuments.fire(b, order, List.of(j1, j2), session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
                             if (e.getObject() instanceof Value w && w.onderwerp() == j1
-                                    && w.attribuut().naam().equals("wachtsom")
-                                    && ((BigDecimal) w.waarde()).compareTo(new BigDecimal("3178")) != 0) intermediate[0]++;
+                                    && w.attribute().naam().equals("wachtsom")
+                                    && ((BigDecimal) w.value()).compareTo(new BigDecimal("3178")) != 0) intermediate[0]++;
                         }
-                    }), sessie -> {
-                for (Object f : sessie.getObjects(o -> o instanceof State))
-                    states.merge(labels.get(((State) f).onderwerp()) + "." + ((State) f).attribuut().naam(), 1,
+                    }), session -> {
+                for (Object f : session.getObjects(o -> o instanceof State))
+                    states.merge(labels.get(((State) f).onderwerp()) + "." + ((State) f).attribute().naam(), 1,
                             Integer::sum);
-                for (Object f : sessie.getObjects(o -> o instanceof Value))
-                    waarden.merge(labels.get(((Value) f).onderwerp()) + "." + ((Value) f).attribuut().naam(), 1,
+                for (Object f : session.getObjects(o -> o instanceof Value))
+                    waarden.merge(labels.get(((Value) f).onderwerp()) + "." + ((Value) f).attribute().naam(), 1,
                             Integer::sum);
             });
             // the jaartarief and the bedrag no form writes stand as well, the bedrag of J2 as leeg: every attribute on a
@@ -217,11 +217,11 @@ class TmsTimelineWitnessTest {
             assertEquals(List.of("[2024-01-01, 2025-01-01)=306", "[2025-01-01, 2026-01-01)=59"),
                     TmsTimelineWitnessTest.timelineOf(j1, "jaardeel"), () -> "jaardeel van J1 in volgorde " + names);
             assertEquals(12, TmsTimelineWitnessTest.timelineOf(j1, "maanddeel").size(), () -> "volgorde " + names);
-            assertEquals(0, new BigDecimal("3178").compareTo((BigDecimal) TmsDocuments.lees(j1, "wachtsom")),
+            assertEquals(0, new BigDecimal("3178").compareTo((BigDecimal) TmsDocuments.read(j1, "wachtsom")),
                     () -> "wachtsom van J1 in volgorde " + names);
-            assertEquals(0, new BigDecimal("70").compareTo((BigDecimal) TmsDocuments.lees(j1, "topsom")),
+            assertEquals(0, new BigDecimal("70").compareTo((BigDecimal) TmsDocuments.read(j1, "topsom")),
                     () -> "topsom van J1 in volgorde " + names);
-            assertNull(TmsDocuments.lees(j2, "jaardeel"), () -> "een nooit geschreven doel is null, volgorde " + names);
+            assertNull(TmsDocuments.read(j2, "jaardeel"), () -> "een nooit geschreven doel is null, volgorde " + names);
             if (intermediate[0] > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde gaf J1 onderweg een andere wachtsom dan 3178");
@@ -242,21 +242,21 @@ class TmsTimelineWitnessTest {
 
     /** The timeline on member {@code lid} of {@code beanObject} as "[van, tot)=waarde", or null where the bean holds none. */
     static List<String> timelineOf(Object beanObject, String member) throws Exception {
-        Object l = TmsDocuments.lees(beanObject, member);
+        Object l = TmsDocuments.read(beanObject, member);
         if (l == null) return null;
         List<String> out = new ArrayList<>();
-        for (Period t : Period.lijst((List<?>) l))
-            out.add("[" + t.van() + ", " + t.to() + ")=" + (t.waarde() == null ? "leeg"
-                    : t.waarde().stripTrailingZeros().toPlainString()));
+        for (Period t : Period.list((List<?>) l))
+            out.add("[" + t.van() + ", " + t.to() + ")=" + (t.value() == null ? "leeg"
+                    : t.value().stripTrailingZeros().toPlainString()));
         return out;
     }
 
     // ---------------- B: a negated read of what a rule derives later ----------------
 
-    static final String MODEL_B = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-            TmsDocuments.attribuut("score", WHOLE), timeAttribute("jaartarief", WHOLE, "year"),
+    static final String MODEL_B = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            TmsDocuments.attribute("score", WHOLE), timeAttribute("jaartarief", WHOLE, "year"),
             timeAttribute("jaardeel", WHOLE, "year")),
-            List.of(timeCharacteristic("borgplichtig", "month"), kenmerk("vrijgesteld")))), List.of());
+            List.of(timeCharacteristic("borgplichtig", "month"), characteristic("vrijgesteld")))), List.of());
 
     static final String VRIJSTELLING = TmsDocuments.characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
             comparison("less", ownRead("score", "Jutter"), number("5")));
@@ -275,20 +275,20 @@ class TmsTimelineWitnessTest {
 
     @Test void a_negated_read_of_what_is_later_derived_in_both_orders() throws Exception {
         JsonNode caseDocument = caseB();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(VRIJSTELLING, YEAR_PART_NON_FREE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL_B, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- B2: a comparison with a value a rule replaces later ----------------
 
-    static final String MODEL_B2 = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-            TmsDocuments.attribuut("score", WHOLE), TmsDocuments.attribuut("teller", WHOLE),
+    static final String MODEL_B2 = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            TmsDocuments.attribute("score", WHOLE), TmsDocuments.attribute("teller", WHOLE),
             timeAttribute("jaartarief", WHOLE, "year"), timeAttribute("jaardeel", WHOLE, "year")),
             List.of(timeCharacteristic("borgplichtig", "month")))), List.of());
 
@@ -304,26 +304,26 @@ class TmsTimelineWitnessTest {
                                 List.of(), BORG, Map.of()),
                         instance("J2", "Jutter", Map.of("score", numberValue("2"), "teller", numberValue("8"),
                                 "jaartarief", RATE), List.of(), BORG, Map.of())),
-                List.of(waarde("J1", "teller", "10"),
+                List.of(value("J1", "teller", "10"),
                         expectedTimeline("J1", "jaardeel", List.of(segment("2024-01-01", "2025-01-01", "4"))),
-                        waarde("J2", "teller", "2"), expectedTimeline("J2", "jaardeel", YEAR_PARTS), consistent()));
+                        value("J2", "teller", "2"), expectedTimeline("J2", "jaardeel", YEAR_PARTS), consistent()));
     }
 
     @Test void a_comparison_with_a_value_that_a_rule_later_replaces_in_both_orders() throws Exception {
         JsonNode caseDocument = caseB2();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(COUNTER, YEAR_PART_UNDER_FIVE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL_B2, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- C: an empty timeline written outside the standing domain ----------------
 
-    static final String MODEL_C = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
+    static final String MODEL_C = TmsDocuments.model(List.of(objectType("Jutter", List.of(
             timeAttribute("jaartarief", WHOLE, "year"), timeAttribute("jaardeel", WHOLE, "year")),
             List.of(timeCharacteristic("borgplichtig", "month")))), List.of());
 
@@ -353,16 +353,16 @@ class TmsTimelineWitnessTest {
                 TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-01-01", "2025-01-01", "366")));
         TmsTimelineDocuments.set(j1, "jaardeel", List.of(
                 TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-01-01", "2025-01-01", "4")));
-        TmsDocuments.vuur(b, b.execModelTranspiler().model().getRules(), List.of(j1),
-                sessie -> sessie.setGlobal("rekendatum", java.time.LocalDate.parse("2025-06-01")), sessie -> { });
+        TmsDocuments.fire(b, b.execModelTranspiler().model().getRules(), List.of(j1),
+                session -> session.setGlobal("rekendatum", java.time.LocalDate.parse("2025-06-01")), session -> { });
         assertEquals(List.of(), timelineOf(j1, "jaardeel"), "een lege lijst op de bean, niet null en niet de invoer");
     }
 
     // ---------------- D: the clip over a characteristic on a timeline, ch. 3.6 ----------------
 
-    static final String MODEL_D = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
-            timeAttribute("vergoeding", WHOLE, "month"), TmsDocuments.attribuut("wachtsom", WHOLE),
-            TmsDocuments.attribuut("stilsom", WHOLE), TmsDocuments.attribuut("topsom", WHOLE)),
+    static final String MODEL_D = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            timeAttribute("vergoeding", WHOLE, "month"), TmsDocuments.attribute("wachtsom", WHOLE),
+            TmsDocuments.attribute("stilsom", WHOLE), TmsDocuments.attribute("topsom", WHOLE)),
             List.of(timeCharacteristic("wachtplichtig", "month")))), List.of());
 
     static final String GUARD = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom",
@@ -382,27 +382,27 @@ class TmsTimelineWitnessTest {
                         instance("J2", "Jutter", Map.of("vergoeding", vergoeding), List.of(), Map.of(), Map.of()),
                         instance("J3", "Jutter", Map.of(), List.of(),
                                 Map.of("wachtplichtig", List.of(period("2023-07-01", "2024-02-01"))), Map.of())),
-                List.of(waarde("J1", "wachtsom", "71"), waarde("J1", "stilsom", "115"), waarde("J1", "topsom", "66"),
-                        waarde("J2", "wachtsom", "0"), waarde("J2", "stilsom", "186"), waarde("J2", "topsom", "66"),
-                        waarde("J3", "wachtsom", "0"), waarde("J3", "stilsom", "0"), waarde("J3", "topsom", "0"),
+                List.of(value("J1", "wachtsom", "71"), value("J1", "stilsom", "115"), value("J1", "topsom", "66"),
+                        value("J2", "wachtsom", "0"), value("J2", "stilsom", "186"), value("J2", "topsom", "66"),
+                        value("J3", "wachtsom", "0"), value("J3", "stilsom", "0"), value("J3", "topsom", "0"),
                         consistent()));
     }
 
     @Test void a_clip_over_a_time_dependent_characteristic_reads_its_periods_in_every_order() throws Exception {
         JsonNode caseDocument = caseD();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(GUARD, SILENT, TOP))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL_D, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- E: a day count onto a target on a fixed start point, ch. 3.2 ----------------
 
-    static final String MODEL_E = TmsDocuments.model(List.of(objecttype("Jutter", List.of(
+    static final String MODEL_E = TmsDocuments.model(List.of(objectType("Jutter", List.of(
             timeAttribute("stormdagen", WHOLE, "year", "--10-01"), timeAttribute("kalenderdagen", WHOLE, "year")),
             List.of(timeCharacteristic("wachtplichtig", "month")))), List.of());
 
@@ -422,14 +422,14 @@ class TmsTimelineWitnessTest {
 
     @Test void a_day_count_to_a_target_on_a_fixed_start_point_in_both_orders() throws Exception {
         JsonNode caseDocument = caseE();
-        List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(STORM_DAYS, CALENDAR_DAYS))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL_E, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " gespeeld");
+            expected.add(names + " gespeeld");
         }
-        assertEquals(verwacht, outcomes);
+        assertEquals(expected, outcomes);
     }
 
     // ---------------- the documents, for the other executors ----------------

@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 
 import java.util.Objects;
 
@@ -18,25 +18,25 @@ import java.util.Objects;
  * <p>Keyed and compared as {@link HasCharacteristic} is: the attribute on its declaring type, the subject by identity, and
  * the value and the writer by their own equality.
  */
-public record Value(Object onderwerp, ElementSleutel attribuut, Object waarde, String writer) {
+public record Value(Object onderwerp, ElementKey attribute, Object value, String writer) {
 
     public Value {
         Objects.requireNonNull(onderwerp, "onderwerp");
-        Objects.requireNonNull(attribuut, "attribuut");
+        Objects.requireNonNull(attribute, "attribuut");
         Objects.requireNonNull(writer, "schrijver");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Value w && w.onderwerp == onderwerp && w.attribuut.equals(attribuut)
-                && Objects.equals(w.waarde, waarde) && w.writer.equals(writer);
+        return o instanceof Value w && w.onderwerp == onderwerp && w.attribute.equals(attribute)
+                && Objects.equals(w.value, value) && w.writer.equals(writer);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(onderwerp), attribuut, waarde, writer);
+        return Objects.hash(System.identityHashCode(onderwerp), attribute, value, writer);
     }
 
     @Override public String toString() {
-        return "Waarde(" + FactNames.object(onderwerp) + ", " + FactNames.member(attribuut) + ", "
-                + (waarde == null ? "leeg" : waarde) + ", " + writer + ")";
+        return "Waarde(" + FactNames.object(onderwerp) + ", " + FactNames.member(attribute) + ", "
+                + (value == null ? "leeg" : value) + ", " + writer + ")";
     }
 }

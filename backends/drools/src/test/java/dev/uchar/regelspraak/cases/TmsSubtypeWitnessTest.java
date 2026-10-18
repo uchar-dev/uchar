@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
-import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
+import static dev.uchar.regelspraak.cases.TmsDocuments.expected;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -36,9 +36,9 @@ class TmsSubtypeWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("S1", "Strandjutter", "erkend"), instance("S2", "Strandjutter", null),
                         instance("J1", "Jutter", "erkend")),
-                List.of(verwacht("S1", "vergund", true), verwacht("S1", "strandbevoegd", false),
-                        verwacht("S2", "vergund", false), verwacht("S2", "strandbevoegd", true),
-                        verwacht("J1", "vergund", true)));
+                List.of(expected("S1", "vergund", true), expected("S1", "strandbevoegd", false),
+                        expected("S2", "vergund", false), expected("S2", "strandbevoegd", true),
+                        expected("J1", "vergund", true)));
         everyOrder(rules, caseDocument);
     }
 
@@ -48,9 +48,9 @@ class TmsSubtypeWitnessTest {
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("J1", "Jutter", "erkend"), instance("S1", "Strandjutter", "erkend"),
                         instance("S2", "Strandjutter", null)),
-                List.of(verwacht("J1", "vergund", false), verwacht("J1", "onvergund", true),
-                        verwacht("S1", "vergund", true), verwacht("S1", "onvergund", false),
-                        verwacht("S2", "vergund", false), verwacht("S2", "onvergund", true)));
+                List.of(expected("J1", "vergund", false), expected("J1", "onvergund", true),
+                        expected("S1", "vergund", true), expected("S1", "onvergund", false),
+                        expected("S2", "vergund", false), expected("S2", "onvergund", true)));
         everyOrder(rules, caseDocument);
     }
 
@@ -65,25 +65,25 @@ class TmsSubtypeWitnessTest {
 
     private static final String MODEL = "{\"objectTypes\":["
             + "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\",\"attributes\":[],"
-            + "\"characteristics\":[" + kenmerk("erkend") + "," + kenmerk("vergund") + "," + kenmerk("onvergund") + "]},"
+            + "\"characteristics\":[" + characteristic("erkend") + "," + characteristic("vergund") + "," + characteristic("onvergund") + "]},"
             + "{\"node\":\"ObjectType\",\"name\":\"Strandjutter\",\"animate\":true,\"plural\":\"Strandjutters\","
-            + "\"supertype\":\"Jutter\",\"attributes\":[],\"characteristics\":[" + kenmerk("strandbevoegd") + "]}],"
+            + "\"supertype\":\"Jutter\",\"attributes\":[],\"characteristics\":[" + characteristic("strandbevoegd") + "]}],"
             + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
             + "\"dayKinds\":[]}";
 
-    private static String kenmerk(String naam) {
+    private static String characteristic(String naam) {
         return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
     }
 
-    private static String regel(String naam, String type, String doel, String voorwaarde) {
-        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + doel + "\",\"subjectType\":\"" + type + "\","
-                + "\"source\":{\"snippet\":\"Een " + type + " is " + doel + "\"}}";
+    private static String regel(String naam, String type, String targetName, String condition) {
+        String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
+                + "\"source\":{\"snippet\":\"Een " + type + " is " + targetName + "\"}}";
         return IrPath.regel(naam, "KENMERKTOEKENNING", target, IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"),
-                voorwaarde);
+                condition);
     }
 
-    private static String instance(String label, String type, String kenmerk) {
+    private static String instance(String label, String type, String characteristic) {
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{},\"roles\":{},"
-                + "\"characteristics\":[" + (kenmerk == null ? "" : "\"" + kenmerk + "\"") + "]}";
+                + "\"characteristics\":[" + (characteristic == null ? "" : "\"" + characteristic + "\"") + "]}";
     }
 }

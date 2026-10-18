@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import org.drools.model.BetaIndexN;
 import org.drools.model.Condition;
@@ -69,10 +69,10 @@ class TmsIndexWitnessTest {
 
     /** One constraint of a pattern: the document, the rule, the class of the pattern's fact, its kind, whether it
      *  reads another variable than the pattern's own (a join), and the index it carries, null where none. */
-    record PatternConstraint(String document, String regel, Class<?> javaClass, String soort, boolean join, Index<?, ?> index) {}
+    record PatternConstraint(String document, String regel, Class<?> javaClass, String category, boolean join, Index<?, ?> index) {}
 
     @BeforeAll
-    static void lees() throws Exception {
+    static void read() throws Exception {
         patternConstraints = new ArrayList<>();
         for (String d : DOCUMENTS) {
             Path ir = d.equals("schaal") ? ScaleTrial.model() : GOLDEN.resolve(d).resolve("ir.json");
@@ -134,10 +134,10 @@ class TmsIndexWitnessTest {
         List<String> without = new ArrayList<>();
         for (PatternConstraint b : patternConstraints) {
             if (!b.join()) continue;
-            seen.add(b.soort());
+            seen.add(b.category());
             boolean index = b.index() instanceof BetaIndexN<?, ?> && b.index().getConstraintType() == Index.ConstraintType.EQUAL;
-            if (!index && !UNINDEXED.containsKey(b.soort()))
-                without.add(b.soort() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '" + b.regel()
+            if (!index && !UNINDEXED.containsKey(b.category()))
+                without.add(b.category() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '" + b.regel()
                         + "'");
         }
         assertEquals(List.of(), without, "joins zonder gelijkheidsindex en zonder reden");
@@ -157,7 +157,7 @@ class TmsIndexWitnessTest {
         int beans = 0;
         for (DroolsBackend.Build b : BUILD.values())
             for (RegelSpraakModel.Objecttype ot : b.model().objecttypen.values()) {
-                Class<?> k = Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), true,
+                Class<?> k = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true), true,
                         b.beanLoader());
                 beans++;
                 if (k.getMethod("equals", Object.class).getDeclaringClass() != Object.class)
@@ -174,11 +174,11 @@ class TmsIndexWitnessTest {
         Map<String, Integer> seen = new LinkedHashMap<>();
         List<String> without = new ArrayList<>();
         for (PatternConstraint b : patternConstraints) {
-            if (!kinds.contains(b.soort()) && !rare.contains(b.soort())) continue;
-            seen.merge(b.soort(), 1, Integer::sum);
+            if (!kinds.contains(b.category()) && !rare.contains(b.category())) continue;
+            seen.merge(b.category(), 1, Integer::sum);
             if (!b.join() || !(b.index() instanceof BetaIndexN<?, ?>)
                     || b.index().getConstraintType() != Index.ConstraintType.EQUAL)
-                without.add(b.soort() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '"
+                without.add(b.category() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '"
                         + b.regel() + "': " + (b.join() ? "" : "geen join, ") + "index " + b.index());
         }
         Set<String> missing = new TreeSet<>(kinds);
