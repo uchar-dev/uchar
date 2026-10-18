@@ -96,9 +96,9 @@ class SeparationWitnessTest {
         }
         for (Path p : files) {
             String naam = TMS.relativize(p).toString().replace(File.separatorChar, '/');
-            List<String> treffers = treffers(Files.readString(p));
-            if (RENDERINGS.contains(naam)) inRenderings.put(naam, treffers.size());
-            else if (!treffers.isEmpty()) outside.put(naam, treffers);
+            List<String> hits = hits(Files.readString(p));
+            if (RENDERINGS.contains(naam)) inRenderings.put(naam, hits.size());
+            else if (!hits.isEmpty()) outside.put(naam, hits);
         }
         assertEquals(Map.of("TmsTranspiler.java", List.of("import org.drools.model.Model;")), outside,
                 "org.drools.model buiten de weergaven");
@@ -111,7 +111,7 @@ class SeparationWitnessTest {
 
     /** Every occurrence of {@link #DROOLS_MODEL} in {@code text} with its whitespace removed, each as the source lines
      *  it spans, stripped and joined by a space. */
-    static List<String> treffers(String text) {
+    static List<String> hits(String text) {
         StringBuilder without = new StringBuilder();
         List<Integer> place = new ArrayList<>();
         for (int i = 0; i < text.length(); i++) {
@@ -131,8 +131,8 @@ class SeparationWitnessTest {
     /** The scan itself: a name broken over two lines, which compiles, counts, with the lines it spans. */
     @Test void the_scan_finds_a_name_broken_over_two_lines() {
         assertEquals(List.of("static org.drools. model.Index proef;"),
-                treffers("class X {\n    static org.drools.\n            model.Index proef;\n}\n"));
-        assertEquals(List.of("import org . drools . model . Model;"), treffers("import org . drools . model . Model;"));
+                hits("class X {\n    static org.drools.\n            model.Index proef;\n}\n"));
+        assertEquals(List.of("import org . drools . model . Model;"), hits("import org . drools . model . Model;"));
     }
 
     @Test void no_plan_class_carries_a_functional_type() throws Exception {

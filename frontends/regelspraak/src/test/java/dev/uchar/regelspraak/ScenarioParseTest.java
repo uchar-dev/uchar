@@ -23,11 +23,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ScenarioParseTest {
 
-    private record Uitkomst(int fouten, int foutknopen, boolean alles, List<String> meldingen) {
-        boolean schoon() { return fouten == 0 && foutknopen == 0 && alles; }
+    private record ParseOutcome(int fouten, int errorNodes, boolean everything, List<String> meldingen) {
+        boolean clean() { return fouten == 0 && errorNodes == 0 && everything; }
     }
 
-    private static Uitkomst parse(String bron, Function<RegelSpraak, ParseTree> start) {
+    private static ParseOutcome parse(String bron, Function<RegelSpraak, ParseTree> start) {
         List<String> meldingen = new ArrayList<>();
         BaseErrorListener l = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col, String msg,
@@ -39,29 +39,29 @@ class ScenarioParseTest {
         lexer.removeErrorListeners(); lexer.addErrorListener(l);
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(lexer));
         parser.removeErrorListeners(); parser.addErrorListener(l);
-        ParseTree boom = start.apply(parser);
-        return new Uitkomst(meldingen.size(), foutknopen(boom), parser.getInputStream().LA(1) == Token.EOF, meldingen);
+        ParseTree tree = start.apply(parser);
+        return new ParseOutcome(meldingen.size(), errorNodes(tree), parser.getInputStream().LA(1) == Token.EOF, meldingen);
     }
 
-    private static int foutknopen(ParseTree t) {
+    private static int errorNodes(ParseTree t) {
         if (t instanceof ErrorNode) return 1;
         int n = 0;
-        for (int i = 0; i < t.getChildCount(); i++) n += foutknopen(t.getChild(i));
+        for (int i = 0; i < t.getChildCount(); i++) n += errorNodes(t.getChild(i));
         return n;
     }
 
-    private static void schoon(String bron) {
-        Uitkomst u = parse(bron, RegelSpraak::testDocument);
-        assertTrue(u.schoon(), () -> "hoort schoon te parseren onder testDocument: " + u + "\n" + bron);
+    private static void clean(String bron) {
+        ParseOutcome u = parse(bron, RegelSpraak::testDocument);
+        assertTrue(u.clean(), () -> "hoort schoon te parseren onder testDocument: " + u + "\n" + bron);
     }
 
     private static void fout(String bron) {
-        Uitkomst u = parse(bron, RegelSpraak::testDocument);
-        assertFalse(u.schoon(), () -> "hoort NIET te parseren onder testDocument:\n" + bron);
+        ParseOutcome u = parse(bron, RegelSpraak::testDocument);
+        assertFalse(u.clean(), () -> "hoort NIET te parseren onder testDocument:\n" + bron);
     }
 
-    @Test void situatie_op_situaties_en_een_rollijst_met_komma() {
-        schoon("""
+    @Test void situation_on_situations_and_a_role_list_with_a_comma() {
+        clean("""
             Situatie kaal:
             een Jutter J
             - de naam is "Aukje"
@@ -73,8 +73,8 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void scenario_zonder_scope_eindigt_zijn_naam_bij_elk_kopwoord() {
-        schoon("""
+    @Test void scenario_without_scope_ends_its_name_at_each_head_word() {
+        clean("""
             Scenario een naam met woorden
             Gegeven is de volgende situatie:
             een Jutter J
@@ -91,8 +91,8 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void elke_scopevorm() {
-        schoon("""
+    @Test void every_scope_form() {
+        clean("""
             Scenario een
             toetst de regel bonus bij drempel
             gebaseerd op de situatie kaal
@@ -111,8 +111,8 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void perioden_op_attribuut_kenmerk_parameter_en_verwachting() {
-        schoon("""
+    @Test void periods_on_attribute_characteristic_parameter_and_expectation() {
+        clean("""
             Situatie tijd:
             een Jutter J
             - de borgdagen is 4 van 01-01-2024 tot 01-02-2024
@@ -127,8 +127,8 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void de_sleutel_van_een_inconsistentie() {
-        schoon("""
+    @Test void the_key_of_an_inconsistency() {
+        clean("""
             Scenario sleutel
             gebaseerd op de situatie kaal
             Met als verwacht resultaat:
@@ -137,7 +137,7 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void volgens_is_het_enige_woord_voor_de_sleutel() {
+    @Test void per_is_the_only_word_for_the_key() {
         fout("""
             Scenario sleutel
             gebaseerd op de situatie kaal
@@ -146,7 +146,7 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void tot_en_met_is_geen_periode() {
+    @Test void up_to_and_including_is_no_period() {
         fout("""
             Situatie tijd:
             een Jutter J
@@ -154,16 +154,16 @@ class ScenarioParseTest {
             """);
     }
 
-    @Test void een_scenarioblok_is_geen_productiedocument() {
-        String blok = """
+    @Test void a_scenario_block_is_no_production_document() {
+        String block = """
             Scenario los
             Gegeven is de volgende situatie:
             een Jutter J
             Met als verwacht resultaat:
             - de gegevens zijn consistent
             """;
-        assertFalse(parse(blok, RegelSpraak::regelSpraakDocument).schoon(),
+        assertFalse(parse(block, RegelSpraak::regelSpraakDocument).clean(),
                 "een scenarioblok hoort onder regelSpraakDocument te falen: de productieroute ziet de extensie niet");
-        schoon(blok);
+        clean(block);
     }
 }

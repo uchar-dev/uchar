@@ -30,16 +30,16 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
                                List<Verwachting> verwachtingen, int line) {
 
     /** The rules a scenario tests: {@code vormen} holds the names of the model forms the scope carries, as the model
-     *  spells them — what the emitted IR keeps; {@code weggelaten} holds the source lines of the blocks (a rule, a
+     *  spells them — what the emitted IR keeps; {@code omitted} holds the source lines of the blocks (a rule, a
      *  decision table, an extension block, a rule group) whose every form the scope leaves out, so the IR document
      *  drops the diagnostics raised there. */
-    public record Scope(List<String> vormen, List<Regelbereik> weggelaten) {
+    public record Scope(List<String> vormen, List<LineRange> omitted) {
         public Scope(List<String> vormen) { this(vormen, List.of()); }
     }
 
     /** The source lines {@code van} to {@code tot}, both inclusive. */
-    public record Regelbereik(int van, int tot) {
-        public boolean bevat(int regel) { return regel >= van && regel <= tot; }
+    public record LineRange(int van, int tot) {
+        public boolean contains(int regel) { return regel >= van && regel <= tot; }
     }
 
     /** The merged situation: the instances by label, in first-seen order, and the parameter values (a later
@@ -84,11 +84,11 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
     public record Periode(LocalDate van, LocalDate tot) {}
 
     /** One expectation; {@code soort} selects the meaningful fields. {@code tijdlijn} is the expected timeline of an
-     *  {@link VerwachtingSoort#ATTRIBUUT_TIJDLIJN} (empty when the whole timeline is expected empty); {@code regel}
-     *  and {@code label} of an {@link VerwachtingSoort#INCONSISTENT} are its optional key. */
-    public record Verwachting(VerwachtingSoort soort, String label, String attribuut, String kenmerk,
+     *  {@link ExpectationKind#ATTRIBUUT_TIJDLIJN} (empty when the whole timeline is expected empty); {@code regel}
+     *  and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its optional key. */
+    public record Verwachting(ExpectationKind soort, String label, String attribuut, String kenmerk,
                               Waarde verwachteWaarde, List<Segment> tijdlijn, String regel, int line) {}
-    public enum VerwachtingSoort {
+    public enum ExpectationKind {
         ATTRIBUUT_WAARDE,    // de <attr> van <LABEL> is <waarde>
         ATTRIBUUT_LEEG,      // de <attr> van <LABEL> is leeg
         ATTRIBUUT_TIJDLIJN,  // de <attr> van <LABEL> is <waarde> van <d> tot <d> (one per segment) | is altijd leeg
@@ -102,11 +102,11 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
      *  dot, or a reduced fraction {@code p/q}) in the declared unit of its target. */
     public record Waarde(String getal, LocalDate datum, LocalDateTime datumTijd, Boolean bool, String tekst,
                          String enumWaarde) {
-        public static Waarde vanGetal(String lexeem) { return new Waarde(lexeem, null, null, null, null, null); }
-        public static Waarde vanDatum(LocalDate d) { return new Waarde(null, d, null, null, null, null); }
-        public static Waarde vanDatumTijd(LocalDateTime d) { return new Waarde(null, null, d, null, null, null); }
-        public static Waarde vanBoolean(boolean b) { return new Waarde(null, null, null, b, null, null); }
-        public static Waarde vanTekst(String t) { return new Waarde(null, null, null, null, t, null); }
-        public static Waarde vanEnum(String e) { return new Waarde(null, null, null, null, null, e); }
+        public static Waarde fromNumber(String lexemeText) { return new Waarde(lexemeText, null, null, null, null, null); }
+        public static Waarde fromDate(LocalDate d) { return new Waarde(null, d, null, null, null, null); }
+        public static Waarde fromDateTime(LocalDateTime d) { return new Waarde(null, null, d, null, null, null); }
+        public static Waarde fromBoolean(boolean b) { return new Waarde(null, null, null, b, null, null); }
+        public static Waarde fromText(String t) { return new Waarde(null, null, null, null, t, null); }
+        public static Waarde fromEnum(String e) { return new Waarde(null, null, null, null, null, e); }
     }
 }

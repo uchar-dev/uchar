@@ -85,23 +85,23 @@ final class ScenarioFixture {
                 De vondstklasse van een Jutter moet ongelijk zijn aan 'wrakgoed'.
         """;
 
-    static ScenarioBundel resolve(String scenarioTekst) {
-        return ScenarioResolver.resolve(MODEL + scenarioTekst);
+    static ScenarioBundel resolve(String scenarioText) {
+        return ScenarioResolver.resolve(MODEL + scenarioText);
     }
 
     /** The 1-based line of the first line of {@code bron} that contains {@code merker}. */
-    static int regelVan(String bron, String merker) {
+    static int lineOf(String bron, String merker) {
         String[] regels = bron.split("\n", -1);
         for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) return i + 1;
         return fail("merker '" + merker + "' staat niet in de bron");
     }
 
     /** An ERROR whose message contains {@code fragment} stands on the line of {@code bron} that holds {@code merker}. */
-    static void foutOpRegel(ScenarioBundel b, String bron, String merker, String fragment) {
-        int regel = regelVan(bron, merker);
-        List<Diagnostic> passend = b.model().errors().stream()
+    static void errorOnLine(ScenarioBundel b, String bron, String merker, String fragment) {
+        int regel = lineOf(bron, merker);
+        List<Diagnostic> matching = b.model().errors().stream()
                 .filter(d -> d.line() == regel && d.message().contains(fragment)).toList();
-        assertFalse(passend.isEmpty(), () -> "verwacht een ERROR met '" + fragment + "' op regel " + regel
+        assertFalse(matching.isEmpty(), () -> "verwacht een ERROR met '" + fragment + "' op regel " + regel
                 + " (de regel met '" + merker + "'), maar de diagnoses zijn: " + b.model().errors());
     }
 }

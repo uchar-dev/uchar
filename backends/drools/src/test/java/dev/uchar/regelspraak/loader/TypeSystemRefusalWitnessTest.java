@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Eenheid;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Eenheidstelsel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.UnitSystem;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 
 import org.junit.jupiter.api.Test;
@@ -163,14 +163,14 @@ class TypeSystemRefusalWitnessTest {
                 + "\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":24}}"));
         units.add(JSON.readTree("{\"node\":\"Unit\",\"abbreviation\":\"daalder\",\"system\":\"Munt\","
                 + "\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":12,\"den\":1}}"));
-        Eenheidstelsel unitSystem = IrLoader.load(ir).eenheidstelsels.get("Munt");
-        assertEquals("0.01", unitSystem.eenheden.get("ct").factorNaarCanoniek().toPlainString());
-        assertEquals("0.04166666666666667", unitSystem.eenheden.get("kwartje").factorNaarCanoniek().toPlainString());
-        assertEquals("12", unitSystem.eenheden.get("daalder").factorNaarCanoniek().toPlainString());
-        assertEquals("1", unitSystem.eenheden.get("EUR").factorNaarCanoniek().toPlainString());
-        assertEquals(new Eenheidstelsel.Factor(BigInteger.ONE, BigInteger.valueOf(24)), unitSystem.exacteFactoren.get("kwartje"));
-        assertEquals(new Eenheidstelsel.Factor(BigInteger.valueOf(12), BigInteger.ONE), unitSystem.exacteFactoren.get("daalder"));
-        assertEquals(Eenheidstelsel.Factor.EEN, unitSystem.exacteFactoren.get("EUR"));
+        UnitSystem unitSystem = IrLoader.load(ir).unitSystems.get("Munt");
+        assertEquals("0.01", unitSystem.units.get("ct").factorNaarCanoniek().toPlainString());
+        assertEquals("0.04166666666666667", unitSystem.units.get("kwartje").factorNaarCanoniek().toPlainString());
+        assertEquals("12", unitSystem.units.get("daalder").factorNaarCanoniek().toPlainString());
+        assertEquals("1", unitSystem.units.get("EUR").factorNaarCanoniek().toPlainString());
+        assertEquals(new UnitSystem.Factor(BigInteger.ONE, BigInteger.valueOf(24)), unitSystem.exactFactors.get("kwartje"));
+        assertEquals(new UnitSystem.Factor(BigInteger.valueOf(12), BigInteger.ONE), unitSystem.exactFactors.get("daalder"));
+        assertEquals(UnitSystem.Factor.EEN, unitSystem.exactFactors.get("EUR"));
     }
 
     // ---------------- the sign and the presentation tag ----------------
@@ -294,18 +294,18 @@ class TypeSystemRefusalWitnessTest {
         assertNull(threshold.eenheid());
         assertNull(m.parameters.get("vondstdrempel").granulariteit());
         assertEquals(Granulariteit.JAAR, m.parameters.get("penningbedrag").granulariteit());
-        Eenheidstelsel unitSystem = m.eenheidstelsels.get("Munt");
-        Eenheid eur = unitSystem.eenheden.get("EUR");
-        assertEquals(List.of("EUR"), List.copyOf(unitSystem.eenheden.keySet()));
-        assertEquals(List.of("€", "euro", "euros"), List.copyOf(unitSystem.aliassen.keySet()));
-        for (Eenheid e : unitSystem.aliassen.values()) assertEquals(eur, e);
+        UnitSystem unitSystem = m.unitSystems.get("Munt");
+        Eenheid eur = unitSystem.units.get("EUR");
+        assertEquals(List.of("EUR"), List.copyOf(unitSystem.units.keySet()));
+        assertEquals(List.of("€", "euro", "euros"), List.copyOf(unitSystem.spellings.keySet()));
+        for (Eenheid e : unitSystem.spellings.values()) assertEquals(eur, e);
         assertEquals(eur, ((Datatype.Numeriek) m.parameters.get("penningbedrag").datatype()).eenheid());
 
         // a number with the unit '%' is the record's percentage, tagged or not, and its unit is the built-in one
         m = IrLoader.load(golden(VONDSTTARIEF));
         Datatype.Percentage rate = assertInstanceOf(Datatype.Percentage.class,
                 m.objecttypen.get("Vondst").attributen.get("vondsttarief"));
-        assertEquals(Datatype.Percentage.PROCENT, rate.eenheid());
+        assertEquals(Datatype.Percentage.PERCENT, rate.eenheid());
         assertInstanceOf(Datatype.Percentage.class, m.resolvedRegels.get(0).waarde().type());
 
         // the two precisions are the two date records

@@ -39,7 +39,7 @@ class BeansFieldWitnessTest {
     private static final Path POSTWACHT = CORPUS.resolve("jutterswet-postwacht");
     private static final Path KUSTREGISTER = CORPUS.resolve("anchor").resolve("jutterswet-kustregister");
 
-    // ---------------- zetVeld: the field the creation writes ----------------
+    // ---------------- setField: the field the creation writes ----------------
 
     @Test void a_write_field_beside_the_binding_is_refused_by_name() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
@@ -55,7 +55,7 @@ class BeansFieldWitnessTest {
                 "the creation must write the bound keurberging relation");
     }
 
-    // ---------------- joinVeld: the field the doel joins on ----------------
+    // ---------------- joinField: the field the doel joins on ----------------
 
     @Test void a_link_field_beside_the_binding_is_refused_by_name() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);

@@ -11,7 +11,7 @@ import dev.uchar.regelspraak.model.Eenheid;
  * missing is what the derivation is FOR. Every restatement helper in both transpiler branches guarded with
  * one composite test:
  *
- * <pre>if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return identity;</pre>
+ * <pre>if (ev == null || en == null || !ev.convertibleTo(en) || !ev.requiredConversion(en)) return identity;</pre>
  *
  * That collapses two different facts into one answer. "No conversion is due" (same unit, or a unitless side)
  * and "no conversion EXISTS" (two units with disjoint canonicals) both returned the identity, so a document
@@ -65,7 +65,7 @@ import dev.uchar.regelspraak.model.Eenheid;
  * derivation, not an exemption — {@link EffectiveUnit#afterTimeFolding} makes a TOTAAL over a
  * timeline-declared operand yield the numerator, which is what the fold actually produces — so the pair never
  * reaches this fence on those goldens, and everywhere else it faults.
- * A unit that declares a canonical but no factor is NOT exempt: {@link Eenheid#omrekenfactorNaar} already
+ * A unit that declares a canonical but no factor is NOT exempt: {@link Eenheid#conversionFactorTo} already
  * faults there (the WF-092 wire form), and it must keep doing so.
  */
 public final class UnitConflict extends RuntimeException {
@@ -92,7 +92,7 @@ public final class UnitConflict extends RuntimeException {
      */
     public static void requireRescalable(Eenheid van, Eenheid naar, String site) {
         if (van == null || naar == null) return;              // a unitless side adopts the other (ch. 2.6)
-        if (van.convertibleNaar(naar)) return;                // a factor exists (or the two are the same unit)
+        if (van.convertibleTo(naar)) return;                // a factor exists (or the two are the same unit)
         if (opaqueProduct(van) || opaqueProduct(naar)) return;   // ch. 2.10's recorded conservative no-op
         throw new UnitConflict(van, naar, site);
     }

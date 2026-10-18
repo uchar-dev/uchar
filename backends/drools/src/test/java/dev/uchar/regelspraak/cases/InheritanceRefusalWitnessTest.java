@@ -226,7 +226,7 @@ class InheritanceRefusalWitnessTest {
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))).model();
         Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
         assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granulariteitVan("grondslag"));
-        assertTrue(wrak.granulariteitLeden().containsKey("grondslag"),
+        assertTrue(wrak.granularityMembers().containsKey("grondslag"),
                 "the chain-closed facet map is what the routed read sites ask");
         assertTrue(wrak.attribuutGranulariteit.isEmpty(),
                 "the OWN map stays own — the bean generator subtracts inherited members and needs it");
@@ -244,7 +244,7 @@ class InheritanceRefusalWitnessTest {
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-dimensie", ir)))).model();
         Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
         assertEquals(List.of("seizoen"), wrak.dimensiesVan("grondslag"));
-        assertTrue(wrak.gedimensioneerdeLeden().containsKey("grondslag"));
+        assertTrue(wrak.dimensionedMembers().containsKey("grondslag"));
     }
 
     // The §9.9 startpunt-ANCHOR family: what is LEFT of the withdrawn refusal, and the one part of it
@@ -252,12 +252,12 @@ class InheritanceRefusalWitnessTest {
     // must NOT cross. Every fixture below is VERIFIER-CLEAN — measured, and it is the point: a refusal
     // pinned on a document the verifier already rejects pins nothing, since no such document reaches an
     // executor through any gate. That is what the first versions of these two got wrong (an
-    // `attribuutTijdlijnNaam` entry with no `tijdlijnen` declaration and no matching granularity is
+    // `attributeTimelineName` entry with no `tijdlijnen` declaration and no matching granularity is
     // WF-003 + WF-005), and the shapes here are the corrected ones.
 
     @Test void an_inherited_variable_timeline_is_refused_on_loading() throws Exception {
         // Site (a). An ancestor declares an attribute riding a named tijdlijn WITH A VARIABEL STARTPUNT.
-        // `heeftVariabelStartpunt` reads `attribuutTijdlijnNaam` on the type the reference names, so
+        // `hasVariableStart` reads `attributeTimelineName` on the type the reference names, so
         // from a subtype it answers false where the truth is true: the bucketing is skipped, silently,
         // in both branches.
         //
@@ -280,8 +280,8 @@ class InheritanceRefusalWitnessTest {
     }
 
     @Test void an_inherited_timeline_with_a_fixed_start_point_loads_simply() throws Exception {
-        // The boundary, and the whole reason the guard asks `heeftVariabelStartpunt` instead of testing
-        // `attribuutTijdlijnNaam` for emptiness. On a FIXED-startpunt tijdlijn that predicate answers
+        // The boundary, and the whole reason the guard asks `hasVariableStart` instead of testing
+        // `attributeTimelineName` for emptiness. On a FIXED-startpunt tijdlijn that predicate answers
         // false from the own map and from the chain alike: there is no blindness, so refusing would
         // print a reason ("reads it as unanchored") that is simply TRUE of the document. Measured
         // (probe p1): verifier PASS, merge base EXCLUDE (the broad refusal caught it), head PLAYED 4 —
@@ -294,7 +294,7 @@ class InheritanceRefusalWitnessTest {
 
     @Test void a_start_point_determination_on_an_ancestor_is_refused_on_loading() throws Exception {
         // Site (b), and it falls independently of (a): here NO attribute rides a named tijdlijn at all,
-        // but a startpuntbepaling names the ANCESTOR. `isStartpuntLid` is asked of the type the
+        // but a startpuntbepaling names the ANCESTOR. `isStartPointMember` is asked of the type the
         // REFERENCE names and compares the determination's declared subject name, so for every subtype
         // instance it answers no and the §6.8 leeg-fout companion silently disappears for exactly those.
         //

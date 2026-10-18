@@ -226,7 +226,7 @@ class GraphDefaultReadTest {
             List<Integer> pad = d.pad();
             assertFalse(pad.isEmpty());
             var dflt = g.defaults().get(pad.get(0));
-            for (int i = 1; i < pad.size(); i += 2) dflt = dflt.excepties().leden().get(pad.get(i)).defaults().get(pad.get(i + 1));
+            for (int i = 1; i < pad.size(); i += 2) dflt = dflt.exceptions().leden().get(pad.get(i)).defaults().get(pad.get(i + 1));
             assertTrue(dflt == d.dflt(), () -> "het pad " + pad + " wijst een andere default aan");
         }
     }

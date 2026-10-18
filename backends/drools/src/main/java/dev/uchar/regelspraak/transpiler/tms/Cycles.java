@@ -6,18 +6,18 @@ import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
-import dev.uchar.regelspraak.ir.ResolvedConsistentie;
-import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
-import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
+import dev.uchar.regelspraak.ir.ResolvedConsistency;
+import dev.uchar.regelspraak.ir.ResolvedFactCreation;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreation;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
-import dev.uchar.regelspraak.ir.ResolvedUniciteit;
-import dev.uchar.regelspraak.ir.ResolvedUniciteitUnie;
+import dev.uchar.regelspraak.ir.ResolvedUniqueness;
+import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
-import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.util.ArrayDeque;
@@ -120,8 +120,8 @@ public final class Cycles {
      * with a forbidden cycle gets strata as well; {@link #refusal} refuses it.
      */
     static Map<Object, Integer> strata(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
-                                       Map<Object, List<RolBindingRef>> navigation, Map<Object, RolBindingRef> roleBindings,
-                                       Map<Object, List<RolBindingRef>> sourcePaths) {
+                                       Map<Object, List<RoleBindingRef>> navigation, Map<Object, RoleBindingRef> roleBindings,
+                                       Map<Object, List<RoleBindingRef>> sourcePaths) {
         List<Vorm> vormen = new Graph(model, defaults, navigation, roleBindings, sourcePaths).vormen();
         int n = vormen.size();
         List<Edge> edges = new ArrayList<>();
@@ -305,17 +305,17 @@ public final class Cycles {
     private static final class Graph {
         private final RegelSpraakModel model;
         private final List<PrioritizedDefaults> defaults;
-        private final Map<Object, List<RolBindingRef>> navigation;
-        private final Map<Object, RolBindingRef> roleBindings;
-        private final Map<Object, List<RolBindingRef>> sourcePaths;
+        private final Map<Object, List<RoleBindingRef>> navigation;
+        private final Map<Object, RoleBindingRef> roleBindings;
+        private final Map<Object, List<RoleBindingRef>> sourcePaths;
         private final Stapels stapels;
         /** How a node is shown, by key: a member as "Type.naam", spelled as declared. */
         private final Map<String, String> names = new HashMap<>();
         /** The order nodes are listed in: the members first, by type and name, then the other nodes. */
         private final Map<String, String> order = new HashMap<>();
 
-        Graph(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Map<Object, List<RolBindingRef>> navigation,
-              Map<Object, RolBindingRef> roleBindings, Map<Object, List<RolBindingRef>> sourcePaths) {
+        Graph(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Map<Object, List<RoleBindingRef>> navigation,
+              Map<Object, RoleBindingRef> roleBindings, Map<Object, List<RoleBindingRef>> sourcePaths) {
             this.model = model;
             this.defaults = defaults;
             this.navigation = navigation;
@@ -343,7 +343,7 @@ public final class Cycles {
 
         private String member(Objecttype ot, String naam, boolean kenmerk) {
             String sleutel = (kenmerk ? "char:" : "attr:") + Namen.norm(ot.naam) + ":" + Namen.norm(naam);
-            String declared = kenmerk ? ot.kenmerkNaam(naam) : ot.attribuutNaam(naam);
+            String declared = kenmerk ? ot.kenmerkNaam(naam) : ot.attributeName(naam);
             names.putIfAbsent(sleutel, ot.naam + "." + (declared != null ? declared : naam));
             order.putIfAbsent(sleutel, "0 " + Namen.norm(ot.naam) + " " + Namen.norm(naam) + " " + (kenmerk ? 1 : 0));
             return sleutel;
@@ -403,7 +403,7 @@ public final class Cycles {
         List<Vorm> vormen() {
             Set<String> recursive = new HashSet<>();
             for (ResolvedRegelGroep g : model.regelGroepen)
-                if (g.recursief()) for (String member : g.leden()) if (member != null) recursive.add(Namen.norm(withoutVersion(member)));
+                if (g.recursive()) for (String member : g.leden()) if (member != null) recursive.add(Namen.norm(withoutVersion(member)));
             List<Vorm> out = new ArrayList<>();
             for (ResolvedRegel r : model.resolvedRegels) {
                 if (!(r.doel() instanceof Expr.AttribuutRef d) || d.objecttype() == null || d.attribuut() == null) continue;
@@ -419,75 +419,75 @@ public final class Cycles {
             }
             for (ResolvedVerdeling v : model.verdelingen) {
                 Set<String> writes = new LinkedHashSet<>();
-                if (v.doelType() != null && v.doelAttribuut() != null)
-                    writes.addAll(extensionWrite(v.doelType(), v.doelAttribuut(), false));
-                if (v.bronType() != null && v.restantAttribuut() != null)
-                    writes.addAll(extensionWrite(v.bronType(), v.restantAttribuut(), false));
+                if (v.targetType() != null && v.targetAttribute() != null)
+                    writes.addAll(extensionWrite(v.targetType(), v.targetAttribute(), false));
+                if (v.sourceType() != null && v.remainderAttribute() != null)
+                    writes.addAll(extensionWrite(v.sourceType(), v.remainderAttribute(), false));
                 List<Read> leest = new ArrayList<>();
-                if (v.doelType() != null) leest.add(new Read(population(v.doelType()), false));
-                RolBindingRef rb = roleBindings.get(v);
+                if (v.targetType() != null) leest.add(new Read(population(v.targetType()), false));
+                RoleBindingRef rb = roleBindings.get(v);
                 if (rb != null && rb.feittype() != null) leest.add(new Read(relation(rb.feittype()), false));
-                if (v.bronType() != null && v.bronAttribuut() != null)
-                    leest.add(new Read(member(v.bronType(), v.bronAttribuut(), false), false));
-                if (v.doelType() != null)
-                    for (String a : new String[] {v.ratoAttribuut(), v.maximumAttribuut(), v.groepeerAttribuut()})
-                        if (a != null) leest.add(new Read(member(v.doelType(), a, false), false));
-                condition(v.voorwaarde(), v.bronType(), false, leest);
+                if (v.sourceType() != null && v.sourceAttribute() != null)
+                    leest.add(new Read(member(v.sourceType(), v.sourceAttribute(), false), false));
+                if (v.targetType() != null)
+                    for (String a : new String[] {v.ratioAttribute(), v.maximumAttribute(), v.orderingAttribute()})
+                        if (a != null) leest.add(new Read(member(v.targetType(), a, false), false));
+                condition(v.voorwaarde(), v.sourceType(), false, leest);
                 out.add(new Vorm(ProducentConsument.Vormsoort.VERDELING, ProducentConsument.basisNaam(v.naam()), v, false,
                         false, writes, leest));
             }
-            for (ResolvedConsistentie c : model.consistenties) {
+            for (ResolvedConsistency c : model.consistenties) {
                 List<Read> leest = new ArrayList<>();
                 condition(c.assertie(), c.subject(), false, leest);
                 out.add(new Vorm(ProducentConsument.Vormsoort.CONSISTENTIE, ProducentConsument.basisNaam(c.naam()), c,
                         false, true, c.naam() == null ? Set.of() : Set.of(channel(c.naam())), leest));
             }
-            for (ResolvedUniciteit u : model.uniciteiten) {
+            for (ResolvedUniqueness u : model.uniciteiten) {
                 List<Read> leest = new ArrayList<>();
-                if (u.scopeRol() != null && u.scopeRol().feittype() != null)
-                    leest.add(new Read(relation(u.scopeRol().feittype()), false));
+                if (u.scopeBinding() != null && u.scopeBinding().feittype() != null)
+                    leest.add(new Read(relation(u.scopeBinding().feittype()), false));
                 if (u.subject() != null)
-                    for (String k : u.sleutels()) if (k != null) leest.add(new Read(member(u.subject(), k, false), false));
+                    for (String k : u.keys()) if (k != null) leest.add(new Read(member(u.subject(), k, false), false));
                 out.add(new Vorm(ProducentConsument.Vormsoort.UNICITEIT, ProducentConsument.basisNaam(u.naam()), u,
                         false, true, u.naam() == null ? Set.of() : Set.of(channel(u.naam())), leest));
             }
-            for (ResolvedUniciteitUnie u : model.uniciteitUnies) {
+            for (ResolvedUniquenessUnion u : model.uniciteitUnies) {
                 List<Read> leest = new ArrayList<>();
-                for (ResolvedUniciteitUnie.Bron b : u.bronnen())
+                for (ResolvedUniquenessUnion.Bron b : u.sources())
                     if (b.type() != null)
-                        for (String k : b.sleutels()) if (k != null) leest.add(new Read(member(b.type(), k, false), false));
+                        for (String k : b.keys()) if (k != null) leest.add(new Read(member(b.type(), k, false), false));
                 out.add(new Vorm(ProducentConsument.Vormsoort.UNICITEIT, ProducentConsument.basisNaam(u.naam()), u,
                         false, true, u.naam() == null ? Set.of() : Set.of(channel(u.naam())), leest));
             }
-            for (ResolvedObjectCreatie o : model.objectCreaties) {
+            for (ResolvedObjectCreation o : model.objectCreaties) {
                 Set<String> writes = new LinkedHashSet<>();
-                if (o.nieuwType() != null) {
-                    writes.add(population(o.nieuwType()));
-                    for (Objecttype t : o.nieuwType().keten()) writes.add(population(t));
+                if (o.createdType() != null) {
+                    writes.add(population(o.createdType()));
+                    for (Objecttype t : o.createdType().keten()) writes.add(population(t));
                 }
                 String backLinkRelation = backLink(o);
                 if (backLinkRelation != null) writes.add(relation(backLinkRelation));
-                if (o.nieuwType() != null)
-                    for (ResolvedObjectCreatie.Toekenning t : o.toekenningen())
-                        if (t.attribuut() != null) writes.addAll(mintWrite(o.nieuwType(), t.attribuut(), t.kenmerk()));
+                if (o.createdType() != null)
+                    for (ResolvedObjectCreation.MemberInit t : o.initialisations())
+                        if (t.attribuut() != null) writes.addAll(mintWrite(o.createdType(), t.attribuut(), t.kenmerk()));
                 List<Read> leest = new ArrayList<>();
                 if (o.subject() != null) leest.add(new Read(population(o.subject()), false));
                 condition(o.voorwaarde(), o.subject(), false, leest);
-                for (ResolvedObjectCreatie.Toekenning t : o.toekenningen()) expr(t.waarde(), o.subject(), leest);
+                for (ResolvedObjectCreation.MemberInit t : o.initialisations()) expr(t.waarde(), o.subject(), leest);
                 String naam = o.naam() == null ? "" : o.naam();
                 out.add(new Vorm(ProducentConsument.Vormsoort.OBJECTCREATIE, ProducentConsument.basisNaam(o.naam()), o,
                         recursive.contains(Namen.norm(withoutVersion(naam))), true, writes, leest));
             }
-            for (ResolvedFeitCreatie f : model.feitCreaties) {
+            for (ResolvedFactCreation f : model.feitCreaties) {
                 Set<String> writes = new LinkedHashSet<>();
                 if (f.feittype() != null) writes.add(relation(f.feittype()));
                 List<Read> leest = new ArrayList<>();
-                for (ResolvedFeitCreatie.Tussenstap t : f.tussenstappen())
-                    if (t.rolBinding() != null && t.rolBinding().feittype() != null)
-                        leest.add(new Read(relation(t.rolBinding().feittype()), false));
-                if (f.joinRol() != null && f.joinRol().feittype() != null)
-                    leest.add(new Read(relation(f.joinRol().feittype()), false));
-                condition(f.voorwaarde(), f.anker(), false, leest);
+                for (ResolvedFactCreation.PathStep t : f.pathSteps())
+                    if (t.roleBinding() != null && t.roleBinding().feittype() != null)
+                        leest.add(new Read(relation(t.roleBinding().feittype()), false));
+                if (f.path() != null && f.path().feittype() != null)
+                    leest.add(new Read(relation(f.path().feittype()), false));
+                condition(f.voorwaarde(), f.anchor(), false, leest);
                 String naam = f.naam() == null ? "" : f.naam();
                 out.add(new Vorm(ProducentConsument.Vormsoort.FEITCREATIE, ProducentConsument.basisNaam(f.naam()), f,
                         recursive.contains(Namen.norm(withoutVersion(naam))), true, writes, leest));
@@ -510,10 +510,10 @@ public final class Cycles {
         /** The relation an object creation writes as its back-link: its {@code connectingRole} binding's, else the one
          *  fact type relating its subject and created type, none for a self-typed two-role pair, which the derivation
          *  leaves unlinked (the verifier's reading of the by-pair route). */
-        private String backLink(ResolvedObjectCreatie o) {
-            RolBindingRef rb = roleBindings.get(o);
+        private String backLink(ResolvedObjectCreation o) {
+            RoleBindingRef rb = roleBindings.get(o);
             if (rb != null) return rb.feittype();
-            Objecttype s = o.subject(), n = o.nieuwType();
+            Objecttype s = o.subject(), n = o.createdType();
             if (s == null || n == null) return null;
             List<RegelSpraakModel.Feittype> candidates = new ArrayList<>();
             for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
@@ -536,8 +536,8 @@ public final class Cycles {
         private void defaultReads(Default d, Objecttype onderwerp, List<Read> out) {
             condition(d.voorwaarde(), onderwerp, false, out);
             expr(d.consequentie(), onderwerp, out);
-            if (d.excepties() == null) return;
-            for (ExceptionGroup g : d.excepties().leden())
+            if (d.exceptions() == null) return;
+            for (ExceptionGroup g : d.exceptions().leden())
                 for (Default member : g.defaults()) defaultReads(member, onderwerp, out);
         }
 
@@ -556,34 +556,34 @@ public final class Cycles {
             switch (e) {
                 case Expr.AttribuutRef a -> {
                     if (a.objecttype() == null || a.attribuut() == null) return;
-                    for (RolBindingRef hop : navigation.getOrDefault(a, List.of()))
+                    for (RoleBindingRef hop : navigation.getOrDefault(a, List.of()))
                         if (hop.feittype() != null) out.add(new Read(relation(hop.feittype()), false));
                     out.add(new Read(member(a.objecttype(), a.attribuut(), false), false));
                 }
                 case Expr.Binair b -> { expr(b.links(), subject, out); expr(b.rechts(), subject, out); }
-                case Expr.Functie f -> {
-                    Objecttype el = f.elementObjecttype();
+                case Expr.FunctionCall f -> {
+                    Objecttype el = f.elementObjectType();
                     if (el != null) out.add(new Read(population(el), false));
-                    List<RolBindingRef> pad = sourcePaths.get(f);
+                    List<RoleBindingRef> pad = sourcePaths.get(f);
                     if (pad != null)
-                        for (RolBindingRef hop : pad) if (hop.feittype() != null) out.add(new Read(relation(hop.feittype()), false));
-                    RolBindingRef rol = roleBindings.get(f);
+                        for (RoleBindingRef hop : pad) if (hop.feittype() != null) out.add(new Read(relation(hop.feittype()), false));
+                    RoleBindingRef rol = roleBindings.get(f);
                     if (rol != null && rol.feittype() != null) out.add(new Read(relation(rol.feittype()), false));
                     // the count source names the relation's role, not a member: it reads the link set and the
                     // population drawn above, never a member of the contributor
-                    boolean countSource = f.kind() == Expr.FunctieKind.AANTAL && el != null && f.argumenten().size() == 1
-                            && f.argumenten().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
+                    boolean countSource = f.kind() == Expr.FunctionKind.AANTAL && el != null && f.arguments().size() == 1
+                            && f.arguments().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
                             && (pad != null || rol != null)
                             && !carries(el, bron.attribuut(), false) && !carries(el, bron.attribuut(), true);
-                    if (!countSource) for (Expr a : f.argumenten()) expr(a, subject, out);
-                    expr(f.leegwaarde(), subject, out);
+                    if (!countSource) for (Expr a : f.arguments()) expr(a, subject, out);
+                    expr(f.emptyFallback(), subject, out);
                     condition(f.filter(), el != null ? el : subject, false, out);
                 }
                 case Expr.InstanceSetUnion u -> {
-                    for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+                    for (Expr.InstanceSetUnion.Branch t : u.branches()) {
                         if (t.elementType() != null) out.add(new Read(population(t.elementType()), false));
-                        if (t.bronRol() != null && t.bronRol().feittype() != null)
-                            out.add(new Read(relation(t.bronRol().feittype()), false));
+                        if (t.sourceRole() != null && t.sourceRole().feittype() != null)
+                            out.add(new Read(relation(t.sourceRole().feittype()), false));
                         condition(t.filter(), t.elementType(), false, out);
                     }
                 }
@@ -593,23 +593,23 @@ public final class Cycles {
                     expr(b.minimum(), subject, out);
                     expr(b.maximum(), subject, out);
                 }
-                case Expr.DimensieCel c -> expr(c.attribuut(), subject, out);
-                case Expr.TekstReeks t -> {
-                    for (Expr.TekstReeks.Deel d : t.delen())
-                        if (d instanceof Expr.TekstReeks.Ingevoegd i) expr(i.expr(), subject, out);
+                case Expr.DimensionCellRead c -> expr(c.attribuut(), subject, out);
+                case Expr.TextComposition t -> {
+                    for (Expr.TextComposition.Part d : t.parts())
+                        if (d instanceof Expr.TextComposition.EmbeddedExpression i) expr(i.expr(), subject, out);
                 }
                 case Expr.Let l -> { expr(l.value(), subject, out); expr(l.body(), subject, out); }
                 case Expr.IfThenElse i -> {
-                    condition(i.conditie(), subject, false, out);
-                    expr(i.dan(), subject, out);
-                    expr(i.anders(), subject, out);
+                    condition(i.condition(), subject, false, out);
+                    expr(i.then(), subject, out);
+                    expr(i.otherwise(), subject, out);
                 }
                 case Expr.Literal ignored -> { }
                 case Expr.ParameterRef ignored -> { }
-                case Expr.VariabeleRef ignored -> { }
+                case Expr.VariableRef ignored -> { }
                 case Expr.BinderRef ignored -> { }
                 case Expr.Constante ignored -> { }
-                case Expr.Onopgelost ignored -> { }
+                case Expr.Unresolved ignored -> { }
             }
         }
 
@@ -621,7 +621,7 @@ public final class Cycles {
             switch (c) {
                 case Conditie.Vergelijking v -> { expr(v.links(), subject, out); expr(v.rechts(), subject, out); }
                 case Conditie.Predicaat p -> {
-                    if (p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD) {
+                    if (p.soort() == Conditie.PredicateKind.LEEG || p.soort() == Conditie.PredicateKind.GEVULD) {
                         List<Read> under = new ArrayList<>();
                         expr(p.operand(), subject, under);
                         out.addAll(negative(under));
@@ -632,9 +632,9 @@ public final class Cycles {
                 case Conditie.Kenmerk k -> {
                     if (k.kenmerk() == null) return;
                     boolean negative = neg || k.negatie();
-                    List<RolBindingRef> pad = navigation.get(k);
+                    List<RoleBindingRef> pad = navigation.get(k);
                     if (pad != null && !pad.isEmpty()) {
-                        for (RolBindingRef hop : pad)
+                        for (RoleBindingRef hop : pad)
                             if (hop.feittype() != null) out.add(new Read(relation(hop.feittype()), false));
                         Objecttype reaches = filler(pad.get(pad.size() - 1));
                         if (reaches != null) out.add(new Read(member(reaches, k.kenmerk(), true), negative));
@@ -644,11 +644,11 @@ public final class Cycles {
                     if (carrier != null) out.add(new Read(member(carrier, k.kenmerk(), true), negative));
                 }
                 case Conditie.Rollidmaatschap r -> {
-                    RolBindingRef rb = roleBindings.get(r);
+                    RoleBindingRef rb = roleBindings.get(r);
                     if (rb != null && rb.feittype() != null) out.add(new Read(relation(rb.feittype()), neg || r.negatie()));
                 }
                 // a role check the loader records without a binding: no relation of its own to name
-                case Conditie.VerreRollidmaatschap ignored -> { }
+                case Conditie.FarRoleMembership ignored -> { }
                 case Conditie.Periode p -> { expr(p.vanaf(), subject, out); expr(p.tot(), subject, out); }
                 case Conditie.Samengesteld s -> {
                     boolean under = switch (s.kwantor()) {
@@ -657,22 +657,22 @@ public final class Cycles {
                     };
                     for (Conditie d : s.onderdelen()) condition(d, subject, under, out);
                 }
-                case Conditie.Kwantorvouw kv -> {
+                case Conditie.QuantifierFold kv -> {
                     boolean rangeNeg = neg || kv.kwantor() != Conditie.Kwantor.TEN_MINSTE;
                     boolean matrixNeg = neg || !(kv.kwantor() == Conditie.Kwantor.TEN_MINSTE
                             || kv.kwantor() == Conditie.Kwantor.ALLE);
-                    List<RolBindingRef> range = new ArrayList<>();
-                    if (kv.bronRol() != null) range.add(kv.bronRol());
-                    if (kv.bronPad() != null) range.addAll(kv.bronPad());
-                    for (RolBindingRef hop : range)
+                    List<RoleBindingRef> range = new ArrayList<>();
+                    if (kv.sourceRole() != null) range.add(kv.sourceRole());
+                    if (kv.sourcePath() != null) range.addAll(kv.sourcePath());
+                    for (RoleBindingRef hop : range)
                         if (hop.feittype() != null) out.add(new Read(relation(hop.feittype()), rangeNeg));
-                    part(kv.filter(), kv.elementObjecttype(), rangeNeg, out);
-                    part(kv.toets(), kv.elementObjecttype(), matrixNeg, out);
+                    part(kv.filter(), kv.elementObjectType(), rangeNeg, out);
+                    part(kv.test(), kv.elementObjectType(), matrixNeg, out);
                 }
-                case Conditie.Regelversie rv -> {
+                case Conditie.RuleStatusCheck rv -> {
                     if (rv.regel() != null) out.add(new Read(channel(rv.regel()), true));
                 }
-                case Conditie.Onopgelost ignored -> { }
+                case Conditie.Unresolved ignored -> { }
             }
         }
 
@@ -684,7 +684,7 @@ public final class Cycles {
         }
 
         /** The declared filler of the role a hop binds: the type it reaches. */
-        private Objecttype filler(RolBindingRef hop) {
+        private Objecttype filler(RoleBindingRef hop) {
             for (RegelSpraakModel.Feittype ft : model.feittypen.values())
                 if (Namen.norm(ft.naam).equals(Namen.norm(hop.feittype())))
                     for (RegelSpraakModel.Rol r : ft.rollen)

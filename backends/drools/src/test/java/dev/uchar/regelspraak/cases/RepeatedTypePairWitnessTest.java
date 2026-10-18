@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The §13.3.9 REPEATED-TYPE-PAIR witness: what the bean model derives when MORE THAN ONE feittype relates the
  * same two object types, which readers may address the resulting fields, and what stays refused.
  *
- * <p>The by-PAIR authority ({@code RegelSpraakModel.verbindendeRol}) answers null there — two or more candidate
+ * <p>The by-PAIR authority ({@code RegelSpraakModel.connectingRole}) answers null there — two or more candidate
  * roles, an honest ambiguity — and until this card {@code FactModelGenerator.members} asked it FIRST for every
  * ordinary cross-type field. So a document whose author wrote a UNIQUE role name got a bean with no reference
  * field at all. RED FIRST, measured on the jar built before the change, on the models below:
@@ -74,13 +74,13 @@ class RepeatedTypePairWitnessTest {
         // The authority every bindingless consumer shares stays exactly as it was. Teaching it to pick a
         // winner would turn an honest ambiguity into a silent wrong join across the whole back-end —
         // RUNTIME-SEMANTICS ch. 5.5 forbids it and ref refuses the same derivation (connecting_pair).
-        assertNull(m.verbindendeRol(schuit, haven), "four candidate Haven roles: by PAIR this is ambiguous");
-        assertNull(m.verbindendeRol(haven, schuit), "and so is the other direction");
+        assertNull(m.connectingRole(schuit, haven), "four candidate Haven roles: by PAIR this is ambiguous");
+        assertNull(m.connectingRole(haven, schuit), "and so is the other direction");
         // ...while every WRITTEN name still selects exactly one, which is what the bean model may derive from.
         assertEquals(List.of("thuishaven", "winterhaven", "keurhaven", "vlaghaven"),
-                m.verbindendeRollen(schuit, haven), "one addressable role per uniquely written name");
+                m.connectingRoles(schuit, haven), "one addressable role per uniquely written name");
         assertEquals(List.of("ligger", "winterschuit", "keurschuit", "vlaggenschip"),
-                m.verbindendeRollen(haven, schuit));
+                m.connectingRoles(haven, schuit));
     }
 
     @Test void the_bean_model_carries_a_field_per_to_one_role() throws Exception {
@@ -188,7 +188,7 @@ class RepeatedTypePairWitnessTest {
     @Test void both_spellings_of_a_relation_write_the_same_field() throws Exception {
         // ch. 5.7a: a supplied link ESTABLISHES the relation and BOTH roles read it, so the 1:N relation's
         // ONE field must be written whichever end the case spells. Spelled from the HAVEN side the sister
-        // role is resolved BY NAME (verbindendeRolViaElementnaam) — the only route on a repeated pair.
+        // role is resolved BY NAME (connectingRoleViaElementName) — the only route on a repeated pair.
         Map<String, Object> fromSchuit = CaseRunner.inputBeans(onlyCounts(), JSON.readTree(spellingCase(true)));
         Map<String, Object> fromHaven = CaseRunner.inputBeans(onlyCounts(), JSON.readTree(spellingCase(false)));
         assertSame(fromSchuit.get("H1"), RegelSpraakRuntime.get(fromSchuit.get("S1"), "thuishaven"));
@@ -235,9 +235,9 @@ class RepeatedTypePairWitnessTest {
         // field) and the Schuit reads the kadegeld of its winterhaven (the near side). A creation that wrote
         // a field only one reader reaches would still satisfy one of the two.
         // MUTATION FLANK: a creation that set the role of ANOTHER feittype over the same pair moves both
-        // readings at once, and the flank names it. Until P2 (2026-09-22) the flank twisted zetVeld; since then
+        // readings at once, and the flank names it. Until P2 (2026-09-22) the flank twisted setField; since then
         // the written field is derived from the creation's binding, so the flank twists the BINDING. Since L2 the
-        // wire has no zetVeld to twist: BeansFieldWitnessTest pins that the loader refuses one.
+        // wire has no setField to twist: BeansFieldWitnessTest pins that the loader refuses one.
         BothBranches.green(ir(DUBBELVERBINDING), JSON.readTree(golden("case1-binnen-venster.json")),
                 "both readings of the created link agree with ref and clingo");
         String verdict = BothBranches.red(creationMoved("keurberging", "keurhaven", "keurschuit"), JSON.readTree(golden("case1-binnen-venster.json")),

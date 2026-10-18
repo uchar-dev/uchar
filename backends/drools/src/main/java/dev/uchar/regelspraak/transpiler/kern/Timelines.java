@@ -33,7 +33,7 @@ import java.util.Map;
  * {@code ["integer","null"]} and WF-005 fires only on a present count below 1, so a null-valued entry was
  * verifier-clean, and the loader read it as 0 — single-period here, where the presence test read it as a raster.
  * Measured 2026-09-11 on {@code corpus/golden/synth-gehelejaarkenmerk} with
- * {@code kenmerkTijdlijnAantal {"bedrijvig": null}}: verifier PASS, {@code ref} and clingo PASS, both Drools branches
+ * {@code characteristicTimelineCount {"bedrijvig": null}}: verifier PASS, {@code ref} and clingo PASS, both Drools branches
  * EXCLUDE before this predicate and PLAYED 4 after. Since M1 the count is a required integer on every
  * {@code TimelineFacet}: the schema and the loaders refuse a null or absent count (this backend's as a document
  * defect, {@code IrLoader.Documentfout}), so the case no longer reaches this predicate.
@@ -55,13 +55,13 @@ public final class Timelines {
      *  because its grid nests in the target's, and a start point off the calendar breaks that nesting; {@code ref}
      *  and the ASP backend refuse the form, so both branches do as well, in their sentence. */
     public static String proRataFixedGrid(RegelSpraakModel.Objecttype subject, String doel, Expr waarde) {
-        if (!(waarde instanceof Expr.Functie f) || f.kind() != Expr.FunctieKind.TIJDSEVENREDIG_DEEL) return null;
-        boolean fixed = subject != null && subject.vastStartpuntVan(doel) != null;
-        for (Expr base : f.argumenten()) {
+        if (!(waarde instanceof Expr.FunctionCall f) || f.kind() != Expr.FunctionKind.TIJDSEVENREDIG_DEEL) return null;
+        boolean fixed = subject != null && subject.fixedStartPointOf(doel) != null;
+        for (Expr base : f.arguments()) {
             if (base instanceof Expr.AttribuutRef ba && ba.objecttype() != null
-                    && ba.objecttype().vastStartpuntVan(ba.attribuut()) != null) fixed = true;
+                    && ba.objecttype().fixedStartPointOf(ba.attribuut()) != null) fixed = true;
             if (base instanceof Expr.ParameterRef bp && bp.parameter() != null
-                    && bp.parameter().vastStartpunt() != null) fixed = true;
+                    && bp.parameter().fixedStartPoint() != null) fixed = true;
         }
         return fixed ? "pro-rata onto or from a grid that does not lie on the calendar is fenced (RUNTIME-SEMANTICS "
                 + "ch. 3.2)" : null;

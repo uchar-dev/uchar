@@ -10,7 +10,7 @@ import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
-import dev.uchar.regelspraak.ir.ResolvedConsistentie;
+import dev.uchar.regelspraak.ir.ResolvedConsistency;
 import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -215,7 +215,7 @@ class SourceReferenceRefusalWitnessTest {
         // the marker reads the snippet as any other node does
         ObjectNode ir = golden(PENNINGDREMPEL);
         set(ir, CONDITION, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"de onbekende vondstwaarde\"}}");
-        Conditie.Onopgelost o = assertInstanceOf(Conditie.Onopgelost.class,
+        Conditie.Unresolved o = assertInstanceOf(Conditie.Unresolved.class,
                 IrLoader.load(ir).resolvedRegels.get(0).voorwaarde());
         assertEquals("de onbekende vondstwaarde", o.bron().snippet());
     }
@@ -241,8 +241,8 @@ class SourceReferenceRefusalWitnessTest {
     }
 
     @Test void the_rule_goes_to_the_consistency_and_the_rule_group() throws Exception {
-        List<ResolvedConsistentie> check = IrLoader.load(golden(KEURSPELLING)).consistenties;
-        assertEquals(List.of(30, 34), check.stream().map(ResolvedConsistentie::line).toList());
+        List<ResolvedConsistency> check = IrLoader.load(golden(KEURSPELLING)).consistenties;
+        assertEquals(List.of(30, 34), check.stream().map(ResolvedConsistency::line).toList());
 
         ObjectNode ir = golden(WACHTERSKETEN);
         RegelSpraakModel m = IrLoader.load(ir);

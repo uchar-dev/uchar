@@ -542,6 +542,29 @@ class ValueTypes(Fixture):
         self.assertEqual([kind for kind, _ in model.decls['b']], ['variable'])
 
 
+class QualifiedConstantReceivers(Fixture):
+    """Card rename-frontend: a.b.Type.CONSTANT.member() read the constant as a type, so the frontend's
+    RuleChecker kept rijen() on Spelling.CONTEXT_VALUE_NAME written in full while IrEmitter, which imports Spelling,
+    renamed it."""
+
+    def test_a_member_read_through_a_constant_written_with_its_package_is_the_zones(self):
+        self.write({'src/fe/Familie.java': 'package fe;\npublic class Familie {\n    public int rijen() { return 0; }\n}\n',
+                    'src/fe/Spelling.java': 'package fe;\npublic class Spelling {\n'
+                                            '    public static final Familie SOORT_NAAM = new Familie();\n}\n',
+                    'src/z/Proef.java': 'package z;\nimport fe.Spelling;\nclass Proef {\n'
+                                        '    int a() { return fe.Spelling.SOORT_NAAM.rijen(); }\n'
+                                        '    int b() { return Spelling.SOORT_NAAM.rijen(); }\n}\n'})
+        t = self.table('src', [row('rijen', 'rows', 'rijen')])
+        git(self.root, 'add', '-A')
+        git(self.root, 'commit', '-q', '-m', 'table')
+        self.assertEqual(self.check(t), [])
+        self.assertEqual(self.apply(t)[0], 0)
+        self.assertEqual(self.read('src/z/Proef.java'), 'package z;\nimport fe.Spelling;\nclass Proef {\n'
+                         '    int a() { return fe.Spelling.SOORT_NAAM.rows(); }\n'
+                         '    int b() { return Spelling.SOORT_NAAM.rows(); }\n}\n')
+        self.assertEqual(self.read('src/fe/Familie.java'), 'package fe;\npublic class Familie {\n    public int rows() { return 0; }\n}\n')
+
+
 class ReceiverTypes(Fixture):
     """Card hernoem-drools-backend: after the written types of variables, 27 compile errors read a frontend member
     through an expression whose type the code does not write: d.excepties().leden(), u.bronnen().get(0).sleutels(),
@@ -1093,6 +1116,19 @@ class FilesOnly(Fixture):
         self.assertEqual(self.apply(t)[0], 0)
         self.assertEqual(self.read('src/Loader.java'), 'class Loader { Loader zelf() { return this; } }\n')
 
+    def test_a_rename_that_changes_only_the_case_of_a_file_name_is_no_collision(self):
+        # on a case-insensitive file system (macOS) src/ParameterSet.java "exists" while src/Parameterset.java is the
+        # file being renamed to it (card rename-frontend: Parameterset -> ParameterSet); the file found is the file
+        # renamed, not another one. Where the file system tells the cases apart the rename already worked
+        self.write({'src/Parameterset.java': 'class Parameterset { }\n'})
+        t = self.table('src', [row('Parameterset', 'ParameterSet', 'parameterset')])
+        git(self.root, 'add', '-A')
+        git(self.root, 'commit', '-q', '-m', 'table')
+        self.assertEqual(self.check(t), [])
+        self.assertEqual(self.apply(t, files_only=True)[0], 0)
+        self.assertEqual(git(self.root, 'status', '--porcelain').split('\n')[0],
+                         'R  src/Parameterset.java -> src/ParameterSet.java')
+
     def test_a_path_scope_holds_once_the_files_are_renamed(self):
         # anders has a row of its own for src/test/Proef.java, which files-only renames to src/test/Trial.java; a row
         # toets -> test must not make src/test read as the directory src/toets (card hernoem-drools-backend: the row
@@ -1409,6 +1445,49 @@ class Translation(Fixture):
         for new in ('a_node_is_refused', 'memberNode'):
             self.assertFalse(any(new in e for e in errors), (new, errors))
         self.assertTrue(any('content words of refused (' in e for e in errors), errors)
+
+    def test_a_dutch_ending_or_prefix_beside_a_glossary_word_is_part_of_that_word(self):
+        # card rename-frontend: the glossary lists words, not their inflections, and no English word stands for an
+        # ending. bindende is binden + de and gegroepeerde ge + groepeer + de, whole in the words column; the
+        # linking s of stap|s|regel and the ge and de of ge|groepeer|de ask for nothing. An ending beside a word
+        # that is no glossary word (qux) is part of nothing: it still asks for an s in new
+        self.write({'src/Bean.java': 'class Bean {\n    int bindendeStap;\n    int gegroepeerdeRegel;\n'
+                                     '    int stapsRegel;\n    int ge_groepeer_de_stap;\n    int stapQuxSRegel;\n}\n'})
+        self.assertEqual(self.check(self.table('src', [
+            row('bindendeStap', 'bindingStep', 'bindende|stap'),
+            row('gegroepeerdeRegel', 'groupedRule', 'gegroepeerde|regel'),
+            row('stapsRegel', 'stepRule', 'stap|s|regel'),
+            row('ge_groepeer_de_stap', 'grouped_step', 'ge|groepeer|de|stap')])), [])
+        errors = self.check(self.table('src', [row('stapQuxSRegel', 'stepQuxRule', 'stap|qux|s|regel')]))
+        self.assertTrue(any('stepQuxRule' in e and 'not the glossary translations' in e for e in errors), errors)
+
+    def test_an_inflected_glossary_word_still_asks_for_its_translation(self):
+        # the ending is part of the word, so the word is not dropped: bindende asks for bind, not for step only
+        self.write({'src/Bean.java': 'class Bean {\n    int bindendeStap;\n}\n'})
+        errors = self.check(self.table('src', [row('bindendeStap', 'step', 'bindende|stap')]))
+        self.assertTrue(any('content words of step (' in e for e in errors), errors)
+
+    def test_an_ending_beside_a_glossary_word_may_stand_in_new_as_the_letter_it_is(self):
+        # card rename-frontend: neemtS asks whether a word takes an s, verbogen_e_vorm names the inflected e form;
+        # the letter is part of the Dutch name and stays in the English one, where dropping it stays allowed
+        self.write({'src/Bean.java': 'class Bean {\n    boolean neemtS;\n    boolean neemtT;\n'
+                                     '    int verbogen_e_vorm;\n}\n'})
+        self.assertEqual(self.check(self.table('src', [
+            row('neemtS', 'takesS', 'neemt|s'),
+            row('neemtT', 'takes', 'neemt|t'),
+            row('verbogen_e_vorm', 'inflected_e_form', 'verbogen|e|vorm')])), [])
+
+    def test_a_proper_name_in_the_words_column_stays_as_it_is(self):
+        # card rename-frontend: regelspraak is the proper name RegelSpraak; the glossary words regels and raak inside
+        # it are no reason to split it. New spells it as the name does (regelSpraak) or in one word (snake_case)
+        self.write({'src/Bean.java': 'class Bean {\n    int regelSpraakRegel;\n    int zin_van_regelspraak;\n'
+                                     '    int regelspraakRegel;\n}\n'})
+        self.assertEqual(self.check(self.table('src', [
+            row('regelSpraakRegel', 'regelSpraakRule', 'regelspraak|regel'),
+            row('zin_van_regelspraak', 'sentence_of_regelspraak', 'zin|van|regelspraak')])), [])
+        # the name is not dropped
+        errors = self.check(self.table('src', [row('regelspraakRegel', 'rule', 'regelspraak|regel')]))
+        self.assertTrue(any('content words of rule (' in e for e in errors), errors)
 
 
 class Merge(Fixture):

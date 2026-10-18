@@ -156,7 +156,7 @@ class UnitConflictWitnessTest {
         // place-blind, so an additive join, a write boundary and a comparison between a rate and its numerator
         // all stayed silent while ref and clingo faulted. The repair is the derivation (see the §7.1 test
         // below), not an exemption, so this pair faults again everywhere. Both directions.
-        Eenheid rate = Eenheid.samengesteld(EUR, JR);
+        Eenheid rate = Eenheid.compound(EUR, JR);
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(rate, EUR, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(EUR, rate, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(rate, KG, "witness"));
@@ -169,7 +169,7 @@ class UnitConflictWitnessTest {
         // grid units of its span, so a €/mnd rate is multiplied by a COUNT of months and what survives is €.
         // Without this the fold would answer €/mnd for a result that is €, and every restatement downstream
         // would be handed a pair with no factor — which is exactly what the two corpus goldens did.
-        Eenheid rate = Eenheid.samengesteld(EUR, JR);
+        Eenheid rate = Eenheid.compound(EUR, JR);
         Objecttype withTimeline = new Objecttype("Vondst");
         withTimeline.attributen.put("tarief", num(rate));
         withTimeline.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
@@ -188,12 +188,12 @@ class UnitConflictWitnessTest {
         // and ref faults on the others in as many words. Restricting the collapse to TOTAAL left SOM answering
         // the rate for an already-folded value: measured 576 for 48 into a €/jr doel (the mnd->jr factor applied
         // twice over), where ref faults. Same declaration, same shape, only the operator differs.
-        Eenheid rate = Eenheid.samengesteld(EUR, JR);
+        Eenheid rate = Eenheid.compound(EUR, JR);
         Objecttype ot = new Objecttype("Vondst");
         ot.attributen.put("tarief", num(rate));
         ot.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
         Expr.AttribuutRef ref = new Expr.AttribuutRef("tarief", ot, "alle vondsten", null, num(rate), bron());
-        Expr.Functie sum = new Expr.Functie(Expr.FunctieKind.SOM, List.of(ref), ot, null, null, num(rate), bron());
+        Expr.FunctionCall sum = new Expr.FunctionCall(Expr.FunctionKind.SOM, List.of(ref), ot, null, null, num(rate), bron());
         assertEquals(EUR, bare().unitOf(sum), "de noemer is door de vouwing verbruikt");
     }
 
@@ -201,12 +201,12 @@ class UnitConflictWitnessTest {
         // A selecting fold sums nothing, so no denominator is consumed and none may be dropped. Measured over
         // the corpus: every fold whose operand is timeline-declared is a TOTAAL, so this is the boundary of a
         // rule that was scoped by measurement rather than by guess.
-        Eenheid rate = Eenheid.samengesteld(EUR, JR);
+        Eenheid rate = Eenheid.compound(EUR, JR);
         Objecttype ot = new Objecttype("Vondst");
         ot.attributen.put("tarief", num(rate));
         ot.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
         Expr.AttribuutRef ref = new Expr.AttribuutRef("tarief", ot, "alle vondsten", null, num(rate), bron());
-        Expr.Functie f = new Expr.Functie(Expr.FunctieKind.MINIMUM, List.of(ref), ot, null, null, num(rate), bron());
+        Expr.FunctionCall f = new Expr.FunctionCall(Expr.FunctionKind.MINIMUM, List.of(ref), ot, null, null, num(rate), bron());
         assertEquals(rate, bare().unitOf(f));
     }
 
@@ -216,15 +216,15 @@ class UnitConflictWitnessTest {
         return new Datatype.Numeriek(false, 2, Datatype.Teken.ONBEPAALD, e);
     }
 
-    private static Bron bron() { return Bron.synthetisch("witness"); }
+    private static Bron bron() { return Bron.synthetic("witness"); }
 
     private static EffectiveUnit bare() { return new EffectiveUnit(List.of()); }
 
     /** "het totaal van het tarief van alle vondsten" over {@code ot} — the §7.1 fold shape. */
-    private static Expr.Functie totalOver(Objecttype ot) {
+    private static Expr.FunctionCall totalOver(Objecttype ot) {
         Datatype t = ot.attributen.get("tarief");
         Expr.AttribuutRef ref = new Expr.AttribuutRef("tarief", ot, "alle vondsten", null, t, bron());
-        return new Expr.Functie(Expr.FunctieKind.TOTAAL, List.of(ref), ot, null, null, t, bron());
+        return new Expr.FunctionCall(Expr.FunctionKind.TOTAAL, List.of(ref), ot, null, null, t, bron());
     }
 
     /** An opaque product carrying this backend's own provenance mark: obtained through the DERIVATION (a §4.4

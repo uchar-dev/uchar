@@ -36,74 +36,74 @@ class ScenarioMutatieTest {
         """;
 
     /** {@link #DOCUMENT} with {@code van} replaced by {@code naar} exactly once. */
-    private static String muteer(String van, String naar) {
+    private static String muteer(String van, String to) {
         int i = DOCUMENT.indexOf(van);
         assertTrue(i >= 0 && DOCUMENT.indexOf(van, i + 1) < 0, () -> "de mutatie '" + van + "' past niet precies één keer");
-        return DOCUMENT.substring(0, i) + naar + DOCUMENT.substring(i + van.length());
+        return DOCUMENT.substring(0, i) + to + DOCUMENT.substring(i + van.length());
     }
 
-    private static void weigert(String gemuteerd, String merker, String fragment) {
-        ScenarioBundel b = resolve(gemuteerd);
+    private static void refuses(String mutated, String merker, String fragment) {
+        ScenarioBundel b = resolve(mutated);
         assertFalse(b.isOk(), "de mutatie hoort geweigerd te worden");
-        foutOpRegel(b, MODEL + gemuteerd, merker, fragment);
+        errorOnLine(b, MODEL + mutated, merker, fragment);
     }
 
-    @Test void het_ongemuteerde_document_resolvet_schoon() {
+    @Test void the_unmutated_document_resolves_clean() {
         ScenarioBundel b = resolve(DOCUMENT);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         assertEquals(1, b.scenarios().size());
     }
 
-    @Test void verkeerd_type_in_de_situatie() {
-        weigert(muteer("- het vondstgewicht is 12,00 kg", "- het vondstgewicht is waar"), "vondstgewicht is waar",
+    @Test void wrong_type_in_the_situation() {
+        refuses(muteer("- het vondstgewicht is 12,00 kg", "- het vondstgewicht is waar"), "vondstgewicht is waar",
                 "het attribuut 'vondstgewicht': toekenning: a boolean value is assigned to a number target");
     }
 
-    @Test void verkeerd_type_in_de_verwachting() {
-        weigert(muteer("- de kustwachtbonus van J is 3", "- de kustwachtbonus van J is 01-01-2025"), "van J is 01-01-2025",
+    @Test void wrong_type_in_the_expectation() {
+        refuses(muteer("- de kustwachtbonus van J is 3", "- de kustwachtbonus van J is 01-01-2025"), "van J is 01-01-2025",
                 "de verwachting voor 'kustwachtbonus': toekenning: a date-day value is assigned to a number target");
     }
 
-    @Test void onbekend_attribuut_in_de_situatie() {
-        weigert(muteer("- het vondstgewicht is 12,00 kg", "- het vangstgewicht is 12,00 kg"), "vangstgewicht",
+    @Test void unknown_attribute_in_the_situation() {
+        refuses(muteer("- het vondstgewicht is 12,00 kg", "- het vangstgewicht is 12,00 kg"), "vangstgewicht",
                 "het objecttype 'Jutter' kent geen attribuut 'vangstgewicht'");
     }
 
-    @Test void onbekend_attribuut_in_de_verwachting() {
-        weigert(muteer("- de wachtbonus van J is 5", "- de wachtpremie van J is 5"), "wachtpremie",
+    @Test void unknown_attribute_in_the_expectation() {
+        refuses(muteer("- de wachtbonus van J is 5", "- de wachtpremie van J is 5"), "wachtpremie",
                 "het objecttype 'Jutter' kent geen attribuut 'wachtpremie'");
     }
 
-    @Test void onbekend_label_in_de_verwachting() {
-        weigert(muteer("- J is bergingsbevoegd", "- K is bergingsbevoegd"), "K is bergingsbevoegd",
+    @Test void unknown_label_in_the_expectation() {
+        refuses(muteer("- J is bergingsbevoegd", "- K is bergingsbevoegd"), "K is bergingsbevoegd",
                 "het label 'K' in de verwachting is nergens in de situatie gedeclareerd");
     }
 
-    @Test void dubbele_situatie() {
-        String gemuteerd = muteer("Situatie vervolg", "Situatie basis:\neen Jutter J\n\nSituatie vervolg");
-        ScenarioBundel b = resolve(gemuteerd);
+    @Test void duplicate_situation() {
+        String mutated = muteer("Situatie vervolg", "Situatie basis:\neen Jutter J\n\nSituatie vervolg");
+        ScenarioBundel b = resolve(mutated);
         assertFalse(b.isOk());
-        String volledig = MODEL + gemuteerd;
-        int tweede = volledig.indexOf("Situatie basis:", volledig.indexOf("Situatie basis:") + 1);
-        int regel = 1 + (int) volledig.substring(0, tweede).chars().filter(c -> c == '\n').count();
+        String complete = MODEL + mutated;
+        int second = complete.indexOf("Situatie basis:", complete.indexOf("Situatie basis:") + 1);
+        int regel = 1 + (int) complete.substring(0, second).chars().filter(c -> c == '\n').count();
         assertTrue(b.model().errors().stream().anyMatch(d -> d.line() == regel
                         && d.message().contains("de situatie 'basis' is meer dan eens gedeclareerd")),
                 () -> "verwacht de dubbele declaratie op regel " + regel + ": " + b.model().errors());
     }
 
-    @Test void kring_via_gebaseerd_op() {
-        weigert(muteer("Situatie basis:", "Situatie basis gebaseerd op de situatie vervolg:"),
+    @Test void cycle_via_based_on() {
+        refuses(muteer("Situatie basis:", "Situatie basis gebaseerd op de situatie vervolg:"),
                 "Situatie vervolg gebaseerd op",
                 "de situaties vormen een kring via 'gebaseerd op': 'basis' → 'vervolg' → 'basis'");
     }
 
-    @Test void kring_op_zichzelf() {
-        weigert(muteer("Situatie basis:", "Situatie basis gebaseerd op de situatie basis:"), "Situatie basis gebaseerd",
+    @Test void cycle_on_itself() {
+        refuses(muteer("Situatie basis:", "Situatie basis gebaseerd op de situatie basis:"), "Situatie basis gebaseerd",
                 "de situaties vormen een kring via 'gebaseerd op': 'basis' → 'basis'");
     }
 
-    @Test void onbekende_basis() {
-        weigert(muteer("Situatie vervolg gebaseerd op de situatie basis:", "Situatie vervolg gebaseerd op de situatie bodem:"),
+    @Test void unknown_base() {
+        refuses(muteer("Situatie vervolg gebaseerd op de situatie basis:", "Situatie vervolg gebaseerd op de situatie bodem:"),
                 "situatie bodem", "de situatie 'bodem' is nergens in het document gedeclareerd");
     }
 }

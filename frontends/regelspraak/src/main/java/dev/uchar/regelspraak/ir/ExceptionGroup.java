@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * §6.1 (Phase 5c) one member of a {@link Default}'s exception group ({@code RUNTIME-SEMANTICS} ch. 7.9):
  * a default chain (descending, highest first) inheriting the root group's target and itself possibly nesting
- * via {@link Default#excepties}. An exception group carries NO target of its own. The RegelSpraak resolver builds
+ * via {@link Default#exceptions}. An exception group carries NO target of its own. The RegelSpraak resolver builds
  * it from the dialect's defaults tree ({@code grammar/DIVERGENCES.md} §4, form 2): one ordered group holding the
  * children of an exception, later-written first, or one group per member of an {@code Uitzonderingen ongeordend
  * op} block. A head makes it, not a rule, so there it carries the head's text as {@link #bron}: "Uitzondering op

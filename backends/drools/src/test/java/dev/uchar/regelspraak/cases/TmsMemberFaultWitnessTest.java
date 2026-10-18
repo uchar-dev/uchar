@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * its own timeline hangs on the answer", ch. 3.4a/3.6).
  *
  * <p><b>Red</b> under a mutation, since the behaviour itself did not change: a {@code WithoutFault} that catches a
- * {@code Rekenfout} only lets the division by zero, a {@code Breuk.DelingDoorNul}, leave the left-hand side of the
+ * {@code Rekenfout} only lets the division by zero, a {@code Rational.DelingDoorNul}, leave the left-hand side of the
  * member-fault rule, and the fire throws.
  */
 class TmsMemberFaultWitnessTest {

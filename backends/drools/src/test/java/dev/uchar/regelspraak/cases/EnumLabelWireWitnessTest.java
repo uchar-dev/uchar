@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The ENUMERATION VALUE as this backend reads it off the wire — both transpiler branches, both positions.
  *
- * <p><b>What was wrong.</b> The shared reader {@code Literalen.tekstOfEnumLabel} routed an enumeration
+ * <p><b>What was wrong.</b> The shared reader {@code Literals.textOrEnumLabel} routed an enumeration
  * literal through {@code enumLabel}, which demands the {@code '…'} delimiters of the RegelSpraak source.
  * The wire never carries them: IR-SPEC ch. 4.1 puts the BARE label in {@code waarde} and WF-039 crosses it
  * byte-exactly against the declared domain. So on every conforming document the reader answered null, and

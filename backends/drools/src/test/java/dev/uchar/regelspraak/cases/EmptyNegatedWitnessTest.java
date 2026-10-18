@@ -164,10 +164,10 @@ class EmptyNegatedWitnessTest {
 
     /** meldpremie's rule alone, its test set to {@code soort}/{@code negated} under "gedurende het gehele jaar"
      *  (with the qualifier's own {@code niet}), over a month-granular lengte: S1 carries 8 over the whole of 2025,
-     *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code treffers}, leeg on the
+     *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code hits}, leeg on the
      *  others. The ongemeten rule is dropped because it reads the now-temporal lengte without a qualifier and
      *  would be refused for THAT; the werfpremie rule because it reads the werf, not the lengte. */
-    private void playWholeYear(String soort, boolean negated, boolean wholePeriodNegated, String... treffers) throws Exception {
+    private void playWholeYear(String soort, boolean negated, boolean wholePeriodNegated, String... hits) throws Exception {
         ObjectNode ir = ir();
         IrPath.timeline(IrPath.attribute(IrPath.objectType(ir, "Schuit"), "lengte"), "month");
         IrPath.rules(ir).set("rules", JSON.createArrayNode().add(IrPath.rulesList(ir, "rules").get(0)));
@@ -186,7 +186,7 @@ class EmptyNegatedWitnessTest {
         ArrayNode rows = JSON.createArrayNode();
         for (String label : new String[] { "S1", "S2", "S3", "S4" }) {
             ObjectNode r = rows.addObject().put("label", label).put("attribute", "meldpremie");
-            if (Arrays.asList(treffers).contains(label)) {
+            if (Arrays.asList(hits).contains(label)) {
                 r.put("kind", "attributeValue");
                 r.putObject("value").put("number", "40");
             } else r.put("kind", "attributeEmpty");

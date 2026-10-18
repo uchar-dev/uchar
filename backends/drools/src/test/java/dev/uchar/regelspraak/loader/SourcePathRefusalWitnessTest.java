@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.IrPath;
-import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,9 +56,9 @@ class SourcePathRefusalWitnessTest {
     @Test void the_whole_ordered_path_is_kept() throws Exception {
         IrLoader.Loaded l = IrLoader.loadAll(anchor());
         assertEquals(1, l.sourcePaths().size(), "één vouw in dit document draagt een pad");
-        List<RolBindingRef> path = l.sourcePaths().values().iterator().next();
-        assertEquals(List.of(new RolBindingRef("bemanning", "gevoerde boot"),
-                             new RolBindingRef("berging", "geborgen vondst")), path,
+        List<RoleBindingRef> path = l.sourcePaths().values().iterator().next();
+        assertEquals(List.of(new RoleBindingRef("bemanning", "gevoerde boot"),
+                             new RoleBindingRef("berging", "geborgen vondst")), path,
                 "onderwerp-uitwaarts, stap voor stap, precies zoals de wire hem schrijft");
     }
 

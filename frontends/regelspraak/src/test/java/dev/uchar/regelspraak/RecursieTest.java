@@ -23,7 +23,7 @@ class RecursieTest {
             de y Numeriek (geheel getal);
         """;
 
-    @Test void kringverwijzing_is_een_error_met_de_warning_ernaast() {
+    @Test void cycle_reference_is_an_error_with_the_warning_beside_it() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel a
                 geldig altijd
@@ -40,7 +40,7 @@ class RecursieTest {
                 () -> "de kringverwijzing-WARNING ontbreekt: " + m.diagnostics);
     }
 
-    @Test void zelfde_instantie_zelfafleiding_clamp_idioom_is_een_kring_die_weigert() {
+    @Test void same_instance_self_derivation_clamp_idiom_is_a_cycle_that_is_refused() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel begrens x
                 geldig altijd

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * ({@code whole: false}, {@code decimals: 0}). The division gives the fraction 1/3, which no decimal holds exactly.
  * Before the value comes to rest in a fact, the plan collapses it ({@code collapse} of a value consequence,
  * {@code ComputeHelpers.collapse}): a fraction that terminates becomes its decimal, and one that does not becomes
- * {@code Breuk.naarDecimal()}, cut off at {@code DECIMAL64}. Until this witness no case of the corpus and no witness
+ * {@code Rational.naarDecimal()}, cut off at {@code DECIMAL64}. Until this witness no case of the corpus and no witness
  * brought a non-terminating fraction at rest through either branch, so a DRL rendering that ignored the collapse of the
  * plan (mutation W4 of Fable advice 4) and a plan without it (A1) passed every measurement of behaviour; only the pins
  * of the text and of the plan saw them.

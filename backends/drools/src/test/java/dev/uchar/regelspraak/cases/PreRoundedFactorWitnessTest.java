@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * refuses the additive join over two units by name.
  *
  * <p>The rows are expected to turn red the day the transpilers restate through the fraction the loader keeps beside
- * the decimal ({@code Eenheidstelsel.exacteFactoren}); their pin then becomes {@code BothBranches.green} on the exact
+ * the decimal ({@code UnitSystem.exactFactors}); their pin then becomes {@code BothBranches.green} on the exact
  * values, and row 26 loses this delta. Until then a change in how the branches round shows up here, by name.
  */
 class PreRoundedFactorWitnessTest {

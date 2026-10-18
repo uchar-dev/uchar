@@ -254,7 +254,7 @@ public final class CaseInvoer {
             if (reader.temporal(ot, e.getKey())) {
                 // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
                 // brought back to it or it names a setter the bean does not have (ref reads it as the same name)
-                CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.granulariteitLeden().keySet(), e.getKey())),
+                CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.granularityMembers().keySet(), e.getKey())),
                         List.class, temporalInput(e.getValue(), e.getKey(), i.get("label").asText() + "." + e.getKey(),
                                 reader.grid(ot, e.getKey())));
                 if (!e.getValue().isNull() && !e.getValue().has("timeline"))
@@ -275,7 +275,7 @@ public final class CaseInvoer {
             // since that decision. It stayed an Excluded until then, which filed a broken case under "a form
             // the v0 backend does not carry" — a counted, reasoned refusal in the gate report for a case that
             // is simply wrong, and the one classification that could keep it out of sight.
-            if (Namen.containsName(ot.kenmerkGranulariteitLeden(), k.asText()))
+            if (Namen.containsName(ot.characteristicGranularityMembers(), k.asText()))
                 throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
                         + "time-dependent kenmerk of " + ot.naam + ": deliver it as a characteristicTimelines "
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
@@ -288,10 +288,10 @@ public final class CaseInvoer {
             // a CASE defect, not an uncarried form — ref refuses this shape at load (case.ml: "a
             // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
             // Excluded would file a broken corpus case under "not carried", silently green.
-            if (!Namen.containsName(ot.kenmerkGranulariteitLeden(), e.getKey()))
+            if (!Namen.containsName(ot.characteristicGranularityMembers(), e.getKey()))
                 throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
             reader.ownField(ot, e.getKey(), true, "zet");
-            CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.kenmerkGranulariteitLeden().keySet(), e.getKey())),
+            CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.characteristicGranularityMembers().keySet(), e.getKey())),
                     List.class, characteristicTimeline(e.getValue(), e.getKey()));
         }
     }
@@ -310,7 +310,7 @@ public final class CaseInvoer {
                 Objecttype tL = beanObjectType(doel);
                 // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
                 // one role it is the ONLY route: the by-pair search below counts every candidate and derives
-                // null by construction (RegelSpraakModel.verbindendeRol; ref BLOCKS the same derivation in
+                // null by construction (RegelSpraakModel.connectingRole; ref BLOCKS the same derivation in
                 // connecting_pair). That is the SELF-TYPED pair's two sibling roles and, since the repeated-pair
                 // card, the ordinary cross-type pair related by several feittypen. Resolved through the very
                 // authority FactModelGenerator.members derives the fields from and ACCEPTED ONLY when it names one
@@ -318,14 +318,14 @@ public final class CaseInvoer {
                 // test is what keeps this from being a general by-name override. Where the by-pair search already
                 // succeeds the outcome is unchanged: a by-name hit is always one of the by-pair candidates, so a
                 // unique pair resolves to the same role either way.
-                String viaName = model.verbindendeRolViaNaam(tI, tL, e.getKey());
+                String viaName = model.connectingRoleViaName(tI, tL, e.getKey());
                 boolean writtenField = viaName != null && validRoleField(tI, viaName, tL);
                 // the field on THIS bean (to-one from here): the written role, else the type pair
-                String roleIL = writtenField ? viaName : model.verbindendeRol(tI, tL);
+                String roleIL = writtenField ? viaName : model.connectingRole(tI, tL);
                 // The SISTER role — the one THIS instance fills — whose reference field lives on the TARGET
                 // bean, and which is where a TO-MANY written role stores its links. Resolved BY NAME first,
                 // exactly as roleIL is: the written role name names one feittype and its OTHER role is the
-                // back-reference (verbindendeRolViaElementnaam). That is the only route wherever the by-pair
+                // back-reference (connectingRoleViaElementName). That is the only route wherever the by-pair
                 // search counts more than one candidate — the self-typed pair's two siblings (the shape that
                 // made W1{opvolgers:[…]} a per-form refusal although Wachter.voorligger exists) and the
                 // repeated cross-type pair, where H1{liggers:[…]} must land on Schuit.thuishaven and not on
@@ -338,9 +338,9 @@ public final class CaseInvoer {
                 // role WITHOUT a field keeps the honest refusal below instead of reaching a setter no bean
                 // carries. Where the by-pair search already succeeds, a by-name hit is one of its candidates,
                 // so a unique pair resolves to the same role either way.
-                String sister = model.verbindendeRolViaElementnaam(tI, e.getKey());
+                String sister = model.connectingRoleViaElementName(tI, e.getKey());
                 boolean sisterField = sister != null && validRoleField(tL, sister, tI);
-                String roleLI = sisterField ? sister : model.verbindendeRol(tL, tI);
+                String roleLI = sisterField ? sister : model.connectingRole(tL, tI);
                 if (roleIL != null && !model.naarVeelRol(tI, tL, roleIL)) {
                     nameSharingGate(tI, roleIL, tL, link);
                     setToOne(bean, roleIL, doel, link);
@@ -416,7 +416,7 @@ public final class CaseInvoer {
      *  {@code drager} toward {@code doel} — the membership test that lets the WRITTEN role name override the
      *  by-pair search without ever reaching a setter no bean has. It asks the generator's own two derivations:
      *  {@code selfPairRoles} for a self-typed pair (§13.3.9.2 and the ordinary two-role self-pair) and
-     *  {@code verbindendeRollen} for a cross-type one. Deliberately a NAME test, not
+     *  {@code connectingRoles} for a cross-type one. Deliberately a NAME test, not
      *  {@link FactModelGenerator#hasReferenceField}: a role whose name a declared member displaced is a
      *  DIFFERENT failure with its own sentence ({@link #nameSharingGate}), and collapsing the two here would
      *  send the name-sharing shape back through the by-pair route to be blamed for an ambiguity it does not
@@ -424,13 +424,13 @@ public final class CaseInvoer {
     private boolean validRoleField(Objecttype carrier, String rol, Objecttype doel) {
         return carrier.naam.equalsIgnoreCase(doel.naam)
                 ? FactModelGenerator.selfPairRoles(model, carrier).contains(rol)
-                : model.verbindendeRollen(carrier, doel).contains(rol);
+                : model.connectingRoles(carrier, doel).contains(rol);
     }
 
     /** The §13.3.9 NAME-SHARING gate on a resolved to-one role write: {@code drager}'s bean must carry the
      *  reference field for {@code rol} TYPED (a field of {@code doel}'s class), not merely a property of that
      *  name. Both roles here come from the very authorities {@link FactModelGenerator#members} derives the fields
-     *  from ({@code selfPairRoles} / {@code verbindendeRollen} / {@code connectingRole}), so the ONE thing that
+     *  from ({@code selfPairRoles} / {@code connectingRoles} / {@code connectingRole}), so the ONE thing that
      *  can still be missing is the
      *  reference itself, displaced by a declared member of the same name (leden()'s dedup: attribute >
      *  characteristic > reference). Without this gate the write below reaches {@code set<X>(BigDecimal)} with a
@@ -447,7 +447,7 @@ public final class CaseInvoer {
         FactModelGenerator.Origin houder = FactModelGenerator.fieldOrigin(model, carrier, rol);
         String veld = Namen.ident(carrier.naam, true) + "." + Namen.ident(rol, false);
         String cause;
-        if (carrier.heeftLid(rol)) cause = "which shares its name with a declared member";
+        if (carrier.hasMember(rol)) cause = "which shares its name with a declared member";
         else if (houder == null) cause = "for which the bean model derives no field";
         else if (houder.soort() != FactModelGenerator.Origin.Kind.ROL)
             cause = "whose bean property " + veld + " belongs to " + described(houder);

@@ -73,7 +73,7 @@ public final class Host {
         if (c instanceof Conditie.Predicaat p) return p.periode() != null;
         if (c instanceof Conditie.Kenmerk k) return k.periode() != null;
         if (c instanceof Conditie.Samengesteld s) return s.onderdelen().stream().anyMatch(Host::carriesWholePeriod);
-        if (c instanceof Conditie.Kwantorvouw kv) return carriesWholePeriod(kv.filter()) || carriesWholePeriod(kv.toets());
+        if (c instanceof Conditie.QuantifierFold kv) return carriesWholePeriod(kv.filter()) || carriesWholePeriod(kv.test());
         return false;
     }
 }

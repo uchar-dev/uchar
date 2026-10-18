@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>Red before the change</b> (measured 2026-10-08 on the branch at its claim): every row of this branch left the
  * fire with the engine's exception, "[erkenning, zwaarte] RuntimeException:
  * org.drools.modelcompiler.constraints.LambdaEvalExpression@e410d4c : java.lang.RuntimeException:
- * dev.uchar.regelspraak.runtime.Breuk$DelingDoorNul: Breuk deling door 0", the transient document in both orders and
+ * dev.uchar.regelspraak.runtime.Rational$DelingDoorNul: Breuk deling door 0", the transient document in both orders and
  * each standing form, and the rows that fire a session themselves stopped in the fire with it, "de fire wierp in
  * volgorde [erkenning, zwaarte]: java.lang.RuntimeException: …LambdaEvalExpression@e410d4a : …". The exec-model rows
  * were green before.

@@ -42,7 +42,7 @@ class InstanceUnionPopulationWitnessTest {
      *  <p>Rood-eerst, measured 2026-09-22 on {@code corpus/negatief/wf110-unie-als-regelwaarde}: ref answered an
      *  EVALUATION FAULT and the ASP backend a TRANSLATION FAULT, both citing WF-110; the exec-model branch
      *  skipped with the GENERIC {@code regel (waarde buiten scope)}, which names no construct; and the DRL-TEXT
-     *  branch CRASHED — {@code NullPointerException} on {@code r.waarde().type().isNumeriek()}, because the
+     *  branch CRASHED — {@code NullPointerException} on {@code r.waarde().type().isNumber()}, because the
      *  union is the only loadable expression node whose {@code type()} is null by construction and the §4 unit
      *  restate read it unguarded. A crash names no form and reaches the gate as an ERROR instead of as a
      *  channel with a reason. This row is the fence for both halves: both branches refuse, and both name the

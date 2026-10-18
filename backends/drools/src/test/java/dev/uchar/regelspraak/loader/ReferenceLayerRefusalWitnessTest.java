@@ -175,7 +175,7 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde();
-        assertTrue(w instanceof Expr.Onopgelost, String.valueOf(w));
+        assertTrue(w instanceof Expr.Unresolved, String.valueOf(w));
         assertNull(w.type(), "een marker zonder type draagt geen type — nooit een gok");
 
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"x\"}}"));

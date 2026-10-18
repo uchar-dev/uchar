@@ -9,7 +9,7 @@ import java.util.Objects;
  * A member of a fold's range for which the fold's filter faults, inserted logically by the filter fault rule of the
  * fold: {@code element} is a member of the range of the fold {@code fold}, reached from the fold's subject
  * {@code onderwerp}, and the filter raises an evaluation fault for it ({@code fout}, unnamed): a division by a numeric
- * zero as {@link Breuk#delen} threw it, or a {@link Rekenfout}. It is no fault by itself. The reference interpreter
+ * zero as {@link Rational#delen} threw it, or a {@link Rekenfout}. It is no fault by itself. The reference interpreter
  * evaluates a filter only where the evaluation of a form reaches the fold: where the form's condition holds, or within
  * its condition up to the member after which a composite's verdict stands (RUNTIME-SEMANTICS ch. 5.10), and only there
  * does the fault happen (ch. 1.4, point 4; ch. 3.8). The rule that reads the fold therefore binds these facts beside

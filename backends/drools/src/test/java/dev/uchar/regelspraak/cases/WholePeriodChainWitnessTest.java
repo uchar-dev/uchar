@@ -70,12 +70,12 @@ class WholePeriodChainWitnessTest {
         return tmp;
     }
 
-    private static JsonNode caseDocument(List<String> treffers) throws Exception {
+    private static JsonNode caseDocument(List<String> hits) throws Exception {
         String whole = "{\"timeline\":[{\"from\":\"2025-01-01\",\"to\":\"2026-01-01\",\"value\":{\"number\":\"312\"}}]}";
         String half = "{\"timeline\":[{\"from\":\"2025-01-01\",\"to\":\"2025-07-01\",\"value\":{\"number\":\"312\"}}]}";
         StringBuilder rows = new StringBuilder();
         for (String s : List.of("S1", "S2", "S3", "S4"))
-            rows.append(treffers.contains(s)
+            rows.append(hits.contains(s)
                     ? "{\"kind\":\"attributeValue\",\"label\":\"" + s + "\",\"attribute\":\"meldpremie\","
                             + "\"value\":{\"number\":\"40\"}},"
                     : "{\"kind\":\"attributeEmpty\",\"label\":\"" + s + "\",\"attribute\":\"meldpremie\"},");

@@ -62,11 +62,11 @@ public final class DroolsBackendMain {
      *  each whole, and the bound applies to their sentences only: a bound across the whole message would drop from the
      *  line every rule whose fault comes past it. */
     private static String melding(RuntimeException e) {
-        if (e instanceof Evaluatiefouten f) return plat(f.head()) + ": " + clamped(plat(f.sentences()));
-        return clamped(plat(String.valueOf(e.getMessage())));
+        if (e instanceof Evaluatiefouten f) return flatten(f.head()) + ": " + clamped(flatten(f.sentences()));
+        return clamped(flatten(String.valueOf(e.getMessage())));
     }
 
-    private static String plat(String s) {
+    private static String flatten(String s) {
         return s.replace('\n', ' ');
     }
 

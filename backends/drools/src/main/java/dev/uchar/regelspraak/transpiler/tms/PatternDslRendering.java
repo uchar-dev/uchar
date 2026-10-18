@@ -770,7 +770,7 @@ final class PatternDslRendering {
                 case NOT_EQUAL -> x -> !f.apply(x).equals(w);
                 case AT_LEAST -> x -> ((Number) f.apply(x)).intValue() >= ((Number) w).intValue();
                 case UNDER -> x -> ((Number) f.apply(x)).intValue() < ((Number) w).intValue();
-                case WITHIN -> x -> ((Geldigheid) w).bevat((LocalDate) f.apply(x));
+                case WITHIN -> x -> ((Geldigheid) w).contains((LocalDate) f.apply(x));
                 case IS_A -> x -> ((Class<?>) w).isInstance(f.apply(x));
                 case LEEG -> x -> f.apply(x) == null;
                 case GEVULD -> x -> f.apply(x) != null;

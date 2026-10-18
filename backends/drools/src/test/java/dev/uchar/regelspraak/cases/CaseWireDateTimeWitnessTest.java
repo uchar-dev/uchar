@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.kern.Literals;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import org.junit.jupiter.api.Test;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * expectation is read or touched. The reads go through {@link CaseRunner#inputBeans}, the input layer
  * before any rule fires, so what the reader made of a value is the assertion itself.
  *
- * <p>The LITERAL reader ({@code Literalen.parseDatumTijd}) is a different reader with its own witness
+ * <p>The LITERAL reader ({@code Literals.parseDateTime}) is a different reader with its own witness
  * ({@code DateTimeLexemeWitnessTest}). Until 2026-09-23 its grammar was WIDER than this one — it also
  * read the day-first source snippet — and the last case here pinned that asymmetry. Since card
  * {@code datumtijd-lezers-versmalling} both readers refuse the snippet, and the last case pins that
@@ -163,7 +163,7 @@ class CaseWireDateTimeWitnessTest {
         // `waarde`) while the case reader refused it. The emitter writes ISO since p5-datumtijd-lexeem
         // and WF-095 admits ISO alone, so the literal reader narrowed too. Both halves are asserted in
         // one case, so widening EITHER reader back to the snippet fails here.
-        assertNull(Literalen.parseDatumTijd(SOURCE_SNIPPET), "the day-first snippet is not a literal lexeme");
+        assertNull(Literals.parseDateTime(SOURCE_SNIPPET), "the day-first snippet is not a literal lexeme");
         refusesByForm(SOURCE_SNIPPET, "and the same string is not a valid case value");
     }
 

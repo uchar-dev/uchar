@@ -34,40 +34,40 @@ class InstanceUnionWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test void the_loader_reads_each_selection_literally() throws Exception {
-        Expr.Functie f = countOf(doc(union(BRANCH_AANGEMELD, BRANCH_GEBORGEN)));
-        assertEquals(Expr.FunctieKind.AANTAL, f.kind());
-        assertEquals(1, f.argumenten().size(), "de unie is ÉÉN argument");
-        assertNull(f.elementObjecttype(), "de telling boven een unie noemt geen eigen bron (WF-110 (c))");
-        Expr.InstanceSetUnion u = assertInstanceOf(Expr.InstanceSetUnion.class, f.argumenten().get(0));
-        assertEquals(2, u.takken().size());
+        Expr.FunctionCall f = countOf(doc(union(BRANCH_AANGEMELD, BRANCH_GEBORGEN)));
+        assertEquals(Expr.FunctionKind.AANTAL, f.kind());
+        assertEquals(1, f.arguments().size(), "de unie is ÉÉN argument");
+        assertNull(f.elementObjectType(), "de telling boven een unie noemt geen eigen bron (WF-110 (c))");
+        Expr.InstanceSetUnion u = assertInstanceOf(Expr.InstanceSetUnion.class, f.arguments().get(0));
+        assertEquals(2, u.branches().size());
         // the two selections walk DIFFERENT relations and both are read from the wire: a by-pair search
         // over (Jutter, Vondst) is ambiguous here by construction, which is exactly why the field exists
-        assertEquals("vondstaanmelding", u.takken().get(0).bronRol().feittype());
-        assertEquals("aangemelde vondst", u.takken().get(0).bronRol().rol());
-        assertEquals("vondstberging", u.takken().get(1).bronRol().feittype());
-        assertEquals("geborgen vondst", u.takken().get(1).bronRol().rol());
-        assertEquals("Vondst", u.takken().get(0).elementType().naam);
-        assertEquals("Vondst", u.takken().get(1).elementType().naam);
+        assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().feittype());
+        assertEquals("aangemelde vondst", u.branches().get(0).sourceRole().rol());
+        assertEquals("vondstberging", u.branches().get(1).sourceRole().feittype());
+        assertEquals("geborgen vondst", u.branches().get(1).sourceRole().rol());
+        assertEquals("Vondst", u.branches().get(0).elementType().naam);
+        assertEquals("Vondst", u.branches().get(1).elementType().naam);
         assertNotNull(u.bron(), "bron");
     }
 
     @Test void a_selection_filter_lands_on_the_selection_and_not_on_the_count() throws Exception {
-        Expr.Functie f = countOf(doc(union(BRANCH_GEMERKT, BRANCH_GEBORGEN)));
+        Expr.FunctionCall f = countOf(doc(union(BRANCH_GEMERKT, BRANCH_GEBORGEN)));
         assertNull(f.filter(), "de telling draagt geen eigen filter (WF-110 (c))");
-        Expr.InstanceSetUnion u = (Expr.InstanceSetUnion) f.argumenten().get(0);
-        Conditie.Kenmerk k = assertInstanceOf(Conditie.Kenmerk.class, u.takken().get(0).filter());
+        Expr.InstanceSetUnion u = (Expr.InstanceSetUnion) f.arguments().get(0);
+        Conditie.Kenmerk k = assertInstanceOf(Conditie.Kenmerk.class, u.branches().get(0).filter());
         assertEquals("gemerkt", k.kenmerk());
-        assertNull(u.takken().get(1).filter(), "een selectie zonder deelselectie draagt er geen");
+        assertNull(u.branches().get(1).filter(), "een selectie zonder deelselectie draagt er geen");
     }
 
     @Test void the_generic_walk_descends_into_the_selections() throws Exception {
-        // Expr.verzamelOnopgelost walks the sealed union with no default arm; a union that read as an
+        // Expr.collectUnresolved walks the sealed union with no default arm; a union that read as an
         // opaque LEAF would report no surviving marker under it, and every caller takes that silence for
         // a licence to omit work. The marker sits in a SELECTION's filter, which is the only place a
         // union carries an expression at all.
-        Expr.Functie f = countOf(doc(union(BRANCH_UNRESOLVED, BRANCH_GEBORGEN)));
+        Expr.FunctionCall f = countOf(doc(union(BRANCH_UNRESOLVED, BRANCH_GEBORGEN)));
         java.util.List<String> seen = new java.util.ArrayList<>();
-        Expr.verzamelOnopgelost(f, (source, reason) -> seen.add(String.valueOf(source)));
+        Expr.collectUnresolved(f, (source, reason) -> seen.add(String.valueOf(source)));
         assertEquals(1, seen.size(), "de wandeling bereikt de deelselectie van een selectie niet: " + seen);
     }
 
@@ -103,10 +103,10 @@ class InstanceUnionWitnessTest {
 
     // --- the documents ------------------------------------------------------------------------------
 
-    private static Expr.Functie countOf(String ir) throws Exception {
+    private static Expr.FunctionCall countOf(String ir) throws Exception {
         var model = IrLoader.loadAll(JSON.readTree(ir)).model();
         assertEquals(1, model.resolvedRegels.size(), "één regel in dit document");
-        return assertInstanceOf(Expr.Functie.class, model.resolvedRegels.get(0).waarde());
+        return assertInstanceOf(Expr.FunctionCall.class, model.resolvedRegels.get(0).waarde());
     }
 
     private static String branch(String elementType, String factType, String role, String filter) {

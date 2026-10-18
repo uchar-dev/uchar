@@ -67,7 +67,10 @@ variable, a lambda over zone values) unknown counts as may), a Java type declare
 imports or sees from outside (`Rol` imported from the frontend's `RegelSpraakModel`, beside the zone's
 `Toetsitem.Rol`), a member of a supertype or a static import from outside, an OCaml constructor or field declared
 only outside (record labels included), a name of an opened module outside. The inventory does not count those names,
-`apply` leaves them alone, and `check` refuses a row whose name is declared only outside. In a string or a comment,
+`apply` leaves them alone, and `check` refuses a row whose name is declared only outside. A constant written with
+its package (`a.b.Type.CONSTANT.member()`) is read through the type of that package, as `Type.CONSTANT.member()` is
+through its simple name (card `rename-frontend`: two reads of `Spelling.CONTEXT_VALUE_NAME` in `RuleChecker`). In a
+string or a comment,
 which is no code, a qualifier the file does not see is the zone's type when only the zone declares a Java type of
 that name (card `hernoem-drools-backend`: a test of package `cases` expects the DRL text `Rekenhulpen.tijdvakken(`
 of a class of package `tms`). In Java code a name behind a package of the repository (an import, `a.b.Type` in code)
@@ -115,6 +118,13 @@ so a read the tool misses fails to compile, while one counted wrongly would keep
 (`Breuk.van(1).delen(...)` reads the runtime's own `Breuk`, beside a `delen` of the zone). The runtime also reads a
 property by its name, which no compiler checks: `get(seg, "waarde")` of `RegelSpraakRuntime` looks up `getWaarde`,
 else `isWaarde`, by reflection, so those getters of the zone stay too (the segments of `Period`).
+
+The list also holds names that no code outside this repository reads, where the zone itself fixes their spelling (card
+`rename-frontend`): the names that the two tests of the `toka/` zone read (that zone is not renamed), the constants of
+`ResolvedRegel.Soort`, which `RuleChecker` writes with `name()` in its diagnostics, and the v0 values of
+`spec/proposals/v1-naamtabel.json`, which `SpellingTest` compares with the `name()` of the frontend's enum constants
+(`spec/proposals/` keeps v0 names as they are). `freeze` does not write these rows; a new `freeze` of the list must
+keep them.
 
 ## Subcommands
 
@@ -240,10 +250,16 @@ else `isWaarde`, by reflection, so those getters of the zone stay too (the segme
   and in any English inflection (`weigert` is `refuses`, and `is_refused` passes), while what `new` holds beyond
   them is English function words: a translation that holds one counts whole (`peildatum` → `asOfDate`), `is` and
   `in`, alike in both languages, ask for nothing, and negations stay content words (`nietLeeg` → `empty` is
-  refused). It prints the file renames.
+  refused). A Dutch ending (`s e en n t d de te len ige baar loos`) after a glossary word and a prefix (`ge ver ont
+  her`) before one are part of that word and ask for no translation (`stap|s|regel`, `ge|groepeer|de`), though
+  `new` may spell the piece out (`neemtS` → `takesS`); a word of `words` made of a prefix, a glossary word and
+  endings may stand whole (`gegroepeerde` is `grouped`), and a proper name (`regelspraak`) asks for itself.
+  It prints the file renames.
 - `apply <table> [--decisions <list>] [--files-only]` — refuses a dirty work tree. `--files-only` renames files
   and directories with `git mv` (a Java file by its class, an OCaml file by its module) and nothing else, for a
-  commit of its own. Without it, one pass over the tokens of the zone's code: every identifier is replaced by
+  commit of its own. A file whose new name differs from its old in case only (`Parameterset.java` to
+  `ParameterSet.java`) is renamed on a case-insensitive file system too, where the new name "exists" already (card
+  `rename-frontend`). Without it, one pass over the tokens of the zone's code: every identifier is replaced by
   the row of its name with the most specific scope, at most once, so the order of the rows does not matter. In
   a comment it replaces the names of two or more words and the qualified ones (`A.b`, `A#b`, `A::b`,
   `{@link ...}`, `{!...}`). Every other occurrence goes to `decisions/<table name>.tsv`: one-word names in

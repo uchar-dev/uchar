@@ -1582,8 +1582,17 @@ class Index:
         dotted name is a qualified name, or a nested type read through its outer type."""
         if '.' in name:
             f = self.java_fqn.get(name)
-            if f is not None or name[:1].islower():
+            if f is not None:
                 return f
+            if name[:1].islower():
+                # a constant behind the type of its package (a.b.Type.CONSTANT) is read through that type, as
+                # Type.CONSTANT is through its simple name (card rename-frontend)
+                parts = name.split('.')
+                for n in range(len(parts) - 1, 0, -1):
+                    f = self.java_fqn.get('.'.join(parts[:n]))
+                    if f is not None:
+                        return f
+                return None
             name = name.split('.')[0]
         for t in m.types:
             if t.name == name:
@@ -3374,7 +3383,9 @@ def run_apply(repo, table, decisions_file=None, files_only=False, out=None, allo
         for f, n in renames:
             if targets[n] > 1:
                 die('apply: two files would become %s' % n)
-            if os.path.exists(repo.path(n)) and n not in {f2 for f2, _ in renames}:
+            # a case-insensitive file system finds the file itself under a name that differs from it in case only
+            if os.path.exists(repo.path(n)) and n not in {f2 for f2, _ in renames} \
+                    and not os.path.samefile(repo.path(f), repo.path(n)):
                 die('apply: %s -> %s, but %s exists' % (f, n, n))
         for f, n in renames:
             os.makedirs(os.path.dirname(repo.path(n)) or repo.root, exist_ok=True)
@@ -3518,6 +3529,57 @@ def _humps(chunk):
     return [p for p in out if p]
 
 
+# Card rename-frontend: a Dutch inflection ending or prefix beside a glossary word is part of that word. The glossary
+# lists words, not their inflections, and no English word stands for an ending: bindende (binden + de), gegroepeerde
+# (ge + groepeer + de), the linking s of stap|s|regel. With the check asking for an English counterpart of each
+# piece, Haiku could not translate 207 of the 251 rows of its second round on frontends/regelspraak.
+DUTCH_ENDINGS = frozenset('s e en n t d de te len ige baar loos'.split())
+DUTCH_PREFIXES = frozenset('ge ver ont her'.split())
+
+
+def _only_endings(rest):
+    return not rest or any(rest.startswith(e) and _only_endings(rest[len(e):]) for e in DUTCH_ENDINGS)
+
+
+def inflected_stem(lex, w):
+    """The content word of the glossary of which `w` is an inflected form, or None: a prefix of DUTCH_PREFIXES, the
+    word (three letters or more, the longest first) and endings of DUTCH_ENDINGS (gegroepeerde: ge + groepeer + de,
+    telt: tel + t). `w` itself is no glossary word; a caller asks for that first."""
+    for pre in ('',) + tuple(sorted(DUTCH_PREFIXES)):
+        if w == pre or not w.startswith(pre):
+            continue
+        body = w[len(pre):]
+        for k in range(len(body), 2, -1):
+            stem_ = body[:k]
+            if (pre or k < len(body)) and stem_ in lex.words and stem_ not in lex.function_words \
+                    and _only_endings(body[k:]):
+                return stem_
+    return None
+
+
+def _glossary_word(lex, w):
+    return (w in lex.words and w not in lex.function_words) or inflected_stem(lex, w) is not None
+
+
+def _affix_beside_glossary_word(lex, words, i):
+    """Whether words[i] is an ending that follows a glossary word (or follows endings that follow one), or a prefix
+    that precedes one: the piece is then part of that word and asks for no English counterpart."""
+    w = words[i].lower()
+    if w in DUTCH_ENDINGS:
+        j = i - 1
+        while j >= 0 and words[j].lower() in DUTCH_ENDINGS:
+            j -= 1
+        if j >= 0 and _glossary_word(lex, words[j].lower()):
+            return True
+    if w in DUTCH_PREFIXES:
+        j = i + 1
+        while j < len(words) and words[j].lower() in DUTCH_PREFIXES:
+            j += 1
+        if j < len(words) and _glossary_word(lex, words[j].lower()):
+            return True
+    return False
+
+
 def translation_words(lex, words):
     """The English words a translation of the split `words` (invoer|vorm|fout) holds: the words of the glossary's
     translations of each Dutch word, also of the glossary words inside a compound, and each other word as it is
@@ -3528,7 +3590,9 @@ def translation_words(lex, words):
         if not w or w.isdigit():
             continue
         rows = list(lex.words.get(w, ()))
-        if not rows and lex.word_class(w, 2) == 'compound':
+        if not rows and lex.word_class(w, 2) in ('compound', 'unknown') and inflected_stem(lex, w):
+            rows = list(lex.words[inflected_stem(lex, w)])
+        elif not rows and lex.word_class(w, 2) == 'compound':
             for _, _, part in lex._with_short_words(w, lex.cover(w)):
                 rows.extend(lex.words.get(part, ()))
         for r in rows:
@@ -3725,8 +3789,18 @@ def translation_error(lex, row):
             units.append([[w]])
         elif w in lex.function_words:
             units.append(_function_word_options(lex, w))
+        elif _affix_beside_glossary_word(lex, words, i):
+            # part of the glossary word beside it; where the glossary also has the piece as a word (ver: far), that
+            # translation is allowed too, and so is the letter itself (neemtS: takesS)
+            units.append([[], [w]] + [r.english_words() for r in lex.words.get(w, [])])
         elif w in lex.words:
             units.append([r.english_words() for r in lex.words[w]])
+        elif w in lex.proper:
+            # a proper name is no compound of the glossary words inside it (regelspraak: regels, raak); new spells
+            # it as the name or in one word
+            units.append([lex.proper[w].split(' '), [w]])
+        elif lex.word_class(w, 2) in ('compound', 'unknown') and inflected_stem(lex, w):
+            units.append([r.english_words() for r in lex.words[inflected_stem(lex, w)]])
         elif lex.word_class(w, 2) == 'compound':
             return 'word %s holds glossary words (%s): split it in the words column' % (
                 w, ', '.join(p[2] for p in lex.cover(w)))

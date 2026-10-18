@@ -92,7 +92,7 @@ class OriginWitnessTest {
         o.put("form", "startPoint");
         o.putObject("from").put("kind", "namedForm").put("name", "afwijking opgave waarde");
         RegelSpraakModel m = IrLoader.load(ir);
-        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.vorm("afwijking opgave waarde"), Herkomstvorm.STARTPUNT)),
+        assertEquals(Optional.of(new GegenereerdUit(Benoembaar.vorm("afwijking opgave waarde"), Herkomstvorm.START_POINT)),
                 m.gegenereerdUit(Benoembaar.attribuut("Vondst", "waarde")));
     }
 

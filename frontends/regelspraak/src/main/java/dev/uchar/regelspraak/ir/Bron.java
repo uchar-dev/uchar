@@ -25,7 +25,7 @@ public record Bron(String file, int line, int column, String snippet) {
 
     /** A synthetic node with no source position — a desugared / artificially-built node whose only
      *  faithful anchor is its snippet text (file null, line/column 0). */
-    public static Bron synthetisch(String snippet) {
+    public static Bron synthetic(String snippet) {
         return new Bron(null, 0, 0, snippet);
     }
 
@@ -34,7 +34,7 @@ public record Bron(String file, int line, int column, String snippet) {
      *  (set by {@code CharStreams.fromString(text, name)} at the front end; {@code "<unknown>"} for a
      *  nameless string input). A null ctx (or one with no start token) yields a synthetic anchor. */
     public static Bron van(ParserRuleContext ctx, String snippet) {
-        if (ctx == null || ctx.getStart() == null) return synthetisch(snippet);
+        if (ctx == null || ctx.getStart() == null) return synthetic(snippet);
         Token t = ctx.getStart();
         String file = t.getInputStream() != null ? t.getInputStream().getSourceName() : null;
         return new Bron(file, t.getLine(), t.getCharPositionInLine(), snippet);

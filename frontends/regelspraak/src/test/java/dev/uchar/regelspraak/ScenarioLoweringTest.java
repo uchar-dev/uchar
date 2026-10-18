@@ -58,7 +58,7 @@ class ScenarioLoweringTest {
         - de gegevens zijn consistent
         """;
 
-    private static final String CASEBESTAND = """
+    private static final String CASE_FILE = """
         {
           "format": "uchar-case-v0",
           "asOfDate": "2024-03-15",
@@ -183,28 +183,28 @@ class ScenarioLoweringTest {
         }
         """;
 
-    private static ResolvedScenario enig(ScenarioBundel b) {
+    private static ResolvedScenario only(ScenarioBundel b) {
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         assertEquals(1, b.scenarios().size());
         return b.scenarios().get(0);
     }
 
-    @Test void het_casebestand_volgt_het_caseformaat() {
-        ResolvedScenario s = enig(resolve(SCENARIO));
-        assertEquals(CASEBESTAND, CaseEmitter.emit(s));
+    @Test void the_case_file_follows_the_case_format() {
+        ResolvedScenario s = only(resolve(SCENARIO));
+        assertEquals(CASE_FILE, CaseEmitter.emit(s));
         assertEquals("case1-een-wrak.json", CaseEmitter.bestandsnaam(1, s));
     }
 
-    @Test void de_sleutels_van_een_inconsistentie() {
-        String kop = "Situatie k:\neen Jutter J\nde parameter de vondstdrempel is 3\n"
+    @Test void the_keys_of_an_inconsistency() {
+        String head = "Situatie k:\neen Jutter J\nde parameter de vondstdrempel is 3\n"
                 + "Scenario k\nmet peildatum 01-06-2025\ngebaseerd op de situatie k\nMet als verwacht resultaat:\n";
-        assertTrue(CaseEmitter.emit(enig(resolve(kop + "- de gegevens zijn inconsistent\n")))
+        assertTrue(CaseEmitter.emit(only(resolve(head + "- de gegevens zijn inconsistent\n")))
                 .contains("  \"expected\": [\n    {\n      \"kind\": \"inconsistent\"\n    }\n  ]\n"));
-        assertTrue(CaseEmitter.emit(enig(resolve(kop + "- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor J\n")))
+        assertTrue(CaseEmitter.emit(only(resolve(head + "- de gegevens zijn inconsistent volgens \"geen wrakgoed\" voor J\n")))
                 .contains("      \"kind\": \"inconsistent\",\n      \"rule\": \"geen wrakgoed\",\n      \"label\": \"J\"\n"));
     }
 
-    @Test void de_bestandsnaam() {
+    @Test void the_file_name() {
         assertEquals("een-wrak-twee-jutters", CaseEmitter.slug("Één wrak, twee  jutters!"));
         assertEquals("y-wint", CaseEmitter.slug("y wint"));
         assertEquals("", CaseEmitter.slug("-"));
@@ -212,7 +212,7 @@ class ScenarioLoweringTest {
 
     // ---------------- the scope and the IR document ----------------
 
-    private static final String REGELS = """
+    private static final String RULES = """
         Objecttype de Jutter (mv: Jutters) (bezield)
             de vondstteller Numeriek (geheel getal);
             de bonus Numeriek (geheel getal);
@@ -243,54 +243,54 @@ class ScenarioLoweringTest {
 
     /** The rule names and rule groups of the IR document a one-scenario document with header {@code scope} lowers to. */
     private static String ir(String scope) {
-        ScenarioBundel b = ScenarioResolver.resolve(REGELS + "Scenario s\n" + scope
+        ScenarioBundel b = ScenarioResolver.resolve(RULES + "Scenario s\n" + scope
                 + "Gegeven is de volgende situatie:\neen Jutter J\n- de vondstteller is 12\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
-        ResolvedScenario s = enig(b);
+        ResolvedScenario s = only(b);
         return IrEmitter.emit(CaseEmitter.metScope(b.model(), s.scope()));
     }
 
-    private static List<String> regelnamen(String ir) {
-        List<String> uit = new ArrayList<>();
+    private static List<String> ruleNames(String ir) {
+        List<String> result = new ArrayList<>();
         Matcher m = Pattern.compile("\"node\": \"Rule\",\\s*\"name\": \"([^\"]+)\"").matcher(ir);
-        while (m.find()) uit.add(m.group(1));
-        return uit;
+        while (m.find()) result.add(m.group(1));
+        return result;
     }
 
-    @Test void zonder_scope_is_het_ir_document_dat_van_de_productieroute() {
-        String productie = IrEmitter.emit(Resolver.resolve(REGELS));
+    @Test void without_scope_is_the_ir_document_that_is_of_the_production_route() {
+        String productie = IrEmitter.emit(Resolver.resolve(RULES));
         assertEquals(productie, ir(""));
         assertEquals(List.of("bonus van een jutter", "premie van een jutter", "ervaring van een jutter",
-                "rubriek van een jutter 1", "rubriek van een jutter 2"), regelnamen(productie));
+                "rubriek van een jutter 1", "rubriek van een jutter 2"), ruleNames(productie));
         assertEquals(IrEmitter.emit(Resolver.resolve(MODEL)), IrEmitter.emit(resolve(SCENARIO).model()),
                 "de scenarioroute bouwt het model met de pijplijn van de productieroute");
     }
 
-    @Test void de_scope_draagt_alleen_wat_zij_noemt() {
-        assertEquals(List.of("bonus van een jutter"), regelnamen(ir("toetst de regel bonus van een jutter\n")));
-        String tabel = ir("toetst de regels rubriek van een jutter en bonus van een jutter\n");
+    @Test void the_scope_carries_only_what_it_names() {
+        assertEquals(List.of("bonus van een jutter"), ruleNames(ir("toetst de regel bonus van een jutter\n")));
+        String table = ir("toetst de regels rubriek van een jutter en bonus van een jutter\n");
         assertEquals(List.of("bonus van een jutter", "rubriek van een jutter 1", "rubriek van een jutter 2"),
-                regelnamen(tabel), "een beslistabel bij haar naam draagt al haar rijen");
-        assertFalse(tabel.contains("\"node\": \"RuleGroup\""), "een groep zonder gedragen lid valt weg");
-        String groep = ir("toetst de regelgroep premies\n");
-        assertEquals(List.of("premie van een jutter", "ervaring van een jutter"), regelnamen(groep));
-        assertTrue(groep.contains("\"node\": \"RuleGroup\""));
-        String lid = ir("toetst de regel ervaring van een jutter\n");
-        assertEquals(List.of("ervaring van een jutter"), regelnamen(lid));
-        assertTrue(lid.contains("\"members\": [\n          \"ervaring van een jutter\"\n        ]"),
-                () -> "de groep houdt alleen haar gedragen lid:\n" + lid);
+                ruleNames(table), "een beslistabel bij haar naam draagt al haar rijen");
+        assertFalse(table.contains("\"node\": \"RuleGroup\""), "een groep zonder gedragen lid valt weg");
+        String group = ir("toetst de regelgroep premies\n");
+        assertEquals(List.of("premie van een jutter", "ervaring van een jutter"), ruleNames(group));
+        assertTrue(group.contains("\"node\": \"RuleGroup\""));
+        String member = ir("toetst de regel ervaring van een jutter\n");
+        assertEquals(List.of("ervaring van een jutter"), ruleNames(member));
+        assertTrue(member.contains("\"members\": [\n          \"ervaring van een jutter\"\n        ]"),
+                () -> "de groep houdt alleen haar gedragen lid:\n" + member);
     }
 
-    @Test void een_scope_die_een_regelgroep_als_regel_noemt() {
-        ScenarioBundel b = ScenarioResolver.resolve(REGELS + "Scenario s\ntoetst de regel premies\n"
+    @Test void a_scope_that_names_a_rule_group_as_rule() {
+        ScenarioBundel b = ScenarioResolver.resolve(RULES + "Scenario s\ntoetst de regel premies\n"
                 + "Gegeven is de volgende situatie:\neen Jutter J\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.model().errors().stream().anyMatch(d -> d.message()
                 .contains("'premies' uit de scope is een regelgroep; schrijf 'toetst de regelgroep premies'")),
                 () -> b.model().errors().toString());
     }
 
-    @Test void een_document_een_ir_document() {
-        ScenarioBundel b = ScenarioResolver.resolve(REGELS
+    @Test void a_document_an_ir_document() {
+        ScenarioBundel b = ScenarioResolver.resolve(RULES
                 + "Scenario een\ntoetst de regel bonus van een jutter\nGegeven is de volgende situatie:\neen Jutter J\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n"
                 + "Scenario twee\nGegeven is de volgende situatie:\neen Jutter J\n"
@@ -300,7 +300,7 @@ class ScenarioLoweringTest {
                 () -> b.model().errors().toString());
     }
 
-    @Test void een_scope_noemt_een_defaultsgroep_bij_haar_basisregel() {
+    @Test void a_scope_names_a_defaults_group_at_its_base_rule() {
         String dialect = """
             Objecttype de Jutter (mv: Jutters) (bezield)
                 is vergunning geweigerd kenmerk (bijvoeglijk);
@@ -317,13 +317,13 @@ class ScenarioLoweringTest {
                     Een Jutter is niet uitgesloten
                     indien hij weigering herroepen is.
             """;
-        String staart = "Gegeven is de volgende situatie:\neen Jutter J\nMet als verwacht resultaat:\n- J is niet uitgesloten\n";
-        ScenarioBundel fout = ScenarioResolver.resolve(dialect + "Scenario s\ntoetst de regel herroepen weigering\n" + staart);
+        String suffix = "Gegeven is de volgende situatie:\neen Jutter J\nMet als verwacht resultaat:\n- J is niet uitgesloten\n";
+        ScenarioBundel fout = ScenarioResolver.resolve(dialect + "Scenario s\ntoetst de regel herroepen weigering\n" + suffix);
         assertTrue(fout.model().errors().stream().anyMatch(d -> d.message().contains("de regel 'herroepen weigering' uit "
                 + "de scope is opgegaan in een defaultsgroep; de scope noemt die groep bij de naam van haar basisregel")),
                 () -> fout.model().errors().toString());
-        ScenarioBundel goed = ScenarioResolver.resolve(dialect + "Scenario s\ntoetst de regel uitsluiting\n" + staart);
-        ResolvedScenario s = enig(goed);
+        ScenarioBundel goed = ScenarioResolver.resolve(dialect + "Scenario s\ntoetst de regel uitsluiting\n" + suffix);
+        ResolvedScenario s = only(goed);
         assertEquals(IrEmitter.emit(Resolver.resolve(dialect)), IrEmitter.emit(CaseEmitter.metScope(goed.model(), s.scope())),
                 "de basisregel draagt de hele defaultsgroep");
     }
@@ -444,62 +444,62 @@ class ScenarioLoweringTest {
         """;
 
     @SuppressWarnings("unchecked")
-    private static List<java.lang.reflect.Field> verzamelingen() {
-        List<java.lang.reflect.Field> uit = new ArrayList<>();
+    private static List<java.lang.reflect.Field> sets() {
+        List<java.lang.reflect.Field> result = new ArrayList<>();
         for (java.lang.reflect.Field f : RegelSpraakModel.class.getFields())
-            if (!java.lang.reflect.Modifier.isStatic(f.getModifiers())) uit.add(f);
-        return uit;
+            if (!java.lang.reflect.Modifier.isStatic(f.getModifiers())) result.add(f);
+        return result;
     }
 
-    private static boolean leeg(Object v) {
+    private static boolean empty(Object v) {
         return v instanceof java.util.Collection<?> c ? c.isEmpty() : ((java.util.Map<?, ?>) v).isEmpty();
     }
 
     /** Every element of every collection reaches the copy the scoped document starts from. Before: a copy field by
      *  field, from which a mutant could leave eight declaration collections out with every test green. */
     @SuppressWarnings("unchecked")
-    @Test void de_kopie_draagt_elke_verzameling_van_het_model() throws IllegalAccessException {
+    @Test void the_copy_carries_every_set_of_the_model() throws IllegalAccessException {
         RegelSpraakModel m = new RegelSpraakModel();
-        Object merk = new Object();
-        for (java.lang.reflect.Field f : verzamelingen()) {
-            if (f.get(m) instanceof List<?> l) ((List<Object>) l).add(merk);
-            else ((java.util.Map<Object, Object>) f.get(m)).put(merk, merk);
+        Object mark = new Object();
+        for (java.lang.reflect.Field f : sets()) {
+            if (f.get(m) instanceof List<?> l) ((List<Object>) l).add(mark);
+            else ((java.util.Map<Object, Object>) f.get(m)).put(mark, mark);
         }
-        RegelSpraakModel k = m.kopie();
-        for (java.lang.reflect.Field f : verzamelingen()) {
+        RegelSpraakModel k = m.copy();
+        for (java.lang.reflect.Field f : sets()) {
             Object v = f.get(k);
-            assertTrue(v instanceof List<?> l ? l.contains(merk) : ((java.util.Map<?, ?>) v).containsKey(merk),
+            assertTrue(v instanceof List<?> l ? l.contains(mark) : ((java.util.Map<?, ?>) v).containsKey(mark),
                     () -> "de kopie mist het veld '" + f.getName() + "'");
         }
-        assertTrue(verzamelingen().size() >= 22, "het model telt minder verzamelingen dan gemeten (22)");
+        assertTrue(sets().size() >= 22, "het model telt minder verzamelingen dan gemeten (22)");
     }
 
     /** A scope that names every form of a model that fills every collection leaves the production document, byte for
      *  byte. The model carries a start point determination, which the scenario route refuses beside a scope, so the
      *  scope is built here from the model's own form names. */
-    @Test void een_scope_die_alles_noemt_is_het_productiedocument() throws IllegalAccessException {
+    @Test void a_scope_that_names_everything_is_the_production_document() throws IllegalAccessException {
         RegelSpraakModel m = Resolver.resolve(RIJK);
         assertTrue(m.errors().isEmpty(), () -> "het rijke document hoort schoon te resolven: " + m.errors());
-        for (java.lang.reflect.Field f : verzamelingen())
-            assertFalse(leeg(f.get(m)), () -> "het rijke document vult '" + f.getName() + "' niet");
-        List<String> namen = new ArrayList<>();
-        m.resolvedRegels.forEach(r -> namen.add(r.naam()));
-        m.objectCreaties.forEach(x -> namen.add(x.naam()));
-        m.verdelingen.forEach(x -> namen.add(x.naam()));
-        m.consistenties.forEach(x -> namen.add(x.naam()));
-        m.uniciteiten.forEach(x -> namen.add(x.naam()));
-        m.uniciteitUnies.forEach(x -> namen.add(x.naam()));
-        m.feitCreaties.forEach(x -> namen.add(x.naam()));
-        m.prioritizedDefaults.forEach(x -> namen.add(x.naam()));
-        ResolvedScenario.Scope alles = new ResolvedScenario.Scope(namen);
-        assertEquals(IrEmitter.emit(m), IrEmitter.emit(CaseEmitter.metScope(m, alles)));
+        for (java.lang.reflect.Field f : sets())
+            assertFalse(empty(f.get(m)), () -> "het rijke document vult '" + f.getName() + "' niet");
+        List<String> names = new ArrayList<>();
+        m.resolvedRegels.forEach(r -> names.add(r.naam()));
+        m.objectCreaties.forEach(x -> names.add(x.naam()));
+        m.verdelingen.forEach(x -> names.add(x.naam()));
+        m.consistenties.forEach(x -> names.add(x.naam()));
+        m.uniciteiten.forEach(x -> names.add(x.naam()));
+        m.uniciteitUnies.forEach(x -> names.add(x.naam()));
+        m.feitCreaties.forEach(x -> names.add(x.naam()));
+        m.prioritizedDefaults.forEach(x -> names.add(x.naam()));
+        ResolvedScenario.Scope everything = new ResolvedScenario.Scope(names);
+        assertEquals(IrEmitter.emit(m), IrEmitter.emit(CaseEmitter.metScope(m, everything)));
     }
 
     // ---------------- the diagnostics a scoped document carries ----------------
 
     /** A declaration that draws a WARNING, and a marker WARNING in a rule, a rule the scope leaves out, the exception
      *  block of a defaults group it leaves out, and the member of a group it keeps one other member of. */
-    private static final String WAARSCHUWINGEN = """
+    private static final String WARNINGS = """
         Dagsoort de rustdag (mv: wk);
 
         Objecttype de Jutter (mv: Jutters) (bezield)
@@ -550,92 +550,92 @@ class ScenarioLoweringTest {
     /** Before: the scoped document kept every diagnostic of the whole model, also the WARNINGs of the rules it left
      *  out (open point of the scenario card, measured again by the lens: a WARNING about a left-out rule in a
      *  document without it). */
-    @Test void een_gescopet_document_draagt_de_diagnoses_van_zijn_vormen_en_declaraties() {
-        ScenarioBundel b = ScenarioResolver.resolve(WAARSCHUWINGEN + "Scenario s\n"
+    @Test void a_scoped_document_carries_the_diagnostics_of_its_forms_and_declarations() {
+        ScenarioBundel b = ScenarioResolver.resolve(WARNINGS + "Scenario s\n"
                 + "toetst de regels bevoegdheid en melding\nGegeven is de volgende situatie:\neen Jutter J\n"
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         assertEquals(5, b.model().diagnostics.size(), () -> "het hele model: " + b.model().diagnostics);
-        List<String> gescopet = CaseEmitter.metScope(b.model(), enig(b).scope()).diagnostics.stream()
+        List<String> scoped = CaseEmitter.metScope(b.model(), only(b).scope()).diagnostics.stream()
                 .map(d -> d.line() + " " + d.message().substring(0, d.message().indexOf(' '))).toList();
-        assertEquals(List.of("1 dagsoort-eenheid", "26 'kiezels'"), gescopet,
+        assertEquals(List.of("1 dagsoort-eenheid", "26 'kiezels'"), scoped,
                 "de declaratie en de gedragen regel houden hun WARNING; de weggelaten regel, het uitzonderingsblok "
                         + "van de weggelaten defaultsgroep en het weggelaten groepslid niet");
     }
 
     // ---------------- the CLI ----------------
 
-    private record Uitvoer(int code, String tekst) {}
+    private record Output(int code, String tekst) {}
 
-    private static Uitvoer cli(Path ir, Path map, Path... bronnen) throws IOException {
+    private static Output cli(Path ir, Path map, Path... sources) throws IOException {
         List<String> rest = new ArrayList<>();
         rest.add(ir.toString());
-        for (Path p : bronnen) rest.add(p.toString());
+        for (Path p : sources) rest.add(p.toString());
         PrintStream oud = System.out;
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         System.setOut(new PrintStream(buf, true, java.nio.charset.StandardCharsets.UTF_8));
         try {
-            return new Uitvoer(Resolver.casesModus(rest, map), buf.toString(java.nio.charset.StandardCharsets.UTF_8));
+            return new Output(Resolver.casesMode(rest, map), buf.toString(java.nio.charset.StandardCharsets.UTF_8));
         } finally {
             System.setOut(oud);
         }
     }
 
-    private static List<String> bestanden(Path map) throws IOException {
+    private static List<String> files(Path map) throws IOException {
         if (!Files.isDirectory(map)) return List.of();
         try (Stream<Path> s = Files.list(map)) { return s.map(p -> p.getFileName().toString()).sorted().toList(); }
     }
 
-    @Test void de_casesmodus_schrijft_het_ir_document_en_de_casebestanden() throws IOException {
+    @Test void the_cases_mode_writes_the_ir_document_and_the_case_files() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
         Path bron = Files.writeString(d.resolve("bron.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO);
-        Uitvoer u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
+        Output u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
         assertEquals(0, u.code(), u.tekst());
-        assertEquals(List.of("case1-een-wrak.json"), bestanden(d.resolve("cases")));
-        assertEquals(CASEBESTAND, Files.readString(d.resolve("cases/case1-een-wrak.json")));
+        assertEquals(List.of("case1-een-wrak.json"), files(d.resolve("cases")));
+        assertEquals(CASE_FILE, Files.readString(d.resolve("cases/case1-een-wrak.json")));
         assertEquals(IrEmitter.emit(Resolver.resolve(MODEL)), Files.readString(d.resolve("ir.json")));
     }
 
-    @Test void de_casesmodus_schrijft_niets_bij_een_fout_en_noemt_bestand_en_regel() throws IOException {
+    @Test void the_cases_mode_writes_nothing_at_an_error_and_names_file_and_line() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
         Path bron = Files.writeString(d.resolve("bron.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO.replace("met peildatum 15-03-2024",
                 "met peildatum 15-03-2024 12:00:00.000"));
-        Uitvoer u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
+        Output u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
         assertEquals(1, u.code());
         // one line number, the one in the file: before, the line in the chain of files came first ("(line 64)")
         assertTrue(u.tekst().contains("  ERROR (" + scen + ":2): scenario: de peildatum '15-03-2024 12:00:00.000' "
                 + "draagt een tijd"), u.tekst());
         assertFalse(u.tekst().contains("(line "), u.tekst());
         assertFalse(Files.exists(d.resolve("ir.json")), "een weigering schrijft geen IR-document");
-        assertEquals(List.of(), bestanden(d.resolve("cases")), "een weigering schrijft geen casebestand");
+        assertEquals(List.of(), files(d.resolve("cases")), "een weigering schrijft geen casebestand");
     }
 
-    @Test void de_casesmodus_weigert_een_map_met_een_casebestand_dat_zij_niet_schrijft() throws IOException {
+    @Test void the_cases_mode_refuses_a_directory_with_a_case_file_that_it_does_not_write() throws IOException {
         // before: the old file stayed beside the new ones, and the run wrote them and exited 0
         Path d = Files.createTempDirectory("scenario-cli");
         Path bron = Files.writeString(d.resolve("bron.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO);
         Files.createDirectories(d.resolve("cases"));
         Files.writeString(d.resolve("cases/case9-oud.json"), "{}\n");
-        Uitvoer u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
+        Output u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
         assertEquals(1, u.code(), u.tekst());
         assertTrue(u.tekst().contains("draagt al casebestanden die dit document niet schrijft (case9-oud.json)"),
                 u.tekst());
-        assertEquals(List.of("case9-oud.json"), bestanden(d.resolve("cases")), "de weigering schrijft geen casebestand");
+        assertEquals(List.of("case9-oud.json"), files(d.resolve("cases")), "de weigering schrijft geen casebestand");
         assertFalse(Files.exists(d.resolve("ir.json")), "de weigering schrijft geen IR-document");
         // a case file the run writes itself is overwritten
         Files.delete(d.resolve("cases/case9-oud.json"));
         Files.writeString(d.resolve("cases/case1-een-wrak.json"), "{}\n");
         assertEquals(0, cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen).code());
-        assertEquals(CASEBESTAND, Files.readString(d.resolve("cases/case1-een-wrak.json")));
+        assertEquals(CASE_FILE, Files.readString(d.resolve("cases/case1-een-wrak.json")));
     }
 
-    @Test void een_document_zonder_scenario_heeft_niets_te_loweren() throws IOException {
+    @Test void a_document_without_scenario_has_nothing_to_lower() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
         Path bron = Files.writeString(d.resolve("bron.rgs"), MODEL);
-        Uitvoer u = cli(d.resolve("ir.json"), d.resolve("cases"), bron);
+        Output u = cli(d.resolve("ir.json"), d.resolve("cases"), bron);
         assertEquals(1, u.code());
         assertTrue(u.tekst().contains("het document draagt geen scenario, dus er valt geen casebestand te schrijven"),
                 u.tekst());

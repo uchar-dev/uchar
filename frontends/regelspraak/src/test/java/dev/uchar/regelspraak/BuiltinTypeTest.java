@@ -23,7 +23,7 @@ class BuiltinTypeTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    @Test void de_dagentelling_draagt_het_type_van_een_telling() {
+    @Test void the_day_count_carries_the_type_of_a_count() {
         String c = emitCompact("""
             Objecttype de Jutter (mv: Jutters) (bezield)
                 is borgplichtig kenmerk (bijvoeglijk) voor elke maand;
@@ -38,7 +38,7 @@ class BuiltinTypeTest {
         assertFalse(c.contains("\"type\":null"), () -> "een type null op de wire:\n" + c);
     }
 
-    @Test void de_concatenatie_draagt_het_type_tekst() {
+    @Test void the_concatenation_carries_the_text_type() {
         String c = emitCompact("""
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de voornaam Tekst;

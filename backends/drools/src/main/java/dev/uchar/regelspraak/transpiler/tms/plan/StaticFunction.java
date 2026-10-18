@@ -36,7 +36,7 @@ public enum StaticFunction {
     /** The text of a text or an enumeration label, a leeg value the empty text (ch. 1.2). */
     RS_TEXT(RegelSpraakRuntime.class, "rsTekst", false),
     /** A duration in whole units (ch. 3.8) between two dates, the unit a {@code String} constant as
-     *  {@code Tijdrekening.chronoUnit} names it, absolute where a {@code Boolean} constant says so. */
+     *  {@code TimeCalculation.chronoUnit} names it, absolute where a {@code Boolean} constant says so. */
     RS_DURATION(RegelSpraakRuntime.class, "rsTijdsduur", false),
     /** A duration in whole days of a day kind between two dates (ch. 3.8), the kind a {@link Term.DayKind}, absolute
      *  where a {@code Boolean} constant says so. */
@@ -58,7 +58,7 @@ public enum StaticFunction {
     /** A timeline clipped to the periods outside the true periods of a characteristic, within its segments. */
     RS_TIME_CLIP_NOT(RegelSpraakRuntime.class, "rsTijdKnipNiet", false),
     /** The true periods of a comparison of a timeline with a value, the comparison an {@code Integer} code of
-     *  {@code Tijdrekening.toets}, the value a {@code BigDecimal}. */
+     *  {@code TimeCalculation.test}, the value a {@code BigDecimal}. */
     RS_TIME_CONDITION(RegelSpraakRuntime.class, "rsTijdConditie", false),
     /** The pro-rata part of a base timeline per bucket of a grid over the true periods of a characteristic (ch. 3.7). */
     RS_TIME_PROPORTIONAL(RegelSpraakRuntime.class, "rsTijdsevenredig", false),

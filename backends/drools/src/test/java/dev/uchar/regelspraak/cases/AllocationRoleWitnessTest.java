@@ -57,7 +57,7 @@ class AllocationRoleWitnessTest {
         IrLoader.Loaded l = IrLoader.loadAll(lees(TOEZICHT));
         RegelSpraakModel m = l.model();
         var v = m.verdelingen.get(0);
-        assertNull(m.verbindendeRol(v.doelType(), v.bronType()), "two fact types relate Berger and Berging");
+        assertNull(m.connectingRole(v.targetType(), v.sourceType()), "two fact types relate Berger and Berging");
         assertEquals(new FactModelGenerator.AllocationJoin("berging", null),
                 FactModelGenerator.allocationJoin(m, v, l.roleBindings().get(v)),
                 "the join is the sibling of the bound recipient role 'berger'");

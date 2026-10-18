@@ -5,12 +5,12 @@ import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
-import dev.uchar.regelspraak.ir.ResolvedConsistentie;
-import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
-import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
+import dev.uchar.regelspraak.ir.ResolvedConsistency;
+import dev.uchar.regelspraak.ir.ResolvedFactCreation;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreation;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
-import dev.uchar.regelspraak.ir.ResolvedUniciteit;
-import dev.uchar.regelspraak.ir.ResolvedUniciteitUnie;
+import dev.uchar.regelspraak.ir.ResolvedUniqueness;
+import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -74,7 +74,7 @@ public final class ProducentConsument {
      *
      * <p>The chain walk reads the OWN declaration maps per type on purpose, because the question is WHICH type
      * declares the member, and it is kind-aware: a kenmerk and an attribuut may legally share a name on
-     * different types of one chain, and the model's own {@code declarantVan} answers for both kinds at once. A
+     * different types of one chain, and the model's own {@code declarantOf} answers for both kinds at once. A
      * member nothing on the chain declares keeps its holder, which is the reading from before this rule existed.
      */
     public static ElementSleutel elementVan(RegelSpraakModel.Objecttype houder, String naam, boolean kenmerk) {
@@ -154,45 +154,45 @@ public final class ProducentConsument {
             out.add(new Vorm(Vormsoort.REGEL, basisNaam(r.naam()), writes,
                     navigation == null ? Set.of() : verbruikt(r, navigation)));
         }
-        for (ResolvedObjectCreatie o : model.objectCreaties) {
+        for (ResolvedObjectCreation o : model.objectCreaties) {
             Set<ElementSleutel> writes = new LinkedHashSet<>();
-            for (ResolvedObjectCreatie.Toekenning t : o.toekenningen())
-                if (t.attribuut() != null) writes.add(elementVan(o.nieuwType(), t.attribuut(), t.kenmerk()));
+            for (ResolvedObjectCreation.MemberInit t : o.initialisations())
+                if (t.attribuut() != null) writes.add(elementVan(o.createdType(), t.attribuut(), t.kenmerk()));
             Reader l = new Reader(navigation, new LinkedHashSet<>());
             l.condition(o.voorwaarde(), o.subject());
-            for (ResolvedObjectCreatie.Toekenning t : o.toekenningen()) l.expr(t.waarde(), o.subject());
+            for (ResolvedObjectCreation.MemberInit t : o.initialisations()) l.expr(t.waarde(), o.subject());
             out.add(new Vorm(Vormsoort.OBJECTCREATIE, basisNaam(o.naam()), writes, l.out()));
         }
         for (ResolvedVerdeling v : model.verdelingen) {
             Set<ElementSleutel> writes = new LinkedHashSet<>();
-            if (v.doelAttribuut() != null) writes.add(elementVan(v.doelType(), v.doelAttribuut(), false));
-            if (v.restantAttribuut() != null) writes.add(elementVan(v.bronType(), v.restantAttribuut(), false));
+            if (v.targetAttribute() != null) writes.add(elementVan(v.targetType(), v.targetAttribute(), false));
+            if (v.remainderAttribute() != null) writes.add(elementVan(v.sourceType(), v.remainderAttribute(), false));
             Reader l = new Reader(navigation, new LinkedHashSet<>());
-            l.member(v.bronType(), v.bronAttribuut(), false);
-            for (String a : new String[] { v.ratoAttribuut(), v.maximumAttribuut(), v.groepeerAttribuut() })
-                l.member(v.doelType(), a, false);
-            l.condition(v.voorwaarde(), v.bronType());
+            l.member(v.sourceType(), v.sourceAttribute(), false);
+            for (String a : new String[] { v.ratioAttribute(), v.maximumAttribute(), v.orderingAttribute() })
+                l.member(v.targetType(), a, false);
+            l.condition(v.voorwaarde(), v.sourceType());
             out.add(new Vorm(Vormsoort.VERDELING, basisNaam(v.naam()), writes, l.out()));
         }
-        for (ResolvedConsistentie c : model.consistenties) {
+        for (ResolvedConsistency c : model.consistenties) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
             l.condition(c.assertie(), c.subject());
             out.add(new Vorm(Vormsoort.CONSISTENTIE, basisNaam(c.naam()), Set.of(), l.out()));
         }
-        for (ResolvedUniciteit u : model.uniciteiten) {
+        for (ResolvedUniqueness u : model.uniciteiten) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
-            for (String sleutel : u.sleutels()) l.member(u.subject(), sleutel, false);
+            for (String sleutel : u.keys()) l.member(u.subject(), sleutel, false);
             out.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.out()));
         }
-        for (ResolvedUniciteitUnie u : model.uniciteitUnies) {
+        for (ResolvedUniquenessUnion u : model.uniciteitUnies) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
-            for (ResolvedUniciteitUnie.Bron b : u.bronnen())
-                if (b.type() != null) for (String sleutel : b.sleutels()) l.member(b.type(), sleutel, false);
+            for (ResolvedUniquenessUnion.Bron b : u.sources())
+                if (b.type() != null) for (String sleutel : b.keys()) l.member(b.type(), sleutel, false);
             out.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.out()));
         }
-        for (ResolvedFeitCreatie f : model.feitCreaties) {
+        for (ResolvedFactCreation f : model.feitCreaties) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
-            l.condition(f.voorwaarde(), f.anker());
+            l.condition(f.voorwaarde(), f.anchor());
             out.add(new Vorm(Vormsoort.FEITCREATIE, basisNaam(f.naam()), Set.of(), l.out()));
         }
         for (int i = 0; i < defaults.size(); i++) {
@@ -248,8 +248,8 @@ public final class ProducentConsument {
         consequentie.expr(d.consequentie(), onderwerp);
         out.add(new DefaultLezing(pad, d, java.util.Collections.unmodifiableSet(rechtvaardiging.out()),
                 java.util.Collections.unmodifiableSet(consequentie.out())));
-        if (d.excepties() == null) return;
-        List<ExceptionGroup> groups = d.excepties().leden();
+        if (d.exceptions() == null) return;
+        List<ExceptionGroup> groups = d.exceptions().leden();
         for (int g = 0; g < groups.size(); g++) {
             List<Default> members = groups.get(g).defaults();
             for (int j = 0; j < members.size(); j++) {
@@ -297,11 +297,11 @@ public final class ProducentConsument {
      *  (WF-053). */
     public static Navigatie wireNavigatie(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
-        Map<Object, List<RegelSpraakModel.RolBindingRef>> hops = loaded.navigationBindings();
+        Map<Object, List<RegelSpraakModel.RoleBindingRef>> hops = loaded.navigationBindings();
         return (k, onderwerp) -> {
-            List<RegelSpraakModel.RolBindingRef> pad = hops.get(k);
+            List<RegelSpraakModel.RoleBindingRef> pad = hops.get(k);
             if (pad == null || pad.isEmpty()) return null;
-            RegelSpraakModel.RolBindingRef hop = pad.get(pad.size() - 1);
+            RegelSpraakModel.RoleBindingRef hop = pad.get(pad.size() - 1);
             for (RegelSpraakModel.Feittype ft : model.feittypen.values())
                 if (sameName(ft.naam, hop.feittype()))
                     for (RegelSpraakModel.Rol rol : ft.rollen)
@@ -363,16 +363,16 @@ public final class ProducentConsument {
                 case Conditie.Samengesteld s -> { for (Conditie d : s.onderdelen()) condition(d, subject); }
                 // IR-SPEC ch. 4.5: a quantifier fold's filter and matrix are evaluated with the ELEMENT as subject
                 // (RUNTIME-SEMANTICS ch. 3.9a), hence the element type rather than the enclosing subject.
-                case Conditie.Kwantorvouw kv -> {
-                    condition(kv.filter(), kv.elementObjecttype());
-                    condition(kv.toets(), kv.elementObjecttype());
+                case Conditie.QuantifierFold kv -> {
+                    condition(kv.filter(), kv.elementObjectType());
+                    condition(kv.test(), kv.elementObjectType());
                 }
                 // A role check reads a relation's link set and a rule-version test a channel: nodes of IR-SPEC
                 // ch. 5.1 this graph does not draw, so neither contributes an element.
                 case Conditie.Rollidmaatschap ignored -> { }
-                case Conditie.VerreRollidmaatschap ignored -> { }
-                case Conditie.Regelversie ignored -> { }
-                case Conditie.Onopgelost ignored -> { }
+                case Conditie.FarRoleMembership ignored -> { }
+                case Conditie.RuleStatusCheck ignored -> { }
+                case Conditie.Unresolved ignored -> { }
             }
         }
 
@@ -381,46 +381,46 @@ public final class ProducentConsument {
             switch (e) {
                 case Expr.AttribuutRef ref -> out.add(elementVan(ref.objecttype(), ref.attribuut(), false));
                 case Expr.Binair b -> { expr(b.links(), subject); expr(b.rechts(), subject); }
-                case Expr.Functie f -> {
+                case Expr.FunctionCall f -> {
                     // A count's source names the relation's ROLE, never a member of the element type (the loader
                     // refuses a member there): it reads the link set, not an attribuut of each contributor.
-                    if (!isCountSource(f)) for (Expr a : f.argumenten()) expr(a, subject);
-                    expr(f.leegwaarde(), subject);
+                    if (!isCountSource(f)) for (Expr a : f.arguments()) expr(a, subject);
+                    expr(f.emptyFallback(), subject);
                     // the filter is evaluated per contributor, with the element as subject
-                    condition(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : subject);
+                    condition(f.filter(), f.elementObjectType() != null ? f.elementObjectType() : subject);
                 }
                 // each selection's filter is evaluated per contributor, as a fold's filter is
                 case Expr.InstanceSetUnion u -> {
-                    for (Expr.InstanceSetUnion.Tak t : u.takken()) condition(t.filter(), t.elementType());
+                    for (Expr.InstanceSetUnion.Branch t : u.branches()) condition(t.filter(), t.elementType());
                 }
                 case Expr.Afgerond a -> expr(a.basis(), subject);
                 case Expr.Begrensd b -> { expr(b.basis(), subject); expr(b.minimum(), subject); expr(b.maximum(), subject); }
-                case Expr.DimensieCel c -> expr(c.attribuut(), subject);
-                case Expr.TekstReeks t -> {
-                    for (Expr.TekstReeks.Deel d : t.delen())
-                        if (d instanceof Expr.TekstReeks.Ingevoegd i) expr(i.expr(), subject);
+                case Expr.DimensionCellRead c -> expr(c.attribuut(), subject);
+                case Expr.TextComposition t -> {
+                    for (Expr.TextComposition.Part d : t.parts())
+                        if (d instanceof Expr.TextComposition.EmbeddedExpression i) expr(i.expr(), subject);
                 }
                 // Call-by-need does not narrow this: a value that is never evaluated is still a read the author
                 // wrote, and IR-SPEC ch. 5 draws the edge for it as well (a static over-approximation).
                 case Expr.Let l -> { expr(l.value(), subject); expr(l.body(), subject); }
-                case Expr.IfThenElse i -> { condition(i.conditie(), subject); expr(i.dan(), subject); expr(i.anders(), subject); }
+                case Expr.IfThenElse i -> { condition(i.condition(), subject); expr(i.then(), subject); expr(i.otherwise(), subject); }
                 case Expr.Literal ignored -> { }
                 case Expr.ParameterRef ignored -> { }
-                case Expr.VariabeleRef ignored -> { }
+                case Expr.VariableRef ignored -> { }
                 case Expr.BinderRef ignored -> { }
                 case Expr.Constante ignored -> { }
-                case Expr.Onopgelost ignored -> { }
+                case Expr.Unresolved ignored -> { }
             }
         }
     }
 
     /** A count over one source whose argument names no member of the element type: the count source of IR-SPEC
      *  ch. 4.3, which names the relation's role. */
-    private static boolean isCountSource(Expr.Functie f) {
-        return f.kind() == Expr.FunctieKind.AANTAL && f.elementObjecttype() != null && f.argumenten().size() == 1
-                && f.argumenten().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
-                && f.elementObjecttype().attribuut(bron.attribuut()) == null
-                && f.elementObjecttype().kenmerkNaam(bron.attribuut()) == null;
+    private static boolean isCountSource(Expr.FunctionCall f) {
+        return f.kind() == Expr.FunctionKind.AANTAL && f.elementObjectType() != null && f.arguments().size() == 1
+                && f.arguments().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
+                && f.elementObjectType().attribuut(bron.attribuut()) == null
+                && f.elementObjectType().kenmerkNaam(bron.attribuut()) == null;
     }
 
     private static boolean sameName(String a, String b) {

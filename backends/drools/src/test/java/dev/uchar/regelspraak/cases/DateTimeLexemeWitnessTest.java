@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.kern.Literals;
 import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
@@ -134,26 +134,26 @@ class DateTimeLexemeWitnessTest {
      * The source snippet has its own pin below.
      */
     @Test void the_reader_refuses_every_form_outside_the_lexeme() {
-        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00Z"), "no zone suffix — a Z is not dropped");
-        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00+01:00"), "no offset — an offset is not dropped");
-        assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00"), "a space is not the canonical separator");
-        assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00.000"), "idem, with the fraction written");
-        assertNull(Literalen.parseDatumTijd("2024-1-31T09:00:00"), "fixed widths: a one-digit month is not the lexeme");
-        assertNull(Literalen.parseDatumTijd("2024-01-31T9:00:00"), "fixed widths: a one-digit hour is not the lexeme");
-        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00.1"),
+        assertNull(Literals.parseDateTime("2024-01-31T12:00:00Z"), "no zone suffix — a Z is not dropped");
+        assertNull(Literals.parseDateTime("2024-01-31T12:00:00+01:00"), "no offset — an offset is not dropped");
+        assertNull(Literals.parseDateTime("2024-01-31 12:00:00"), "a space is not the canonical separator");
+        assertNull(Literals.parseDateTime("2024-01-31 12:00:00.000"), "idem, with the fraction written");
+        assertNull(Literals.parseDateTime("2024-1-31T09:00:00"), "fixed widths: a one-digit month is not the lexeme");
+        assertNull(Literals.parseDateTime("2024-01-31T9:00:00"), "fixed widths: a one-digit hour is not the lexeme");
+        assertNull(Literals.parseDateTime("2024-01-31T12:00:00.1"),
                 "a one-digit fraction is the width the readers disagree on (IR-SPEC ch. 4.1) — refused, not guessed");
-        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00.1234"),
+        assertNull(Literals.parseDateTime("2024-01-31T12:00:00.1234"),
                 "a four-digit fraction was TRUNCATED to 123 ms before the fix — silently a different instant");
-        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00"), "the seconds field is always written");
-        assertNull(Literalen.parseDatumTijd("rommel 2024-01-31T12:00:00 x"), "whole-string: the lexeme is the value, not a substring in it");
-        assertNull(Literalen.parseDatumTijd("2024-01-31"), "a date without a time of day is not a datum-tijd");
-        assertNull(Literalen.parseDatumTijd("2024-02-30T12:00:00"), "a real day of a real month (the calendar still decides)");
+        assertNull(Literals.parseDateTime("2024-01-31T12:00"), "the seconds field is always written");
+        assertNull(Literals.parseDateTime("rommel 2024-01-31T12:00:00 x"), "whole-string: the lexeme is the value, not a substring in it");
+        assertNull(Literals.parseDateTime("2024-01-31"), "a date without a time of day is not a datum-tijd");
+        assertNull(Literals.parseDateTime("2024-02-30T12:00:00"), "a real day of a real month (the calendar still decides)");
     }
 
     /** What the reader must keep READING: the canonical lexeme, with and without its fraction. */
     @Test void the_reader_reads_the_canonical_lexeme_and_the_millisecond_field() {
-        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0), Literalen.parseDatumTijd(ISO_NOON));
-        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0, 500_000_000), Literalen.parseDatumTijd(ISO_HALVE),
+        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0), Literals.parseDateTime(ISO_NOON));
+        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0, 500_000_000), Literals.parseDateTime(ISO_HALVE),
                 ".500 is five hundred milliseconds, scaled to nanoOfSecond");
     }
 
@@ -163,10 +163,10 @@ class DateTimeLexemeWitnessTest {
      *  them to this reader any more — the frontend reads its own source with a reader of its own and writes
      *  ISO into {@code waarde} — so each is now no value, which both branches report as an unreadable lexeme. */
     @Test void the_reader_refuses_the_source_snippet() {
-        assertNull(Literalen.parseDatumTijd(SNIPPET_NOON), "the day-first snippet is not the wire lexeme");
-        assertNull(Literalen.parseDatumTijd(SNIPPET_HALVE), "nor with its fraction");
-        assertNull(Literalen.parseDatumTijd("dd. 25-12-2024 10:30:00.500"), "nor with the de-dato prefix");
-        assertNull(Literalen.parseDatumTijd("1-3-2025 09:00:00"), "nor with one-digit day and month");
+        assertNull(Literals.parseDateTime(SNIPPET_NOON), "the day-first snippet is not the wire lexeme");
+        assertNull(Literals.parseDateTime(SNIPPET_HALVE), "nor with its fraction");
+        assertNull(Literals.parseDateTime("dd. 25-12-2024 10:30:00.500"), "nor with the de-dato prefix");
+        assertNull(Literals.parseDateTime("1-3-2025 09:00:00"), "nor with one-digit day and month");
     }
 
     /** End-to-end, per branch, for a form that PLAYED before the fix: the zone-suffixed lexeme. It is not the

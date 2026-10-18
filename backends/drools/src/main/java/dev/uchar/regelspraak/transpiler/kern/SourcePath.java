@@ -4,7 +4,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Feittype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Rol;
-import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 
 import java.util.ArrayList;
@@ -103,7 +103,7 @@ public final class SourcePath {
      * feittype/role, a step that does not join what its predecessor reaches, a landing beside the element type, or
      * a hop the bean model derives no field for.
      */
-    public static Plan parse(RegelSpraakModel model, Objecttype subject, List<RolBindingRef> pad, Objecttype element) {
+    public static Plan parse(RegelSpraakModel model, Objecttype subject, List<RoleBindingRef> pad, Objecttype element) {
         if (model == null || subject == null || element == null)
             return refuse("sourcePath zonder onderwerp of elementtype (WF-102)");
         if (pad == null || pad.size() < 2)
@@ -113,7 +113,7 @@ public final class SourcePath {
         List<Objecttype> nodes = new ArrayList<>();
         nodes.add(subject);
         for (int i = 0; i < pad.size(); i++) {
-            RolBindingRef rb = pad.get(i);
+            RoleBindingRef rb = pad.get(i);
             Objecttype van = nodes.get(i);
             boolean last = i == pad.size() - 1;
             Feittype ft = factTypeByName(model, rb == null ? null : rb.feittype());
@@ -175,7 +175,7 @@ public final class SourcePath {
     }
 
     /** The DECLARED role name, never a plural and never a best-effort one — the wire binds what the author
-     *  declared (the same narrowing {@code elementRolBinding} makes on the emitting side). */
+     *  declared (the same narrowing {@code elementRoleBinding} makes on the emitting side). */
     private static Rol roleByName(Feittype ft, String naam) {
         if (naam == null) return null;
         for (Rol r : ft.rollen)

@@ -3,8 +3,8 @@ package dev.uchar.regelspraak.transpiler.kern;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.Geldigheid;
-import dev.uchar.regelspraak.model.Parameterset;
-import dev.uchar.regelspraak.model.Parameterset.WaardeInterval;
+import dev.uchar.regelspraak.model.ParameterSet;
+import dev.uchar.regelspraak.model.ParameterSet.WaardeInterval;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import java.time.LocalDate;
@@ -28,8 +28,8 @@ import java.util.Map;
  *
  * <p><b>Constructielijst.</b> {@link #controleer} spiegelt EXACT de constructielijst en de {@code Expr}-walk van
  * {@code ScenarioResolver.regelParameters} (zie {@code resolver/ScenarioResolver.java}, ~regel 490): per resolved
- * construct de {@code ParameterRef}-namen via {@link Expr#bevat} over de waarde/doel-{@code Expr}s en via
- * {@link Conditie#bevatOperand} over de voorwaarde/assertie. {@code regelParameters} loopt precies TWEE
+ * construct de {@code ParameterRef}-namen via {@link Expr#contains} over de waarde/doel-{@code Expr}s en via
+ * {@link Conditie#containsOperand} over de voorwaarde/assertie. {@code regelParameters} loopt precies TWEE
  * resolved-collecties af — {@link RegelSpraakModel#resolvedRegels} (waarde + doel + voorwaarde) en
  * {@link RegelSpraakModel#consistenties} (assertie) — en die twee dekken we hier identiek. Wijzigt {@code regelParameters}
  * ooit zijn collectie-set, dan moet deze spiegel meebewegen.
@@ -40,7 +40,7 @@ import java.util.Map;
  * versie afzonderlijk met de versie-{@link Geldigheid} als regelperiode.
  *
  * <p><b>Dekking.</b> De dekking van één parameter is de UNIE van zijn intervallen over alle sets — de fase-1
- * pool-semantiek van {@link Parameterset#pool}. Een gat is een deelperiode van de regelperiode die door geen enkel
+ * pool-semantiek van {@link ParameterSet#pool}. Een gat is een deelperiode van de regelperiode die door geen enkel
  * pool-interval gedekt is; bounds zijn inclusief, {@code null} = open kant. Een regel {@code geldig altijd} × een
  * parameter met alleen 2025-waarden levert dus TWEE open gaten: {@code [open t/m 2024-12-31]} en
  * {@code [2026-01-01 t/m open]}.
@@ -62,10 +62,10 @@ public record PeriodeDekking(String regel, String parameter, Geldigheid rulePeri
      * {@code sets} voorkomen tellen (zie klasse-javadoc: het andere kanaal). Bij lege/afwezige sets is het resultaat
      * altijd leeg.
      */
-    public static List<PeriodeDekking> controleer(RegelSpraakModel model, List<Parameterset> sets) {
+    public static List<PeriodeDekking> controleer(RegelSpraakModel model, List<ParameterSet> sets) {
         List<PeriodeDekking> out = new ArrayList<>();
         if (model == null || sets == null || sets.isEmpty()) return out;
-        Map<String, List<WaardeInterval>> pool = Parameterset.pool(sets);
+        Map<String, List<WaardeInterval>> pool = ParameterSet.pool(sets);
         if (pool.isEmpty()) return out;
 
         // Spiegelt ScenarioResolver.regelParameters: resolvedRegels (waarde + doel + voorwaarde) en consistenties (assertie).
@@ -95,14 +95,14 @@ public record PeriodeDekking(String regel, String parameter, Geldigheid rulePeri
         }
     }
 
-    /** De ParameterRef-namen in een waarde/doel-Expr — dezelfde {@code Expr.bevat}-walk als {@code regelParameters}. */
+    /** De ParameterRef-namen in een waarde/doel-Expr — dezelfde {@code Expr.contains}-walk als {@code regelParameters}. */
     private static void catchExpr(Expr e, LinkedHashSet<String> out) {
-        Expr.bevat(e, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
+        Expr.contains(e, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
     }
 
-    /** De ParameterRef-namen in een voorwaarde/assertie — dezelfde {@code Conditie.bevatOperand}-walk. */
+    /** De ParameterRef-namen in een voorwaarde/assertie — dezelfde {@code Conditie.containsOperand}-walk. */
     private static void catchCondition(Conditie c, LinkedHashSet<String> out) {
-        Conditie.bevatOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
+        Conditie.containsOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
     }
 
     /**
@@ -175,7 +175,7 @@ public record PeriodeDekking(String regel, String parameter, Geldigheid rulePeri
         for (PeriodeDekking pd : findings) pd.report(model);
     }
 
-    /** {@code [vanaf t/m tot]} met "(open)" voor een null-kant — zelfde renderstijl als {@link Parameterset}. */
+    /** {@code [vanaf t/m tot]} met "(open)" voor een null-kant — zelfde renderstijl als {@link ParameterSet}. */
     private static String toon(Geldigheid g) {
         String v = g.vanaf() == null ? "(open)" : g.vanaf().toString();
         String t = g.tot() == null ? "(open)" : g.tot().toString();

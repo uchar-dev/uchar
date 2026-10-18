@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.kern.Literals;
 import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * interpreter's {@code date_of_iso} and the verifier already hold.
  *
  * <p><b>Red before the fix</b> (card {@code datum-lexeem-hele-match}, measured 2026-09-23 through the backend
- * CLI on {@link #model} with the lexemes below). The shared reader {@code Literalen.parseDatum} SEARCHED for
+ * CLI on {@link #model} with the lexemes below). The shared reader {@code Literals.parseDate} SEARCHED for
  * {@code \d{4}-\d{1,2}-\d{1,2}} with {@code find()} and fell back to a day-first {@code d-m-yyyy} arm, so:
  * <ul>
  *   <li>{@code 2024-01-2026} read as 2024-01-20 — a case pinned to that misreading answered {@code PLAYED 1}
@@ -69,22 +69,22 @@ class DateLexemeWitnessTest {
     // ---------------- the reader itself ----------------
 
     @Test void the_reader_reads_the_iso_lexeme() {
-        assertEquals(LocalDate.of(2024, 1, 31), Literalen.parseDatum("2024-01-31"));
-        assertEquals(LocalDate.of(2024, 2, 29), Literalen.parseDatum("2024-02-29"), "a leap day in a leap year");
+        assertEquals(LocalDate.of(2024, 1, 31), Literals.parseDate("2024-01-31"));
+        assertEquals(LocalDate.of(2024, 2, 29), Literals.parseDate("2024-02-29"), "a leap day in a leap year");
     }
 
     @Test void the_reader_refuses_every_form_outside_the_whole_lexeme() {
-        assertNull(Literalen.parseDatum("2024-01-2026"), "a multi-digit day is not a prefix to read as 2024-01-20");
-        assertNull(Literalen.parseDatum("2024-001-31"), "a multi-digit month is not the lexeme either");
-        assertNull(Literalen.parseDatum("x 2024-01-31 y"), "the lexeme is the value, not a substring in it");
-        assertNull(Literalen.parseDatum("2024-01-31T12:00:00"), "a datum-tijd is not a date");
-        assertNull(Literalen.parseDatum("2024-1-31"), "fixed widths: a one-digit month");
-        assertNull(Literalen.parseDatum("2024-01-5"), "fixed widths: a one-digit day");
-        assertNull(Literalen.parseDatum("31-01-2024"), "the day-first source snippet (WF-084 refuses it)");
-        assertNull(Literalen.parseDatum("dd. 31-01-2024"), "nor with the de-dato prefix");
-        assertNull(Literalen.parseDatum("dd. 2024-01-31"), "the de-dato prefix before an ISO lexeme is not the lexeme");
-        assertNull(Literalen.parseDatum("2023-02-29"), "the calendar decides");
-        assertNull(Literalen.parseDatum(""), "an empty lexeme");
+        assertNull(Literals.parseDate("2024-01-2026"), "a multi-digit day is not a prefix to read as 2024-01-20");
+        assertNull(Literals.parseDate("2024-001-31"), "a multi-digit month is not the lexeme either");
+        assertNull(Literals.parseDate("x 2024-01-31 y"), "the lexeme is the value, not a substring in it");
+        assertNull(Literals.parseDate("2024-01-31T12:00:00"), "a datum-tijd is not a date");
+        assertNull(Literals.parseDate("2024-1-31"), "fixed widths: a one-digit month");
+        assertNull(Literals.parseDate("2024-01-5"), "fixed widths: a one-digit day");
+        assertNull(Literals.parseDate("31-01-2024"), "the day-first source snippet (WF-084 refuses it)");
+        assertNull(Literals.parseDate("dd. 31-01-2024"), "nor with the de-dato prefix");
+        assertNull(Literals.parseDate("dd. 2024-01-31"), "the de-dato prefix before an ISO lexeme is not the lexeme");
+        assertNull(Literals.parseDate("2023-02-29"), "the calendar decides");
+        assertNull(Literals.parseDate(""), "an empty lexeme");
     }
 
     // ---------------- both branches ----------------

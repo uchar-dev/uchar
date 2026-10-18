@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * <p>RED FIRST, measured on this branch's first commit (cf54b8b9), where the runtime took the count as a
  * {@code BigDecimal}: the exec-model and truth-maintenance branches cast the quotient to one and threw
- * "ClassCastException: class dev.uchar.regelspraak.runtime.Breuk cannot be cast to class java.math.BigDecimal" at
+ * "ClassCastException: class dev.uchar.regelspraak.runtime.Rational cannot be cast to class java.math.BigDecimal" at
  * fire; the DRL-text branch did not compile the rule ("Unable to Analyse Expression ... rsDatumReken(...,
  * rsGedeeld(...), ...)", the method took no {@code Object}) and the replay refused the document, also where the
  * division terminates.

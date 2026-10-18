@@ -34,7 +34,7 @@ class SubtypeDialectTest {
     /** The {@code rules} list of a compacted emission — the part a declaration SPLIT (one flat
      *  type versus a subtype and its parent) leaves untouched, so two documents that mean the same rule
      *  compare equal here even though their objecttypen sections differ. */
-    private static String regeldeel(String compact) {
+    private static String rulePart(String compact) {
         int van = compact.indexOf("\"rules\":[");
         int tot = compact.indexOf("\"dayKindDefinitions\":");
         assertTrue(van >= 0 && tot > van, () -> "geen rules-lijst in de emissie:\n" + compact);
@@ -43,12 +43,12 @@ class SubtypeDialectTest {
 
     /** The single error text, asserting exactly one error was raised (so a test pins the intended refusal, not
      *  some unrelated diagnostic). */
-    private static String enigeFout(RegelSpraakModel m) {
+    private static String onlyError(RegelSpraakModel m) {
         assertEquals(1, m.errors().size(), () -> "verwachtte precies één fout, kreeg: " + m.errors());
         return m.errors().get(0).message();
     }
 
-    private static final String KETEN = """
+    private static final String CHAIN = """
         Objecttype het Strandrecht (mv: Strandrechten)
             de grondslag Numeriek (niet-negatief getal met 2 decimalen);
             is betwist kenmerk (bijvoeglijk);
@@ -59,7 +59,7 @@ class SubtypeDialectTest {
 
     // -------------------------------------------------------------------- rood-eerst: de weigeringen
 
-    @Test void twee_is_een_clausules_weigeren_onder_wf106() {
+    @Test void two_is_a_clauses_refuse_under_wf106() {
         // The second direct parent. WF-106 has no verifier check and no negatief — a bare-string
         // `supertype` cannot WRITE two parents — so this fixture is one of its two witnesses.
         String src = """
@@ -74,7 +74,7 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "twee 'is een'-clausules op één kop horen luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-106"), () -> "de melding citeert WF-106 niet: " + fout);
         assertTrue(fout.contains("Strandrecht") && fout.contains("Zeerecht"),
                 () -> "de melding noemt de twee ouders niet: " + fout);
@@ -82,7 +82,7 @@ class SubtypeDialectTest {
                 () -> "de melding noemt de twee bekende meervoudige-overervingsgevallen niet: " + fout);
     }
 
-    @Test void is_een_a_en_b_weigert_onder_wf106() {
+    @Test void is_a_and_b_refuses_under_wf_106() {
         // The same refusal through the other spelling the sentence admits: one clause, two names.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
@@ -96,25 +96,25 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "'is een A en B' hoort luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-106"), () -> "de melding citeert WF-106 niet: " + fout);
         assertTrue(fout.contains("RechtOpUitkeringWazo") && fout.contains("RechtUitkeringZw"),
                 () -> "de melding noemt de twee bekende meervoudige-overervingsgevallen niet: " + fout);
     }
 
-    @Test void zelfverwijzing_weigert_onder_wf104() {
+    @Test void self_reference_refuses_under_wf104() {
         String src = """
             Objecttype het Wrakrecht is een Wrakrecht (mv: Wrakrechten)
                 de bergingsdiepte Numeriek (niet-negatief geheel getal);
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "'X is een X' hoort luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-104"), () -> "de melding citeert WF-104 niet: " + fout);
         assertTrue(fout.contains("Wrakrecht"), () -> "de melding noemt het objecttype niet: " + fout);
     }
 
-    @Test void supertypecyclus_weigert_onder_wf104() {
+    @Test void supertype_cycle_refuses_under_wf104() {
         // The depth-1 cycle above falls independently of this two-step one: a reader that
         // special-cases the self-edge passes the first and not the second.
         String src = """
@@ -130,19 +130,19 @@ class SubtypeDialectTest {
                 () -> "geen enkele melding citeert WF-104: " + m.errors());
     }
 
-    @Test void onbekend_supertype_weigert_onder_wf103() {
+    @Test void unknown_supertype_refuses_under_wf103() {
         String src = """
             Objecttype het Wrakrecht is een Zeerecht (mv: Wrakrechten)
                 de bergingsdiepte Numeriek (niet-negatief geheel getal);
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "een ongedeclareerd supertype hoort luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-103"), () -> "de melding citeert WF-103 niet: " + fout);
         assertTrue(fout.contains("Zeerecht"), () -> "de melding noemt de onbekende naam niet: " + fout);
     }
 
-    @Test void supertype_dat_een_domein_is_weigert_onder_wf103() {
+    @Test void supertype_that_is_a_domain_refuses_under_wf103() {
         // A name the document DOES declare, but not as an object type: the reference resolves to
         // nothing a chain can walk, and saying "onbekend" would send the author looking for a typo.
         String src = """
@@ -153,12 +153,12 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "een supertype dat een domein noemt hoort luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-103"), () -> "de melding citeert WF-103 niet: " + fout);
         assertTrue(fout.contains("domein"), () -> "de melding benoemt de soort van de naam niet: " + fout);
     }
 
-    @Test void geshadowd_attribuut_weigert_onder_wf105() {
+    @Test void shadowed_attribute_refuses_under_wf105() {
         // The frontend refuses BEFORE the verifier does: it has the chain at hand.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
@@ -169,13 +169,13 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "een geshadowd attribuut hoort luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-105"), () -> "de melding citeert WF-105 niet: " + fout);
         assertTrue(fout.contains("grondslag") && fout.contains("Strandrecht"),
                 () -> "de melding noemt het lid of de declarant niet: " + fout);
     }
 
-    @Test void geshadowd_kenmerk_weigert_onder_wf105() {
+    @Test void shadowed_characteristic_refuses_under_wf105() {
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 is betwist kenmerk (bijvoeglijk);
@@ -185,30 +185,30 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "een geshadowd kenmerk hoort luid te weigeren");
-        String fout = enigeFout(m);
+        String fout = onlyError(m);
         assertTrue(fout.contains("WF-105"), () -> "de melding citeert WF-105 niet: " + fout);
         assertTrue(fout.contains("betwist"), () -> "de melding noemt het kenmerk niet: " + fout);
     }
 
     // -------------------------------------------------------------------- de kopvorm
 
-    @Test void de_kopvorm_bindt_het_supertype() {
-        RegelSpraakModel m = Resolver.resolve(KETEN);
+    @Test void the_head_form_binds_the_supertype() {
+        RegelSpraakModel m = Resolver.resolve(CHAIN);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         var wrak = m.objecttypen.get("Wrakrecht");
         assertNotNull(wrak);
         assertSame(m.objecttypen.get("Strandrecht"), wrak.supertype);
         // the annotations after the clause still land: (mv: …) is read, not swallowed by the parent name
-        assertEquals("Wrakrechten", wrak.meervoud);
+        assertEquals("Wrakrechten", wrak.plural);
         assertFalse(wrak.bezield);
         // the member maps stay OWN; the chain is what closes them
         assertEquals(1, wrak.attributen.size(), "een subtype declareert alleen zijn eigen leden");
         assertNotNull(wrak.attribuut("grondslag"), "een geërfd attribuut lost op via de keten");
-        assertTrue(wrak.heeftLid("betwist"), "een geërfd kenmerk lost op via de keten");
+        assertTrue(wrak.hasMember("betwist"), "een geërfd kenmerk lost op via de keten");
         assertTrue(wrak.isEen(m.objecttypen.get("Strandrecht")));
     }
 
-    @Test void de_kopvorm_draagt_ook_bezield_na_de_meervoudsgroep() {
+    @Test void the_head_form_also_carries_animate_after_the_plural_group() {
         // The clause sits between the name and the (mv: …) group, so BOTH existing head annotations
         // must still be reachable behind it — the grammar already fixes their mutual order.
         String src = """
@@ -222,11 +222,11 @@ class SubtypeDialectTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         var voogd = m.objecttypen.get("Strandvoogd");
         assertEquals("Kustbewoner", voogd.supertype.naam);
-        assertEquals("Strandvoogden", voogd.meervoud);
+        assertEquals("Strandvoogden", voogd.plural);
         assertTrue(voogd.bezield, "(bezield) achter de mv-groep hoort nog steeds te binden");
     }
 
-    @Test void een_voorwaartse_verwijzing_is_geen_fout() {
+    @Test void a_forward_reference_is_no_error() {
         // Resolution is document-wide and order-free: only an undeclared name refuses.
         String src = """
             Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
@@ -240,10 +240,10 @@ class SubtypeDialectTest {
         assertEquals("Strandrecht", m.objecttypen.get("Wrakrecht").supertype.naam);
     }
 
-    @Test void een_doel_op_twee_niveaus_is_geen_weigering() {
+    @Test void a_target_on_two_levels_is_no_refusal() {
         // Explicit NON-refusal (SUBTYPING §9.2): the kernel's group inheritance governs, and the
         // kernel witnesses are the semantic referee.
-        String src = KETEN + """
+        String src = CHAIN + """
             Regel uitkering van een strandrecht
                 geldig altijd
                     De grondslag van een Strandrecht moet gesteld worden op 10,00.
@@ -260,15 +260,15 @@ class SubtypeDialectTest {
 
     // -------------------------------------------------------------------- de wire
 
-    @Test void het_supertype_gaat_de_wire_op_direct_na_naam() {
-        RegelSpraakModel m = Resolver.resolve(KETEN);
+    @Test void the_supertype_goes_the_wire_on_directly_after_name() {
+        RegelSpraakModel m = Resolver.resolve(CHAIN);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
         assertTrue(c.contains("\"name\":\"Wrakrecht\",\"supertype\":\"Strandrecht\","),
                 () -> "supertype hoort direct na naam op de wire te staan (schema-sleutelvolgorde):\n" + c);
     }
 
-    @Test void een_worteltype_emitteert_geen_supertype_sleutel() {
+    @Test void a_root_type_emits_no_supertype_key() {
         // Additivity / the § Method's "whole or not at all": a flat document emits no supertype key,
         // so the v0-mirror byte-identity of every flat golden holds.
         String src = """
@@ -281,7 +281,7 @@ class SubtypeDialectTest {
                 "een document zonder de extensie mag de supertype-sleutel niet emitteren");
     }
 
-    @Test void het_lidwoord_voor_de_supertypenaam_hoort_bij_de_frase() {
+    @Test void the_article_for_the_super_type_name_belongs_to_the_phrase() {
         // "is een <Naam>" — the article is the language's own onbepaaldLidwoord, read exactly where
         // the language reads one elsewhere; a bare "is <Naam>" is not the head form and must not bind.
         // ANTLR can only call that "no viable alternative", which points at the wrong thing, so the
@@ -300,7 +300,7 @@ class SubtypeDialectTest {
                 () -> "geen gerichte hint over het ontbrekende lidwoord: " + m.errors());
     }
 
-    @Test void de_clausule_achter_de_meervoudsgroep_wijst_naar_zijn_plek() {
+    @Test void the_clause_behind_the_plural_group_points_to_its_site() {
         // The other common authoring slip: the head annotations have a fixed mutual order and the
         // extension inserts one more element, so the author has to be told WHERE rather than that
         // something is unparseable.
@@ -317,7 +317,7 @@ class SubtypeDialectTest {
                 () -> "geen gerichte hint over de annotatievolgorde: " + m.errors());
     }
 
-    @Test void een_correcte_kop_krijgt_geen_kopvormhint() {
+    @Test void a_correct_head_gets_no_head_form_hint() {
         // The hints are raised only alongside a real syntax error, and the head walk stops at the
         // first token no head can contain — so ordinary rule text, where "is een" is plain Dutch,
         // never draws one. The syntax error here is elsewhere in the document on purpose.
@@ -340,8 +340,8 @@ class SubtypeDialectTest {
 
     // -------------------------------------------------------------------- de onvoorwaardelijke basis
 
-    @Test void een_basisregel_zonder_indien_krijgt_de_altijd_rechtvaardiging() {
-        // Surfaced by this card's golden and pinned here rather than in DefaultsExtensieTest, whose
+    @Test void a_base_rule_without_if_gets_the_always_justification() {
+        // Surfaced by this card's golden and pinned here rather than in DefaultsExtensionTest, whose
         // fixtures all carry an 'indien': until now no lifted base rule was UNCONDITIONAL. WF-050
         // demands a justification on every non-initialisation default, so a §13.4.2 rule without a
         // condition — the ch. 7.8 standing norm — lowers to the vacuously true one, which is exactly
@@ -366,10 +366,10 @@ class SubtypeDialectTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.prioritizedDefaults.size());
         var basis = m.prioritizedDefaults.get(0).defaults().get(1);
-        var altijd = assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Samengesteld.class,
+        var always = assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Samengesteld.class,
                 basis.voorwaarde(), "de onvoorwaardelijke basis hoort een rechtvaardiging te dragen (WF-050)");
-        assertEquals(dev.uchar.regelspraak.ir.Conditie.Kwantor.ALLE, altijd.kwantor());
-        assertTrue(altijd.onderdelen().isEmpty(), "'altijd' is een ALLE-groep zonder onderdelen");
+        assertEquals(dev.uchar.regelspraak.ir.Conditie.Kwantor.ALLE, always.kwantor());
+        assertTrue(always.onderdelen().isEmpty(), "'altijd' is een ALLE-groep zonder onderdelen");
         assertTrue(emitCompact(m).contains(
                         "\"justification\":{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,"
                         + "\"parts\":[],\"source\":{\"snippet\":\"altijd\"}}"),
@@ -378,7 +378,7 @@ class SubtypeDialectTest {
 
     // -------------------------------------------------------------------- de rolbinding-consequentie
 
-    @Test void een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_sourceRole() {
+    @Test void a_subtype_that_connects_the_type_pair_doubly_keeps_its_sourceRole() {
         // SUBTYPING §3.4 / IR-SPEC ch. 2.2: the pair's uniqueness (WF-048's, until L2) was computed over the
         // CHAIN-CLOSED type-pair set, so adding a subtype could turn a previously well-formed BINDINGLESS fold
         // into a loud refusal; since L2 the wire requires the binding. A role's declared filler is an UPPER
@@ -413,7 +413,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         // the by-PAIR search is now ambiguous — both fact types relate the chain-closed pair
-        assertNull(m.verbindendeRolBinding(m.objecttypen.get("Kustgemeente"), m.objecttypen.get("Wrakrecht")),
+        assertNull(m.connectingRoleBinding(m.objecttypen.get("Kustgemeente"), m.objecttypen.get("Wrakrecht")),
                 "het typepaar hoort door het subtype dubbel verbonden te zijn");
         String c = emitCompact(m);
         assertTrue(c.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"wrakberging\","
@@ -435,10 +435,10 @@ class SubtypeDialectTest {
     // made unusable, not a wrong number slipping through — with ONE exception, plek 6 below, which
     // emits a member name no declaration carries, verifier-clean and diagnostics-free.
 
-    @Test void een_verdeling_naar_een_subtype_bindt_het_geerfde_doelattribuut() {
-        // Plek 1, MeervoudMatcher.vindAttribuut. The sentence writes the PLURAL "bergingsaandelen";
+    @Test void an_allocation_to_a_subtype_binds_the_inherited_target_attribute() {
+        // Plek 1, PluralMatcher.findAttribute. The sentence writes the PLURAL "bergingsaandelen";
         // the declaration — singular, with its own "(mv: …)" — sits on Berger, one hop up. Reading the
-        // subtype's own maps binds nothing, so the written plural stayed on the wire as `doelAttribuut`,
+        // subtype's own maps binds nothing, so the written plural stayed on the wire as `targetAttribute`,
         // where no declaration carries it and WF-034 refuses the document. This is the p18 refusal the
         // previous card traced here.
         String src = """
@@ -473,8 +473,8 @@ class SubtypeDialectTest {
                 () -> "de geschreven meervoudsvorm hoort nergens als lidnaam op de wire te staan:\n" + c);
     }
 
-    @Test void een_geerfd_kenmerk_bindt_in_een_predicaat() {
-        // Plek 2, KenmerkMatcher. An inherited kenmerk bound in NO predicaat form — across all eleven
+    @Test void an_inherited_characteristic_binds_in_a_predicate() {
+        // Plek 2, CharacteristicMatcher. An inherited kenmerk bound in NO predicaat form — across all eleven
         // call sites — and the condition fell through to an Onopgelost marker. That marker is LOUD, not
         // silent: reaching it in evaluation faults with WF-044, so the rule does not quietly never fire,
         // it takes the document down. The soort check right after the binding (kenmerkSoort) was already
@@ -508,8 +508,8 @@ class SubtypeDialectTest {
         assertFalse(c.contains("Unresolved"), () -> "geen enkele voorwaarde hoort een marker te blijven:\n" + c);
     }
 
-    @Test void een_objectcreatie_zet_een_geerfd_kenmerk() {
-        // Plek 3. The attribute branch of maakToekenning already resolved through the chain; the kenmerk
+    @Test void an_object_creation_sets_an_inherited_characteristic() {
+        // Plek 3. The attribute branch of makeMemberInit already resolved through the chain; the kenmerk
         // branch read the own list and ended on an ERROR ("is geen attribuut of kenmerk van") where a
         // binding belongs — the two branches of one sentence disagreeing about what the type has.
         String src = """
@@ -540,7 +540,7 @@ class SubtypeDialectTest {
                 () -> "de toekenning hoort als KENMERK te binden (een boolean setter, geen attribuut):\n" + c);
     }
 
-    @Test void een_geerfde_tijdlijn_klemt_het_totaal() {
+    @Test void an_inherited_timeline_clamps_the_total() {
         // Plek 4: the temporality family had NO chain accessor at all, so a subtype subject reading an
         // ancestor's timeline attribute answered "not temporal". The §7.1 gedurende clip then does not
         // silently disappear — it DEGRADES to an `Unresolved` filter plus a WARNING, and WF-055 refuses
@@ -567,10 +567,10 @@ class SubtypeDialectTest {
                         + "dat WF-055 weigert:\n" + c);
     }
 
-    @Test void een_geerfde_tijdlijn_draagt_de_hele_periode_check() {
+    @Test void an_inherited_timeline_carries_the_whole_period_check() {
         // Plek 4, the loud half — the same blindness, the other direction: §8.2's whole-period qualifier
         // is only defined on a tijdsafhankelijk onderwerp, so a subject read as non-temporal turned a
-        // perfectly good rule into an ERROR. Both arms of onderwerpIsTemporeel are inherited here.
+        // perfectly good rule into an ERROR. Both arms of subjectIsTemporal are inherited here.
         String src = """
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
@@ -597,7 +597,7 @@ class SubtypeDialectTest {
                 "geen van beide §8.2-voorwaarden hoort een marker te worden");
     }
 
-    @Test void een_geerfd_temporeel_attribuut_met_gewone_eenheid_is_geen_tabel30_fout() {
+    @Test void an_inherited_temporal_attribute_with_an_ordinary_unit_is_no_table30_error() {
         // Plek 4 again, and the third failure mode of one blindness: §4.20 Tabel 30 demands a rate unit
         // for "het totaal van", EXCEPT when the operand is a timeline attribute — its per-tijdseenheid
         // dimension lives in the declaration, not in the unit. Read as non-temporal, the exception lapses
@@ -621,7 +621,7 @@ class SubtypeDialectTest {
                 () -> "een geërfd tijdlijnattribuut met een gewone eenheid is de Tabel-30-fout niet: " + m.errors());
     }
 
-    @Test void een_geerfde_tijdreeks_ontsnapt_niet_aan_de_statische_wacht() {
+    @Test void an_inherited_time_sequence_does_not_escape_the_static_guard() {
         // Plek 4, the escape: §8.4 admits a NON-temporal comparison bullet beside the temporal ones
         // precisely because it "heeft geen verschillende waarden op verschillende momenten".
         // `toeslag per maand` is inherited and IS a timeline, so the bullet reads a List<Segment>;
@@ -648,7 +648,7 @@ class SubtypeDialectTest {
             """;
         // the FLAT equivalent — one type carrying all four members — is the reference outcome: the
         // frontend must treat the subtype subject exactly as it treats this.
-        String vlak = """
+        String flat = """
             Objecttype de Klipjutter (mv: Klipjutters) (bezield)
                 de toeslag per maand Numeriek (geheel getal) voor elke maand;
                 de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
@@ -669,13 +669,13 @@ class SubtypeDialectTest {
                         + "gedurende-conditie te belanden:\n" + c);
         assertTrue(c.contains("\"filter\":{\"node\":\"Unresolved\""),
                 () -> "de niet-lowerbare samengestelde conditie hoort een eerlijke marker te zijn:\n" + c);
-        assertEquals(regeldeel(emitCompact(Resolver.resolve(vlak))), regeldeel(c),
+        assertEquals(rulePart(emitCompact(Resolver.resolve(flat))), rulePart(c),
                 "een subtype-subject met geërfde tijdlijnleden hoort exact als het vlakke equivalent te "
                         + "worden behandeld");
     }
 
-    @Test void een_geerfd_gedimensioneerd_attribuut_leest_zijn_cel() {
-        // Plek 5, dimensieCel. `dimensiesVan` existed as a chain accessor and was used two lines later
+    @Test void an_inherited_dimensioned_attribute_reads_its_cell() {
+        // Plek 5, dimensionCell. `dimensiesVan` existed as a chain accessor and was used two lines later
         // for the fold; the cell READER iterated the own map, so a §3.6 single-cell read of an inherited
         // gedimensioneerd attribuut resolved to nothing and stayed a marker.
         String src = """
@@ -702,7 +702,7 @@ class SubtypeDialectTest {
                 () -> "de cel hoort haar gedeclareerde label te dragen:\n" + c);
     }
 
-    @Test void een_geerfd_gedimensioneerd_attribuut_draagt_de_gedeclareerde_spelling() {
+    @Test void an_inherited_dimensioned_attribute_carries_the_declared_spelling() {
         // Plek 6, and the ONLY one of the six whose failure is silent. The §5.8.5 interval fold
         // reconstructs the attribute it folds, and it took the declared spelling from the own map:
         // for an inherited attribute that lookup misses and the WRITTEN form ("Betaalde belasting",
@@ -731,8 +731,8 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.Functie f && f.dimensieSelectie() != null
-                        && f.argumenten().get(0) instanceof Expr.AttribuutRef a
+        assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.FunctionCall f && f.dimensieSelectie() != null
+                        && f.arguments().get(0) instanceof Expr.AttribuutRef a
                         && a.attribuut().equals("betaalde belasting"),
                 () -> "de vouw hoort de GEDECLAREERDE spelling te dragen: " + m.resolvedRegels.get(0).waarde());
         String c = emitCompact(m);
@@ -743,8 +743,8 @@ class SubtypeDialectTest {
                 + "\"labels\":[\"vorigjaar\",\"huidigjaar\"]"), () -> "de dimensieselectie op de wire:\n" + c);
     }
 
-    @Test void twee_geerfde_tijdlijnsleutels_weigeren_de_uniciteit() {
-        // Plek 4, telTemporeel. §8.1.6 ever-uniqueness admits at most ONE temporal key component; a
+    @Test void two_inherited_timeline_keys_refuse_the_uniqueness() {
+        // Plek 4, countTemporal. §8.1.6 ever-uniqueness admits at most ONE temporal key component; a
         // second needs the same-moment tuple join no reading pins, so the whole rule stays a WARNING.
         // Counting the temporal components on the SUBJECT'S OWN maps calls two inherited timelines
         // static and admits a key with no defined semantics.
@@ -755,7 +755,7 @@ class SubtypeDialectTest {
         // is what makes the count load-bearing, so both directions are pinned here at once — with
         // one temporal key the rule must RESOLVE, with two it must be REFUSED. A chain-blind count
         // would resolve both.
-        String eenTijdlijn = """
+        String oneTimeline = """
             Objecttype de Wachter (mv: Wachters) (bezield)
                 het wachtnummer Numeriek (geheel getal);
                 het borgnummer Numeriek (geheel getal) voor elke maand;
@@ -767,21 +767,21 @@ class SubtypeDialectTest {
                 geldig altijd
                     De concatenatie van wachtnummer en borgnummer van alle Klipwachters moeten uniek zijn.
             """;
-        RegelSpraakModel een = Resolver.resolve(eenTijdlijn);
-        assertEquals(1, een.uniciteiten.size(),
-                () -> "één geërfde tijdlijncomponent is toegestaan en hoort te resolven: " + een.diagnostics);
-        assertEquals("Klipwachter", een.uniciteiten.get(0).subject().naam);
+        RegelSpraakModel one = Resolver.resolve(oneTimeline);
+        assertEquals(1, one.uniciteiten.size(),
+                () -> "één geërfde tijdlijncomponent is toegestaan en hoort te resolven: " + one.diagnostics);
+        assertEquals("Klipwachter", one.uniciteiten.get(0).subject().naam);
 
-        String tweeTijdlijnen = eenTijdlijn.replace(
+        String twoTimelines = oneTimeline.replace(
                 "het wachtnummer Numeriek (geheel getal);",
                 "het wachtnummer Numeriek (geheel getal) voor elke maand;");
-        RegelSpraakModel twee = Resolver.resolve(tweeTijdlijnen);
-        assertTrue(twee.uniciteiten.isEmpty() && twee.uniciteitUnies.isEmpty(),
+        RegelSpraakModel two = Resolver.resolve(twoTimelines);
+        assertTrue(two.uniciteiten.isEmpty() && two.uniciteitUnies.isEmpty(),
                 () -> "twee GEËRFDE tijdlijncomponenten horen de §8.1.6-ooituniciteit te laten weigeren: "
-                        + twee.uniciteiten + twee.uniciteitUnies);
+                        + two.uniciteiten + two.uniciteitUnies);
     }
 
-    @Test void een_genavigeerde_tijdsevenredige_basis_leest_de_keten_van_het_doeltype() {
+    @Test void a_navigated_time_proportional_base_reads_the_chain_of_the_target_type() {
         // Plek 4, the navigated §7.3.2 base. The operand is a to-one navigated timeline attribute of
         // the RELATED type; that type's facets were read on its own maps, so a related SUBTYPE whose
         // timeline attribute is declared one hop up failed the operand gate and the clip degraded to
@@ -820,8 +820,8 @@ class SubtypeDialectTest {
                         + "van een marker te worden:\n" + c);
     }
 
-    @Test void een_genavigeerd_geerfd_tijdlijnkenmerk_klemt_het_tijdsevenredig_deel() {
-        // Plek 4, gedurendeNavigatieKenmerk. Same navigated shape, now on the CONDITION side: the
+    @Test void a_navigated_inherited_timeline_characteristic_clamps_the_time_proportional_part() {
+        // Plek 4, duringNavigationCharacteristicCheck. Same navigated shape, now on the CONDITION side: the
         // kenmerk must be a single-period timeline kenmerk of the navigated type, read on its own
         // maps. An inherited one answered "not temporal" and the clip fell away.
         String src = """
@@ -854,8 +854,8 @@ class SubtypeDialectTest {
                 () -> "de kenmerkcheck navigeert via haar binding:\n" + c);
     }
 
-    @Test void een_setlezing_over_een_geerfde_tijdlijn_blijft_de_tijdvouw() {
-        // Plek 4, setLezing. A set read over a NON-timeline attribute is the pure instance fold; over
+    @Test void a_set_read_over_an_inherited_timeline_stays_the_time_fold() {
+        // Plek 4, setRead. A set read over a NON-timeline attribute is the pure instance fold; over
         // a TIMELINE attribute it is the §7.1 per-element fold over time, and the §4.20 rate strip
         // must keep applying to it. Read on the element's own maps, an inherited timeline made the
         // fold look like the plain one — the strip lapsed and the unit came out wrong.
@@ -889,7 +889,7 @@ class SubtypeDialectTest {
         assertTrue(emitCompact(m).contains("\"kind\":\"total\""), "de vouw hoort een totaal te blijven");
     }
 
-    @Test void een_naam_die_een_rol_in_een_ander_feittype_treft_bindt_niet() {
+    @Test void a_name_that_matches_a_role_in_another_fact_type_does_not_bind() {
         // The other side of the fallback, and the one that decides whether it may exist at all. The name
         // candidates are formed by DROPPING LEADING WORDS, so "alle geborgen wrakrechten" is also tried as
         // "wrakrechten" — which here names a role in a DIFFERENT fact type, filled by the supertype. An

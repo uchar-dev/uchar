@@ -4,9 +4,9 @@ import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.Bron;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
+import dev.uchar.regelspraak.ir.ResolvedFactCreation;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
-import dev.uchar.regelspraak.ir.ResolvedUniciteit;
+import dev.uchar.regelspraak.ir.ResolvedUniqueness;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
@@ -45,7 +45,7 @@ class IrEmitterTest {
         return IrEmitter.emit(m);
     }
 
-    @Test void navigatiebindingen_op_ketenlezing_subject_uitwaarts() {
+    @Test void path_on_chain_read_subject_outward() {
         // "het bedrijfsniveau van het bedrijf van zijn afdeling": a §13.4.1 declared chain
         // Werknemer -[afdeling]-> Afdeling -[bedrijf]-> Bedrijf. One binding per hop, subject-
         // outward, each naming the REACHED role by its declared name.
@@ -75,7 +75,7 @@ class IrEmitterTest {
                 () -> "keten-bindingen (subject-uitwaarts, gedeclareerde namen) ontbreken:\n" + c);
     }
 
-    @Test void navigatiebinding_op_genavigeerde_kenmerkcheck() {
+    @Test void navigation_on_navigated_characteristic_check() {
         // "indien zijn afdeling kernafdeling is": a navigated §8.1.8 characteristic check binds
         // the reached role of the one hop.
         String src = """
@@ -97,7 +97,7 @@ class IrEmitterTest {
                 () -> "navigation op de genavigeerde kenmerkcheck ontbreekt:\n" + c);
     }
 
-    @Test void scoperol_op_parent_scoped_uniciteit() {
+    @Test void scope_role_on_parent_scoped_uniqueness() {
         // "De X van alle Werknemer van de afdeling moeten uniek zijn": parent-scoped uniqueness;
         // the version's scope names the scope-parent relation (the reference field made symbolic).
         String src = """
@@ -118,7 +118,7 @@ class IrEmitterTest {
                 () -> "de scope op de parent-scoped uniciteit ontbreekt:\n" + c);
     }
 
-    @Test void feitcreatie_symbolisch_blok_is_heel_of_niet() {
+    @Test void fact_creation_symbolic_block_is_whole_or_not() {
         // A §13.4.7 feitcreatie with one tussenstap: the whole symbolic block — the created fact type, both
         // its roles, the anchor and the path from it, the intermediate hop and then the final one, each a
         // RoleBinding — and nothing beside it: IR-SPEC ch. 3.4 leaves the storage fields to the backend's own
@@ -154,7 +154,7 @@ class IrEmitterTest {
                 () -> "het symbolische feitcreatieblok ontbreekt, is onvolledig of draagt velden ernaast:\n" + c);
     }
 
-    @Test void fold_bron_argument_draagt_geen_navigatiebindingen() {
+    @Test void fold_source_argument_carries_no_path() {
         // The fold's SOURCE argument routes through its sourceRole; even though its type (Persoon) differs
         // from the fold's outer subject (Ploeg) — the by-pair shape — it must carry NO
         // path (IR-SPEC ch. 4.1a; the uchar verifier rejects a path in a fold slot).
@@ -179,7 +179,7 @@ class IrEmitterTest {
                 () -> "een fold-bron-argument mag GEEN path dragen:\n" + c);
     }
 
-    @Test void fold_filter_elementlezing_draagt_geen_navigatiebindingen() {
+    @Test void fold_filter_element_read_carries_no_path() {
         // The filter is a subselectie over the fold ELEMENT: "die kleiner zijn dan 18" reads the
         // deelnemer's OWN leeftijd — an own read, not a navigation from the outer groep. So the filter
         // read carries no spurious by-pair path (the emitter walks the filter with the
@@ -205,7 +205,7 @@ class IrEmitterTest {
                 () -> "een element-eigen filter-lezing mag GEEN path dragen:\n" + c);
     }
 
-    @Test void unit_literal_lexeme_is_kaal_eenheid_in_type() {
+    @Test void unit_literal_lexeme_is_bare_unit_in_type() {
         // uchar WF-081 (IR-SPEC ch. 4.1): a numeric literal's value is the BARE number;
         // the unit rides the literal's datatype ("unit"), exactly as attribute datatypes carry
         // it. The source snippet ("5 €") stays in the source record. A number carrying its unit ("5 €") is
@@ -232,7 +232,7 @@ class IrEmitterTest {
                 () -> "de eenheid mag niet in het literal-lexeme zitten:\n" + c);
     }
 
-    @Test void de_factor_is_de_gedeclareerde_breuk_en_de_spellingen_staan_op_de_declaratie() {
+    @Test void the_factor_is_the_declared_rational_and_the_spellings_are_on_the_declaration() {
         // IR-SPEC ch. 2.5: a unit's factor is the exact fraction its declarations write, multiplied along the chain
         // ("1/60" over "1/24" is 1/1440; "1,5" is 3/2), not the product of 16-digit decimals the unit record holds. A
         // unit's further spellings — a second abbreviation, then its word and plural — stand on its declaration and
@@ -264,12 +264,12 @@ class IrEmitterTest {
         assertEquals(4, c.split("\"spellings\"", -1).length - 1, () -> "spellingen alleen in het stelsel:\n" + c);
     }
 
-    @Test void een_tweede_declaratie_van_een_afkorting_is_een_fout_en_vervangt_de_eerste_niet() {
+    @Test void a_second_declaration_of_an_abbreviation_is_an_error_and_does_not_replace_the_first() {
         // WF-009: one Unit per abbreviation under the name identity. The resolver keyed its units on the written
         // abbreviation, so a second declaration of one replaced the first without a word — the document then carried
         // "t = 100 kg" alone, verifier-clean — and a second one that differs in case alone became a second unit.
         // Both are refused now, by name and at the second declaration's line; the first declaration stands.
-        RegelSpraakModel dubbel = Resolver.resolve("""
+        RegelSpraakModel duplicates = Resolver.resolve("""
             Eenheidsysteem Gewicht
                 het kilogram kg
                 de ton t = 1000 kg
@@ -279,12 +279,12 @@ class IrEmitterTest {
             """);
         assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': the unit 't' is declared "
                         + "twice in the unit system 'Gewicht': one Unit per abbreviation"),
-                dubbel.errors().stream().map(Diagnostic::message).toList());
-        assertEquals(4, dubbel.errors().get(0).line(), "de melding staat op de tweede declaratie");
+                duplicates.errors().stream().map(Diagnostic::message).toList());
+        assertEquals(4, duplicates.errors().get(0).line(), "de melding staat op de tweede declaratie");
         assertEquals(new java.math.BigDecimal("1000"),
-                dubbel.eenheidstelsels.get("Gewicht").eenheden.get("t").factorNaarCanoniek(), "de eerste declaratie staat");
+                duplicates.unitSystems.get("Gewicht").units.get("t").factorNaarCanoniek(), "de eerste declaratie staat");
 
-        RegelSpraakModel kast = Resolver.resolve("""
+        RegelSpraakModel caseCollision = Resolver.resolve("""
             Eenheidsysteem Gewicht
                 het kilogram kg
                 de kilo KG = 1 kg
@@ -293,20 +293,20 @@ class IrEmitterTest {
             """);
         assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': the unit 'KG' is "
                         + "declared twice in the unit system 'Gewicht': one Unit per abbreviation"),
-                kast.errors().stream().map(Diagnostic::message).toList());
-        assertFalse(kast.eenheidstelsels.get("Gewicht").eenheden.containsKey("KG"), "de tweede declaratie is geweigerd");
+                caseCollision.errors().stream().map(Diagnostic::message).toList());
+        assertFalse(caseCollision.unitSystems.get("Gewicht").units.containsKey("KG"), "de tweede declaratie is geweigerd");
 
         // two spellings of one abbreviation inside ONE declaration are that unit's own, and no collision
-        RegelSpraakModel eigen = Resolver.resolve("""
+        RegelSpraakModel own = Resolver.resolve("""
             Eenheidsysteem Gewicht
                 het kilogram kg KG
             Objecttype de Vondst
                 het gewicht Numeriek (geheel getal) met eenheid kg;
             """);
-        assertTrue(eigen.errors().isEmpty(), () -> "onverwachte fouten: " + eigen.errors());
+        assertTrue(own.errors().isEmpty(), () -> "onverwachte fouten: " + own.errors());
     }
 
-    @Test void een_afkorting_die_ook_het_eenheidswoord_is_staat_eenmaal_bij_de_spellingen() {
+    @Test void an_abbreviation_that_is_also_the_unit_word_stands_once_in_the_spellings() {
         // "de meter (mv: meters) m meter" writes 'meter' as a second abbreviation and as the unit's word: one spelling
         // of one unit. Before: the emitter's exception ("draagt een spelling van 'm' tweemaal, als afkorting en als
         // alias: [meter, meter, meters]").
@@ -320,21 +320,21 @@ class IrEmitterTest {
                 + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"meter\",\"meters\"]}"), c);
     }
 
-    @Test void twee_afkortingen_die_een_naam_zijn_in_een_stelsel_worden_geweigerd() {
+    @Test void two_abbreviation_that_is_a_name_in_a_system_is_refused() {
         // The emitter's own guard behind the resolver's refusal above: a model that keys two units of one system on
         // spellings the name identity joins (kg and KG) would put one name on the wire twice, which every reader
         // refuses (WF-009), so the emitter refuses the model instead of writing that document. Only a model the
         // resolver did not build reaches it, so this one is built by hand.
         RegelSpraakModel m = new RegelSpraakModel();
-        RegelSpraakModel.Eenheidstelsel gewicht = new RegelSpraakModel.Eenheidstelsel("Gewicht");
-        gewicht.eenheden.put("kg", new dev.uchar.regelspraak.model.Eenheid("kg", "Gewicht"));
-        gewicht.eenheden.put("KG", new dev.uchar.regelspraak.model.Eenheid("KG", "Gewicht"));
-        m.eenheidstelsels.put("Gewicht", gewicht);
+        RegelSpraakModel.UnitSystem weight = new RegelSpraakModel.UnitSystem("Gewicht");
+        weight.units.put("kg", new dev.uchar.regelspraak.model.Eenheid("kg", "Gewicht"));
+        weight.units.put("KG", new dev.uchar.regelspraak.model.Eenheid("KG", "Gewicht"));
+        m.unitSystems.put("Gewicht", weight);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("'kg' en 'KG'") && e.getMessage().contains("(WF-009)"), e.getMessage());
     }
 
-    @Test void percentage_literal_lexeme_is_kaal() {
+    @Test void percentage_literal_lexeme_is_bare() {
         // Same WF-081 fence for the '%' suffix: "21%" emits the number "21", its type a number with the unit '%'.
         // The presentation tag belongs to the declaration and never to a type annotation (IR-SPEC ch. 2.4).
         String src = """
@@ -363,15 +363,15 @@ class IrEmitterTest {
                 () -> "het %-teken mag niet in het literal-lexeme zitten:\n" + c);
     }
 
-    @Test void een_geschreven_getal_heeft_een_spelling() {
+    @Test void a_written_number_has_a_spelling() {
         // one value, one lexeme: before, a proper fraction went out as written ("6/8") and a mixed one that reduces to
         // a whole number as "2/1", where the scenario lowering wrote "3/4" and "2" for the same written numbers
-        for (String[] paar : new String[][]{{"6/8", "3/4"}, {"-6/8", "-3/4"}, {"4/2", "2"}, {"2_0/5", "2"},
+        for (String[] pair : new String[][]{{"6/8", "3/4"}, {"-6/8", "-3/4"}, {"4/2", "2"}, {"2_0/5", "2"},
                 {"1_1/2", "3/2"}, {"-0_1/2", "-1/2"}, {"3/4", "3/4"}, {"2400,00", "2400.00"}, {"-5", "-5"}})
-            assertEquals(paar[1], IrEmitter.getalLexeem(paar[0]), paar[0]);
+            assertEquals(pair[1], IrEmitter.numberLexeme(pair[0]), pair[0]);
     }
 
-    @Test void gemengde_breuk_wordt_het_gereduceerde_rationaal() {
+    @Test void mixed_rational_becomes_the_reduced_rational() {
         // IR-SPEC ch. 4.1: a number lexeme is an exact decimal or a rational a/b with the sign on the numerator; no
         // reader takes the §13.2.5 mixed form, so the emitter writes its reduced rational and the source keeps the
         // author's spelling. A proper fraction is already a wire rational and goes out as written.
@@ -396,16 +396,16 @@ class IrEmitterTest {
                     Het gemeentedeel van een Vondst moet berekend worden als zijn gewicht maal 3/4.
             """;
         String c = emitCompact(src);
-        for (String[] paar : new String[][]{{"1_1/2", "3/2"}, {"-0_1/2", "-1/2"}, {"1_2/4", "3/2"}, {"3/4", "3/4"}}) {
-            assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"" + paar[1] + "\"},"),
-                    () -> "'" + paar[0] + "' hoort als het rationaal '" + paar[1] + "' op de wire te staan:\n" + c);
-            assertTrue(c.contains("\"source\":{\"snippet\":\"" + paar[0] + "\"}"),
-                    () -> "de bron houdt de spelling '" + paar[0] + "':\n" + c);
+        for (String[] pair : new String[][]{{"1_1/2", "3/2"}, {"-0_1/2", "-1/2"}, {"1_2/4", "3/2"}, {"3/4", "3/4"}}) {
+            assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"" + pair[1] + "\"},"),
+                    () -> "'" + pair[0] + "' hoort als het rationaal '" + pair[1] + "' op de wire te staan:\n" + c);
+            assertTrue(c.contains("\"source\":{\"snippet\":\"" + pair[0] + "\"}"),
+                    () -> "de bron houdt de spelling '" + pair[0] + "':\n" + c);
         }
         assertFalse(c.matches("(?s).*\"number\":\"[^\"]*_.*"), () -> "geen gemengde breuk als getallexeem:\n" + c);
     }
 
-    @Test void de_tekenweigering_noemt_het_lexeem_van_de_wire() {
+    @Test void the_sign_refusal_names_the_lexeme_of_the_wire() {
         // the resolver names the literal the emitter writes, so a mixed fraction is named in its wire form
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Vondst (mv: Vondsten)
@@ -419,7 +419,7 @@ class IrEmitterTest {
                 () -> "de weigering noemt het rationaal van de wire: " + m.diagnostics);
     }
 
-    @Test void datum_literal_lexeme_is_iso_snippet_in_bron() {
+    @Test void date_literal_lexeme_is_iso_snippet_in_source() {
         // uchar WF-084 (IR-SPEC ch. 4.1): a date literal's value is the BARE ISO lexeme the uchar
         // executors parse (yyyy-mm-dd), NOT the Dutch day-first source snippet ("31-01-2024"). The
         // day-first form ("31-01-2024") was silently misread as year 31 (0036-07-16) by both
@@ -442,7 +442,7 @@ class IrEmitterTest {
                 () -> "de day-first bron-snippet mag niet in de literalwaarde zitten:\n" + c);
     }
 
-    @Test void datum_literal_dedato_prefix_wordt_iso_lexeme() {
+    @Test void date_literal_dated_prefix_becomes_iso_lexeme() {
         // The §13.2.19 "dd. " de-dato prefix (and the day-first order) belong to the source snippet,
         // never to the parsed lexeme: "dd. 31-01-2024" emits the date "2024-01-31", the snippet unchanged.
         String src = """
@@ -461,7 +461,7 @@ class IrEmitterTest {
                 () -> "de bron-snippet (prefix of day-first) mag niet in de literalwaarde zitten:\n" + c);
     }
 
-    @Test void datumtijd_literal_lexeme_is_iso_snippet_in_bron() {
+    @Test void date_time_literal_lexeme_is_iso_snippet_in_source() {
         // uchar WF-095 (IR-SPEC ch. 4.1, narrowed 2026-09-22): a datum-tijd literal's value is the
         // canonical ISO lexeme yyyy-mm-ddThh:mm:ss.fff, the day-first source snippet stays in source —
         // the same split the date branch makes. The snippet in the value is refused by the verifier,
@@ -494,7 +494,7 @@ class IrEmitterTest {
         assertEquals("dd. 5-3-2026 09:07:05.004", md.group(2));
     }
 
-    @Test void datumtijd_literal_buiten_de_kalender_is_een_fout() {
+    @Test void date_time_literal_outside_the_calendar_is_an_error() {
         // The DATE token admits 30-02-2026 12:00:00.000; there is no ISO lexeme for it, so the emitter
         // reports an ERROR (which stops emission) instead of writing a lexeme WF-095 would refuse.
         RegelSpraakModel m = Resolver.resolve("""
@@ -511,8 +511,8 @@ class IrEmitterTest {
                 () -> "de fout noemt het lexeme niet: " + m.errors());
     }
 
-    /** A model whose one rule compares a Datum-in-dagen attribute with the literal {@code lexeem}. */
-    private static RegelSpraakModel datumLiteralModel(String lexeem) {
+    /** A model whose one rule compares a Datum-in-dagen attribute with the literal {@code lexemeText}. */
+    private static RegelSpraakModel dateLiteralModel(String lexemeText) {
         return Resolver.resolve("""
             Objecttype de Aanmelding
                 de meldatum Datum in dagen;
@@ -521,84 +521,84 @@ class IrEmitterTest {
                 geldig altijd
                     Een Aanmelding is tijdig
                     indien zijn meldatum eerder is dan %s.
-            """.formatted(lexeem));
+            """.formatted(lexemeText));
     }
 
-    @Test void datum_literal_buiten_de_kalender_is_een_fout() {
+    @Test void date_literal_outside_the_calendar_is_an_error() {
         // The bare-date sister of the datum-tijd test above: the DATE token admits 30-02-2026 too,
         // and the shared reader answers null. That null once reached .toString() unguarded, so the
         // frontend died on a NullPointerException instead of naming the lexeme.
-        RegelSpraakModel m = datumLiteralModel("30-02-2026");
+        RegelSpraakModel m = dateLiteralModel("30-02-2026");
         assertEquals(java.util.List.of("datum-literal '30-02-2026' is geen geldige datum (§13.2.19)"),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
     }
 
-    @Test void datum_literal_met_meercijferige_dag_is_een_fout() {
+    @Test void date_literal_with_multi_digit_day_is_an_error() {
         // The DATE token takes DIGIT+ for day and month, and the shared reader searches with find():
         // 2024-01-2026 matched its ISO arm as 2024-01-20 and 123-01-2026 its day-first arm as
         // 23-01-2026, both silently. The frontend now demands the whole lexeme be a d-m-jjjj date.
-        for (String lexeem : new String[] {"2024-01-2026", "123-01-2026", "1-123-2026"}) {
-            RegelSpraakModel m = datumLiteralModel(lexeem);
-            assertEquals(java.util.List.of("datum-literal '" + lexeem + "' is geen geldige datum (§13.2.19)"),
-                    m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(), lexeem);
+        for (String lexemeText : new String[] {"2024-01-2026", "123-01-2026", "1-123-2026"}) {
+            RegelSpraakModel m = dateLiteralModel(lexemeText);
+            assertEquals(java.util.List.of("datum-literal '" + lexemeText + "' is geen geldige datum (§13.2.19)"),
+                    m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(), lexemeText);
         }
-        assertTrue(datumLiteralModel("dd. 1-2-2026").errors().isEmpty(), "het dd.-voorvoegsel blijft gelezen");
+        assertTrue(dateLiteralModel("dd. 1-2-2026").errors().isEmpty(), "het dd.-voorvoegsel blijft gelezen");
     }
 
-    /** A model whose one rule carries the validity {@code geldig}. */
-    private static RegelSpraakModel geldigheidModel(String geldig) {
+    /** A model whose one rule carries the validity {@code valid}. */
+    private static RegelSpraakModel validityModel(String valid) {
         return Resolver.resolve("""
             Objecttype de Vondst
                 de waarde Numeriek (geheel getal);
             Regel waarde
                 geldig %s
                     De waarde van een Vondst moet gesteld worden op 1.
-            """.formatted(geldig));
+            """.formatted(valid));
     }
 
-    private static String tijdcomponentFout(String grens) {
-        return "versiegeldigheidsgrens '" + grens + "' draagt een tijdcomponent; de geldigheid is datumgranulair "
+    private static String timeComponentError(String limit) {
+        return "versiegeldigheidsgrens '" + limit + "' draagt een tijdcomponent; de geldigheid is datumgranulair "
                 + "(verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)";
     }
 
-    private static String grensFout(String grens) {
-        return "ongeldige versiegeldigheidsgrens '" + grens
+    private static String boundError(String limit) {
+        return "ongeldige versiegeldigheidsgrens '" + limit
                 + "' (verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)";
     }
 
-    @Test void versiegeldigheid_met_tijdcomponent_is_een_fout() {
+    @Test void version_validity_with_time_component_is_an_error() {
         // The validity window is day-granular (Geldigheid holds LocalDates), so a bound written
         // with a time of day has no carrier. It used to be read by a find() that stopped after
         // the date and emitted "vanaf": "2026-01-01" with the 10:00 silently gone.
-        String[][] gevallen = {{"vanaf 01-01-2026 10:00:00.000", "01-01-2026 10:00:00.000"},
+        String[][] cases = {{"vanaf 01-01-2026 10:00:00.000", "01-01-2026 10:00:00.000"},
                                {"t/m 31-12-2026 23:59:59.999", "31-12-2026 23:59:59.999"},
                                {"vanaf 2025 t/m 31-12-2026 10:00:00.000", "31-12-2026 10:00:00.000"}};
-        for (String[] g : gevallen) {
-            assertEquals(java.util.List.of(tijdcomponentFout(g[1])),
-                    geldigheidModel(g[0]).errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(), g[0]);
+        for (String[] g : cases) {
+            assertEquals(java.util.List.of(timeComponentError(g[1])),
+                    validityModel(g[0]).errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(), g[0]);
         }
     }
 
-    @Test void versiegeldigheid_met_onmogelijke_datum_en_tijd_meldt_beide() {
+    @Test void version_validity_with_impossible_date_and_time_reports_both() {
         // Both defects are reported at once: reporting only the time component would send the
         // author round a second time to learn the date itself does not exist.
-        assertEquals(java.util.List.of(grensFout("30-02-2026 10:00:00.000"), tijdcomponentFout("30-02-2026 10:00:00.000")),
-                geldigheidModel("vanaf 30-02-2026 10:00:00.000").errors().stream()
+        assertEquals(java.util.List.of(boundError("30-02-2026 10:00:00.000"), timeComponentError("30-02-2026 10:00:00.000")),
+                validityModel("vanaf 30-02-2026 10:00:00.000").errors().stream()
                         .map(RegelSpraakModel.Diagnostic::message).toList());
     }
 
-    @Test void versiegeldigheid_met_meercijferige_dag_is_een_fout() {
+    @Test void version_validity_with_multi_digit_day_is_an_error() {
         // The bound reader searched for d-m-jjjj with find(), so 2024-01-2026 was read as
         // 24-01-2026 and emitted "vanaf": "2026-01-24" without a word. The whole lexeme counts now.
-        for (String grens : new String[] {"2024-01-2026", "123-01-2026"}) {
-            assertEquals(java.util.List.of(grensFout(grens)),
-                    geldigheidModel("vanaf " + grens).errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(),
-                    grens);
+        for (String limit : new String[] {"2024-01-2026", "123-01-2026"}) {
+            assertEquals(java.util.List.of(boundError(limit)),
+                    validityModel("vanaf " + limit).errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(),
+                    limit);
         }
-        assertTrue(geldigheidModel("vanaf dd. 1-1-2026").errors().isEmpty(), "het dd.-voorvoegsel blijft gelezen");
+        assertTrue(validityModel("vanaf dd. 1-1-2026").errors().isEmpty(), "het dd.-voorvoegsel blijft gelezen");
     }
 
-    @Test void beslistabel_met_tijdcomponent_in_geldigheid_meldt_eenmaal() {
+    @Test void decision_table_with_time_component_in_validity_reports_once() {
         // A beslistabel desugars to one regel per data row, each re-parsed with the header's
         // validity, so the bound is checked once per row. The author wrote it once.
         RegelSpraakModel m = Resolver.resolve("""
@@ -612,31 +612,31 @@ class IrEmitterTest {
             | 1 | 1 | 5 |
             | 2 | 2 | 10 |
             """);
-        assertEquals(java.util.List.of(tijdcomponentFout("01-01-2026 10:00:00.000")),
+        assertEquals(java.util.List.of(timeComponentError("01-01-2026 10:00:00.000")),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
     }
 
-    /** A Tekst-attribuut plus one rule that assigns {@code lexeem} to it — the smallest model that
+    /** A Tekst-attribuut plus one rule that assigns {@code lexemeText} to it — the smallest model that
      *  puts a text literal on the wire. The lexeme is inserted RAW, so a test can hand it a source
      *  form the grammar rejects and assert on the diagnostics. */
-    private static String tekstBron(String lexeem) {
+    private static String textSource(String lexemeText) {
         return """
             Objecttype de Vondst
                 het etiket Tekst;
             Regel etiket
                 geldig altijd
                     Het etiket van een Vondst moet gesteld worden op %s.
-            """.formatted(lexeem);
+            """.formatted(lexemeText);
     }
 
-    @Test void tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron() {
+    @Test void text_literal_lexeme_is_the_parsed_value_snippet_in_source() {
         // uchar, maintainer decision 2026-09-18 (IR-SPEC ch. 4.1): a Tekst literal's value is the
         // PARSED string — what stands BETWEEN the delimiters — not the source snippet with its own
         // outer '"' still attached. The delimited form ("\"Flevoland\"") gave v0 two lexeme
         // families for one text value, and since all four consumers compare Tekst verbatim, an
         // emitted golden only played when its case input carried the delimiters too. Third in the
         // bare-lexeme row beside WF-081 (number) and WF-084 (date); the source record keeps the snippet.
-        String c = emitCompact(tekstBron("\"Flevoland\""));
+        String c = emitCompact(textSource("\"Flevoland\""));
         assertTrue(c.contains(
                 "{\"node\":\"Literal\",\"value\":{\"text\":\"Flevoland\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"\\\"Flevoland\\\"\"}}"),
                 () -> "de tekst-literal moet de geparste waarde dragen, de bron-snippet in source:\n" + c);
@@ -644,7 +644,7 @@ class IrEmitterTest {
                 () -> "de buitenste aanhalingstekens mogen niet in de literalwaarde zitten:\n" + c);
     }
 
-    @Test void tekst_literal_grammatica_kent_geen_escape_dus_nooit_een_ingebed_aanhalingsteken() {
+    @Test void text_literal_grammar_knows_no_escape_so_never_an_embedded_quotation_sign() {
         // WHY the unquoting is total and lossless, measured at the grammar rather than assumed:
         // tekstWaarde is STRING_START tekstReeksDeel* STRING_END and a literal chunk is STRING_TEXT
         // ~["«»\r\n]+ (RegelSpraakLexer.g4). There is NO escape sequence, so a '"' always CLOSES the
@@ -653,45 +653,45 @@ class IrEmitterTest {
         // The consequence this pins: a wire value with an embedded double quote (merk "AA", which
         // corpus/golden/jutterswet-keurmerk carries) is HAND-AUTHORED by construction — this emitter
         // cannot write one. What both back-ends do with such a value stays verbatim; that flank is
-        // pinned by LiteralenTest.tekstOfEnumLabel_leest_tekst_verbatim and the Drools dual-branch
+        // pinned by LiteralsTest.textOfEnumLabel_reads_text_verbatim and the Drools dual-branch
         // witnesses, not here.
-        RegelSpraakModel m = Resolver.resolve(tekstBron("\"merk \"AA\"\""));
+        RegelSpraakModel m = Resolver.resolve(textSource("\"merk \"AA\"\""));
         assertFalse(m.errors().isEmpty(),
                 "de grammatica kent geen escape: een tweede aanhalingsteken sluit de string en de rest is syntaxfout");
         assertTrue(m.errors().toString().contains("syntaxfout"),
                 () -> "verwacht een syntaxfout, kreeg: " + m.errors());
     }
 
-    @Test void tekst_literal_normaliseert_verder_niets() {
+    @Test void text_literal_normalises_nothing_further() {
         // "Outer delimiters off, nothing else" — taken from the STRING_TEXT tokens, not from
         // bron.snippet() minus its first and last char. DefinitionResolver.src collapses every
         // whitespace run to one space, so a snippet-derived value silently rewrote a double space;
         // the snippet still shows that collapse, which is exactly why the two fields differ here. A
         // backslash and a single quote are ordinary characters and stay as written; an empty string
         // stays empty (zero STRING_TEXT chunks, not a two-character lexeme).
-        String raw = emitRaw(tekstBron("\"a  b\""));
+        String raw = emitRaw(textSource("\"a  b\""));
         assertTrue(raw.contains("\"text\": \"a  b\""),
                 () -> "de dubbele spatie binnen de delimiters hoort bij de waarde:\n" + raw);
         assertTrue(raw.contains("\"snippet\": \"\\\"a b\\\"\""),
                 () -> "source blijft de (whitespace-gevouwen) bronsnippet:\n" + raw);
 
-        String backslash = emitCompact(tekstBron("\"pad\\naar\""));
+        String backslash = emitCompact(textSource("\"pad\\naar\""));
         assertTrue(backslash.contains("\"text\":\"pad\\\\naar\""),
                 () -> "een backslash is een gewoon teken, niet een escape-inleiding:\n" + backslash);
 
-        String enkel = emitRaw(tekstBron("\"het 'merk'\""));
-        assertTrue(enkel.contains("\"text\": \"het 'merk'\""),
-                () -> "enkele aanhalingstekens zijn gewone tekens in een Tekst-literal:\n" + enkel);
+        String single = emitRaw(textSource("\"het 'merk'\""));
+        assertTrue(single.contains("\"text\": \"het 'merk'\""),
+                () -> "enkele aanhalingstekens zijn gewone tekens in een Tekst-literal:\n" + single);
 
-        String leeg = emitCompact(tekstBron("\"\""));
-        assertTrue(leeg.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"\\\"\\\"\"}}"),
-                () -> "de lege tekst is leeg, niet twee aanhalingstekens:\n" + leeg);
+        String empty = emitCompact(textSource("\"\""));
+        assertTrue(empty.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"\\\"\\\"\"}}"),
+                () -> "de lege tekst is leeg, niet twee aanhalingstekens:\n" + empty);
     }
 
     /** A domain plus a Vondst whose {@code oordeel} is of that domain and whose {@code etiket} is Tekst,
      *  with {@code regels} appended — the smallest model that puts an enumeratiewaarde on the wire in
      *  each of the positions that can (and cannot) supply a domain. */
-    private static String enumBron(String regels) {
+    private static String enumSource(String regels) {
         return """
             Domein Keurklasse is van het type Enumeratie
                 'gaaf'
@@ -708,12 +708,12 @@ class IrEmitterTest {
     /** The one enumeratiewaarde shape the wire admits: the BARE label (WF-039 crosses it byte-exactly
      *  against the declared domain) typed with the domain the position names (WF-034 (r) refuses the
      *  unknown sentinel), the delimited source lexeme in the source snippet. */
-    private static final String GAAF_GETYPEERD =
+    private static final String GAAF_TYPED =
             "{\"node\":\"Literal\",\"value\":{\"enumeration\":\"gaaf\"},"
             + "\"type\":{\"node\":\"Enumeration\",\"domain\":\"Keurklasse\",\"values\":[\"gaaf\",\"beschadigd\"]},"
             + "\"source\":{\"snippet\":\"'gaaf'\"}}";
 
-    @Test void enum_literal_krijgt_zijn_domein_van_het_schrijfdoel() {
+    @Test void enum_literal_gets_its_domain_of_the_write_target() {
         // uchar V8 (spec/proposals/V1-WIREMIGRATIE.md, maintainer decision 2026-09-19): an
         // enumeratiewaarde reaches the wire as the bare label typed with its domain. The delimited form
         // ("'gaaf'", type the unknown sentinel) is doubly ill-formed — WF-039 crosses the
@@ -721,48 +721,48 @@ class IrEmitterTest {
         // so the frontend could not emit the construct at all and no bron.rgs golden carried one.
         // Derivation rule, first half: the domain comes from the WRITE TARGET, i.e. the declared
         // datatype of the attribute being assigned (§13.3.4.2 / WF-023's keuzetype clause).
-        String c = emitCompact(enumBron("""
+        String c = emitCompact(enumSource("""
             Regel oordeel
                 geldig altijd
                     Het oordeel van een Vondst moet gesteld worden op 'gaaf'.
             """));
-        assertTrue(c.contains(GAAF_GETYPEERD),
+        assertTrue(c.contains(GAAF_TYPED),
                 () -> "het schrijfdoel moet het domein van de enumeratiewaarde leveren:\n" + c);
         assertFalse(c.contains("\"enumeration\":\"'gaaf'\""),
                 () -> "de delimiters mogen niet in het literal-lexeme zitten:\n" + c);
     }
 
-    @Test void enum_literal_krijgt_zijn_domein_van_de_andere_vergelijkingszijde() {
+    @Test void enum_literal_gets_its_domain_of_the_other_comparison_side() {
         // Derivation rule, second half: in a comparison the domain comes from the OTHER side — the
-        // same context §13.3.4.2's membership check already reads (RuleChecker.meldVergelijk crosses
+        // same context §13.3.4.2's membership check already reads (RuleChecker.reportCompare crosses
         // the label against the sibling's domain). Both directions, since the rule is symmetric:
         // the marker is promoted whether it stands left or right of the operator.
-        String rechts = emitCompact(enumBron("""
+        String rechts = emitCompact(enumSource("""
             Regel veilbaarheid
                 geldig altijd
                     Een Vondst is veilbaar indien zijn staat gelijk is aan 'gaaf'.
             """));
-        assertTrue(rechts.contains(GAAF_GETYPEERD),
+        assertTrue(rechts.contains(GAAF_TYPED),
                 () -> "de linkerzijde moet het domein van de rechter enumeratiewaarde leveren:\n" + rechts);
 
-        String links = emitCompact(enumBron("""
+        String links = emitCompact(enumSource("""
             Regel veilbaarheid
                 geldig altijd
                     Een Vondst is veilbaar indien 'gaaf' gelijk is aan zijn staat.
             """));
-        assertTrue(links.contains(GAAF_GETYPEERD),
+        assertTrue(links.contains(GAAF_TYPED),
                 () -> "de rechterzijde moet het domein van de linker enumeratiewaarde leveren:\n" + links);
     }
 
-    @Test void enum_literal_door_de_letketen_van_een_variabelendeel() {
+    @Test void enum_literal_through_the_let_chain_of_a_variable_part() {
         // §11/ch. 4.10: a value written through the variabelendeel denotes exactly what the bare literal
         // denotes (ch. 10.6), so it must reach the wire in the same shape — and the whole chain must, not
         // just its value: the Let is typed FROM the value, so an unpromoted chain would leave an unknown
         // type at two positions the wire has no spelling for, and the emitter would refuse the model. The
         // binder read carries no type of its own; its binding is its declaration. This is also what keeps
-        // the variabelendeel diagnostically transparent (VariabeledeelLoweringTest pins that the
+        // the variabelendeel diagnostically transparent (VariablePartLoweringTest pins that the
         // §13.3.4.2 membership check says the same thing through the chain as beside it).
-        String c = emitCompact(enumBron("""
+        String c = emitCompact(enumSource("""
             Regel oordeel
                 geldig altijd
                     Het oordeel van een Vondst moet gesteld worden op de tint.
@@ -771,15 +771,15 @@ class IrEmitterTest {
             """));
         String enumType = "{\"node\":\"Enumeration\",\"domain\":\"Keurklasse\",\"values\":[\"gaaf\",\"beschadigd\"]}";
         assertTrue(c.contains("\"node\":\"Let\",\"type\":" + enumType + ",\"binder\":\"tint\",\"value\":"
-                        + GAAF_GETYPEERD + ",\"body\":{\"node\":\"BinderRef\",\"name\":\"tint\",\"source\":"),
+                        + GAAF_TYPED + ",\"body\":{\"node\":\"BinderRef\",\"name\":\"tint\",\"source\":"),
                 () -> "de hele letketen moet het domein van het schrijfdoel dragen:\n" + c);
     }
 
-    @Test void het_domein_draagt_zijn_naam_op_de_wrapper_en_de_referentie_houdt_hem() {
+    @Test void the_domain_carries_its_name_on_the_wrapper_and_the_reference_keeps_it() {
         // M1 (delta B2, IR-SPEC ch. 2.3): the Domain wrapper writes the name once, so the Enumeration at the
         // declaration position carries no domain; at a reference position domain is the domain reference
         // and stays.
-        String c = emitCompact(enumBron(""));
+        String c = emitCompact(enumSource(""));
         assertTrue(c.contains("\"domains\":[{\"node\":\"Domain\",\"name\":\"Keurklasse\","
                         + "\"datatype\":{\"node\":\"Enumeration\",\"values\":[\"gaaf\",\"beschadigd\"]}}]"),
                 () -> "de declaratiepositie hoort geen zelfnaam te dragen:\n" + c);
@@ -788,28 +788,28 @@ class IrEmitterTest {
                 () -> "de referentiepositie houdt haar domeinverwijzing:\n" + c);
     }
 
-    @Test void een_ongelabeld_kenmerk_is_zelfstandig_en_een_zijkaart_zonder_lid_wordt_geweigerd() {
+    @Test void an_unlabelled_characteristic_is_nominal_and_a_side_map_without_member_is_refused() {
         // The model keeps its member-keyed side-maps; the wire carries the facets on the member nodes, so
         // what those nodes cannot carry is refused instead of dropped.
-        RegelSpraakModel m = Resolver.resolve(enumBron(""));
+        RegelSpraakModel m = Resolver.resolve(enumSource(""));
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         var vondst = m.objecttypen.get("Vondst");
-        vondst.kenmerkSoorten.remove("veilbaar");
+        vondst.characteristicKinds.remove("veilbaar");
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(c.contains("{\"node\":\"Characteristic\",\"name\":\"veilbaar\",\"kind\":\"nominal\"}"),
                 () -> "een kenmerk zonder soort is zelfstandig (ch. 2.2):\n" + c);
 
-        vondst.attribuutMeervoud.put("gewicht", "gewichten");
+        vondst.attributePlural.put("gewicht", "gewichten");
         IllegalStateException wees = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(wees.getMessage().contains("Vondst.attribuutMeervoud"), wees::getMessage);
-        vondst.attribuutMeervoud.remove("gewicht");
+        vondst.attributePlural.remove("gewicht");
 
         vondst.attribuutTijdlijnAantal.put("staat", 2);
-        IllegalStateException zonderRaster = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(zonderRaster.getMessage().contains("Vondst.attribuutTijdlijnAantal"), zonderRaster::getMessage);
+        IllegalStateException withoutGrid = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(withoutGrid.getMessage().contains("Vondst.attribuutTijdlijnAantal"), withoutGrid::getMessage);
     }
 
-    @Test void enum_literal_zonder_domeincontext_blijft_een_luide_marker() {
+    @Test void enum_literal_without_domain_context_stays_a_loud_marker() {
         // The fail-fast half of the rule: where NEITHER a write target nor a comparison sibling names
         // an Enumeratie, the frontend has no domain to derive and emits the honest marker rather than
         // guessing one. A Tekst target is exactly such a position. The marker is loud — Resolver's
@@ -817,7 +817,7 @@ class IrEmitterTest {
         // the finished model — and it carries the delimited source lexeme, so the author sees which
         // one stayed unresolved. A guessed domain would be worse than a marker: it would put a label
         // on the wire under a domain nobody declared for this position.
-        RegelSpraakModel m = Resolver.resolve(enumBron("""
+        RegelSpraakModel m = Resolver.resolve(enumSource("""
             Regel etiket
                 geldig altijd
                     Het etiket van een Vondst moet gesteld worden op 'gaaf'.
@@ -832,7 +832,7 @@ class IrEmitterTest {
                 () -> "de marker moet luid zijn (WARNING met reden): " + m.diagnostics);
     }
 
-    @Test void enum_literal_label_komt_uit_de_tokentekst_niet_uit_de_gevouwen_snippet() {
+    @Test void enum_literal_label_comes_out_of_the_token_text_not_out_of_the_folded_snippet() {
         // WHERE the label is read, measured at the grammar: ENUM_LITERAL is ONE lexer token
         // ('\'' ~['\r\n]* '\'', RegelSpraakLexer.g4), so the token text IS the whole source slice and
         // the delimiters are its first and last character — stripping them is total and lossless.
@@ -858,7 +858,7 @@ class IrEmitterTest {
                 () -> "geen enkele positie mag de gevouwen vorm dragen — declaratie en label zouden uiteenlopen:\n" + raw);
     }
 
-    @Test void tijdsevenredig_deel_draagt_basistype_geen_sentinel() {
+    @Test void time_proportional_part_carries_base_type_no_sentinel() {
         // §7.3.2/§13.4.17.58: the pro-rata node carries its BASE's value type on the wire; a derived
         // position the frontend cannot type would be written null, which is not what this node is.
         String src = """
@@ -886,7 +886,7 @@ class IrEmitterTest {
                 () -> "de pro-rata-node mag geen ontypeerbaar resultaat dragen:\n" + ownType);
     }
 
-    @Test void bron_annotaties_op_de_draad_heel_of_niet() {
+    @Test void statute_annotations_on_the_wire_whole_or_not() {
         // uchar WF-082 (IR-SPEC ch. 3.1): the // Bron: statuutannotaties above a rule ride the
         // Rule as the optional statuteAnnotations array (after its versions), in source order;
         // a rule WITHOUT annotations leaves no trace, and a blank annotation is dropped (an
@@ -930,7 +930,7 @@ class IrEmitterTest {
      * <p>The node is grafted onto an otherwise resolver-built model, because the resolver itself will not
      * produce one — which is the claim under test.
      */
-    @Test void een_ifthenelse_wordt_geweigerd_want_de_emitter_produceert_hem_nooit() {
+    @Test void an_ifthenelse_is_refused_because_the_emitter_never_produces_it() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Jutter
                 de vondstteller Numeriek (geheel getal);
@@ -942,18 +942,18 @@ class IrEmitterTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.resolvedRegels.size());
         // sanity: the resolver produced no such node by itself — "never emitter-produced" starts there.
-        ResolvedRegel origineel = m.resolvedRegels.get(0);
-        assertFalse(Expr.bevat(origineel.waarde(), x -> x instanceof Expr.IfThenElse),
+        ResolvedRegel original = m.resolvedRegels.get(0);
+        assertFalse(Expr.contains(original.waarde(), x -> x instanceof Expr.IfThenElse),
                 "de resolver bouwt de vorm niet");
 
-        Expr keuze = new Expr.IfThenElse(
-                new Conditie.Vergelijking(Conditie.Operator.GROTER, origineel.waarde(),
-                        new Expr.Literal("0", origineel.waarde().type(), Bron.synthetisch("0")),
-                        Bron.synthetisch("groter dan 0")),
-                origineel.waarde(), origineel.waarde(), origineel.waarde().type(),
-                Bron.synthetisch("als … dan … anders …"));
-        m.resolvedRegels.set(0, new ResolvedRegel(origineel.naam(), origineel.soort(), origineel.doel(),
-                keuze, origineel.voorwaarde(), origineel.geldigheid()));
+        Expr choice = new Expr.IfThenElse(
+                new Conditie.Vergelijking(Conditie.Operator.GROTER, original.waarde(),
+                        new Expr.Literal("0", original.waarde().type(), Bron.synthetic("0")),
+                        Bron.synthetic("groter dan 0")),
+                original.waarde(), original.waarde(), original.waarde().type(),
+                Bron.synthetic("als … dan … anders …"));
+        m.resolvedRegels.set(0, new ResolvedRegel(original.naam(), original.soort(), original.doel(),
+                choice, original.voorwaarde(), original.geldigheid()));
 
         UnsupportedOperationException geweigerd =
                 assertThrows(UnsupportedOperationException.class, () -> IrEmitter.emit(m),
@@ -967,7 +967,7 @@ class IrEmitterTest {
      *  resolver writes none of the twisted diagnostics below, so each is grafted onto a resolver-built model;
      *  that the emitter refuses them by itself is the claim. Until 2026-09-23 nothing pinned INFO or a null
      *  severity (a guard narrowed to ERROR kept the suite green), and a blank message or line -1 was written. */
-    @Test void wf113a_de_emitter_schrijft_alleen_wat_de_verifier_als_diagnose_aanneemt() {
+    @Test void wf113a_the_emitter_writes_only_what_the_verifier_accepts_as_diagnostic() {
         String bron = """
             Objecttype de Jutter
                 de vondstteller Numeriek (geheel getal);
@@ -1001,9 +1001,9 @@ class IrEmitterTest {
      *  missing context or an empty match); the emitter refuses to write it, at either marker node, with a WARNING
      *  on the model that a literal reading of an empty snippet would count as its account. An empty snippet is
      *  refused before WF-113 is asked, in the sentence every reader gives for it at load. */
-    @Test void wf113b_de_emitter_schrijft_geen_marker_zonder_bron() {
-        for (Bron bron : new Bron[] { Bron.synthetisch(""), Bron.synthetisch("   "), Bron.synthetisch(null), null }) {
-            for (boolean conditie : new boolean[] { false, true }) {
+    @Test void wf113b_the_emitter_writes_no_marker_without_source() {
+        for (Bron bron : new Bron[] { Bron.synthetic(""), Bron.synthetic("   "), Bron.synthetic(null), null }) {
+            for (boolean condition : new boolean[] { false, true }) {
                 RegelSpraakModel m = Resolver.resolve("""
                     Objecttype de Jutter
                         de vondstteller Numeriek (geheel getal);
@@ -1014,14 +1014,14 @@ class IrEmitterTest {
                     """);
                 assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
                 ResolvedRegel r = m.resolvedRegels.get(0);
-                m.resolvedRegels.set(0, conditie
+                m.resolvedRegels.set(0, condition
                         ? new ResolvedRegel(r.naam(), r.soort(), r.doel(), r.waarde(),
-                                new Conditie.Onopgelost(bron, "test"), r.geldigheid())
+                                new Conditie.Unresolved(bron, "test"), r.geldigheid())
                         : new ResolvedRegel(r.naam(), r.soort(), r.doel(),
-                                new Expr.Onopgelost(r.waarde().type(), bron, "test"), r.voorwaarde(), r.geldigheid()));
+                                new Expr.Unresolved(r.waarde().type(), bron, "test"), r.voorwaarde(), r.geldigheid()));
                 m.diagnostics.add(new Diagnostic(Severity.WARNING, "een melding", 1));
                 IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
-                        () -> "de emitter schreef een " + (conditie ? "conditie" : "expressie") + "marker met bron "
+                        () -> "de emitter schreef een " + (condition ? "conditie" : "expressie") + "marker met bron "
                                 + (bron == null ? null : "'" + bron.snippet() + "'"));
                 assertTrue(e.getMessage().contains(bron != null && "".equals(bron.snippet())
                         ? "a source snippet is never empty" : "WF-113 (b)"), e::getMessage);
@@ -1031,7 +1031,7 @@ class IrEmitterTest {
 
     // ---------------- L2: the reference layer carries its symbolic form only ----------------
 
-    @Test void een_rolcheck_gaat_aan_beide_zijden_als_rolemembership_de_wire_op() {
+    @Test void a_role_check_goes_on_both_sides_as_rolemembership_onto_the_wire() {
         // IR-SPEC ch. 4.5: one node for the role check, whichever end of the fact type holds the reference —
         // the fact type and the role the SUBJECT plays in it, by declared name, in the schema's key order.
         // The near side ("hij is een wachtjutter": the Jutter plays wachtjutter) and the far side ("hij heeft
@@ -1060,7 +1060,7 @@ class IrEmitterTest {
                 () -> "de rolcheck aan de verre zijde noemt de rol die het onderwerp speelt:\n" + c);
     }
 
-    @Test void een_rolcheck_die_de_andere_zijde_vernauwt_draagt_het_type_van_die_zijde() {
+    @Test void a_role_check_that_narrows_the_other_side_carries_the_type_of_that_side() {
         // IR-SPEC ch. 4.5, RoleMembership: a check whose other end names a STRICT subtype of that role's declared filler
         // ("heeft een Strandjutter", where wachtjutter is declared on Jutter) narrows the link it asks for, and
         // the wire says so in counterpartType; naming the declared filler itself narrows nothing and the field
@@ -1081,22 +1081,22 @@ class IrEmitterTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         ResolvedRegel r = m.resolvedRegels.get(0);
-        assertTrue(r.voorwaarde() instanceof Conditie.VerreRollidmaatschap v && v.filler().naam.equals("Jutter"),
+        assertTrue(r.voorwaarde() instanceof Conditie.FarRoleMembership v && v.filler().naam.equals("Jutter"),
                 () -> "de resolver hoort de verre rolcheck te bouwen: " + r.voorwaarde());
-        String zonder = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(zonder.contains("\"role\":\"toegewezenwachtpost\",\"negated\":false,"),
-                () -> "de gedeclareerde vuller vernauwt niets:\n" + zonder);
-        Conditie.VerreRollidmaatschap v = (Conditie.VerreRollidmaatschap) r.voorwaarde();
+        String without = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(without.contains("\"role\":\"toegewezenwachtpost\",\"negated\":false,"),
+                () -> "de gedeclareerde vuller vernauwt niets:\n" + without);
+        Conditie.FarRoleMembership v = (Conditie.FarRoleMembership) r.voorwaarde();
         m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), r.waarde(),
-                new Conditie.VerreRollidmaatschap(m.objecttypen.get("Strandjutter"), v.backref(), v.negatie(), v.bron()),
+                new Conditie.FarRoleMembership(m.objecttypen.get("Strandjutter"), v.backref(), v.negatie(), v.bron()),
                 r.geldigheid()));
-        String met = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(met.contains("{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
+        String with = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(with.contains("{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
                         + "\"role\":\"toegewezenwachtpost\",\"counterpartType\":\"Strandjutter\",\"negated\":false,"),
-                () -> "een strikt subtype van de gedeclareerde vuller vernauwt de link:\n" + met);
+                () -> "een strikt subtype van de gedeclareerde vuller vernauwt de link:\n" + with);
     }
 
-    @Test void een_lezing_die_navigeert_zonder_unieke_binding_wordt_geweigerd() {
+    @Test void a_read_that_navigates_without_unique_binding_is_refused() {
         // IR-SPEC ch. 4.1a: a read without bindings is the subject's own, so a read the resolver took to another
         // type but whose relation it cannot name has no spelling — written without its binding, it would read
         // the subject's own attribute. The pair is made ambiguous by a second fact type added after resolution,
@@ -1110,13 +1110,13 @@ class IrEmitterTest {
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(
                 "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}]"),
                 "de ongemoeide lezing draagt haar binding");
-        tweedeAfdelingsrol(m);
+        secondAfdelingRole(m);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("het niveau van zijn afdeling") && e.getMessage().contains("navigeert"),
                 e::getMessage);
     }
 
-    @Test void een_kenmerkcheck_die_navigeert_zonder_unieke_binding_wordt_geweigerd() {
+    @Test void a_characteristic_check_that_navigates_without_unique_binding_is_refused() {
         // IR-SPEC ch. 4.5: the binding IS the hop; without it the check would test the subject's own kenmerk.
         RegelSpraakModel m = Resolver.resolve(WERKNEMER_AFDELING + """
             Regel rang
@@ -1127,30 +1127,30 @@ class IrEmitterTest {
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(
                 "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}"),
                 "de ongemoeide kenmerkcheck draagt haar binding");
-        tweedeAfdelingsrol(m);
+        secondAfdelingRole(m);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("kenmerkcheck"), e::getMessage);
     }
 
-    @Test void een_feitcreatie_zonder_heel_symbolisch_blok_wordt_geweigerd() {
+    @Test void a_fact_creation_without_a_whole_symbolic_block_is_refused() {
         // IR-SPEC ch. 3.4: the creation IS its symbolic block, so a creation missing any binding has no spelling.
-        RegelSpraakModel m = Resolver.resolve(FEITCREATIE);
+        RegelSpraakModel m = Resolver.resolve(FACT_CREATION);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        ResolvedFeitCreatie fc = m.feitCreaties.get(0);
-        m.feitCreaties.set(0, new ResolvedFeitCreatie(fc.naam(), fc.anker(), fc.doel(), fc.zetVeld(), fc.joinVeld(),
-                fc.tussenstappen(), fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.ankerRol(), fc.doelRol(), null));
-        IllegalStateException zonderJoin = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(zonderJoin.getMessage().contains("niet heel symbolisch gebonden"), zonderJoin::getMessage);
+        ResolvedFactCreation fc = m.feitCreaties.get(0);
+        m.feitCreaties.set(0, new ResolvedFactCreation(fc.naam(), fc.anchor(), fc.doel(), fc.setField(), fc.joinField(),
+                fc.pathSteps(), fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.anchorRole(), fc.targetRole(), null));
+        IllegalStateException withoutJoin = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(withoutJoin.getMessage().contains("niet heel symbolisch gebonden"), withoutJoin::getMessage);
 
-        ResolvedFeitCreatie.Tussenstap t = fc.tussenstappen().get(0);
-        m.feitCreaties.set(0, new ResolvedFeitCreatie(fc.naam(), fc.anker(), fc.doel(), fc.zetVeld(), fc.joinVeld(),
-                List.of(new ResolvedFeitCreatie.Tussenstap(t.type(), t.veld(), t.viaOuderVeld())),
-                fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.ankerRol(), fc.doelRol(), fc.joinRol()));
-        IllegalStateException zonderStap = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(zonderStap.getMessage().contains("niet heel symbolisch gebonden"), zonderStap::getMessage);
+        ResolvedFactCreation.PathStep t = fc.pathSteps().get(0);
+        m.feitCreaties.set(0, new ResolvedFactCreation(fc.naam(), fc.anchor(), fc.doel(), fc.setField(), fc.joinField(),
+                List.of(new ResolvedFactCreation.PathStep(t.type(), t.veld(), t.viaParentField())),
+                fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.anchorRole(), fc.targetRole(), fc.path()));
+        IllegalStateException withoutStep = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(withoutStep.getMessage().contains("niet heel symbolisch gebonden"), withoutStep::getMessage);
     }
 
-    @Test void een_begrensde_uniciteit_zonder_rol_wordt_geweigerd() {
+    @Test void a_scoped_uniqueness_without_role_is_refused() {
         // IR-SPEC ch. 3.6: the binding IS the scoping; written without it the uniqueness would hold across
         // every instance instead of within each afdeling.
         RegelSpraakModel m = Resolver.resolve(WERKNEMER_AFDELING + """
@@ -1159,15 +1159,15 @@ class IrEmitterTest {
                     De rang van alle Werknemer van de afdeling moeten uniek zijn.
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        ResolvedUniciteit u = m.uniciteiten.get(0);
-        assertNotNull(u.scopeRol(), "de ongemoeide uniciteit is gebonden");
-        m.uniciteiten.set(0, new ResolvedUniciteit(u.naam(), u.subject(), u.sleutels(), u.scopeVeld(), u.bron(),
+        ResolvedUniqueness u = m.uniciteiten.get(0);
+        assertNotNull(u.scopeBinding(), "de ongemoeide uniciteit is gebonden");
+        m.uniciteiten.set(0, new ResolvedUniqueness(u.naam(), u.subject(), u.keys(), u.scopeField(), u.bron(),
                 u.geldigheid()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("geen unieke rol"), e::getMessage);
     }
 
-    @Test void een_onbekend_type_is_null_op_een_afgeleide_positie_en_heeft_elders_geen_spelling() {
+    @Test void an_unknown_type_is_null_on_a_derived_position_and_has_no_spelling_elsewhere() {
         // uchar-ir-v1 has no datatype for "unknown". A DERIVED position the frontend cannot type (a datum plus a
         // datum, reported and not refused) is written null; a marker leaves its type out; any other position —
         // a literal, a declaration, a payload — would carry a type the wire cannot spell, and is refused.
@@ -1182,23 +1182,23 @@ class IrEmitterTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
         ResolvedRegel r = m.resolvedRegels.get(0);
         Expr.Binair b = (Expr.Binair) r.waarde();
-        Datatype onbekend = new Datatype.Onbekend("test");
+        Datatype unknown = new Datatype.Onbekend("test");
         m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(),
-                new Expr.Binair(b.op(), b.links(), b.rechts(), onbekend, b.bron()), r.voorwaarde(), r.geldigheid()));
+                new Expr.Binair(b.op(), b.links(), b.rechts(), unknown, b.bron()), r.voorwaarde(), r.geldigheid()));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(c.contains("\"type\":null,\"source\":{\"snippet\":\"devondsttellervandeJutter"),
                 () -> "een afgeleide positie zonder type schrijft null:\n" + c);
         assertFalse(c.contains("Onbekend"), () -> "het onbekende type heeft geen spelling:\n" + c);
 
-        Expr.Literal zes = (Expr.Literal) b.rechts();
+        Expr.Literal six = (Expr.Literal) b.rechts();
         m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(),
-                new Expr.Binair(b.op(), b.links(), new Expr.Literal(zes.waarde(), onbekend, zes.bron()), b.type(), b.bron()),
+                new Expr.Binair(b.op(), b.links(), new Expr.Literal(six.waarde(), unknown, six.bron()), b.type(), b.bron()),
                 r.voorwaarde(), r.geldigheid()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("onbekend datatype"), e::getMessage);
 
         m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(),
-                new Expr.Onopgelost(onbekend, b.bron(), "test"), r.voorwaarde(), r.geldigheid()));
+                new Expr.Unresolved(unknown, b.bron(), "test"), r.voorwaarde(), r.geldigheid()));
         m.diagnostics.add(new Diagnostic(Severity.WARNING, "onopgelost: " + b.bron().snippet(), 1));
         String marker = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(marker.contains("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"devondsttellervandeJuttermin6\"}}"),
@@ -1208,7 +1208,7 @@ class IrEmitterTest {
     // ---------------- L4: the rule layer and the expression layer ----------------
 
     /** A rule with two versions, the model's shape of it: one entry per version, named "waarde #1" and "waarde #2". */
-    private static final String TWEE_VERSIES = """
+    private static final String TWO_VERSIONS = """
             Objecttype de Vondst
                 de waarde Numeriek (geheel getal);
             Regel waarde
@@ -1218,60 +1218,60 @@ class IrEmitterTest {
                     De waarde van een Vondst moet gesteld worden op 2.
             """;
 
-    @Test void de_versies_van_een_regel_worden_een_vorm_met_zijn_versies_in_volgorde() {
+    @Test void the_versions_of_a_rule_become_a_form_with_its_versions_in_order() {
         // IR-SPEC ch. 3, Versioning: the model keeps one entry per version and names them "<name> #<i>"; the wire
         // writes the rule once, under its own name, with its versions in the order of i and each its own validity.
         // No rgs golden and no document of the parity zone carries two versions, so this is the grouping's witness.
-        RegelSpraakModel m = Resolver.resolve(TWEE_VERSIES);
+        RegelSpraakModel m = Resolver.resolve(TWO_VERSIONS);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(List.of("waarde #1", "waarde #2"), m.resolvedRegels.stream().map(ResolvedRegel::naam).toList(),
                 "het model draagt één invoer per versie");
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         String doel = "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"waarde\",\"subjectType\":\"Vondst\",";
-        int eerste = c.indexOf("\"rules\":[{\"node\":\"Rule\",\"name\":\"waarde\",\"versions\":[{\"validity\":"
+        int first = c.indexOf("\"rules\":[{\"node\":\"Rule\",\"name\":\"waarde\",\"versions\":[{\"validity\":"
                 + "{\"node\":\"Validity\",\"from\":\"2025-01-01\",\"to\":\"2025-12-31\"}," + doel);
-        int tweede = c.indexOf("},{\"validity\":{\"node\":\"Validity\",\"from\":\"2026-01-01\"}," + doel);
-        assertTrue(eerste >= 0 && tweede > eerste, () -> "één vorm met twee versies in volgorde verwacht:\n" + c);
-        assertTrue(c.indexOf("\"value\":{\"number\":\"1\"}") > eerste && c.indexOf("\"value\":{\"number\":\"2\"}") > tweede,
+        int second = c.indexOf("},{\"validity\":{\"node\":\"Validity\",\"from\":\"2026-01-01\"}," + doel);
+        assertTrue(first >= 0 && second > first, () -> "één vorm met twee versies in volgorde verwacht:\n" + c);
+        assertTrue(c.indexOf("\"value\":{\"number\":\"1\"}") > first && c.indexOf("\"value\":{\"number\":\"2\"}") > second,
                 () -> "elke versie draagt haar eigen waarde:\n" + c);
         assertEquals(1, c.split("\"node\":\"Rule\"", -1).length - 1, () -> "precies één vorm:\n" + c);
         assertFalse(c.contains(" #") || c.contains("#1") || c.contains("#2"),
                 () -> "het versieachtervoegsel is de spelling van het model, niet die van de wire:\n" + c);
     }
 
-    @Test void een_versiegroep_die_de_wire_niet_kan_spellen_wordt_geweigerd() {
+    @Test void a_version_group_that_the_wire_can_not_spell_is_refused() {
         // The grouping reads the model's names exactly as m4.py reads the flattened wire, and refuses what it
         // cannot spell rather than guessing a form: versions that do not stand together, a suffix on one entry
         // (a form with one version carries its bare name, so "x #1" alone would read as a version of "x"), numbers
         // that are not exactly 1 to n, a form name that itself ends in a suffix, and versions that carry
         // different statute annotations (the wire writes one list on the form).
-        record Geval(String reden, List<String> namen, List<List<String>> annotaties) {}
-        List<List<String>> geen = List.of(List.of(), List.of(), List.of());
-        for (Geval g : List.of(
-                new Geval("niet aaneengesloten", List.of("x #1", "y", "x #2"), geen),
-                new Geval("op één invoer", List.of("x #1", "y", "z"), geen),
-                new Geval("niet precies 1 tot en met", List.of("x #1", "x #3", "y"), geen),
-                new Geval("niet precies 1 tot en met", List.of("x #01", "x #2", "y"), geen),
-                new Geval("eindigt zelf op een versieachtervoegsel", List.of("x #1 #1", "x #1 #2", "y"), geen),
-                new Geval("verschillende statuutannotaties", List.of("x #1", "x #2", "y"),
+        record Case(String reason, List<String> names, List<List<String>> annotations) {}
+        List<List<String>> none = List.of(List.of(), List.of(), List.of());
+        for (Case g : List.of(
+                new Case("niet aaneengesloten", List.of("x #1", "y", "x #2"), none),
+                new Case("op één invoer", List.of("x #1", "y", "z"), none),
+                new Case("niet precies 1 tot en met", List.of("x #1", "x #3", "y"), none),
+                new Case("niet precies 1 tot en met", List.of("x #01", "x #2", "y"), none),
+                new Case("eindigt zelf op een versieachtervoegsel", List.of("x #1 #1", "x #1 #2", "y"), none),
+                new Case("verschillende statuutannotaties", List.of("x #1", "x #2", "y"),
                         List.of(List.of("art. 1"), List.of("art. 2"), List.of())))) {
-            RegelSpraakModel m = drieRegels();
+            RegelSpraakModel m = threeRules();
             for (int i = 0; i < 3; i++) {
                 ResolvedRegel r = m.resolvedRegels.get(i);
-                m.resolvedRegels.set(i, new ResolvedRegel(g.namen().get(i), r.soort(), r.doel(), r.waarde(),
-                        r.voorwaarde(), r.geldigheid(), g.annotaties().get(i)));
+                m.resolvedRegels.set(i, new ResolvedRegel(g.names().get(i), r.soort(), r.doel(), r.waarde(),
+                        r.voorwaarde(), r.geldigheid(), g.annotations().get(i)));
             }
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
-                    () -> g.namen() + " hoort geweigerd te worden");
-            assertTrue(e.getMessage().contains(g.reden()), () -> g.namen() + ": " + e.getMessage());
+                    () -> g.names() + " hoort geweigerd te worden");
+            assertTrue(e.getMessage().contains(g.reason()), () -> g.names() + ": " + e.getMessage());
         }
         // an entry without a suffix beside a group of the same name is a form of its own (WF-020 then speaks)
-        RegelSpraakModel m = drieRegels();
-        List<String> namen = List.of("x", "x #1", "x #2");
+        RegelSpraakModel m = threeRules();
+        List<String> names = List.of("x", "x #1", "x #2");
         for (int i = 0; i < 3; i++) {
             ResolvedRegel r = m.resolvedRegels.get(i);
-            m.resolvedRegels.set(i, new ResolvedRegel(namen.get(i), r.soort(), r.doel(), r.waarde(), r.voorwaarde(),
-                    r.geldigheid(), r.bronAnnotaties()));
+            m.resolvedRegels.set(i, new ResolvedRegel(names.get(i), r.soort(), r.doel(), r.waarde(), r.voorwaarde(),
+                    r.geldigheid(), r.statuteAnnotations()));
         }
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertEquals(2, c.split("\"node\":\"Rule\",\"name\":\"x\"", -1).length - 1,
@@ -1279,7 +1279,7 @@ class IrEmitterTest {
     }
 
     /** Three single-version rules on one attribute, for the grouping's refusals to rename. */
-    private static RegelSpraakModel drieRegels() {
+    private static RegelSpraakModel threeRules() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Vondst
                 de waarde Numeriek (geheel getal);
@@ -1297,7 +1297,7 @@ class IrEmitterTest {
         return m;
     }
 
-    @Test void de_regelsoort_gaat_de_wire_op_als_initialisatie_en_presentatie() {
+    @Test void the_rule_kind_goes_on_the_wire_as_initialisation_and_presentation() {
         // IR-SPEC ch. 3.1: a gelijkstelling and a berekening are initialisation false with their tag, an
         // initialisation is initialisation true without one, and a characteristic attribution carries neither —
         // that its target is a characteristic is the declaration's to say, and its value is the boolean true.
@@ -1332,7 +1332,7 @@ class IrEmitterTest {
                 () -> "de soort is structuur, geen veld:\n" + c);
     }
 
-    @Test void een_doel_dat_attribuut_en_kenmerk_noemt_wordt_geweigerd() {
+    @Test void a_target_that_names_attribute_and_characteristic_is_refused() {
         // WF-022: which member a rule writes decides its kind, so a target whose name is both an attribute and a
         // characteristic of the subject type decides nothing; the frontend does not write such a document. The
         // characteristic is added after resolution, so the rule itself is the resolver's.
@@ -1351,7 +1351,7 @@ class IrEmitterTest {
                 e::getMessage);
     }
 
-    @Test void de_uniciteiten_staan_in_een_lijst_de_enkelvoudige_eerst() {
+    @Test void the_uniquenesses_are_in_a_list_the_single_ones_first() {
         // IR-SPEC ch. 3.6: one list of uniquenesses, each a version with its sources — one for the single-type form,
         // two or more for the union — the single-source forms first and then the unions, whatever order the source
         // wrote them in. No rgs golden and no document of the parity zone carries a union.
@@ -1368,18 +1368,18 @@ class IrEmitterTest {
                 geldig altijd
                     De nummers van alle Vierkanten moeten uniek zijn.
             """);
-        String geldig = "\"validity\":{\"node\":\"Validity\"}";
-        int enkel = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\",\"versions\":[{\"sources\":["
-                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"nummer\"]}]," + geldig + ",\"source\":");
-        int unie = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"namenuniek\",\"versions\":[{\"sources\":["
+        String valid = "\"validity\":{\"node\":\"Validity\"}";
+        int single = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\",\"versions\":[{\"sources\":["
+                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"nummer\"]}]," + valid + ",\"source\":");
+        int union = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"namenuniek\",\"versions\":[{\"sources\":["
                 + "{\"node\":\"Source\",\"objectType\":\"Cirkel\",\"keys\":[\"naam\"]},"
-                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"naam\"]}]," + geldig + ",\"source\":");
-        assertTrue(c.indexOf("\"uniquenesses\":[{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\"") >= 0 && enkel >= 0
-                        && unie > enkel, () -> "de enkelvoudige vorm eerst, dan de unie, in één lijst:\n" + c);
+                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"naam\"]}]," + valid + ",\"source\":");
+        assertTrue(c.indexOf("\"uniquenesses\":[{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\"") >= 0 && single >= 0
+                        && union > single, () -> "de enkelvoudige vorm eerst, dan de unie, in één lijst:\n" + c);
         assertFalse(c.contains("uniciteitUnies"), () -> "de tweede lijst bestaat op de wire niet meer:\n" + c);
     }
 
-    @Test void een_verdeling_zonder_methode_wordt_weggelaten_en_gemeld() {
+    @Test void an_allocation_without_method_is_omitted_and_reported() {
         // IR-SPEC ch. 3.2 gives an allocation one of three methods. An allocation the frontend could not give one
         // (its placeholder) has no spelling: it is left out, and a WARNING that names it is appended to the
         // diagnostics, line 0 because the model keeps no line for it (WF-113 (a)). The other allocations stand.
@@ -1401,10 +1401,10 @@ class IrEmitterTest {
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"method\":\"equalShares\""),
                 "de ongemoeide verdeling wordt geschreven");
         dev.uchar.regelspraak.ir.ResolvedVerdeling v = m.verdelingen.get(0);
-        m.verdelingen.set(0, new dev.uchar.regelspraak.ir.ResolvedVerdeling(v.naam(), v.bronType(),
-                v.bronAttribuut(), v.doelType(), v.doelAttribuut(),
-                dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX, v.ratoAttribuut(),
-                v.maximumAttribuut(), v.afrondingDecimalen(), v.restantAttribuut(), v.groepeerAttribuut(), v.afnemend(),
+        m.verdelingen.set(0, new dev.uchar.regelspraak.ir.ResolvedVerdeling(v.naam(), v.sourceType(),
+                v.sourceAttribute(), v.targetType(), v.targetAttribute(),
+                dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX, v.ratioAttribute(),
+                v.maximumAttribute(), v.roundingDecimals(), v.remainderAttribute(), v.orderingAttribute(), v.descending(),
                 v.voorwaarde(), v.geldigheid()));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(c.contains("\"allocations\":[],"), () -> "de verdeling zonder methode hoort weg te blijven:\n" + c);
@@ -1413,10 +1413,10 @@ class IrEmitterTest {
                         + "\"verdeling'verdeling'wordtnietgeschreven:"), () -> "de WARNING noemt de verdeling:\n" + c);
         assertTrue(c.endsWith("\"line\":0}]}"), () -> "regel 0, als laatste diagnose:\n" + c);
         assertEquals(1, IrEmitter.ongeschrevenVerdelingen(m).size());
-        Verslag.verantwoord(IrEmitter.emit(m));
+        Report.assertAccountedFor(IrEmitter.emit(m));
     }
 
-    @Test void de_gebonden_dag_en_de_contextwaarden_hebben_elk_hun_knoop() {
+    @Test void the_bound_day_and_the_context_values_each_have_their_node() {
         // IR-SPEC ch. 4.1: the bound day of a day-kind definition is a node of its own without a name; the session
         // values are a ContextValue under their name. A day kind reads no session value (WF-031), so the evaluation
         // date is read by a rule.
@@ -1446,18 +1446,18 @@ class IrEmitterTest {
                 () -> "de v0-spelling van de naam staat niet op de wire:\n" + c);
     }
 
-    @Test void een_literal_zonder_type_en_een_onbekende_constante_worden_geweigerd() {
+    @Test void a_literal_without_type_and_an_unknown_constant_are_refused() {
         // The literal's value is the variant its type names, so a literal without a type has none; a boolean whose
         // lexeme is not waar or onwaar has no value; and a constant outside the bound day and the two session values
         // has no spelling at all. Each is refused rather than written in a guessed shape.
-        RegelSpraakModel m = drieRegels();
+        RegelSpraakModel m = threeRules();
         ResolvedRegel r = m.resolvedRegels.get(0);
-        Expr.Literal een = (Expr.Literal) r.waarde();
+        Expr.Literal one = (Expr.Literal) r.waarde();
         for (Expr waarde : List.<Expr>of(
-                new Expr.Literal(een.waarde(), null, een.bron()),
-                new Expr.Literal("ja", new Datatype.Booleaan(), een.bron()),
-                new Expr.Constante("Rekenmaand", new Datatype.DatumInDagen(), een.bron()),
-                new Expr.Constante("de dag", null, een.bron()))) {
+                new Expr.Literal(one.waarde(), null, one.bron()),
+                new Expr.Literal("ja", new Datatype.Booleaan(), one.bron()),
+                new Expr.Constante("Rekenmaand", new Datatype.DatumInDagen(), one.bron()),
+                new Expr.Constante("de dag", null, one.bron()))) {
             m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), waarde, r.voorwaarde(),
                     r.geldigheid()));
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
@@ -1467,7 +1467,7 @@ class IrEmitterTest {
         }
     }
 
-    @Test void een_komma_wordt_een_punt_en_de_bron_houdt_de_komma() {
+    @Test void a_comma_becomes_a_period_and_the_source_keeps_the_comma() {
         // IR-SPEC ch. 4.1 (WF-081): the number is written with a point; the author's decimal comma stays in the
         // source snippet.
         String c = emitCompact("""
@@ -1482,19 +1482,19 @@ class IrEmitterTest {
                 () -> "punt in de waarde, komma in de bron:\n" + c);
     }
 
-    @Test void een_vouwveld_op_de_andere_functieknoop_wordt_geweigerd() {
+    @Test void a_fold_field_on_the_other_function_node_is_refused() {
         // IR-SPEC ch. 4.3: an Aggregation has no place for a granularity, a BuiltinCall none for a fold's element
         // type, empty value or dimension selection. The frontend builds neither, so the fields are grafted on.
-        RegelSpraakModel m = drieRegels();
+        RegelSpraakModel m = threeRules();
         ResolvedRegel r = m.resolvedRegels.get(0);
         Objecttype vondst = m.objecttypen.get("Vondst");
-        Expr.AttribuutRef lezing = (Expr.AttribuutRef) r.doel();
+        Expr.AttribuutRef attributeRead = (Expr.AttribuutRef) r.doel();
         for (Expr waarde : List.<Expr>of(
-                new Expr.Functie(Expr.FunctieKind.ABSOLUTE_WAARDE, List.of(r.waarde()), vondst, null, null, null,
+                new Expr.FunctionCall(Expr.FunctionKind.ABSOLUTE_WAARDE, List.of(r.waarde()), vondst, null, null, null,
                         r.waarde().type(), r.waarde().bron()),
-                new Expr.Functie(Expr.FunctieKind.ABSOLUTE_WAARDE, List.of(r.waarde()), null, r.waarde(), null, null,
+                new Expr.FunctionCall(Expr.FunctionKind.ABSOLUTE_WAARDE, List.of(r.waarde()), null, r.waarde(), null, null,
                         r.waarde().type(), r.waarde().bron()),
-                new Expr.Functie(Expr.FunctieKind.SOM, List.of(lezing), null, null, null, null,
+                new Expr.FunctionCall(Expr.FunctionKind.SOM, List.of(attributeRead), null, null, null, null,
                         r.waarde().type(), r.waarde().bron(), RegelSpraakModel.Granulariteit.MAAND))) {
             m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), waarde, r.voorwaarde(),
                     r.geldigheid()));
@@ -1504,15 +1504,15 @@ class IrEmitterTest {
         }
     }
 
-    @Test void een_feitcreatie_naar_een_ander_type_dan_de_vuller_wordt_geweigerd() {
+    @Test void a_fact_creation_to_another_type_than_the_filler_is_refused() {
         // IR-SPEC ch. 3.4: the target type is not written — a reader takes the declared filler of the target role —
         // so a creation whose target type the model holds otherwise would be read as another creation.
-        RegelSpraakModel m = Resolver.resolve(FEITCREATIE);
+        RegelSpraakModel m = Resolver.resolve(FACT_CREATION);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        ResolvedFeitCreatie fc = m.feitCreaties.get(0);
-        m.feitCreaties.set(0, new ResolvedFeitCreatie(fc.naam(), fc.anker(), m.objecttypen.get("Afdeling"), fc.zetVeld(),
-                fc.joinVeld(), fc.tussenstappen(), fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.ankerRol(),
-                fc.doelRol(), fc.joinRol()));
+        ResolvedFactCreation fc = m.feitCreaties.get(0);
+        m.feitCreaties.set(0, new ResolvedFactCreation(fc.naam(), fc.anchor(), m.objecttypen.get("Afdeling"), fc.setField(),
+                fc.joinField(), fc.pathSteps(), fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.anchorRole(),
+                fc.targetRole(), fc.path()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("gedeclareerde vuller van de rol 'sponsorproject'"), e::getMessage);
     }
@@ -1520,7 +1520,7 @@ class IrEmitterTest {
     // ---------------- L5: the source record ----------------
 
     /** A rule group over a rule and a consistency rule: the two nodes whose source record carries a line. */
-    private static final String BRONRECORD = """
+    private static final String SOURCE_REFERENCE = """
             Objecttype de Vondst (mv: Vondsten)
                 het gewicht Numeriek (geheel getal);
                 de waarde Numeriek (geheel getal);
@@ -1538,8 +1538,8 @@ class IrEmitterTest {
     /** IR-SPEC ch. 4 (B26): a node's source text is its record {@code source}, the snippet first. The line stands in
      *  the record of a consistency version and of a rule group alone — the two places the model keeps one — and no
      *  record carries a file or a column, although the model's anchor of every parsed node holds both. */
-    @Test void het_bronrecord_draagt_de_regel_alleen_op_de_consistentieversie_en_de_regelgroep() {
-        RegelSpraakModel m = Resolver.resolve(BRONRECORD);
+    @Test void the_source_reference_carries_the_rule_only_on_the_consistency_version_and_the_rule_group() {
+        RegelSpraakModel m = Resolver.resolve(SOURCE_REFERENCE);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
         assertNotNull(m.consistenties.get(0).assertie().bron().file(), "het model kent het bestand van de assertie");
@@ -1555,23 +1555,23 @@ class IrEmitterTest {
 
     /** The model's 0 is "no line": a synthetic node has none, and the record admits a line of at least 1 only, so the
      *  record goes out without it. A negative line has no meaning and is refused. */
-    @Test void een_regel_0_blijft_weg_en_een_negatieve_regel_wordt_geweigerd() {
-        RegelSpraakModel m = Resolver.resolve(BRONRECORD);
+    @Test void a_line_0_stays_away_and_a_negative_line_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(SOURCE_REFERENCE);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         var cons = m.consistenties.get(0);
-        var groep = m.regelGroepen.get(0);
-        m.consistenties.set(0, new dev.uchar.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
+        var group = m.regelGroepen.get(0);
+        m.consistenties.set(0, new dev.uchar.regelspraak.ir.ResolvedConsistency(cons.naam(), cons.subject(),
                 cons.assertie(), cons.bron(), 0, cons.geldigheid()));
-        m.regelGroepen.set(0, new dev.uchar.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
-                groep.leden(), groep.bron(), 0));
+        m.regelGroepen.set(0, new dev.uchar.regelspraak.ir.ResolvedRegelGroep(group.naam(), group.recursive(),
+                group.leden(), group.bron(), 0));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(c.contains("\"source\":{\"snippet\":\"HetgewichtvaneenVondstmoetgroterzijndan0\"}}"),
                 () -> "de consistentieversie zonder regel:\n" + c);
         assertTrue(c.contains("\"source\":{\"snippet\":\"weging\"}}"), () -> "de regelgroep zonder regel:\n" + c);
         assertFalse(c.contains("\"line\":"), () -> "geen regel 0 op de wire:\n" + c);
 
-        m.regelGroepen.set(0, new dev.uchar.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
-                groep.leden(), groep.bron(), -1));
+        m.regelGroepen.set(0, new dev.uchar.regelspraak.ir.ResolvedRegelGroep(group.naam(), group.recursive(),
+                group.leden(), group.bron(), -1));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         // the refusal speaks the readers' sentence since the card frontend-emitterrestanten
         assertEquals("IrEmitter: a source line is at least 1", e.getMessage());
@@ -1579,16 +1579,16 @@ class IrEmitterTest {
 
     /** A node without source text carries no record; an empty text is refused, not dropped: a snippet is never empty,
      *  and a document that lost the record would read as a node without source text. */
-    @Test void een_knoop_zonder_brontekst_draagt_geen_record_en_een_lege_wordt_geweigerd() {
-        RegelSpraakModel m = Resolver.resolve(BRONRECORD);
+    @Test void a_node_without_source_text_carries_no_record_and_an_empty_one_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(SOURCE_REFERENCE);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         var cons = m.consistenties.get(0);
         Conditie.Vergelijking v = (Conditie.Vergelijking) cons.assertie();
-        Expr.Literal nul = (Expr.Literal) v.rechts();
+        Expr.Literal zero = (Expr.Literal) v.rechts();
         for (String snippet : new String[] { null, "" }) {
-            m.consistenties.set(0, new dev.uchar.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
-                    new Conditie.Vergelijking(v.op(), v.links(), new Expr.Literal(nul.waarde(), nul.type(),
-                            Bron.synthetisch(snippet)), v.periode(), v.bron()), cons.bron(), cons.line(), cons.geldigheid()));
+            m.consistenties.set(0, new dev.uchar.regelspraak.ir.ResolvedConsistency(cons.naam(), cons.subject(),
+                    new Conditie.Vergelijking(v.op(), v.links(), new Expr.Literal(zero.waarde(), zero.type(),
+                            Bron.synthetic(snippet)), v.periode(), v.bron()), cons.bron(), cons.line(), cons.geldigheid()));
             if (snippet == null) {
                 String c = IrEmitter.emit(m).replaceAll("\\s+", "");
                 assertTrue(c.contains("\"value\":{\"number\":\"0\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
@@ -1617,14 +1617,14 @@ class IrEmitterTest {
 
     /** A second fact type in which a Werknemer reaches an Afdeling through a role also called afdeling: the
      *  by-name and the by-pair search both stop being unique. */
-    private static void tweedeAfdelingsrol(RegelSpraakModel m) {
+    private static void secondAfdelingRole(RegelSpraakModel m) {
         RegelSpraakModel.Feittype ft = new RegelSpraakModel.Feittype("detachering");
         ft.rollen.add(new RegelSpraakModel.Rol("gedetacheerde", "Werknemer", null, false));
         ft.rollen.add(new RegelSpraakModel.Rol("afdeling", "Afdeling", null, false));
         m.feittypen.put(ft.naam, ft);
     }
 
-    private static final String FEITCREATIE = """
+    private static final String FACT_CREATION = """
             Objecttype het Bedrijf
             Objecttype de Afdeling
             Objecttype het Project

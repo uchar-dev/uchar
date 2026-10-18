@@ -25,13 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>{@code DrlTranspiler.scope} derived the aggregation join and emitted {@code <rol> == $subject} without
  *       asking whether that role has a bean field. The exec counterpart has asked since 2026-08-30.</li>
  *   <li>{@code DrlTranspiler.feitCreatie} asked its ch. 13.3.9 questions only behind
- *       {@code if (anker != null && doel != null && zetVeld != null && joinVeld != null)}, and let a null one fall
+ *       {@code if (anker != null && doel != null && setField != null && joinField != null)}, and let a null one fall
  *       through to the emission. The exec counterpart refuses all four unconditionally.</li>
  * </ol>
  *
  * <p>No corpus form reaches either place with a missing field or a null position — measured, not assumed: the whole
  * golden set with case files (168) through the DRL branch gives ZERO bare {@code EXCLUDE drl compile} outcomes, and
- * the four feitcreaties in {@code corpus/golden} carried no null anker, doel, zetVeld or joinVeld (the last two left
+ * the four feitcreaties in {@code corpus/golden} carried no null anker, doel, setField or joinField (the last two left
  * the wire at L2, with the rest of the bean-field names). So every model
  * below is SYNTHETIC, built in memory from a golden's {@code ir.json} off the wire; the corpus files are read and
  * never written. Each was pushed through the verifier, {@code ref/} and the clingo backend, and the measurements
@@ -163,7 +163,7 @@ class BranchEqualityWitnessTest {
 
     @Test void the_drl_fact_creation_refuses_an_unnamed_creation() throws Exception {
         // `naam` is a wire-nullable position of this construct that no well-formedness rule covered when this row was
-        // written: WF-034 gated zetVeld, joinVeld and the tussenstappen until L2 and crosses the symbolic block since,
+        // written: WF-034 gated setField, joinField and the tussenstappen until L2 and crosses the symbolic block since,
         // and WF-094 clause (d) gated the five KEYED tables while feitCreaties is a LIST. Since then WF-107 covers it:
         // the verifier rejects a nameless form ("form in factCreations carries no name", measured 2026-10-10), so the
         // document is NOT well-formed, and the exec-model branch refuses it by name. ref and clingo still run
@@ -182,7 +182,7 @@ class BranchEqualityWitnessTest {
 
     @Test void two_unnamed_creations_do_not_collide_on_their_fallback_name() throws Exception {
         // The flank the nameless fallback itself opens: a DRL package refuses duplicate rule names, so ONE flat
-        // fallback string turns two nameless creations into "Duplicate rule name: <unnamed ResolvedFeitCreatie>"
+        // fallback string turns two nameless creations into "Duplicate rule name: <unnamed ResolvedFactCreation>"
         // — measured — where the destructive exec-model branch played them. That would have replaced the inequality
         // this card closes with another one, so the fallback carried the construct's WIRE POSITION, and the destructive
         // DRL-text branch played until card drl-teksttak-op-truth-maintenance. The verifier rejects a nameless form

@@ -205,7 +205,7 @@ the characteristic is false: a characteristic the case input sets stays set
 (RegelSpraak §3.5: input or attribution), and without input the closed world
 makes it false anyway.
 
-**Refusals and the warning** (witness: `NietInUitzonderingTest`):
+**Refusals and the warning** (witness: `NotInExceptionTest`):
 
 - a negated kenmerktoekenning in a plain `Regel` — no exception, no member of
   an unordered block, no base of a chain — is an ERROR in the verifier's WF-022
@@ -358,7 +358,7 @@ is written with this header; its `ir.json` is byte-identical to the one its
 `Uitzondering op` gave before form 2.
 
 **Refusals**, each one ERROR at the block, naming what can be written instead
-(witness: `UitzonderingOpUitzonderingTest`):
+(witness: `ExceptionOnExceptionTest`):
 
 - a carrier that names nothing: "Uitzondering op 'X': geen basisregel met die
   naam gevonden, en ook geen uitzondering of afwijking — noem als drager …", and
@@ -466,7 +466,7 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   (`RuleChecker.defaultVan`), so the nested lowering inherits the placement. The
   `ExceptionGroup` itself and a group-default carry the text of the head that
   made them, not an annotation (form 2, above; witness
-  `UitzonderingOpUitzonderingTest`);
+  `ExceptionOnExceptionTest`);
 - an annotation written above the `Uitzonderingen ongeordend:` header belongs
   to no rule — an annotation belongs to the rule directly below it, and the
   header is none — so it reaches no default and no group (the group-default an
@@ -489,7 +489,7 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   is common practice — 351 of the 736 annotations in the measured operational
   ruleset collection stand above a definition.
 
-Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
+Witness: `DefaultsSourceAnnotationTest`, `SourceAnnotationPlaceTest`.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
@@ -553,7 +553,7 @@ vocabulary the group's designation is composed part by part from B's and S's
 (section "Gegenereerde elementen", "Part by part").
 
 Refused, each one ERROR at the block, the sentence naming what can be written
-instead (witness: `AfwijkingOpSubtypeTest`, every sentence literal):
+instead (witness: `DeviationOnSubtypeTest`, every sentence literal):
 
 - a base of its own on the target, on the subtype or on a type between it and
   the base's subject: a plain rule, or the base of a tree. That base replaces the
@@ -674,7 +674,7 @@ a group whose members do not include its base, and an `Uitzonderingen
 ongeordend` block directly after a group — because at that position the rules
 behind the block would fall outside the group in silence. No `.rgs` source in
 the repository — golden, rood or parity zone — carries a `Regelgroep` at all,
-so nothing in the corpus moves. Witness: `RegelgroepUitzonderingTest`.
+so nothing in the corpus moves. Witness: `RuleGroupExceptionTest`.
 
 ### Emission (v0-mirror invariant)
 
@@ -852,7 +852,7 @@ silently fold the wrong set, which is by far the worse of the two.
   dimension or plural, another article or kind of characteristic, a second
   marker) is an ERROR on the repeat's line that names both lines, and so is a
   role line in an extension whose name is a role of a fact type the type takes
-  part in (witness: `ExtensieHerdeclaratieTest`, every sentence whole). Until
+  part in (witness: `ExtensionRedeclarationTest`, every sentence whole). Until
   then the repeat replaced the declaration without a diagnostic, also with
   another datatype. The word-for-word repeat is admitted because it changes
   nothing and the casus of the repository's parity zone writes three
@@ -959,7 +959,7 @@ case is the grammar itself, and both of its failure modes are LOUD:
 
 The shift is loud in both, never a different answer. That pair — measured
 absence plus a bounded failure — is the whole argument, and both halves carry a
-fixture (`AantalGevuldeDialectTest`).
+fixture (`FilledCountDialectTest`).
 
 ### Lowering (resolver)
 
@@ -984,7 +984,7 @@ one argument, reusing the value folds' machinery rather than adding any:
 WF-096 admits a set reading on a value fold's source alone and a filled count
 is a count in its RESULT but a value fold in its READING. That set and the
 verifier's `set_source_exempt` are one boundary in two languages;
-`VouwsoortenGrensTest` now READS the verifier's own kind list and the line that
+`FoldKindsBoundaryTest` now READS the verifier's own kind list and the line that
 keys on it, so the two cannot drift again in either direction.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
@@ -1062,7 +1062,7 @@ for the supertype-named read say how to read the subject's own date instead.
 So the fence compares by identity, as the Drools gate
 `Tijdrekening.periodeGrensLowerbaar` does; with `⊑` it would pass the
 supertype-named read on to a verifier that refuses it. Witness:
-`PeriodegrensTest`, `StructuurZinTest`.
+`PeriodBoundaryTest`, `StructureSentenceTest`.
 
 **The window's position — WF-112** (fix round 2, 2026-09-23). v2.3.0 lets a
 "het is de periode …" bullet stand in any compound condition (§13.4.15.69),
@@ -1078,7 +1078,7 @@ the reach of the verifier's own walk, conditions nested in expressions included
 window, with an ERROR naming the quantifier, in the verifier's WF-112
 sentence. Under 'alle', or as the rule's own
 voorwaardendeel, the window stays admitted. No source in any zone writes the
-refused form. Witness: `VensterKwantorTest`.
+refused form. Witness: `WindowQuantifierTest`.
 
 **A window bullet written last in a compound subselection** (same fix round).
 The grammar ends such a subselection at the bullet's words "het is de periode",
@@ -1087,7 +1087,7 @@ the RULE's voorwaardendeel: a window on the whole rule, which is a different
 document from the one written, while the warnings name only the marker. The
 same bullet written earlier in the list is read as a window inside the filter.
 The frontend refuses the split with an ERROR at the rule; the grammar is not
-changed. Witness: `RegeldoelTest`.
+changed. Witness: `RuleTargetTest`.
 
 ---
 
@@ -1113,7 +1113,7 @@ A target that navigates from an implied subject ("De premie van zijn vakhouder
 …") is refused the same way; it ended in the emitter's exception until the fix
 round of 2026-09-26. A name that is both an attribute and a characteristic of
 the subject type decides no member and is refused in WF-022's sentence
-(`StructuurZinTest`). Witness: `RegeldoelTest`.
+(`StructureSentenceTest`). Witness: `RuleTargetTest`.
 
 **A cell of a dimensioned attribute as the target** (fix round 3). The wire has
 no cell assignment: a rule's target is an attribute reference, which WF-022
@@ -1126,7 +1126,7 @@ document than the one written. It is refused now with the cell named
 dimension. A whole-attribute write of a dimensioned attribute, with no label at
 all, stays unfenced: the verifier admits it, `ref` and clingo write the value as
 a scalar, and the Drools exec branch fails at fire time — a norm question for
-the verifier line, recorded in the card. Witness: `DimensieDoelTest`.
+the verifier line, recorded in the card. Witness: `DimensionTargetTest`.
 
 ---
 
@@ -1263,7 +1263,7 @@ subtype's instances alone — 5 where 9 is right in ref, clingo and both Drools
 branches, a silent wrong answer. A name that names both a role the walk binds
 and an object type outside the landing ("alle wrakken" for a role `wrak (mv:
 wrakken)` filled by Vondst, beside a type Wrak) read as the role before and is
-refused now. Witness: `ElementnaamVouwbronTest`.
+refused now. Witness: `ElementNameFoldSourceTest`.
 
 The matrix of a quantifier fold reads with the element as subject
 (RUNTIME-SEMANTICS ch. 3.9a). An operand beside the quantified one that names
@@ -1274,7 +1274,7 @@ which the element is a to-many step, and refused as a read not laid as a
 navigation, where "de sluitdag van zijn jutter" bound. Its wire is that of the
 possessive form. Only an operand that left such a read unresolved is built
 again, so every operand that bound stays as it was. Witness:
-`KwantormatrixElementnaamTest`.
+`QuantifierMatrixElementNameTest`.
 
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
@@ -1282,7 +1282,7 @@ each ended in an `IllegalStateException` of the emitter, and so did a count or
 a sum over the type's plural with two relations or none. Now case 2 binds and
 the others end in the ERROR; every rgs golden and every source of the parity
 zone re-emits unchanged (gates 10 and 11), since each read that binds now threw
-before. Witnesses: `NavigatiekeuzeTest`, `TelbereikTest`, `SubtypeDialectTest`.
+before. Witnesses: `NavigationChoiceTest`, `CountRangeTest`, `SubtypeDialectTest`.
 
 ---
 
@@ -1353,7 +1353,7 @@ under a subselection, one step to a date) were markers (a WARNING, and the
 subselection an ERROR) and now play in ref, clingo, the Drools exec branch and,
 but for the earliest date, the DRL-text branch; so do a sum, a sum with a
 fallback, a minimum, a filled count and a total over two steps. Witnesses:
-`StappenNaDeVerzamelingTest`, the golden `jutterswet-zwaarste-weging`.
+`StepsAfterSetTest`, the golden `jutterswet-zwaarste-weging`.
 
 ---
 
@@ -1397,7 +1397,7 @@ spellings (`er een vondst van de Jutter is die …`, `hij een vondst heeft die
 the anchor tails "" and `niet`; all 178 documents (every source alone, every
 scenario document with its source, the casus of the parity zone) emit the same
 IR, diagnostics, case files and exit code before and after. Witnesses:
-`OntkendeKwantorTest`, the golden `jutterswet-zinkende-jutter`.
+`NegatedQuantifierTest`, the golden `jutterswet-zinkende-jutter`.
 
 ---
 
@@ -1443,7 +1443,7 @@ which is the class `spec/PLAN.md` §6 calls a spec fault.
 **The fence stands in the resolver, not in the grammar** — `ExpressieBouwer`'s
 `tellingAriteitFout`, an ERROR, so `Resolver.irModus` writes nothing and the
 ill-formed document never reaches disk. Witness:
-`AantalOpgesomdTest` (both spellings, the element-binding route, the
+`CountEnumeratedTest` (both spellings, the element-binding route, the
 off-disk property, and the two forms that must stay clean).
 
 Why not simply delete the tail:
@@ -1458,7 +1458,7 @@ Why not simply delete the tail:
 - The refusal is the same either way. What differs is only whether the author
   gets a named refusal in the verifier's sentence, or a syntax error.
 
-This is the same posture `AantalSetbronTest` records one decision earlier: when
+This is the same posture `CountSetSourceTest` records one decision earlier: when
 the wire narrows, the frontend's fence moves and its grammar does not.
 
 ### Half of it stopped being a divergence (2026-09-20, the unie-telling card)
@@ -1518,7 +1518,7 @@ mechanism fact — it lowers a concatenation by OR-ing the operands' filter term
 and has no term to OR for an unfiltered operand — and our wire carries the
 selections themselves, so `filter: null` is the ordinary case.
 
-Witness: `AantalUnieTest` (the two-relation union, the two-characteristic union,
+Witness: `CountUnionTest` (the two-relation union, the two-characteristic union,
 the unfiltered selection, the comma spelling, the wire shape, the three named
 refusals, and the two counter-proofs). Measured red-first on the pre-card
 frontend (5b42e5b9): both of this card's golden sources — `jutterswet-vondstunie`
@@ -1565,7 +1565,7 @@ parameter or a "Daarbij geldt" variable that shares a type's name keeps the
 generic context. A subselection
 over a bare type ("het aantal Vondsten die gewogen zijn") parses another way
 and is refused by the subselection fence of §5.6 with its own sentence.
-Witness: `TypemeervoudTellingTest`.
+Witness: `TypePluralCountTest`.
 
 ---
 
@@ -1609,7 +1609,7 @@ expressible on the wire (WF-102 (c)); the card `frontend-kwantor-over-een-pad`
 carries it. All 196 RegelSpraak sources of the repository, the 28 scenario goldens
 as test documents and the 108 sources of the distribution emit the same IR,
 diagnostics, case files and exit code before and after. Witness
-`TellingOverEenPadTest`.
+`CountOverPathTest`.
 
 
 ## The percentage forms — "het percentage P van Y", with and without the '%'
@@ -1668,7 +1668,7 @@ carries no unit. A first version placed the parenthesised form as a suffix of
 name takes the '%' does not see a predicate inside `expressie`. All 196
 RegelSpraak sources of the repository and the 108 of the distribution emit the
 same IR, diagnostics and exit code before and after. Witnesses:
-`PercentageLezingTest`, the golden `jutterswet-havengeld`.
+`PercentageReadTest`, the golden `jutterswet-havengeld`.
 
 **Not carried.** A product with a percentage ("zijn getaxeerde waarde maal het
 percentage havengeld") stays the typing ERROR "maal vereist numerieke
@@ -1712,13 +1712,13 @@ resolver refuses it there with a message of its own instead of a bare syntax
 error. The token reserves no name word: `mag`, `opgegeven` and `worden` keep
 lexing as `LOWER_ID` everywhere else, and a comment, an enumeration literal or
 a text literal that contains the sequence is never lexed as the token (witness:
-`OpgaveMarkeringTest`, an attribute named "mag worden stand" and the text
+`InputMarkingTest`, an attribute named "mag worden stand" and the text
 literal `"(mag opgegeven worden)"`).
 
 An extension marks an attribute its type already declares by writing that
 declaration again word for word with the marker added (§5, on the extension),
 and the lowering is the one of the marker in the head, the consistency's source
-line aside (witness: `ExtensieHerdeclaratieTest`).
+line aside (witness: `ExtensionRedeclarationTest`).
 
 ### Inertness — measured, not assumed
 
@@ -1851,7 +1851,7 @@ sibling subtypes each give the instances of their own type their own date.
 
 Each is one ERROR at the line of the marked declaration, naming the first
 reason that holds, and the marker then generates nothing (witness:
-`OpgaveMarkeringTest`, every sentence literal):
+`InputMarkingTest`, every sentence literal):
 
 - the marker on a characteristic — the positive direction holds without it,
   since input on a characteristic stands against every decision (ch. 7.8), and
@@ -1967,7 +1967,7 @@ which is the measurement above stated as a property.
   still wrote the document, as it did for every cycle on a rule's own subject;
   since then it refuses it beside the WARNING with an ERROR in the verifier's
   sentence (section "Kringen: WF-045 en WF-051 in check"; witness:
-  `ZelflezingKringTest`). The
+  `SelfReadCycleTest`). The
   clamp idiom "x = x, met een maximum van y" is such a self-read too, and so is
   a computation whose condition reads its own target: the verifier refuses both
   under WF-045 as well (measured the same day). The frontend's graph mirrors the
@@ -1988,7 +1988,7 @@ which is the measurement above stated as a property.
   WARNING in the names the author read, `kringverwijzing tussen berekeningen:
   Vondst.berekende waarde -> Vondst.premie -> Vondst.berekende waarde — …`; a
   cycle the authored forms already showed is not warned twice, since there
-  `berekende X` counts as X (witness: `ZelflezingKringTest`). A document without
+  `berekende X` counts as X (witness: `SelfReadCycleTest`). A document without
   a lowered marker never reaches that second pass. A navigated read, a read in
   the filter or test of a fold, a role check and a channel test are no edges of
   it; a read in a fold's argument is one, as in the verifier. And a node
@@ -2162,7 +2162,7 @@ casus re-emit unchanged.
 
 ### Lowering (resolver)
 
-The resolver (`Benamingen`) reads the side table in two passes. After the
+The resolver (`Designations`) reads the side table in two passes. After the
 declarations it reads every vocabulary head, then every annotation of every
 designatable declaration, and adds each designation to the model's side
 table (`RegelSpraakModel.vocabulaires`, `.benamingen`) under the declaration
@@ -2185,13 +2185,13 @@ refused as any undeclared name is — as a target by WF-022's refusal
 gedeclareerd attribuut van Jutter (WF-022, IR-SPEC ch. 3.1)"), in a read as
 an unresolved name that stays a marker with its warning — and a designation
 that spells the canonical name of another declaration reads that other one
-(witnesses: `VocabulaireDialectTest`).
+(witnesses: `VocabularyDialectTest`).
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
 Every refusal is an ERROR on the line of the head or the annotation (a
 declaration's line for the checks of the second pass) in a sentence of its
-own, placeholders in angle brackets (witnesses: `VocabulaireDialectTest`,
+own, placeholders in angle brackets (witnesses: `VocabularyDialectTest`,
 every sentence on its line):
 
 - `vocabulaire 'mv': die naam is gereserveerd, want '(mv:' opent de
@@ -2285,7 +2285,7 @@ designatable node writes its `designations` as its LAST field, and an
 enumeration's declaration its `valueDesignations` after `values`, value by
 value. Each is written only where there is something to write, so a
 document without the extension emits exactly what it emitted before, which
-is the measurement above stated as a property (`VocabulaireDialectTest`
+is the measurement above stated as a property (`VocabularyDialectTest`
 holds it on the golden's source with its annotations taken out, and gate 10
 on the corpus).
 
@@ -2317,7 +2317,7 @@ on the corpus).
 - Witnesses: the golden `jutterswet-vocabulaires` (both vocabularies on every
   kind; ref, clingo and both Drools branches replay its two cases, and gate
   13's vocabulary leg replays them stripped, exchanged and rotated), the
-  frontend's `VocabulaireDialectTest` and the Drools backend's
+  frontend's `VocabularyDialectTest` and the Drools backend's
   `VocabularyWitnessTest` (the model's reading entry: `benaming`,
   `effectieveNaam`, `benoemd`).
 
@@ -2392,7 +2392,7 @@ rest; a one-word member read correctly only because the longer head then left
 no member to parse. Measured: those forms now read, the forms that read before
 emit the same IR, and all 196 RegelSpraak sources of the repository and the 108
 of the distribution emit the same IR, diagnostics and exit code. Witness:
-`KopRegeleindeTest`.
+`HeadLineEndTest`.
 
 ### Inertness — measured, not assumed
 
@@ -2463,7 +2463,7 @@ diagnostic to act on.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
-Each on the line of the declaration it names (witnesses: `DeclaratiekopNaamTest`,
+Each on the line of the declaration it names (witnesses: `DeclarationHeadNameTest`,
 every sentence whole, on its line):
 
 - ERROR, the line check: `<drager>: <lid> begint met '<woord>' op de regel
@@ -2518,7 +2518,7 @@ wire — its default joins the group of its base — and is not judged here; the
 refuses two such blocks of one name in its own words. Before: such a document
 passed `check` without a diagnostic, the verifier refused it, ref and clingo played
 it, and the Drools exec branch kept one of the two rules. No source of the corpora
-carries two heads of one name. Witness `DubbeleVormnaamTest`.
+carries two heads of one name. Witness `DuplicateFormNameTest`.
 
 ### Emission
 
@@ -2547,7 +2547,7 @@ list, as every WARNING does.
   premierecht`, over rules that compute a premium, a sum, a filtered count and
   a threshold; its scenario document writes `een Recht op premie R1`; ref,
   clingo and both Drools branches replay its two cases) and the frontend's
-  `DeclaratiekopNaamTest`.
+  `DeclarationHeadNameTest`.
 
 ---
 
@@ -2559,7 +2559,7 @@ record brought into this frontend at the card `scenariolaag-in-uchar`
 reachable only through the start rule `testDocument`: `regelSpraakDocument`
 is unchanged, so production parsing and the re-emission of every golden are
 untouched (gate 10), and a scenario block does not parse there
-(`ScenarioParseTest`), nor does a parameter set (`ScenarioParametersetTest`).
+(`ScenarioParseTest`), nor does a parameter set (`ScenarioParameterSetTest`).
 The parameter set came at the card `scenario-parametersets` (2026-09-27):
 the source toolchain read parameter sets from a JSON file beside a scenario
 or a service descriptor, and here a set is a block of the scenario
@@ -2686,7 +2686,7 @@ Measured on 2026-09-27, before the parameter set's own witnesses: the word
 `parameterset`, in any capitalisation, occurred in none of the 104
 RegelSpraak sources of this repository outside the parity zone;
 `Parametersets` stays an `UPPER_ID` and `met parameters`
-stays `MET` `LOWER_ID` (`ScenarioParametersetTest`).
+stays `MET` `LOWER_ID` (`ScenarioParameterSetTest`).
 
 ### Resolution
 
@@ -2834,7 +2834,7 @@ serialiser, so a case file and an IR document share one shape.
   only where a scope names it, with the groups that take it. Before, a scope
   that named the base carried its group alone, and a subtype instance got
   the base's value where the whole document gives it the subtype's exception
-  (`ScenarioErflijnScopeTest`). Without a scope the document is the
+  (`ScenarioInheritanceLineScopeTest`). Without a scope the document is the
   production route's.
 
 The CLI writes both: `Resolver --ir <out.json> --cases <map> <file.rgs…>`,
@@ -2982,7 +2982,7 @@ the restatement, the role key and the timelines), `ScenarioMutatieTest`
 (a clean document and nine mutations of it, a cycle and a duplicate among
 them), `ScenarioLoweringTest` (a case file written by hand from the
 schema, the file name, the scope and its IR document, the CLI) and
-`ScenarioParametersetTest` (the two tokens, a case file with a jaargang and
+`ScenarioParameterSetTest` (the two tokens, a case file with a jaargang and
 a whole timeline written by hand, the exclusive end, and each refusal of
 the parameter set on its line). The corpus:
 nine goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
@@ -3025,14 +3025,14 @@ carried one, and refusing it refused the casus. That cycle did not exist. A fact
 target role's filler in the graph, a proxy from before every fold named its relation, and an object creation that
 counts members of a role over that type read that population; the fact creation that links those members to the
 created object closed the cycle (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-premiepot`). The proxy went the same
-day, in the verifier and in `Afhankelijkheden`, and the bound with it: the casus has no cycle, and a cycle through an
+day, in the verifier and in `Dependencies`, and the bound with it: the casus has no cycle, and a cycle through an
 object creation — a creation of its own subject's type reads the population it grows — is refused like any other
-(`CreatieRolTest`, `SetlezingZonderVouwTest`). Since that day a role check reads the relation it names as well,
+(`CreationRoleTest`, `SetReadWithoutFoldTest`). Since that day a role check reads the relation it names as well,
 negated as a negative edge (`resolver/FeitcreatieRandenTest`).
 
 A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
 2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
-members the author wrote (`RecursieTest`, `ZelflezingKringTest`). Measured before, on the frontend of `b3861896`:
+members the author wrote (`RecursieTest`, `SelfReadCycleTest`). Measured before, on the frontend of `b3861896`:
 "Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is penninggerechtigd indien hij
 niet uitgesloten is" passed `check` with that WARNING alone, the verifier refused the document under WF-045 and twice
 under WF-046, and the ASP backend found two stable models for a Jutter without input. No golden, no source of the
@@ -3042,8 +3042,8 @@ een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursi
 draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle through no recursive creation: uitsluiting
 -> penningrecht -> uitsluiting" — measured equal to the verifier's WF-046 lines on the eleven WF-045 cycles in the 868
 documents of the corpus zones and the parity zone, five of them with a negative edge (2026-10-06). A negative edge
-on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `AfhankelijkheidskringTest`,
-`ZelflezingKringTest`, and the negatief `wf046-kenmerken-lezen-elkaars-ontkenning`.
+on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `DependencyCycleTest`,
+`SelfReadCycleTest`, and the negatief `wf046-kenmerken-lezen-elkaars-ontkenning`.
 
 
 ## Bronvolgorde: what one rule reads of another does not depend on the order
@@ -3078,7 +3078,7 @@ the verifier the same, and a duplicate day kind or rule name is reported at the 
 the rule of a generated member (section "A fold over a set and to-one steps after it") takes as its source snippet
 when two folds generate one member; and, by design, the order of the blocks of `Uitzondering op`, where the one
 written later stands higher (§4). Blocks that group the rules after them (`Regelgroep`, `Uitzonderingen ongeordend`)
-are syntax. Witness: `BronvolgordeTest`.
+are syntax. Witness: `SourceOrderTest`.
 
 
 ## Producer refusals without a reader sentence
@@ -3099,10 +3099,10 @@ its binding, `missing field 'factType'`), a rule target whose name is both an
 attribute and a characteristic of its type (WF-022), a written day-kind spelling
 another day kind already carries (WF-017; a derived plural gives way instead), a
 parent-scoped uniqueness whose parent role is to-many (WF-054);
-witnesses `EenheidZinTest`,
-`TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`,
-`OngebondenLezingTest`), and
-`LezerszinGrensTest` requires every English fragment of the resolver's and the
+witnesses `UnitSentenceTest`,
+`TypingSentenceTest`, `FoldOperandSentenceTest`, `StructureSentenceTest`,
+`UnboundReadTest`), and
+`ReaderSentenceBoundaryTest` requires every English fragment of the resolver's and the
 emitter's refusals to stand in the verifier's string literals, so a sentence the
 verifier rewords turns it red. The refusals listed here keep their Dutch words
 because no reader refuses that document, measured on 2026-09-25 by changing a
@@ -3212,11 +3212,11 @@ document after a Dutch part in the author's words:
 
 1. The part behind one of its `van`s is a declared attribute of the type it is
    read on, or the written plural of one: the name took in a word before `van`
-   (`StructuurZinTest`, at every position the emitter writes a read at).
+   (`StructureSentenceTest`, at every position the emitter writes a read at).
 2. The read reaches a role — by its path, or by a role name or a type name
    behind one of its `van`s, walked outward from where the read stands as the
    resolver's chain walk walks it — and its member is not on the filler of the
-   last role (`OngebondenLezingTest`: in a value, a condition, the
+   last role (`UnboundReadTest`: in a value, a condition, the
    justification of a default, the subselection of a fold, a consistency, the
    toekenning of an object creation and a window bound that is an own read;
    one and two roles far; in the spellings "de toeslag van de jutter van de
@@ -3247,7 +3247,7 @@ attribute, whether or not the navigation would bind as well, and where it would 
 a role walked from where the read stands reaches a type that declares the member
 the remaining words name, here the Jutter's 'premie' — a WARNING names both
 readings and says the declaration wins (maintainer decision 2026-10-01,
-`DubbeleLezingTest`; no golden and no fragment of the parity zone reads such a
+`DoubleReadingTest`; no golden and no fragment of the parity zone reads such a
 name, so no pinned document changed).
 
 What stays with the verifier is an own read — one that reaches no role — of an
@@ -3289,7 +3289,7 @@ count is well-formed, and golden `jutterswet-vervaltermijn`, written as IR
 without a `bron.rgs`, pins it (`zijn aangiftedatum min 1,9 maanden`, 31-01-2024
 to 31-12-2023) in ref, the ASP backend and both Drools branches. The verifier
 admits such a document, so the refusal is this producer's own and keeps its
-Dutch words (`GebrokenDuurTest`).
+Dutch words (`BrokenDurationTest`).
 
 The resolver refuses a date plus or min a duration, at every position it builds
 one — the value of a rule, a condition, the justification and the consequence of
@@ -3518,7 +3518,7 @@ gives every executor the same answer (gate 13, the origin leg). What reaches
 the wire through it are the `origin` fields and the composed designations
 (above), both side tables without semantics; a document without an element
 the frontend made emits exactly what it emitted before (gates 10, 11 and 16,
-and `HerkomstOpDeDraadTest`). A version of a form with several versions is no
+and `OriginOnTheWireTest`). A version of a form with several versions is no
 element (the element is the form; the model entry is `<form> #<k>`), and an
 effective defaults stack is no element either: both are names of the Drools
 backend's coverage manifest, and its TMS transpiler gives their source the
@@ -3530,8 +3530,8 @@ Not covered: the names the Drools backend gives the rules inside a form
 (`<form>: …`), which the manifest and the trace do not show, and the names of
 the fixpoint that are no form (the key of a defaults conflict, `<type>.<member>`
 with `/<i>` per level below the root, and the relation named by a second
-filling). Witnesses: `GegenereerdUitTest` (frontend) and
+filling). Witnesses: `GeneratedFromTest` (frontend) and
 `GeneratedNamesWitnessTest` (backend); for the designations
-`GegenereerdeBenamingenTest` and `GegenereerdeNamenPerDeelTest` (frontend);
-for the wire `HerkomstOpDeDraadTest` (frontend), `OriginWitnessTest`
+`GeneratedDesignationsTest` and `GeneratedNamesPerPartTest` (frontend);
+for the wire `OriginOnTheWireTest` (frontend), `OriginWitnessTest`
 (backend) and `OriginSourceRouteTest` (the route suite of gate 15).

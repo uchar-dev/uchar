@@ -38,15 +38,15 @@ class FixedStartPointWitnessTest {
 
     @Test void the_golden_reads_one_to_one_and_gives_the_anchor() throws Exception {
         RegelSpraakModel m = IrLoader.load(read("golden/jutterswet-vast-startpunt"));
-        assertEquals("--10-01", m.tijdlijnen.get(0).vastStartpunt());
+        assertEquals("--10-01", m.tijdlijnen.get(0).fixedStartPoint());
         RegelSpraakModel.Objecttype jutter = m.objecttypen.get("Jutter");
-        assertEquals("--10-01", jutter.attribuutVastStartpunt.get("stormwachtdagen"));
-        assertEquals("--01-31", jutter.attribuutVastStartpunt.get("maandwachtdagen"));
-        assertEquals("2024-09-30", jutter.kenmerkVastStartpunt.get("wachtplichtig"));
-        assertNull(jutter.attribuutVastStartpunt.get("toelagesom"));
-        assertEquals(LocalDate.of(2000, 10, 1), m.vastStartpuntAnker(jutter, "stormwachtdagen"));
-        assertEquals(LocalDate.of(2000, 1, 31), m.vastStartpuntAnker(jutter, "maandwachtdagen"));
-        assertNull(m.vastStartpuntAnker(jutter, "toelagesom"));
+        assertEquals("--10-01", jutter.attributeFixedStartPoint.get("stormwachtdagen"));
+        assertEquals("--01-31", jutter.attributeFixedStartPoint.get("maandwachtdagen"));
+        assertEquals("2024-09-30", jutter.characteristicFixedStartPoint.get("wachtplichtig"));
+        assertNull(jutter.attributeFixedStartPoint.get("toelagesom"));
+        assertEquals(LocalDate.of(2000, 10, 1), m.fixedStartPointAnchor(jutter, "stormwachtdagen"));
+        assertEquals(LocalDate.of(2000, 1, 31), m.fixedStartPointAnchor(jutter, "maandwachtdagen"));
+        assertNull(m.fixedStartPointAnchor(jutter, "toelagesom"));
     }
 
     /** The pro-rata document ref's and clingo's suites hold (WV-3.2-vast-prorata), with the target's and the base's

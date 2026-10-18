@@ -39,7 +39,7 @@ public final class WindowPosition {
     /** The refusal for the first WF-112 position in {@code c}, or null when it has none. Null-safe. */
     public static String refusal(Conditie c) {
         if (c instanceof Conditie.Samengesteld s) {
-            if (counts(s.kwantor()) && s.onderdelen().stream().anyMatch(Conditie::bevatPeriode))
+            if (counts(s.kwantor()) && s.onderdelen().stream().anyMatch(Conditie::containsTimeWindow))
                 return sentence("een " + s.kwantor() + "-samenstelling", COUNTS);
             for (Conditie part : s.onderdelen()) {
                 String w = refusal(part);
@@ -47,18 +47,18 @@ public final class WindowPosition {
             }
             return null;
         }
-        if (c instanceof Conditie.Kwantorvouw kv) {
+        if (c instanceof Conditie.QuantifierFold kv) {
             if (counts(kv.kwantor())) {
-                boolean inFilter = Conditie.bevatPeriode(kv.filter()), inTest = Conditie.bevatPeriode(kv.toets());
+                boolean inFilter = Conditie.containsTimeWindow(kv.filter()), inTest = Conditie.containsTimeWindow(kv.test());
                 if (inFilter || inTest) {
                     String site = inFilter && inTest ? "het filter en de toets" : inFilter ? "het filter" : "de toets";
                     return sentence(site + " van een kwantorvouw onder " + kv.kwantor() + " over "
-                            + (kv.elementObjecttype() == null ? "<onopgelost elementtype>" : kv.elementObjecttype().naam),
+                            + (kv.elementObjectType() == null ? "<onopgelost elementtype>" : kv.elementObjectType().naam),
                             inTest ? COUNTS : CHOOSES);
                 }
             }
             String w = refusal(kv.filter());
-            return w != null ? w : refusal(kv.toets());
+            return w != null ? w : refusal(kv.test());
         }
         if (c instanceof Conditie.Vergelijking v) {
             String w = inExpression(v.links());
@@ -72,7 +72,7 @@ public final class WindowPosition {
      *  null. Null-safe. */
     public static String inExpression(Expr e) {
         String[] eerste = { null };
-        Expr.bevat(e, x -> x instanceof Expr.Functie f && (eerste[0] = refusal(f.filter())) != null);
+        Expr.contains(e, x -> x instanceof Expr.FunctionCall f && (eerste[0] = refusal(f.filter())) != null);
         return eerste[0];
     }
 

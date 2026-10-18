@@ -2,8 +2,8 @@ package dev.uchar.regelspraak.transpiler.kern;
 
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedDagsoort;
-import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.ir.ResolvedDayKindDefinition;
+import dev.uchar.regelspraak.kern.Literals;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
@@ -50,8 +50,8 @@ public final class DayKinds {
         if (have != null) return have;
         if (busy.contains(key))   // cyclic reference: defer to the eventual map entry
             return d -> { var p = predicates.get(key); return p != null && p.test(d); };
-        ResolvedDagsoort def = null;
-        for (var d : model.resolvedDagsoorten) if (d.naam().equalsIgnoreCase(naam)) { def = d; break; }
+        ResolvedDayKindDefinition def = null;
+        for (var d : model.resolvedDayKindDefinitions) if (d.naam().equalsIgnoreCase(naam)) { def = d; break; }
         if (def == null) return null;
         busy.add(key);
         Predicate<LocalDate> body = bool(def.voorwaarde());
@@ -67,14 +67,14 @@ public final class DayKinds {
             // Comparable.compareTo -> null, so both back-ends marker it symmetrically.
             // a day-kind definition binds no Let, so its operands' types are their declarations' or their own
             Datatype lt = EffectiveUnit.typeWithoutBinder(v.links()), rt = EffectiveUnit.typeWithoutBinder(v.rechts());
-            boolean compat = (lt.isNumeriek() && rt.isNumeriek()) || (lt.isDatum() && rt.isDatum());
+            boolean compat = (lt.isNumber() && rt.isNumber()) || (lt.isDate() && rt.isDate());
             if (!compat) return null;
             Function<LocalDate, Object> lo = waarde(v.links()), ro = waarde(v.rechts());
             if (lo == null || ro == null) return null;
             Conditie.Operator op = v.op();
             return d -> vergelijk(lo.apply(d), ro.apply(d), op);
         }
-        if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.DAGSOORT) {
+        if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.PredicateKind.DAGSOORT) {
             // The §9.8 composition is carried ON THE BOUND DAY ONLY (uchar RUNTIME-SEMANTICS ch. 3.8, the narrow
             // route of 2026-09-19): a nested test on some OTHER date is a recognised, unexecuted form in `ref` and
             // in the ASP backend, so this backend does not answer it either — one executor computing what two
@@ -84,7 +84,7 @@ public final class DayKinds {
             if (!(od == null || (od instanceof Expr.Constante oc && "de dag".equalsIgnoreCase(oc.naam()))))
                 return null;
             Function<LocalDate, Object> o = waarde(p.operand());
-            Predicate<LocalDate> inner = datePredicate(p.dagsoort());
+            Predicate<LocalDate> inner = datePredicate(p.dayKind());
             if (o == null || inner == null) return null;
             boolean neg = p.negatie();   // §8.1.5 + Tabel 16 "(de dag) is geen <dagsoort>" inside a §9.8 definitie
             return d -> neg != (o.apply(d) instanceof LocalDate ld && inner.test(ld));
@@ -93,7 +93,7 @@ public final class DayKinds {
             List<Predicate<LocalDate>> parts = new ArrayList<>();
             for (Conditie part : s.onderdelen()) { var d = bool(part); if (d == null) return null; parts.add(d); }
             if (parts.isEmpty()) return null;
-            int n = s.drempel();
+            int n = s.threshold();
             return switch (s.kwantor()) {
                 case ALLE, DE    -> d -> parts.stream().allMatch(q -> q.test(d));
                 case GEEN        -> d -> parts.stream().noneMatch(q -> q.test(d));
@@ -109,7 +109,7 @@ public final class DayKinds {
      *  of it via rsDatumDeel, "de eerste paasdag van", or a fact-free literal); null when not a pure date operand. */
     private Function<LocalDate, Object> waarde(Expr e) {
         if (e instanceof Expr.Constante c && "de dag".equalsIgnoreCase(c.naam())) return d -> d;
-        if (e instanceof Expr.Functie f && f.argumenten().size() == 1) {
+        if (e instanceof Expr.FunctionCall f && f.arguments().size() == 1) {
             java.time.temporal.ChronoField cf = switch (f.kind()) {
                 case JAAR_UIT         -> java.time.temporal.ChronoField.YEAR;
                 case MAAND_UIT        -> java.time.temporal.ChronoField.MONTH_OF_YEAR;
@@ -120,16 +120,16 @@ public final class DayKinds {
                 case MILLISECONDE_UIT -> java.time.temporal.ChronoField.MILLI_OF_SECOND;
                 default               -> null;
             };
-            Function<LocalDate, Object> inner = waarde(f.argumenten().get(0));
+            Function<LocalDate, Object> inner = waarde(f.arguments().get(0));
             if (inner == null) return null;
             if (cf != null) return d -> RegelSpraakRuntime.rsDatumDeel(inner.apply(d), cf);
             // §13.4.17.37 "de eerste paasdag van <jaar>" — the paasdag/feestdag building block.
-            if (f.kind() == Expr.FunctieKind.EERSTE_PAASDAG) return d -> RegelSpraakRuntime.rsEerstePaasdag(inner.apply(d));
+            if (f.kind() == Expr.FunctionKind.EERSTE_PAASDAG) return d -> RegelSpraakRuntime.rsEerstePaasdag(inner.apply(d));
             return null;
         }
         if (e instanceof Expr.Literal lit) {
-            if (lit.type().isDatum()) { LocalDate ld = Literalen.parseDatum(lit.waarde()); return ld == null ? null : d -> ld; }
-            BigDecimal n = Literalen.getal(lit); return n == null ? null : d -> n;
+            if (lit.type().isDate()) { LocalDate ld = Literals.parseDate(lit.waarde()); return ld == null ? null : d -> ld; }
+            BigDecimal n = Literals.getal(lit); return n == null ? null : d -> n;
         }
         return null;
     }

@@ -11,13 +11,13 @@ import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
-import dev.uchar.regelspraak.ir.ResolvedDagsoort;
-import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
+import dev.uchar.regelspraak.ir.ResolvedDayKindDefinition;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreation;
 import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
-import dev.uchar.regelspraak.ir.ResolvedStartpunt;
+import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 
 import org.junit.jupiter.api.Test;
 
@@ -224,12 +224,12 @@ class RenamingRefusalWitnessTest {
     @Test void every_v0_enum_value_is_refused_by_name() throws Exception {
         int rows = 0;
         Set<String> covered = new java.util.TreeSet<>();
-        for (Spelling.Familie<?> f : Spelling.FAMILIES) {
+        for (Spelling.Family<?> f : Spelling.FAMILIES) {
             if (f == Spelling.DATE_PRECISION) continue;
             List<Object> v0 = new ArrayList<>();
-            for (Object k : f.rijen().keySet()) v0.add(k);
+            for (Object k : f.rows().keySet()) v0.add(k);
             for (Object k : f.geweigerd().keySet()) v0.add(k);
-            for (String place : f.plaatsen()) {
+            for (String place : f.places()) {
                 Site p = place.equals("ContextValue.name") ? synthetic("ContextValue")
                         : place.equals("QuantifierFold.quantifier") ? site("QuantifierFold")
                         : siteWithField(place);
@@ -313,7 +313,7 @@ class RenamingRefusalWitnessTest {
         ObjectNode doc = golden(PENNINGDREMPEL);
         set(doc, V, "{\"node\":\"Regelversie\",\"regel\":\"penningdrempel\",\"inconsistent\":true,"
                 + "\"source\":{\"snippet\":\"regelversie penningdrempel is inconsistent\"}}");
-        Conditie.Regelversie rv = assertInstanceOf(Conditie.Regelversie.class,
+        Conditie.RuleStatusCheck rv = assertInstanceOf(Conditie.RuleStatusCheck.class,
                 IrLoader.load(doc).resolvedRegels.get(0).voorwaarde());
         assertEquals("penningdrempel", rv.regel());
         assertTrue(rv.inconsistent());
@@ -354,9 +354,9 @@ class RenamingRefusalWitnessTest {
         assertEquals("penninggerechtigd", k.kenmerk());
         assertTrue(k.negatie());
         assertEquals("Jutter", k.eigenaar().naam);
-        assertFalse(k.periode().jaar(), "month is the record's jaar false");
-        assertTrue(k.periode().niet());
-        assertEquals(List.of(new RolBindingRef("f", "r")), l.navigationBindings().get(k));
+        assertFalse(k.periode().year(), "month is the record's jaar false");
+        assertTrue(k.periode().negated());
+        assertEquals(List.of(new RoleBindingRef("f", "r")), l.navigationBindings().get(k));
         // absent host and qualifier: the subject, no qualifier — the v0 null of the record
         ObjectNode bare = golden(PENNINGDREMPEL);
         set(bare, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"
@@ -394,9 +394,9 @@ class RenamingRefusalWitnessTest {
         set(doc, W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"vondst \"},"
                 + "{\"node\":\"EmbeddedExpression\",\"expr\":" + one + "}],\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"vondst 1\"}}");
-        Expr.TekstReeks t = assertInstanceOf(Expr.TekstReeks.class, IrLoader.load(doc).resolvedRegels.get(0).waarde());
-        assertEquals("vondst ", ((Expr.TekstReeks.Letterlijk) t.delen().get(0)).tekst());
-        assertInstanceOf(Expr.Literal.class, ((Expr.TekstReeks.Ingevoegd) t.delen().get(1)).expr());
+        Expr.TextComposition t = assertInstanceOf(Expr.TextComposition.class, IrLoader.load(doc).resolvedRegels.get(0).waarde());
+        assertEquals("vondst ", ((Expr.TextComposition.LiteralChunk) t.parts().get(0)).tekst());
+        assertInstanceOf(Expr.Literal.class, ((Expr.TextComposition.EmbeddedExpression) t.parts().get(1)).expr());
 
         // the name is read, and names the node the loader refuses (WF-034)
         doc = golden(PREMIEVENSTER);
@@ -424,21 +424,21 @@ class RenamingRefusalWitnessTest {
         Conditie.Samengesteld s = assertInstanceOf(Conditie.Samengesteld.class,
                 IrLoader.load(doc).resolvedRegels.get(0).voorwaarde());
         assertEquals(Conditie.Kwantor.TEN_MINSTE, s.kwantor());
-        assertEquals(1, s.drempel());
+        assertEquals(1, s.threshold());
         Conditie.Vergelijking v = assertInstanceOf(Conditie.Vergelijking.class, s.onderdelen().get(0));
         assertEquals(Conditie.Operator.KLEINER_OF_GELIJK, v.op());
         assertNotNull(v.links());
         assertNotNull(v.rechts());
-        assertTrue(v.periode().jaar());
+        assertTrue(v.periode().year());
         Conditie.Predicaat p = assertInstanceOf(Conditie.Predicaat.class, s.onderdelen().get(1));
-        assertEquals(Conditie.Predicaatsoort.DAGSOORT, p.soort());
-        assertEquals("feestdag", p.dagsoort());
+        assertEquals(Conditie.PredicateKind.DAGSOORT, p.soort());
+        assertEquals("feestdag", p.dayKind());
         assertTrue(p.negatie());
-        assertEquals(3, p.cijfers());
+        assertEquals(3, p.digits());
         Conditie.Periode w = assertInstanceOf(Conditie.Periode.class, s.onderdelen().get(2));
         assertNull(w.vanaf(), "an absent bound is open on that side");
         assertNotNull(w.tot());
-        assertTrue(w.totInclusief());
+        assertTrue(w.toInclusive());
     }
 
     /** The rule-layer nodes of the renaming, over every loadable golden that carries them: each wire field equals the
@@ -453,31 +453,31 @@ class RenamingRefusalWitnessTest {
             JsonNode rules = doc.get("rules");
             for (int i = 0; i < rules.get("dayKindDefinitions").size(); i++, dayKinds++) {
                 JsonNode w = rules.get("dayKindDefinitions").get(i);
-                ResolvedDagsoort d = m.resolvedDagsoorten.get(i);
+                ResolvedDayKindDefinition d = m.resolvedDayKindDefinitions.get(i);
                 assertEquals(w.get("dayKind").asText(null), d.naam(), path.toString());
                 assertEquals(w.get("condition").isNull(), d.voorwaarde() == null, path.toString());
             }
             for (int i = 0; i < rules.get("startPointDeterminations").size(); i++, startPoints++) {
                 JsonNode w = rules.get("startPointDeterminations").get(i);
-                ResolvedStartpunt sp = m.resolvedStartpunten.get(i);
+                ResolvedStartPointDetermination sp = m.resolvedStartPointDeterminations.get(i);
                 assertEquals(w.get("timeline").asText(null), sp.tijdlijn(), path.toString());
                 assertEquals(w.get("objectType").asText(null), sp.objecttype(), path.toString());
-                assertEquals(w.get("member").asText(null), sp.lid(), path.toString());
+                assertEquals(w.get("member").asText(null), sp.member(), path.toString());
             }
             for (int i = 0; i < rules.get("ruleGroups").size(); i++, groups++) {
                 JsonNode w = rules.get("ruleGroups").get(i);
                 ResolvedRegelGroep g = m.regelGroepen.get(i);
                 assertEquals(w.get("name").asText(null), g.naam(), path.toString());
-                assertEquals(w.get("recursive").asBoolean(), g.recursief(), path.toString());
+                assertEquals(w.get("recursive").asBoolean(), g.recursive(), path.toString());
                 assertEquals(w.get("members").size(), g.leden().size(), path.toString());
             }
             int oc = 0;
             for (JsonNode form : rules.get("objectCreations"))
                 for (JsonNode version : form.get("versions")) {
-                    ResolvedObjectCreatie c = m.objectCreaties.get(oc++);
+                    ResolvedObjectCreation c = m.objectCreaties.get(oc++);
                     for (int j = 0; j < version.get("initialisations").size(); j++, initialisations++) {
                         JsonNode w = version.get("initialisations").get(j);
-                        ResolvedObjectCreatie.Toekenning t = c.toekenningen().get(j);
+                        ResolvedObjectCreation.MemberInit t = c.initialisations().get(j);
                         assertEquals(w.get("member").asText(null), t.attribuut(), path.toString());
                         assertEquals(w.get("characteristic").asBoolean(), t.kenmerk(), path.toString());
                         assertEquals(w.get("value").isNull(), t.waarde() == null, path.toString());
@@ -510,17 +510,17 @@ class RenamingRefusalWitnessTest {
         for (int i = 0; i < wire.size(); i++, n++) {
             JsonNode w = wire.get(i);
             Default d = records.get(i);
-            assertEquals(w.has("decision") ? w.get("decision").asBoolean() : null, d.besluit(), where);
+            assertEquals(w.has("decision") ? w.get("decision").asBoolean() : null, d.decision(), where);
             assertEquals(w.has("justification"), d.voorwaarde() != null, where);
             assertEquals(w.has("consequence"), d.consequentie() != null, where);
             assertEquals(w.path("initialisation").asBoolean(false), d.initialisatie(), where);
-            assertEquals(w.has("exceptions"), d.excepties() != null, where);
+            assertEquals(w.has("exceptions"), d.exceptions() != null, where);
             if (w.has("exceptions")) {
-                assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.excepties().ongeordend(), where);
+                assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.exceptions().ongeordend(), where);
                 JsonNode members = w.get("exceptions").get("members");
-                assertEquals(members.size(), d.excepties().leden().size(), where);
+                assertEquals(members.size(), d.exceptions().leden().size(), where);
                 for (int j = 0; j < members.size(); j++)
-                    n += compare(members.get(j).get("defaults"), d.excepties().leden().get(j).defaults(), where);
+                    n += compare(members.get(j).get("defaults"), d.exceptions().leden().get(j).defaults(), where);
             }
         }
         return n;

@@ -468,7 +468,7 @@ APOSTROPHE : '\''  ;
 // syntax). '|' occurs NOWHERE ELSE in RegelSpraak, so the first '|' unambiguously
 // opens a decision-table row block. A whole row is captured as ONE TABEL_RIJ token
 // (cells never contain '|', per §12); the resolver splits it on '|' and hands the
-// grid to BeslistabelDesugar. Newlines are globally skipped (header note 1), so the
+// grid to DecisionTableDesugar. Newlines are globally skipped (header note 1), so the
 // TABEL_MODE sub-mode (defined at the end) re-introduces line structure locally:
 // each further pipe line is another TABEL_RIJ, and the first newline NOT followed
 // by a pipe line pops back to DEFAULT_MODE. A '|' inside a "…" string stays part of

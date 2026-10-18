@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * GENERIC tree walk therefore descends into it without being told to.
  *
  * <p>What this replaces, and why it is worth a witness. Until the union grew the record, the loader parsed this
- * one form into an {@link Expr.Onopgelost} plus a side table keyed on that node's identity. A side table is
- * invisible to {@link Expr#bevat} and to every hand-written walk built on it: the node read as an opaque LEAF,
+ * one form into an {@link Expr.Unresolved} plus a side table keyed on that node's identity. A side table is
+ * invisible to {@link Expr#contains} and to every hand-written walk built on it: the node read as an opaque LEAF,
  * so a walk asking "does this tree mention X?" answered no for everything under the guard and both branches —
  * silently, since a leaf is a legitimate answer. Only walks that knew about the table saw through it. The pins
  * below are about that difference and nothing else: no value is computed here, and no gate expectation moves.
@@ -47,20 +47,20 @@ class IfThenElseUnionWitnessTest {
         // condition / then / else).
         assertNotNull(choice.type(), "type");
         assertNotNull(choice.bron(), "bron");
-        assertInstanceOf(Conditie.Vergelijking.class, choice.conditie(), "de guard is de gewone conditie-unie");
-        assertEquals("laag", ((Expr.AttribuutRef) choice.dan()).attribuut(), "de dan-tak");
-        assertEquals("hoog", ((Expr.AttribuutRef) choice.anders()).attribuut(), "de anders-tak");
+        assertInstanceOf(Conditie.Vergelijking.class, choice.condition(), "de guard is de gewone conditie-unie");
+        assertEquals("laag", ((Expr.AttribuutRef) choice.then()).attribuut(), "de dan-tak");
+        assertEquals("hoog", ((Expr.AttribuutRef) choice.otherwise()).attribuut(), "de anders-tak");
 
         // and nothing in this tree is unresolved any more: the last Onopgelost CARRIER is gone, so an
         // Onopgelost here would again mean a form parsed into a leaf.
-        assertFalse(Expr.bevat(value, x -> x instanceof Expr.Onopgelost),
+        assertFalse(Expr.contains(value, x -> x instanceof Expr.Unresolved),
                 "geen Onopgelost-blad meer in een boom die alleen een IfThenElse droeg");
     }
 
     @Test void a_generic_walk_descends_into_both_arms_and_into_the_guard() throws Exception {
         Expr value = ruleValue(nestedModel());
 
-        // Expr.bevat is the generic walk every consumer's structural question is built on. Each of these three
+        // Expr.contains is the generic walk every consumer's structural question is built on. Each of these three
         // reads is reachable ONLY through the ch. 10.2 node, so each answer is the arm doing its work.
         assertTrue(reads(value, "laag"), "de dan-tak wordt afgedaald");
         assertTrue(reads(value, "hoog"), "de anders-tak wordt afgedaald");
@@ -77,11 +77,11 @@ class IfThenElseUnionWitnessTest {
 
         Expr.Let let = assertInstanceOf(Expr.Let.class, value, "de waarde is de omhullende Let");
         assertInstanceOf(Expr.IfThenElse.class, let.body(), "de body is de ch. 10.2-vorm");
-        assertTrue(Expr.bevat(value, x -> x instanceof Expr.IfThenElse),
+        assertTrue(Expr.contains(value, x -> x instanceof Expr.IfThenElse),
                 "de generieke wandeling vindt de vorm onder een Let");
         assertTrue(reads(value, "laag"), "de dan-tak onder de Let");
         assertTrue(reads(value, "hoog"), "de anders-tak onder de Let");
-        assertTrue(Expr.bevat(value, x -> x instanceof Expr.BinderRef b && "g".equals(b.naam())),
+        assertTrue(Expr.contains(value, x -> x instanceof Expr.BinderRef b && "g".equals(b.naam())),
                 "de binderlezing in de guard onder de Let");
     }
 
@@ -89,7 +89,7 @@ class IfThenElseUnionWitnessTest {
 
     /** Whether the tree reads the named attribute — the generic scan, asked exactly as a consumer asks it. */
     private static boolean reads(Expr e, String attribute) {
-        return Expr.bevat(e, x -> x instanceof Expr.AttribuutRef a && attribute.equals(a.attribuut()));
+        return Expr.contains(e, x -> x instanceof Expr.AttribuutRef a && attribute.equals(a.attribuut()));
     }
 
     private static Expr ruleValue(String ir) throws Exception {

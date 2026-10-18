@@ -12,7 +12,7 @@ import java.util.List;
  * channel. The RegelSpraak resolver builds it from the dialect's own blocks only — {@code Uitzondering op},
  * {@code Afwijking van} and {@code Uitzonderingen ongeordend} ({@code grammar/DIVERGENCES.md} §4; a flat rule family
  * is never folded into one), one group per tree of blocks under a base rule, nested exceptions as
- * {@link Default#excepties} — with a {@code false} decision where the block's sentence negates the characteristic
+ * {@link Default#exceptions} — with a {@code false} decision where the block's sentence negates the characteristic
  * ({@code is niet X}, {@code heeft geen X}). It also builds one per attribute that carries the opgave marker
  * {@code (mag opgegeven worden)} ({@code grammar/DIVERGENCES.md} §7): the group {@code opgave boven berekening X} on
  * X, the opgave above the computation and an authored initialisation of X as the lowest default. The Catala frontend

@@ -42,13 +42,13 @@ class EffectiveUnitWitnessTest {
     // "Geld" and "Tijd", for the §4.4 product rules: € per jaar is a RATE (a numerator over a denominator).
     private static final Eenheid EUR = new Eenheid("EUR", "Geld", "EUR", BigDecimal.ONE);
     private static final Eenheid JR = new Eenheid("jr", "Tijd", "mnd", new BigDecimal("12"));
-    private static final Eenheid EUR_PER_JR = Eenheid.samengesteld(EUR, JR);
+    private static final Eenheid EUR_PER_JR = Eenheid.compound(EUR, JR);
 
     private static Datatype num(Eenheid e) {
         return new Datatype.Numeriek(false, 2, Datatype.Teken.ONBEPAALD, e);
     }
 
-    private static Bron bron() { return Bron.synthetisch("witness"); }
+    private static Bron bron() { return Bron.synthetic("witness"); }
 
     private static EffectiveUnit bare() { return new EffectiveUnit(List.of()); }
 
@@ -94,7 +94,7 @@ class EffectiveUnitWitnessTest {
         // the derivation claims no unit and no datatype rather than reading the slot.
         Expr.AttribuutRef loose = new Expr.AttribuutRef("gewicht", null, "iets", null, num(TON), bron());
         assertNull(bare().unitOf(loose));
-        assertTrue(bare().van(loose).isOnbekend(), "geen declaratie, dus geen datatype");
+        assertTrue(bare().van(loose).isUnknown(), "geen declaratie, dus geen datatype");
         Objecttype empty = new Objecttype("Vondst");   // declares no member of that name
         assertNull(bare().unitOf(new Expr.AttribuutRef("gewicht", empty, "een vondst", null, num(TON), bron())));
     }
@@ -107,7 +107,7 @@ class EffectiveUnitWitnessTest {
     }
 
     @Test void a_dimension_cell_reads_the_declaration_of_its_within_reference() {
-        Expr.DimensieCel cell = new Expr.DimensieCel(lyingRef(vondst()), List.of("noord"), bron());
+        Expr.DimensionCellRead cell = new Expr.DimensionCellRead(lyingRef(vondst()), List.of("noord"), bron());
         assertEquals(KG, bare().unitOf(cell));
     }
 
@@ -127,7 +127,7 @@ class EffectiveUnitWitnessTest {
     }
 
     @Test void a_times_with_two_units_falls_away_against_its_denominator() {
-        // §4.4 / ch. 2.6, the cancel clause the frontend's Typering.samengesteldeEenheid spells: a RATE times its
+        // §4.4 / ch. 2.6, the cancel clause the frontend's Typing.compoundUnit spells: a RATE times its
         // (convertible) denominator unit is the numerator — "€/jr maal jr = €". Reading left-then-right here (the
         // additive rule) would answer €/jr, a unit the result does NOT have.
         Objecttype ot = vracht();
@@ -148,20 +148,20 @@ class EffectiveUnitWitnessTest {
                 lyingRef(ot, "prijs"), lyingRef(ot, "gewicht"), num(TON), bron()));
         assertEquals(Eenheid.product(EUR, KG), out);
         assertNull(out.canoniek(), "een opaak product draagt geen canoniek");
-        assertNull(out.exacteHerschaalFactoren(EUR), "en dus geen exacte herschaalfactoren naar een concrete eenheid");
-        assertFalse(out.convertibleNaar(EUR), "€·kg herschaalt niet naar €");
-        assertFalse(out.convertibleNaar(KG), "en niet naar kg");
-        assertTrue(out.convertibleNaar(Eenheid.product(KG, EUR)), "alleen een identiek product is converteerbaar");
+        assertNull(out.exactRestateFactors(EUR), "en dus geen exacte herschaalfactoren naar een concrete eenheid");
+        assertFalse(out.convertibleTo(EUR), "€·kg herschaalt niet naar €");
+        assertFalse(out.convertibleTo(KG), "en niet naar kg");
+        assertTrue(out.convertibleTo(Eenheid.product(KG, EUR)), "alleen een identiek product is converteerbaar");
     }
 
     @Test void a_value_aggregation_carries_the_unit_of_operand_zero() {
         // §4.6 Eenheid1 — and the exact class the WF-091 card left open: a fold RESULT type has no single
         // declaration behind it, so the verifier cannot cross it and only this derivation can.
         Objecttype ot = vondst();
-        for (Expr.FunctieKind kind : List.of(Expr.FunctieKind.SOM, Expr.FunctieKind.TOTAAL,
-                Expr.FunctieKind.MINIMUM, Expr.FunctieKind.MAXIMUM,
-                Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE)) {
-            Expr.Functie f = new Expr.Functie(kind, List.of(lyingRef(ot)), ot, null, null, num(TON), bron());
+        for (Expr.FunctionKind kind : List.of(Expr.FunctionKind.SOM, Expr.FunctionKind.TOTAAL,
+                Expr.FunctionKind.MINIMUM, Expr.FunctionKind.MAXIMUM,
+                Expr.FunctionKind.EERSTE, Expr.FunctionKind.LAATSTE)) {
+            Expr.FunctionCall f = new Expr.FunctionCall(kind, List.of(lyingRef(ot)), ot, null, null, num(TON), bron());
             assertEquals(KG, bare().unitOf(f), kind + " draagt de eenheid van operand 0");
         }
     }
@@ -236,7 +236,7 @@ class EffectiveUnitWitnessTest {
         // annotation of its own, so it claims no unit — the same answer as an AttribuutRef without a declaration.
         Expr read = new Expr.BinderRef("onbekend", num(TON), bron());
         assertNull(overLets().unitOf(read));
-        assertTrue(overLets().van(read).isOnbekend(), "geen binding, dus geen datatype");
+        assertTrue(overLets().van(read).isUnknown(), "geen binding, dus geen datatype");
     }
 
     @Test void a_choice_reads_the_branch_not_its_own_claim() {
@@ -302,8 +302,8 @@ class EffectiveUnitWitnessTest {
         // parameter. Deriving it from operand 0 (a date) would erase the operator's own statement.
         Eenheid year = new Eenheid("jr", "Tijd", "mnd", new BigDecimal("12"));
         Expr.Literal date = new Expr.Literal("2026-01-01", new Datatype.DatumInDagen(), bron());
-        for (Expr.FunctieKind kind : List.of(Expr.FunctieKind.TIJDSDUUR, Expr.FunctieKind.ABSOLUTE_TIJDSDUUR)) {
-            Expr.Functie f = new Expr.Functie(kind, List.of(date, date), null, null, null, num(year), bron());
+        for (Expr.FunctionKind kind : List.of(Expr.FunctionKind.TIJDSDUUR, Expr.FunctionKind.ABSOLUTE_TIJDSDUUR)) {
+            Expr.FunctionCall f = new Expr.FunctionCall(kind, List.of(date, date), null, null, null, num(year), bron());
             assertEquals(year, bare().unitOf(f), kind + " draagt haar eigen 'in <eenheid>'");
         }
     }

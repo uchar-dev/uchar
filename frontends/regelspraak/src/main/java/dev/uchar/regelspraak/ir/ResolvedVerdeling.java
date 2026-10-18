@@ -4,17 +4,17 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 /**
- * A resolved §13.4.10 verdeling: a source amount ({@code bronAttribuut} of
- * {@code bronType}) is distributed over a recipient attribute ({@code doelAttribuut}
- * of {@code doelType}, the objects related to the source) by some method.
+ * A resolved §13.4.10 verdeling: a source amount ({@code sourceAttribute} of
+ * {@code sourceType}) is distributed over a recipient attribute ({@code targetAttribute}
+ * of {@code targetType}, the objects related to the source) by some method.
  *
  * {@link Methode#GELIJKE_DELEN equal shares} (total / count) and {@link Methode#NAAR_RATO
  * proportional} (total · weight / sum-of-weights) each have a clean single forward-rule
  * Drools form. {@link Methode#OP_VOLGORDE} (§9.7.2 "op volgorde van toenemende/afnemende
  * \<criterium\>, bij een even groot criterium ...") is a genuinely multi-pass ORDERED allocation:
- * recipients are partitioned into groups by {@code groepeerAttribuut} and the pot is depleted
+ * recipients are partitioned into groups by {@code orderingAttribute} and the pot is depleted
  * group-by-group in sort order, each group splitting its entry-pot among its members (naar-rato by
- * {@code ratoAttribuut}, or equal shares when that is null), carrying the undistributed remainder
+ * {@code ratioAttribute}, or equal shares when that is null), carrying the undistributed remainder
  * (after the §9.7.3 cap / §9.7.4 floor) to the next group. It lowers via the registered
  * {@code rsVerdeelOpVolgorde} helper that computes the whole allocation in one shot. Only the truly
  * unhandled forms — an unresolvable join, a non-numeric ordering/weight key, or a maximum on a
@@ -22,49 +22,49 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
  *
  * <p>The §9.7.3 "met een maximum van", §9.7.4 "afgerond op N decimalen naar beneden" and §9.7.5
  * "onverdeelde rest" modifiers (the {@code meervoudigCriterium} bullet form) ride on every fireable
- * method. For GELIJKE_DELEN / NAAR_RATO without ordering, each share is capped at {@code maximumAttribuut}
+ * method. For GELIJKE_DELEN / NAAR_RATO without ordering, each share is capped at {@code maximumAttribute}
  * (§9.7.3, naar-rato only — the surplus is NOT redistributed, it falls to the rest), then floored to
- * {@code afrondingDecimalen} (the §6.1.2 explicit afronding the spec requires before assigning a division
+ * {@code roundingDecimals} (the §6.1.2 explicit afronding the spec requires before assigning a division
  * result to a bounded target). For OP_VOLGORDE the cap and floor are applied <em>inside</em> the helper,
  * group by group, so the carry-over reflects the capped+floored shares (the §9.7.5 worked example,
- * Tabel 18). {@code restantAttribuut} on the {@code bronType} receives the remainder (total − Σ shares)
+ * Tabel 18). {@code remainderAttribute} on the {@code sourceType} receives the remainder (total − Σ shares)
  * via a separate method-agnostic rule.
  *
- * @param ratoAttribuut      for {@link Methode#NAAR_RATO} the bare recipient weight attribute, and for
+ * @param ratioAttribute      for {@link Methode#NAAR_RATO} the bare recipient weight attribute, and for
  *                           {@link Methode#OP_VOLGORDE} the within-group tie weight ("bij een even groot
  *                           criterium naar rato van \<gewicht\>"); null for a gelijke-delen tie. The
  *                           lidwoord is stripped, so it maps straight to a getter.
- * @param maximumAttribuut   §9.7.3 the bare recipient ({@code doelType}) attribute capping each share
+ * @param maximumAttribute   §9.7.3 the bare recipient ({@code targetType}) attribute capping each share
  *                           (naar-rato / op-volgorde-with-naar-rato-tie only); null = no cap
- * @param afrondingDecimalen §9.7.4 floor each share to this many decimals (always "naar beneden");
+ * @param roundingDecimals §9.7.4 floor each share to this many decimals (always "naar beneden");
  *                           null = no rounding
- * @param restantAttribuut   §9.7.5 the bare {@code bronType} attribute that receives the
+ * @param remainderAttribute   §9.7.5 the bare {@code sourceType} attribute that receives the
  *                           undistributed remainder; null = none
- * @param groepeerAttribuut  §9.7.2 the bare recipient ordering key partitioning the recipients into
+ * @param orderingAttribute  §9.7.2 the bare recipient ordering key partitioning the recipients into
  *                           groups; null unless {@link Methode#OP_VOLGORDE}
  * @param afnemend           §9.7.2 true = descending ("afnemende"), false = ascending ("toenemende");
  *                           read only when {@link Methode#OP_VOLGORDE}
- * @param verbindendeRol     the recipient join (IR-SPEC ch. 3.2 {@code connectingRole}): the role the recipient
+ * @param connectingRole     the recipient join (IR-SPEC ch. 3.2 {@code connectingRole}): the role the recipient
  *                           phrase names where it names one relation between the two types, else the one relation
  *                           between them; null where the resolver bound none, and the emitter then derives it from
  *                           the type pair
  */
-public record ResolvedVerdeling(String naam, Objecttype bronType, String bronAttribuut,
-                                Objecttype doelType, String doelAttribuut,
-                                Methode methode, String ratoAttribuut, String maximumAttribuut,
-                                Integer afrondingDecimalen, String restantAttribuut,
-                                String groepeerAttribuut, boolean afnemend,
+public record ResolvedVerdeling(String naam, Objecttype sourceType, String sourceAttribute,
+                                Objecttype targetType, String targetAttribute,
+                                Methode methode, String ratioAttribute, String maximumAttribute,
+                                Integer roundingDecimals, String remainderAttribute,
+                                String orderingAttribute, boolean descending,
                                 Conditie voorwaarde, Geldigheid geldigheid,
-                                RegelSpraakModel.RolBindingRef verbindendeRol) {
+                                RegelSpraakModel.RoleBindingRef connectingRole) {
     public enum Methode { GELIJKE_DELEN, NAAR_RATO, OP_VOLGORDE, COMPLEX }
 
     /** Without a bound join: the reader that carries the wire's binding beside the record (the Drools backend's
      *  loader) builds it this way. */
-    public ResolvedVerdeling(String naam, Objecttype bronType, String bronAttribuut, Objecttype doelType,
-                             String doelAttribuut, Methode methode, String ratoAttribuut, String maximumAttribuut,
-                             Integer afrondingDecimalen, String restantAttribuut, String groepeerAttribuut,
-                             boolean afnemend, Conditie voorwaarde, Geldigheid geldigheid) {
-        this(naam, bronType, bronAttribuut, doelType, doelAttribuut, methode, ratoAttribuut, maximumAttribuut,
-                afrondingDecimalen, restantAttribuut, groepeerAttribuut, afnemend, voorwaarde, geldigheid, null);
+    public ResolvedVerdeling(String naam, Objecttype sourceType, String sourceAttribute, Objecttype targetType,
+                             String targetAttribute, Methode methode, String ratioAttribute, String maximumAttribute,
+                             Integer roundingDecimals, String remainderAttribute, String orderingAttribute,
+                             boolean descending, Conditie voorwaarde, Geldigheid geldigheid) {
+        this(naam, sourceType, sourceAttribute, targetType, targetAttribute, methode, ratioAttribute, maximumAttribute,
+                roundingDecimals, remainderAttribute, orderingAttribute, descending, voorwaarde, geldigheid, null);
     }
 }

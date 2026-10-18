@@ -1,9 +1,15 @@
 dutch	english	source	context	note
 aan	to	plain	function word: aan X, to X; aan beide kanten, on both sides; verb particle (voldoet aan)	
 aandelen	shares	plain	the shares of a distribution	added by card hernoem-drools-backend: 1 name in backends/drools (aandelen)
+aangemaakt	created	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 aangemaakte	created	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+aangeraden	recommended	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+aangrenzend	adjacent	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+aanhalings	quotation	plain	the linking-s form in a compound: aanhalingsteken, quotation mark	added by card rename-frontend (the translation check of frontends/regelspraak)
+aanhef	preamble	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 aanlever	delivery	plain	the stem in a compound: aanlevervolgorde, delivery order	added by card hernoem-drools-backend: 1 name in backends/drools (de_botsing_wordt_gezien_ongeacht_de_aanlevervolgorde)
 aanmaak	creation	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+aanneemt	accepts	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 aanroep	call	wire		`BuiltinCall`
 aanroepen	calls	plain	the plural of aanroep	added by card hernoem-drools-backend: 1 name in backends/drools (een_runtimeaanroep_met_eenheidsherschaling_is_een_boom_van_genoemde_aanroepen)
 aanroeper	caller	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_labels_zijn_die_van_de_aanroeper)
@@ -11,12 +17,15 @@ aantal	count	wire
 aantal dagen in	dayCount	wire		`BuiltinCall.kind`
 aantalgevulde	filledCount	wire		
 aantallen	counts	plain		added by card hernoem-drools-backend: 1 name in backends/drools (aantallen)
+aanvaardt	accepts	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 absoluut	absolute	plain		added by card hernoem-drools-backend: 1 name in backends/drools (absoluut)
+absorberende	absorbing	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 abstracte	abstract	plain		added by card hernoem-drools-backend: 1 name in backends/drools (abstracteMethoden)
 accumulatie	accumulation	field	the Drools accumulate of a fold	added by card hernoem-drools-backend: in 2 identifiers (112 occurrences)
 acht	eight	plain		added by card hernoem-drools-backend: 1 name in backends/drools (MAAK_ONDER_ACHT)
 achter	behind	plain	function word: preposition and verb particle (laat achter, leaves behind)	
 achtergebleven	leftover	plain	left behind by an earlier spelling: een achtergebleven zelfnaam, a leftover self-name	added by card hernoemgereedschap: 1 name in the loader tests (een_enumeratiedomein_met_achtergebleven_zelfnaam_weigert)
+achteruit	backward	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 achterwaarts	backward	plain		added by card hernoem-drools-backend: in 2 identifiers (13 occurrences)
 achtig	like	plain	the suffix: getalachtig, number-like	added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (isGetalachtig in frontends/regelspraak)
 actie	action	plain		added by card hernoem-drools-backend: in 3 identifiers (8 occurrences)
@@ -35,8 +44,10 @@ afgeronde	rounded	plain		added by card hernoem-drools-backend: 1 name in backend
 afhankelijkheden	dependencies	plain		added by card hernoem-drools-backend: in 2 identifiers (14 occurrences)
 afhankelijkheid	dependency	plain		added by card hernoem-drools-backend: in 2 identifiers (7 occurrences)
 afhankelijkheids	dependency	plain	the form in a compound: afhankelijkheidskring, dependency cycle	added by card hernoem-drools-backend: keeps 2 names outside backends/drools split right beside the rows the card added (AfhankelijkheidskringTest in frontends/regelspraak)
+afkapping	truncation	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 afkapt	truncates	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_verbrede_poort_vuurt_niet_als_de_barriere_beide_plekken_afkapt)
 afkorting	abbreviation	wire		
+afleidend	deriving	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 afleiding	derivation	spec		RUNTIME-SEMANTICS §2.10
 afleidt	derives	plain		
 afloop	decision	plain	the decision of a default (Gevolg.Afloop)	added by card hernoem-drools-backend: in 2 identifiers (21 occurrences); decision, not outcome, because uitkomst is outcome (RUNTIME-SEMANTICS §5.10) and Uitkomst and Gevolg.Afloop are both types of the zone; the record's own message says een besluit
@@ -66,10 +77,12 @@ alleen	only	plain	function word
 alles	everything	plain	function word	false friend
 als	as	plain	function word: X als Y, X as Y	false friend
 als	if	plain	function word: als ... dan, if ... then	false friend
+alternatief	alternative	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 altijd	always	plain	function word	
 ambigu	ambiguous	plain		
 ambigue	ambiguous	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_ambigue_zelfpaarvorm_wordt_luid_geweigerd)
 ambiguiteit	ambiguity	plain		added by card hernoem-drools-backend: 1 name in backends/drools (diezelfde_ambiguiteit_zonder_subject_weigert_ook)
+ambiguus	ambiguous	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 analyse	analysis	plain	the noun: de analyse van een document, the analysis of a document	added by card hernoem-drools-backend: the translator flagged it (ronde 2); the dictionary has analyse, the British verb, which the next row keeps
 analyse	analyse	plain	the British verb, as code writes it (GegenereerdeNamenWitnessTest.analyse): English as it stands	added by card hernoem-drools-backend: with this row analyse never makes a name Dutch on its own
 ander	another	plain	function word: een ander X, another X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (een_totaal_zonder_bereik_over_een_ander_type_weigert)
@@ -80,6 +93,7 @@ anders	else	wire	the else of an IfThenElse	false friend; `IfThenElse.else`
 anders	otherwise	plain	function word	false friend
 anders	differently	plain	the manner: anders gekapitaliseerd, differently capitalised	added by card drools-word-fixes
 anker	anchor	wire		false friend
+ankers	anchors	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 annotatie	annotation	wire		`statuteAnnotations`
 annotaties	annotations	wire		
 antwoord	answer	plain		
@@ -88,21 +102,31 @@ argumenten	arguments	wire
 ariteit	arity	spec	the number of arguments of a node or of the components of a key	added by card drools-word-fixes; IR-SPEC
 ariteits	arity	plain	the form in a compound: ariteitsguard, arity guard	added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 armen	arms	field	the then and the else of an IfThenElse	added by card hernoem-drools-backend: in 2 identifiers (5 occurrences)
+artikel	article	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+as	axis	plain	the axis of a refusal; as is also the English code word as	added by card rename-frontend (the translation check of frontends/regelspraak)
+as	as	plain	the English code word as; a Dutch name keeps it beside as, axis	added by card rename-frontend (the translation check of frontends/regelspraak)
 assertie	assertion	wire		
+associatief	associative	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 attributen	attributes	wire		
 attribuut	attribute	wire		
 attribuut	member	wire	the member an object creation initialises	`MemberInit`, IR-SPEC §3.3
 attribuutref	attributeReference	wire		
+auteur	author	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 barriere	barrier	spec		RUNTIME-SEMANTICS §10.6
 basis	base	spec	the base of a defaults chain or level	false friend; RUNTIME-SEMANTICS §7.10
 basisregel	baseRule	spec		IR-SPEC §2.13
 bedrag	amount	plain	an amount of money	RUNTIME-SEMANTICS §2.9 says money
+beeindigen	end	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+beeindigt	ends	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 beeld	picture	plain	what something shows (meldbeeld, message picture)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 begeleider	companion	plain	a companion that reads the condition of a division	added by card hernoem-drools-backend: in 3 identifiers (4 occurrences)
+begint	begins	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 begrens	clamp	wire	the verb stem: RS_BEGRENS, rsBegrens	added by card hernoem-drools-backend: 1 name in backends/drools (RS_BEGRENS)
 begrensd	clamp	wire	the v0 node Begrensd	`Clamp`
 begrensd	clamped	plain	the adjective	
+begrensd	bounded	plain	a window or an interval with bounds (WF-031); the clamp of an expression is clamp	added by card rename-frontend (the translation check of frontends/regelspraak)
 begrensde	clamped	plain		
+begrensde	bounded	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 begrenzing	clamp	wire		`Clamp`
 behalve	except	plain	function word	
 behoefte	need	spec	the need of a Let binder	RUNTIME-SEMANTICS §10.6
@@ -122,7 +146,9 @@ benoemd	byName	plain	after a refusal: by name (weigert de exectak benoemd, the e
 benoemd geweigerd	refusedByName	plain	a refusal that names what it refuses (worden benoemd geweigerd, are refused by name); not once named	added by card drools-word-fixes
 benoemde	named	wire		`namedForm`
 benoemt	designates	spec		IR-SPEC §2.12; added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (een_woord_dat_niets_benoemt_levert_geen_elementtype in frontends/regelspraak)
+bepaald	definite	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 bepaalde	definite	plain	the definite article form: de bepaalde kwantor, the quantifier the	added by card hernoem-drools-backend: 1 name in backends/drools (de_bepaalde_kwantor_wordt_bij_naam_geweigerd)
+bepaling	determination	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 bepalingen	provisions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bepalingen)
 beperking	restriction	plain		added by card hernoem-drools-backend: in 2 identifiers (12 occurrences)
 beperkingen	restrictions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (beperkingen)
@@ -169,6 +195,7 @@ bewogen	moved	plain		added by card hernoem-drools-backend: 1 name in backends/dr
 bewust	aware	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_sleutel_is_soort_bewust)
 bezield	animate	wire		
 bezig	busy	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bezig)
+bezits	possession	plain	the linking-s form in a compound: bezitspredicaat, possession predicate	added by card rename-frontend (the translation check of frontends/regelspraak)
 bezittelijk	possessive	wire		
 bezocht	visited	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bezocht)
 bezoek	visit	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bezoek)
@@ -177,6 +204,7 @@ bijdrage	contribution	plain		added by card hernoem-drools-backend: in 7 identifi
 bijdragen	contributions	plain		added by card hernoem-drools-backend: in 2 identifiers (14 occurrences)
 bijdrager	contributor	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 bijdragers	contributors	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+bijectie	bijection	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 bijgewerkt	updated	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bijgewerkt)
 bijkomt	arrives	plain	comes in: input that arrives outside voegIn	added by card hernoem-drools-backend: 1 name in backends/drools (invoer_die_buiten_voegIn_om_bijkomt_of_weggaat_weigert_vuur)
 bijna	almost	plain	function word	
@@ -185,6 +213,7 @@ bijwerkt	updates	plain		added by card hernoem-drools-backend: 1 name in backends
 binair	binary	wire		
 binden	bind	wire		`binder`, `RoleBinding`
 bindercel	binderCell	plain		
+binding	binding	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 bindingen	bindings	wire		
 bindt	binds	wire		`RoleBinding`, `binder`
 binnen	within	plain	function word	
@@ -213,12 +242,14 @@ botsingen	collisions	spec		IR-SPEC §2.1
 botst	collides	spec		IR-SPEC §2.1
 bouw	build	plain		false friend
 bouwen	build	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_kring_over_het_kanaal_wordt_voor_het_bouwen_geweigerd)
+bouwer	builder	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 bouwsteen	buildingBlock	plain		added by card hernoem-drools-backend: 1 name in backends/drools (keurBouwsteen)
 bouwt	builds	plain		
 boven	above	wire		`inputAboveComputation`
 breekt	breaks	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 breken	break	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_verwisselde_stappen_breken_de_wandeling)
 breuk	rational	spec	an exact rational value	RUNTIME-SEMANTICS §2.1; `Breuk` in the production runtime is not renamed
+broer	sibling	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 bron	source	wire		
 bron annotaties	statuteAnnotations	wire	the v0 field bronAnnotaties of a rule	
 bronloos	sourceless	plain		added by card hernoem-drools-backend: 1 name in backends/drools (bronloos)
@@ -233,6 +264,7 @@ buiten	outside	plain	function word
 buitenom	outside	plain	what happened outside the entry (Bewaking)	added by card hernoem-drools-backend: 1 name in backends/drools (buitenom)
 buitenste	outermost	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 buur	neighbour	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_zusterbinding_houdt_haar_eigen_antwoord_als_de_buur_leegloopt)
+cancelt	cancels	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 canoniek	canonical	wire		
 canonieke	canonical	wire		
 cardinaliteit	cardinality	field		
@@ -244,16 +276,26 @@ cellen	cells	wire
 cijfer	digit	plain		added by card hernoem-drools-backend: 1 name in backends/drools (cijferproef)
 cijfers	digits	wire		
 claimt	claims	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
+clausule	clause	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+clausules	clauses	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+codeert	encodes	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+commentaar	comment	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+commutatief	commutative	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+compatibel	compatible	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 compileer	compile	plain	the verb stem: compileer, compile (BeanCompiler.compileer)	added by card hernoem-drools-backend: the translator flagged it (ronde 2); the dictionary takes compileer for English
 compileert	compiles	plain		
 compileren	compile	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 componenten	components	plain		added by card hernoem-drools-backend: in 3 identifiers (23 occurrences)
 concatenatie	concatenation	wire		
+conclusie	conclusion	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 concreet	concrete	plain		added by card hernoem-drools-backend: in 3 identifiers (6 occurrences)
 conditie	condition	wire		
 conflicten	conflicts	plain		added by card hernoem-drools-backend: 1 name in backends/drools (conflicten)
 conflicteren	conflict	plain	the verb	added by card hernoem-drools-backend: in 2 identifiers (8 occurrences)
+conjuncten	conjuncts	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+conjunctie	conjunction	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 conjunctieve	conjunctive	plain		added by card hernoem-drools-backend: 1 name in backends/drools (heelperiode-niet-conjunctieve-kwantor)
+conjungeert	conjoins	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 consequentie	consequence	wire		
 consistentie	consistency	wire		
 consistenties	consistencies	wire		
@@ -269,6 +311,9 @@ contractbreuk	contractBreach	plain	a broken contract (Route.CONTRACTBREUK)	added
 controle	check	wire		`CharacteristicCheck`, `RuleStatusCheck`
 controleer	check	plain	the verb	added by card hernoem-drools-backend: in 2 identifiers (10 occurrences)
 conventie	convention	plain		added by card hernoem-drools-backend: the translator flagged it (ronde 2)
+convertibel	convertible	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+convertibele	convertible	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+correcte	correct	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 crashen	crash	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_breuk_achter_een_let_vergelijkt_exact_in_plaats_van_te_crashen)
 creatie	creation	wire		
 creatiebudget	creationBudget	spec		RUNTIME-SEMANTICS §5.5
@@ -278,6 +323,7 @@ creaties	creations	wire
 creatiestrata	creationStrata	plain	the strata of object creations	added by card hernoem-drools-backend: 1 name in backends/drools (creatiestrata)
 creatiestratum	creationStratum	plain	a stratum of object creations	added by card hernoem-drools-backend: 1 name in backends/drools (TmsCreatiestratumWitnessTest)
 criterium	criterion	plain		false friend
+cycli	cycles	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 cyclus	cycle	plain		added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 daad	act	plain	in a compound: schrijfdaad, write act	added by card hernoem-drools-backend: 1 name in backends/drools (Schrijfdaad)
 daadwerkelijk	actually	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_corpuswandeling_vindt_daadwerkelijk_goldens)
@@ -301,6 +347,7 @@ dan	than	plain	function word: groter dan, greater than	false friend
 dan	then	plain	function word: als ... dan, if ... then	false friend
 danstak	thenArm	field	the then of an IfThenElse	added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 dat	that	plain	function word	
+dato	date	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 datum	date	wire		false friend
 datum in dagen	date	wire	the v0 node DatumInDagen	`Date` with precision `day`
 datum tijd	date	wire	the v0 node DatumTijd	`Date` with precision `millisecond`
@@ -318,6 +365,7 @@ declaratie	declaration	spec		IR-SPEC §2
 declaraties	declarations	spec		IR-SPEC §2
 declareert	declares	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_kleinkind_declareert_een_geerfd_referentieveld_niet_opnieuw)
 declarerende	declaring	plain		added by card hernoem-drools-backend: 1 name in backends/drools (producent_en_consument_sleutelen_op_het_declarerende_type)
+dedato	dated	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 deel	part	wire	a part of a whole (parts, timeProportionalPart; jaardeel, year part; dagdeel, part of the day)	`parts`, `timeProportionalPart`; context sharpened by card hernoem-drools-backend: the translator flagged it
 deel	share	plain	the share of a distribution, what one recipient gets of the whole (plafondDeel, ceiling share)	added by card hernoem-drools-backend: the translator flagged it
 deel	divide	plain	the verb stem: deel door, divide by; deel op rang, divide by rank	added by card hernoem-drools-backend: the translator flagged it
@@ -330,12 +378,14 @@ deelt	shares	plain	deelt X: shares X
 deeltal	dividend	plain		added by card hernoem-drools-backend: in 4 identifiers (9 occurrences)
 defaultsgroep	defaultsGroup	spec		IR-SPEC §6.1
 defaultsgroepen	defaultsGroups	spec		IR-SPEC §6.1; added by card hernoem-drools-backend: 1 name in backends/drools (defaultsgroepen)
+definieren	define	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 definitie	definition	wire		
 definities	definitions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (definities)
 degelijk	indeed	plain	function word: wel degelijk, indeed	
 degradaties	degradations	plain		added by card hernoem-drools-backend: 1 name in backends/drools (c_degradaties_in_elke_volgorde)
 degradeert	degrades	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 dekking	coverage	spec		RUNTIME-SEMANTICS §8.4
+dekt	covers	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 delen	divide	plain	the verb: delen door, divide by	context sharpened by card hernoem-drools-backend: the translator flagged it
 delen	parts	wire	the parts of a whole or of a text composition	context sharpened by card hernoem-drools-backend: the translator flagged it
 delen	share	plain	the verb: delen de sleutel, share the key	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
@@ -343,6 +393,7 @@ delend	dividing	plain		added by card hernoem-drools-backend: in 4 identifiers (7
 deler	divisor	plain		false friend
 deling	division	spec		false friend; RUNTIME-SEMANTICS §5.6
 delings	division	plain	the form in a compound: delingshek, delingsroute	added by card hernoem-drools-backend: in 4 identifiers (7 occurrences)
+denoterend	denoting	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 deponeer	deposit	plain	the verb stem: deponeerregel, deposit rule	false friend; added by card hernoem-drools-backend: in 3 identifiers (16 occurrences)
 deponeert	deposits	spec		RUNTIME-SEMANTICS §5.11
 deponeren	deposit	plain		added by card hernoem-drools-backend: 1 name in backends/drools (b_alleen_de_lege_gewichten_deponeren)
@@ -356,8 +407,11 @@ dertig	thirty	plain		added by card hernoem-drools-backend: in 2 identifiers (7 o
 deze	this	plain	function word: deze, dit: this, these	
 dezelfde	same	plain	function word: dezelfde X, the same X	
 diagnose	diagnostic	wire		false friend
+diagnoses	diagnostics	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+diagnoses	diagnoses	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 diakriet	diacritic	plain		added by card hernoem-drools-backend: 1 name in backends/drools (diakriet)
 diakritische	diacritical	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_diakritische_kastvariant_is_geen_temporele_sleutel)
+dialectzin	dialectSentence	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 dichtbij	near	plain	the near end of a pair, beside far (veraf)	corrected by card drools-word-fixes
 diens	its	plain	function word: diens X, its X	added by card hernoem-drools-backend: 1 name in backends/drools (naast_een_actieve_jutter_rekent_alleen_diens_vouw)
 diep	deep	plain		
@@ -368,6 +422,7 @@ diezelfde	same	plain	function word: diezelfde X, that same X
 dimensie	dimension	wire		
 dimensie cel	dimensionCellRead	wire	the v0 node DimensieCel	
 dimensiecel	dimensionCell	wire		
+dimensieloos	dimensionless	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 dimensies	dimensions	wire		
 dimensieselectie	dimensionSelection	wire		
 directe	direct	plain		
@@ -377,6 +432,7 @@ dit	this	plain	function word	false friend
 documenten	documents	plain		
 documentfout	documentError	plain	a malformed IR document	
 documentvolgorde	documentOrder	plain		
+dode	dead	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 doel	target	wire		
 doelen	targets	wire		
 doelgastheer	targetHost	plain		
@@ -393,7 +449,9 @@ doorgespeeld	playedThrough	plain		added by card hernoem-drools-backend: 1 name i
 doorgeven	pass	plain		added by card hernoem-drools-backend: 1 name in backends/drools (doorgeven)
 doorgifte	passThrough	plain		added by card hernoem-drools-backend: 1 name in backends/drools (vreemdeBarriereDoorgifteModel)
 doorheen	through	plain	function word	
+doorloopt	runs-on	plain	continues on the next line	added by card rename-frontend (the translation check of frontends/regelspraak)
 doorval	fallThrough	spec		RUNTIME-SEMANTICS §7.1
+draad	wire	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 draagt	carries	plain		
 draaiende	running	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 draden	threads	plain		added by card hernoem-drools-backend: 1 name in backends/drools (draden)
@@ -401,6 +459,7 @@ dragen	carry	plain
 dragend	carrying	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 dragende	carrying	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 drager	carrier	plain		false friend
+dragers	carriers	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 drempel	threshold	wire		
 drie	three	plain		
 drijf	drive	plain	the verb stem: drive a session to its fixpoint	added by card hernoem-drools-backend: 1 name in backends/drools (drijf)
@@ -412,6 +471,7 @@ dubbele punt	colon	plain	the character colon (een vormnaam met een dubbele punt,
 dubbelepunt	colon	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dubbelepunt)
 dubbelop	redundant	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dubbelop)
 dubbelzinnig	ambiguous	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dubbelzinnig)
+duidt	indicates	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 dumpt	dumps	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_naad_dumpt_elke_sessie_van_beide_takken_ook_zonder_fixpunt)
 dus	so	plain	function word: dus, so, thus	false friend
 duur	duration	wire		
@@ -459,6 +519,7 @@ eis	requirement	plain		added by card hernoem-drools-backend: in 3 identifiers (2
 eis	require	plain	the verb stem: eis, require (eisSegment, require a segment)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 elders	elsewhere	plain		false friend; added by card hernoemgereedschap: 1 name in the loader tests (de_snippet_is_het_anker_van_het_record_en_een_regel_elders_valt_weg)
 element objecttype	elementType	wire	the v0 field elementObjecttype	
+elementair	elementary	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 elementaire	elementary	plain	an elementary condition of RegelSpraak	added by card hernoemgereedschap: in 4 identifiers (36 occurrences)
 elementen	elements	wire		
 elementnaam	elementName	plain		
@@ -470,15 +531,22 @@ elkaar	eachOther	plain	function word
 elkaars	eachOther	plain	function word: elkaars, each other's	
 elke	each	plain	function word	
 elke	every	plain	function word: elke X, every X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (elke_v0_knoopnaam_wordt_bij_naam_geweigerd)
+emissie	emission	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+emitteert	emits	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+emitteren	emit	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 emmer	bucket	spec		false friend; RUNTIME-SEMANTICS §3.2
 emmerende	bucketing	spec	a bucketing builtin: one that lays its result per calendar period	RUNTIME-SEMANTICS §3.2; added by card hernoemgereedschap: 1 name in the loader tests (een_granulariteit_staat_alleen_op_een_emmerende_builtin)
 emmerscalair	bucketScalar	spec		RUNTIME-SEMANTICS §3.6, the asOfDate-bucket scalar
 en	and	plain	function word	false friend; not the language tag `en` (`bron.catala_en`)
 ene	one	plain	function word: de ene ... de andere, the one ... the other	
+engelse	english	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+enig	any	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+enig	only	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 enige	any	plain	function word: zonder enige X, without any X	
 enige	only	plain	function word: de enige X, the only X	
 enkel	single	plain	geen enkel: not a single	
 enkele	single	plain		
+enkelvoud	singular	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 enkelvoudige	single	plain		
 enumeratie	enumeration	wire		
 er	there	plain	function word	false friend
@@ -510,6 +578,7 @@ extensie	extension	field	the extension of an object type: its instances
 faal	fail	plain	the verb stem	added by card hernoem-drools-backend: in 3 identifiers (18 occurrences)
 faalbaar	fallible	plain		added by card hernoem-drools-backend: 1 name in backends/drools (MODEL_FAALBAAR)
 faalt	fails	plain		
+facetten	facets	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 factor naar canoniek	factorToCanonical	wire		
 factoren	factors	plain		added by card hernoemgereedschap: 1 name the loader tests read from outside the zone (exacteFactoren)
 factorvraag	factorQuestion	plain	the query for a unit's conversion factor	
@@ -529,16 +598,19 @@ feittypen	factTypes	wire
 filterdeponering	filterDeposit	plain		
 filterfout	filterFault	spec	the fault of the filter of a fold, an evaluation fault (the filter-fault rule)	corrected by card drools-word-fixes: in the transpiler and the TMS plans a fout is a fault; RUNTIME-SEMANTICS ch. 5.11
 filterfouten	filterFaults	spec	the faults of the filters of folds	corrected by card drools-word-fixes
+filterlid	filterMember	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 filtervouw	filterFold	plain		
 fixpunt	fixpoint	spec		RUNTIME-SEMANTICS §5.3
 floraeen	flora1	plain	Flora-1, the first Flora system of the F-logic papers	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_floraeen)
 formaat	format	wire		
 fout	error	spec	an error on the error channel (RUNTIME-SEMANTICS 5.6: an inconsistency as a fact beside the result), a load error, an error of an input or a document (documentfout, document error; invoervormfout, input form error), an exception; a failure in general	RUNTIME-SEMANTICS §5.6; context sharpened by card hernoem-drools-backend: the translator flagged it
 fout	fault	spec	an evaluation fault: evaluation stops with it and the executor reports it, as a red case pins it (expectedFault; rekenfout, compute fault; deling door nul, filterfout, the fout of a Gevolg, Foutnaam); in the transpiler and the TMS plans a fout is a fault	RUNTIME-SEMANTICS §5.11; the case field `expectedFault`; context sharpened by card hernoem-drools-backend: the translator flagged it
+foute	wrong	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 fouten	errors	spec	errors on the error channel, load errors, errors of an input or a document; failures in general	RUNTIME-SEMANTICS §5.6; context sharpened by card hernoem-drools-backend: the translator flagged it
 fouten	faults	spec	evaluation faults, as red cases pin them (the faults of a session, of a fixpoint)	RUNTIME-SEMANTICS §5.11; context sharpened by card hernoem-drools-backend: the translator flagged it
 fractie	fraction	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 fragmenten	fragments	plain		added by card hernoem-drools-backend: in 2 identifiers (5 occurrences)
+frase	phrase	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 functie	aggregation	wire	the v0 node Functie as an aggregation; Accumulatie.Functie, the aggregation of an accumulate	context sharpened by card drools-word-fixes
 functie	builtinCall	wire	the v0 node Functie as a builtin call	
 functie	function	wire	a function in general; a FunctionDef; the plan's Functie, a static function a Term calls (Functie.RS_PLUS): StaticFunction in backends/drools, where Function meets java.util.function.Function	context sharpened by card drools-word-fixes
@@ -555,12 +627,15 @@ gat	gap	plain		false friend
 gaten	holes	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gaten)
 geabsorbeerd	absorbed	plain		added by card hernoem-drools-backend: in 2 identifiers (16 occurrences)
 geabsorbeerde	absorbed	plain		added by card hernoem-drools-backend: keeps 4 names outside backends/drools split right beside the rows the card added (REDEN_GEABSORBEERDE_NIET in frontends/regelspraak)
+gebaseerd	based	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gebeurd	happened	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gebeurd)
 gebeurt	happens	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_creatie_die_alleen_op_een_lagere_default_geldt_gebeurt_niet)
 geblokkeerd	blocked	plain		added by card hernoem-drools-backend: 1 name in backends/drools (NIET_GEBLOKKEERD)
 gebonden	bound	wire		`BoundDay`, `binder`
 gebouwd	built	plain		added by card hernoem-drools-backend: in 2 identifiers (18 occurrences)
+gebrek	defect	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gebreken	defects	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gebreken)
+gebroken	broken	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gebruik	use	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gebruik)
 gebruikt	used	plain		added by card hernoem-drools-backend: in 4 identifiers (5 occurrences)
 gebruikte	used	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_misvormd_datumlexeem_in_een_gebruikte_dagsoort_wordt_op_beide_takken_geweigerd)
@@ -581,6 +656,7 @@ gedegradeerde	degraded	plain		added by card hernoem-drools-backend: 1 name in ba
 gedekt	covered	plain		added by card hernoemgereedschap: 1 name in the loader tests (gedekt)
 gedeponeerd	deposited	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gedeponeerd)
 gedimensioneerd	dimensioned	plain		
+gedocumenteerde	documented	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gedragen	carried	plain		
 gedurende	during	plain		keyword, decided at review
 geeft	gives	plain		
@@ -595,6 +671,7 @@ geforceerd	forced	plain		added by card hernoem-drools-backend: in 2 identifiers 
 gegenereerd	generated	plain		
 gegenereerde	generated	plain		
 gegeven	given	plain		added by card hernoem-drools-backend: in 3 identifiers (13 occurrences)
+gegokte	guessed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gehaald	fetched	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gehaald)
 geheel	whole	wire		
 gehele	whole	wire		
@@ -614,6 +691,7 @@ gekwantificeerd	quantified	plain		added by card hernoem-drools-backend: 1 name i
 gekwantificeerde	quantified	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (de_gekwantificeerde_operand_komt_terug_als_eigen_lezing_van_het_element in frontends/regelspraak)
 gelabeld	labelled	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gelabeld)
 geladen	loaded	plain		added by card hernoemgereedschap: 1 name in the loader tests (geladen)
+gelande	landed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 geld	money	plain	the Catala fixture geld	false friend
 geld	valid	wire	geld vanaf, geld tot: valid from, valid to	false friend; `validity`
 gelden	apply	plain	to hold: a creation that applies only on a lower default	added by card hernoem-drools-backend: 1 name in backends/drools (gelden)
@@ -625,6 +703,7 @@ geldigheidsdrager	validityCarrier	plain	a node that carries a validity window; t
 geldt	applies	plain		
 geleegd	emptied	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geleegd)
 geleegde	emptied	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_geleegde_agenda_of_een_focuswissel_buiten_vuur_om_weigert_vuur_lees_en_terugzetten)
+gelegd	laid	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 geleverd	supplied	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_temporeel_kenmerk_statisch_geleverd_is_een_harde_casefout)
 geleverde	supplied	plain		added by card hernoem-drools-backend: in 3 identifiers (4 occurrences)
 gelezen	read	plain		
@@ -667,21 +746,30 @@ genestelde	nested	plain		added by card hernoem-drools-backend: 1 name in backend
 genoemd	named	plain		added by card hernoem-drools-backend: in 2 identifiers (6 occurrences)
 genoemde	named	plain		
 genomen	taken	plain		
+genormaliseerde	normalised	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 genummerd	numbered	plain		added by card hernoem-drools-backend: in 2 identifiers (12 occurrences)
 genummerde	numbered	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (genummerde_rijen_blijven_schoon in frontends/regelspraak)
 geordend	ordered	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geordend)
 geordende	ordered	wire		
 gepakte	taken	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_tijdsduur_houdt_de_regel_van_de_gepakte_maand)
+geparste	parsed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gepasseerde	passed	plain		added by card hernoem-drools-backend: in 2 identifiers (3 occurrences)
 gepinde	pinned	plain		added by card hernoem-drools-backend: 1 name in backends/drools (alle_drie_de_casussen_spelen_met_de_gepinde_waarden)
 geproduceerd	produced	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geproduceerd)
 geraakt	touched	plain		added by card hernoem-drools-backend: in 2 identifiers (29 occurrences)
 geraden	guessed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_scalar_zonder_asOfDate_wordt_geweigerd_niet_geraden)
+gereduceerde	reduced	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gerefereerd	referenced	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_gerefereerd_object_dat_niet_is_opgegeven_weigert_voegIn_luid)
 gerenderd	rendered	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Gerenderd)
+gericht	directed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+gesanctioneerde	sanctioned	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 geschaduwd	shadowed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (geschaduwd)
 geschreven	written	plain		
 gescoopte	scoped	spec	a scoped union	IR-SPEC §3.6; added by card hernoemgereedschap: 1 name in the loader tests (lege_lijsten_en_een_gescoopte_unie_weigeren)
+gescopet	scoped	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+geselecteerde	selected	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+geshadowd	shadowed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+geshadowde	shadowed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gesloten	closed	spec	a closed set	IR-SPEC §2.4; added by card hernoemgereedschap: 1 name in the loader tests (methode_tag_soort_en_granulariteit_zijn_gesloten_verzamelingen)
 gesorteerd	sorted	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gesorteerd)
 gespeeld	played	plain		added by card hernoem-drools-backend: in 2 identifiers (51 occurrences)
@@ -689,6 +777,7 @@ gespeelde	played	plain		added by card hernoem-drools-backend: in 2 identifiers (
 gespiegeld	mirrored	plain		added by card hernoem-drools-backend: in 2 identifiers (8 occurrences)
 gespiegelde	mirrored	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 gesteld	set	plain		added by card hernoem-drools-backend: in 3 identifiers (40 occurrences)
+gesubstitueerd	substituted	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 getagd	tagged	plain		added by card hernoem-drools-backend: 1 name in backends/drools (getagd)
 getal	number	wire		
 getallen	numbers	wire		
@@ -700,6 +789,7 @@ getelde	counted	plain		added by card hernoem-drools-backend: 1 name in backends/
 getoetst	tested	plain		added by card hernoem-drools-backend: 1 name in backends/drools (getoetst)
 getoetste	tested	plain		added by card hernoem-drools-backend: 1 name in backends/drools (getoetsteTijdlijn)
 getoond	shown	plain		added by card hernoem-drools-backend: 1 name in backends/drools (getoond)
+getrimd	trimmed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 getuige	witness	spec	a witness: a document or case that shows a rule or a refusal	IR-SPEC, WF index; added by card hernoemgereedschap: 1 name in the loader tests (getuige)
 getuigen	witnesses	spec	witnesses: documents or cases that show a rule or a refusal	IR-SPEC, WF index; added by card hernoemgereedschap: 1 name in the loader tests (de_drie_getuigen_worden_in_de_zin_van_de_verifier_geweigerd)
 getwist	twisted	plain	twisted by the annotation-indifference harness (gate 13)	added by card hernoem-drools-backend: 1 name in backends/drools (getwist)
@@ -709,7 +799,9 @@ geval	case	spec	a case: a test situation	RUNTIME-SEMANTICS §5.7a
 gevallen	cases	spec	cases: test situations	RUNTIME-SEMANTICS §5.7a; added by card hernoemgereedschap: 1 name in the loader tests (gevallen)
 gevangen	caught	plain		added by card hernoem-drools-backend: in 2 identifiers (16 occurrences)
 geven	give	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+gevoelige	sensitive	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 gevolg	consequence	wire		
+gevolgd	followed	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 gevonden	found	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_geerfd_lid_wordt_vanaf_het_subtype_gevonden); also a word of declared names of the corpus, which stay as written
 gevouwen	folded	plain		added by card hernoem-drools-backend: in 2 identifiers (6 occurrences)
 gevuld	filled	wire		
@@ -730,9 +822,11 @@ gewoon	ordinary	plain	the adjective: an ordinary one beside a special one (NUL_E
 gezet	set	plain	the participle: a value that is set	added by card hernoemgereedschap: in 4 identifiers (59 occurrences)
 gezien	seen	plain		
 gezouten	salted	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gezouten)
+geëmitteerde	emitted	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 globaal	global	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Globaal)
 globalen	globals	field	the globals of a Drools session	added by card hernoemgereedschap: in 4 identifiers (25 occurrences)
 goedkoop	cheap	plain		added by card hernoem-drools-backend: 1 name in backends/drools (goedkoop)
+gokt	guesses	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 gooit	throws	plain		added by card hernoem-drools-backend: 1 name in backends/drools (gooit)
 graaf	graph	field	the rule graph	
 grafen	graphs	plain		added by card hernoem-drools-backend: 1 name in backends/drools (grafen)
@@ -775,14 +869,20 @@ heel	whole	wire		false friend
 heelperiode	wholePeriod	wire		
 heen	across	plain	function word: verb particle (over ... heen, door ... heen)	
 heet	named	plain	is called: heetOfErft, is named or inherits	added by card hernoem-drools-backend: in 2 identifiers (5 occurrences)
+heft	cancels	plain	heft op, cancels	added by card rename-frontend (the translation check of frontends/regelspraak)
+heft	heft	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 hek	fence	plain	in a compound: delingshek, division fence	added by card hernoem-drools-backend: in 4 identifiers (4 occurrences)
 hele	whole	wire		false friend
 helemaal	entirely	plain	function word	
 hem	it	plain	function word: the object pronoun	false friend
+her	re	plain	prefix: herdeclaratie, redeclaration; herNest, reNest	added by card rename-frontend (the translation check of frontends/regelspraak)
+her	her	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 herbonden	rebound	plain		added by card hernoem-drools-backend: in 2 identifiers (3 occurrences)
+herdeclaratie	redeclaration	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 herdoop	rename	plain		added by card hernoem-drools-backend: 1 name in backends/drools (herdoop)
 herhaald	repeated	plain		
 herhaalde	repeated	plain		added by card hernoem-drools-backend: 1 name in backends/drools (het_herhaalde_paar_leest_in_beide_takken_een_echte_waarde)
+herhaalt	repeats	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 herhaling	repetition	plain		
 herhalingen	repetitions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (HERHALINGEN)
 herkomst	origin	wire		
@@ -825,21 +925,26 @@ houd	keep	plain	the verb stem: houd X, keep X	added by card hernoemgereedschap: 
 houden	keep	plain		added by card hernoem-drools-backend: keeps 4 names outside backends/drools split right beside the rows the card added (case1-huishouden in corpus/golden)
 houdt	holds	plain	a condition that holds	
 houdt	keeps	plain		
+huidige	current	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 hulp	helper	plain		added by card hernoem-drools-backend: in 5 identifiers (10 occurrences)
 hulpen	helpers	plain		added by card hernoem-drools-backend: in 2 identifiers (263 occurrences)
 hun	their	plain	function word	false friend
 identiteit	identity	spec		IR-SPEC §2.1
 identiteiten	identities	plain		added by card hernoem-drools-backend: 1 name in backends/drools (identiteiten)
 identiteits	identity	plain	the form in a compound: identiteitsjoins, identity joins	added by card hernoem-drools-backend: 1 name in backends/drools (identiteitsjoins)
+idioom	idiom	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 iets	something	plain	function word	
 implementatie	implementation	plain		added by card hernoem-drools-backend: in 2 identifiers (17 occurrences)
 inbreng	input	plain	what a member brings into its fold (Gevolg.Inbreng)	added by card hernoem-drools-backend: in 2 identifiers (46 occurrences)
 inclusief	inclusive	wire		`toInclusive`
+inconsistente	inconsistent	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 inconsistentie	inconsistency	spec		RUNTIME-SEMANTICS §1.2
 inconsistenties	inconsistencies	plain		added by card hernoem-drools-backend: 1 name in backends/drools (inconsistenties)
+indelingen	groupings	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 indien	if	plain	function word	
 ingang	entry	plain		
 ingangen	entries	plain		added by card hernoem-drools-backend: in 4 identifiers (12 occurrences)
+ingebed	embedded	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ingebedde	embedded	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ingebedde_quotes_overleven_in_beide_takken)
 ingebouwde	builtIn	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (een_ingebouwde_meervoudsnaam_blijft_een_fout in frontends/regelspraak)
 ingetrokken	withdrawn	plain	taken back, of a fault or a fact the fixpoint withdraws (de fout wordt ingetrokken)	added by card hernoem-drools-backend: in 2 test names (de_fout_van_een_tussenstand_wordt_ingetrokken); a declared name of the corpus too, technical in the code
@@ -856,8 +961,12 @@ initialiseert	initialises	plain		added by card hernoem-drools-backend: 1 name in
 inspringing	indentation	plain		added by card hernoem-drools-backend: 1 name in backends/drools (inspringing)
 instantie	instance	wire		`InstanceSetUnion`
 instanties	instances	wire		
+instrumenteerbaar	instrumentable	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 integreerbaar	integrable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (integreerbaar)
+intern	internal	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+intern	intern	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 intervallen	intervals	plain		added by card hernoem-drools-backend: 1 name in backends/drools (intervallen)
+inversie	inversion	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 invoegen	insert	plain		added by card hernoem-drools-backend: 1 name in backends/drools (het_plan_van_een_creatie_construeert_voor_het_invoegen)
 invoeging	insertion	plain		added by card hernoem-drools-backend: in 3 identifiers (280 occurrences)
 invoegingen	insertions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (invoegingen)
@@ -889,6 +998,7 @@ kant	side	plain
 kanten	sides	plain		false friend
 kanten	edges	plain	the edges of a graph (TweeRoutes.kanten)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 kapt	cuts	plain	kapt X af, cuts X off	added by card hernoem-drools-backend: in 4 identifiers (4 occurrences)
+kardinaliteit	cardinality	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 kast	case	plain	letter case: ascii kast, ascii case	added by card hernoem-drools-backend: in 4 identifiers (4 occurrences)
 keer	time	plain	an occurrence: een keer, twee keer	false friend
 keert	turns	plain	keert om, turns over	added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
@@ -900,6 +1010,7 @@ kenmerken	characteristics	wire
 kenmerktoekenning	characteristicAttribution	spec		IR-SPEC §3.1
 kenmerkvorm	characteristicForm	plain		
 kenmerkwaarde	characteristicValue	plain		
+kennen	know	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 kent	knows	plain	kent geen X: knows no X	false friend; added by card hernoemgereedschap: 1 name in the loader tests (elke_knoopsoort_met_een_bronrecord_leest_het_en_kent_geen_bron)
 keten	chain	spec		false friend; IR-SPEC §6.1
 ketens	chains	spec		IR-SPEC §6.1; false friend; added by card hernoem-drools-backend: in 2 identifiers (7 occurrences)
@@ -921,6 +1032,7 @@ kleiner of gelijk	lessOrEqual	wire
 kleinkind	grandchild	plain		
 kleinste	smallest	plain		added by card hernoem-drools-backend: in 3 identifiers (11 occurrences)
 klem	clamp	wire		
+klinker	vowel	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 klip	clip	spec		false friend; RUNTIME-SEMANTICS §3.10
 klipvouw	clipFold	plain		
 klok	clock	plain		added by card hernoem-drools-backend: in 4 identifiers (10 occurrences)
@@ -929,6 +1041,7 @@ klopt	holds	plain	is correct	added by card hernoem-drools-backend: 1 name in bac
 knip	clip	spec		RUNTIME-SEMANTICS §3.10
 knoop	node	wire		
 knopen	nodes	wire		
+kolom	column	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 kolommen	columns	plain		added by card hernoem-drools-backend: 1 name in backends/drools (kolommen)
 komen	come	plain		added by card hernoemgereedschap: 1 name in the loader tests (de_vocabulaires_en_hun_benamingen_komen_in_het_model)
 komma	comma	plain		
@@ -941,6 +1054,7 @@ koppelingen	links	spec		RUNTIME-SEMANTICS §5.7a; added by card hernoem-drools-b
 koppelings	link	spec	the form in a compound: koppelingsbereik, link reach	RUNTIME-SEMANTICS §5.7a; added by card hernoem-drools-backend: in 4 identifiers (9 occurrences)
 koppelloze	linkless	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_gegenereerde_drl_draagt_geen_koppelloze_insert)
 koppelt	links	spec		RUNTIME-SEMANTICS §5.7a
+koppen	heads	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 kopplan	headPlan	plain		added by card hernoem-drools-backend: 1 name in backends/drools (kopplan)
 kort	short	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_te_kort_bronpad_wordt_geweigerd)
 korter	shorter	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_keten_die_een_pas_korter_is_speelt)
@@ -953,6 +1067,7 @@ krijgt	gets	plain
 kring	cycle	spec		IR-SPEC §5.3
 kringen	cycles	spec		IR-SPEC §5.3
 kruis	cross	plain		
+kwalificatie	qualification	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 kwalificerende	qualifying	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_niet_kwalificerende_plek_onder_dezelfde_drager_meldt_zijn_fout_ook)
 kwantificatie	quantification	plain		
 kwantificaties	quantifications	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_kwantificaties_binden_elk_dezelfde_lokale_naam)
@@ -966,6 +1081,7 @@ laag	layer	spec	a layer of the IR: the model layer, the rule layer, the expressi
 laag	low	plain	the adjective, beside hoog	added by card hernoemgereedschap: the other meaning of laag, beside layer; not in the two zones
 laat	leaves	plain	laat ... achter, laat ... weg: leaves	
 laat	lets	plain	laat X Y: lets X do Y	
+laat	allows	plain	laat X toe: allows X	added by card rename-frontend (the translation check of frontends/regelspraak)
 laatste	last	wire		
 laden	load	plain		false friend
 lader	loader	spec		false friend; IR-SPEC §4.1
@@ -988,11 +1104,15 @@ leegtest	emptyTest	plain	in a name: an emptiness test, leeg as a test	added by c
 leegtoets	emptyTest	wire	the predicate is leeg	`Predicate.kind` `empty`
 leegwaarde	emptyFallback	wire		
 lees	read	plain		false friend
+leesbaar	readable	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 leest	reads	plain		
 lege	empty	wire		
 legen	empty	plain	the verb	added by card hernoem-drools-backend: 1 name in backends/drools (legen)
+leggen	lay	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 legt	lays	plain		
+leidende	leading	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 leidt	derives	plain	leidt X af, derives X	added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+leidt	leads	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 lekt	leaks	plain		added by card hernoem-drools-backend: 1 name in backends/drools (naamgelijkheid_schaduwt_binnen_en_lekt_niet_naar_buiten)
 lengte	length	wire		`ListLength`
 lengtes	lengths	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_terugvalwaarde_van_een_som_wordt_herrekend_naast_later_afgeleide_lengtes)
@@ -1018,9 +1138,11 @@ lidmaatschaps	membership	plain	the form in a compound: lidmaatschapsopslag, memb
 lidrol	memberRole	plain		added by card hernoem-drools-backend: 1 name in backends/drools (lidrol)
 lidslot	memberSlot	plain		added by card hernoem-drools-backend: 1 name in backends/drools (lidslot)
 lidwoord	article	plain		
+lidwoordloze	articleless	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 liegend	lying	plain		added by card hernoem-drools-backend: 1 name in backends/drools (liegend)
 liegende	lying	plain		added by card hernoem-drools-backend: in 2 identifiers (24 occurrences)
 lig	lie	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ligRij)
+liggen	lie	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ligt	lies	plain		
 lijkt	resembles	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 lijst	list	wire		
@@ -1040,9 +1162,14 @@ loopt	runs	plain	without an object: it goes on (loopt niet eindeloos, does not r
 loopt	walks	plain	with an object: loopt een link, een pad, walks it (loopt geen link van haar eigen fase, walks no link of its own phase)	added by card drools-word-fixes
 lopen	run	plain	without an object: go on, run	added by card drools-word-fixes
 lopen	walk	plain	with an object: walk a link or a path (een link lopen, walk a link)	added by card drools-word-fixes
+los	loose	plain	function word	added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 losse	separate	plain		
+lossen	resolve	plain	lossen op: resolve	added by card rename-frontend (the translation check of frontends/regelspraak)
+lost	resolves	plain	lost op, resolves	added by card rename-frontend (the translation check of frontends/regelspraak)
+lost	lost	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 lowerbaar	lowerable	plain	that the transpiler can lower	added by card hernoem-drools-backend: 1 name in backends/drools (grensLowerbaar)
 lowerbare	lowerable	plain	that the transpiler can lower	added by card hernoem-drools-backend: 1 name in backends/drools (de_anker_lowerbare_heelperiode_guard_speelt_nog_in_beide_takken)
+loweren	lower	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 lowert	lowers	plain	a Dutch inflection of the English verb lower	
 luid	loudly	plain		
 luisteraar	listener	plain		added by card hernoem-drools-backend: in 2 identifiers (11 occurrences)
@@ -1056,6 +1183,8 @@ maanden	months	wire
 maart	march	plain		added by card hernoem-drools-backend: 1 name in backends/drools (MELDING_MAART)
 macht	power	wire		
 mag	may	plain	the verb: mag, may	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
+map	directory	plain	a folder of files	added by card rename-frontend (the translation check of frontends/regelspraak)
+map	map	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 mappen	directories	plain		added by card hernoem-drools-backend: 1 name in backends/drools (mappen)
 markeer	mark	plain		added by card hernoem-drools-backend: 1 name in backends/drools (markeerFalen)
 markering	marking	plain		false friend
@@ -1064,17 +1193,20 @@ massa	mass	plain		added by card hernoem-drools-backend: the translator flagged i
 matcht	matches	plain		
 maximale	maximal	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_maximale_waarde_over_een_bronrol_speelt_in_beide_takken)
 mede	co	plain	co-, fellow: medeplek, co-site	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
+medeklinker	consonant	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 mediaan	median	plain		added by card hernoem-drools-backend: in 2 identifiers (21 occurrences)
 mee	along	plain	function word: verb particle (telt mee, rekent mee, neemt mee)	
 meer	more	plain	function word	false friend
 meercijferige	multiDigit	plain		added by card hernoem-drools-backend: keeps 2 names outside backends/drools split right beside the rows the card added (datum_literal_met_meercijferige_dag_is_een_fout in frontends/regelspraak)
 meerdere	multiple	plain		
+meerduidig	ambiguous	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 meerstaps	multiStep	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_meerstaps_doelgastheer_leest_het_doel_in_beide_takken)
 meervoud	plural	wire		
 meervoudig	many	wire	the multiplicity of a role	
 meervoudige	many	wire	the multiplicity of a role	`many`
 meervoudige	multiple	plain	more than one, as in meervoudige periode	
 meervoudsvorm	pluralForm	plain		
+meerwoordig	multi-word	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 meld	report	plain	the verb stem: meld X, report X (meldt, reports; melden, report)	false friend
 meld	message	plain	the stem in a compound noun: meldmodel, message model; meldplek, message site; meldtelling, message count (melding is message on the wire)	added by card hernoem-drools-backend: one term for melding, also in a compound; the verb stays report
 melden	report	plain		added by card hernoem-drools-backend: 1 name in backends/drools (melden)
@@ -1092,6 +1224,7 @@ midden	middle	plain		added by card hernoem-drools-backend: the translator flagge
 milliseconde	millisecond	wire		
 min	min	plain	the minimum, as code writes it (Math.min, EXPECTED_MIN_*): English as it stands	added by card hernoem-drools-backend: with this row min never makes a name Dutch on its own
 min	minus	wire	the binary minus (datum min dagen; waarde min vijf), the wire operator minus	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
+minimaal	minimal	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 minimale	minimal	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_minimale_waarde_over_een_bronrol_speelt_in_beide_takken)
 minste	least	wire	in ten minste	`atLeast`
 minstens	atLeast	plain	function word	
@@ -1105,6 +1238,8 @@ modus	mode	wire
 mogelijk	possible	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_objectcreatie_die_de_regellaag_mogelijk_maakt_vuurt_in_de_volgende_generatie)
 mogelijke	possible	plain		added by card hernoem-drools-backend: 1 name in backends/drools (mogelijkeOuder)
 monotoon	monotonic	field	Flora-2's monotonic inheritance mode (setsemantics)	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_monotoon)
+morfologie	morphology	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+multidimensioneel	multidimensional	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 munt	mints	spec	an object creation makes a new object	false friend; RUNTIME-SEMANTICS §5.5
 muren	walls	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 mutanten	mutants	plain		added by card hernoem-drools-backend: 1 name in backends/drools (MUTANTEN)
@@ -1135,17 +1270,22 @@ navigatie bindingen	path	wire	the v0 field navigatieBindingen of an attribute re
 navigatiebinding	navigation	wire	the v0 field navigatieBinding of a characteristic check	
 navigatiebindingen	path	wire	the v0 field navigatieBindingen of an attribute reference	
 navigeerde	navigated	spec		IR-SPEC §4.1a; added by card hernoem-drools-backend: 1 name in backends/drools (navigeerdeKeur)
+navigeert	navigates	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 navigerende	navigating	spec		IR-SPEC §4.1a; added by card hernoem-drools-backend: in 2 identifiers (8 occurrences)
 neemt	takes	plain		
+neerwaarts	downward	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 negatie	negated	wire	the v0 field negatie	
 negatie	negation	spec		RUNTIME-SEMANTICS §5.3
 negatief	negative	wire		
 negatieve	negative	wire		
 negatieven	negatives	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+negeer	ignore	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 negen	nine	plain		
 negenentwintig	twentyNine	plain	the numeral	added by card hernoemgereedschap: 1 name in the loader tests (negenentwintig_februari_buiten_een_schrikkeljaar_wordt_geweigerd_op_de_kalender)
+negentiende	nineteenth	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 nemen	take	plain		added by card hernoemgereedschap: 1 name in the loader tests (wortel_en_absolute_waarde_nemen_een_getal)
 nergens	nowhere	plain	function word	
+nesten	nest	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 net	just	plain	function word: net zo, just as	false friend
 netten	nets	plain		added by card hernoem-drools-backend: 1 name in backends/drools (netten)
 niemand	nobody	plain	function word	
@@ -1164,6 +1304,7 @@ noemer	denominator	wire
 noemt	names	plain		
 nog	still	plain	function word	false friend
 nooit	never	plain	function word	
+normaliseer	normalise	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 normaliseert	normalises	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_drl_tekst_normaliseert_ook_de_uniesleutel)
 nu	now	plain	function word	false friend
 nul	zero	wire		false friend
@@ -1204,12 +1345,16 @@ onbekend	unknown	plain		naamtabel: no v1 name (B16)
 onbekende	unknown	plain		
 onbepaald	indefinite	plain	the indefinite article (onbepaald lidwoord)	
 onbepaald	unspecified	wire		`Number.sign`
+onbewaakte	unguarded	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+onbindbaar	unbindable	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+onbindbare	unbindable	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 onder	under	plain	function word	
 onderdeel	part	wire		`parts`
 onderdelen	parts	wire		
 onderweg	intermediate	plain	on the way, before the fixpoint	
 onderwerp	subject	wire		
 ondraagbare	uncarriable	plain	that the backend cannot carry	added by card hernoem-drools-backend: 1 name in backends/drools (ondraagbareGrens)
+onduidelijke	unclear	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 oneven	odd	plain	of a number or a cycle (een oneven ontkenningskring, an odd negation cycle)	added by card drools-word-fixes
 ongeacht	regardless	plain	function word	
 ongeankerde	unanchored	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_ongeankerde_temporele_schrijvers_bereiken_een_fixpunt)
@@ -1237,6 +1382,7 @@ ongeordend	unordered	wire
 ongeordende	unordered	wire		
 ongeprobeerd	untried	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ongeprobeerd)
 ongerechtvaardigde	unjustified	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_ongerechtvaardigde_default_laat_de_letwaarde_ongemoeid)
+ongeschreven	unwritten	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 ongestoorde	undisturbed	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 ongetwiste	untwisted	spec	as written, before a probe or gate 13 twists it	IR-SPEC §4.1; added by card hernoemgereedschap: 1 name in the loader tests (het_ongetwiste_venster_wordt_gelezen_zoals_het_op_de_wire_staat)
 ongevoelig	insensitive	plain	in a compound: hoofdletterongevoelig, case-insensitive	added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (de_tabel_wordt_hoofdletterongevoelig_en_getrimd_gelezen in frontends/regelspraak)
@@ -1246,11 +1392,16 @@ ongewijzigd	unchanged	plain		added by card hernoemgereedschap: 1 name in the loa
 ongezet	unset	plain		
 onherroepelijk	irrevocable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (onherroepelijk)
 onleesbaar	unreadable	plain		
+onleesbare	unreadable	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 onmogelijke	impossible	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (versiegeldigheid_met_onmogelijke_datum_en_tijd_meldt_beide in frontends/regelspraak)
 onopgelost	unresolved	wire		
 onopgeloste	unresolved	wire		
+onoplosbare	unsolvable	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+onpersoonlijke	impersonal	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+onregelmatige	irregular	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 onsamenstelbaar	uncomposable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Onsamenstelbaar)
 onspeelbaar	unplayable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (onspeelbaar)
+onspelbare	unspellable	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ontbreekt	missing	plain		
 ontbrekend	missing	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_ontbrekend_verplicht_veld_weigert)
 ontbrekende	missing	plain		
@@ -1259,11 +1410,13 @@ ontkende	negated	wire
 ontkenning	negation	spec		RUNTIME-SEMANTICS §5.3
 ontkenningen	negations	plain		added by card hernoem-drools-backend: in 2 identifiers (8 occurrences)
 ontkennings	negation	plain	the form in a compound: ontkenningsketen, negation chain	added by card hernoem-drools-backend: in 4 identifiers (5 occurrences)
+ontkent	negates	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 ontleed	parsed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ontleed)
 ontleed	parse	plain	the verb stem: ontleed, parse	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 ontmoet	meets	plain		added by card hernoem-drools-backend: in 2 identifiers (3 occurrences)
 ontmoeten	meet	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_pad_waarvan_de_wandelingen_elkaar_ontmoeten)
 ontmoeting	meeting	plain		added by card hernoem-drools-backend: in 2 identifiers (13 occurrences)
+ontsnapt	escapes	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ontstaat	arises	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 ontsuikerd	desugared	plain		added by card hernoem-drools-backend: in 4 identifiers (7 occurrences)
 ontsuikerde	desugared	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ontsuikerdeDoelen)
@@ -1272,12 +1425,15 @@ ontvangers	recipients	spec		RUNTIME-SEMANTICS §4.1
 onveranderd	unchanged	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (een_gewone_dagsoort_wordt_onveranderd_geregistreerd in frontends/regelspraak)
 onveranderlijke	immutable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (lijst_maakt_een_onveranderlijke_tijdlijn_en_laat_een_afwezige_afwezig)
 onverbonden	unconnected	plain		
+onverenigbare	incompatible	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 onvervulbare	unsatisfiable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (telling_over_een_onvervulbare_dagsoort_is_nul_en_geen_fout)
 onvervulde	unfulfilled	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_onvervulde_voorwaarde_munt_niet)
 onvolledig	incomplete	plain		added by card hernoem-drools-backend: keeps 2 names outside backends/drools split right beside the rows the card added (onvolledig in frontends/regelspraak)
 onvolledige	incomplete	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (een_onvolledige_periode_is_alleen_een_syntaxfout in frontends/regelspraak)
+onvoorwaardelijk	unconditional	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 onwaar	false	wire		keyword, decided at review; the boolean literal `false` on the wire
 onware	false	wire		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
+onzuiver	impure	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ooit	ever	spec		RUNTIME-SEMANTICS §5.9
 ook	also	plain	function word	
 oordeel	verdict	spec		IR-SPEC §4.6
@@ -1285,19 +1441,22 @@ oordelen	verdicts	spec		IR-SPEC §4.6; added by card hernoem-drools-backend: 1 n
 oorspronkelijke	original	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_gevulde_delingsroute_levert_de_oorspronkelijke_uitkomst)
 oorzaak	cause	plain		added by card hernoem-drools-backend: in 3 identifiers (22 occurrences)
 oorzaken	causes	plain		added by card hernoem-drools-backend: 1 name in backends/drools (oorzaken)
-op volgorde	ordered	wire		`AllocationVersion.method`
 op	by	plain	function word: a key or a basis (rolOpNaam, roleByName; opRang, byRank)	added by card hernoem-drools-backend: the rule for op in a name; op stays English on its own (opCode)
 op	on	plain	function word: what something acts on or holds for, a place, a day (filterOpOnderwerp, filterOnSubject; opStapel, onStack; zaakOp, caseOn)	added by card hernoem-drools-backend: the rule for op in a name; op stays English on its own (opCode)
 op	to	plain	function word: a rounding (afgerondOp2, roundedTo2)	added by card hernoem-drools-backend: the rule for op in a name; op stays English on its own (opCode)
+op volgorde	ordered	wire		`AllocationVersion.method`
 opaak	opaque	plain		
 opake	opaque	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_maal_van_twee_losse_eenheden_geeft_het_opake_product)
 opbouw	structure	plain	the structure of a rule: de regelopbouw	added by card hernoem-drools-backend: 1 name in backends/drools (een_naam_met_tekens_van_de_regelopbouw_staat_geciteerd)
 opdracht	task	plain		added by card hernoem-drools-backend: 1 name in backends/drools (opdracht)
 opdrachten	tasks	plain		added by card hernoem-drools-backend: 1 name in backends/drools (opdrachten)
+opent	opens	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 operanden	operands	wire		
 operatoren	operators	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Operatoren)
 opgave	input	wire	a supplied value that a computation can also produce (opgave boven berekening)	`inputAboveComputation`
+opgelost	resolved	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 opgeloste	resolved	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+opgeslokte	swallowed	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 opgesomd	enumerated	plain		
 opgesomde	enumerated	plain		
 opgevangen	caught	plain	caught by an empty barrier (Route.OPGEVANGEN)	added by card hernoem-drools-backend: in 2 identifiers (5 occurrences)
@@ -1315,10 +1474,12 @@ optelling	addition	plain		added by card hernoem-drools-backend: 1 name in backen
 optioneel	optional	plain	an optional field	added by card hernoemgereedschap: 3 names in the loader tests (een_null_op_een_veld_dat_l5_optioneel_maakte_weigert)
 opvolger	successor	plain		added by card hernoem-drools-backend: 1 name in backends/drools (EEN_OPVOLGER)
 opvolgerrol	successorRole	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ketenMetOpvolgerrol)
+opvraagbaar	retrievable	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 opwarmen	warmUp	plain		added by card hernoem-drools-backend: 1 name in backends/drools (OPWARMEN)
 opzet	setup	plain		added by card hernoem-drools-backend: 1 name in backends/drools (opzetNanos)
 opzoek	lookup	plain	the stem in a compound: opzoekvolgorde, lookup order	added by card hernoem-drools-backend: 1 name in backends/drools (DagsoortOpzoekvolgordeWitnessTest)
 opzoekbare	findable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (zonder_opzoekbare_declaratie_claimt_de_lezing_niets)
+ordenen	order	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 ordenend	ordering	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ordenend)
 ordenende	ordering	plain		added by card hernoem-drools-backend: in 4 identifiers (4 occurrences)
 ordening	ordering	plain		added by card hernoem-drools-backend: 1 name in backends/drools (leeg_onder_gelijkheid_en_ordening_volgens_de_tabellen)
@@ -1330,11 +1491,16 @@ ouder	parent	plain
 over	about	plain	function word: about	false friend
 over	over	plain	function word: een vouw over X, a fold over X	false friend
 overal	everywhere	plain		added by card hernoem-drools-backend: 1 name in backends/drools (overal)
+overbodig	redundant	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+overbodige	redundant	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 overerving	inheritance	spec		RUNTIME-SEMANTICS §7.10
 overgenomen	adopted	plain		added by card hernoem-drools-backend: 1 name in backends/drools (overgenomen)
 overgeslagen	skipped	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_matrix_buiten_de_scope_wordt_met_de_vorm_in_de_reden_overgeslagen)
 overkant	farSide	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_rolcheck_aan_de_overkant)
+overlappen	overlap	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+overlappend	overlapping	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 overlappende	overlapping	plain		
+overlapt	overlaps	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 overleeft	survives	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_regeleinde_overleeft_vergelijking_en_gevolg_in_beide_takken)
 overleven	survive	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ingebedde_quotes_overleven_in_beide_takken)
 overname	adoption	plain	a member taking over a declaration, such as a timeline	false friend
@@ -1353,8 +1519,15 @@ paden	paths	wire		`path`; added by card hernoemgereedschap: in 4 identifiers (76
 padmodel	pathModel	wire		added by card hernoem-drools-backend: 1 name in backends/drools (PADMODEL)
 pakket	package	plain		added by card hernoem-drools-backend: in 2 identifiers (41 occurrences)
 parametergrens	parameterBound	plain		
+parameterset	parameterSet	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+parseert	parses	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+parsen	parse	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+parseren	parse	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+parst	parses	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 pas	only	plain	function word: pas na X, only after X	false friend
 pas	step	plain	the noun	false friend
+passen	fit	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+passen	steps	plain	the plural of pas, step	added by card rename-frontend (the translation check of frontends/regelspraak)
 past	fits	plain		false friend
 patronen	patterns	field	Drools patterns	added by card hernoem-drools-backend: in 3 identifiers (65 occurrences)
 patroon	pattern	plain		false friend
@@ -1380,6 +1553,7 @@ plaatsen	places	plain		added by card hernoem-drools-backend: in 6 identifiers (7
 plafond	cap	spec	an upper limit, such as the cap of a creation budget	RUNTIME-SEMANTICS §4.6
 plafond	ceiling	wire	rounding up	`Rounding.mode`
 plannen	plans	plain		added by card hernoem-drools-backend: in 4 identifiers (105 occurrences)
+plat	flat	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 platgeslagen	flattened	plain		added by card hernoem-drools-backend: in 2 identifiers (3 occurrences)
 platte	flat	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_tijdsafhankelijk_kenmerk_in_de_platte_lijst_weigert_de_caselezer)
 plek	site	plain	a place in an expression where a read or a deposit happens	
@@ -1401,12 +1575,17 @@ predicaten	predicates	plain		added by card hernoem-drools-backend: in 2 identifi
 predikaat	predicate	plain		added by card hernoem-drools-backend: in 2 identifiers (20 occurrences)
 predikaten	predicates	plain		added by card hernoem-drools-backend: 1 name in backends/drools (predikaten)
 presentatie	presentation	wire		
+primair	primary	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 primaire	primary	plain		
 procent	percent	plain		
+produceert	produces	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 producent	producer	spec		false friend; IR-SPEC §4.3
 producenten	producers	plain		added by card hernoem-drools-backend: 1 name in backends/drools (producenten)
 producten	products	plain		added by card hernoem-drools-backend: in 3 identifiers (8 occurrences)
+productiedocument	productionDocument	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+productieroute	productionRoute	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 productloze	productless	plain		added by card hernoem-drools-backend: 1 name in backends/drools (productloze_eind_output_wordt_gemarkeerd)
+productunit	productUnit	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 proef	trial	plain	a test fixture	
 projectie	projection	plain		added by card hernoem-drools-backend: 1 name in backends/drools (GraafProjectie)
 propagatie	propagation	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_onbekende_actie_op_de_propagatielijst_weigert_vuur_lees_en_terugzetten)
@@ -1425,7 +1604,10 @@ rangtelwoord	ordinal	plain
 rapport	report	plain		false friend
 rapporteert	reports	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_golden_die_speelt_rapporteert_verdicten_vuringen_en_dekking)
 raster	grid	spec		false friend; RUNTIME-SEMANTICS §3.2
+rasters	grids	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+ratefactor	rateFactor	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 rationaal	rational	spec		RUNTIME-SEMANTICS §2.1
+rationalen	rationals	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 rato	ratio	wire		`ratioAttribute`
 rauw	raw	plain		added by card hernoem-drools-backend: in 3 identifiers (10 occurrences)
 rauwe	raw	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
@@ -1449,6 +1631,7 @@ regel groepen	ruleGroups	wire
 regeldoel	ruleTarget	wire		
 regeleinde	lineEnd	plain		
 regelgroep	ruleGroup	wire		
+regelmatige	regular	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 regelnaam	ruleName	wire		
 regelplan	rulePlan	plain	the plan the truth-maintenance analysis yields per rule	CLAUDE.md, gate 12
 regels	rules	wire		
@@ -1456,6 +1639,8 @@ regels	lines	plain	the lines of a text (over twee regels, over two lines)	added 
 regelversie	ruleStatusCheck	wire	the v0 node Regelversie: regelversie X is inconsistent	the wire keeps v0 `Regelversie` until its v1 form lands (B25)
 regelversie	ruleVersion	wire	a version of a rule	`RuleVersion`
 regelwaarde	ruleValue	plain		
+registerlint	registerLint	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+registreer	register	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 reikwijdte	scope	wire	only the wire field scope of a uniqueness; how far a step goes is its reach	context sharpened by card drools-word-fixes
 reikwijdte	reach	spec	how far a step or a day-kind walk may go (reikwijdtefout, a reach fault)	added by card drools-word-fixes; RUNTIME-SEMANTICS ch. 3.8, the reach fence
 reken	compute	plain	the verb stem	
@@ -1469,9 +1654,12 @@ rekenkunde	arithmetic	plain		added by card hernoem-drools-backend: 1 name in bac
 rekenkundig	halfAwayFromZero	wire	the rounding mode	`Rounding.mode`
 rekenregel	computingRule	spec	a rule with a computing version	IR-SPEC §3.1
 rekent	computes	plain		
+relateert	relates	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 relatie	relation	spec		IR-SPEC §2.6
 relaties	relations	spec		IR-SPEC §2.6
 reproductie	reproduction	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_reproductie_van_de_kaart)
+resolveer	resolve	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+resolvet	resolves	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 restant	remainder	wire		false friend; `remainderAttribute`
 resultaat	result	wire		
 resultaten	results	plain		added by card hernoem-drools-backend: 1 name in backends/drools (resultaten)
@@ -1493,6 +1681,7 @@ rollidmaatschap	roleMembership	wire
 rollidmaatschaps	roleMembership	wire	the form in a compound: rollidmaatschapscheck, role membership check	added by card hernoem-drools-backend: 1 name in backends/drools (de_rollidmaatschapscheck_weigert_hetzelfde_veld)
 rollink	roleLink	plain		added by card hernoem-drools-backend: 1 name in backends/drools (Rollink)
 rolnaam	roleName	wire		
+rolteling	roleCount	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 rolvuller	roleFiller	spec		IR-SPEC §4.6
 rolvullers	roleFillers	spec		IR-SPEC §4.6; added by card hernoem-drools-backend: in 2 identifiers (4 occurrences)
 rond	around	plain	rond een vouw, around a fold	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
@@ -1507,11 +1696,14 @@ saldo	balance	plain
 samen	together	plain	function word: verb particle (voeg samen: merge; stel samen: compose)	false friend
 samengesteld	compound	wire		
 samengestelde	compound	wire		
+samengevoegd	merged	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 samenstelling	compound	wire	a composite condition	`Compound`
 samenstelt	composes	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_toets_die_de_vorm_zelf_samenstelt_heeft_de_rol_vorm)
 samenvallen	coincide	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+samenvoegen	merge	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 scalair	scalar	spec		RUNTIME-SEMANTICS §3.6
 scalaire	scalar	spec		RUNTIME-SEMANTICS §3.6
+scenarioroute	scenarioRoute	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 schaal	scale	spec		RUNTIME-SEMANTICS §2.9
 schaduwende	shadowing	field		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 schaduwt	shadows	field	a name shadows another	
@@ -1524,6 +1716,7 @@ schendingen	violations	plain		added by card hernoemgereedschap: 1 name in the lo
 schoon	clean	plain		false friend
 schreeuw	shout	plain		added by card hernoem-drools-backend: 1 name in backends/drools (isSchreeuw)
 schrijf	write	plain		
+schrijfbaar	writable	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 schrijft	writes	plain		
 schrijven	write	plain		added by card hernoem-drools-backend: 1 name in backends/drools (beide_spellingen_van_een_relatie_schrijven_hetzelfde_veld)
 schrijvend	writing	plain		added by card hernoem-drools-backend: 1 name in backends/drools (schrijvend)
@@ -1532,6 +1725,7 @@ schrijvers	writers	spec		RUNTIME-SEMANTICS §5.5
 schrikkel	leap	spec	in schrikkeljaar, schrikkeldag: leap year, leap day	IR-SPEC §4.1; added by card hernoemgereedschap: 2 names in the loader tests (een_schrikkeldag_wordt_gelezen)
 schuddingen	shuffles	plain		added by card hernoem-drools-backend: in 2 identifiers (15 occurrences)
 scope rol	scope	wire	the v0 field scopeRol of a uniqueness	
+scoperol	scopeRole	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 seconde	second	wire	the time unit	false friend
 seconden	seconds	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_ontbrekend_secondenveld_wordt_geweigerd)
 sectie	section	plain	a section of the IR document	added by card hernoemgereedschap: 1 name in the loader tests (een_onbekende_sectie_weigert_en_functionDefs_blijft_een_vorm)
@@ -1542,6 +1736,7 @@ sessie	session	spec		RUNTIME-SEMANTICS §5.7
 sessiedump	sessionDump	plain		
 sessies	sessions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_sessies_zien_elkaars_vuringen_niet)
 setbron	setSource	spec		IR-SPEC §4.3
+setkop	setHeader	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 setlezing	setRead	plain	a read of an attribute over a set of instances	
 setvouw	setFold	spec		IR-SPEC §4.3
 signatuur	signature	field	an F-logic signature, C[|a => T|]	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_rolsignatuur)
@@ -1576,6 +1771,7 @@ speelt	plays	plain	a golden replays with its pinned outcome	gate 12 status `PLAY
 spelen	play	plain		
 spelend	playing	plain		added by card hernoem-drools-backend: 1 name in backends/drools (spelend)
 spelende	playing	plain		added by card hernoem-drools-backend: in 2 identifiers (11 occurrences)
+spellen	spell	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 spellingen	spellings	wire		
 spelt	spells	plain		false friend
 spiegelde	mirrored	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_botsende_omgekeerde_poot_noemt_de_link_waarvan_de_pas_de_poot_spiegelde)
@@ -1584,6 +1780,7 @@ splijt	split	plain	the stem in a compound: splijtdocument, split document	added 
 splitst	splits	plain		added by card hernoemgereedschap: 1 name in the loader tests (de_ene_lijst_uniciteiten_splitst_op_het_aantal_bronnen)
 spoor	trace	plain	in a compound: vuurspoor, firing trace	false friend; added by card hernoem-drools-backend: in 2 identifiers (38 occurrences)
 sporen	traces	plain		added by card hernoem-drools-backend: in 2 identifiers (6 occurrences)
+spreekt	speaks	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 staan	are	plain	function word: staan op X, are on X	added by card hernoemgereedschap: the translation of a test sentence of the loader tests (spellingen_staan_alleen_op_de_declaratie); stand is Dutch to the inventory (false friend)
 staan	stand	plain		
 staand	standing	spec		RUNTIME-SEMANTICS §7.8
@@ -1612,16 +1809,20 @@ statische	static	plain		added by card hernoem-drools-backend: in 2 identifiers (
 steeds	still	plain	function word: nog steeds, still	false friend
 steekproef	sample	plain		
 stellen	set	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_VERSCHILLENDE_afgeleide_producten_stellen_elkaar_ook_vrij)
+stellende	verb-leading	plain	the register whose conditions lead with the verb (is gelijk aan)	added by card rename-frontend (the translation check of frontends/regelspraak)
 stelsel	system	wire		
 stelsels	systems	plain		added by card hernoem-drools-backend: 1 name in backends/drools (stelsels)
 stelt	sets	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_creatie_stelt_wat_ze_maakt)
 stijgt	rises	plain		added by card hernoem-drools-backend: 1 name in backends/drools (stijgt)
 stil	silent	plain		
 stille	silent	plain		
+stilletjes	silently	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 stond	stood	plain	the past of staan	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 stopt	stops	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 strijdige	conflicting	plain	against: cardinaliteitsstrijdige, against the cardinality	added by card hernoem-drools-backend: 1 name in backends/drools (een_cardinaliteitsstrijdige_stap_wordt_geweigerd)
 strikt	strict	plain		
+stript	strips	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+stroomafwaarts	downstream	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 structdomein	structDomain	wire		`StructType`, `domain`
 structureel	structural	plain	the adjective	added by card hernoemgereedschap: the adjective beside the adverb; not in the two zones
 structureel	structurally	spec	the adverb: wordt structureel gelezen, is read structurally	IR-SPEC §2.12; added by card hernoemgereedschap: 2 names in the loader tests (de_herkomst_wordt_structureel_gelezen)
@@ -1632,10 +1833,13 @@ stuur	control	field	in a compound: stuurfeit, control fact	added by card hernoem
 subdag	subDay	plain		
 subjectrol	subjectRole	plain		added by card hernoem-drools-backend: 1 name in backends/drools (meervoudigeSubjectrol)
 subselectie	subselection	spec		RUNTIME-SEMANTICS §3.4a
+subtypen	subtypes	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 symbolisch	symbolic	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_creatie_zonder_heel_symbolisch_blok_laadt_niet)
 symbool	symbol	plain		added by card hernoem-drools-backend: 1 name in backends/drools (symbool)
+synthese	synthesis	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 synthetisch	synthetic	spec		IR-SPEC §2.2; added by card hernoemgereedschap: 1 name in the loader tests (synthetisch)
 systeem	system	plain	a type system; a unit system is a stelsel	added by card hernoemgereedschap: 1 name in the loader tests (TypesysteemWeigeringWitnessTest)
+taal	language	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 tabel	table	wire		`decisionTable`
 tabellen	tables	plain		added by card hernoem-drools-backend: 1 name in backends/drools (leeg_onder_gelijkheid_en_ordening_volgens_de_tabellen)
 tak	arm	field	the then or the else of an IfThenElse	Match `arms`; RUNTIME-SEMANTICS §10.6 says branch
@@ -1674,6 +1878,7 @@ telling	count	wire		false friend
 tellingen	counts	plain		added by card hernoem-drools-backend: in 2 identifiers (11 occurrences)
 telt	counts	plain		false friend
 telwoord	numeral	plain		
+telwrat	countWart	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 temporeel	temporal	wire		
 temporele	temporal	wire		
 ten	at	plain	function word: in ten minste, ten hoogste	false friend
@@ -1690,6 +1895,8 @@ terugzet	writeBack	plain	the stem of terugzetten in a compound: terugzetMs, the 
 terugzetten	writeBack	plain	the write-back: zetAfgeleideWaarden puts what stands in a session onto its beans (lees en terugzetten, read and write back); never reset	corrected by card drools-word-fixes: reset says the opposite
 terugzetting	writeBack	plain	the write-back of a session onto its beans (zetAfgeleideWaarden)	corrected by card drools-word-fixes
 terwijl	while	plain	function word	
+testdocument	testDocument	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+thuis	home	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 tien	ten	plain		false friend
 tijd	time	wire		
 tijdelijk	temporary	plain		added by card hernoem-drools-backend: in 2 identifiers (128 occurrences)
@@ -1708,10 +1915,14 @@ tijdvak	period	wire	a period of a timeline
 tijdvakken	periods	wire		added by card hernoem-drools-backend: in 2 identifiers (10 occurrences)
 tijdvrij	timeFree	spec	without an evaluation date: a time-free session	added by card drools-word-fixes; RUNTIME-SEMANTICS ch. 3.12
 tijdvrije	timeFree	spec	without an evaluation date: a time-free session	corrected by card drools-word-fixes; RUNTIME-SEMANTICS ch. 3.12
+tilt	lifts	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+tilt	tilt	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 titel	title	plain		added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 toch	nevertheless	plain	function word	
 toe	to	plain	function word: verb particle (voeg toe: add; laat toe: allow)	false friend
+toegelaten	admitted	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 toegestaan	allowed	plain		added by card hernoem-drools-backend: in 3 identifiers (6 occurrences)
+toekennen	assign	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 toekenning	assignment	spec	an assignment of a value to an attribute by a rule (IR-SPEC 3.1: gelijkstelling, berekening; kenmerktoekenning, characteristic assignment)	IR-SPEC §3.1; context sharpened by card hernoem-drools-backend: the translator flagged it
 toekenning	memberInit	wire	only the v0 node Toekenning: the initialisation of a member in an object creation	context sharpened by card hernoem-drools-backend: the translator flagged it
 toekenningen	assignments	spec	assignments of values to attributes by rules (IR-SPEC 3.1)	IR-SPEC §3.1; context sharpened by card hernoem-drools-backend: the translator flagged it
@@ -1733,13 +1944,19 @@ totaal	total	wire
 totaan	upTo	plain	tot aan: up to	added by card hernoem-drools-backend: 1 name in backends/drools (totaan)
 totalen	totals	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_keten_van_tijdlijnschrijvers_en_de_totalen_erover_in_elke_volgorde_van_de_regels)
 treffer	hit	plain	something found, with where it was found	added by card hernoemgereedschap: 1 name in the loader tests (Treffer)
+treffers	hits	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+treft	matches	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 turks	turkish	plain	the Turkish locale of a test (turks-kenmerk)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 tussen	between	plain	function word	
+tussen	intermediate	plain	the first part of a compound: tussentype, intermediate type	added by card rename-frontend (the translation check of frontends/regelspraak)
 tussenstand	intermediateState	plain	a state before the fixpoint	
 tussenstap	pathStep	wire		
 tussenstappen	path	wire	the v0 field tussenstappen of a fact creation	
 tussenstappen	pathSteps	wire		
+twaalf	twelve	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+twaalfde	twelfth	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 twee	two	plain		false friend
+twee keer	twice	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 tweede	second	plain	the ordinal	
 tweedepunt	secondPoint	plain		added by card hernoem-drools-backend: 1 name in backends/drools (tweedepunt)
 tweeledig	twofold	plain		added by card hernoem-drools-backend: 1 name in backends/drools (doelTweeledig)
@@ -1748,6 +1965,8 @@ tweemaal	twice	plain	function word
 tweerollig	twoRole	plain	with two roles	added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (tweerollig in frontends/regelspraak)
 tweeëntwintig	twentyTwo	plain		added by card hernoem-drools-backend: 1 name in backends/drools (tweeëntwintig)
 twintig	twenty	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twintig)
+typeer	type	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
+typeloos	untyped	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 typemeervoud	typePlural	plain		
 typen	types	wire		
 typenaam	typeName	plain		
@@ -1756,6 +1975,7 @@ typepaar	typePair	spec		IR-SPEC §2.6
 typering	typing	plain		false friend
 uit	of	wire	in the builtins jaar uit, maand uit, dag uit and the other time parts	`yearOf`, `monthOf`, `dayOf`
 uit	out	plain	function word: preposition and verb particle (komt uit, sluit uit)	
+uit	from	plain	uit X: from X, what a thing is generated or composed from (composedFrom, conditionFromToplevel)	added by card rename-frontend (the translation check of frontends/regelspraak)
 uitbreidings	extension	plain	the form in a compound: uitbreidingsschrijf, extension write	added by card hernoem-drools-backend: 1 name in backends/drools (uitbreidingsschrijf)
 uitdeling	payout	plain		added by card hernoem-drools-backend: in 3 identifiers (18 occurrences)
 uiteinden	ends	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
@@ -1773,6 +1993,7 @@ uitsluit	exclude	plain	the verb stem: sluit uit, exclude; the replay status EXCL
 uitsluiting	exclusion	plain		
 uitvoer	output	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_creatie_die_haar_eigen_uitvoer_leest_houdt_zichzelf_niet_in_stand)
 uitvoerbaar	executable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (uitvoerbaar)
+uitwaarts	outward	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 uitweg	exit	plain		
 uitzondering	exception	wire		
 uitzonderingen	exceptions	wire		
@@ -1785,6 +2006,9 @@ uniek	unique	plain
 unieke	unique	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_niet_unieke_rolnaam_leidt_geen_veld_af)
 unies	unions	wire		false friend
 uniesleutel	unionKey	plain		
+unitloos	unitless	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+unitloze	unitless	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+universeel	universal	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 uren	hours	wire		
 uur	hour	wire		
 vaar	sail	plain	the verb stem of varen: vaardagen, sailing days	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
@@ -1822,16 +2046,21 @@ veraf	far	plain		added by card hernoem-drools-backend: 1 name in backends/drools
 veranderd	changed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (veranderd)
 veranderde	changed	plain		added by card hernoem-drools-backend: in 2 identifiers (7 occurrences)
 verandert	changes	plain		
+verantwoordt	accounts-for	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 verbindend	connecting	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_niet_uniek_verbindend_feittype_weigert_bij_de_bouw)
 verbindende	connecting	wire		`connectingRole`
 verboden	forbidden	plain		added by card hernoem-drools-backend: in 2 identifiers (11 occurrences)
+verbogen	inflected	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 verbonden	connected	plain		added by card hernoem-drools-backend: 1 name in backends/drools (het_uniek_verbonden_paar_blijft_spelen)
 verborgen	hidden	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 verbrede	widened	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_verbrede_poort_vuurt_niet_als_de_barriere_beide_plekken_afkapt)
 verbruikt	consumed	plain		added by card hernoem-drools-backend: 1 name in backends/drools (verbruikt)
 verbruikte	consumed	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (verbruikteDeelselecties in frontends/regelspraak)
+verbuiging	inflection	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+verbuigt	inflects	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 verdacht	suspected	plain		added by card hernoem-drools-backend: 1 name in backends/drools (VERDACHT)
 verdeelt	allocates	plain	verdeelt X over Y: allocates X over Y (verdeling, allocation)	added by card hernoem-drools-backend: the translator corrected a split (propose read the glossary words inside it)
+verdelen	allocate	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 verdeling	allocation	wire		
 verdelingen	allocations	wire		
 verdelings	allocation	wire	the form in a compound: verdelingsfout, allocation error	added by card hernoem-drools-backend: in 6 identifiers (19 occurrences)
@@ -1862,15 +2091,19 @@ vergelijkt	compares	plain		added by card hernoem-drools-backend: in 4 identifier
 vergeten	forgotten	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_vergeten_lid_in_een_gegeven_lijst_weigert_voegIn_luid)
 verhouding	ratio	wire		
 verhuist	moves	plain		
+verhuizen	move	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+verkeerd	wrong	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 verkeerde	wrong	plain		added by card hernoemgereedschap: 1 name in the loader tests (een_veld_van_het_verkeerde_json_type_weigert); also a word of declared names of the corpus, which stay as written
 verklaar	declare	plain		added by card hernoem-drools-backend: 1 name in backends/drools (verklaar)
 verklaart	declares	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (wf100-eigenaar-verklaart-kenmerk-niet in corpus/negatief)
 verlaagd	lowered	plain	lowered: translated to an executor's form by a backend	added by card hernoemgereedschap: 1 name in the loader tests (een_marker_als_telbron_wordt_geweigerd_en_niet_verlaagd)
 verlaagt	lowers	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_analyse_verlaagt_de_knoop)
 verlegd	moved	plain		added by card hernoem-drools-backend: 1 name in backends/drools (creatieVerlegd)
+verlegt	moves	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 verminderd	reduced	wire		`reducedBy`
 verminderd met	reducedBy	wire		`Binary.op`
 vernauwing	narrowing	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
+vernauwt	narrows	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 vernieuw	renew	plain	the verb stem	added by card hernoem-drools-backend: the translator corrected a split (propose read the glossary words inside it)
 verouderd	outdated	plain		added by card hernoem-drools-backend: 1 name in backends/drools (verouderd)
 verouderde	outdated	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (de_zoekregel_weigert_een_verouderde_zin in frontends/regelspraak)
@@ -1883,6 +2116,7 @@ verschil	difference	plain
 verschillen	differ	plain		
 verschillende	different	plain		
 verschoven	shifted	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
+verschuift	shifts	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 verse	fresh	plain	the inflected form of vers: een verse sessie, a fresh session	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 versie	version	wire		
 versies	versions	wire		
@@ -1890,6 +2124,7 @@ versiestrip	versionStrip	plain		added by card hernoem-drools-backend: 1 name in 
 verslag	report	plain		
 vervalst	falsified	plain		added by card hernoem-drools-backend: 1 name in backends/drools (vervalst)
 vervalt	lapses	plain		
+vervang	replace	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 vervangt	replaces	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 vervolg	continuation	plain		added by card hernoem-drools-backend: keeps 2 names outside backends/drools split right beside the rows the card added (naamVervolgDeel in frontends/regelspraak)
 vervulde	fulfilled	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
@@ -1959,6 +2194,7 @@ voorheen	formerly	plain	function word
 voorouder	ancestor	plain		added by card hernoem-drools-backend: the translator corrected a split (propose read the glossary words inside it)
 voorouders	ancestors	plain		added by card hernoem-drools-backend: 1 name in backends/drools (voorouders)
 voortijdig	premature	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ongeordend_zonder_voortijdig_conflict)
+vooruit	forward	plain		added by card rename-frontend (the translation check of frontends/regelspraak)
 voorvoegsel	prefix	plain		added by card hernoem-drools-backend: 1 name in backends/drools (voorvoegsel)
 voorwaarde	condition	wire		
 voorwaarde	justification	wire	a Default of a prioritized-defaults group	IR-SPEC §6.1
@@ -1966,6 +2202,7 @@ voorwaardelijke	conditional	plain
 voorwaarts	forward	plain		added by card hernoem-drools-backend: in 2 identifiers (24 occurrences)
 voorwaartse	forward	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_gelijknamig_lid_verdringt_het_voorwaartse_veld)
 voorzetsel	preposition	wire		
+vorig	previous	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 vorige	previous	plain		
 vorm	form	wire		`Origin.form`, `namedForm`
 vormen	forms	wire		
@@ -1977,6 +2214,7 @@ vouwfilter	foldFilter	wire	the `filter` of a fold
 vouwing	folding	plain		added by card hernoem-drools-backend: 1 name in backends/drools (naTijdvouwing)
 vouwt	folds	wire		
 vraagt	requires	plain	vraagt een X: requires an X	added by card hernoemgereedschap: 1 name in the loader tests (een_eenheid_onder_de_dag_vraagt_een_datum_tijd)
+vragende	verb-trailing	plain	the register whose conditions end with the verb (niet aan de elfproef voldoet)	added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 vreemd	foreign	plain		
 vreemde	foreign	plain		
 vrij	free	plain		
@@ -2037,6 +2275,7 @@ weg van nul	awayFromZero	wire		`Rounding.mode`
 wegen	weigh	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_kwartaal_en_een_jaar_tussen_geklemde_muren_wegen_een_eenheid)
 weggaat	leaves	plain		added by card hernoem-drools-backend: 1 name in backends/drools (invoer_die_buiten_voegIn_om_bijkomt_of_weggaat_weigert_vuur)
 weggeklipte	clipped	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_weggeklipte_datumwaarde_weigert_in_dezelfde_zin)
+weggelaten	omitted	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 weiger	refuse	spec		RUNTIME-SEMANTICS §3.12
 weigeren	refuse	spec		RUNTIME-SEMANTICS §3.12
 weigering	refusal	spec		RUNTIME-SEMANTICS §3.12
@@ -2122,6 +2361,8 @@ zodra	once	plain	function word: zodra, as soon as
 zoek	find	plain	the verb stem: zoek X, find X	
 zonder	without	plain	function word	
 zonesuffix	zoneSuffix	spec	a time-zone suffix on a date lexeme (2026-01-01Z)	IR-SPEC §4.1; added by card hernoemgereedschap: 1 name in the loader tests (een_zonesuffix_wordt_geweigerd)
+zuivere	pure	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
+zuiverheid	purity	plain		added by card rename-frontend (Haiku classification of the unknown words of frontends/regelspraak)
 zusje	sister	plain		added by card hernoem-drools-backend: 1 name in backends/drools (zusje)
 zuster	sister	plain		added by card hernoem-drools-backend: in 10 identifiers (28 occurrences)
 zusterrol	sisterRole	spec		RUNTIME-SEMANTICS §5.7a

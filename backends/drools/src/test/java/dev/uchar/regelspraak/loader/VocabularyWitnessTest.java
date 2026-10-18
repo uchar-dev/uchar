@@ -64,7 +64,7 @@ class VocabularyWitnessTest {
                 m.benoemd("handboek", Benoembaar.Soort.ENUMERATIEWAARDE, "Vondstsoort", "amber"));
         assertEquals(Optional.of(Benoembaar.vorm("premie van een vondst")),
                 m.benoemd("cgm", Benoembaar.Soort.VORM, null, "R_PREMIE_VONDST"));
-        // a designation never stands in for a canonical name: in cgm the attribute is VONDST_BEDRAG, not vondstbedrag
+        // a designation never stands in for a canonical name: in cgm the attribute is VONDST_AMOUNT, not vondstbedrag
         assertEquals(Optional.empty(), m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Jutter", "vondstbedrag"));
         // the attribute of another type is not in the scope
         assertEquals(Optional.empty(), m.benoemd("cgm", Benoembaar.Soort.ATTRIBUUT, "Vondst", "VONDST_BEDRAG"));
@@ -77,9 +77,9 @@ class VocabularyWitnessTest {
         list.remove(0);                                    // the handboek designation goes, the cgm one stays
         RegelSpraakModel m = IrLoader.load(ir);
         Benoembaar b = Benoembaar.attribuut("Vondst", "gewicht");
-        assertEquals("gewicht", m.effectieveNaam("handboek", b));
+        assertEquals("gewicht", m.effectiveName("handboek", b));
         assertEquals(Optional.of(b), m.benoemd("handboek", Benoembaar.Soort.ATTRIBUUT, "Vondst", "GEWICHT"));
-        assertEquals("GEWICHT", m.effectieveNaam("cgm", b));
+        assertEquals("GEWICHT", m.effectiveName("cgm", b));
     }
 
     @Test void an_inherited_member_is_found_from_the_subtype() throws Exception {
@@ -120,6 +120,6 @@ class VocabularyWitnessTest {
                 .get("valueDesignations")).get(0);
         e.put("vocabulary", "wet").put("value", "gruis");
         RegelSpraakModel m = IrLoader.load(ir);
-        assertFalse(m.benamingen.isEmpty());
+        assertFalse(m.designations.isEmpty());
     }
 }

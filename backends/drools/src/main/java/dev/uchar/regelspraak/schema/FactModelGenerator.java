@@ -139,7 +139,7 @@ public final class FactModelGenerator {
                     !temporal), new Origin(Origin.Kind.KENMERK, k, ot.naam)));
         }
         // §13.3.9: the scalar to-one reference fields — derived from the SAME authority the transpilers
-        // navigate by (verbindendeRollen + naarVeelRol): for every other objecttype, the houder carries ONE
+        // navigate by (connectingRoles + naarVeelRol): for every other objecttype, the houder carries ONE
         // field per uniquely addressable to-one role of that type, named after the role ("Eén houder betreft
         // meerdere elementen" -> Element.houder : Houder), UNLESS that navigation crosses a to-many role
         // (then the scalar reference lives on the other side).
@@ -149,7 +149,7 @@ public final class FactModelGenerator {
         // feittype relates the same two object types, so a bean carried no reference at all and the fold's
         // join, the §13.4.7 creation's three positions, the navigated read and the case-input write each
         // refused a document whose author had written a perfectly unique role name. The ambiguity was never
-        // in the source; it was in asking the question by pair. verbindendeRollen asks it by NAME, per role,
+        // in the source; it was in asking the question by pair. connectingRoles asks it by NAME, per role,
         // and keeps every refusal that is genuinely a refusal: a name two roles share resolves to nothing,
         // a to-many role's storage stays the far end's field, and a declared member of the same name still
         // displaces the reference through the dedup above. Under-implied, never over-implied — as before,
@@ -167,7 +167,7 @@ public final class FactModelGenerator {
         // subtype's bean extends it.
         for (Objecttype target : model.objecttypen.values()) {
             if (target == ot) continue;
-            for (String rol : model.verbindendeRollen(ot, target)) {
+            for (String rol : model.connectingRoles(ot, target)) {
                 if (model.naarVeelRol(ot, target, rol)) continue;
                 out.add(new Kandidaat(new Member(Namen.ident(rol, false),
                         Namen.ident(fillerType(model, ot, target, rol).naam, true), false),
@@ -188,7 +188,7 @@ public final class FactModelGenerator {
 
     /** The declaration of the role {@code rol} that a field on {@code houder} toward {@code target} stands for:
      *  the role of that name that {@code target} may fill, in a fact type that relates {@code houder} — the search
-     *  {@code verbindendeRollen} admits a role by, which leaves exactly one. Public for the case reader, which tells
+     *  {@code connectingRoles} admits a role by, which leaves exactly one. Public for the case reader, which tells
      *  the field of this very role apart from a field another role took. */
     public static Origin roleOrigin(RegelSpraakModel model, Objecttype houder, Objecttype target, String rol) {
         List<Map.Entry<Feittype, Rol>> roles = rolesTo(model, houder, target, rol);
@@ -340,7 +340,7 @@ public final class FactModelGenerator {
      * TO-ONE ROLE, named after the role, exactly as the by-pair loop names a reference after the role of the
      * thing it POINTS AT — {@code Wachter.opvolger} is the Wachter that plays {@code opvolger} (the successor),
      * {@code Wachter.voorganger} the one that plays {@code voorganger}. Derived through the SAME authority the
-     * transpilers navigate by, here its BY-NAME form ({@code verbindendeRolViaNaam} + {@code naarVeelRol}), so a
+     * transpilers navigate by, here its BY-NAME form ({@code connectingRoleViaName} + {@code naarVeelRol}), so a
      * role name that does not resolve UNIQUELY derives nothing and a to-many role derives nothing (its storage is
      * the other end's field). {@code connectingRole(ot, ot)} — the BY-PAIR search — is deliberately left as it
      * is: still null, still ambiguous. So these fields exist but nothing reaches them by accident; only a WRITTEN
@@ -374,7 +374,7 @@ public final class FactModelGenerator {
                 // the by-NAME authority: null when the name does not resolve uniquely, or when the feittype does
                 // not relate ot to ot at all (a role of ot in a feittype whose sibling is another type is the
                 // by-pair loop's business, and is reached from THAT side).
-                String rol = model.verbindendeRolViaNaam(ot, ot, r.naam());
+                String rol = model.connectingRoleViaName(ot, ot, r.naam());
                 if (rol == null || model.naarVeelRol(ot, ot, rol)) continue;
                 if (!out.contains(rol)) out.add(rol);
             }
@@ -451,7 +451,7 @@ public final class FactModelGenerator {
      * derives no reference field" is true there and names no cause, so the sentence names the holder.
      */
     public static String noReferenceFieldReason(RegelSpraakModel model, Objecttype ot, String rol, Objecttype doel) {
-        if (ot.heeftLid(rol))
+        if (ot.hasMember(rol))
             return "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
                     + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
                     + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld";
@@ -489,7 +489,7 @@ public final class FactModelGenerator {
         // reached that case — its own conservative arm refuses a to-one element role with a to-many sister
         // first — but the DRL-text branch does not mirror that arm and arrives here.
         Objecttype far = model.objecttypeOpNaam(doel.naam);
-        String sister = model.verbindendeRolViaElementnaam(carrier, rol);
+        String sister = model.connectingRoleViaElementName(carrier, rol);
         boolean otherSideCarries = sister != null && far != null && hasReferenceField(model, far, sister, carrier);
         String sentence = "de rol '" + rol + "' op " + carrier.naam + " is meervoudig, dus haar opslag is het veld aan de"
                 + " overzijde";
@@ -512,7 +512,7 @@ public final class FactModelGenerator {
      *
      * <p>Resolution goes through the fact type the wire NAMES, not through the role name alone: two fact types
      * may declare an element role of the same name while their anchor roles differ, and the binding then still
-     * selects exactly one. That is also why this is not {@code verbindendeRolViaElementnaam} with the bound
+     * selects exactly one. That is also why this is not {@code connectingRoleViaElementName} with the bound
      * role's name — that search is by NAME over the whole model and answers null on such a document, which would
      * refuse where the wire is unambiguous.
      *
@@ -535,7 +535,7 @@ public final class FactModelGenerator {
      * callers DO carry is the typed reference-field gate ({@link #hasReferenceField}), which catches the usual
      * downstream consequence — but that is a bean-model question, not a filler check, and does not claim to be.
      */
-    public static Rol[] boundRolePair(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+    public static Rol[] boundRolePair(RegelSpraakModel model, RegelSpraakModel.RoleBindingRef rb) {
         if (model == null || rb == null || rb.feittype() == null || rb.rol() == null) return null;
         Feittype ft = null;
         // the WF-001 form of a name, as the verifier and ref compare it (case and runs of blanks folded)
@@ -588,7 +588,7 @@ public final class FactModelGenerator {
      * broken invariant: the 1:1 shape must have the forward field its guard reads.
      */
     public static CreationLink creationLink(RegelSpraakModel model, Objecttype fresh, Objecttype subject,
-                                                    RegelSpraakModel.RolBindingRef connectingRole, String naam) {
+                                                    RegelSpraakModel.RoleBindingRef connectingRole, String naam) {
         String backRole, fwdRole;
         boolean backMany, fwdMany;
         if (connectingRole != null) {
@@ -599,8 +599,8 @@ public final class FactModelGenerator {
             fwdRole = pair[0].naam(); fwdMany = pair[0].meervoudig();
             backRole = pair[1].naam(); backMany = pair[1].meervoudig();
         } else {
-            backRole = model.verbindendeRol(fresh, subject);
-            fwdRole = model.verbindendeRol(subject, fresh);
+            backRole = model.connectingRole(fresh, subject);
+            fwdRole = model.connectingRole(subject, fresh);
             backMany = backRole != null && model.naarVeelRol(fresh, subject, backRole);
             fwdMany = fwdRole != null && model.naarVeelRol(subject, fresh, fwdRole);
         }
@@ -626,7 +626,7 @@ public final class FactModelGenerator {
         }
         // with a binding the cardinality is the bound role's own, without one the by-pair reading; either way a 1:1
         // arm must HAVE the forward field its guard reads
-        boolean oneToOne = connectingRole != null ? !fwdMany : !model.subjectNaarVeelCreatie(subject, fresh);
+        boolean oneToOne = connectingRole != null ? !fwdMany : !model.subjectToManyCreation(subject, fresh);
         if (oneToOne != (fwdRef != null))
             throw new IllegalStateException("objectcreatie " + naam + ": subjectNaarVeelCreatie(" + oneToOne
                     + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
@@ -678,7 +678,7 @@ public final class FactModelGenerator {
      * {@link #noJoinFieldReason}'s reason: a producer reading the gate report must not have to know which branch
      * answered.
      */
-    public static RangeJoin rangeJoin(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+    public static RangeJoin rangeJoin(RegelSpraakModel model, RegelSpraakModel.RoleBindingRef rb) {
         Rol[] pair = boundRolePair(model, rb);
         if (pair == null) return new RangeJoin(null, null);        // no range on the wire -> the caller's own refusal
         if (!pair[1].meervoudig()) return new RangeJoin(pair[1].naam(), null);
@@ -694,7 +694,7 @@ public final class FactModelGenerator {
     public record NavigationWalk(List<String> roles, List<Objecttype> reaches, boolean toMany) {}
 
     /**
-     * THE navigation walk of an {@code AttribuutRef.navigatieBindingen} / {@code Characteristic.navigatieBinding}
+     * THE navigation walk of an {@code AttribuutRef.navigationBindings} / {@code Characteristic.navigationBinding}
      * (IR-SPEC ch. 4.1a), resolved from {@code subject} — the one derivation both transpiler branches decide a
      * bound navigation by (V1-WIREMIGRATIE P1); since L2 the bindings are the only navigation the wire carries.
      *
@@ -704,7 +704,7 @@ public final class FactModelGenerator {
      * direction WF-053 and ref demand: every object the walk can reach must be one the read may address). The caller refuses such a read
      * with its own unresolved-navigation reason. It never falls back to the written name: a document whose
      * binding does not fit is refused, not read along a route the wire did not name. The same subject-fit the
-     * written-chain derivation ({@code RegelSpraakModel.volgKeten}) applies, so a read the transpiler meets
+     * written-chain derivation ({@code RegelSpraakModel.followChain}) applies, so a read the transpiler meets
      * under another subject than the one it was bound to is refused exactly as before.
      *
      * <p>No cross-check against the written step: WF-053 already demands that every written step denote its
@@ -712,13 +712,13 @@ public final class FactModelGenerator {
      * binding that decides into one that merely vetoes.
      */
     public static NavigationWalk navigationWalk(RegelSpraakModel model, Objecttype subject,
-            List<RegelSpraakModel.RolBindingRef> bindings, Objecttype endpoint) {
+            List<RegelSpraakModel.RoleBindingRef> bindings, Objecttype endpoint) {
         if (bindings == null || bindings.isEmpty()) return null;
         List<String> roles = new ArrayList<>();
         List<Objecttype> reaches = new ArrayList<>();
         boolean toMany = false;
         Objecttype cur = subject;
-        for (RegelSpraakModel.RolBindingRef rb : bindings) {
+        for (RegelSpraakModel.RoleBindingRef rb : bindings) {
             Rol[] pair = boundRolePair(model, rb);
             if (pair == null || cur == null) return null;
             Objecttype near = model.objecttypeOpNaam(pair[1].objecttypeNaam());
@@ -760,14 +760,14 @@ public final class FactModelGenerator {
      * <p>Null when a binding names no declared role; the caller refuses the creation as unresolved.
      */
     public static CreationFields creationFields(RegelSpraakModel model,
-            dev.uchar.regelspraak.ir.ResolvedFeitCreatie fc) {
-        if (fc.feittype() == null || fc.ankerRol() == null || fc.joinRol() == null) return null;
-        Rol[] made = boundRolePair(model, new RegelSpraakModel.RolBindingRef(fc.feittype(), fc.ankerRol()));
-        Rol[] join = boundRolePair(model, fc.joinRol());
+            dev.uchar.regelspraak.ir.ResolvedFactCreation fc) {
+        if (fc.feittype() == null || fc.anchorRole() == null || fc.path() == null) return null;
+        Rol[] made = boundRolePair(model, new RegelSpraakModel.RoleBindingRef(fc.feittype(), fc.anchorRole()));
+        Rol[] join = boundRolePair(model, fc.path());
         if (made == null || join == null) return null;
         List<CreationHop> hops = new ArrayList<>();
-        for (var step : fc.tussenstappen()) {
-            Rol[] pair = boundRolePair(model, step.rolBinding());
+        for (var step : fc.pathSteps()) {
+            Rol[] pair = boundRolePair(model, step.roleBinding());
             if (pair == null) return null;
             Objecttype reaches = model.objecttypeOpNaam(pair[0].objecttypeNaam());
             if (reaches == null) return null;
@@ -782,9 +782,9 @@ public final class FactModelGenerator {
      * parent plays, hence the reference field on the subject. IR-SPEC ch. 3.6: the binding IS the scoping, so null
      * means an unscoped uniqueness, or a binding that names no declared role (the caller refuses).
      */
-    public static String scopeField(RegelSpraakModel model, dev.uchar.regelspraak.ir.ResolvedUniciteit u) {
-        if (u.scopeRol() == null) return null;
-        Rol[] pair = boundRolePair(model, u.scopeRol());
+    public static String scopeField(RegelSpraakModel model, dev.uchar.regelspraak.ir.ResolvedUniqueness u) {
+        if (u.scopeBinding() == null) return null;
+        Rol[] pair = boundRolePair(model, u.scopeBinding());
         return pair == null ? null : pair[0].naam();
     }
 
@@ -802,7 +802,7 @@ public final class FactModelGenerator {
      * other end, whose field — named after the subject's role — must point back at the subject, which is an
      * exists-join; with both roles to-many no bean carries the link at all.
      */
-    public static MembershipStorage membershipStorage(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+    public static MembershipStorage membershipStorage(RegelSpraakModel model, RegelSpraakModel.RoleBindingRef rb) {
         Rol[] pair = boundRolePair(model, rb);
         if (pair == null)
             return new MembershipStorage(null, false, null, "rollidmaatschap onopgelost: de binding ("
@@ -827,8 +827,8 @@ public final class FactModelGenerator {
      * that names no declared role is refused by name, where ref faults; WF-047 is the fence on its fillers.
      */
     public static AllocationJoin allocationJoin(RegelSpraakModel model, dev.uchar.regelspraak.ir.ResolvedVerdeling v,
-            RegelSpraakModel.RolBindingRef rb) {
-        Objecttype bron = v.bronType(), doel = v.doelType();
+            RegelSpraakModel.RoleBindingRef rb) {
+        Objecttype bron = v.sourceType(), doel = v.targetType();
         if (bron == null || doel == null || rb == null) return new AllocationJoin(null, null);
         Rol[] pair = boundRolePair(model, rb);
         if (pair == null)
@@ -843,7 +843,7 @@ public final class FactModelGenerator {
      *
      * <p>A wederkerig feittype carries a single role that is ITS OWN OPPOSITE (WF: exactly one role), so the
      * pair (ot, ot) resolves through the very same authority the transpilers navigate by —
-     * {@code connectingRole}, whose {@code feittypeRelateert} admits the reciprocal role as its own sibling.
+     * {@code connectingRole}, whose {@code factTypeRelates} admits the reciprocal role as its own sibling.
      * That makes the field name knowable SYMBOLICALLY, from the role alone. An ordinary (non-wederkerig)
      * self-pair stays underived: there two distinct sibling roles both fill the holder, so the by-pair search
      * is ambiguous by construction and the transpilers reach it only through the written role name.
@@ -859,7 +859,7 @@ public final class FactModelGenerator {
      */
     public static String selfPairRole(RegelSpraakModel model, Objecttype ot) {
         if (!namesReciprocal(model, ot)) return null;
-        String rol = model.verbindendeRol(ot, ot);
+        String rol = model.connectingRole(ot, ot);
         return rol == null || model.naarVeelRol(ot, ot, rol) ? null : rol;
     }
 
@@ -871,8 +871,8 @@ public final class FactModelGenerator {
 
     /** The scalar Java type of a datatype — the same mapping the DRL back-end assumes of the beans. */
     public static String javaType(Datatype t) {
-        if (t.isPercentage() || t.isNumeriek()) return "java.math.BigDecimal";
-        if (t.isTekst() || t instanceof Datatype.Enumeratie) return "String";   // an enumeratiewaarde is its String label
+        if (t.isPercentage() || t.isNumber()) return "java.math.BigDecimal";
+        if (t.isText() || t instanceof Datatype.Enumeratie) return "String";   // an enumeratiewaarde is its String label
         if (t instanceof Datatype.Booleaan) return "Boolean";                   // nullable: a leegwaarde is a real state
         if (t instanceof Datatype.DatumInDagen) return "java.time.LocalDate";
         if (t instanceof Datatype.DatumTijd) return "java.time.LocalDateTime";

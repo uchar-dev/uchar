@@ -738,10 +738,10 @@ public final class ComputeHelpers {
 
     /** Whether the evaluation date {@code datum} lies in the validity window from {@code vanaf} to {@code tot}, dates in
      *  ISO form, both inclusive and a null bound open; never where the session has no date
-     *  ({@code Alpha.Comparator.WITHIN}, {@link Geldigheid#bevat}). */
+     *  ({@code Alpha.Comparator.WITHIN}, {@link Geldigheid#contains}). */
     public static boolean inside(Object date, String from, String to) {
         return new Geldigheid(from == null ? null : LocalDate.parse(from), to == null ? null : LocalDate.parse(to))
-                .bevat((LocalDate) date);
+                .contains((LocalDate) date);
     }
 
     /** Whether {@code object} is an instance of the class named {@code klasse}: its own class or a class or interface

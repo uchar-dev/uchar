@@ -31,8 +31,8 @@ options { tokenVocab = RegelSpraakLexer; }
 // (2024) and a full datumwaarde (01-03-2024, one DATE token) still match.
 // Scenariotoetsen: a LOWER_ID that must be one particular word, on one position of the
 // testDocument extension only (see volgensWoord).
-private boolean isWoord(String woord) { return woord.equals(_input.LT(1).getText()); }
-private static boolean isJaar(org.antlr.v4.runtime.Token t) {
+private boolean isWord(String word) { return word.equals(_input.LT(1).getText()); }
+private static boolean isYear(org.antlr.v4.runtime.Token t) {
     String s = t.getText();
     if (s.length() != 4) return false;
     for (int i = 0; i < 4; i++) if (s.charAt(i) < '0' || s.charAt(i) > '9') return false;
@@ -42,13 +42,13 @@ private static boolean isJaar(org.antlr.v4.runtime.Token t) {
 // lines: the next word belongs to the name only where it stands on the line the previous word ends on
 // (grammar/DIVERGENCES.md, "Namen in declaratiekoppen"). A multi-word token may run over a line end, so the previous
 // word ends on its start line plus the line ends inside it.
-private boolean opRegelVanVorigWoord() {
-    org.antlr.v4.runtime.Token vorig = _input.LT(-1), volgend = _input.LT(1);
-    if (vorig == null || volgend == null) return true;
-    int eind = vorig.getLine();
-    String tekst = vorig.getText();
-    if (tekst != null) for (int i = 0; i < tekst.length(); i++) if (tekst.charAt(i) == '\n') eind++;
-    return volgend.getLine() == eind;
+private boolean onPreviousWordLine() {
+    org.antlr.v4.runtime.Token previous = _input.LT(-1), next = _input.LT(1);
+    if (previous == null || next == null) return true;
+    int end = previous.getLine();
+    String tekst = previous.getText();
+    if (tekst != null) for (int i = 0; i < tekst.length(); i++) if (tekst.charAt(i) == '\n') end++;
+    return next.getLine() == end;
 }
 }
 
@@ -260,7 +260,7 @@ verwachting
 // token run, and optionally the flagged instance. 'volgens' is no keyword token (a name may
 // carry the word), so the word is matched on its text here, on this one position only.
 inconsistentieSleutel : volgensWoord tekstWaarde ( VOOR UPPER_ID )? ;
-volgensWoord          : { isWoord("volgens") }? LOWER_ID ;
+volgensWoord          : { isWord("volgens") }? LOWER_ID ;
 // The attribuutnaam of a verwachting, which MUST stop before the trailing ' van <LABEL>'
 // (VAN then the UPPER_ID label). A plain kaleNaam would ambiguously absorb ' van <LABEL>'
 // because kaleNaam's '(VAN kaleNaamDeel)*' loop accepts a bare UPPER_ID as a kaleNaamDeel —
@@ -383,10 +383,10 @@ vrijeNaam : naamWoordAny+ ;
 // is now read into the name (the loop is greedy); the resolver refuses a member that begins on the line where the
 // head ended, so that reading is loud (grammar/DIVERGENCES.md, "Namen in declaratiekoppen").
 // A word on the NEXT physical line is never read into the name: a line end bounds the head (§13.3.1.1), so a member
-// without an article of two words or more after the head begins on its own line (opRegelVanVorigWoord). Until
+// without an article of two words or more after the head begins on its own line (onPreviousWordLine). Until
 // 2026-10-02 the loop took the first word of such a member as well, and the line check refused the rest.
 objectTypeNaam
-    : UPPER_ID ( {opRegelVanVorigWoord()}? ( UPPER_ID | LOWER_ID | OP | BIJ | IN | VOOR | OVER | TOT | TOT_EN_MET | PER | MET ) )*
+    : UPPER_ID ( {onPreviousWordLine()}? ( UPPER_ID | LOWER_ID | OP | BIJ | IN | VOOR | OVER | TOT | TOT_EN_MET | PER | MET ) )*
     ;
 domeinNaam     : UPPER_ID ( UPPER_ID | LOWER_ID )* ;
 // A plural runs up to its closing parenthesis, so it takes every word rule text reads in a name: '(mv: Rechten op
@@ -743,7 +743,7 @@ versieGeldigheid                                     // §13.4.2.5
     | VANAF datumOfJaar ( TM datumOfJaar )?
     | TM datumOfJaar
     ;
-datumOfJaar : DATE | {isJaar(_input.LT(1))}? NUMBER ; // §13.2.24: jaar = 4 digits
+datumOfJaar : DATE | {isYear(_input.LT(1))}? NUMBER ; // §13.2.24: jaar = 4 digits
 // §13.4.2.6 — the terminating '.' is made lenient: casus source omits it on several rules.
 regelSpraakRegel
     : resultaatDeel voorwaardeDeel? DOT? variabeleDeel?
@@ -755,7 +755,7 @@ variabeleNaam      : vrijeNaam ;                                               /
 // §12 Beslistabel: the header (name + optional validity) followed by the inline
 // markdown pipe-table body (Option A surface syntax). The lexer captures each pipe
 // line WHOLE as a TABEL_RIJ token (cells never contain '|'); the resolver splits
-// the grid and desugars each data row to an ordinary regel (BeslistabelDesugar),
+// the grid and desugars each data row to an ordinary regel (DecisionTableDesugar),
 // so both back-ends get the rows for free. The table is optional — a header-only
 // shell (the pre-body corpus) still parses and the resolver warns it is empty.
 // A designation annotation after the name is admitted so that the resolver refuses it by name: a table stands for the
@@ -887,7 +887,7 @@ voorwaardeDeel // §13.4.13.1
 // verb-leading after 'die'/'dat' ("die heeft een kind"), and (as with the §8.3.2 bullet rule)
 // over-acceptance of the verb-leading register here is harmless — the resolver gives the right
 // meaning. toplevelOperator is listed first so the spec form is the preferred parse of an
-// ambiguous kenmerk ("een minderjarige zijn"); elementKenmerkFilter reads either register.
+// ambiguous kenmerk ("een minderjarige zijn"); elementCharacteristicCheckFilter reads either register.
 predicaat // §13.4.13.2 (used in subselectie)
     : samengesteldPredicaat
     | toplevelOperator
@@ -1074,10 +1074,10 @@ functieAanroep
     // count. Deliberate divergence from the symmetric EBNF — see grammar/DIVERGENCES.md §13.4.17.47.
     // The operand LIST is a SECOND divergence, and since 2026-09-20 only HALF of it is one. §5.7
     // spells a CONCATENATION of onderwerpexpressies and typeringen §4.11 admits it under this very
-    // operator, so a list of ROLSELECTIES is the source language's own form: ExpressieBouwer
-    // .bouwInstantieUnie lowers it to one InstanceSetUnion (uchar WF-110), the count's single
+    // operator, so a list of ROLSELECTIES is the source language's own form: ExpressionBuilder
+    // .buildInstanceUnion lowers it to one InstanceSetUnion (uchar WF-110), the count's single
     // argument. A list of WAARDElezingen has no such form and stays the widening, refused by
-    // ExpressieBouwer.tellingAriteitFout (WF-037), an ERROR — deleting the tail would re-associate
+    // ExpressionBuilder.countArityError (WF-037), an ERROR — deleting the tail would re-associate
     // trailing conjunctions rather than refuse them. Both halves in DIVERGENCES.md '§13.4.17.47'.
     | HET AANTAL_WORD primaireExpressie ( COMMA primaireExpressie )* ( EN primaireExpressie )?    # aantalFunc
     // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §6, decision G9 2026-09-19): the FILLED-value

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The sibling {@code LetClusterWitnessTest} pins what the Let cluster COMPUTES. This file pins the other
  * half — what a walk that stops at a cluster node MISSES. All three of them ({@code Let},
  * {@code BinderRef}, {@code IfThenElse}) are ordinary {@code Expr} union nodes, so the generic
- * {@code Expr.bevat} descends them by construction; the walks pinned here were the HAND-WRITTEN ones in
+ * {@code Expr.contains} descends them by construction; the walks pinned here were the HAND-WRITTEN ones in
  * {@code ExecModelTranspiler}, the destructive lowering until card tms-omschakeling (2026-10-10), which
  * matched concrete v0 node shapes and therefore reached a cluster node's children only by taking
  * {@code letKinderen}. One that does not under-reports in SILENCE: a missing §9.5

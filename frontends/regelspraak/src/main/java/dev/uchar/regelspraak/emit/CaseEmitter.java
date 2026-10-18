@@ -36,34 +36,34 @@ public final class CaseEmitter {
      *  a-z and 0-9 one '-', none at either end. Empty when the name has no letter or digit, which the resolver
      *  refuses. */
     public static String slug(String naam) {
-        String zonderTekens = java.text.Normalizer.normalize(naam, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        return zonderTekens.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
+        String withoutSigns = java.text.Normalizer.normalize(naam, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        return withoutSigns.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
     }
 
     /** The model the IR document is emitted from: {@code m} itself without a scope, and with one a copy of the whole
-     *  model ({@link RegelSpraakModel#kopie}) from which every named form the scope does not carry is dropped, and
+     *  model ({@link RegelSpraakModel#copy}) from which every named form the scope does not carry is dropped, and
      *  every diagnostic raised on a line of a source block whose forms it leaves out entirely
-     *  ({@link Scope#weggelaten}): the document carries what its forms and its declarations raise. A rule group keeps
+     *  ({@link Scope#omitted}): the document carries what its forms and its declarations raise. A rule group keeps
      *  its carried members and is dropped when none is left. */
     public static RegelSpraakModel metScope(RegelSpraakModel m, Scope scope) {
         if (scope == null) return m;
-        Set<String> namen = new HashSet<>();
-        for (String v : scope.vormen()) namen.add(norm(v));
-        Predicate<String> draagt = naam -> namen.contains(norm(basisNaam(naam)));
-        RegelSpraakModel k = m.kopie();
-        k.resolvedRegels.removeIf(r -> !draagt.test(r.naam()));
-        k.objectCreaties.removeIf(x -> !draagt.test(x.naam()));
-        k.verdelingen.removeIf(x -> !draagt.test(x.naam()));
-        k.consistenties.removeIf(x -> !draagt.test(x.naam()));
-        k.uniciteiten.removeIf(x -> !draagt.test(x.naam()));
-        k.uniciteitUnies.removeIf(x -> !draagt.test(x.naam()));
-        k.feitCreaties.removeIf(x -> !draagt.test(x.naam()));
-        k.prioritizedDefaults.removeIf(x -> !draagt.test(x.naam()));
-        k.diagnostics.removeIf(d -> scope.weggelaten().stream().anyMatch(b -> b.bevat(d.line())));
+        Set<String> names = new HashSet<>();
+        for (String v : scope.vormen()) names.add(norm(v));
+        Predicate<String> carries = naam -> names.contains(norm(basisNaam(naam)));
+        RegelSpraakModel k = m.copy();
+        k.resolvedRegels.removeIf(r -> !carries.test(r.naam()));
+        k.objectCreaties.removeIf(x -> !carries.test(x.naam()));
+        k.verdelingen.removeIf(x -> !carries.test(x.naam()));
+        k.consistenties.removeIf(x -> !carries.test(x.naam()));
+        k.uniciteiten.removeIf(x -> !carries.test(x.naam()));
+        k.uniciteitUnies.removeIf(x -> !carries.test(x.naam()));
+        k.feitCreaties.removeIf(x -> !carries.test(x.naam()));
+        k.prioritizedDefaults.removeIf(x -> !carries.test(x.naam()));
+        k.diagnostics.removeIf(d -> scope.omitted().stream().anyMatch(b -> b.contains(d.line())));
         k.regelGroepen.clear();
         for (ResolvedRegelGroep g : m.regelGroepen) {
-            List<String> leden = g.leden().stream().filter(draagt).toList();
-            if (!leden.isEmpty()) k.regelGroepen.add(new ResolvedRegelGroep(g.naam(), g.recursief(), leden, g.bron(), g.line()));
+            List<String> leden = g.leden().stream().filter(carries).toList();
+            if (!leden.isEmpty()) k.regelGroepen.add(new ResolvedRegelGroep(g.naam(), g.recursive(), leden, g.bron(), g.line()));
         }
         return k;
     }
@@ -82,7 +82,7 @@ public final class CaseEmitter {
         w.key("parameters").beginObject();
         for (ParameterWaarde p : s.situatie().parameters()) {
             w.key(p.parameter());
-            if (p.tijdlijn() != null) tijdlijnWaarde(w, p.tijdlijn()); else waarde(w, p.waarde());
+            if (p.tijdlijn() != null) timelineValue(w, p.tijdlijn()); else waarde(w, p.waarde());
         }
         w.endObject();
         w.endObject();
@@ -101,7 +101,7 @@ public final class CaseEmitter {
         w.key("attributes").beginObject();
         for (AttribuutWaarde a : i.attributen()) {
             w.key(a.attribuut());
-            if (a.tijdlijn() != null) tijdlijnWaarde(w, a.tijdlijn()); else waarde(w, a.waarde());
+            if (a.tijdlijn() != null) timelineValue(w, a.tijdlijn()); else waarde(w, a.waarde());
         }
         w.endObject();
         w.key("roles").beginObject();
@@ -114,11 +114,11 @@ public final class CaseEmitter {
         w.key("characteristics").beginArray();
         for (KenmerkWaarde k : i.kenmerken()) if (k.perioden() == null) w.value(k.kenmerk());
         w.endArray();
-        List<KenmerkWaarde> temporeel = new ArrayList<>();
-        for (KenmerkWaarde k : i.kenmerken()) if (k.perioden() != null) temporeel.add(k);
-        if (!temporeel.isEmpty()) {
+        List<KenmerkWaarde> temporal = new ArrayList<>();
+        for (KenmerkWaarde k : i.kenmerken()) if (k.perioden() != null) temporal.add(k);
+        if (!temporal.isEmpty()) {
             w.key("characteristicTimelines").beginObject();
-            for (KenmerkWaarde k : temporeel) {
+            for (KenmerkWaarde k : temporal) {
                 w.key(k.kenmerk()).beginArray();
                 for (Periode p : k.perioden()) {
                     w.beginObject();
@@ -153,7 +153,7 @@ public final class CaseEmitter {
                 w.key("label").value(v.label());
                 w.key("attribute").value(v.attribuut());
                 w.key("timeline");
-                segmenten(w, v.tijdlijn());
+                segments(w, v.tijdlijn());
             }
             case KENMERK_AANWEZIG -> {
                 w.key("kind").value("characteristicPresent");
@@ -175,14 +175,14 @@ public final class CaseEmitter {
         w.endObject();
     }
 
-    private static void tijdlijnWaarde(IrEmitter.Json w, List<Segment> tijdlijn) {
+    private static void timelineValue(IrEmitter.Json w, List<Segment> tijdlijn) {
         w.beginObject();
         w.key("timeline");
-        segmenten(w, tijdlijn);
+        segments(w, tijdlijn);
         w.endObject();
     }
 
-    private static void segmenten(IrEmitter.Json w, List<Segment> tijdlijn) {
+    private static void segments(IrEmitter.Json w, List<Segment> tijdlijn) {
         w.beginArray();
         for (Segment s : tijdlijn) {
             w.beginObject();

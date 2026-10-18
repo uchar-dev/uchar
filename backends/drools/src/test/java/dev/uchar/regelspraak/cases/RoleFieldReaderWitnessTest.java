@@ -190,7 +190,7 @@ class RoleFieldReaderWitnessTest {
 
     @Test void the_fact_creation_refuses_a_join_without_field() throws Exception {
         // The gemeenteberging creation, reduced to that rule. Until P2 (2026-09-22) this row pinned the refusal on
-        // the HOP: the wire's viaOuderVeld put the hop's field `gemeente van inschrijving` on the anker Gemeente,
+        // the HOP: the wire's viaParentField put the hop's field `gemeente van inschrijving` on the anker Gemeente,
         // whose bean carries no such getter. Measured then, on a verifier-clean AND ref-clean model:
         //     verifier: PASS   ref: oracle: PASS (1 expectations)   clingo: clingo: PASS (1 expectations)
         //     Drools exec-model : ERROR ConstraintEvaluationException
@@ -238,7 +238,7 @@ class RoleFieldReaderWitnessTest {
     // ---------------- 6. the §9.5 presence count: one derivation, one question ----------------
 
     @Test void the_count_assertion_reads_the_resolved_role_not_the_written_name() throws Exception {
-        // toOneAantalReader tested the name-sharing itself — `subject.heeftLid(a.attribuut())` — instead of asking
+        // toOneAantalReader tested the name-sharing itself — `subject.hasMember(a.attribuut())` — instead of asking
         // the shared question. That is a second reading of leden()'s law, and it reads the WRONG NAME whenever the
         // written element name and the resolved role name differ. They differ in the ordinary case: the AANTAL's
         // argument NAMES the element role as written ("het aantal penningen"), which resolves through the role's

@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * The RegelSpraak datatypes (§13.3.3), the typed core of the resolved AST. Every
  * attribute, parameter, domain, and (inferred) expression carries one of these.
- * The typeringen matrix (see {@link dev.uchar.regelspraak.resolver.Typering}) is
+ * The typeringen matrix (see {@link dev.uchar.regelspraak.resolver.Typing}) is
  * defined over them.
  *
  * Units live on {@link Numeriek}: a unit is optional, but once one operand in an
@@ -17,15 +17,15 @@ public sealed interface Datatype
 
     /** §13.3.3.2 Numeriek (geheel/decimaal) with an optional unit. */
     record Numeriek(boolean geheel, int decimalen, Teken teken, Eenheid eenheid) implements Datatype {
-        public boolean heeftEenheid() { return eenheid != null; }
+        public boolean hasUnit() { return eenheid != null; }
     }
     /** §13.3.3.3 Percentage. A Percentage attribuut "heeft verder altijd als eenheid %" (§3.3.5),
      *  optionally specialized as a rate ("%/jaar"); so its {@code eenheid} is never null. */
     record Percentage(boolean geheel, int decimalen, Eenheid eenheid) implements Datatype {
         /** The implicit "%" unit every Percentage carries (§3.3.5). */
-        public static final Eenheid PROCENT = new Eenheid("%", null);
+        public static final Eenheid PERCENT = new Eenheid("%", null);
         /** A bare percentage, carrying the implicit "%" unit. */
-        public Percentage(boolean geheel, int decimalen) { this(geheel, decimalen, PROCENT); }
+        public Percentage(boolean geheel, int decimalen) { this(geheel, decimalen, PERCENT); }
     }
     /** §13.3.3.4 Tekst. */
     record Tekst() implements Datatype {}
@@ -39,24 +39,24 @@ public sealed interface Datatype
      *  require the SAME enumeration on both sides, not merely any enumeration) plus the declared value set. */
     record Enumeratie(String domein, List<String> waarden) implements Datatype {}
     /** A reference that could not be resolved to a concrete datatype. */
-    record Onbekend(String reden) implements Datatype {}
+    record Onbekend(String reason) implements Datatype {}
 
     enum Teken { ONBEPAALD, NEGATIEF, NIET_NEGATIEF, POSITIEF }
 
     // --- predicates used by the typeringen matrix ---
-    default boolean isNumeriek()   { return this instanceof Numeriek; }
+    default boolean isNumber()   { return this instanceof Numeriek; }
     default boolean isPercentage() { return this instanceof Percentage; }
     /** numeric in the typeringen sense: a number or a percentage. */
-    default boolean isGetalachtig() { return isNumeriek() || isPercentage(); }
-    default boolean isTekst()      { return this instanceof Tekst; }
+    default boolean isGetalachtig() { return isNumber() || isPercentage(); }
+    default boolean isText()      { return this instanceof Tekst; }
     default boolean isBoolean()    { return this instanceof Booleaan; }
-    default boolean isDatum()      { return this instanceof DatumInDagen || this instanceof DatumTijd; }
-    default boolean isOnbekend()   { return this instanceof Onbekend; }
+    default boolean isDate()      { return this instanceof DatumInDagen || this instanceof DatumTijd; }
+    default boolean isUnknown()   { return this instanceof Onbekend; }
     /** Orderable by a scalar &lt;/&gt; (so it can drive a §9.7.2 "op volgorde van toenemende/afnemende"
      *  ordering): a number/percentage or a date. Tekst, Booleaan and Enumeratie carry only gelijk/ongelijk
      *  in the typeringen matrix (§5.x), no ordinal {@code <}, so they are NOT orderable — a non-orderable
      *  ordering key keeps the verdeling a COMPLEX marker rather than guessing a lexicographic order. */
-    default boolean isOrdenbaar()  { return isGetalachtig() || isDatum(); }
+    default boolean isOrdenbaar()  { return isGetalachtig() || isDate(); }
 
     /** §13.3.3 form (c) "getal": an unbounded numeriek/percentage — any number of decimals, no
      *  precision ceiling. The three getalspecificatie forms are encoded as: (a) "geheel getal"
@@ -79,15 +79,15 @@ public sealed interface Datatype
     /** A short, human-readable name for diagnostics. */
     default String naam() {
         return switch (this) {
-            case Numeriek n   -> "Numeriek" + (n.heeftEenheid() ? " (" + n.eenheid().afkorting() + ")" : "");
-            case Percentage p -> "Percentage" + (p.eenheid() != null && p.eenheid().noemer() != null
+            case Numeriek n   -> "Numeriek" + (n.hasUnit() ? " (" + n.eenheid().afkorting() + ")" : "");
+            case Percentage p -> "Percentage" + (p.eenheid() != null && p.eenheid().denominator() != null
                                                   ? " (" + p.eenheid().weergave() + ")" : "");
             case Tekst t      -> "Tekst";
             case Booleaan b   -> "Boolean";
             case DatumInDagen d -> "Datum in dagen";
             case DatumTijd d  -> "Datum-tijd";
             case Enumeratie e -> "Enumeratie " + e.domein();
-            case Onbekend o   -> "onbekend(" + o.reden() + ")";
+            case Onbekend o   -> "onbekend(" + o.reason() + ")";
         };
     }
 }

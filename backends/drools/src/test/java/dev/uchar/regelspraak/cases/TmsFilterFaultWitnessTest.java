@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * — …" in both document orders. Without marking a fold whose filter can fault as a read that can fault, the composite's
  * test threw out of the fire where J1 is actief: "but was: &lt;RuntimeException:
  * org.drools.modelcompiler.constraints.LambdaEvalExpression@… : java.lang.RuntimeException:
- * dev.uchar.regelspraak.runtime.Breuk$DelingDoorNul: Breuk deling door 0&gt;".
+ * dev.uchar.regelspraak.runtime.Rational$DelingDoorNul: Breuk deling door 0&gt;".
  */
 class TmsFilterFaultWitnessTest {
 

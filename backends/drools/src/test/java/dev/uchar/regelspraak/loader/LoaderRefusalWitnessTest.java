@@ -377,9 +377,9 @@ class LoaderRefusalWitnessTest {
         IrPath.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "Springtijdag")
                 .put("plural", "springtijdagen");
         RegelSpraakModel m = IrLoader.load(ir);
-        assertEquals(List.of("Springtijdag"), m.dagsoorten);
+        assertEquals(List.of("Springtijdag"), m.dayKinds);
         assertEquals(java.util.Map.of("springtijdag", "Springtijdag", "springtijdagen", "Springtijdag"),
-                m.dagsoortPerEenheid);
+                m.dayKindPerUnit);
     }
 
     @Test void format_and_functionDefs_are_first_read_by_form() throws Exception {
@@ -466,7 +466,7 @@ class LoaderRefusalWitnessTest {
     // ---------------- what a refusal says ----------------
 
     @Test void an_unknown_value_names_a_field_and_a_value_and_no_java_class() throws Exception {
-        // Before: "No enum constant dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit.jaar",
+        // Before: "No enum constant dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit.year",
         // the JDK's sentence, naming a Java class and no position in the document. Since L5 the value is read
         // through the translation table and refused in the shared loader's sentence, which names the field and the
         // value, the v0 spelling included.

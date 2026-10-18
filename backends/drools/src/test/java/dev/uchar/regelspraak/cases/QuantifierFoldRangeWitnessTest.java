@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *                                  keurvergoeding — TODO §8.2 kwantorvouw (ALLE over Keurmeester) —
  *                                  geen verbindende rol tussen Keurploeg en Keurmeester
  * </pre>
- * The exec branch has read {@code kv.bronRol()} since the fold landed; this branch read the by-pair search
+ * The exec branch has read {@code kv.sourceRole()} since the fold landed; this branch read the by-pair search
  * alone, which two feittypen make ambiguous by construction. Same wire, two answers — the same branch
  * inequality the som-over-bronrol card closed for the instance fold, still open here.
  *

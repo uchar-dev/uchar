@@ -7,14 +7,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.IrPath;
 import dev.uchar.regelspraak.ir.Expr;
-import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
+import dev.uchar.regelspraak.ir.ResolvedFactCreation;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
-import dev.uchar.regelspraak.ir.ResolvedUniciteit;
-import dev.uchar.regelspraak.ir.ResolvedUniciteitUnie;
+import dev.uchar.regelspraak.ir.ResolvedUniqueness;
+import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
 import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 
 import org.junit.jupiter.api.Test;
 
@@ -343,12 +343,12 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         ((ObjectNode) ir.at(VALUE)).put("granularity", "month");
         assertTrue(refuses(ir, VALUE).getMessage().endsWith(": granularity facet on a non-bucketing kind"));
         int refused = 0;
-        for (Expr.FunctieKind kind : Expr.FunctieKind.values()) {
+        for (Expr.FunctionKind kind : Expr.FunctionKind.values()) {
             // the folds: a kind of the other node, refused by name above
-            if (Spelling.AGGREGATION_KIND.rijen().containsKey(kind)) continue;
+            if (Spelling.AGGREGATION_KIND.rows().containsKey(kind)) continue;
             ir = golden(PACHTVENSTER);
             ((ObjectNode) ir.at(VALUE)).put("kind", Spelling.BUILTIN_KIND.spelling(kind));
-            if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN) {
+            if (kind == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctionKind.AANTAL_DAGEN_IN) {
                 assertNotNull(IrLoader.load(ir), kind.name());
                 continue;
             }
@@ -570,15 +570,15 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         m = IrLoader.load(ir);
         assertNull(m.resolvedRegels.get(0).naam());
         assertNull(m.resolvedRegels.get(1).naam());
-        assertEquals(List.of("art. 3 Jutterswet"), m.resolvedRegels.get(0).bronAnnotaties());
-        assertEquals(List.of("art. 3 Jutterswet"), m.resolvedRegels.get(1).bronAnnotaties());
-        assertEquals(List.of(), m.resolvedRegels.get(2).bronAnnotaties());
+        assertEquals(List.of("art. 3 Jutterswet"), m.resolvedRegels.get(0).statuteAnnotations());
+        assertEquals(List.of("art. 3 Jutterswet"), m.resolvedRegels.get(1).statuteAnnotations());
+        assertEquals(List.of(), m.resolvedRegels.get(2).statuteAnnotations());
 
         ir = golden(HARDHEIDSOVERSCHOT);
         List<String> annotations = new ArrayList<>();
         ir.at("/rules/rules/1/statuteAnnotations").forEach(a -> annotations.add(a.asText()));
         assertEquals(2, annotations.size());
-        assertEquals(annotations, IrLoader.load(ir).resolvedRegels.get(1).bronAnnotaties());
+        assertEquals(annotations, IrLoader.load(ir).resolvedRegels.get(1).statuteAnnotations());
     }
 
     @Test void the_kind_of_a_version_is_its_structure() throws Exception {
@@ -595,42 +595,42 @@ class RuleAndExpressionLayerRefusalWitnessTest {
 
     @Test void a_fact_creation_reads_its_target_kind_and_its_path() throws Exception {
         ObjectNode ir = golden(MASTSEIN);
-        ResolvedFeitCreatie fc = IrLoader.load(ir).feitCreaties.get(0);
+        ResolvedFactCreation fc = IrLoader.load(ir).feitCreaties.get(0);
         assertEquals("Sein", fc.doel().naam, "the declared filler of targetRole 'vaksein' in 'vakbeseining'");
-        assertEquals("Kustvak", fc.anker().naam);
+        assertEquals("Kustvak", fc.anchor().naam);
         assertEquals("vakbeseining", fc.feittype());
-        assertEquals("seinvak", fc.ankerRol());
-        assertEquals("vaksein", fc.doelRol());
-        List<RolBindingRef> steps = new ArrayList<>();
-        for (ResolvedFeitCreatie.Tussenstap t : fc.tussenstappen()) steps.add(t.rolBinding());
-        assertEquals(List.of(new RolBindingRef("kustligging", "post"), new RolBindingRef("mastvoering", "mast")),
+        assertEquals("seinvak", fc.anchorRole());
+        assertEquals("vaksein", fc.targetRole());
+        List<RoleBindingRef> steps = new ArrayList<>();
+        for (ResolvedFactCreation.PathStep t : fc.pathSteps()) steps.add(t.roleBinding());
+        assertEquals(List.of(new RoleBindingRef("kustligging", "post"), new RoleBindingRef("mastvoering", "mast")),
                 steps, "every hop of the path but the last is a step");
-        assertEquals(new RolBindingRef("seinvoering", "sein"), fc.joinRol(), "and the last is the join");
+        assertEquals(new RoleBindingRef("seinvoering", "sein"), fc.path(), "and the last is the join");
         // one hop is a join without steps
         ArrayNode path = (ArrayNode) ir.at("/rules/factCreations/0/versions/0/path");
         path.remove(0);
         path.remove(0);
         fc = IrLoader.load(ir).feitCreaties.get(0);
-        assertEquals(List.of(), fc.tussenstappen());
-        assertEquals(new RolBindingRef("seinvoering", "sein"), fc.joinRol());
+        assertEquals(List.of(), fc.pathSteps());
+        assertEquals(new RoleBindingRef("seinvoering", "sein"), fc.path());
     }
 
     @Test void the_one_list_of_uniquenesses_splits_on_the_count_of_sources() throws Exception {
         ObjectNode ir = golden(KUSTREGISTER);
         RegelSpraakModel m = IrLoader.load(ir);
         assertEquals(List.of("eenmalig kaveletiket", "eenmalige sectiecode"),
-                m.uniciteiten.stream().map(ResolvedUniciteit::naam).toList());
+                m.uniciteiten.stream().map(ResolvedUniqueness::naam).toList());
         assertEquals(List.of("eenmalig vondstnummer", "eenmalige bakencode"),
-                m.uniciteitUnies.stream().map(ResolvedUniciteitUnie::naam).toList());
-        ResolvedUniciteit single = m.uniciteiten.get(0);
+                m.uniciteitUnies.stream().map(ResolvedUniquenessUnion::naam).toList());
+        ResolvedUniqueness single = m.uniciteiten.get(0);
         assertEquals("Kavel", single.subject().naam);
-        assertEquals(List.of("etiket"), single.sleutels());
-        assertEquals(new RolBindingRef("kavelindeling", "gemeente"), single.scopeRol());
-        assertNull(single.scopeVeld());
-        ResolvedUniciteitUnie union = m.uniciteitUnies.get(1);
-        assertEquals(List.of("Baken", "Baken"), union.bronnen().stream().map(b -> b.type().naam).toList());
+        assertEquals(List.of("etiket"), single.keys());
+        assertEquals(new RoleBindingRef("kavelindeling", "gemeente"), single.scopeBinding());
+        assertNull(single.scopeField());
+        ResolvedUniquenessUnion union = m.uniciteitUnies.get(1);
+        assertEquals(List.of("Baken", "Baken"), union.sources().stream().map(b -> b.type().naam).toList());
         assertEquals(List.of(List.of("landcode"), List.of("zeecode")),
-                union.bronnen().stream().map(ResolvedUniciteitUnie.Bron::sleutels).toList());
+                union.sources().stream().map(ResolvedUniquenessUnion.Bron::keys).toList());
         // the order of the one list carries no meaning: the unions first split the same
         ArrayNode list = IrPath.rulesList(ir, "uniquenesses");
         ArrayNode reversed = JSON.createArrayNode();
@@ -638,27 +638,27 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         IrPath.rules(ir).set("uniquenesses", reversed);
         m = IrLoader.load(ir);
         assertEquals(List.of("eenmalige sectiecode", "eenmalig kaveletiket"),
-                m.uniciteiten.stream().map(ResolvedUniciteit::naam).toList());
+                m.uniciteiten.stream().map(ResolvedUniqueness::naam).toList());
         assertEquals(List.of("eenmalige bakencode", "eenmalig vondstnummer"),
-                m.uniciteitUnies.stream().map(ResolvedUniciteitUnie::naam).toList());
+                m.uniciteitUnies.stream().map(ResolvedUniquenessUnion::naam).toList());
     }
 
     @Test void both_function_nodes_become_the_one_function_record() throws Exception {
-        Expr.Functie sum = assertInstanceOf(Expr.Functie.class,
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class,
                 IrLoader.load(golden(BOOTBERGING)).resolvedRegels.get(1).waarde());
-        assertEquals(Expr.FunctieKind.SOM, sum.kind());
-        assertEquals("Vondst", sum.elementObjecttype().naam);
-        assertNotNull(sum.leegwaarde(), "emptyFallback");
+        assertEquals(Expr.FunctionKind.SOM, sum.kind());
+        assertEquals("Vondst", sum.elementObjectType().naam);
+        assertNotNull(sum.emptyFallback(), "emptyFallback");
         assertNull(sum.granulariteit(), "a fold carries no granularity");
-        Expr.Functie part = assertInstanceOf(Expr.Functie.class,
+        Expr.FunctionCall part = assertInstanceOf(Expr.FunctionCall.class,
                 IrLoader.load(golden(PACHTVENSTER)).resolvedRegels.get(0).waarde());
-        assertEquals(Expr.FunctieKind.TIJDSEVENREDIG_DEEL, part.kind());
+        assertEquals(Expr.FunctionKind.TIJDSEVENREDIG_DEEL, part.kind());
         assertEquals(Spelling.GRANULARITY.waarde("BuiltinCall.granularity",
                         golden(PACHTVENSTER).at(VALUE + "/granularity").asText()),
                 part.granulariteit());
         assertNotNull(part.filter(), "filter");
-        assertNull(part.elementObjecttype(), "a builtin carries none of the fold's fields");
-        assertNull(part.leegwaarde());
+        assertNull(part.elementObjectType(), "a builtin carries none of the fold's fields");
+        assertNull(part.emptyFallback());
         assertNull(part.dimensieSelectie());
     }
 

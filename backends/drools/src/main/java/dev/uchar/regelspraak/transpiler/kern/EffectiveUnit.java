@@ -22,7 +22,7 @@ import java.util.Objects;
  * listed below; they are exactly ch. 2.10's, and they are a scope boundary rather than an escape hatch.
  *
  * <p><b>Why.</b> A v0 IR node repeated its type on the wire at positions where that type is a COPY of a
- * declaration (an {@code AttribuutRef}, a {@code ParameterRef}, a {@code DimensieCel} read, a binder read), and
+ * declaration (an {@code AttribuutRef}, a {@code ParameterRef}, a {@code DimensionCellRead} read, a binder read), and
  * still does at positions where it is a DERIVATION over its operands (an arithmetic node, a Let, a value
  * aggregation). Since L2 of the v1 wire migration the reference positions carry no type at all — theirs is the
  * declaration's ({@link #typeOf}) — and nothing crosses the derived ones mechanically. A consumer that
@@ -52,8 +52,8 @@ import java.util.Objects;
  * </ul>
  *
  * <p><b>Scope.</b> This derives the UNIT only. The soort and the precision of an annotation are equally
- * repetitions, but this backend reads neither for its §4 restatements: it reads {@code isNumeriek}/
- * {@code isDatum} as ROUTING predicates (a soort lie is a different document, crossed by WF-091; on a binder
+ * repetitions, but this backend reads neither for its §4 restatements: it reads {@code isNumber}/
+ * {@code isDate} as ROUTING predicates (a soort lie is a different document, crossed by WF-091; on a binder
  * read by WF-078 until L2, when the reference annotations left the wire)
  * and it never reads {@code Datatype.decimalen} at all — only {@code Afgerond.decimalen}, a node field.
  * Grafting the derived unit onto the node's own annotation therefore changes exactly what is read and
@@ -140,10 +140,10 @@ public final class EffectiveUnit {
         Datatype t = switch (e) {
             case null -> null;
             case Expr.AttribuutRef a -> a.objecttype() == null ? null : a.objecttype().attribuut(a.attribuut());
-            case Expr.DimensieCel c -> typeWithoutBinder(c.attribuut());
+            case Expr.DimensionCellRead c -> typeWithoutBinder(c.attribuut());
             case Expr.ParameterRef p -> p.parameter() == null ? null : p.parameter().datatype();
             case Expr.BinderRef ignored -> null;
-            case Expr.VariabeleRef ignored -> null;
+            case Expr.VariableRef ignored -> null;
             case Expr.Afgerond a -> rounded(typeWithoutBinder(a.basis()), a.decimalen());
             case Expr.Begrensd b -> typeWithoutBinder(b.basis());
             case Expr.InstanceSetUnion ignored -> null;   // it denotes instances and carries no datatype
@@ -186,9 +186,9 @@ public final class EffectiveUnit {
             return;
         }
         if (e instanceof Expr.IfThenElse k) {
-            for (Expr x : conditionOperands(k.conditie())) noteerType(x, environment, depth + 1);
-            noteerType(k.dan(), environment, depth + 1);
-            noteerType(k.anders(), environment, depth + 1);
+            for (Expr x : conditionOperands(k.condition())) noteerType(x, environment, depth + 1);
+            noteerType(k.then(), environment, depth + 1);
+            noteerType(k.otherwise(), environment, depth + 1);
             return;
         }
         for (Expr kind : children(e)) noteerType(kind, environment, depth + 1);
@@ -222,7 +222,7 @@ public final class EffectiveUnit {
             Datatype decl = a.objecttype().attribuut(a.attribuut());
             return decl == null ? annotation : decl.eenheidOf();
         }
-        if (e instanceof Expr.DimensieCel c) return unit(c.attribuut(), environment, depth + 1);
+        if (e instanceof Expr.DimensionCellRead c) return unit(c.attribuut(), environment, depth + 1);
         if (e instanceof Expr.ParameterRef p) {
             Datatype decl = p.parameter() == null ? null : p.parameter().datatype();
             return decl == null ? annotation : decl.eenheidOf();
@@ -242,12 +242,12 @@ public final class EffectiveUnit {
                 default -> annotation;
             };
         }
-        if (e instanceof Expr.Functie f) {
+        if (e instanceof Expr.FunctionCall f) {
             // §4.6 Eenheid1: a value aggregation carries its FIRST operand's unit (the rule this backend's own
             // concatenatieFold already states). TIJDSDUUR/ABSOLUTE_TIJDSDUUR are the documented exception above.
             return switch (f.kind()) {
                 case SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> {
-                    List<Expr> args = f.argumenten();
+                    List<Expr> args = f.arguments();
                     if (args == null || args.isEmpty()) yield annotation;
                     Eenheid u = unit(args.get(0), environment, depth + 1);
                     yield foldsTimeline(f.kind()) ? afterTimeFolding(args.get(0), u) : u;
@@ -296,18 +296,18 @@ public final class EffectiveUnit {
      * question about the FOLD's value, which the verifier and ref own, not about a restatement.
      */
     /** The fold kinds that carry the §7.1 per-element timeline fold — the same two both consumers admit. */
-    private static boolean foldsTimeline(Expr.FunctieKind kind) {
-        return kind == Expr.FunctieKind.TOTAAL || kind == Expr.FunctieKind.SOM;
+    private static boolean foldsTimeline(Expr.FunctionKind kind) {
+        return kind == Expr.FunctionKind.TOTAAL || kind == Expr.FunctionKind.SOM;
     }
 
     private static Eenheid afterTimeFolding(Expr operand, Eenheid u) {
-        if (u == null || u.noemer() == null) return u;
+        if (u == null || u.denominator() == null) return u;
         if (!(operand instanceof Expr.AttribuutRef a) || a.objecttype() == null) return u;
-        return Namen.containsName(a.objecttype().granulariteitLeden(), a.attribuut()) ? u.teller() : u;
+        return Namen.containsName(a.objecttype().granularityMembers(), a.attribuut()) ? u.numerator() : u;
     }
 
     /**
-     * §4.4 / ch. 2.6, the MAAL join — the Java twin of the frontend's {@code Typering.samengesteldeEenheid}, which
+     * §4.4 / ch. 2.6, the MAAL join — the Java twin of the frontend's {@code Typing.compoundUnit}, which
      * is where this rule is authored. One unit-bearing operand hands its unit through (the factor-free product).
      * TWO of them do NOT: a rate times its (convertible) denominator unit CANCELS to the numerator ("€/jr maal jr
      * = €"), and anything else is the OPAQUE product ("€ maal kg = €·kg") — a unit with no canonical, convertible
@@ -316,12 +316,12 @@ public final class EffectiveUnit {
      * <p>That opacity is load-bearing here, not cosmetic: it is what stands between a two-unit product and a
      * restatement by a live factor. Handing back the left operand's unit would scale €·kg into a € target.
      * But what an opaque product buys downstream is NOT uniformly an honest marker, and the two shapes must
-     * not be conflated (measured 2026-09-04 on {@code Eenheid}: for m·m against m, {@code convertibleNaar} is
-     * false, {@code vereistOmrekening} is false, {@code omrekenfactorNaar} FAULTS rather than answering 1 —
+     * not be conflated (measured 2026-09-04 on {@code Eenheid}: for m·m against m, {@code convertibleTo} is
+     * false, {@code requiredConversion} is false, {@code conversionFactorTo} FAULTS rather than answering 1 —
      * the fail-fast card of the same day, and the reason the no-op below is each site's OWN identity, taken
-     * before it ever asks, and never an invented factor — and {@code exacteHerschaalFactoren} is null):
+     * before it ever asks, and never an invented factor — and {@code exactRestateFactors} is null):
      * <ul>
-     *   <li>a site that REFUSES on {@code convertibleNaar} — the §4.1/§5.1.4 TEMPORAL restatements
+     *   <li>a site that REFUSES on {@code convertibleTo} — the §4.1/§5.1.4 TEMPORAL restatements
      *       (until card drl-teksttak-op-truth-maintenance those of the destructive DRL-text lowering, and until
      *       card tms-omschakeling the fold- and timeline-restatement guards of the destructive exec-model
      *       lowering) — gets a false and turns the whole construct into an honest marker/skip;</li>
@@ -336,7 +336,7 @@ public final class EffectiveUnit {
      * That is conservative in the sense that matters — no lie-driven magnitude, because no factor was invented
      * — but it is a SILENT ref/Drools divergence, not a loud one, and this class must not claim otherwise.
      * Its blast radius is bounded by who else accepts the form: the frontend's
-     * {@code Typering.samengesteldeEenheid} flags the unit mismatch, {@code ref} faults, and the ASP
+     * {@code Typing.compoundUnit} flags the unit mismatch, {@code ref} faults, and the ASP
      * translator refuses ahead of translation, so no corpus golden carries it and the divergence is
      * unobservable in every gate. {@code CaseRunner} builds BOTH transpiler branches since the DRL-measurement
      * card (2026-09-04), so the form has two legs to reach rather than one — the split above is stated for each
@@ -353,8 +353,8 @@ public final class EffectiveUnit {
     private static Eenheid timesUnit(Eenheid el, Eenheid rightUnit) {
         if (el == null) return rightUnit;
         if (rightUnit == null) return el;
-        if (el.noemer() != null && rightUnit.noemer() == null && rightUnit.convertibleNaar(el.noemer())) return el.teller();
-        if (rightUnit.noemer() != null && el.noemer() == null && el.convertibleNaar(rightUnit.noemer())) return rightUnit.teller();
+        if (el.denominator() != null && rightUnit.denominator() == null && rightUnit.convertibleTo(el.denominator())) return el.numerator();
+        if (rightUnit.denominator() != null && el.denominator() == null && el.convertibleTo(rightUnit.denominator())) return rightUnit.numerator();
         return opaqueProduct(el, rightUnit);
     }
 
@@ -421,8 +421,8 @@ public final class EffectiveUnit {
         }
         // ch. 10.2: exactly one branch runs; both must agree on the unit, so either arm derives it.
         Expr.IfThenElse k = (Expr.IfThenElse) e;
-        Eenheid then = unit(k.dan(), environment, depth + 1);
-        return then != null ? then : unit(k.anders(), environment, depth + 1);
+        Eenheid then = unit(k.then(), environment, depth + 1);
+        return then != null ? then : unit(k.otherwise(), environment, depth + 1);
     }
 
     private Map<String, Eenheid> withBinder(Map<String, Eenheid> environment, Expr.Let b, int depth) {
@@ -461,16 +461,16 @@ public final class EffectiveUnit {
             return;
         }
         if (e instanceof Expr.IfThenElse k) {
-            for (Expr x : conditionOperands(k.conditie())) noteer(x, environment, depth + 1);
-            noteer(k.dan(), environment, depth + 1);
-            noteer(k.anders(), environment, depth + 1);
+            for (Expr x : conditionOperands(k.condition())) noteer(x, environment, depth + 1);
+            noteer(k.then(), environment, depth + 1);
+            noteer(k.otherwise(), environment, depth + 1);
             return;
         }
         for (Expr kind : children(e)) noteer(kind, environment, depth + 1);
     }
 
     /**
-     * Every Expr-carrying component of an ordinary v0 node (the {@code Expr.bevat} inventory minus its ch. 4.10
+     * Every Expr-carrying component of an ordinary v0 node (the {@code Expr.contains} inventory minus its ch. 4.10
      * arms — {@link #noteer} matches all three cluster nodes itself, because each needs a SCOPE this cannot
      * carry).
      *
@@ -481,7 +481,7 @@ public final class EffectiveUnit {
      * every binder read beneath it silently loses its recorded unit — falling back to the annotation this class
      * exists to not read. So the {@code switch} below is EXHAUSTIVE over the sealed union, with no
      * {@code default}: the next node the union grows is a COMPILE ERROR here rather than a silent gap, exactly
-     * as {@code Expr.bevat} is written for the same reason. The six genuine leaves are spelled out; the three
+     * as {@code Expr.contains} is written for the same reason. The six genuine leaves are spelled out; the three
      * ch. 4.10 nodes are unreachable — {@link #noteer} intercepts each before it gets here — and they REFUSE
      * rather than answering, because handing back their children from a place that carries no scope is the
      * defect, not the fix.
@@ -491,33 +491,33 @@ public final class EffectiveUnit {
             case Expr.Binair b      -> childrenOf(b.links(), b.rechts());
             case Expr.Afgerond a    -> childrenOf(a.basis());
             case Expr.Begrensd b    -> childrenOf(b.basis(), b.minimum(), b.maximum());
-            case Expr.DimensieCel c -> childrenOf(c.attribuut());
-            case Expr.Functie f -> {
+            case Expr.DimensionCellRead c -> childrenOf(c.attribuut());
+            case Expr.FunctionCall f -> {
                 java.util.List<Expr> out = new java.util.ArrayList<>();
-                if (f.argumenten() != null) out.addAll(f.argumenten());
-                if (f.leegwaarde() != null) out.add(f.leegwaarde());
+                if (f.arguments() != null) out.addAll(f.arguments());
+                if (f.emptyFallback() != null) out.add(f.emptyFallback());
                 out.addAll(conditionOperands(f.filter()));
                 yield out;
             }
-            case Expr.TekstReeks t -> {
+            case Expr.TextComposition t -> {
                 java.util.List<Expr> out = new java.util.ArrayList<>();
-                if (t.delen() != null)
-                    for (Expr.TekstReeks.Deel d : t.delen())
-                        if (d instanceof Expr.TekstReeks.Ingevoegd i) out.add(i.expr());
+                if (t.parts() != null)
+                    for (Expr.TextComposition.Part d : t.parts())
+                        if (d instanceof Expr.TextComposition.EmbeddedExpression i) out.add(i.expr());
                 yield out;
             }
             case Expr.Literal ignored      -> List.of();
             case Expr.AttribuutRef ignored -> List.of();
             case Expr.ParameterRef ignored -> List.of();
-            case Expr.VariabeleRef ignored -> List.of();
+            case Expr.VariableRef ignored -> List.of();
             case Expr.Constante ignored    -> List.of();
-            case Expr.Onopgelost ignored   -> List.of();
+            case Expr.Unresolved ignored   -> List.of();
             // the §5.7 instance-set union (WF-110): its own fields are SYMBOLIC — a type name and a
             // role binding — so the only child expressions are the selections' filter operands, and
             // each is read against its own selection's element, exactly as a Functie's filter is
             case Expr.InstanceSetUnion u -> {
                 java.util.List<Expr> out = new java.util.ArrayList<>();
-                for (Expr.InstanceSetUnion.Tak t : u.takken()) out.addAll(conditionOperands(t.filter()));
+                for (Expr.InstanceSetUnion.Branch t : u.branches()) out.addAll(conditionOperands(t.filter()));
                 yield out;
             }
             case Expr.Let ignored        -> throw clusterNode();
@@ -540,7 +540,7 @@ public final class EffectiveUnit {
     /**
      * The ROOT of every Expr operand a condition carries — the nodes {@link #noteer} may start a walk at.
      *
-     * <p><b>Roots, never descendants.</b> The shared {@code Conditie.bevatOperand} scan is a FULL pre-order walk:
+     * <p><b>Roots, never descendants.</b> The shared {@code Conditie.containsOperand} scan is a FULL pre-order walk:
      * asked with a predicate that never short-circuits it yields each operand AND every node beneath it. Handing
      * that flat list to {@link #noteer} makes it RE-ENTER each operand tree midway, carrying the enclosing scope
      * into a place that scope does not govern. For a SHADOWING inner {@code Let} that is not redundant work but a
@@ -565,14 +565,14 @@ public final class EffectiveUnit {
     private static List<Expr> conditionOperands(Conditie c) {
         if (c == null) return List.of();
         java.util.List<Expr> flat = new java.util.ArrayList<>();
-        Conditie.bevatOperand(c, x -> { flat.add(x); return false; });
+        Conditie.containsOperand(c, x -> { flat.add(x); return false; });
         java.util.List<Expr> roots = new java.util.ArrayList<>();
         for (Expr kandidaat : flat) {
             boolean underAnother = false;
             for (Expr possibleParent : flat) {
                 // identity, not equality: two operands can be value-equal records and still be separate roots
                 if (possibleParent == kandidaat) continue;
-                if (Expr.bevat(possibleParent, x -> x == kandidaat)) { underAnother = true; break; }
+                if (Expr.contains(possibleParent, x -> x == kandidaat)) { underAnother = true; break; }
             }
             if (!underAnother) roots.add(kandidaat);
         }

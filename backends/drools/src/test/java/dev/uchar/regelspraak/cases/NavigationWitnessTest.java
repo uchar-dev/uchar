@@ -129,7 +129,7 @@ class NavigationWitnessTest {
         typen.add(emptyType(haven, "Zeehaven", "Haven"));
         haven.put("supertype", "Ligplaats");
         RegelSpraakModel m = IrLoader.loadAll(ir).model();
-        List<RegelSpraakModel.RolBindingRef> step = List.of(new RegelSpraakModel.RolBindingRef("vlagvoering", "vlaghaven"));
+        List<RegelSpraakModel.RoleBindingRef> step = List.of(new RegelSpraakModel.RoleBindingRef("vlagvoering", "vlaghaven"));
         RegelSpraakModel.Objecttype schuit = m.objecttypeOpNaam("Schuit");
         assertNotNull(FactModelGenerator.navigationWalk(m, schuit, step, m.objecttypeOpNaam("Haven")));
         assertNotNull(FactModelGenerator.navigationWalk(m, schuit, step, m.objecttypeOpNaam("Ligplaats")),

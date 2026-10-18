@@ -13,14 +13,14 @@ import java.util.List;
  * RegelSpraak expressie denotes, and the input the Drools transpiler will consume.
  *
  * Every node carries (a) its result {@link Datatype}, computed via the typeringen
- * matrix ({@link dev.uchar.regelspraak.resolver.Typering}), and (b) the original
+ * matrix ({@link dev.uchar.regelspraak.resolver.Typing}), and (b) the original
  * source slice, for diagnostics and traceability back to the regel text.
  *
  * References are bound to the model where the resolver can do so —
  * attribute-of-subject against a known object type, and parameters. Role navigation and
  * deep van-chains have since been bound too: {@link AttribuutRef} carries them as
- * {@code navigatieRol} and {@code navigatiePad}. What still cannot be bound becomes an
- * {@link Onopgelost} node carrying {@link Datatype.Onbekend}, so the IR is explicit about
+ * {@code navigatieRol} and {@code navigationPath}. What still cannot be bound becomes an
+ * {@link Unresolved} node carrying {@link Datatype.Onbekend}, so the IR is explicit about
  * its resolution coverage rather than guessing: a transpiler can see exactly what is and
  * isn't resolved. This mirrors the resolver's "unknown ⇒ no claim" discipline.
  */
@@ -39,46 +39,46 @@ public sealed interface Expr {
      *  grows is a COMPILE ERROR here rather than a silent leaf. That is deliberate: a missing arm under-reports
      *  ("this tree does not mention X") and every caller reads a false as a licence to omit something. The seven
      *  leaves are spelled out for the same reason; each is a genuine leaf, not an unhandled case. */
-    static boolean bevat(Expr e, java.util.function.Predicate<Expr> toets) {
+    static boolean contains(Expr e, java.util.function.Predicate<Expr> test) {
         if (e == null) return false;
-        if (toets.test(e)) return true;
+        if (test.test(e)) return true;
         return switch (e) {
-            case Binair b      -> bevat(b.links(), toets) || bevat(b.rechts(), toets);
-            case Functie f     -> f.argumenten().stream().anyMatch(x -> bevat(x, toets))
-                                  || bevat(f.leegwaarde(), toets) || Conditie.bevatExpr(f.filter(), toets);
-            case Afgerond a    -> bevat(a.basis(), toets);
-            case Begrensd b    -> bevat(b.basis(), toets) || bevat(b.minimum(), toets) || bevat(b.maximum(), toets);
-            case TekstReeks t  -> t.delen().stream().anyMatch(d -> d instanceof TekstReeks.Ingevoegd i && bevat(i.expr(), toets));
-            case DimensieCel c -> bevat(c.attribuut(), toets);
+            case Binair b      -> contains(b.links(), test) || contains(b.rechts(), test);
+            case FunctionCall f     -> f.arguments().stream().anyMatch(x -> contains(x, test))
+                                  || contains(f.emptyFallback(), test) || Conditie.containsExpr(f.filter(), test);
+            case Afgerond a    -> contains(a.basis(), test);
+            case Begrensd b    -> contains(b.basis(), test) || contains(b.minimum(), test) || contains(b.maximum(), test);
+            case TextComposition t  -> t.parts().stream().anyMatch(d -> d instanceof TextComposition.EmbeddedExpression i && contains(i.expr(), test));
+            case DimensionCellRead c -> contains(c.attribuut(), test);
             // A Let's binding is a child on BOTH sides: the value may never be evaluated (ch. 10.6 is
             // call-by-need) but it is structurally present, and every caller of this scan asks a
             // STRUCTURAL question ("does this tree mention X?"). A scan that stopped at the binder would
             // under-report a Rekendatum/parameter read hidden in a Let value.
-            case Let l         -> bevat(l.value(), toets) || bevat(l.body(), toets);
+            case Let l         -> contains(l.value(), test) || contains(l.body(), test);
             // Both branches are children, and so is every Expr operand of the guard: exactly one branch RUNS
             // (ch. 10.2), but the question this scan answers is structural, and a scan that saw only the taken
             // branch would have to know a runtime verdict it cannot have. The guard's operands are reached
             // through the shared Conditie walk, the same way a Functie's filter is.
-            case IfThenElse k  -> bevat(k.dan(), toets) || bevat(k.anders(), toets)
-                                  || Conditie.bevatExpr(k.conditie(), toets);
+            case IfThenElse k  -> contains(k.then(), test) || contains(k.otherwise(), test)
+                                  || Conditie.containsExpr(k.condition(), test);
             // A union's own fields are SYMBOLIC — a type name and a role binding — so the only child
             // expressions live in the selections' filters, reached through the shared Conditie walk
             // exactly as a Functie's filter is.
-            case InstanceSetUnion u -> u.takken().stream()
-                                        .anyMatch(t -> Conditie.bevatExpr(t.filter(), toets));
+            case InstanceSetUnion u -> u.branches().stream()
+                                        .anyMatch(t -> Conditie.containsExpr(t.filter(), test));
             case Literal ignored      -> false;
             case AttribuutRef ignored -> false;
             case ParameterRef ignored -> false;
-            case VariabeleRef ignored -> false;
+            case VariableRef ignored -> false;
             case BinderRef ignored    -> false;
             case Constante ignored    -> false;
-            case Onopgelost ignored   -> false;
+            case Unresolved ignored   -> false;
         };
     }
 
     /** §5.3: whether {@code e} is the Rekendatum or Rekenjaar execution-date constant — the trigger for the
      *  §4.2 rekendatum global when used as a VALUE operand (§13.4.17.34). */
-    static boolean isRekenConstante(Expr e) {
+    static boolean isContextValue(Expr e) {
         return e instanceof Constante c && ("Rekendatum".equals(c.naam()) || "Rekenjaar".equals(c.naam()));
     }
 
@@ -88,14 +88,14 @@ public sealed interface Expr {
     /** §5.4/§13.4.17.9 "reeks van teksten en waarden": an interleaving of literal karakterreeks chunks and
      *  «expressie» parts, each coerced to Tekst and concatenated at runtime. A PLAIN "…" (no «…») stays an
      *  {@link Literal}; this node is built ONLY when at least one «expressie» part is present. */
-    record TekstReeks(List<Deel> delen, Bron bron) implements Expr {
+    record TextComposition(List<Part> parts, Bron bron) implements Expr {
         @Override public Datatype type() { return new Datatype.Tekst(); }
         /** One piece of a tekstenwaardereeks: a literal chunk or an embedded expression. */
-        public sealed interface Deel {}
+        public sealed interface Part {}
         /** A literal karakterreeks chunk (already unquoted, no guillemets). */
-        public record Letterlijk(String tekst) implements Deel {}
+        public record LiteralChunk(String tekst) implements Part {}
         /** A «expressie» part — its value is coerced to Tekst at evaluation. */
-        public record Ingevoegd(Expr expr) implements Deel {}
+        public record EmbeddedExpression(Expr expr) implements Part {}
     }
 
     /** §13.4.16 arithmetic operators and §13.4.17.12 percentage-of. */
@@ -110,17 +110,17 @@ public sealed interface Expr {
      *  also has a PRODUCER route, and that route is a dialect extension of this frontend's grammar
      *  rather than a v2.3.0 form: "het aantal gevulde waarden van &lt;setlezing&gt;", measured inert on
      *  official documents in {@code grammar/DIVERGENCES.md} §6. */
-    enum FunctieKind {
+    enum FunctionKind {
         SOM, TOTAAL, AANTAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE, WORTEL, ABSOLUTE_WAARDE,
         CONCATENATIE, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, EERSTE_PAASDAG, TIJDSEVENREDIG_DEEL,
         AANTAL_DAGEN_IN, JAAR_UIT, MAAND_UIT, DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT,
         DATUM_MET, DATUMTIJD_MET
     }
-    /** `elementObjecttype` is the object type the aggregation ranges over — the type
+    /** `elementObjectType` is the object type the aggregation ranges over — the type
      *  whose instances are summed/counted/etc. (null if unresolved). It is what the
      *  transpiler binds the accumulate source pattern to.
      *
-     *  `leegwaarde` is the §5.8.2 "of … als die er niet zijn" fallback for a sommatie
+     *  `emptyFallback` is the §5.8.2 "of … als die er niet zijn" fallback for a sommatie
      *  (SOM/TOTAAL): the value the sum takes when it has no non-empty contributors,
      *  instead of a leegwaarde. Null when the source declared no fallback (an empty
      *  sommatie is then a leegwaarde); always null for non-sommatie functions.
@@ -130,7 +130,7 @@ public sealed interface Expr {
      *  It is resolved against the ELEMENT type, not the rule subject. Null when the operand
      *  carries no such filter. A kenmerk-membership predicate now resolves to a real
      *  {@link Conditie.Kenmerk} against the element type; a filter the resolver still cannot
-     *  structure is kept here as an {@link Conditie.Onopgelost} marker so the transpiler can see it
+     *  structure is kept here as an {@link Conditie.Unresolved} marker so the transpiler can see it
      *  must NOT lower the aggregation to a count over every instance — it emits a visible marker
      *  instead of a silently-wrong total. */
     /** §13.4.17.51-.54 a resolved dimension selection on an aggregation: the dimension the
@@ -139,27 +139,27 @@ public sealed interface Expr {
      *  dimension's declared label order (§13.3.7.5), and "over alle …" is every label. The
      *  transpiler folds the dimensioned attribute over exactly these labels (a fixed sum/min/max
      *  of {@code map.get(label)}), so no label arithmetic survives into the back-end. */
-    record DimensieSelectie(String dimensie, List<String> labels, Bron bron) {}
+    record DimensionSelection(String dimension, List<String> labels, Bron bron) {}
 
     /** {@code dimensieSelectie} (§13.4.17.51-.54), when non-null, restricts a SOM/MIN/MAX over a
      *  gedimensioneerd attribuut to the selected dimension labels — the only aggregation that
      *  ranges over a dimension's value space rather than over object instances. Null for an
      *  ordinary instance aggregation. */
-    record Functie(FunctieKind kind, List<Expr> argumenten, Objecttype elementObjecttype,
-                   Expr leegwaarde, Conditie filter, DimensieSelectie dimensieSelectie,
+    record FunctionCall(FunctionKind kind, List<Expr> arguments, Objecttype elementObjectType,
+                   Expr emptyFallback, Conditie filter, DimensionSelection dimensieSelectie,
                    Datatype type, Bron bron, Granulariteit granulariteit) implements Expr {
         /** {@code granulariteit} is the §13.4.17.57 aantal-dagen-in operator's stated bucket unit ("in <de maand|
          *  het jaar>"); null for every other functie. The transpiler requires it to MATCH the doel's tijdlijn
          *  (§4.21/§7.2), markering a mismatch rather than silently bucketing by the wrong unit. */
-        public Functie(FunctieKind kind, List<Expr> argumenten, Objecttype elementObjecttype,
-                       Expr leegwaarde, Conditie filter, DimensieSelectie dimensieSelectie,
+        public FunctionCall(FunctionKind kind, List<Expr> arguments, Objecttype elementObjectType,
+                       Expr emptyFallback, Conditie filter, DimensionSelection dimensieSelectie,
                        Datatype type, Bron bron) {
-            this(kind, argumenten, elementObjecttype, leegwaarde, filter, dimensieSelectie, type, bron, null);
+            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensieSelectie, type, bron, null);
         }
         /** Most call sites build an instance aggregation with no dimensieselectie and no granulariteit. */
-        public Functie(FunctieKind kind, List<Expr> argumenten, Objecttype elementObjecttype,
-                       Expr leegwaarde, Conditie filter, Datatype type, Bron bron) {
-            this(kind, argumenten, elementObjecttype, leegwaarde, filter, null, type, bron, null);
+        public FunctionCall(FunctionKind kind, List<Expr> arguments, Objecttype elementObjectType,
+                       Expr emptyFallback, Conditie filter, Datatype type, Bron bron) {
+            this(kind, arguments, elementObjectType, emptyFallback, filter, null, type, bron, null);
         }
     }
 
@@ -170,15 +170,15 @@ public sealed interface Expr {
      *  contributors, deduplicated on instance identity, so an instance two selections both select is
      *  counted once.
      *
-     *  <p>It is the SINGLE argument of a {@link FunctieKind#AANTAL} functie and stands nowhere else;
+     *  <p>It is the SINGLE argument of a {@link FunctionKind#AANTAL} functie and stands nowhere else;
      *  the count above it then names no source of its own. It carries no {@link #type()} — it denotes
      *  instances, not a value — which is why {@code type()} answers null here and the wire writes no
      *  {@code type} key at all.
      *
      *  <p>This is the reading the multi-operand VALUE count does NOT have: that form stays refused
-     *  (WF-037, {@code ExpressieBouwer.tellingAriteitFout}), and the two are distinguishable on the
+     *  (WF-037, {@code ExpressionBuilder.countArityError}), and the two are distinguishable on the
      *  wire because this one has exactly ONE argument. */
-    record InstanceSetUnion(List<Tak> takken, Bron bron) implements Expr {
+    record InstanceSetUnion(List<Branch> branches, Bron bron) implements Expr {
         @Override public Datatype type() { return null; }
 
         /** One selection: the population it ranges over, the one-step relation it walks from the
@@ -188,7 +188,7 @@ public sealed interface Expr {
          *  toolchain leaves it unlowered because its own lowering ORs the operands' filter terms and
          *  has no term to OR for one without a filter. There is deliberately no path spelling: a
          *  selection carries a one-step relation, and a count's range is one step (WF-102 (c)). */
-        public record Tak(Objecttype elementType, RegelSpraakModel.RolBindingRef bronRol,
+        public record Branch(Objecttype elementType, RegelSpraakModel.RoleBindingRef sourceRole,
                           Conditie filter, Bron bron) {}
     }
 
@@ -223,25 +223,25 @@ public sealed interface Expr {
      * or role — and distinguishes a wederkerig self-relation ("zijn partner", where the
      * navigated type equals the subject's) from a plain own-attribute read (§13.3.9.2).
      */
-    record AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
+    record AttribuutRef(String attribuut, Objecttype objecttype, String subjectSource,
                         String navigatieRol, Datatype type, Bron bron, boolean set,
-                        java.util.List<String> navigatiePad,
-                        java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad,
-                        Conditie.Kwantor kwantor, int drempel)
+                        java.util.List<String> navigationPath,
+                        java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
+                        Conditie.Kwantor kwantor, int threshold)
             implements Expr {
         /** {@code set} marks an operand that ranges over a SET (a §13.4.2 set quantifier — alle/al/geen van de/
          *  ten minste…/ten hoogste…/precies… — NOT the bare definite "de"), computed structurally from the
          *  onderwerp's quantifier rather than re-scanned from the onderwerp text. Lets the transpiler/resolver
          *  distinguish a set aggregation from a single-object read even when the element type equals the subject.
          *
-         *  {@code navigatiePad} is the resolved MULTI-HOP to-one navigation chain (§13.4.1 "de X van de Y van de Z"):
+         *  {@code navigationPath} is the resolved MULTI-HOP to-one navigation chain (§13.4.1 "de X van de Y van de Z"):
          *  the DECLARED feittype role names from the rule subject to the object carrying {@code attribuut}, in
          *  navigation order — empty for the subject's own attribute and for a single-hop navigation (which stays
          *  the written {@code navigatieRol}). INVARIANT: a non-empty pad implies a non-null {@code navigatieRol},
          *  so every own-attribute fast path (keyed on navigatieRol == null) routes a chain to the navigated
          *  branches, whose choke points (naviResolve / navReader / navComparisonRole) are pad-aware.
          *
-         *  {@code bereikPad} is the resolved MULTI-STEP fold-source RANGE (IR-SPEC ch. 4.3 / WF-102, the
+         *  {@code rangePath} is the resolved MULTI-STEP fold-source RANGE (IR-SPEC ch. 4.3 / WF-102, the
          *  uchar wire's {@code sourcePath} on the enclosing Aggregation): the symbolic role bindings from the rule
          *  subject to the element type, subject-outwards, one per written set step. Empty for every source
          *  whose range is ONE relation — that one stays the emitter's {@code sourceRole} — and empty whenever
@@ -257,38 +257,38 @@ public sealed interface Expr {
          *  travelling beside it for the same reason: without it "ten minste 2 van de" and "ten minste 3
          *  van de" would reach the resolver as one and the same sentence. 0 when the quantor carries no
          *  count. FRONTEND-INTERNAL, both of them: they are the resolver's
-         *  input for lowering a §8.2 quantified condition to {@link Conditie.Kwantorvouw}, which records
+         *  input for lowering a §8.2 quantified condition to {@link Conditie.QuantifierFold}, which records
          *  them on the wire — the reference node itself never carries them out, so no schema field
          *  corresponds to these components. */
-        public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
+        public AttribuutRef(String attribuut, Objecttype objecttype, String subjectSource,
                             String navigatieRol, Datatype type, Bron bron, boolean set,
-                            java.util.List<String> navigatiePad,
-                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad) {
-            this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, set, navigatiePad, bereikPad, null);
+                            java.util.List<String> navigationPath,
+                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath) {
+            this(attribuut, objecttype, subjectSource, navigatieRol, type, bron, set, navigationPath, rangePath, null);
         }
         /** {@code drempel} defaults to 0: it is read only under a COUNTING {@code kwantor}, and every
          *  reference built outside the onderwerp path carries none. */
-        public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
+        public AttribuutRef(String attribuut, Objecttype objecttype, String subjectSource,
                             String navigatieRol, Datatype type, Bron bron, boolean set,
-                            java.util.List<String> navigatiePad,
-                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad,
+                            java.util.List<String> navigationPath,
+                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
                             Conditie.Kwantor kwantor) {
-            this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, set, navigatiePad, bereikPad,
+            this(attribuut, objecttype, subjectSource, navigatieRol, type, bron, set, navigationPath, rangePath,
                     kwantor, 0);
         }
-        public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
+        public AttribuutRef(String attribuut, Objecttype objecttype, String subjectSource,
                             String navigatieRol, Datatype type, Bron bron, boolean set,
-                            java.util.List<String> navigatiePad) {
-            this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, set, navigatiePad,
+                            java.util.List<String> navigationPath) {
+            this(attribuut, objecttype, subjectSource, navigatieRol, type, bron, set, navigationPath,
                     java.util.List.of());
         }
-        public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
+        public AttribuutRef(String attribuut, Objecttype objecttype, String subjectSource,
                             String navigatieRol, Datatype type, Bron bron, boolean set) {
-            this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, set, java.util.List.of());
+            this(attribuut, objecttype, subjectSource, navigatieRol, type, bron, set, java.util.List.of());
         }
-        public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
+        public AttribuutRef(String attribuut, Objecttype objecttype, String subjectSource,
                             String navigatieRol, Datatype type, Bron bron) {
-            this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, false, java.util.List.of());
+            this(attribuut, objecttype, subjectSource, navigatieRol, type, bron, false, java.util.List.of());
         }
     }
 
@@ -297,7 +297,7 @@ public sealed interface Expr {
      *  single-dimension attribute). The transpiler lowers it to {@code <map-read>.get(label)}; the result
      *  type is the attribute's element datatype. A read must pin EVERY dimension (§3.6), so the labels list
      *  has one entry per dimension. */
-    record DimensieCel(AttribuutRef attribuut, List<String> labels, Bron bron) implements Expr {
+    record DimensionCellRead(AttribuutRef attribuut, List<String> labels, Bron bron) implements Expr {
         @Override public Datatype type() { return attribuut.type(); }
     }
 
@@ -310,7 +310,7 @@ public sealed interface Expr {
      *  resolver could NOT bind to a definition — a forward or cyclic reference. A BOUND variable read in
      *  a rule's result part is an {@link BinderRef} under its {@link Let}; one read in the voorwaarde is
      *  substituted at its use site (see {@link Let}). This node is therefore a residual marker only. */
-    record VariabeleRef(String naam, Datatype type, Bron bron) implements Expr {}
+    record VariableRef(String naam, Datatype type, Bron bron) implements Expr {}
 
     /**
      * IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.6: the value-level binding. {@code binder} is visible
@@ -339,57 +339,57 @@ public sealed interface Expr {
      *
      * <p>Never emitter-produced: no RegelSpraak construct lowers to it, so {@link dev.uchar.regelspraak.emit.IrEmitter}
      * writes none and no {@code bron.rgs} golden carries one. It is here because the union is the shape
-     * every consumer walks: a wire form parsed into anything else is an opaque leaf to {@link #bevat} and
+     * every consumer walks: a wire form parsed into anything else is an opaque leaf to {@link #contains} and
      * to every hand-written tree walk built on it, which under-report in silence.
      *
      * <p>The wire spells its fields {@code condition} / {@code then} / {@code else}; two of those are Java
      * keywords, so the record names them as the semantics does.
      */
-    record IfThenElse(Conditie conditie, Expr dan, Expr anders, Datatype type, Bron bron) implements Expr {}
+    record IfThenElse(Conditie condition, Expr then, Expr otherwise, Datatype type, Bron bron) implements Expr {}
 
     /** A built-in reckoning constant or referent: Rekendatum, Rekenjaar, hij, de dag. */
     record Constante(String naam, Datatype type, Bron bron) implements Expr {}
 
     /** A reference or sub-expression the resolver could not bind to the model.
      *
-     *  <p>{@code reden} is the Dutch sentence the frontend raises as a WARNING over this marker when it
-     *  SURVIVES into the finished model — see {@link Conditie.Onopgelost#reden()} for why the reason
+     *  <p>{@code reason} is the Dutch sentence the frontend raises as a WARNING over this marker when it
+     *  SURVIVES into the finished model — see {@link Conditie.Unresolved#reason()} for why the reason
      *  travels on the node instead of being reported where the node is built, and why null means "the
      *  producing route already speaks for itself". Never serialised: the wire writes {@code node},
      *  {@code type} and {@code source}. */
-    record Onopgelost(Datatype type, Bron bron, String reden) implements Expr {}
+    record Unresolved(Datatype type, Bron bron, String reason) implements Expr {}
 
-    /** Every {@link Onopgelost} inside {@code e}, in structural order, handed to {@code uit} as its
+    /** Every {@link Unresolved} inside {@code e}, in structural order, handed to {@code uit} as its
      *  {@code (bron, reden)} pair — the {@link Expr} half of the survivor traversal
-     *  {@link Conditie#verzamelOnopgelost} drives. Walks every Expr-carrying component, and reaches a
+     *  {@link Conditie#collectUnresolved} drives. Walks every Expr-carrying component, and reaches a
      *  functie's filter and an if-then-else's guard back through the {@link Conditie} half. Null-safe.
-     *  EXHAUSTIVE over the sealed union, for the reason {@link #bevat} states. */
-    static void verzamelOnopgelost(Expr e, java.util.function.BiConsumer<Bron, String> uit) {
+     *  EXHAUSTIVE over the sealed union, for the reason {@link #contains} states. */
+    static void collectUnresolved(Expr e, java.util.function.BiConsumer<Bron, String> result) {
         if (e == null) return;
         switch (e) {
-            case Onopgelost o -> uit.accept(o.bron(), o.reden());
-            case Binair b -> { verzamelOnopgelost(b.links(), uit); verzamelOnopgelost(b.rechts(), uit); }
-            case Functie f -> {
-                f.argumenten().forEach(x -> verzamelOnopgelost(x, uit));
-                verzamelOnopgelost(f.leegwaarde(), uit);
-                Conditie.verzamelOnopgelost(f.filter(), uit);
+            case Unresolved o -> result.accept(o.bron(), o.reason());
+            case Binair b -> { collectUnresolved(b.links(), result); collectUnresolved(b.rechts(), result); }
+            case FunctionCall f -> {
+                f.arguments().forEach(x -> collectUnresolved(x, result));
+                collectUnresolved(f.emptyFallback(), result);
+                Conditie.collectUnresolved(f.filter(), result);
             }
-            case Afgerond a -> verzamelOnopgelost(a.basis(), uit);
-            case Begrensd b -> { verzamelOnopgelost(b.basis(), uit); verzamelOnopgelost(b.minimum(), uit);
-                                 verzamelOnopgelost(b.maximum(), uit); }
-            case TekstReeks t -> t.delen().forEach(d -> {
-                if (d instanceof TekstReeks.Ingevoegd i) verzamelOnopgelost(i.expr(), uit);
+            case Afgerond a -> collectUnresolved(a.basis(), result);
+            case Begrensd b -> { collectUnresolved(b.basis(), result); collectUnresolved(b.minimum(), result);
+                                 collectUnresolved(b.maximum(), result); }
+            case TextComposition t -> t.parts().forEach(d -> {
+                if (d instanceof TextComposition.EmbeddedExpression i) collectUnresolved(i.expr(), result);
             });
-            case DimensieCel c -> verzamelOnopgelost(c.attribuut(), uit);
-            case Let l -> { verzamelOnopgelost(l.value(), uit); verzamelOnopgelost(l.body(), uit); }
-            case IfThenElse k -> { Conditie.verzamelOnopgelost(k.conditie(), uit);
-                                   verzamelOnopgelost(k.dan(), uit); verzamelOnopgelost(k.anders(), uit); }
-            case InstanceSetUnion u -> u.takken()
-                    .forEach(t -> Conditie.verzamelOnopgelost(t.filter(), uit));
+            case DimensionCellRead c -> collectUnresolved(c.attribuut(), result);
+            case Let l -> { collectUnresolved(l.value(), result); collectUnresolved(l.body(), result); }
+            case IfThenElse k -> { Conditie.collectUnresolved(k.condition(), result);
+                                   collectUnresolved(k.then(), result); collectUnresolved(k.otherwise(), result); }
+            case InstanceSetUnion u -> u.branches()
+                    .forEach(t -> Conditie.collectUnresolved(t.filter(), result));
             case Literal ignored -> { }
             case AttribuutRef ignored -> { }
             case ParameterRef ignored -> { }
-            case VariabeleRef ignored -> { }
+            case VariableRef ignored -> { }
             case BinderRef ignored -> { }
             case Constante ignored -> { }
         }

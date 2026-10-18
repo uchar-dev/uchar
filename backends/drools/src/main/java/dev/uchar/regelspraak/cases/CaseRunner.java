@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.engine.ScenarioResultaat;
 import dev.uchar.regelspraak.loader.IrLoader;
-import dev.uchar.regelspraak.kern.VastStartpunt;
+import dev.uchar.regelspraak.kern.FixedStartPoint;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
@@ -549,7 +549,7 @@ public final class CaseRunner {
     /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal bean member — a {@code List<Segment>} field,
      *  the shape {@link FactModelGenerator} derives from a declared attribuutGranulariteit. */
     boolean temporal(Objecttype ot, String attr) {
-        return Namen.containsName(ot.granulariteitLeden(), attr);
+        return Namen.containsName(ot.granularityMembers(), attr);
     }
 
     /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map<String, BigDecimal>}
@@ -648,9 +648,9 @@ public final class CaseRunner {
     record Grid(Granulariteit gran, int aantal, String fixed, boolean variable) {}
 
     Grid grid(Objecttype ot, String attr) {
-        Integer aantal = Namen.byName(ot.tijdlijnAantalLeden(), attr);
-        return new Grid(Namen.byName(ot.granulariteitLeden(), attr), aantal == null ? 1 : aantal,
-                ot.vastStartpuntVan(attr), model.heeftVariabelStartpunt(ot, attr));
+        Integer aantal = Namen.byName(ot.timelineCountMembers(), attr);
+        return new Grid(Namen.byName(ot.granularityMembers(), attr), aantal == null ? 1 : aantal,
+                ot.fixedStartPointOf(attr), model.hasVariableStart(ot, attr));
     }
 
     /** The period {@code [van, tot)} of the member's grid that contains {@code d} (ch. 3.2), as ref lays it: the
@@ -667,7 +667,7 @@ public final class CaseRunner {
         if (r.variable())
             throw new Excluded("a variable-start grid is laid per object from the anchor its start-point"
                     + " determination binds, which this interpreter does not execute (ch. 3.2)");
-        if (r.fixed() != null) return VastStartpunt.periode(r.gran(), r.fixed(), d);
+        if (r.fixed() != null) return FixedStartPoint.periode(r.gran(), r.fixed(), d);
         switch (r.gran()) {
             case JAAR:
                 return new LocalDate[]{ LocalDate.of(d.getYear(), 1, 1), LocalDate.of(d.getYear() + 1, 1, 1) };
@@ -1103,8 +1103,8 @@ public final class CaseRunner {
 
     static Class<?> argType(Datatype dt) {
         if (dt == null) return Object.class;
-        if (dt.isNumeriek() || dt.isPercentage()) return BigDecimal.class;
-        if (dt.isTekst() || dt instanceof Datatype.Enumeratie) return String.class;
+        if (dt.isNumber() || dt.isPercentage()) return BigDecimal.class;
+        if (dt.isText() || dt instanceof Datatype.Enumeratie) return String.class;
         if (dt instanceof Datatype.Booleaan) return Boolean.class;
         if (dt instanceof Datatype.DatumInDagen) return LocalDate.class;
         if (dt instanceof Datatype.DatumTijd) return LocalDateTime.class;

@@ -7,7 +7,7 @@ import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.engine.ScenarioResultaat;
 import dev.uchar.regelspraak.graaf.ProducentConsument;
-import dev.uchar.regelspraak.ir.ResolvedStartpunt;
+import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -229,8 +229,8 @@ public final class DroolsBackend {
             for (ProducentConsument.ElementSleutel e : v.writes()) use.putIfAbsent(e, formName);
             for (ProducentConsument.ElementSleutel e : v.leest()) use.putIfAbsent(e, formName);
         }
-        for (ResolvedStartpunt sp : model.resolvedStartpunten)
-            use.putIfAbsent(ProducentConsument.elementVan(model.objecttypeOpNaam(sp.objecttype()), sp.lid(), false),
+        for (ResolvedStartPointDetermination sp : model.resolvedStartPointDeterminations)
+            use.putIfAbsent(ProducentConsument.elementVan(model.objecttypeOpNaam(sp.objecttype()), sp.member(), false),
                     "de startpuntbepaling van tijdlijn '" + sp.tijdlijn() + "'");
         for (FactModelGenerator.Displacement v : displacements) {
             FactModelGenerator.Origin h = v.displaced();
@@ -475,7 +475,7 @@ public final class DroolsBackend {
         if (ot.attribuut(e.attribuut()) == null)
             throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
                     + ", maar " + ot.naam + " heeft geen attribuut van die naam");
-        if (!Namen.containsName(ot.granulariteitLeden(), e.attribuut()))
+        if (!Namen.containsName(ot.granularityMembers(), e.attribuut()))
             throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
                     + ", maar dat attribuut van " + ot.naam + " ligt niet op een tijdlijn; alleen de invoer van een"
                     + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
@@ -629,7 +629,7 @@ public final class DroolsBackend {
      * hold it (§13.3.9). Until this call the beans hold the input alone, since the branch writes no bean while it fires.
      *
      * <p>Before anything is written, it throws the evaluation faults that stand at the fixpoint, and then writes nothing:
-     * one fault as its own exception, which is a {@link Breuk.DelingDoorNul} for a division by a numeric zero (an
+     * one fault as its own exception, which is a {@link Rational.DelingDoorNul} for a division by a numeric zero (an
      * {@code ArithmeticException}, named after the rule with the operands), a {@code Rekenfout} for a fault of a
      * computation or of the evaluation date, a
      * {@code Schrijversconflict} for two writers of one attribute that disagree (an {@code IllegalStateException},
@@ -1197,7 +1197,7 @@ public final class DroolsBackend {
     }
 
     /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence
-     *  throws: a {@link Breuk.DelingDoorNul} in its cause chain becomes one naming the rule, with what the consequence
+     *  throws: a {@link Rational.DelingDoorNul} in its cause chain becomes one naming the rule, with what the consequence
      *  threw as its cause; any other {@code e} is returned unchanged. Neither branch throws an evaluation fault out of
      *  its fire, which stands as a fact at the fixpoint, so what comes here is a broken contract or a bug, and this
      *  hands it on as it is. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw a division by a

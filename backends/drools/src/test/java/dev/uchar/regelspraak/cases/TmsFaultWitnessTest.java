@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * nul in de regel "aandeel": 90 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS
  * ch. 1.4, punt 4)"; every row that fires a session itself stopped in the fire, "de fire wierp in volgorde [erkenning,
  * aandeel, kenmerkstand Vondst.erkend: waar uit de invoer, …]: Exception executing consequence for rule "aandeel" in
- * dev.uchar.regelspraak.tms: dev.uchar.regelspraak.runtime.Breuk$DelingDoorNul: Breuk deling door 0"; and the document
+ * dev.uchar.regelspraak.tms: dev.uchar.regelspraak.runtime.Rational$DelingDoorNul: Breuk deling door 0"; and the document
  * with two faults reported the first fault the agenda reached and no other, "[aandeel, verhouding, erkenning]
  * DelingDoorNul: deling door nul in de regel "aandeel": 100 gedeeld door 0 — …", in each of its six orders. The replay
  * of the single standing fault and the exec-model rows were green before: they pin what stays.
@@ -292,7 +292,7 @@ class TmsFaultWitnessTest {
 
     /** The fault a consumer meets at the fixpoint is the exception the fire of the destructive exec-model branch gave
      *  through {@code DroolsBackend.designate}, which the DRL-text branch's fire gives still: the named division, with the
-     *  division as {@code Breuk.delen} threw it as its cause, so the red path's cause chain reads as on that branch.
+     *  division as {@code Rational.delen} threw it as its cause, so the red path's cause chain reads as on that branch.
      *  Two faults are one exception whose cause is the first fault of its message and whose suppressed exception is the
      *  second. */
     @Test void the_faults_at_the_fixpoint_carry_the_division_as_cause() throws Exception {

@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.transpiler.kern;
 
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
-import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreation;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -88,8 +88,8 @@ public final class StandingTargets {
         Map<String, Integer> count = writersPerTarget();
         Set<String> out = new LinkedHashSet<>();
         for (ResolvedRegel r : model.resolvedRegels) {
-            boolean executable = r.waarde() instanceof Expr.Functie f
-                    && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN);
+            boolean executable = r.waarde() instanceof Expr.FunctionCall f
+                    && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN);
             String k = sleutel(r.doel());
             if (!isComputing(r) || !executable || k == null || count.getOrDefault(k, 0) != 1) continue;
             Expr.AttribuutRef d = (Expr.AttribuutRef) r.doel();
@@ -153,7 +153,7 @@ public final class StandingTargets {
             // one computing rule.
             if (e.getValue().size() != inits.size() + comps.size() || inits.size() != 1 || comps.size() > 1) continue;
             ResolvedRegel init = inits.get(0);
-            boolean bare = init.voorwaarde() == null && (init.geldigheid() == null || init.geldigheid().altijd())
+            boolean bare = init.voorwaarde() == null && (init.geldigheid() == null || init.geldigheid().always())
                     && init.waarde() != null;   // ref's is_plain_init
             if (bare) out.add(e.getKey());
         }
@@ -181,7 +181,7 @@ public final class StandingTargets {
      *  (ch. 7.4) and never defeasible. */
     private static boolean isComputing(ResolvedRegel r) {
         return (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
-                && (r.geldigheid() == null || r.geldigheid().altijd()) && r.waarde() != null;
+                && (r.geldigheid() == null || r.geldigheid().always()) && r.waarde() != null;
     }
 
     /** ref's {@code other_writer}: a prioritized-defaults group, a verdeling or an object-creatie toekenning
@@ -190,11 +190,11 @@ public final class StandingTargets {
         for (PrioritizedDefaults pd : prioritizedDefaults)
             if (equalName(pd.onderwerp(), ot) && pd.attribuut() != null && equalName(pd.attribuut(), attr)) return true;
         for (ResolvedVerdeling v : model.verdelingen)
-            if (v.doelType() != null && equalName(v.doelType().naam, ot)
-                    && v.doelAttribuut() != null && equalName(v.doelAttribuut(), attr)) return true;
-        for (ResolvedObjectCreatie oc : model.objectCreaties)
-            if (oc.nieuwType() != null && equalName(oc.nieuwType().naam, ot))
-                for (var t : oc.toekenningen())
+            if (v.targetType() != null && equalName(v.targetType().naam, ot)
+                    && v.targetAttribute() != null && equalName(v.targetAttribute(), attr)) return true;
+        for (ResolvedObjectCreation oc : model.objectCreaties)
+            if (oc.createdType() != null && equalName(oc.createdType().naam, ot))
+                for (var t : oc.initialisations())
                     if (!t.kenmerk() && equalName(t.attribuut(), attr)) return true;
         return false;
     }
@@ -203,7 +203,7 @@ public final class StandingTargets {
      *  SHARED name contract ({@link Namen#containsName}), so a key written in another capitalisation classifies
      *  the same way here as it resolves at the write site. */
     private static boolean temporalAttribute(Objecttype ot, String attr) {
-        return ot != null && Namen.containsName(ot.granulariteitLeden(), attr);
+        return ot != null && Namen.containsName(ot.granularityMembers(), attr);
     }
 
     /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or

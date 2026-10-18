@@ -9,7 +9,7 @@ import java.util.List;
  *
  * Only the assignment-shaped resultaatdelen live in THIS record; the other resultaatdeel
  * kinds have since gained nodes of their own — kenmerktoekenning as the {@link Soort#KENMERKTOEKENNING}
- * arm here, objectcreatie as {@link ResolvedObjectCreatie}, verdeling as {@link ResolvedVerdeling},
+ * arm here, objectcreatie as {@link ResolvedObjectCreation}, verdeling as {@link ResolvedVerdeling},
  * and likewise feitcreatie, startpunt, dagsoort, consistentie and uniciteit. The voorwaardendeel
  * joined the IR as the {@code voorwaarde} component below.
  *
@@ -22,12 +22,12 @@ import java.util.List;
  *                       (the rule's "when")
  * @param geldigheid     the §13.4.2.5 version validity window; {@link Geldigheid#ALTIJD} when
  *                       always-valid (the transpiler then emits no Rekendatum guard)
- * @param bronAnnotaties the {@code // Bron: …} statuutannotaties written directly above the rule
+ * @param statuteAnnotations the {@code // Bron: …} statuutannotaties written directly above the rule
  *                       (the text after {@code Bron:}, in source order), so uitleg can cite the
  *                       wetsartikel. On the wire they are the rule form's statuteAnnotations (WF-082).
  */
 public record ResolvedRegel(String naam, Soort soort, Expr doel, Expr waarde,
-                            Conditie voorwaarde, Geldigheid geldigheid, List<String> bronAnnotaties) {
+                            Conditie voorwaarde, Geldigheid geldigheid, List<String> statuteAnnotations) {
     public enum Soort { GELIJKSTELLING, BEREKENING, INITIALISATIE, KENMERKTOEKENNING }
 
     /** Without statuutannotaties (an empty list) — for the construction sites that carry no

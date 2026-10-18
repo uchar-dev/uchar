@@ -148,7 +148,7 @@ final class Stapels {
         }
         if (all.isEmpty()) return null;
         for (ResolvedRegel r : all)
-            if (r.geldigheid() != null && !r.geldigheid().altijd())
+            if (r.geldigheid() != null && !r.geldigheid().always())
                 throw new Uncomposable("het doel " + targetName(key) + " op " + level.naam + " wordt naast een geërfde"
                         + " defaultsstapel geschreven door de regel \"" + r.naam() + "\" met een geldigheidsvenster: een"
                         + " basis met een venster zet versiekeuze in de stapel, die ch. 7.4 van verdedigbaarheid scheidt"

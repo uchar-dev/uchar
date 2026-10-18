@@ -32,7 +32,7 @@ class IrTest {
                 Het totaal van een Verkoop moet berekend worden als het bedrag van de Verkoop plus de toeslag.
         """;
 
-    @Test void berekening_wordt_een_getypeerde_resolved_regel() {
+    @Test void calculation_becomes_a_typed_resolved_rule() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.resolvedRegels.size());
@@ -42,7 +42,7 @@ class IrTest {
         assertEquals(ResolvedRegel.Soort.BEREKENING, rr.soort());
     }
 
-    @Test void doel_is_een_gebonden_attribuutreferentie() {
+    @Test void target_is_a_bound_attribute_reference() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         ResolvedRegel rr = m.resolvedRegels.get(0);
 
@@ -54,25 +54,25 @@ class IrTest {
         assertEquals("€", ((Datatype.Numeriek) doel.type()).eenheid().afkorting());
     }
 
-    @Test void waarde_is_een_getypeerde_optelboom_met_gebonden_operanden() {
+    @Test void value_is_a_typed_summing_tree_with_bound_operands() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         ResolvedRegel rr = m.resolvedRegels.get(0);
 
-        Expr.Binair som = assertInstanceOf(Expr.Binair.class, rr.waarde());
-        assertEquals(Expr.BinOp.PLUS, som.op());
-        assertTrue(som.type().isNumeriek(), "som moet numeriek zijn");
+        Expr.Binair sum = assertInstanceOf(Expr.Binair.class, rr.waarde());
+        assertEquals(Expr.BinOp.PLUS, sum.op());
+        assertTrue(sum.type().isNumber(), "som moet numeriek zijn");
 
         // left operand: het bedrag van de Verkoop -> attribuut bound to objecttype Verkoop
-        Expr.AttribuutRef links = assertInstanceOf(Expr.AttribuutRef.class, som.links());
+        Expr.AttribuutRef links = assertInstanceOf(Expr.AttribuutRef.class, sum.links());
         assertEquals("bedrag", links.attribuut());
         assertSame(m.objecttypen.get("Verkoop"), links.objecttype());
 
         // right operand: de toeslag -> bound to the parameter
-        Expr.ParameterRef rechts = assertInstanceOf(Expr.ParameterRef.class, som.rechts());
+        Expr.ParameterRef rechts = assertInstanceOf(Expr.ParameterRef.class, sum.rechts());
         assertSame(m.parameters.get("toeslag"), rechts.parameter());
     }
 
-    @Test void aggregatie_structuur_wordt_vastgelegd() {
+    @Test void aggregation_structure_is_recorded() {
         // The som-aggregation's structure is captured even where its element type is
         // not yet resolved (the argument's subject is a role, not an object type).
         String src = """
@@ -90,12 +90,12 @@ class IrTest {
                         + "or sourcePath) under every kind but total: the range is written, never derived"),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
         Expr waarde = m.resolvedRegels.get(0).waarde();
-        Expr.Functie som = assertInstanceOf(Expr.Functie.class, waarde);
-        assertEquals(Expr.FunctieKind.SOM, som.kind());
-        assertEquals(1, som.argumenten().size());
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, waarde);
+        assertEquals(Expr.FunctionKind.SOM, sum.kind());
+        assertEquals(1, sum.arguments().size());
     }
 
-    @Test void aggregatie_dimensieselectie_op_scalair_attribuut_blijft_marker() {
+    @Test void aggregation_dimension_selection_on_scalar_attribute_stays_a_marker() {
         // A dimensieselectie ("over alle <dim>") whose operand is NOT a gedimensioneerd attribuut (here
         // the scalar "prijs") cannot be lowered — there is no label set to range over — so the resolver
         // keeps the honest marker: an Onopgelost filter + a WARNING, never a silent aggregation of the
@@ -111,9 +111,9 @@ class IrTest {
                     De prijs van een Reis moet berekend worden als de som van de prijs van een Reis over alle jaardimensies.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        Expr.Functie som = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
-        assertNull(som.dimensieSelectie(), "een scalair operand heeft geen oplosbare dimensieselectie");
-        Conditie.Onopgelost f = assertInstanceOf(Conditie.Onopgelost.class, som.filter(),
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        assertNull(sum.dimensieSelectie(), "een scalair operand heeft geen oplosbare dimensieselectie");
+        Conditie.Unresolved f = assertInstanceOf(Conditie.Unresolved.class, sum.filter(),
                 () -> "de dimensieselectie moet als Onopgelost-marker vastliggen, niet stil verdwijnen");
         assertTrue(f.bron().snippet().contains("over alle jaardimensies"), () -> "bron: " + f.bron());
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == RegelSpraakModel.Severity.WARNING
@@ -121,9 +121,9 @@ class IrTest {
                 () -> "verwachtte een dimensieselectie-WARNING: " + m.diagnostics);
     }
 
-    @Test void dimensieselectie_over_gedimensioneerd_attribuut_wordt_opgelost() {
+    @Test void dimension_selection_over_dimensioned_attribute_is_resolved() {
         // §5.8.5 / §13.4.17.53: "de som van <gedimensioneerd attribuut> vanaf <a> t/m <b>" resolves to a
-        // DimensieSelectie carrying the dimension and the CONTIGUOUS label interval [a..b] in the declared
+        // DimensionSelection carrying the dimension and the CONTIGUOUS label interval [a..b] in the declared
         // order (§13.3.7.5) — positions 3..6 of the seven labels — NOT a marker. No WARNING.
         String src = """
             Objecttype de Natuurlijk persoon (mv: Natuurlijke personen)
@@ -143,19 +143,19 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
-        Expr.Functie som = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
-        assertEquals(Expr.FunctieKind.SOM, som.kind());
-        Expr.DimensieSelectie sel = som.dimensieSelectie();
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        assertEquals(Expr.FunctionKind.SOM, sum.kind());
+        Expr.DimensionSelection sel = sum.dimensieSelectie();
         assertNotNull(sel, "de vanaf..t/m dimensieselectie moet opgelost zijn, geen marker");
-        assertEquals("jaardimensie", sel.dimensie());
+        assertEquals("jaardimensie", sel.dimension());
         assertEquals(List.of("vier jaar geleden", "drie jaar geleden", "twee jaar geleden", "een jaar geleden"),
                 sel.labels(), "interval [vier..een jaar geleden] inclusief, in gedeclareerde volgorde");
-        assertFalse(som.filter() instanceof Conditie.Onopgelost, "geen Onopgelost-marker meer");
+        assertFalse(sum.filter() instanceof Conditie.Unresolved, "geen Onopgelost-marker meer");
         assertTrue(m.diagnostics.stream().noneMatch(d -> d.message().contains("dimensieselectie")),
                 () -> "geen marker-WARNING verwacht: " + m.diagnostics);
     }
 
-    @Test void dimensieselectie_over_multidimensioneel_attribuut_blijft_marker() {
+    @Test void dimension_selection_over_multidimensional_attribute_stays_a_marker() {
         // review (lens A): a MULTI-dimension attribuut (§3.6 "inkomen" over jaardimensie EN
         // brutonettodimensie) is keyed by label COMBINATIONS, so the single-Map<label,value> fold would
         // mis-read it (map.get(singleLabel) -> null). Until a composite-key model exists it must stay a
@@ -175,15 +175,15 @@ class IrTest {
                 De totaal van een Persoon moet berekend worden als de som van zijn inkomen over alle jaardimensies.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        Expr.Functie som = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
-        assertNull(som.dimensieSelectie(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
-        assertInstanceOf(Conditie.Onopgelost.class, som.filter(), "moet de honest marker houden");
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        assertNull(sum.dimensieSelectie(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
+        assertInstanceOf(Conditie.Unresolved.class, sum.filter(), "moet de honest marker houden");
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("dimensieselectie")),
                 () -> "verwachtte een marker-WARNING: " + m.diagnostics);
     }
 
-    @Test void dimensie_cel_lezen_wordt_een_dimensiecel_met_label() {
-        // §3.6/§3.8 "zijn betaalde belasting in jaar van huidig jaar" resolves to a DimensieCel: the bare
+    @Test void dimension_cell_read_becomes_a_dimension_cell_with_label() {
+        // §3.6/§3.8 "zijn betaalde belasting in jaar van huidig jaar" resolves to a DimensionCellRead: the bare
         // attribuut ("betaalde belasting in jaar") plus the peeled jaardimensie label ("huidig jaar").
         String src = """
             Objecttype de Natuurlijk persoon (mv: Natuurlijke personen)
@@ -198,14 +198,14 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "" + m.errors());
-        Expr.DimensieCel cel = assertInstanceOf(Expr.DimensieCel.class, m.resolvedRegels.get(0).waarde(),
+        Expr.DimensionCellRead cell = assertInstanceOf(Expr.DimensionCellRead.class, m.resolvedRegels.get(0).waarde(),
                 "een gelabelde dimensielezing moet een DimensieCel zijn");
-        assertEquals("betaalde belasting in jaar", cel.attribuut().attribuut(), "de kale attribuutnaam");
-        assertEquals(List.of("huidig jaar"), cel.labels(), "het geselecteerde label");
-        assertTrue(cel.type().isNumeriek(), "het celtype is het element-datatype van het attribuut");
+        assertEquals("betaalde belasting in jaar", cell.attribuut().attribuut(), "de kale attribuutnaam");
+        assertEquals(List.of("huidig jaar"), cell.labels(), "het geselecteerde label");
+        assertTrue(cell.type().isNumber(), "het celtype is het element-datatype van het attribuut");
     }
 
-    @Test void enkelvoudige_voorwaarde_wordt_een_vergelijking() {
+    @Test void single_condition_becomes_a_comparison() {
         String src = """
             Parameter de grens : Numeriek (geheel getal)
             Objecttype de Reis
@@ -225,7 +225,7 @@ class IrTest {
         assertInstanceOf(Expr.ParameterRef.class, v.rechts());
     }
 
-    @Test void samengestelde_voorwaarde_wordt_een_boom_van_onderdelen() {
+    @Test void compound_condition_becomes_a_tree_of_parts() {
         String src = """
             Objecttype de Reis
                 de prijs Numeriek (geheel getal);
@@ -249,12 +249,12 @@ class IrTest {
                 ((Conditie.Vergelijking) s.onderdelen().get(1)).op());
     }
 
-    @Test void onvoorwaardelijke_regel_heeft_geen_voorwaarde() {
+    @Test void unconditional_rule_has_no_condition() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         assertNull(m.resolvedRegels.get(0).voorwaarde());
     }
 
-    @Test void aggregatie_neemt_het_elementtype_via_rolnavigatie_over() {
+    @Test void aggregation_takes_over_the_element_type_via_role_navigation() {
         // "de som van <attr> van alle deelnemers van de groep": the element is the
         // deelnemer's attribute (head noun before 'van'), so the sum is its type —
         // not the deeper "groep". Count is a non-negative integer.
@@ -278,16 +278,16 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
 
-        Expr.Functie som = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
-        assertEquals(Expr.FunctieKind.SOM, som.kind());
-        assertTrue(som.type().isNumeriek(), "som-elementtype niet via rol opgelost");
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        assertEquals(Expr.FunctionKind.SOM, sum.kind());
+        assertTrue(sum.type().isNumber(), "som-elementtype niet via rol opgelost");
 
-        Expr.Functie telling = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(1).waarde());
-        assertEquals(Expr.FunctieKind.AANTAL, telling.kind());
-        assertTrue(telling.type().isNumeriek(), "telling moet numeriek (een telling) zijn");
+        Expr.FunctionCall count = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(1).waarde());
+        assertEquals(Expr.FunctionKind.AANTAL, count.kind());
+        assertTrue(count.type().isNumber(), "telling moet numeriek (een telling) zijn");
     }
 
-    @Test void tijdsduur_wordt_getypeerd_met_genormaliseerde_eenheid() {
+    @Test void duration_is_typed_with_a_normalised_unit() {
         // "in hele jaren" must be convertible with the declared abbreviation "jr",
         // so a duration can assign to an attribute "met eenheid jr" without a false
         // positive — unit-word/plural/abbreviation all denote the one unit.
@@ -305,14 +305,14 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "valse fout op jaren/jr: " + m.errors());
 
-        Expr.Functie td = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
-        assertEquals(Expr.FunctieKind.TIJDSDUUR, td.kind());
+        Expr.FunctionCall td = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        assertEquals(Expr.FunctionKind.TIJDSDUUR, td.kind());
         Datatype.Numeriek n = assertInstanceOf(Datatype.Numeriek.class, td.type());
         assertTrue(n.geheel(), "hele jaren -> geheel");
-        assertTrue(n.eenheid().convertibleNaar(m.resolveEenheid("jr")), "jaren niet inwisselbaar met jr");
+        assertTrue(n.eenheid().convertibleTo(m.resolveEenheid("jr")), "jaren niet inwisselbaar met jr");
     }
 
-    @Test void gedeclareerd_meervoud_wint_van_gegokte_morfologie() {
+    @Test void declared_plural_wins_over_guessed_morphology() {
         // The role declares an IRREGULAR plural "(mv: steden)"; a "stad"+s guess would
         // produce "stads" and never match "steden". Matching must use the DECLARED form.
         String src = """
@@ -331,14 +331,14 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
 
-        Expr.Functie som = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
-        assertEquals(Expr.FunctieKind.SOM, som.kind());
-        Expr.AttribuutRef arg = assertInstanceOf(Expr.AttribuutRef.class, som.argumenten().get(0));
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).waarde());
+        assertEquals(Expr.FunctionKind.SOM, sum.kind());
+        Expr.AttribuutRef arg = assertInstanceOf(Expr.AttribuutRef.class, sum.arguments().get(0));
         assertNotNull(arg.objecttype(), "'steden' niet opgelost via gedeclareerd meervoud");
         assertEquals("Stad", arg.objecttype().naam);   // resolved via (mv: steden), not a guess
     }
 
-    @Test void referenties_lossen_op_via_feittype_rollen() {
+    @Test void references_resolve_via_fact_type_roles() {
         // Subjects are roles, not object-type names: "een groep" → Ploeg (role groep),
         // "een deelnemer"/"alle deelnemers" → Persoon (role deelnemer, incl. plural).
         String src = """
@@ -370,10 +370,10 @@ class IrTest {
         Expr.AttribuutRef waarde = assertInstanceOf(Expr.AttribuutRef.class, rr.waarde());
         assertNotNull(waarde.objecttype(), "meervoudige rol 'deelnemers' niet opgelost");
         assertEquals("Persoon", waarde.objecttype().naam);       // via plural role deelnemers
-        assertTrue(waarde.type().isNumeriek());
+        assertTrue(waarde.type().isNumber());
     }
 
-    @Test void onopgeloste_referentie_blijft_onbekend_geen_valse_fout() {
+    @Test void unresolved_reference_stays_unknown_no_false_error() {
         // A deep van-chain the resolver cannot bind must not produce a type error.
         String src = """
             Objecttype de Reis
@@ -386,6 +386,6 @@ class IrTest {
         assertTrue(m.errors().isEmpty(), () -> "valse fout op onopgeloste referentie: " + m.errors());
         // value is an attribuut-ref whose datatype stayed Onbekend (subject not resolved)
         Expr waarde = m.resolvedRegels.get(0).waarde();
-        assertTrue(waarde.type().isOnbekend());
+        assertTrue(waarde.type().isUnknown());
     }
 }
