@@ -7787,7 +7787,7 @@ let () =
      element contribute once; a disjunction inside one aggregate condition
      or two aggregates added together would not have that property. *)
   translates_carrying ~name:"WF-110 de takken landen in één hulppredicaat" ~ir
-    ~case_text:union_case ~needle:"unie";
+    ~case_text:union_case ~needle:"union";
   translates_carrying ~name:"WF-110 de telling loopt over het hulppredicaat" ~ir
     ~case_text:union_case ~needle:"= #count { X";
   (* clause (c): a count that names a source of its own beside the union.

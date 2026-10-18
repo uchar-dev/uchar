@@ -316,7 +316,7 @@ LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 UNCOVERED=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$VTWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
+trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$UNCOVERED" "$RAKERS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -668,7 +668,7 @@ for _, _, n in dragers(kaal):
     gestript += len(n.pop("designations", []))
 for _, dt in waardeTabellen(kaal):
     gestript += len(dt.pop("valueDesignations"))
-schrijf(kaal, os.path.join(doel, "gestript.json"))
+schrijf(kaal, os.path.join(doel, "stripped.json"))
 
 # EXCHANGED: vocabulary i takes the name of vocabulary i+1, in the declarations and the designations
 wissel = lees(bron)
@@ -685,7 +685,7 @@ for _, dt in waardeTabellen(wissel):
     for b in dt["valueDesignations"]:
         b["vocabulary"] = nieuw.get(b["vocabulary"].lower(), b["vocabulary"])
         verwisseld += 1
-schrijf(wissel, os.path.join(doel, "verwisseld.json"))
+schrijf(wissel, os.path.join(doel, "swapped.json"))
 
 # ROTATED: per vocabulary and scope, the designations one declaration on
 rot = lees(bron)
@@ -719,7 +719,7 @@ for dom, dt in waardeTabellen(rot):
         scopes.setdefault((b["vocabulary"].lower(), ("values", dom)), []).append((b["value"], b))
 for (voc, _), plekken in scopes.items():
     roteer(voc, plekken)
-schrijf(rot, os.path.join(doel, "geroteerd.json"))
+schrijf(rot, os.path.join(doel, "rotated.json"))
 print("1 %d %d %d" % (gestript, verwisseld, geroteerd))
 PY
 
@@ -979,15 +979,15 @@ if [ "$n_vgoldens" -eq 0 ]; then
     exit 1
 fi
 if [ "$n_vgoldens" -lt "$EXPECTED_MIN_VOCABULARY_GOLDENS" ]; then
-    echo "FAIL: the vocabulary leg probed $n_vgoldens golden(s), but EXPECTED_MIN_VOCABULAIRE_GOLDENS pins at least $EXPECTED_MIN_VOCABULARY_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: the vocabulary leg probed $n_vgoldens golden(s), but EXPECTED_MIN_VOCABULARY_GOLDENS pins at least $EXPECTED_MIN_VOCABULARY_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 if [ "$n_v_stripped" -lt "$EXPECTED_MIN_VOCABULARY_STRIPPED" ]; then
-    echo "FAIL: the vocabulary leg stripped $n_v_stripped designation(s), but EXPECTED_MIN_VOCABULAIRE_GESTRIPT pins at least $EXPECTED_MIN_VOCABULARY_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: the vocabulary leg stripped $n_v_stripped designation(s), but EXPECTED_MIN_VOCABULARY_STRIPPED pins at least $EXPECTED_MIN_VOCABULARY_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 if [ "$n_v_rotated" -lt "$EXPECTED_MIN_VOCABULARY_ROTATED" ]; then
-    echo "FAIL: the vocabulary leg rotated $n_v_rotated designation(s), but EXPECTED_MIN_VOCABULAIRE_GEROTEERD pins at least $EXPECTED_MIN_VOCABULARY_ROTATED — the rotation moves less than it did (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: the vocabulary leg rotated $n_v_rotated designation(s), but EXPECTED_MIN_VOCABULARY_ROTATED pins at least $EXPECTED_MIN_VOCABULARY_ROTATED — the rotation moves less than it did (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
@@ -1039,11 +1039,11 @@ if [ "$n_hgoldens" -eq 0 ]; then
     exit 1
 fi
 if [ "$n_hgoldens" -lt "$EXPECTED_MIN_ORIGIN_GOLDENS" ]; then
-    echo "FAIL: the origin leg probed $n_hgoldens golden(s), but EXPECTED_MIN_HERKOMST_GOLDENS pins at least $EXPECTED_MIN_ORIGIN_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: the origin leg probed $n_hgoldens golden(s), but EXPECTED_MIN_ORIGIN_GOLDENS pins at least $EXPECTED_MIN_ORIGIN_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 if [ "$n_h_stripped" -lt "$EXPECTED_MIN_ORIGIN_STRIPPED" ]; then
-    echo "FAIL: the origin leg stripped $n_h_stripped origin(s), but EXPECTED_MIN_HERKOMST_GESTRIPT pins at least $EXPECTED_MIN_ORIGIN_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: the origin leg stripped $n_h_stripped origin(s), but EXPECTED_MIN_ORIGIN_STRIPPED pins at least $EXPECTED_MIN_ORIGIN_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 

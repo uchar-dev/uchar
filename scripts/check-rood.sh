@@ -84,7 +84,7 @@ if [ "$n_cases" -eq 0 ]; then
     exit 1
 fi
 if [ "$n_cases" -lt "$EXPECTED_MIN_RED_CASES" ]; then
-    echo "FAIL: $n_cases red case(s) replayed, but EXPECTED_MIN_ROOD_CASES pins at least $EXPECTED_MIN_RED_CASES — the red fence shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: $n_cases red case(s) replayed, but EXPECTED_MIN_RED_CASES pins at least $EXPECTED_MIN_RED_CASES — the red fence shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 

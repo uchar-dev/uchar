@@ -38,7 +38,7 @@ A witness whose rule the v1 migration takes away gets one of three stamps
 (rewritten on the rule that still holds), **vervangen** (replaced by a
 successor witness of a successor rule) or **verwijderd-met-reden** (removed,
 with the reason). This list names every one of them, per migration step, so a
-witness never leaves the corpus unrecorded. The floor `EXPECTED_MIN_NEGATIEF`
+witness never leaves the corpus unrecorded. The floor `EXPECTED_MIN_NEGATIVE`
 in `scripts/check-verifier.sh` is a lower bound and did not have to move.
 
 ### M1 — the container (2026-09-23)
@@ -106,7 +106,7 @@ The negatief zone went from 444 to 394 documents at the L2 union (with the U12
 witness `wf034-rollidmaatschap-vreemde-vullersklasse` added beside the stamps),
 and to 400 in the L2 fix round (the restored `wf046-kwantorvouw-bereik-ander-type`
 and the five witnesses the fix round added, listed in the last table beside the
-U12 witness); the floor `EXPECTED_MIN_NEGATIEF` did not have to move.
+U12 witness); the floor `EXPECTED_MIN_NEGATIVE` did not have to move.
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
@@ -339,7 +339,7 @@ message of the arm it pins, without a JSON pointer; so does every date witness
 whose rule reads the precision, and every witness added here. The arm column
 names that arm in words, or, for a removed witness, the arm that left. The
 negatief zone went from 400 to 402 documents (four removed, six added); the
-floor `EXPECTED_MIN_NEGATIEF` did not have to move, and `EXPECTED_MIN_EXPECT`
+floor `EXPECTED_MIN_NEGATIVE` did not have to move, and `EXPECTED_MIN_EXPECT`
 rose from 91 to 159 (`scripts/check-verifier.sh`).
 
 | directory | rule | delta | stamp | arm | reason |
@@ -540,7 +540,7 @@ stamp list carries `expect.txt`; so does every witness added here. The arm
 column quotes the pinned fragment, shortened where it is long. Every NOTE
 citation was taken again from the L4 verifier's output. The negatief zone went
 from 407 to 417 documents (five removed, fifteen added: seven with the
-landing, eight in its fix round); the floor `EXPECTED_MIN_NEGATIEF` did not
+landing, eight in its fix round); the floor `EXPECTED_MIN_NEGATIVE` did not
 have to move, and `EXPECTED_MIN_EXPECT` rose from 165 to 220 with the landing
 and to 228 in its fix round (`scripts/check-verifier.sh`).
 
@@ -760,7 +760,7 @@ fragment, shortened where it is long. Every NOTE citation was taken again from
 the L5 verifier's output; a NOTE that describes a v0 form, or a measurement
 taken on one, says so and keeps that form's names. The negatief zone went from
 417 to 418 documents (none removed, one added); the floor
-`EXPECTED_MIN_NEGATIEF` did not have to move, and `EXPECTED_MIN_EXPECT` rose
+`EXPECTED_MIN_NEGATIVE` did not have to move, and `EXPECTED_MIN_EXPECT` rose
 from 228 to 229 with the added witness and to 260 with the 31 first pins
 (`scripts/check-verifier.sh`).
 

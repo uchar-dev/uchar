@@ -47,14 +47,26 @@ class FoldKindsBoundaryTest {
 
     private static final String CHECKS = "spec/verifier/lib/checks.ml";
 
-    /** A constructor of the verifier's AST, which keeps its v0 names: upper-cased it is the frontend's kind name, as
-     *  for aggregation_kinds below. */
+    /** A constructor of the verifier's AST, which carries the wire names (card rename-ocaml); the frontend's kinds keep
+     *  the RegelSpraak words, so {@link #kind} maps one to the other. */
     private static final Pattern CONSTRUCTOR = Pattern.compile("\\b[A-Z][A-Za-z0-9_]*\\b");
+
+    private static final java.util.Map<String, String> VERIFIER_KINDS = java.util.Map.of(
+            "SUM_FUNCTION", "SOM", "TOTAL", "TOTAAL", "COUNT", "AANTAL", "MINIMUM", "MINIMUM", "MAXIMUM", "MAXIMUM",
+            "FIRST", "EERSTE", "LAST", "LAATSTE", "FILLED_COUNT", "AANTAL_GEVULDE");
+
+    /** The frontend's kind name of a verifier constructor; an unmapped constructor FAILS, so a kind added on the
+     *  verifier's side cannot pass unseen. */
+    private static String kind(String constructor) {
+        String name = VERIFIER_KINDS.get(constructor.toUpperCase(java.util.Locale.ROOT));
+        if (name == null) fail("the verifier's constructor " + constructor + " has no frontend kind in VERIFIER_KINDS");
+        return name;
+    }
 
     /** The two arms of {@code source_reading} that read a ranged source under the COUNT kind as instances;
      *  every other aggregation kind falls to the value arms below them. Whitespace-tolerant. */
-    private static final Pattern COUNT_ARM_MEMBER = Pattern.compile("\\|\\s*Aantal\\s*,\\s*true\\s*->\\s*Src_count_of_member");
-    private static final Pattern COUNT_ARM_ROLE = Pattern.compile("\\|\\s*Aantal\\s*,\\s*false\\s*->\\s*Src_count\\b");
+    private static final Pattern COUNT_ARM_MEMBER = Pattern.compile("\\|\\s*Count\\s*,\\s*true\\s*->\\s*Src_count_of_member");
+    private static final Pattern COUNT_ARM_ROLE = Pattern.compile("\\|\\s*Count\\s*,\\s*false\\s*->\\s*Src_count\\b");
 
     /** The verifier's list of aggregation kinds, the set {@code source_reading} splits. */
     private static final Pattern AGGREGATION_KINDS = Pattern.compile("let aggregation_kinds\\s*=\\s*\\[([^\\]]*)\\]");
@@ -85,7 +97,7 @@ class FoldKindsBoundaryTest {
             int pijl = arm.indexOf("->");
             if (pijl < 0 || !arm.substring(pijl + 2).strip().startsWith("Some")) continue;   // the None catch-all
             Matcher m = CONSTRUCTOR.matcher(arm.substring(0, pijl).replaceAll("\\bas\\s+\\w+", ""));
-            while (m.find()) kinds.add(m.group().toUpperCase(java.util.Locale.ROOT));
+            while (m.find()) kinds.add(kind(m.group()));
         }
         assertFalse(kinds.isEmpty(), "geen enkele arm gelezen — het patroon sluit niet meer aan op de bron");
 
@@ -107,8 +119,8 @@ class FoldKindsBoundaryTest {
         assertTrue(m.find(), "aggregation_kinds staat niet meer in " + CHECKS);
         List<String> valueFolds = new ArrayList<>();
         for (String soort : m.group(1).split(";")) {
-            String naam = soort.strip().toUpperCase(java.util.Locale.ROOT);
-            if (!naam.isEmpty() && !naam.equals("AANTAL")) valueFolds.add(naam);
+            String naam = soort.strip();
+            if (!naam.isEmpty() && !naam.equals("Count")) valueFolds.add(kind(naam));
         }
         assertEquals(valueFolds.stream().sorted().toList(),
                 RuleChecker.FOLD_KINDS.stream().map(Expr.FunctionKind::name).sorted().toList(),

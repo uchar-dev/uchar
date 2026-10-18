@@ -125,9 +125,9 @@ while IFS= read -r ir; do
             if (deel[1] == "attr" || deel[1] == "char") {
                 if (n != 3) { print "ONLEESBAAR", doc, $4; next }
                 print "rand", pl, nrm($3), deel[1], deel[3], cl, nrm($6)
-                print "binnen", pl " -> " deel[1] " -> " cl >>klassen
+                print "binnen", pl " -> " deel[1] " -> " cl >>classes
             } else if (deel[1] == "pop" || deel[1] == "rel" || deel[1] == "chan") {
-                print "buiten", pl " -> " deel[1] " -> " cl >>klassen
+                print "buiten", pl " -> " deel[1] " -> " cl >>classes
             } else print "ONLEESBAAR", doc, $4
         }' "$TMP/edges" | LC_ALL=C sort -u >>"$TMP/verifier"
 done <"$TMP/goldens"
@@ -177,7 +177,7 @@ for i in $(seq 1 "$n_goldens"); do
     LC_ALL=C comm -23 "$TMP/v/$i.rand" "$TMP/g/$i.rand" >"$TMP/alleen-verifier" || fail "comm over $golden"
     for side in graaf verifier; do
         awk -F'\t' -v OFS='\t' -v golden="$golden" -v side="$side" \
-            '{ $1 = golden OFS kant; print }' "$TMP/alleen-$side" >>"$TMP/verschil" || fail "awk over $golden"
+            '{ $1 = golden OFS side; print }' "$TMP/alleen-$side" >>"$TMP/verschil" || fail "awk over $golden"
     done
 done
 
@@ -185,7 +185,7 @@ done
 : >"$TMP/bewust"
 for e in ${DELIBERATE_DIFFERENCE[@]+"${DELIBERATE_DIFFERENCE[@]}"}; do
     [ "$(printf '%s' "$e" | awk -F'|' '{ print NF }')" -eq 9 ] && [ -n "${e##*|}" ] \
-        || fail "VERSCHIL_BEWUST entry is not '<golden>|<graaf|verifier>|<producer list>|<producer>|<attr|char>|<member>|<consumer list>|<consumer>|<reason>': $e"
+        || fail "DELIBERATE_DIFFERENCE entry is not '<golden>|<graaf|verifier>|<producer list>|<producer>|<attr|char>|<member>|<consumer list>|<consumer>|<reason>': $e"
     printf '%s\n' "${e%|*}" | tr '|' '\t' >>"$TMP/bewust"
 done
 LC_ALL=C sort -o "$TMP/verschil" "$TMP/verschil"
@@ -195,18 +195,18 @@ stale=$(LC_ALL=C comm -13 "$TMP/verschil" "$TMP/bewust")
 if [ -n "$unlisted" ]; then
     echo "the graph and the verifier's ch. 5 edges differ (golden, side that draws it, producer list, producer, node, member, consumer list, consumer):" >&2
     printf '%s\n' "$unlisted" | sed 's/^/  /' >&2
-    fail "the rule graph disagrees with IR-SPEC ch. 5 on $(printf '%s\n' "$unlisted" | grep -c .) dependency line(s) — fix the graph, or list a deliberate difference in VERSCHIL_BEWUST with its reason"
+    fail "the rule graph disagrees with IR-SPEC ch. 5 on $(printf '%s\n' "$unlisted" | grep -c .) dependency line(s) — fix the graph, or list a deliberate difference in DELIBERATE_DIFFERENCE with its reason"
 fi
 if [ -n "$stale" ]; then
     printf '%s\n' "$stale" | sed 's/^/  /' >&2
-    fail "VERSCHIL_BEWUST is stale: the entries above no longer differ (or their golden is gone or refused) — drop them"
+    fail "DELIBERATE_DIFFERENCE is stale: the entries above no longer differ (or their golden is gone or refused) — drop them"
 fi
 
 [ "$n_compared" -gt 0 ] || fail "no golden was compared (an empty comparison is a failure, never silently green)"
 [ "$n_compared" -ge "$EXPECTED_MIN_GOLDENS" ] \
     || fail "$n_compared goldens compared, but EXPECTED_MIN_GOLDENS pins at least $EXPECTED_MIN_GOLDENS — the comparison shrank (a deliberate removal lowers the floor in the same commit)"
 [ "$n_deps" -ge "$EXPECTED_MIN_DEPENDENT" ] \
-    || fail "$n_deps dependencies compared, but EXPECTED_MIN_AFHANKELIJK pins at least $EXPECTED_MIN_DEPENDENT — the comparison shrank (a deliberate removal lowers the floor in the same commit)"
+    || fail "$n_deps dependencies compared, but EXPECTED_MIN_DEPENDENT pins at least $EXPECTED_MIN_DEPENDENT — the comparison shrank (a deliberate removal lowers the floor in the same commit)"
 
 echo "check-graaf: spec leg — $n_compared of $n_goldens goldens compared, $n_deps dependencies equal to the verifier's ch. 5 edges (floors $EXPECTED_MIN_GOLDENS / $EXPECTED_MIN_DEPENDENT), $(grep -c . "$TMP/bewust") listed difference(s)"
 # per class (producer list -> node -> consumer list): the dependencies compared and the verifier edges they
@@ -264,10 +264,10 @@ junit() {
     echo "$ok"
 }
 
-n_rgs=$(find corpus/golden -name source_name.rgs | grep -c .)
+n_rgs=$(find corpus/golden -name bron.rgs | grep -c .)
 [ "$n_rgs" -gt 0 ] || fail "no corpus/golden/**/bron.rgs found (an empty route comparison is a failure)"
 [ "$n_rgs" -ge "$EXPECTED_MIN_SOURCE_ROUTE" ] \
-    || fail "$n_rgs goldens carry a bron.rgs, but EXPECTED_MIN_BRONROUTE pins at least $EXPECTED_MIN_SOURCE_ROUTE — the route comparison shrank (a deliberate removal lowers the floor in the same commit)"
+    || fail "$n_rgs goldens carry a bron.rgs, but EXPECTED_MIN_SOURCE_ROUTE pins at least $EXPECTED_MIN_SOURCE_ROUTE — the route comparison shrank (a deliberate removal lowers the floor in the same commit)"
 routes=$(junit --select-class dev.uchar.regelspraak.graaf.GraphSourceRouteTest) \
     || fail "the route comparison is red: the graph of a golden's ir.json differs from the graph of its bron.rgs (above)"
 [ "$routes" -eq "$n_rgs" ] \
